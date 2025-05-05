@@ -15,12 +15,6 @@ const Navbar: React.FC = () => {
           <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
             Features
           </a>
-          <a href="#demo" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-            Demo
-          </a>
-          <a href="#pricing" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-            Pricing
-          </a>
         </div>
         <div className="flex items-center space-x-4">
           <Button variant="ghost" size="sm" className="hidden md:flex">
