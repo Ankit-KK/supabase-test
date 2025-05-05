@@ -51,7 +51,8 @@ const SignupDialog: React.FC<SignupDialogProps> = ({ open, onOpenChange }) => {
 
   const onSubmit = async (data: FormValues) => {
     try {
-      const { error } = await supabase.from("user_signups").insert([data]);
+      // Fix: Pass a single object instead of an array, and ensure all required fields are present
+      const { error } = await supabase.from("user_signups").insert(data);
       
       if (error) {
         if (error.code === "23505") {
