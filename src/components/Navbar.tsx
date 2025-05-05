@@ -18,9 +18,6 @@ const Navbar: React.FC = () => {
           <a href="#demo" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
             Demo
           </a>
-          <a href="#testimonials" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-            Testimonials
-          </a>
           <a href="#pricing" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
             Pricing
           </a>
