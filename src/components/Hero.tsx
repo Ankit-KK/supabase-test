@@ -51,32 +51,6 @@ const Hero: React.FC = () => {
               </div>
             </div>
           </div>
-          <div className="flex flex-wrap justify-center gap-4 md:gap-8 pt-8">
-            <div className="flex items-center">
-              <div className="w-8 h-8 rounded-full bg-purple-700 flex items-center justify-center text-white text-xs">
-                💪
-              </div>
-              <p className="ml-2 text-sm text-muted-foreground">
-                <span className="font-medium text-white">10,000+</span> Active Users
-              </p>
-            </div>
-            <div className="flex items-center">
-              <div className="w-8 h-8 rounded-full bg-pink-700 flex items-center justify-center text-white text-xs">
-                🎮
-              </div>
-              <p className="ml-2 text-sm text-muted-foreground">
-                <span className="font-medium text-white">2,500+</span> Streamers
-              </p>
-            </div>
-            <div className="flex items-center">
-              <div className="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center text-white text-xs">
-                💬
-              </div>
-              <p className="ml-2 text-sm text-muted-foreground">
-                <span className="font-medium text-white">1M+</span> HyperChats Sent
-              </p>
-            </div>
-          </div>
         </div>
       </div>
     </section>
