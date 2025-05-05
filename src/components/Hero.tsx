@@ -1,8 +1,11 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
+import SignupDialog from "@/components/SignupDialog";
 
 const Hero: React.FC = () => {
+  const [showSignupDialog, setShowSignupDialog] = useState(false);
+
   return (
     <section className="pt-24 pb-12 md:pt-32 md:pb-20">
       <div className="container px-4 md:px-6">
@@ -17,13 +20,18 @@ const Hero: React.FC = () => {
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-4">
-            <Button size="lg" className="bg-hero-gradient hover:opacity-90 transition-opacity text-white">
+            <Button 
+              size="lg" 
+              className="bg-hero-gradient hover:opacity-90 transition-opacity text-white"
+              onClick={() => setShowSignupDialog(true)}
+            >
               Get Started Free
             </Button>
             <Button variant="outline" size="lg">
               See How It Works
             </Button>
           </div>
+          
           <div className="relative w-full max-w-5xl mx-auto mt-8 md:mt-16">
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-hyperchat-purple/20 rounded-full blur-[100px] z-0" />
             <div className="relative z-10 rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
@@ -53,6 +61,11 @@ const Hero: React.FC = () => {
           </div>
         </div>
       </div>
+      
+      <SignupDialog 
+        open={showSignupDialog} 
+        onOpenChange={setShowSignupDialog} 
+      />
     </section>
   );
 };

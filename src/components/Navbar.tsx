@@ -1,8 +1,11 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
+import SignupDialog from "@/components/SignupDialog";
 
 const Navbar: React.FC = () => {
+  const [showSignupDialog, setShowSignupDialog] = useState(false);
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/40">
       <div className="container flex h-16 items-center justify-between">
@@ -18,11 +21,20 @@ const Navbar: React.FC = () => {
           <Button variant="ghost" size="sm" className="hidden md:flex">
             Log In
           </Button>
-          <Button size="sm" className="bg-hero-gradient hover:opacity-90 transition-opacity">
+          <Button 
+            size="sm" 
+            className="bg-hero-gradient hover:opacity-90 transition-opacity"
+            onClick={() => setShowSignupDialog(true)}
+          >
             Get Started
           </Button>
         </div>
       </div>
+      
+      <SignupDialog 
+        open={showSignupDialog} 
+        onOpenChange={setShowSignupDialog}
+      />
     </nav>
   );
 };

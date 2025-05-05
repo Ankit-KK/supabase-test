@@ -156,6 +156,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_signups: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          mobile_number: string
+          name: string
+          youtube_channel: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          mobile_number: string
+          name: string
+          youtube_channel?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          mobile_number?: string
+          name?: string
+          youtube_channel?: string | null
+        }
+        Relationships: []
+      }
       visits: {
         Row: {
           id: string
