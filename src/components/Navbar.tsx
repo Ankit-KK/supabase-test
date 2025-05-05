@@ -12,9 +12,7 @@ const Navbar: React.FC = () => {
           </span>
         </div>
         <div className="hidden md:flex items-center space-x-6">
-          <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-            Features
-          </a>
+          {/* Features link removed from here */}
         </div>
         <div className="flex items-center space-x-4">
           <Button variant="ghost" size="sm" className="hidden md:flex">
