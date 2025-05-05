@@ -2,9 +2,11 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import SignupDialog from "@/components/SignupDialog";
+import HowItWorksDialog from "@/components/HowItWorksDialog";
 
 const Hero: React.FC = () => {
   const [showSignupDialog, setShowSignupDialog] = useState(false);
+  const [showHowItWorksDialog, setShowHowItWorksDialog] = useState(false);
 
   return (
     <section className="pt-24 pb-12 md:pt-32 md:pb-20">
@@ -27,7 +29,11 @@ const Hero: React.FC = () => {
             >
               Get Started Free
             </Button>
-            <Button variant="outline" size="lg">
+            <Button 
+              variant="outline" 
+              size="lg"
+              onClick={() => setShowHowItWorksDialog(true)}
+            >
               See How It Works
             </Button>
           </div>
@@ -65,6 +71,11 @@ const Hero: React.FC = () => {
       <SignupDialog 
         open={showSignupDialog} 
         onOpenChange={setShowSignupDialog} 
+      />
+
+      <HowItWorksDialog
+        open={showHowItWorksDialog}
+        onOpenChange={setShowHowItWorksDialog}
       />
     </section>
   );
