@@ -1,6 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
+import { BadgeIndianRupee } from "lucide-react";
 
 const ChatDemo: React.FC = () => {
   return (
@@ -12,7 +13,7 @@ const ChatDemo: React.FC = () => {
               See HyperChat in Action
             </h2>
             <p className="text-muted-foreground md:text-xl">
-              HyperChat integrates seamlessly with popular streaming platforms, giving your messages
+              HyperChat integrates seamlessly with popular streaming platforms and UPI payments, giving your messages
               the spotlight they deserve. Here's how it works:
             </p>
             <ul className="space-y-4">
@@ -26,7 +27,7 @@ const ChatDemo: React.FC = () => {
                 <div className="w-6 h-6 rounded-full bg-hyperchat-pink text-white flex items-center justify-center text-sm">
                   2
                 </div>
-                <p>Select your support amount and preview your HyperChat</p>
+                <p>Select your support amount via UPI and preview your HyperChat</p>
               </li>
               <li className="flex gap-3">
                 <div className="w-6 h-6 rounded-full bg-hyperchat-blue text-white flex items-center justify-center text-sm">
@@ -42,8 +43,8 @@ const ChatDemo: React.FC = () => {
               </li>
             </ul>
             <div className="pt-4">
-              <Button className="bg-hero-gradient hover:opacity-90 transition-opacity">
-                Try Demo
+              <Button className="bg-hero-gradient hover:opacity-90 transition-opacity flex items-center">
+                <BadgeIndianRupee className="mr-2" /> Try Demo
               </Button>
             </div>
           </div>
@@ -74,7 +75,7 @@ const ChatDemo: React.FC = () => {
                       <div className="chat-gradient-border bg-black p-3 my-4 animate-float">
                         <div className="flex justify-between items-start">
                           <span className="block text-sm font-semibold text-hyperchat-pink mb-1">
-                            MegaFan2000 <span className="text-xs font-normal text-gray-400">· $10.00</span>
+                            MegaFan2000 <span className="text-xs font-normal text-gray-400">· ₹799</span>
                           </span>
                           <span className="bg-hyperchat-purple/30 text-hyperchat-light-purple text-xs px-2 py-0.5 rounded-full">
                             PINNED - 2:00
@@ -118,8 +119,8 @@ const ChatDemo: React.FC = () => {
                             Regular Chat
                           </Button>
                         </div>
-                        <Button size="sm" className="bg-hero-gradient hover:opacity-90 transition-opacity">
-                          HyperChat
+                        <Button size="sm" className="bg-hero-gradient hover:opacity-90 transition-opacity flex items-center">
+                          <BadgeIndianRupee className="mr-1" size={16} /> HyperChat
                         </Button>
                       </div>
                     </div>

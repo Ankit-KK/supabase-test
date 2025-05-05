@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Check } from "lucide-react";
+import { Check, WalletCards, BadgeIndianRupee, Wallet } from "lucide-react";
 
 interface PricingPlanProps {
   name: string;
@@ -77,7 +77,7 @@ const Pricing: React.FC = () => {
     {
       name: "HyperFan",
       description: "For dedicated fans",
-      price: "$4.99",
+      price: "₹399",
       popular: true,
       gradient: "bg-hero-gradient",
       features: [
@@ -92,7 +92,7 @@ const Pricing: React.FC = () => {
     {
       name: "SuperFan",
       description: "For passionate supporters",
-      price: "$9.99",
+      price: "₹799",
       features: [
         "All HyperFan features",
         "Extended message pinning (60 seconds)",
@@ -109,10 +109,10 @@ const Pricing: React.FC = () => {
       <div className="container px-4 md:px-6">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
-            Simple, Transparent Pricing
+            Simple, Transparent UPI Pricing
           </h2>
           <p className="mt-4 text-muted-foreground md:text-xl">
-            Choose the perfect plan to elevate your streaming experience.
+            Choose the perfect plan to elevate your streaming experience with UPI payments.
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
@@ -132,7 +132,9 @@ const Pricing: React.FC = () => {
           <p className="text-muted-foreground mb-6">
             Looking for custom solutions for your organization or event?
           </p>
-          <Button variant="outline">Contact Us for Enterprise Options</Button>
+          <Button variant="outline" className="flex items-center">
+            <BadgeIndianRupee className="mr-2" /> Contact Us for Enterprise Options
+          </Button>
         </div>
       </div>
     </section>

@@ -13,7 +13,7 @@ const Hero: React.FC = () => {
             </h1>
             <p className="max-w-[700px] text-md md:text-xl text-muted-foreground mx-auto">
               The ultimate fan-to-streamer engagement tool that lets you stand out during live streams.
-              Make your messages shine and support your favorite creators!
+              Make your messages shine and support your favorite creators with UPI payments!
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-4">
@@ -34,7 +34,7 @@ const Hero: React.FC = () => {
                       <div className="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center text-white shrink-0">JD</div>
                       <div className="chat-gradient-border bg-black p-3 w-full">
                         <span className="block text-sm font-semibold text-hyperchat-pink">
-                          SuperFan123 <span className="text-xs font-normal text-gray-400">· $5.00</span>
+                          SuperFan123 <span className="text-xs font-normal text-gray-400">· ₹399</span>
                         </span>
                         <p className="text-white">
                           That gameplay was AMAZING! You're the best streamer ever! 🎮 🔥
