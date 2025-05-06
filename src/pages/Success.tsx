@@ -51,18 +51,42 @@ const SuccessPage: React.FC = () => {
         return;
       }
 
+      console.log("Payment verification response:", data);
+      
+      // Store the payment details for display
       setPaymentDetails(data);
       
-      // Convert response to array format for filtering
-      let getOrderResponse = Array.isArray(data) ? data : [data];
+      // Determine payment status based on the payments data
       let orderStatus;
-
-      if(getOrderResponse.filter(transaction => transaction.order_status === "PAID").length > 0){
-        orderStatus = "success";
-      } else if(getOrderResponse.filter(transaction => transaction.order_status === "ACTIVE").length > 0){
-        orderStatus = "pending";
+      
+      // Check if we have payment data in the expected format
+      if (data.payments && Array.isArray(data.payments)) {
+        // Use the filters as specified in the instructions
+        if (data.payments.filter((transaction: any) => transaction.payment_status === "SUCCESS").length > 0) {
+          orderStatus = "success";
+        } else if (data.payments.filter((transaction: any) => transaction.payment_status === "PENDING").length > 0) {
+          orderStatus = "pending";
+        } else {
+          orderStatus = "failed";
+        }
+      } else if (data.order) {
+        // Fallback to order status if payments data is not available
+        if (data.order.order_status === "PAID") {
+          orderStatus = "success";
+        } else if (data.order.order_status === "ACTIVE") {
+          orderStatus = "pending";
+        } else {
+          orderStatus = "failed";
+        }
       } else {
-        orderStatus = "failed";
+        // Legacy format handling (direct order data)
+        if (data.order_status === "PAID") {
+          orderStatus = "success";
+        } else if (data.order_status === "ACTIVE") {
+          orderStatus = "pending";
+        } else {
+          orderStatus = "failed";
+        }
       }
       
       setPaymentStatus(orderStatus);

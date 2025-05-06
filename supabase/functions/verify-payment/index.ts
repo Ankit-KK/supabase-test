@@ -44,8 +44,8 @@ serve(async (req) => {
       );
     }
 
-    // Call Cashfree API to get order status
-    const response = await fetch(`${API_URL}/orders/${orderId}`, {
+    // First get order details
+    const orderResponse = await fetch(`${API_URL}/orders/${orderId}`, {
       method: "GET",
       headers: {
         "Accept": "application/json",
@@ -55,20 +55,51 @@ serve(async (req) => {
       }
     });
 
-    const responseData = await response.json();
+    const orderData = await orderResponse.json();
     
-    if (!response.ok) {
-      console.error("Error from Cashfree:", responseData);
+    if (!orderResponse.ok) {
+      console.error("Error fetching order:", orderData);
       return new Response(
-        JSON.stringify({ error: "Failed to verify payment", details: responseData }),
+        JSON.stringify({ error: "Failed to fetch order details", details: orderData }),
         {
-          status: response.status,
+          status: orderResponse.status,
           headers: { ...corsHeaders, "Content-Type": "application/json" }
         }
       );
     }
 
-    // Return order details
+    // Now get payment details for this order
+    const paymentResponse = await fetch(`${API_URL}/orders/${orderId}/payments`, {
+      method: "GET",
+      headers: {
+        "Accept": "application/json",
+        "x-client-id": XClientId,
+        "x-client-secret": XClientSecret,
+        "x-api-version": API_VERSION
+      }
+    });
+
+    const paymentData = await paymentResponse.json();
+    
+    if (!paymentResponse.ok) {
+      console.error("Error fetching payment details:", paymentData);
+      // Return order data as fallback
+      return new Response(
+        JSON.stringify(orderData),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        }
+      );
+    }
+
+    // Combine order and payment data
+    const responseData = {
+      order: orderData,
+      payments: paymentData
+    };
+
+    // Return the combined data
     return new Response(
       JSON.stringify(responseData),
       {
