@@ -23,8 +23,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 // Define our donation form schema
 const formSchema = z.object({
   name: z.string().min(3, { message: "Name must be at least 3 characters." }),
-  amount: z.string().transform((val) => parseInt(val, 10))
-    .refine((val) => val >= 50, { message: "Amount must be at least ₹50" }),
+  amount: z.coerce.number().min(50, { message: "Amount must be at least ₹50" }),
   message: z.string().min(5, { message: "Message must be at least 5 characters." }),
 });
 
@@ -36,7 +35,7 @@ const AnkitPage: React.FC = () => {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      amount: "50",
+      amount: 50,
       message: "",
     },
   });
@@ -113,6 +112,8 @@ const AnkitPage: React.FC = () => {
                         min="50"
                         placeholder="Minimum ₹50" 
                         {...field} 
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        value={field.value}
                       />
                     </FormControl>
                     <FormMessage />
