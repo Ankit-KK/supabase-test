@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { Check } from "lucide-react";
+import { toast } from "sonner";
 
 const SuccessPage: React.FC = () => {
   const navigate = useNavigate();
@@ -39,6 +40,8 @@ const SuccessPage: React.FC = () => {
 
   const checkPaymentStatus = async (orderId: string) => {
     try {
+      console.log("Checking payment status for order:", orderId);
+      
       // Call our edge function to verify payment status
       const { data, error } = await supabase.functions.invoke('verify-payment', {
         body: { orderId }
@@ -48,6 +51,7 @@ const SuccessPage: React.FC = () => {
         console.error("Error verifying payment:", error);
         setPaymentStatus('error');
         setLoading(false);
+        toast.error("Error verifying payment status");
         return;
       }
 
@@ -90,6 +94,7 @@ const SuccessPage: React.FC = () => {
       }
       
       setPaymentStatus(orderStatus);
+      console.log("Determined payment status:", orderStatus);
       
       // Update the payment status in our database for all statuses
       let dbStatus = 'pending';
@@ -100,17 +105,32 @@ const SuccessPage: React.FC = () => {
         dbStatus = 'failed';
       }
       
+      console.log("Updating database with status:", dbStatus, "for order ID:", orderId);
+      
       // Update the database with the current status
-      await supabase
+      const { error: updateError } = await supabase
         .from("donations")
         .update({ payment_status: dbStatus })
         .eq('order_id', orderId);
+      
+      if (updateError) {
+        console.error("Error updating payment status in database:", updateError);
+        toast.error("Failed to update payment status in our records");
+      } else {
+        console.log("Payment status updated successfully in database");
+        if (orderStatus === "success") {
+          toast.success("Payment completed successfully!");
+        } else if (orderStatus === "failed") {
+          toast.error("Payment failed");
+        }
+      }
       
       setLoading(false);
     } catch (err) {
       console.error("Error checking payment status:", err);
       setPaymentStatus('error');
       setLoading(false);
+      toast.error("An unexpected error occurred");
     }
   };
 
