@@ -67,7 +67,15 @@ const SuccessPage: React.FC = () => {
           return;
         }
         
-        // Create a new record with the final status ONLY IF it hasn't been created yet
+        // Check if this donation has already been processed
+        if (donationData.isProcessed) {
+          console.log("This donation has already been recorded in the database");
+          setDatabaseEntryCreated(true);
+          setLoading(false);
+          return;
+        }
+        
+        // Create a new record with the final status
         const success = await createDonationRecord(donationData, orderId, result.status);
         setDatabaseEntryCreated(success);
       } catch (err) {

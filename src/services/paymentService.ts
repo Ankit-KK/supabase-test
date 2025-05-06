@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -61,6 +62,7 @@ export async function verifyPaymentStatus(orderId: string) {
 }
 
 export async function createDonationRecord(donationData: any, orderId: string, paymentStatus: string) {
+  // Only create/update a database record if we're on the Success page
   // Map payment status to database status
   let dbStatus = 'pending';
   if (paymentStatus === "success") {
@@ -92,8 +94,7 @@ export async function createDonationRecord(donationData: any, orderId: string, p
     } else {
       console.log("Donation record created successfully with status:", dbStatus);
       
-      // Clear the donation data from session storage to prevent duplicate entries
-      // Keep the data but mark it as processed
+      // Mark the donation as processed in session storage to prevent duplicate entries
       const updatedData = { ...donationData, isProcessed: true };
       sessionStorage.setItem('donation_data', JSON.stringify(updatedData));
       return true;

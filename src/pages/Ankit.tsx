@@ -50,8 +50,9 @@ const AnkitPage: React.FC = () => {
       sessionStorage.setItem('donation_data', JSON.stringify({
         ...data,
         orderId,
-        // Add a flag to indicate this is a new donation that hasn't been processed yet
-        isNewDonation: true
+        // Mark this donation as not yet processed to prevent premature database entry
+        isNewDonation: true,
+        isProcessed: false // Explicit flag to prevent premature database entry
       }));
 
       // Navigate to checkout processing
