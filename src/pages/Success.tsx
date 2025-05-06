@@ -53,19 +53,26 @@ const SuccessPage: React.FC = () => {
 
       setPaymentDetails(data);
       
-      // Determine status from response
-      if (data.order_status === "PAID") {
-        setPaymentStatus('success');
-        
-        // Update the payment status in our database
+      // Convert response to array format for filtering
+      let getOrderResponse = Array.isArray(data) ? data : [data];
+      let orderStatus;
+
+      if(getOrderResponse.filter(transaction => transaction.order_status === "PAID").length > 0){
+        orderStatus = "success";
+      } else if(getOrderResponse.filter(transaction => transaction.order_status === "ACTIVE").length > 0){
+        orderStatus = "pending";
+      } else {
+        orderStatus = "failed";
+      }
+      
+      setPaymentStatus(orderStatus);
+      
+      // Update the payment status in our database if payment was successful
+      if (orderStatus === "success") {
         await supabase
           .from("donations")
           .update({ payment_status: 'completed' })
           .eq('order_id', orderId);
-      } else if (data.order_status === "ACTIVE") {
-        setPaymentStatus('pending');
-      } else {
-        setPaymentStatus('failed');
       }
       
       setLoading(false);
