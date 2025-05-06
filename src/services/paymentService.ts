@@ -62,7 +62,18 @@ export async function verifyPaymentStatus(orderId: string) {
 }
 
 export async function createDonationRecord(donationData: any, orderId: string, paymentStatus: string) {
-  // Only create/update a database record if we're on the Success page
+  // CRITICAL VALIDATION: Only proceed if we're on the success page and have valid data
+  if (!donationData || !orderId || window.location.pathname !== '/success') {
+    console.log("Preventing database entry - not on success page or missing required data");
+    return false;
+  }
+  
+  // Double-check that this donation hasn't been processed already
+  if (donationData.isProcessed === true) {
+    console.log("Preventing database entry - donation was already processed");
+    return true; // Return true so UI doesn't show an error
+  }
+  
   // Map payment status to database status
   let dbStatus = 'pending';
   if (paymentStatus === "success") {

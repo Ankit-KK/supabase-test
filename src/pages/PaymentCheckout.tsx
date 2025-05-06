@@ -45,8 +45,7 @@ const PaymentCheckout: React.FC = () => {
     const parsedData = JSON.parse(storedData);
     console.log("Retrieved donation data:", parsedData);
     
-    // Important: Ensure we're not making a database entry here
-    // Just store the data in state for use in the UI
+    // IMPORTANT: Ensure we're not making a database entry here
     setDonationData(parsedData);
     
     // Create order on component mount
