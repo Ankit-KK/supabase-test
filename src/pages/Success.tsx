@@ -117,7 +117,7 @@ const SuccessPage: React.FC = () => {
         const donationData = JSON.parse(storedData);
         console.log("Donation data from session storage:", donationData);
         
-        // Instead of updating, insert a new record with the final status
+        // Create a new record with the final status
         console.log("Creating new donation record with status:", dbStatus, "for order ID:", orderId);
         const { error: insertError } = await supabase
           .from("donations")
