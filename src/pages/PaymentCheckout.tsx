@@ -37,11 +37,13 @@ const PaymentCheckout: React.FC = () => {
     // Get donation data from session storage
     const storedData = sessionStorage.getItem('donation_data');
     if (!storedData) {
+      console.log("No donation data found, redirecting to form");
       navigate('/ankit');
       return;
     }
 
     const parsedData = JSON.parse(storedData);
+    console.log("Retrieved donation data:", parsedData);
     setDonationData(parsedData);
     
     // Create order on component mount
@@ -50,6 +52,12 @@ const PaymentCheckout: React.FC = () => {
         setLoading(true);
         
         // Call our edge function to create the order
+        console.log("Creating payment order with:", {
+          orderId: parsedData.orderId,
+          amount: parsedData.amount,
+          name: parsedData.name
+        });
+        
         const { data, error } = await supabase.functions.invoke('create-payment-order', {
           body: {
             orderId: parsedData.orderId,
@@ -60,13 +68,16 @@ const PaymentCheckout: React.FC = () => {
         
         if (error) {
           console.error("Error creating payment order:", error);
+          toast.error("Failed to create payment order");
           throw new Error("Failed to create payment order");
         }
         
+        console.log("Payment order created successfully:", data);
         setPaymentSessionId(data.payment_session_id);
         setLoading(false);
       } catch (err) {
         console.error("Error in payment processing:", err);
+        toast.error("Error setting up payment");
         setLoading(false);
       }
     };
@@ -77,6 +88,7 @@ const PaymentCheckout: React.FC = () => {
 
   const handlePaymentClick = () => {
     if (!paymentSessionId || !window.cashfree) {
+      toast.error("Payment system not ready yet");
       return;
     }
     
@@ -87,11 +99,14 @@ const PaymentCheckout: React.FC = () => {
       returnUrl: `${window.location.origin}/success`,
     };
     
+    console.log("Initiating Cashfree checkout with options:", checkoutOptions);
+    
     window.cashfree.checkout(checkoutOptions).then((result: any) => {
       setProcessingPayment(false);
       
       if (result.error) {
         console.log("There is some payment error:", result.error);
+        toast.error("Payment initiation failed");
       }
       
       if (result.redirect) {

@@ -44,10 +44,14 @@ const AnkitPage: React.FC = () => {
       // Generate a random order id
       const orderId = `hyperchat_${Date.now()}_${Math.floor(Math.random() * 1000000)}`;
 
+      console.log("Storing donation data in session storage:", { ...data, orderId });
+      
       // Store form data in session storage for the checkout page
       sessionStorage.setItem('donation_data', JSON.stringify({
         ...data,
-        orderId
+        orderId,
+        // Add a flag to indicate this is a new donation that hasn't been processed yet
+        isNewDonation: true
       }));
 
       // Navigate to checkout processing

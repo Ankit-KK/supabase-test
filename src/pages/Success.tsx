@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,11 +12,14 @@ const SuccessPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
   const [paymentDetails, setPaymentDetails] = useState<any>(null);
+  const [databaseEntryCreated, setDatabaseEntryCreated] = useState(false);
 
   useEffect(() => {
     // Parse URL query parameters
     const params = new URLSearchParams(location.search);
     const orderId = params.get('order_id');
+    
+    console.log("Success page loaded with order_id:", orderId);
     
     if (!orderId) {
       // No order ID in URL, check if we have stored data
@@ -25,11 +27,13 @@ const SuccessPage: React.FC = () => {
       if (storedData) {
         const parsedData = JSON.parse(storedData);
         if (parsedData.orderId) {
+          console.log("No order_id in URL, but found in session storage:", parsedData.orderId);
           checkPaymentStatus(parsedData.orderId);
           return;
         }
       }
       
+      console.log("No order_id found in URL or session storage");
       setLoading(false);
       setPaymentStatus('unknown');
       return;
@@ -41,6 +45,7 @@ const SuccessPage: React.FC = () => {
   const checkPaymentStatus = async (orderId: string) => {
     try {
       console.log("Checking payment status for order:", orderId);
+      setLoading(true);
       
       // Call our edge function to verify payment status
       const { data, error } = await supabase.functions.invoke('verify-payment', {
@@ -100,8 +105,12 @@ const SuccessPage: React.FC = () => {
       let dbStatus = 'pending';
       if (orderStatus === "success") {
         dbStatus = 'completed';
+        toast.success("Payment completed successfully!");
       } else if (orderStatus === "failed") {
         dbStatus = 'failed';
+        toast.error("Payment failed");
+      } else {
+        toast.info("Payment is pending verification");
       }
       
       try {
@@ -117,8 +126,8 @@ const SuccessPage: React.FC = () => {
         const donationData = JSON.parse(storedData);
         console.log("Donation data from session storage:", donationData);
         
-        // Create a new record with the final status
-        console.log("Creating new donation record with status:", dbStatus, "for order ID:", orderId);
+        // Create a new record with the final status ONLY IF it hasn't been created yet
+        console.log("Creating donation record with status:", dbStatus, "for order ID:", orderId);
         const { error: insertError } = await supabase
           .from("donations")
           .insert({
@@ -134,11 +143,12 @@ const SuccessPage: React.FC = () => {
           toast.error("Failed to save your donation details");
         } else {
           console.log("Donation record created successfully with status:", dbStatus);
-          if (orderStatus === "success") {
-            toast.success("Payment completed successfully!");
-          } else if (orderStatus === "failed") {
-            toast.error("Payment failed");
-          }
+          setDatabaseEntryCreated(true);
+          
+          // Clear the donation data from session storage to prevent duplicate entries
+          // Keep the data but mark it as processed
+          const updatedData = { ...donationData, isProcessed: true };
+          sessionStorage.setItem('donation_data', JSON.stringify(updatedData));
         }
       } catch (dbErr) {
         console.error("Error processing donation data:", dbErr);
@@ -174,6 +184,9 @@ const SuccessPage: React.FC = () => {
               </div>
               <h3 className="text-xl font-semibold text-green-600">Payment Successful!</h3>
               <p className="text-muted-foreground mt-2">Thank you for supporting your favorite streamer</p>
+              {databaseEntryCreated && (
+                <p className="text-sm text-green-600 mt-2">Your donation has been recorded</p>
+              )}
             </div>
             
             {paymentDetails && (
@@ -198,6 +211,9 @@ const SuccessPage: React.FC = () => {
           <div className="text-center py-6">
             <h3 className="text-xl font-semibold text-amber-600">Payment Pending</h3>
             <p className="text-muted-foreground mt-2">Your payment is being processed. Please check back later.</p>
+            {databaseEntryCreated && (
+              <p className="text-sm text-amber-600 mt-2">Your pending donation has been recorded</p>
+            )}
           </div>
         );
       
@@ -206,6 +222,9 @@ const SuccessPage: React.FC = () => {
           <div className="text-center py-6">
             <h3 className="text-xl font-semibold text-red-600">Payment Failed</h3>
             <p className="text-muted-foreground mt-2">There was an issue with your payment. Please try again.</p>
+            {databaseEntryCreated && (
+              <p className="text-sm text-red-600 mt-2">The failed payment has been recorded</p>
+            )}
           </div>
         );
       
