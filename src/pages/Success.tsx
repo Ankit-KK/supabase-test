@@ -58,14 +58,10 @@ const SuccessPage: React.FC = () => {
         setPaymentStatus('success');
         
         // Update the payment status in our database
-        const updateResult = await supabase
-          .from('donations')
+        await supabase
+          .from("donations")
           .update({ payment_status: 'completed' })
           .eq('order_id', orderId);
-          
-        if (updateResult.error) {
-          console.error("Error updating payment status:", updateResult.error);
-        }
       } else if (data.order_status === "ACTIVE") {
         setPaymentStatus('pending');
       } else {
