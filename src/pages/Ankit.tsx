@@ -4,7 +4,6 @@ import { z } from "zod";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 import {
@@ -42,22 +41,6 @@ const AnkitPage: React.FC = () => {
 
   const onSubmit = async (data: FormValues) => {
     try {
-      // Insert the donation data into Supabase
-      const { error } = await supabase
-        .from("donations")
-        .insert({
-          name: data.name,
-          amount: data.amount,
-          message: data.message,
-          payment_status: 'pending'
-        });
-
-      if (error) {
-        toast.error("Something went wrong. Please try again.");
-        console.error("Error saving donation:", error);
-        return;
-      }
-
       // Generate a random order id
       const orderId = `hyperchat_${Date.now()}_${Math.floor(Math.random() * 1000000)}`;
 

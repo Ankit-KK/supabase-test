@@ -96,33 +96,53 @@ const SuccessPage: React.FC = () => {
       setPaymentStatus(orderStatus);
       console.log("Determined payment status:", orderStatus);
       
-      // Update the payment status in our database for all statuses
+      // Map payment status to database status
       let dbStatus = 'pending';
-      
       if (orderStatus === "success") {
         dbStatus = 'completed';
       } else if (orderStatus === "failed") {
         dbStatus = 'failed';
       }
       
-      console.log("Updating database with status:", dbStatus, "for order ID:", orderId);
-      
-      // Update the database with the current status
-      const { error: updateError } = await supabase
-        .from("donations")
-        .update({ payment_status: dbStatus })
-        .eq('order_id', orderId);
-      
-      if (updateError) {
-        console.error("Error updating payment status in database:", updateError);
-        toast.error("Failed to update payment status in our records");
-      } else {
-        console.log("Payment status updated successfully in database");
-        if (orderStatus === "success") {
-          toast.success("Payment completed successfully!");
-        } else if (orderStatus === "failed") {
-          toast.error("Payment failed");
+      try {
+        // Get donation details from session storage
+        const storedData = sessionStorage.getItem('donation_data');
+        if (!storedData) {
+          console.error("No donation data found in session storage");
+          toast.error("Missing donation information");
+          setLoading(false);
+          return;
         }
+        
+        const donationData = JSON.parse(storedData);
+        console.log("Donation data from session storage:", donationData);
+        
+        // Instead of updating, insert a new record with the final status
+        console.log("Creating new donation record with status:", dbStatus, "for order ID:", orderId);
+        const { error: insertError } = await supabase
+          .from("donations")
+          .insert({
+            name: donationData.name,
+            amount: donationData.amount,
+            message: donationData.message,
+            order_id: orderId,
+            payment_status: dbStatus
+          });
+        
+        if (insertError) {
+          console.error("Error creating donation record:", insertError);
+          toast.error("Failed to save your donation details");
+        } else {
+          console.log("Donation record created successfully with status:", dbStatus);
+          if (orderStatus === "success") {
+            toast.success("Payment completed successfully!");
+          } else if (orderStatus === "failed") {
+            toast.error("Payment failed");
+          }
+        }
+      } catch (dbErr) {
+        console.error("Error processing donation data:", dbErr);
+        toast.error("Failed to process donation data");
       }
       
       setLoading(false);
