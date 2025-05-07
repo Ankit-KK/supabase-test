@@ -11,7 +11,7 @@ const corsHeaders = {
 const XClientId = Deno.env.get("XClientId");
 const XClientSecret = Deno.env.get("XClientSecret");
 const API_VERSION = "2025-01-01";
-const API_URL = "https://api.cashfree.com/pg";
+const API_URL = Deno.env.get("api_url");
 
 serve(async (req) => {
   // Handle CORS preflight requests
