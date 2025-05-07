@@ -44,6 +44,9 @@ serve(async (req) => {
       );
     }
 
+    // Get origin for return URL
+    const origin = req.headers.get('origin') || 'https://hyperchat.space';
+
     // Prepare request to Cashfree API
     const orderData = {
       order_amount: amount,
@@ -54,7 +57,8 @@ serve(async (req) => {
         customer_phone: "9205013630" // Using a default number, in production this should be dynamic
       },
       order_meta: {
-        return_url: `${req.headers.get('origin') || 'https://hyperchat.space'}/success?order_id={order_id}`
+        return_url: `${origin}/status?order_id={order_id}`,
+        notify_url: `${origin}/status`
       }
     };
 
