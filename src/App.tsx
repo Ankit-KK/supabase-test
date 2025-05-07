@@ -11,6 +11,7 @@ import HarishPage from "./pages/Harish";
 import PaymentCheckout from "./pages/PaymentCheckout";
 import PaymentStatus from "./pages/PaymentStatus";
 import Contact from "./pages/Contact";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/payment-checkout" element={<PaymentCheckout />} />
           <Route path="/status" element={<PaymentStatus />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

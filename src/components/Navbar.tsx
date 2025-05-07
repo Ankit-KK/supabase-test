@@ -21,6 +21,9 @@ const Navbar: React.FC = () => {
           <Link to="/contact" className="text-sm hover:text-hyperchat-purple transition-colors">
             Contact Us
           </Link>
+          <Link to="/privacy-policy" className="text-sm hover:text-hyperchat-purple transition-colors">
+            Privacy Policy
+          </Link>
         </div>
         <div className="flex items-center space-x-4">
           <Button variant="ghost" size="sm" className="hidden md:flex">

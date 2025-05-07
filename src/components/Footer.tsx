@@ -20,8 +20,8 @@ const Footer: React.FC = () => {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><a href="#" className="hover:text-hyperchat-purple transition-colors">About Us</a></li>
               <li><Link to="/contact" className="hover:text-hyperchat-purple transition-colors">Contact</Link></li>
+              <li><Link to="/privacy-policy" className="hover:text-hyperchat-purple transition-colors">Privacy Policy & Terms</Link></li>
               <li><a href="#" className="hover:text-hyperchat-purple transition-colors">Careers</a></li>
-              <li><a href="#" className="hover:text-hyperchat-purple transition-colors">Privacy Policy</a></li>
             </ul>
           </div>
         </div>
