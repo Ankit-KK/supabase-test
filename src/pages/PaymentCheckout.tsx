@@ -81,42 +81,11 @@ const PaymentCheckout = () => {
       
       const checkoutOptions = {
         paymentSessionId: orderResponse.payment_session_id,
-        redirectTarget: "_modal",
+        redirectTarget: "_self",
       };
       
-      // Open Cashfree checkout as a modal popup
-      cashfree.checkout(checkoutOptions).then((result: any) => {
-        setIsLoading(false);
-        
-        if (result.error) {
-          // User closed the popup or there was a payment error
-          console.error("Payment error or popup closed:", result.error);
-          toast({
-            title: "Payment Incomplete",
-            description: "The payment process was interrupted or an error occurred.",
-            variant: "destructive",
-          });
-        }
-
-        if (result.redirect) {
-          // This happens in rare cases when the modal can't be opened
-          console.log("Payment will be redirected");
-          // The user will be redirected to the return_url automatically
-        }
-
-        if (result.paymentDetails) {
-          // Payment completed - redirect to status page to verify result
-          console.log("Payment completed:", result.paymentDetails);
-          toast({
-            title: "Payment Processed",
-            description: "Verifying your payment status...",
-          });
-          
-          // Get the order_id and navigate to status page
-          const orderId = paymentData.orderId;
-          navigate(`/status?order_id=${orderId}`);
-        }
-      });
+      // Open Cashfree checkout
+      cashfree.checkout(checkoutOptions);
       
     } catch (error) {
       console.error("Payment initialization error:", error);
@@ -177,7 +146,7 @@ const PaymentCheckout = () => {
         </Button>
         
         <p className="text-xs text-center text-muted-foreground">
-          A secure payment popup will appear to complete your transaction
+          You will be redirected to Cashfree's secure payment gateway
         </p>
       </div>
     </div>
