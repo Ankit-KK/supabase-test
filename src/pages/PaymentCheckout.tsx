@@ -76,19 +76,19 @@ const PaymentCheckout = () => {
         throw new Error("Failed to create payment order");
       }
 
-      // Initialize Cashfree checkout
+      // Initialize Cashfree checkout with inline mode instead of popup
       const cashfree = (window as any).Cashfree({
         mode: "production",
       });
       
       const checkoutOptions = {
         paymentSessionId: orderResponse.payment_session_id,
-        redirectTarget: "_modal",
+        redirectTarget: "_self", // Change from _modal to _self for inline mode
       };
       
       cashfree.checkout(checkoutOptions).then((result: any) => {
         if (result.error) {
-          console.log("User has closed the popup or there is some payment error:", result.error);
+          console.log("Error in payment:", result.error);
           setIsLoading(false);
         }
         if (result.redirect) {
