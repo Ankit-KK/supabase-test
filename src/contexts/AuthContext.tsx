@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useContext, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +20,36 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [adminType, setAdminType] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+
+  // Make sure we create these admin users in the database if they don't exist yet
+  useEffect(() => {
+    const createDefaultAdminUsers = async () => {
+      try {
+        const { data, error: checkError } = await supabase
+          .from('admin_users')
+          .select('user_email')
+          .limit(1);
+        
+        if (checkError || !data || data.length === 0) {
+          // Create default admin users
+          const adminUsers = [
+            { user_email: 'ankitashuk20@gmail.com', admin_type: 'ankit' },
+            { user_email: 'harishk0294@gmail.com', admin_type: 'harish' }
+          ];
+          
+          for (const user of adminUsers) {
+            await supabase
+              .from('admin_users')
+              .upsert(user, { onConflict: 'user_email' });
+          }
+        }
+      } catch (err) {
+        console.error("Error setting up admin users:", err);
+      }
+    };
+    
+    createDefaultAdminUsers();
+  }, []);
 
   useEffect(() => {
     // Set up auth state listener first
@@ -77,12 +106,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      // Create the user first if it doesn't exist
+      const { data: userCheckData } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (!userCheckData.user) {
+        // User doesn't exist, try to create it
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+
+        if (signUpError) throw signUpError;
+        
+        // Try to sign in again after creating the user
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) throw error;
+      }
       
       toast({
         title: "Login successful",
