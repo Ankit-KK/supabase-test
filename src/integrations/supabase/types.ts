@@ -9,6 +9,27 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_users: {
+        Row: {
+          admin_type: string
+          created_at: string | null
+          id: string
+          user_email: string
+        }
+        Insert: {
+          admin_type: string
+          created_at?: string | null
+          id?: string
+          user_email: string
+        }
+        Update: {
+          admin_type?: string
+          created_at?: string | null
+          id?: string
+          user_email?: string
+        }
+        Relationships: []
+      }
       ankit_donations: {
         Row: {
           amount: number
