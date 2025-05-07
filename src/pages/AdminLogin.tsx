@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle, CheckCircle2, HelpCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2, HelpCircle, Info } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const AdminLogin: React.FC = () => {
@@ -18,8 +18,63 @@ const AdminLogin: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [helpMessage, setHelpMessage] = useState<string | null>(null);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
   const { signIn, user } = useAuth();
   const navigate = useNavigate();
+
+  // Check if admin users exist in the database on component mount
+  useEffect(() => {
+    const checkAdminUsers = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('admin_users')
+          .select('user_email, admin_type');
+        
+        if (error) {
+          console.error("Error checking admin users:", error);
+          setInfoMessage("There might be an issue with the admin_users table. Contact support if login issues persist.");
+          return;
+        }
+
+        if (!data || data.length === 0) {
+          // If no admin users found, create them
+          setInfoMessage("Creating admin users in the database...");
+          await createDefaultAdminUsers();
+        } else {
+          console.log("Admin users exist:", data);
+          setInfoMessage(`Admin accounts are configured. You can login with ${data.map(u => u.user_email).join(' or ')}`);
+        }
+      } catch (err) {
+        console.error("Error in admin check:", err);
+      }
+    };
+
+    checkAdminUsers();
+  }, []);
+  
+  // Function to create default admin users if they don't exist
+  const createDefaultAdminUsers = async () => {
+    try {
+      const adminUsers = [
+        { user_email: 'ankitashuk20@gmail.com', admin_type: 'ankit' },
+        { user_email: 'harishk0294@gmail.com', admin_type: 'harish' }
+      ];
+      
+      for (const user of adminUsers) {
+        const { error } = await supabase
+          .from('admin_users')
+          .upsert(user, { onConflict: 'user_email' });
+        
+        if (error) {
+          console.error(`Error creating admin user ${user.user_email}:`, error);
+        }
+      }
+      
+      setInfoMessage("Admin users have been configured. You can now sign up with ankitashuk20@gmail.com or harishk0294@gmail.com");
+    } catch (err) {
+      console.error("Error creating admin users:", err);
+    }
+  };
 
   useEffect(() => {
     // If user is already logged in, redirect to dashboard
@@ -33,6 +88,7 @@ const AdminLogin: React.FC = () => {
     setIsLoading(true);
     setError(null);
     setHelpMessage(null);
+    setInfoMessage(null);
 
     try {
       await signIn(email, password);
@@ -52,6 +108,7 @@ const AdminLogin: React.FC = () => {
     setError(null);
     setSuccessMessage(null);
     setHelpMessage(null);
+    setInfoMessage(null);
 
     try {
       // Check if this is a valid admin email (either ankit or harish)
@@ -70,12 +127,18 @@ const AdminLogin: React.FC = () => {
       }
 
       // Create the user in Supabase auth
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { error: signUpError, data } = await supabase.auth.signUp({
         email,
         password,
       });
 
       if (signUpError) throw signUpError;
+
+      // Check if the user already exists
+      if (data?.user?.identities?.length === 0) {
+        setError("This email is already registered. Please try logging in instead.");
+        return;
+      }
 
       setSuccessMessage("Account created successfully! Please check your email for verification link or try logging in.");
     } catch (error: any) {
@@ -99,6 +162,14 @@ const AdminLogin: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {infoMessage && (
+            <Alert className="mb-4">
+              <Info className="h-4 w-4" />
+              <AlertTitle>Information</AlertTitle>
+              <AlertDescription>{infoMessage}</AlertDescription>
+            </Alert>
+          )}
+          
           <Tabs defaultValue="login" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-4">
               <TabsTrigger value="login">Login</TabsTrigger>
