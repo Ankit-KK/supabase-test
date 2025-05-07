@@ -84,74 +84,67 @@ const HarishPage = () => {
   };
 
   return (
-    <div 
-      className="min-h-screen bg-cover bg-center flex items-center justify-center py-10" 
-      style={{ backgroundImage: 'url("/lovable-uploads/38e8d464-ae0a-4275-a1e0-06bfcb6aefb8.png")' }}
-    >
-      <div className="container mx-auto max-w-md bg-black/70 p-8 rounded-lg backdrop-blur-sm">
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Make a Donation to Harish</h1>
-            <p className="text-muted-foreground mt-2 text-gray-300">
-              Support Harish's work by making a donation
-            </p>
+    <div className="container mx-auto max-w-md py-10">
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">Make a Donation to Harish</h1>
+          <p className="text-muted-foreground mt-2">
+            Support Harish's work by making a donation
+          </p>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="name" className="block text-sm font-medium">
+              Your Name
+            </label>
+            <Input 
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter your name"
+              disabled={isLoading}
+            />
           </div>
           
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="name" className="block text-sm font-medium text-white">
-                Your Name
-              </label>
-              <Input 
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter your name"
-                disabled={isLoading}
-                className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <label htmlFor="amount" className="block text-sm font-medium text-white">
-                Amount (₹)
-              </label>
-              <Input 
-                id="amount"
-                type="number"
-                min="50"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="Minimum ₹50"
-                disabled={isLoading}
-                className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
-              />
-              <p className="text-xs text-gray-300">Minimum donation amount is ₹50</p>
-            </div>
-            
-            <div className="space-y-2">
-              <label htmlFor="message" className="block text-sm font-medium text-white">
-                Message
-              </label>
-              <Textarea 
-                id="message"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Enter your message"
-                className="h-24 bg-white/10 border-white/20 text-white placeholder:text-gray-400"
-                disabled={isLoading}
-              />
-            </div>
-            
-            <Button 
-              type="submit" 
-              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+          <div className="space-y-2">
+            <label htmlFor="amount" className="block text-sm font-medium">
+              Amount (₹)
+            </label>
+            <Input 
+              id="amount"
+              type="number"
+              min="50"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="Minimum ₹50"
               disabled={isLoading}
-            >
-              {isLoading ? "Processing..." : "Continue to Payment"}
-            </Button>
-          </form>
-        </div>
+            />
+            <p className="text-xs text-muted-foreground">Minimum donation amount is ₹50</p>
+          </div>
+          
+          <div className="space-y-2">
+            <label htmlFor="message" className="block text-sm font-medium">
+              Message
+            </label>
+            <Textarea 
+              id="message"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Enter your message"
+              className="h-24"
+              disabled={isLoading}
+            />
+          </div>
+          
+          <Button 
+            type="submit" 
+            className="w-full"
+            disabled={isLoading}
+          >
+            {isLoading ? "Processing..." : "Continue to Payment"}
+          </Button>
+        </form>
       </div>
     </div>
   );
