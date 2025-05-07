@@ -69,7 +69,7 @@ const AdminDashboard: React.FC = () => {
       if (data) {
         setDonations(data);
         // Calculate total amount
-        const total = data.reduce((sum, item) => sum + parseFloat(item.amount), 0);
+        const total = data.reduce((sum, item) => sum + parseFloat(item.amount.toString()), 0);
         setTotalAmount(total);
       }
     } catch (error) {
@@ -87,7 +87,7 @@ const AdminDashboard: React.FC = () => {
     donations.forEach(donation => {
       const row = [
         `"${donation.name}"`,
-        donation.amount,
+        donation.amount.toString(),
         `"${donation.message.replace(/"/g, '""')}"`,
         donation.order_id,
         format(new Date(donation.created_at), 'yyyy-MM-dd HH:mm:ss'),

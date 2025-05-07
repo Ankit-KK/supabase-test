@@ -76,7 +76,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string): Promise<void> => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -90,7 +90,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         description: "You have been logged in successfully.",
       });
 
-      return data;
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -101,7 +100,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (): Promise<void> => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -121,7 +120,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const signOut = async () => {
+  const signOut = async (): Promise<void> => {
     try {
       await supabase.auth.signOut();
       toast({
