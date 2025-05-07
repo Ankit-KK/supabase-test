@@ -10,6 +10,7 @@ const PaymentStatus = () => {
   const [status, setStatus] = useState<"loading" | "success" | "failed" | "pending">("loading");
   const [paymentDetails, setPaymentDetails] = useState<any>(null);
   const [isRecordCreated, setIsRecordCreated] = useState(false);
+  const [donationType, setDonationType] = useState<"ankit" | "harish" | null>(null);
   
   const location = useLocation();
   
@@ -29,6 +30,16 @@ const PaymentStatus = () => {
           setStatus("failed");
           return;
         }
+
+        // Determine donation type from order ID
+        let donationType: "ankit" | "harish" = "ankit";
+        if (orderId.startsWith("harish_")) {
+          donationType = "harish";
+        } else if (orderId.startsWith("ankit_")) {
+          donationType = "ankit";
+        }
+        
+        setDonationType(donationType);
 
         // Get donation data from session storage
         const donationDataStr = sessionStorage.getItem("donationData");
@@ -81,7 +92,8 @@ const PaymentStatus = () => {
             amount: donationData.amount,
             message: donationData.message,
             order_id: orderId,
-            payment_status: paymentStatus
+            payment_status: paymentStatus,
+            donationType: donationType
           });
           setIsRecordCreated(true);
         }
@@ -99,6 +111,13 @@ const PaymentStatus = () => {
 
     verifyAndRecordPayment();
   }, [location.search, isRecordCreated]);
+
+  const getReturnLink = () => {
+    if (donationType === "harish") {
+      return "/harish";
+    }
+    return "/ankit";
+  };
 
   return (
     <div className="container mx-auto max-w-md py-10">
@@ -128,6 +147,7 @@ const PaymentStatus = () => {
               <div className="text-left bg-gray-50 rounded p-4 text-sm">
                 <p><span className="font-medium">Order ID:</span> {paymentDetails.order.order_id}</p>
                 <p><span className="font-medium">Amount:</span> ₹{paymentDetails.order.order_amount}</p>
+                <p><span className="font-medium">Donation for:</span> {donationType === "harish" ? "Harish" : "Ankit"}</p>
               </div>
             )}
           </>
@@ -158,8 +178,8 @@ const PaymentStatus = () => {
         )}
         
         <div className="pt-4">
-          <Link to="/">
-            <Button variant="outline">Return to Home</Button>
+          <Link to={getReturnLink()}>
+            <Button variant="outline">Make Another Donation</Button>
           </Link>
         </div>
       </div>

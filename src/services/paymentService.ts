@@ -7,15 +7,16 @@ type DonationRecord = {
   message: string;
   order_id: string;
   payment_status: string;
+  donationType: "ankit" | "harish";
 };
 
 /**
  * Creates a payment order via Supabase Edge Function
  */
-export const createPaymentOrder = async (orderId: string, amount: number, name: string) => {
+export const createPaymentOrder = async (orderId: string, amount: number, name: string, donationType: string = "ankit") => {
   try {
     const { data, error } = await supabase.functions.invoke("create-payment-order", {
-      body: { orderId, amount, name },
+      body: { orderId, amount, name, donationType },
     });
 
     if (error) {
@@ -57,8 +58,10 @@ export const verifyPayment = async (orderId: string) => {
  */
 export const createDonationRecord = async (donation: DonationRecord) => {
   try {
+    const tableName = donation.donationType === "harish" ? "harish_donations" : "ankit_donations";
+    
     const { error } = await supabase
-      .from("donations")
+      .from(tableName)
       .insert({
         name: donation.name,
         amount: donation.amount,
@@ -68,8 +71,8 @@ export const createDonationRecord = async (donation: DonationRecord) => {
       });
 
     if (error) {
-      console.error("Error creating donation record:", error);
-      throw new Error(error.message || "Failed to create donation record");
+      console.error(`Error creating donation record in ${tableName}:`, error);
+      throw new Error(error.message || `Failed to create donation record in ${tableName}`);
     }
 
     // Clean up session storage after successful record creation

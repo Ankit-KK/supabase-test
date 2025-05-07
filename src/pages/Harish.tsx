@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 
-const AnkitPage = () => {
+const HarishPage = () => {
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [message, setMessage] = useState("");
@@ -56,7 +56,7 @@ const AnkitPage = () => {
     
     try {
       // Generate a random order ID with timestamp
-      const orderId = `ankit_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+      const orderId = `harish_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
       
       // Store donation data in session storage to access it during the payment flow
       const donationData = {
@@ -64,7 +64,7 @@ const AnkitPage = () => {
         amount: parseFloat(amount),
         message,
         orderId,
-        donationType: "ankit", // Add donation type to differentiate
+        donationType: "harish", // Add donation type to differentiate
       };
       
       sessionStorage.setItem("donationData", JSON.stringify(donationData));
@@ -87,9 +87,9 @@ const AnkitPage = () => {
     <div className="container mx-auto max-w-md py-10">
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold">Make a Donation to Ankit</h1>
+          <h1 className="text-2xl font-bold">Make a Donation to Harish</h1>
           <p className="text-muted-foreground mt-2">
-            Support Ankit's work by making a donation
+            Support Harish's work by making a donation
           </p>
         </div>
         
@@ -150,4 +150,4 @@ const AnkitPage = () => {
   );
 };
 
-export default AnkitPage;
+export default HarishPage;

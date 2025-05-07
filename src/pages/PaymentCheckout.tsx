@@ -12,6 +12,7 @@ const PaymentCheckout = () => {
     amount: number;
     message: string;
     orderId: string;
+    donationType: string;
   } | null>(null);
   
   const navigate = useNavigate();
@@ -39,7 +40,7 @@ const PaymentCheckout = () => {
         description: "No donation data found. Please start again.",
         variant: "destructive",
       });
-      navigate("/ankit");
+      navigate("/");
       return;
     }
 
@@ -54,7 +55,7 @@ const PaymentCheckout = () => {
         description: "Invalid donation data. Please start again.",
         variant: "destructive",
       });
-      navigate("/ankit");
+      navigate("/");
     }
   }, [navigate]);
 
@@ -67,7 +68,8 @@ const PaymentCheckout = () => {
       const orderResponse = await createPaymentOrder(
         paymentData.orderId, 
         paymentData.amount,
-        paymentData.name
+        paymentData.name,
+        paymentData.donationType
       );
       
       if (!orderResponse || !orderResponse.payment_session_id) {
@@ -81,11 +83,22 @@ const PaymentCheckout = () => {
       
       const checkoutOptions = {
         paymentSessionId: orderResponse.payment_session_id,
-        redirectTarget: "_self",
+        redirectTarget: "_modal",
       };
       
-      // Open Cashfree checkout
-      cashfree.checkout(checkoutOptions);
+      cashfree.checkout(checkoutOptions).then((result: any) => {
+        if (result.error) {
+          console.log("User has closed the popup or there is some payment error:", result.error);
+          setIsLoading(false);
+        }
+        if (result.redirect) {
+          console.log("Payment will be redirected");
+        }
+        if (result.paymentDetails) {
+          console.log("Payment has been completed:", result.paymentDetails.paymentMessage);
+          navigate("/status?order_id=" + paymentData.orderId);
+        }
+      });
       
     } catch (error) {
       console.error("Payment initialization error:", error);
@@ -110,13 +123,17 @@ const PaymentCheckout = () => {
     );
   }
 
+  const donationTitle = paymentData?.donationType === "harish" 
+    ? "Donation to Harish" 
+    : "Donation to Ankit";
+
   return (
     <div className="container mx-auto max-w-md py-10">
       <div className="border rounded-lg p-6 shadow-sm space-y-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold">Complete Your Payment</h1>
           <p className="text-muted-foreground mt-2">
-            You're almost there! Click below to complete your donation.
+            You're almost there! Click below to complete your {donationTitle}.
           </p>
         </div>
         
@@ -134,6 +151,10 @@ const PaymentCheckout = () => {
             <span className="font-medium text-sm truncate max-w-[200px]">
               {paymentData?.orderId}
             </span>
+          </div>
+          <div className="flex justify-between">
+            <span>Donation Type:</span>
+            <span className="font-medium capitalize">{paymentData?.donationType}</span>
           </div>
         </div>
         

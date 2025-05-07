@@ -32,7 +32,7 @@ serve(async (req) => {
     }
 
     // Parse request body
-    const { orderId, amount, name } = await req.json();
+    const { orderId, amount, name, donationType = "ankit" } = await req.json();
     
     if (!orderId || !amount) {
       return new Response(

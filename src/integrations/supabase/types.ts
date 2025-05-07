@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      ankit_donations: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          message: string
+          name: string
+          order_id: string
+          payment_status: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          message: string
+          name: string
+          order_id: string
+          payment_status?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          message?: string
+          name?: string
+          order_id?: string
+          payment_status?: string
+        }
+        Relationships: []
+      }
       donations: {
         Row: {
           amount: number
@@ -72,6 +102,36 @@ export type Database = {
           skills?: Json | null
           updated_at?: string | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      harish_donations: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          message: string
+          name: string
+          order_id: string
+          payment_status: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          message: string
+          name: string
+          order_id: string
+          payment_status?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          message?: string
+          name?: string
+          order_id?: string
+          payment_status?: string
         }
         Relationships: []
       }
