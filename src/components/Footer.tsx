@@ -1,5 +1,6 @@
 
 import React from "react";
+import { Link } from "react-router-dom";
 
 const Footer: React.FC = () => {
   return (
@@ -18,8 +19,8 @@ const Footer: React.FC = () => {
             <h3 className="font-medium mb-4">Company</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><a href="#" className="hover:text-hyperchat-purple transition-colors">About Us</a></li>
+              <li><Link to="/contact" className="hover:text-hyperchat-purple transition-colors">Contact</Link></li>
               <li><a href="#" className="hover:text-hyperchat-purple transition-colors">Careers</a></li>
-              <li><a href="#" className="hover:text-hyperchat-purple transition-colors">Contact</a></li>
               <li><a href="#" className="hover:text-hyperchat-purple transition-colors">Privacy Policy</a></li>
             </ul>
           </div>
