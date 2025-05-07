@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2, HelpCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const AdminLogin: React.FC = () => {
@@ -17,6 +17,7 @@ const AdminLogin: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [helpMessage, setHelpMessage] = useState<string | null>(null);
   const { signIn, user } = useAuth();
   const navigate = useNavigate();
 
@@ -31,6 +32,7 @@ const AdminLogin: React.FC = () => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    setHelpMessage(null);
 
     try {
       await signIn(email, password);
@@ -38,6 +40,7 @@ const AdminLogin: React.FC = () => {
     } catch (error: any) {
       console.error("Login error:", error);
       setError(error.message || "Login failed. Please check your credentials.");
+      setHelpMessage("Only registered admin users with valid credentials can log in. If you need to register first, please use the Signup tab.");
     } finally {
       setIsLoading(false);
     }
@@ -48,6 +51,7 @@ const AdminLogin: React.FC = () => {
     setIsLoading(true);
     setError(null);
     setSuccessMessage(null);
+    setHelpMessage(null);
 
     try {
       // Check if this is a valid admin email (either ankit or harish)
@@ -62,7 +66,7 @@ const AdminLogin: React.FC = () => {
       }
 
       if (!adminCheck) {
-        throw new Error("This email is not registered as an admin.");
+        throw new Error("This email is not registered as an admin. Please use either ankitashuk20@gmail.com or harishk0294@gmail.com.");
       }
 
       // Create the user in Supabase auth
@@ -77,6 +81,9 @@ const AdminLogin: React.FC = () => {
     } catch (error: any) {
       console.error("Signup error:", error);
       setError(error.message || "Registration failed. Please try again.");
+      
+      // Add helpful message about valid admin emails
+      setHelpMessage("Only ankitashuk20@gmail.com (for Ankit) or harishk0294@gmail.com (for Harish) are registered as admin users. The password format should be name+2000 (e.g., ankit2000 or harish2000).");
     } finally {
       setIsLoading(false);
     }
@@ -106,13 +113,22 @@ const AdminLogin: React.FC = () => {
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
+
+              {helpMessage && (
+                <Alert variant="warning" className="mb-4">
+                  <HelpCircle className="h-4 w-4" />
+                  <AlertTitle>Help</AlertTitle>
+                  <AlertDescription>{helpMessage}</AlertDescription>
+                </Alert>
+              )}
+
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
                     type="email"
-                    placeholder="email@example.com"
+                    placeholder="ankitashuk20@gmail.com or harishk0294@gmail.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -123,6 +139,7 @@ const AdminLogin: React.FC = () => {
                   <Input
                     id="password"
                     type="password"
+                    placeholder="name+2000 (e.g., ankit2000)"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -146,19 +163,30 @@ const AdminLogin: React.FC = () => {
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
+
               {successMessage && (
-                <Alert className="mb-4 bg-green-50 border-green-200">
+                <Alert variant="success" className="mb-4">
+                  <CheckCircle2 className="h-4 w-4" />
                   <AlertTitle>Success</AlertTitle>
                   <AlertDescription>{successMessage}</AlertDescription>
                 </Alert>
               )}
+
+              {helpMessage && (
+                <Alert variant="warning" className="mb-4">
+                  <HelpCircle className="h-4 w-4" />
+                  <AlertTitle>Help</AlertTitle>
+                  <AlertDescription>{helpMessage}</AlertDescription>
+                </Alert>
+              )}
+
               <form onSubmit={handleSignup} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">Email</Label>
                   <Input
                     id="signup-email"
                     type="email"
-                    placeholder="For admins only (ankitashuk20@gmail.com or harishk0294@gmail.com)"
+                    placeholder="ankitashuk20@gmail.com or harishk0294@gmail.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
