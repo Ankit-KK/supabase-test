@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthProtection } from "@/hooks/useAuthProtection";
-import { RefreshCw, MessageSquare } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 
 interface Donation {
   id: string;
@@ -55,22 +56,53 @@ const AnkitDashboard = () => {
     }
   };
 
+  // Set up real-time subscription for new donations
   useEffect(() => {
-    // Fetch initial donations data
+    const channel = supabase
+      .channel('ankit-dashboard-donations')
+      .on(
+        'postgres_changes',
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'ankit_donations',
+        },
+        (payload) => {
+          const newDonation = payload.new as Donation;
+          console.log("New donation received in dashboard via realtime:", newDonation);
+          setDonations(prev => [newDonation, ...prev]);
+          toast({
+            title: "New Donation Received",
+            description: `${newDonation.name} donated ₹${Number(newDonation.amount).toLocaleString()}`,
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'ankit_donations',
+        },
+        (payload) => {
+          const updatedDonation = payload.new as Donation;
+          console.log("Donation updated in dashboard via realtime:", updatedDonation);
+          setDonations(prev => 
+            prev.map(donation => 
+              donation.id === updatedDonation.id ? updatedDonation : donation
+            )
+          );
+        }
+      )
+      .subscribe();
+
+    console.log("Dashboard realtime subscription set up");
+    
+    // Fetch donations once when component mounts
     fetchDonations();
 
-    // Set up automatic refresh every 2 minutes (120,000 ms)
-    const refreshInterval = setInterval(() => {
-      fetchDonations();
-      toast({
-        title: "Dashboard refreshed",
-        description: "Donation data has been updated",
-      });
-    }, 120000);
-
-    // Clean up interval on component unmount
     return () => {
-      clearInterval(refreshInterval);
+      supabase.removeChannel(channel);
     };
   }, [toast]);
 
@@ -81,15 +113,6 @@ const AnkitDashboard = () => {
       description: "You have been successfully logged out",
     });
     navigate("/ankit/login");
-  };
-
-  const handleManualRefresh = () => {
-    setIsLoading(true);
-    fetchDonations();
-    toast({
-      title: "Dashboard refreshed",
-      description: "Donation data has been updated",
-    });
   };
 
   const formatDate = (dateString: string) => {
@@ -110,10 +133,6 @@ const AnkitDashboard = () => {
           <div className="text-sm text-muted-foreground">
             Last updated: {lastRefresh.toLocaleTimeString()}
           </div>
-          <Button variant="outline" onClick={handleManualRefresh}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
-          </Button>
           <Button variant="outline" onClick={() => navigate("/ankit/messages")}>
             <MessageSquare className="mr-2 h-4 w-4" />
             Donation Messages
@@ -155,7 +174,7 @@ const AnkitDashboard = () => {
         <CardHeader>
           <CardTitle>Recent Donations</CardTitle>
           <CardDescription>
-            Auto-refreshes every 2 minutes - Last updated at {lastRefresh.toLocaleTimeString()}
+            Donations update in real-time
           </CardDescription>
         </CardHeader>
         <CardContent>

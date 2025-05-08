@@ -8,7 +8,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthProtection } from "@/hooks/useAuthProtection";
-import { ArrowUp, RefreshCw, Link } from "lucide-react";
+import { Link as LinkIcon } from "lucide-react";
 
 interface Donation {
   id: string;
@@ -106,6 +106,10 @@ const AnkitDonationMessages = () => {
       .subscribe();
 
     console.log("Dashboard realtime subscription set up for payment_status=failed");
+    
+    // Fetch donations once when component mounts
+    fetchDonations();
+    
     return () => {
       supabase.removeChannel(channel);
     };
@@ -150,28 +154,8 @@ const AnkitDonationMessages = () => {
   };
 
   useEffect(() => {
-    // Fetch initial donations data
-    fetchDonations();
     setupObsLink();
-
-    // Set up automatic refresh every 2 minutes (120,000 ms)
-    const refreshInterval = setInterval(() => {
-      fetchDonations();
-    }, 120000);
-
-    // Clean up interval on component unmount
-    return () => {
-      clearInterval(refreshInterval);
-    };
   }, []);
-
-  const handleManualRefresh = () => {
-    fetchDonations();
-    toast({
-      title: "Data refreshed",
-      description: "Donation messages have been updated",
-    });
-  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -191,13 +175,6 @@ const AnkitDonationMessages = () => {
           <Button variant="outline" onClick={() => navigate("/ankit/dashboard")}>
             Back to Dashboard
           </Button>
-          <div className="text-sm text-muted-foreground">
-            Last updated: {lastRefresh.toLocaleTimeString()}
-          </div>
-          <Button variant="outline" onClick={handleManualRefresh}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
-          </Button>
         </div>
       </div>
 
@@ -215,7 +192,7 @@ const AnkitDonationMessages = () => {
                 className="font-mono text-sm flex-1"
               />
               <Button variant="outline" onClick={copyObsLink}>
-                <Link className="mr-2 h-4 w-4" />
+                <LinkIcon className="mr-2 h-4 w-4" />
                 Copy
               </Button>
               <Button variant="outline" onClick={regenerateObsLink}>
@@ -234,7 +211,7 @@ const AnkitDonationMessages = () => {
         <CardHeader>
           <CardTitle>Recent Donation Messages</CardTitle>
           <CardDescription>
-            Auto-refreshes every 2 minutes - Last updated at {lastRefresh.toLocaleTimeString()}
+            Messages are updated in real-time
           </CardDescription>
         </CardHeader>
         <CardContent>
