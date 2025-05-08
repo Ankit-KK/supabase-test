@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ interface Donation {
 const AnkitDashboard = () => {
   const [donations, setDonations] = useState<Donation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -28,83 +30,47 @@ const AnkitDashboard = () => {
     authKey: "ankitAuth"
   });
 
+  // Function to fetch donations data
+  const fetchDonations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("ankit_donations")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      
+      setDonations(data || []);
+      setLastRefresh(new Date());
+      console.log("Dashboard data refreshed at:", new Date().toLocaleTimeString());
+    } catch (error) {
+      console.error("Error fetching donations:", error);
+      toast({
+        variant: "destructive",
+        title: "Failed to load data",
+        description: "Could not retrieve donation information",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     // Fetch initial donations data
-    const fetchDonations = async () => {
-      try {
-        const { data, error } = await supabase
-          .from("ankit_donations")
-          .select("*")
-          .order("created_at", { ascending: false });
-
-        if (error) throw error;
-        
-        setDonations(data || []);
-      } catch (error) {
-        console.error("Error fetching donations:", error);
-        toast({
-          variant: "destructive",
-          title: "Failed to load data",
-          description: "Could not retrieve donation information",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchDonations();
 
-    // Set up real-time subscription using channel API
-    const channel = supabase
-      .channel('ankit-donations-changes')
-      .on(
-        'postgres_changes',
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'ankit_donations' 
-        },
-        async (payload) => {
-          console.log('Real-time update received:', payload);
-          
-          // Immediately show toast for new donations
-          if (payload.eventType === 'INSERT' && payload.new) {
-            const newDonation = payload.new as Donation;
-            toast({
-              title: "New donation received!",
-              description: `${newDonation.name} donated ₹${Number(newDonation.amount).toLocaleString()}`,
-            });
-          }
-          
-          // Refresh the entire donations list to ensure ordering is correct
-          try {
-            const { data, error } = await supabase
-              .from("ankit_donations")
-              .select("*")
-              .order("created_at", { ascending: false });
-
-            if (error) {
-              console.error("Error refreshing donations:", error);
-              return;
-            }
-
-            if (data) {
-              console.log("Updated donations data:", data);
-              setDonations(data);
-            }
-          } catch (error) {
-            console.error("Error in real-time refresh:", error);
-          }
-        }
-      )
-      .subscribe((status) => {
-        console.log("Channel status:", status);
+    // Set up automatic refresh every 2 minutes (120,000 ms)
+    const refreshInterval = setInterval(() => {
+      fetchDonations();
+      toast({
+        title: "Dashboard refreshed",
+        description: "Donation data has been updated",
       });
+    }, 120000);
 
-    // Cleanup subscription on component unmount
+    // Clean up interval on component unmount
     return () => {
-      console.log("Cleaning up Supabase channel");
-      supabase.removeChannel(channel);
+      clearInterval(refreshInterval);
     };
   }, [toast]);
 
@@ -115,6 +81,15 @@ const AnkitDashboard = () => {
       description: "You have been successfully logged out",
     });
     navigate("/ankit/login");
+  };
+
+  const handleManualRefresh = () => {
+    setIsLoading(true);
+    fetchDonations();
+    toast({
+      title: "Dashboard refreshed",
+      description: "Donation data has been updated",
+    });
   };
 
   const formatDate = (dateString: string) => {
@@ -131,9 +106,17 @@ const AnkitDashboard = () => {
     <div className="container mx-auto py-8 px-4">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Ankit Dashboard</h1>
-        <Button variant="outline" onClick={handleLogout}>
-          Logout
-        </Button>
+        <div className="flex items-center gap-4">
+          <div className="text-sm text-muted-foreground">
+            Last updated: {lastRefresh.toLocaleTimeString()}
+          </div>
+          <Button variant="outline" onClick={handleManualRefresh}>
+            Refresh
+          </Button>
+          <Button variant="outline" onClick={handleLogout}>
+            Logout
+          </Button>
+        </div>
       </div>
 
       <Card className="mb-8">
@@ -166,7 +149,9 @@ const AnkitDashboard = () => {
       <Card>
         <CardHeader>
           <CardTitle>Recent Donations</CardTitle>
-          <CardDescription>Live updates of all donations made to Ankit</CardDescription>
+          <CardDescription>
+            Auto-refreshes every 2 minutes - Last updated at {lastRefresh.toLocaleTimeString()}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
