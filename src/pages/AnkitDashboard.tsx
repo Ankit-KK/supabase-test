@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuthProtection } from "@/hooks/useAuthProtection";
 
 interface Donation {
   id: string;
@@ -21,21 +22,15 @@ const AnkitDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Use the auth protection hook to guard this route
+  useAuthProtection({
+    redirectTo: "/ankit/login",
+    authKey: "ankitAuth"
+  });
 
   useEffect(() => {
-    // Check if authenticated
-    const isAuthenticated = sessionStorage.getItem("ankitAuth") === "true";
-    if (!isAuthenticated) {
-      toast({
-        variant: "destructive",
-        title: "Access denied",
-        description: "Please log in to view this page",
-      });
-      navigate("/ankit/login");
-      return;
-    }
-
-    // Fetch donations data
+    // Fetch initial donations data
     const fetchDonations = async () => {
       try {
         const { data, error } = await supabase
@@ -59,7 +54,47 @@ const AnkitDashboard = () => {
     };
 
     fetchDonations();
-  }, [navigate, toast]);
+
+    // Set up real-time subscription for new donations
+    const channel = supabase
+      .channel('ankit-donations-changes')
+      .on(
+        'postgres_changes',
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'ankit_donations' 
+        },
+        async (payload) => {
+          console.log('Real-time update received:', payload);
+          
+          // Refresh the entire donations list to ensure ordering is correct
+          const { data, error } = await supabase
+            .from("ankit_donations")
+            .select("*")
+            .order("created_at", { ascending: false });
+
+          if (!error && data) {
+            setDonations(data);
+            
+            // Show a toast notification for new donations
+            if (payload.eventType === 'INSERT') {
+              const newDonation = payload.new as Donation;
+              toast({
+                title: "New donation received!",
+                description: `${newDonation.name} donated ₹${Number(newDonation.amount).toLocaleString()}`,
+              });
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription on component unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [toast]);
 
   const handleLogout = () => {
     sessionStorage.removeItem("ankitAuth");
@@ -119,7 +154,7 @@ const AnkitDashboard = () => {
       <Card>
         <CardHeader>
           <CardTitle>Recent Donations</CardTitle>
-          <CardDescription>List of all donations made to Ankit</CardDescription>
+          <CardDescription>Live updates of all donations made to Ankit</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
