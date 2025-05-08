@@ -1,12 +1,14 @@
-import React, { useEffect, useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthProtection } from "@/hooks/useAuthProtection";
-import { RefreshCw, MessageSquare } from "lucide-react";
+import { ArrowUp, RefreshCw, Link } from "lucide-react";
 
 interface Donation {
   id: string;
@@ -17,10 +19,11 @@ interface Donation {
   payment_status: string;
 }
 
-const AnkitDashboard = () => {
+const AnkitDonationMessages = () => {
   const [donations, setDonations] = useState<Donation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [obsLink, setObsLink] = useState<string>("");
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -36,35 +39,75 @@ const AnkitDashboard = () => {
       const { data, error } = await supabase
         .from("ankit_donations")
         .select("*")
+        .eq("payment_status", "success")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       
       setDonations(data || []);
       setLastRefresh(new Date());
-      console.log("Dashboard data refreshed at:", new Date().toLocaleTimeString());
+      console.log("Donation messages refreshed at:", new Date().toLocaleTimeString());
     } catch (error) {
       console.error("Error fetching donations:", error);
       toast({
         variant: "destructive",
         title: "Failed to load data",
-        description: "Could not retrieve donation information",
+        description: "Could not retrieve donation messages",
       });
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Generate or retrieve OBS link
+  const setupObsLink = () => {
+    // Check if there's an existing OBS link in sessionStorage
+    let storedLink = sessionStorage.getItem("ankitObsLink");
+    
+    if (!storedLink) {
+      // Generate a new link with a random ID
+      const randomId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      storedLink = `${window.location.origin}/ankit/obs/${randomId}`;
+      sessionStorage.setItem("ankitObsLink", storedLink);
+    }
+    
+    setObsLink(storedLink);
+  };
+
+  const regenerateObsLink = () => {
+    // Generate a new link with a random ID
+    const randomId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const newLink = `${window.location.origin}/ankit/obs/${randomId}`;
+    
+    // Save the new link
+    sessionStorage.setItem("ankitObsLink", newLink);
+    setObsLink(newLink);
+    
+    toast({
+      title: "OBS Link Regenerated",
+      description: "Your new OBS link has been created",
+    });
+  };
+
+  const copyObsLink = () => {
+    navigator.clipboard.writeText(obsLink);
+    toast({
+      title: "Link Copied",
+      description: "OBS link copied to clipboard",
+    });
+  };
+
   useEffect(() => {
     // Fetch initial donations data
     fetchDonations();
+    setupObsLink();
 
     // Set up automatic refresh every 2 minutes (120,000 ms)
     const refreshInterval = setInterval(() => {
       fetchDonations();
       toast({
-        title: "Dashboard refreshed",
-        description: "Donation data has been updated",
+        title: "Data refreshed",
+        description: "Donation messages have been updated",
       });
     }, 120000);
 
@@ -74,21 +117,12 @@ const AnkitDashboard = () => {
     };
   }, [toast]);
 
-  const handleLogout = () => {
-    sessionStorage.removeItem("ankitAuth");
-    toast({
-      title: "Logged out",
-      description: "You have been successfully logged out",
-    });
-    navigate("/ankit/login");
-  };
-
   const handleManualRefresh = () => {
     setIsLoading(true);
     fetchDonations();
     toast({
-      title: "Dashboard refreshed",
-      description: "Donation data has been updated",
+      title: "Data refreshed",
+      description: "Donation messages have been updated",
     });
   };
 
@@ -105,8 +139,11 @@ const AnkitDashboard = () => {
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Ankit Dashboard</h1>
+        <h1 className="text-3xl font-bold">Donation Messages</h1>
         <div className="flex items-center gap-4">
+          <Button variant="outline" onClick={() => navigate("/ankit/dashboard")}>
+            Back to Dashboard
+          </Button>
           <div className="text-sm text-muted-foreground">
             Last updated: {lastRefresh.toLocaleTimeString()}
           </div>
@@ -114,38 +151,33 @@ const AnkitDashboard = () => {
             <RefreshCw className="mr-2 h-4 w-4" />
             Refresh
           </Button>
-          <Button variant="outline" onClick={() => navigate("/ankit/messages")}>
-            <MessageSquare className="mr-2 h-4 w-4" />
-            Donation Messages
-          </Button>
-          <Button variant="outline" onClick={handleLogout}>
-            Logout
-          </Button>
         </div>
       </div>
 
       <Card className="mb-8">
         <CardHeader>
-          <CardTitle>Donation Summary</CardTitle>
-          <CardDescription>Overview of all donations received</CardDescription>
+          <CardTitle>OBS Link</CardTitle>
+          <CardDescription>Use this link as a browser source in OBS to display donation messages</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-muted rounded-lg p-4">
-              <h3 className="text-sm font-medium text-muted-foreground">Total Donations</h3>
-              <p className="text-2xl font-bold">{donations.length}</p>
+          <div className="flex flex-col space-y-4">
+            <div className="flex items-center space-x-2">
+              <Input 
+                value={obsLink} 
+                readOnly 
+                className="font-mono text-sm flex-1"
+              />
+              <Button variant="outline" onClick={copyObsLink}>
+                <Link className="mr-2 h-4 w-4" />
+                Copy
+              </Button>
+              <Button variant="outline" onClick={regenerateObsLink}>
+                Generate New
+              </Button>
             </div>
-            <div className="bg-muted rounded-lg p-4">
-              <h3 className="text-sm font-medium text-muted-foreground">Total Amount</h3>
-              <p className="text-2xl font-bold">
-                ₹{donations.reduce((sum, donation) => sum + Number(donation.amount), 0).toLocaleString()}
-              </p>
-            </div>
-            <div className="bg-muted rounded-lg p-4">
-              <h3 className="text-sm font-medium text-muted-foreground">Successful Payments</h3>
-              <p className="text-2xl font-bold">
-                {donations.filter(d => d.payment_status === 'success').length}
-              </p>
+            <div className="text-sm text-muted-foreground">
+              <p>This link will display your donation messages in real-time for your stream.</p>
+              <p>Each message will show for 15 seconds before moving to the next one.</p>
             </div>
           </div>
         </CardContent>
@@ -153,16 +185,16 @@ const AnkitDashboard = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Recent Donations</CardTitle>
+          <CardTitle>Recent Donation Messages</CardTitle>
           <CardDescription>
             Auto-refreshes every 2 minutes - Last updated at {lastRefresh.toLocaleTimeString()}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <p className="text-center py-4">Loading donation data...</p>
+            <p className="text-center py-4">Loading donation messages...</p>
           ) : donations.length === 0 ? (
-            <p className="text-center py-4">No donations found</p>
+            <p className="text-center py-4">No donation messages found</p>
           ) : (
             <div className="rounded-md border">
               <Table>
@@ -171,8 +203,7 @@ const AnkitDashboard = () => {
                     <TableHead>Date</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Amount</TableHead>
-                    <TableHead>Message</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead className="w-[40%]">Message</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -181,16 +212,7 @@ const AnkitDashboard = () => {
                       <TableCell>{formatDate(donation.created_at)}</TableCell>
                       <TableCell>{donation.name}</TableCell>
                       <TableCell>₹{Number(donation.amount).toLocaleString()}</TableCell>
-                      <TableCell className="max-w-[200px] truncate">{donation.message}</TableCell>
-                      <TableCell>
-                        <span className={`inline-block px-2 py-1 text-xs rounded-full ${
-                          donation.payment_status === 'success' ? 'bg-green-100 text-green-800' : 
-                          donation.payment_status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
-                          'bg-red-100 text-red-800'
-                        }`}>
-                          {donation.payment_status}
-                        </span>
-                      </TableCell>
+                      <TableCell>{donation.message}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -203,4 +225,4 @@ const AnkitDashboard = () => {
   );
 };
 
-export default AnkitDashboard;
+export default AnkitDonationMessages;
