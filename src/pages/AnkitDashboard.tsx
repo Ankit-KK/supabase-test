@@ -56,6 +56,12 @@ const AnkitDashboard = () => {
     fetchDonations();
 
     // Set up real-time subscription for new donations
+    // First, enable realtime for the table
+    supabase.from('ankit_donations').on('*', (payload) => {
+      console.log('Table subscription update received:', payload);
+    }).subscribe();
+
+    // Create a specific channel for detailed updates
     const channel = supabase
       .channel('ankit-donations-changes')
       .on(
@@ -68,30 +74,43 @@ const AnkitDashboard = () => {
         async (payload) => {
           console.log('Real-time update received:', payload);
           
+          // Immediately show toast for new donations
+          if (payload.eventType === 'INSERT' && payload.new) {
+            const newDonation = payload.new as Donation;
+            toast({
+              title: "New donation received!",
+              description: `${newDonation.name} donated ₹${Number(newDonation.amount).toLocaleString()}`,
+            });
+          }
+          
           // Refresh the entire donations list to ensure ordering is correct
-          const { data, error } = await supabase
-            .from("ankit_donations")
-            .select("*")
-            .order("created_at", { ascending: false });
+          try {
+            const { data, error } = await supabase
+              .from("ankit_donations")
+              .select("*")
+              .order("created_at", { ascending: false });
 
-          if (!error && data) {
-            setDonations(data);
-            
-            // Show a toast notification for new donations
-            if (payload.eventType === 'INSERT') {
-              const newDonation = payload.new as Donation;
-              toast({
-                title: "New donation received!",
-                description: `${newDonation.name} donated ₹${Number(newDonation.amount).toLocaleString()}`,
-              });
+            if (error) {
+              console.error("Error refreshing donations:", error);
+              return;
             }
+
+            if (data) {
+              console.log("Updated donations data:", data);
+              setDonations(data);
+            }
+          } catch (error) {
+            console.error("Error in real-time refresh:", error);
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("Channel status:", status);
+      });
 
     // Cleanup subscription on component unmount
     return () => {
+      console.log("Cleaning up Supabase channel");
       supabase.removeChannel(channel);
     };
   }, [toast]);
