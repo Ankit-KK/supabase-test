@@ -125,7 +125,7 @@ const AnkitObsView = () => {
           event: 'INSERT', 
           schema: 'public', 
           table: 'ankit_donations',
-          filter: 'payment_status=eq.failed'  // For testing purposes
+          filter: 'payment_status=eq.success'  // For testing purposes
         },
         (payload) => {
           const newDonation = payload.new as Donation;
