@@ -25,12 +25,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     const createDefaultAdminUsers = async () => {
       try {
+        // Only attempt to create admin users if we have an authenticated session
+        // This prevents the 401 Unauthorized error
+        if (!session?.access_token) {
+          console.log("Skipping admin user creation - no authenticated session");
+          return;
+        }
+
         const { data, error: checkError } = await supabase
           .from('admin_users')
           .select('user_email')
           .limit(1);
         
-        if (checkError || !data || data.length === 0) {
+        if (checkError) {
+          console.error("Error checking for admin users:", checkError.message);
+          return;
+        }
+        
+        if (!data || data.length === 0) {
           // Create default admin users
           const adminUsers = [
             { user_email: 'ankitashuk20@gmail.com', admin_type: 'ankit' },
@@ -38,9 +50,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           ];
           
           for (const user of adminUsers) {
-            await supabase
+            const { error: insertError } = await supabase
               .from('admin_users')
               .upsert(user, { onConflict: 'user_email' });
+              
+            if (insertError) {
+              console.error(`Error creating admin user ${user.user_email}:`, insertError.message);
+            }
           }
         }
       } catch (err) {
@@ -48,8 +64,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     };
     
-    createDefaultAdminUsers();
-  }, []);
+    // Only try to create admin users after we have a session
+    if (session) {
+      createDefaultAdminUsers();
+    }
+  }, [session]); // Depend on session to ensure we have authentication
 
   useEffect(() => {
     // Set up auth state listener first
