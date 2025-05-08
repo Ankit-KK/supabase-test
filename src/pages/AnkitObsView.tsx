@@ -78,7 +78,7 @@ const AnkitObsView = () => {
         const { data, error } = await supabase
           .from("ankit_donations")
           .select("id, name, amount, message, created_at")
-          .eq("payment_status", "failed") // For testing purposes
+          .eq("payment_status", "success") // For testing purposes
           .gte("created_at", todayStart)
           .lte("created_at", todayEnd)
           .order("created_at", { ascending: false });
