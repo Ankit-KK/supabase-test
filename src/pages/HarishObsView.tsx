@@ -78,7 +78,7 @@ const HarishObsView = () => {
         const { data, error } = await supabase
           .from("harish_donations")
           .select("id, name, amount, message, created_at")
-          .eq("payment_status", "failed") // For testing purposes
+          .eq("payment_status", "success") // Changed from "failed" to "success"
           .gte("created_at", todayStart)
           .lte("created_at", todayEnd)
           .order("created_at", { ascending: false });
@@ -125,7 +125,7 @@ const HarishObsView = () => {
           event: 'INSERT', 
           schema: 'public', 
           table: 'harish_donations',
-          filter: 'payment_status=eq.failed'  // For testing purposes
+          filter: 'payment_status=eq.success'  // Changed from "failed" to "success"
         },
         (payload) => {
           const newDonation = payload.new as Donation;
