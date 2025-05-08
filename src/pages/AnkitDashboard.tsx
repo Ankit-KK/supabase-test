@@ -37,6 +37,7 @@ const AnkitDashboard = () => {
       const { data, error } = await supabase
         .from("ankit_donations")
         .select("*")
+        .eq("payment_status", "success") // Only fetch successful payments
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -66,6 +67,7 @@ const AnkitDashboard = () => {
           event: 'INSERT', 
           schema: 'public', 
           table: 'ankit_donations',
+          filter: 'payment_status=eq.success' // Only listen for successful payments
         },
         (payload) => {
           const newDonation = payload.new as Donation;
@@ -83,6 +85,7 @@ const AnkitDashboard = () => {
           event: 'UPDATE', 
           schema: 'public', 
           table: 'ankit_donations',
+          filter: 'payment_status=eq.success' // Only listen for successful payment updates
         },
         (payload) => {
           const updatedDonation = payload.new as Donation;

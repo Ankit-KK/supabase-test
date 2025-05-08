@@ -49,7 +49,7 @@ const AnkitDonationMessages = () => {
       const { data, error } = await supabase
         .from("ankit_donations")
         .select("*")
-        .eq("payment_status", "failed") // Keep as failed for testing purposes
+        .eq("payment_status", "success") // Changed from "failed" to "success"
         .gte("created_at", todayStart)
         .lte("created_at", todayEnd)
         .order("created_at", { ascending: false });
@@ -87,7 +87,7 @@ const AnkitDonationMessages = () => {
           event: 'INSERT', 
           schema: 'public', 
           table: 'ankit_donations',
-          filter: 'payment_status=eq.failed' // Keep as failed for testing purposes
+          filter: 'payment_status=eq.success' // Changed from "failed" to "success"
         },
         (payload) => {
           const newDonation = payload.new as Donation;
@@ -108,7 +108,7 @@ const AnkitDonationMessages = () => {
       )
       .subscribe();
 
-    console.log("Dashboard realtime subscription set up for payment_status=failed");
+    console.log("Dashboard realtime subscription set up for payment_status=success");
     
     // Fetch donations once when component mounts
     fetchDonations();
