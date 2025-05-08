@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowUp } from "lucide-react";
 
 interface Donation {
   id: string;
@@ -178,18 +177,19 @@ const AnkitObsView = () => {
     );
   }
 
-  // Render the active donation
+  // Render the active donation with improved layout
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-transparent overflow-hidden">
-      <div className="max-w-xl w-full animate-fade-in py-4 px-6 bg-black/80 rounded-lg shadow-lg text-white">
-        <div className="flex items-center gap-3 mb-3">
-          <ArrowUp className="h-5 w-5 text-green-400" />
-          <span className="font-bold text-xl">{activeDonation.name}</span>
-          <span className="text-green-400 font-bold ml-auto">
+      <div className="max-w-xl w-full animate-fade-in py-3 px-5 bg-transparent rounded-lg">
+        <div className="flex items-center justify-between mb-1">
+          <span className="font-bold text-xl text-white">{activeDonation.name}</span>
+          <span className="text-green-400 font-bold">
             ₹{Number(activeDonation.amount).toLocaleString()}
           </span>
         </div>
-        <div className="text-lg">{activeDonation.message}</div>
+        {activeDonation.message && (
+          <div className="text-white text-lg">{activeDonation.message}</div>
+        )}
       </div>
     </div>
   );
