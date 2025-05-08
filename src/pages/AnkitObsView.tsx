@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,7 +22,6 @@ const AnkitObsView = () => {
   const [activeDonation, setActiveDonation] = useState<ActiveDonation | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const DISPLAY_DURATION = 15000; // 15 seconds per message
-  const ROTATION_INTERVAL = 60000; // 60 seconds to restart cycling if no new donations
 
   // Fetch initial donations that are 'failed' (for testing purposes)
   useEffect(() => {
@@ -81,6 +79,14 @@ const AnkitObsView = () => {
           console.log("New donation received via realtime:", newDonation);
           
           setDonations(prev => [newDonation, ...prev]);
+          
+          // Add newly received donation directly to the display queue
+          const newDonationForQueue = {
+            ...newDonation,
+            displayUntil: Date.now() + DISPLAY_DURATION
+          };
+          
+          setDisplayQueue(prev => [...prev, newDonationForQueue]);
         }
       )
       .subscribe();
@@ -91,26 +97,22 @@ const AnkitObsView = () => {
     };
   }, []);
 
-  // Process donations into the display queue
+  // Process initial donations into the display queue
   useEffect(() => {
-    if (donations.length > 0) {
-      // Add any new donations to the queue that aren't already in it
-      const currentIds = new Set(displayQueue.map(d => d.id));
-      const newDonationsForQueue = donations
-        .filter(donation => !currentIds.has(donation.id))
-        .map(donation => ({
-          ...donation,
-          displayUntil: Date.now() + DISPLAY_DURATION
-        }));
+    if (donations.length > 0 && displayQueue.length === 0) {
+      // Only add donations to the queue if there's nothing there yet
+      // (for initial display only)
+      console.log("Adding initial donations to display queue");
+      const initialQueue = donations.map(donation => ({
+        ...donation,
+        displayUntil: Date.now() + DISPLAY_DURATION
+      }));
       
-      if (newDonationsForQueue.length > 0) {
-        console.log(`Adding ${newDonationsForQueue.length} new donations to display queue`);
-        setDisplayQueue(prev => [...prev, ...newDonationsForQueue]);
-      }
+      setDisplayQueue(initialQueue);
     }
   }, [donations, displayQueue]);
 
-  // Handle displaying donations one at a time with continuous rotation
+  // Handle displaying one donation at a time
   useEffect(() => {
     // If no active donation, show the next one from the queue
     if (!activeDonation && displayQueue.length > 0) {
@@ -129,21 +131,10 @@ const AnkitObsView = () => {
       return () => clearTimeout(timeout);
     }
     
-    // If queue is empty but we have donations, recycle them after rotation interval
-    if (!activeDonation && displayQueue.length === 0 && donations.length > 0) {
-      const restartTimeout = setTimeout(() => {
-        console.log("Recycling all donations to display again");
-        // Recycle all donations to display again
-        const recycledQueue = donations.map(donation => ({
-          ...donation,
-          displayUntil: Date.now() + DISPLAY_DURATION
-        }));
-        setDisplayQueue(recycledQueue);
-      }, 2000); // Small delay before recycling
-      
-      return () => clearTimeout(restartTimeout);
-    }
-  }, [activeDonation, displayQueue, donations]);
+    // Note: We no longer recycle donations after they've all been displayed
+    // This will keep the screen blank until new donations arrive
+    
+  }, [activeDonation, displayQueue]);
 
   // Debug log when displayQueue or activeDonation changes
   useEffect(() => {
