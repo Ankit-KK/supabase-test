@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthProtection } from "@/hooks/useAuthProtection";
@@ -24,6 +26,7 @@ const AnkitDonationMessages = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [obsLink, setObsLink] = useState<string>("");
+  const [showMessages, setShowMessages] = useState<boolean>(true);
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -115,6 +118,24 @@ const AnkitDonationMessages = () => {
     };
   }, [toast]);
 
+  // Load the show messages preference from localStorage on component mount
+  useEffect(() => {
+    const savedPref = localStorage.getItem("ankitShowMessages");
+    if (savedPref !== null) {
+      setShowMessages(savedPref === "true");
+    }
+    
+    // Store the preference on URL for OBS to check
+    const currentLink = sessionStorage.getItem("ankitObsLink");
+    if (currentLink) {
+      const hasParam = currentLink.includes("?");
+      const baseLink = hasParam ? currentLink.split("?")[0] : currentLink;
+      const newLink = `${baseLink}?showMessages=${savedPref !== "false"}`;
+      sessionStorage.setItem("ankitObsLink", newLink);
+      setObsLink(newLink);
+    }
+  }, []);
+
   // Generate or retrieve OBS link
   const setupObsLink = () => {
     // Check if there's an existing OBS link in sessionStorage
@@ -123,7 +144,7 @@ const AnkitDonationMessages = () => {
     if (!storedLink) {
       // Generate a new link with a random ID
       const randomId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      storedLink = `${window.location.origin}/ankit/obs/${randomId}`;
+      storedLink = `${window.location.origin}/ankit/obs/${randomId}?showMessages=${showMessages}`;
       sessionStorage.setItem("ankitObsLink", storedLink);
     }
     
@@ -133,7 +154,7 @@ const AnkitDonationMessages = () => {
   const regenerateObsLink = () => {
     // Generate a new link with a random ID
     const randomId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    const newLink = `${window.location.origin}/ankit/obs/${randomId}`;
+    const newLink = `${window.location.origin}/ankit/obs/${randomId}?showMessages=${showMessages}`;
     
     // Save the new link
     sessionStorage.setItem("ankitObsLink", newLink);
@@ -156,6 +177,25 @@ const AnkitDonationMessages = () => {
   useEffect(() => {
     setupObsLink();
   }, []);
+
+  // Handle toggle of show messages preference
+  const handleToggleMessages = () => {
+    const newValue = !showMessages;
+    setShowMessages(newValue);
+    localStorage.setItem("ankitShowMessages", newValue.toString());
+    
+    // Update the OBS link with the new preference
+    const hasParam = obsLink.includes("?");
+    const baseLink = hasParam ? obsLink.split("?")[0] : obsLink;
+    const newLink = `${baseLink}?showMessages=${newValue}`;
+    sessionStorage.setItem("ankitObsLink", newLink);
+    setObsLink(newLink);
+    
+    toast({
+      title: newValue ? "Messages Enabled" : "Messages Disabled",
+      description: newValue ? "Messages will now be shown in OBS" : "Messages will be hidden in OBS",
+    });
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -185,6 +225,16 @@ const AnkitDonationMessages = () => {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col space-y-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-2">
+                <Switch 
+                  id="show-messages" 
+                  checked={showMessages} 
+                  onCheckedChange={handleToggleMessages} 
+                />
+                <Label htmlFor="show-messages">Show donation messages in OBS</Label>
+              </div>
+            </div>
             <div className="flex items-center space-x-2">
               <Input 
                 value={obsLink} 

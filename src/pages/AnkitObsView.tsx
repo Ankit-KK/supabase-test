@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Donation {
@@ -17,16 +17,55 @@ interface ActiveDonation extends Donation {
 
 const AnkitObsView = () => {
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
   const [donations, setDonations] = useState<Donation[]>([]);
   const [displayQueue, setDisplayQueue] = useState<ActiveDonation[]>([]);
   const [activeDonation, setActiveDonation] = useState<ActiveDonation | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [showMessages, setShowMessages] = useState<boolean>(true);
   const DISPLAY_DURATION = 15000; // 15 seconds per message
+
+  // Get URL parameters
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const messagesParam = queryParams.get("showMessages");
+    setShowMessages(messagesParam !== "false");
+  }, [location]);
 
   // Get the current date in ISO format (just the date part)
   const getCurrentDate = () => {
     const today = new Date();
     return today.toISOString().split('T')[0];
+  };
+
+  // Function to split message into lines of max 20 characters
+  const formatMessage = (message: string): string[] => {
+    if (!message) return [];
+    
+    const lines: string[] = [];
+    let currentLine = '';
+    
+    // Split the message into words
+    const words = message.split(' ');
+    
+    for (const word of words) {
+      // Check if adding this word will exceed 20 characters
+      if (currentLine.length + word.length + 1 > 20) {
+        // Push current line and start a new one
+        lines.push(currentLine);
+        currentLine = word;
+      } else {
+        // Add word to current line
+        currentLine = currentLine.length === 0 ? word : `${currentLine} ${word}`;
+      }
+    }
+    
+    // Push the last line if it has content
+    if (currentLine.length > 0) {
+      lines.push(currentLine);
+    }
+    
+    return lines;
   };
 
   // Fetch donations from the current date only
@@ -177,6 +216,9 @@ const AnkitObsView = () => {
     );
   }
 
+  // Format message into lines
+  const messageLines = showMessages && activeDonation.message ? formatMessage(activeDonation.message) : [];
+
   // Render the active donation with improved layout
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-transparent overflow-hidden">
@@ -187,8 +229,12 @@ const AnkitObsView = () => {
             ₹{Number(activeDonation.amount).toLocaleString()}
           </span>
         </div>
-        {activeDonation.message && (
-          <div className="text-white text-lg">{activeDonation.message}</div>
+        {messageLines.length > 0 && (
+          <div className="text-white text-lg">
+            {messageLines.map((line, index) => (
+              <div key={index}>{line}</div>
+            ))}
+          </div>
         )}
       </div>
     </div>
