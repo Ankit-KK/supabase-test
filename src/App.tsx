@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import AnkitPage from "./pages/Ankit";
@@ -24,36 +25,43 @@ import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/ankit" element={<AnkitPage />} />
-            <Route path="/harish" element={<HarishPage />} />
-            <Route path="/payment-checkout" element={<PaymentCheckout />} />
-            <Route path="/status" element={<PaymentStatus />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/ankit/login" element={<AnkitLogin />} />
-            <Route path="/ankit/dashboard" element={<AnkitDashboard />} />
-            <Route path="/ankit/messages" element={<AnkitDonationMessages />} />
-            <Route path="/ankit/obs/:id" element={<AnkitObsView />} />
-            <Route path="/harish/obs/:id" element={<HarishObsView />} />
-            <Route path="/harish/messages" element={<HarishDonationMessages />} />
-            <Route path="/harish/dashboard" element={<HarishDashboard />} />
-            <Route path="/harish/login" element={<HarishLogin />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  // Apply dark mode class to html element
+  useEffect(() => {
+    document.documentElement.classList.add('dark');
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <AuthProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/ankit" element={<AnkitPage />} />
+              <Route path="/harish" element={<HarishPage />} />
+              <Route path="/payment-checkout" element={<PaymentCheckout />} />
+              <Route path="/status" element={<PaymentStatus />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/ankit/login" element={<AnkitLogin />} />
+              <Route path="/ankit/dashboard" element={<AnkitDashboard />} />
+              <Route path="/ankit/messages" element={<AnkitDonationMessages />} />
+              <Route path="/ankit/obs/:id" element={<AnkitObsView />} />
+              <Route path="/harish/obs/:id" element={<HarishObsView />} />
+              <Route path="/harish/messages" element={<HarishDonationMessages />} />
+              <Route path="/harish/dashboard" element={<HarishDashboard />} />
+              <Route path="/harish/login" element={<HarishLogin />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

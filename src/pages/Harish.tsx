@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,18 @@ const HarishPage = () => {
   const [amount, setAmount] = useState("");
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [maxMessageLength, setMaxMessageLength] = useState(50);
   const navigate = useNavigate();
+
+  // Update max message length based on amount
+  useEffect(() => {
+    const parsedAmount = parseFloat(amount);
+    if (!isNaN(parsedAmount) && parsedAmount >= 100) {
+      setMaxMessageLength(100);
+    } else {
+      setMaxMessageLength(50);
+    }
+  }, [amount]);
 
   const validateForm = () => {
     if (!name.trim()) {
@@ -83,6 +94,14 @@ const HarishPage = () => {
     }
   };
 
+  const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    // Limit message to maxMessageLength characters
+    const value = e.target.value;
+    if (value.length <= maxMessageLength) {
+      setMessage(value);
+    }
+  };
+
   return (
     <div className="container mx-auto max-w-md py-10">
       <div className="space-y-6">
@@ -130,11 +149,18 @@ const HarishPage = () => {
             <Textarea 
               id="message"
               value={message}
-              onChange={(e) => setMessage(e.target.value)}
+              onChange={handleMessageChange}
               placeholder="Enter your message"
               className="h-24"
               disabled={isLoading}
+              maxLength={maxMessageLength}
             />
+            <p className="text-xs text-muted-foreground">
+              {message.length}/{maxMessageLength} characters
+              {parseFloat(amount) >= 100 ? 
+                " (100 characters for donations ₹100 and above)" : 
+                " (50 characters for donations below ₹100)"}
+            </p>
           </div>
           
           <Button 

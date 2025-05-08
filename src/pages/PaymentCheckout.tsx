@@ -115,9 +115,9 @@ const PaymentCheckout = () => {
     return (
       <div className="container mx-auto max-w-md py-20 text-center">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-3/4 mx-auto"></div>
-          <div className="h-32 bg-gray-200 rounded"></div>
-          <div className="h-10 bg-gray-200 rounded w-1/2 mx-auto"></div>
+          <div className="h-8 bg-gray-700 rounded w-3/4 mx-auto"></div>
+          <div className="h-32 bg-gray-700 rounded"></div>
+          <div className="h-10 bg-gray-700 rounded w-1/2 mx-auto"></div>
         </div>
       </div>
     );
@@ -129,7 +129,7 @@ const PaymentCheckout = () => {
 
   return (
     <div className="container mx-auto max-w-md py-10">
-      <div className="border rounded-lg p-6 shadow-sm space-y-6">
+      <div className="border rounded-lg p-6 shadow-sm space-y-6 bg-card">
         <div className="text-center">
           <h1 className="text-2xl font-bold">Complete Your Payment</h1>
           <p className="text-muted-foreground mt-2">
@@ -137,7 +137,7 @@ const PaymentCheckout = () => {
           </p>
         </div>
         
-        <div className="space-y-4 border-t border-b py-4">
+        <div className="space-y-4 border-t border-b py-4 border-border">
           <div className="flex justify-between">
             <span>Name:</span>
             <span className="font-medium">{paymentData?.name}</span>
