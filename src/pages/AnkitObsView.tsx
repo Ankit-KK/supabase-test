@@ -42,6 +42,14 @@ const AnkitObsView = () => {
         if (data && data.length > 0) {
           console.log("Initial donations loaded:", data.length);
           setDonations(data);
+          
+          // Add donations directly to display queue
+          const donationsForDisplay = data.map(donation => ({
+            ...donation,
+            displayUntil: Date.now() + DISPLAY_DURATION
+          }));
+          
+          setDisplayQueue(donationsForDisplay);
         } else {
           console.log("No donations found during initial load");
         }
@@ -53,64 +61,45 @@ const AnkitObsView = () => {
     };
 
     fetchInitialDonations();
-
-    // Set up a refresh interval
-    const refreshInterval = setInterval(fetchInitialDonations, 30000); // Refresh every 30 seconds
-
-    return () => {
-      clearInterval(refreshInterval);
-    };
   }, []);
 
   // Set up subscription for new donations with 'failed' status (for testing purposes)
   useEffect(() => {
     const channel = supabase
-      .channel('ankit-donations-changes')
+      .channel('ankit-obs-donations-channel')
       .on(
         'postgres_changes',
         { 
           event: 'INSERT', 
           schema: 'public', 
           table: 'ankit_donations',
-          filter: 'payment_status=eq.failed'  // Changed to 'failed' for testing
+          filter: 'payment_status=eq.failed'  // For testing
         },
         (payload) => {
           const newDonation = payload.new as Donation;
-          console.log("New donation received via realtime:", newDonation);
+          console.log("OBS View: New donation received via realtime:", newDonation);
           
+          // Add to donations list
           setDonations(prev => [newDonation, ...prev]);
           
-          // Add newly received donation directly to the display queue
+          // Add to display queue with high priority (will be shown next)
           const newDonationForQueue = {
             ...newDonation,
             displayUntil: Date.now() + DISPLAY_DURATION
           };
           
+          console.log("Adding new donation to display queue:", newDonationForQueue.name);
           setDisplayQueue(prev => [...prev, newDonationForQueue]);
         }
       )
       .subscribe();
 
-    console.log("Realtime subscription set up for payment_status=failed");
+    console.log("OBS View: Realtime subscription set up for payment_status=failed");
     return () => {
+      console.log("Cleaning up realtime subscription");
       supabase.removeChannel(channel);
     };
   }, []);
-
-  // Process initial donations into the display queue
-  useEffect(() => {
-    if (donations.length > 0 && displayQueue.length === 0) {
-      // Only add donations to the queue if there's nothing there yet
-      // (for initial display only)
-      console.log("Adding initial donations to display queue");
-      const initialQueue = donations.map(donation => ({
-        ...donation,
-        displayUntil: Date.now() + DISPLAY_DURATION
-      }));
-      
-      setDisplayQueue(initialQueue);
-    }
-  }, [donations, displayQueue]);
 
   // Handle displaying one donation at a time
   useEffect(() => {
@@ -131,14 +120,13 @@ const AnkitObsView = () => {
       return () => clearTimeout(timeout);
     }
     
-    // Note: We no longer recycle donations after they've all been displayed
-    // This will keep the screen blank until new donations arrive
+    // Note: We keep the screen blank until new donations arrive
     
   }, [activeDonation, displayQueue]);
 
   // Debug log when displayQueue or activeDonation changes
   useEffect(() => {
-    console.log(`Display queue has ${displayQueue.length} items, active donation: ${activeDonation?.name || 'none'}`);
+    console.log(`OBS View: Display queue has ${displayQueue.length} items, active donation: ${activeDonation?.name || 'none'}`);
   }, [displayQueue, activeDonation]);
 
   if (!isConnected) {
