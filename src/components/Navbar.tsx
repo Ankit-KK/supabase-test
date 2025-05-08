@@ -12,9 +12,11 @@ const Navbar: React.FC = () => {
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center space-x-2">
           <Link to="/">
-            <span className="text-xl font-bold bg-clip-text text-transparent bg-hero-gradient">
-              🎉 HyperChat
-            </span>
+            <img 
+              src="/lovable-uploads/6baaf08e-b2c6-40bd-86d9-0329286b56dc.png" 
+              alt="HyperChat" 
+              className="h-8"
+            />
           </Link>
         </div>
         <div className="hidden md:flex items-center space-x-6">
