@@ -18,6 +18,7 @@ import AnkitDonationMessages from "./pages/AnkitDonationMessages";
 import AnkitObsView from "./pages/AnkitObsView";
 import HarishObsView from "./pages/HarishObsView";
 import HarishDonationMessages from "./pages/HarishDonationMessages";
+import HarishDashboard from "./pages/HarishDashboard";
 import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,7 @@ const App = () => (
             <Route path="/ankit/obs/:id" element={<AnkitObsView />} />
             <Route path="/harish/obs/:id" element={<HarishObsView />} />
             <Route path="/harish/messages" element={<HarishDonationMessages />} />
+            <Route path="/harish/dashboard" element={<HarishDashboard />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

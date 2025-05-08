@@ -19,7 +19,7 @@ interface Donation {
 }
 
 const HarishDonationMessages = () => {
-  useAuthProtection();
+  useAuthProtection("harish");
 
   const [donations, setDonations] = useState<Donation[]>([]);
   const [loading, setLoading] = useState(true);
