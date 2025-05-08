@@ -24,16 +24,26 @@ const AnkitObsView = () => {
   const [isConnected, setIsConnected] = useState(false);
   const DISPLAY_DURATION = 15000; // 15 seconds per message
 
-  // Fetch initial donations that are 'failed' (for testing purposes)
+  // Get the current date in ISO format (just the date part)
+  const getCurrentDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
+
+  // Fetch donations from the current date only
   useEffect(() => {
-    const fetchInitialDonations = async () => {
+    const fetchTodaysDonations = async () => {
       try {
+        const todayStart = `${getCurrentDate()}T00:00:00`;
+        const todayEnd = `${getCurrentDate()}T23:59:59`;
+
         const { data, error } = await supabase
           .from("ankit_donations")
           .select("id, name, amount, message, created_at")
-          .eq("payment_status", "failed")
-          .order("created_at", { ascending: false })
-          .limit(10);
+          .eq("payment_status", "failed") // For testing purposes
+          .gte("created_at", todayStart)
+          .lte("created_at", todayEnd)
+          .order("created_at", { ascending: false });
           
         if (error) {
           console.error("Error fetching donations:", error);
@@ -41,7 +51,7 @@ const AnkitObsView = () => {
         }
         
         if (data && data.length > 0) {
-          console.log("Initial donations loaded:", data.length);
+          console.log(`Initial donations loaded for ${getCurrentDate()}:`, data.length);
           setDonations(data);
           
           // Add donations directly to display queue
@@ -52,7 +62,7 @@ const AnkitObsView = () => {
           
           setDisplayQueue(donationsForDisplay);
         } else {
-          console.log("No donations found during initial load");
+          console.log(`No donations found for ${getCurrentDate()}`);
         }
         
         setIsConnected(true);
@@ -61,46 +71,58 @@ const AnkitObsView = () => {
       }
     };
 
-    fetchInitialDonations();
+    fetchTodaysDonations();
   }, []);
 
-  // Set up subscription for new donations with 'failed' status (for testing purposes)
+  // Set up subscription for new donations
   useEffect(() => {
+    // Generate a unique channel name based on the OBS view ID
+    const channelName = `ankit-obs-donations-${id}`;
+    
     const channel = supabase
-      .channel('ankit-obs-donations-channel')
+      .channel(channelName)
       .on(
         'postgres_changes',
         { 
           event: 'INSERT', 
           schema: 'public', 
           table: 'ankit_donations',
-          filter: 'payment_status=eq.failed'  // For testing
+          filter: 'payment_status=eq.failed'  // For testing purposes
         },
         (payload) => {
           const newDonation = payload.new as Donation;
-          console.log("OBS View: New donation received via realtime:", newDonation);
           
-          // Add to donations list
-          setDonations(prev => [newDonation, ...prev]);
+          // Check if donation is from today
+          const donationDate = new Date(newDonation.created_at).toISOString().split('T')[0];
+          const today = getCurrentDate();
           
-          // Add to display queue with high priority (will be shown next)
-          const newDonationForQueue = {
-            ...newDonation,
-            displayUntil: Date.now() + DISPLAY_DURATION
-          };
-          
-          console.log("Adding new donation to display queue:", newDonationForQueue.name);
-          setDisplayQueue(prev => [...prev, newDonationForQueue]);
+          if (donationDate === today) {
+            console.log("OBS View: New donation received via realtime:", newDonation);
+            
+            // Add to donations list
+            setDonations(prev => [newDonation, ...prev]);
+            
+            // Add to display queue with display duration
+            const newDonationForQueue = {
+              ...newDonation,
+              displayUntil: Date.now() + DISPLAY_DURATION
+            };
+            
+            console.log("Adding new donation to display queue:", newDonationForQueue.name);
+            setDisplayQueue(prev => [...prev, newDonationForQueue]);
+          } else {
+            console.log("Ignoring donation from a different date:", donationDate);
+          }
         }
       )
       .subscribe();
 
-    console.log("OBS View: Realtime subscription set up for payment_status=failed");
+    console.log(`OBS View: Realtime subscription set up with channel ${channelName}`);
     return () => {
       console.log("Cleaning up realtime subscription");
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [id]);
 
   // Handle displaying one donation at a time and properly clearing after all messages
   useEffect(() => {

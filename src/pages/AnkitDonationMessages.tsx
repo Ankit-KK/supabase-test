@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -32,14 +33,22 @@ const AnkitDonationMessages = () => {
     authKey: "ankitAuth"
   });
 
-  // Function to fetch donations data
+  // Function to fetch donations data - only from today
   const fetchDonations = async () => {
     try {
       setIsLoading(true);
+      
+      // Get today's date in ISO format for filtering
+      const today = new Date();
+      const todayStart = `${today.toISOString().split('T')[0]}T00:00:00`;
+      const todayEnd = `${today.toISOString().split('T')[0]}T23:59:59`;
+      
       const { data, error } = await supabase
         .from("ankit_donations")
         .select("*")
         .eq("payment_status", "failed") // Keep as failed for testing purposes
+        .gte("created_at", todayStart)
+        .lte("created_at", todayEnd)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -49,6 +58,7 @@ const AnkitDonationMessages = () => {
         console.log("Donation messages refreshed at:", new Date().toLocaleTimeString(), "count:", data.length);
       } else {
         console.log("No donation messages found during refresh");
+        setDonations([]);
       }
       
       setLastRefresh(new Date());
@@ -80,11 +90,17 @@ const AnkitDonationMessages = () => {
           const newDonation = payload.new as Donation;
           console.log("New donation received in dashboard via realtime:", newDonation);
           
-          setDonations(prev => [newDonation, ...prev]);
-          toast({
-            title: "New Donation Received",
-            description: `${newDonation.name} donated ₹${Number(newDonation.amount).toLocaleString()}`,
-          });
+          // Check if donation is from today
+          const donationDate = new Date(newDonation.created_at).toISOString().split('T')[0];
+          const today = new Date().toISOString().split('T')[0];
+          
+          if (donationDate === today) {
+            setDonations(prev => [newDonation, ...prev]);
+            toast({
+              title: "New Donation Received",
+              description: `${newDonation.name} donated ₹${Number(newDonation.amount).toLocaleString()}`,
+            });
+          }
         }
       )
       .subscribe();
