@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -101,26 +102,31 @@ const AnkitObsView = () => {
     };
   }, []);
 
-  // Handle displaying one donation at a time
+  // Handle displaying one donation at a time and properly clearing after all messages
   useEffect(() => {
-    // If no active donation, show the next one from the queue
-    if (!activeDonation && displayQueue.length > 0) {
+    let timeout: NodeJS.Timeout | null = null;
+    
+    // If there's an active donation being displayed
+    if (activeDonation) {
+      // Set a timeout to clear this donation after its display time
+      timeout = setTimeout(() => {
+        console.log("Finished displaying donation:", activeDonation.name);
+        setActiveDonation(null);
+      }, DISPLAY_DURATION);
+      
+      return () => {
+        if (timeout) clearTimeout(timeout);
+      };
+    } 
+    // No active donation but we have donations in queue
+    else if (displayQueue.length > 0) {
       // Take the first donation from the queue
       const [nextDonation, ...remainingQueue] = displayQueue;
       console.log("Displaying next donation:", nextDonation.name);
       setActiveDonation(nextDonation);
       setDisplayQueue(remainingQueue);
-      
-      // Set a timeout to clear this donation after its display time
-      const timeout = setTimeout(() => {
-        console.log("Finished displaying donation, moving to next");
-        setActiveDonation(null);
-      }, DISPLAY_DURATION);
-      
-      return () => clearTimeout(timeout);
     }
-    
-    // Note: We keep the screen blank until new donations arrive
+    // No active donation and queue is empty - screen remains blank
     
   }, [activeDonation, displayQueue]);
 
@@ -139,6 +145,7 @@ const AnkitObsView = () => {
     );
   }
 
+  // Render a blank screen when there's no active donation to display
   if (!activeDonation) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-transparent">
@@ -149,6 +156,7 @@ const AnkitObsView = () => {
     );
   }
 
+  // Render the active donation
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-transparent overflow-hidden">
       <div className="max-w-xl w-full animate-fade-in py-4 px-6 bg-black/80 rounded-lg shadow-lg text-white">
