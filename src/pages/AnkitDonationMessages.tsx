@@ -36,6 +36,7 @@ const AnkitDonationMessages = () => {
   // Function to fetch donations data
   const fetchDonations = async () => {
     try {
+      setIsLoading(true);
       const { data, error } = await supabase
         .from("ankit_donations")
         .select("*")
@@ -44,9 +45,14 @@ const AnkitDonationMessages = () => {
 
       if (error) throw error;
       
-      setDonations(data || []);
+      if (data && data.length > 0) {
+        setDonations(data);
+        console.log("Donation messages refreshed at:", new Date().toLocaleTimeString(), "count:", data.length);
+      } else {
+        console.log("No donation messages found during refresh");
+      }
+      
       setLastRefresh(new Date());
-      console.log("Donation messages refreshed at:", new Date().toLocaleTimeString());
     } catch (error) {
       console.error("Error fetching donations:", error);
       toast({
@@ -105,20 +111,15 @@ const AnkitDonationMessages = () => {
     // Set up automatic refresh every 2 minutes (120,000 ms)
     const refreshInterval = setInterval(() => {
       fetchDonations();
-      toast({
-        title: "Data refreshed",
-        description: "Donation messages have been updated",
-      });
     }, 120000);
 
     // Clean up interval on component unmount
     return () => {
       clearInterval(refreshInterval);
     };
-  }, [toast]);
+  }, []);
 
   const handleManualRefresh = () => {
-    setIsLoading(true);
     fetchDonations();
     toast({
       title: "Data refreshed",

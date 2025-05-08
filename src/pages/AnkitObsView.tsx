@@ -35,11 +35,16 @@ const AnkitObsView = () => {
           .order("created_at", { ascending: false })
           .limit(10);
           
-        if (error) throw error;
+        if (error) {
+          console.error("Error fetching donations:", error);
+          return;
+        }
         
-        if (data) {
-          setDonations(data);
+        if (data && data.length > 0) {
           console.log("Initial donations loaded:", data.length);
+          setDonations(data);
+        } else {
+          console.log("No donations found during initial load");
         }
         
         setIsConnected(true);
@@ -49,6 +54,13 @@ const AnkitObsView = () => {
     };
 
     fetchInitialDonations();
+
+    // Set up a refresh interval
+    const refreshInterval = setInterval(fetchInitialDonations, 30000); // Refresh every 30 seconds
+
+    return () => {
+      clearInterval(refreshInterval);
+    };
   }, []);
 
   // Set up subscription for new donations
@@ -58,18 +70,16 @@ const AnkitObsView = () => {
       .on(
         'postgres_changes',
         { 
-          event: '*', 
+          event: 'INSERT', 
           schema: 'public', 
           table: 'ankit_donations',
           filter: 'payment_status=eq.success'
         },
         (payload) => {
-          if (payload.eventType === 'INSERT') {
-            const newDonation = payload.new as Donation;
-            console.log("New donation received:", newDonation);
-            
-            setDonations(prev => [newDonation, ...prev]);
-          }
+          const newDonation = payload.new as Donation;
+          console.log("New donation received via realtime:", newDonation);
+          
+          setDonations(prev => [newDonation, ...prev]);
         }
       )
       .subscribe();
@@ -92,6 +102,7 @@ const AnkitObsView = () => {
         }));
       
       if (newDonationsForQueue.length > 0) {
+        console.log(`Adding ${newDonationsForQueue.length} new donations to display queue`);
         setDisplayQueue(prev => [...prev, ...newDonationsForQueue]);
       }
     }
@@ -102,11 +113,13 @@ const AnkitObsView = () => {
     if (!activeDonation && displayQueue.length > 0) {
       // Take the first donation from the queue
       const [nextDonation, ...remainingQueue] = displayQueue;
+      console.log("Displaying next donation:", nextDonation.name);
       setActiveDonation(nextDonation);
       setDisplayQueue(remainingQueue);
       
       // Set a timeout to clear this donation after its display time
       const timeout = setTimeout(() => {
+        console.log("Finished displaying donation, moving to next");
         setActiveDonation(null);
       }, DISPLAY_DURATION);
       
