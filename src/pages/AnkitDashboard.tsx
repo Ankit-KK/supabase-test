@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -55,13 +54,7 @@ const AnkitDashboard = () => {
 
     fetchDonations();
 
-    // Set up real-time subscription for new donations
-    // First, enable realtime for the table
-    supabase.from('ankit_donations').on('*', (payload) => {
-      console.log('Table subscription update received:', payload);
-    }).subscribe();
-
-    // Create a specific channel for detailed updates
+    // Set up real-time subscription using channel API
     const channel = supabase
       .channel('ankit-donations-changes')
       .on(
