@@ -28,9 +28,6 @@ const Navbar: React.FC = () => {
           </Link>
         </div>
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="sm" className="hidden md:flex">
-            Log In
-          </Button>
           <Button 
             size="sm" 
             className="bg-hero-gradient hover:opacity-90 transition-opacity"
