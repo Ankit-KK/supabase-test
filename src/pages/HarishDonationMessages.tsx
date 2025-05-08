@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -19,7 +18,10 @@ interface Donation {
 }
 
 const HarishDonationMessages = () => {
-  useAuthProtection("harish");
+  useAuthProtection({
+    redirectTo: "/harish/login",
+    authKey: "harishAuth"
+  });
 
   const [donations, setDonations] = useState<Donation[]>([]);
   const [loading, setLoading] = useState(true);
