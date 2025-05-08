@@ -7,7 +7,8 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthProtection } from "@/hooks/useAuthProtection";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, Download } from "lucide-react";
+import { objectsToCSV, downloadCSV, formatDateForFilename } from "@/utils/csvExport";
 
 interface Donation {
   id: string;
@@ -128,6 +129,46 @@ const HarishDashboard = () => {
     });
   };
 
+  // Function to handle CSV download
+  const handleDownloadCSV = () => {
+    if (donations.length === 0) {
+      toast({
+        title: "No data to download",
+        description: "There are no donations to export to CSV",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Prepare data for CSV export with better column names
+    const headers = {
+      name: "Donor Name",
+      amount: "Amount (₹)",
+      message: "Message",
+      created_at: "Date",
+      payment_status: "Status"
+    };
+
+    // Format the data for CSV
+    const formattedData = donations.map(donation => ({
+      name: donation.name,
+      amount: donation.amount,
+      message: donation.message,
+      created_at: formatDate(donation.created_at),
+      payment_status: donation.payment_status
+    }));
+
+    // Generate and download the CSV
+    const csvData = objectsToCSV(formattedData, headers);
+    const filename = `harish-donations-${formatDateForFilename()}.csv`;
+    downloadCSV(csvData, filename);
+
+    toast({
+      title: "Download started",
+      description: `${donations.length} donations exported to CSV`,
+    });
+  };
+
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="flex justify-between items-center mb-8">
@@ -139,6 +180,10 @@ const HarishDashboard = () => {
           <Button variant="outline" onClick={() => navigate("/harish/messages")}>
             <MessageSquare className="mr-2 h-4 w-4" />
             Donation Messages
+          </Button>
+          <Button variant="outline" onClick={handleDownloadCSV}>
+            <Download className="mr-2 h-4 w-4" />
+            Download CSV
           </Button>
           <Button variant="outline" onClick={handleLogout}>
             Logout
