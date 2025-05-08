@@ -40,7 +40,7 @@ const AnkitDonationMessages = () => {
       const { data, error } = await supabase
         .from("ankit_donations")
         .select("*")
-        .eq("payment_status", "success")
+        .eq("payment_status", "failed")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
