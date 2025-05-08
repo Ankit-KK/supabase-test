@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -40,7 +39,7 @@ const AnkitDonationMessages = () => {
       const { data, error } = await supabase
         .from("ankit_donations")
         .select("*")
-        .eq("payment_status", "failed")
+        .eq("payment_status", "failed") // Keep as failed for testing purposes
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -64,6 +63,37 @@ const AnkitDonationMessages = () => {
       setIsLoading(false);
     }
   };
+
+  // Set up real-time subscription for new donations
+  useEffect(() => {
+    const channel = supabase
+      .channel('ankit-donations-dashboard')
+      .on(
+        'postgres_changes',
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'ankit_donations',
+          filter: 'payment_status=eq.failed' // Keep as failed for testing purposes
+        },
+        (payload) => {
+          const newDonation = payload.new as Donation;
+          console.log("New donation received in dashboard via realtime:", newDonation);
+          
+          setDonations(prev => [newDonation, ...prev]);
+          toast({
+            title: "New Donation Received",
+            description: `${newDonation.name} donated ₹${Number(newDonation.amount).toLocaleString()}`,
+          });
+        }
+      )
+      .subscribe();
+
+    console.log("Dashboard realtime subscription set up for payment_status=failed");
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [toast]);
 
   // Generate or retrieve OBS link
   const setupObsLink = () => {
