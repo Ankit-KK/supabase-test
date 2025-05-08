@@ -1,12 +1,16 @@
-import React, { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { toast } from "@/hooks/use-toast";
+
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuthProtection } from "@/hooks/useAuthProtection";
-import { Loader2 } from "lucide-react";
+import { Link as LinkIcon } from "lucide-react";
 
 interface Donation {
   id: string;
@@ -18,138 +22,283 @@ interface Donation {
 }
 
 const HarishDonationMessages = () => {
-  useAuthProtection({
-    redirectTo: "/harish/login",
-    authKey: "harishAuth"
-  });
-
   const [donations, setDonations] = useState<Donation[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [obsId] = useState(() => `harish_${Date.now()}`);
+  const [isLoading, setIsLoading] = useState(true);
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [obsLink, setObsLink] = useState<string>("");
   const [showMessages, setShowMessages] = useState<boolean>(() => {
     // Get saved preference from localStorage or default to true
     const savedPreference = localStorage.getItem("harishShowMessages");
     return savedPreference !== null ? savedPreference === "true" : true;
   });
-  
   const navigate = useNavigate();
+  const { toast } = useToast();
+  
+  // Use the auth protection hook to guard this route
+  useAuthProtection({
+    redirectTo: "/harish/login",
+    authKey: "harishAuth"
+  });
 
-  useEffect(() => {
-    fetchDonations();
-
-    // Set up a subscription to listen for new donations
-    const channel = supabase
-      .channel("harish-donations-changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "harish_donations",
-        },
-        (payload) => {
-          console.log("New donation received:", payload);
-          const newDonation = payload.new as Donation;
-          setDonations((prevDonations) => [newDonation, ...prevDonations]);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
+  // Function to fetch donations data - only from today
   const fetchDonations = async () => {
     try {
-      setLoading(true);
+      setIsLoading(true);
+      
+      // Get today's date in ISO format for filtering
+      const today = new Date();
+      const todayStart = `${today.toISOString().split('T')[0]}T00:00:00`;
+      const todayEnd = `${today.toISOString().split('T')[0]}T23:59:59`;
+      
       const { data, error } = await supabase
         .from("harish_donations")
         .select("*")
         .eq("payment_status", "success")
+        .gte("created_at", todayStart)
+        .lte("created_at", todayEnd)
         .order("created_at", { ascending: false });
 
-      if (error) {
-        throw error;
-      }
-
-      if (data) {
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
         setDonations(data);
+        console.log("Donation messages refreshed at:", new Date().toLocaleTimeString(), "count:", data.length);
+      } else {
+        console.log("No donation messages found during refresh");
+        setDonations([]);
       }
+      
+      setLastRefresh(new Date());
     } catch (error) {
       console.error("Error fetching donations:", error);
       toast({
-        title: "Error",
-        description: "Failed to fetch donations. Please try again.",
         variant: "destructive",
+        title: "Failed to load data",
+        description: "Could not retrieve donation messages",
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleShowMessagesChange = (checked: boolean) => {
-    setShowMessages(checked);
-    // Save the preference to localStorage
-    localStorage.setItem("harishShowMessages", checked.toString());
+  // Set up real-time subscription for new donations
+  useEffect(() => {
+    const channel = supabase
+      .channel('harish-donations-dashboard')
+      .on(
+        'postgres_changes',
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'harish_donations',
+          filter: 'payment_status=eq.success'
+        },
+        (payload) => {
+          const newDonation = payload.new as Donation;
+          console.log("New donation received in dashboard via realtime:", newDonation);
+          
+          // Check if donation is from today
+          const donationDate = new Date(newDonation.created_at).toISOString().split('T')[0];
+          const today = new Date().toISOString().split('T')[0];
+          
+          if (donationDate === today) {
+            setDonations(prev => [newDonation, ...prev]);
+            toast({
+              title: "New Donation Received",
+              description: `${newDonation.name} donated ₹${Number(newDonation.amount).toLocaleString()}`,
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    console.log("Dashboard realtime subscription set up for payment_status=success");
+    
+    // Fetch donations once when component mounts
+    fetchDonations();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [toast]);
+
+  // Load the show messages preference from localStorage on component mount
+  useEffect(() => {
+    const savedPref = localStorage.getItem("harishShowMessages");
+    if (savedPref !== null) {
+      setShowMessages(savedPref === "true");
+    }
+    
+    // Store the preference on URL for OBS to check
+    const currentLink = sessionStorage.getItem("harishObsLink");
+    if (currentLink) {
+      const hasParam = currentLink.includes("?");
+      const baseLink = hasParam ? currentLink.split("?")[0] : currentLink;
+      const newLink = `${baseLink}?showMessages=${savedPref !== "false"}`;
+      sessionStorage.setItem("harishObsLink", newLink);
+      setObsLink(newLink);
+    }
+  }, []);
+
+  // Generate or retrieve OBS link
+  const setupObsLink = () => {
+    // Check if there's an existing OBS link in sessionStorage
+    let storedLink = sessionStorage.getItem("harishObsLink");
+    
+    if (!storedLink) {
+      // Generate a new link with a random ID
+      const randomId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      storedLink = `${window.location.origin}/harish/obs/${randomId}?showMessages=${showMessages}`;
+      sessionStorage.setItem("harishObsLink", storedLink);
+    }
+    
+    setObsLink(storedLink);
   };
 
-  const openObsView = () => {
-    const obsUrl = `/harish/obs/${obsId}?showMessages=${showMessages}`;
-    window.open(obsUrl, "_blank");
+  const regenerateObsLink = () => {
+    // Generate a new link with a random ID
+    const randomId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const newLink = `${window.location.origin}/harish/obs/${randomId}?showMessages=${showMessages}`;
+    
+    // Save the new link
+    sessionStorage.setItem("harishObsLink", newLink);
+    setObsLink(newLink);
+    
+    toast({
+      title: "OBS Link Regenerated",
+      description: "Your new OBS link has been created",
+    });
+  };
+
+  const copyObsLink = () => {
+    navigator.clipboard.writeText(obsLink);
+    toast({
+      title: "Link Copied",
+      description: "OBS link copied to clipboard",
+    });
+  };
+
+  useEffect(() => {
+    setupObsLink();
+  }, []);
+
+  // Handle toggle of show messages preference
+  const handleToggleMessages = () => {
+    const newValue = !showMessages;
+    setShowMessages(newValue);
+    localStorage.setItem("harishShowMessages", newValue.toString());
+    
+    // Update the OBS link with the new preference
+    const hasParam = obsLink.includes("?");
+    const baseLink = hasParam ? obsLink.split("?")[0] : obsLink;
+    const newLink = `${baseLink}?showMessages=${newValue}`;
+    sessionStorage.setItem("harishObsLink", newLink);
+    setObsLink(newLink);
+    
+    toast({
+      title: newValue ? "Messages Enabled" : "Messages Disabled",
+      description: newValue ? "Messages will now be shown in OBS" : "Messages will be hidden in OBS",
+    });
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleString(); // Format date based on user's locale
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <h1 className="text-2xl font-bold mb-6">Harish's Donation Messages</h1>
-
-      <div className="mb-6 flex flex-col md:flex-row gap-4 items-start md:items-center">
-        <Button onClick={openObsView} className="whitespace-nowrap">
-          Open OBS Browser Source
-        </Button>
-        <div className="flex items-center gap-2">
-          <span className="text-sm">Show messages in OBS:</span>
-          <Switch
-            checked={showMessages}
-            onCheckedChange={handleShowMessagesChange}
-          />
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Donation Messages</h1>
+        <div className="flex items-center gap-4">
+          <Button variant="outline" onClick={() => navigate("/harish/dashboard")}>
+            Back to Dashboard
+          </Button>
         </div>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center my-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      ) : (
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Recent Donations</h2>
-          {donations.length === 0 ? (
-            <p className="text-muted-foreground">No donations found.</p>
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>OBS Link</CardTitle>
+          <CardDescription>Use this link as a browser source in OBS to display donation messages</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col space-y-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-2">
+                <Switch 
+                  id="show-messages" 
+                  checked={showMessages} 
+                  onCheckedChange={handleToggleMessages} 
+                />
+                <Label htmlFor="show-messages">Show donation messages in OBS</Label>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Input 
+                value={obsLink} 
+                readOnly 
+                className="font-mono text-sm flex-1"
+              />
+              <Button variant="outline" onClick={copyObsLink}>
+                <LinkIcon className="mr-2 h-4 w-4" />
+                Copy
+              </Button>
+              <Button variant="outline" onClick={regenerateObsLink}>
+                Generate New
+              </Button>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              <p>This link will display your donation messages in real-time for your stream.</p>
+              <p>Each message will show for 15 seconds before moving to the next one.</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Donation Messages</CardTitle>
+          <CardDescription>
+            Messages are updated in real-time
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <p className="text-center py-4">Loading donation messages...</p>
+          ) : donations.length === 0 ? (
+            <p className="text-center py-4">No donation messages found</p>
           ) : (
-            donations.map((donation) => (
-              <Card key={donation.id} className="p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <p className="font-bold">{donation.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {formatDate(donation.created_at)}
-                    </p>
-                  </div>
-                  <p className="font-bold text-green-600">
-                    ₹{donation.amount.toLocaleString()}
-                  </p>
-                </div>
-                <p className="text-gray-800 dark:text-gray-200">{donation.message}</p>
-              </Card>
-            ))
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead className="w-[40%]">Message</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {donations.map((donation) => (
+                    <TableRow key={donation.id}>
+                      <TableCell>{formatDate(donation.created_at)}</TableCell>
+                      <TableCell>{donation.name}</TableCell>
+                      <TableCell>₹{Number(donation.amount).toLocaleString()}</TableCell>
+                      <TableCell>{donation.message}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
-        </div>
-      )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
