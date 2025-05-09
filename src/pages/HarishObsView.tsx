@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Gamepad, Flame } from "lucide-react";
-import { isStreamerLoggedIn } from "@/utils/streamerAuth";
 
 interface Donation {
   id: string;
@@ -25,7 +24,6 @@ const HarishObsView = () => {
   const [activeDonation, setActiveDonation] = useState<ActiveDonation | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [showMessages, setShowMessages] = useState<boolean>(true);
-  const [streamerOnline, setStreamerOnline] = useState<boolean>(false);
   const DISPLAY_DURATION = 15000; // 15 seconds per message
 
   // Get URL parameters
@@ -35,21 +33,6 @@ const HarishObsView = () => {
     setShowMessages(messagesParam !== "false");
   }, [location]);
 
-  // Check if streamer is logged in
-  useEffect(() => {
-    const checkStreamerStatus = () => {
-      setStreamerOnline(isStreamerLoggedIn('harish'));
-    };
-    
-    // Initial check
-    checkStreamerStatus();
-    
-    // Set up interval to check every 30 seconds
-    const interval = setInterval(checkStreamerStatus, 30000);
-    
-    return () => clearInterval(interval);
-  }, []);
-
   // Get the current date in ISO format (just the date part)
   const getCurrentDate = () => {
     const today = new Date();
@@ -58,13 +41,6 @@ const HarishObsView = () => {
 
   // Fetch donations from the current date only
   useEffect(() => {
-    if (!streamerOnline) {
-      setDonations([]);
-      setDisplayQueue([]);
-      setActiveDonation(null);
-      return;
-    }
-    
     const fetchTodaysDonations = async () => {
       try {
         const todayStart = `${getCurrentDate()}T00:00:00`;
@@ -105,12 +81,10 @@ const HarishObsView = () => {
     };
 
     fetchTodaysDonations();
-  }, [streamerOnline]);
+  }, []);
 
   // Set up subscription for new donations
   useEffect(() => {
-    if (!streamerOnline) return;
-    
     // Generate a unique channel name based on the OBS view ID
     const channelName = `harish-obs-donations-${id}`;
     
@@ -157,15 +131,10 @@ const HarishObsView = () => {
       console.log("Cleaning up realtime subscription");
       supabase.removeChannel(channel);
     };
-  }, [id, streamerOnline]);
+  }, [id]);
 
   // Handle displaying one donation at a time and properly clearing after all messages
   useEffect(() => {
-    if (!streamerOnline) {
-      setActiveDonation(null);
-      return;
-    }
-    
     let timeout: NodeJS.Timeout | null = null;
     
     // If there's an active donation being displayed
@@ -190,29 +159,18 @@ const HarishObsView = () => {
     }
     // No active donation and queue is empty - screen remains blank
     
-  }, [activeDonation, displayQueue, streamerOnline]);
+  }, [activeDonation, displayQueue]);
 
   // Debug log when displayQueue or activeDonation changes
   useEffect(() => {
     console.log(`OBS View: Display queue has ${displayQueue.length} items, active donation: ${activeDonation?.name || 'none'}`);
   }, [displayQueue, activeDonation]);
 
-  if (!isConnected && streamerOnline) {
+  if (!isConnected) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-transparent">
         <div className="text-center text-white">
           <p className="text-lg animate-pulse">Connecting to donation feed...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!streamerOnline) {
-    return (
-      <div className="h-screen w-screen flex items-center justify-center bg-transparent">
-        <div className="text-center bg-black/40 backdrop-blur-sm rounded-md px-4 py-3">
-          <p className="text-lg text-red-400">Streamer Offline</p>
-          <p className="text-sm text-red-300">Donations are currently disabled</p>
         </div>
       </div>
     );

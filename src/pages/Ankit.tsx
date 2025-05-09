@@ -1,10 +1,10 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { isStreamerLoggedIn } from "@/utils/streamerAuth";
 
 const AnkitPage = () => {
   const [name, setName] = useState("");
@@ -12,37 +12,7 @@ const AnkitPage = () => {
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [maxMessageLength, setMaxMessageLength] = useState(50);
-  const [streamerOnline, setStreamerOnline] = useState(false);
   const navigate = useNavigate();
-
-  // Check if streamer is logged in
-  useEffect(() => {
-    const checkStreamerStatus = () => {
-      const isLoggedIn = isStreamerLoggedIn('ankit');
-      console.log("Checking streamer status: ", isLoggedIn ? "Online" : "Offline");
-      setStreamerOnline(isLoggedIn);
-    };
-    
-    // Initial check
-    checkStreamerStatus();
-    
-    // Set up interval to check every 5 seconds (more frequent for better UX)
-    const interval = setInterval(checkStreamerStatus, 5000);
-    
-    // Set up storage event listener to detect changes in other tabs/windows
-    const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === 'ankitAuth') {
-        checkStreamerStatus();
-      }
-    };
-    
-    window.addEventListener('storage', handleStorageChange);
-    
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, []);
 
   // Update max message length based on amount
   useEffect(() => {
@@ -55,19 +25,6 @@ const AnkitPage = () => {
   }, [amount]);
 
   const validateForm = () => {
-    // Re-check streamer status on form submission
-    const currentStreamerStatus = isStreamerLoggedIn('ankit');
-    setStreamerOnline(currentStreamerStatus);
-    
-    if (!currentStreamerStatus) {
-      toast({
-        title: "Streamer Offline",
-        description: "Ankit is currently offline and not accepting donations",
-        variant: "destructive",
-      });
-      return false;
-    }
-
     if (!name.trim()) {
       toast({
         title: "Name is required",
@@ -153,12 +110,6 @@ const AnkitPage = () => {
           <p className="text-muted-foreground mt-2">
             Support Ankit's work by making a donation
           </p>
-          {!streamerOnline && (
-            <div className="mt-4 p-4 border border-red-500 bg-red-100/10 rounded-md text-center">
-              <p className="text-red-500 font-medium">Streamer Offline</p>
-              <p className="text-sm text-red-400">Donations are currently disabled</p>
-            </div>
-          )}
         </div>
         
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -171,7 +122,7 @@ const AnkitPage = () => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter your name"
-              disabled={isLoading || !streamerOnline}
+              disabled={isLoading}
             />
           </div>
           
@@ -186,7 +137,7 @@ const AnkitPage = () => {
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="Minimum ₹50"
-              disabled={isLoading || !streamerOnline}
+              disabled={isLoading}
             />
             <p className="text-xs text-muted-foreground">Minimum donation amount is ₹50</p>
           </div>
@@ -201,7 +152,7 @@ const AnkitPage = () => {
               onChange={handleMessageChange}
               placeholder="Enter your message"
               className="h-24"
-              disabled={isLoading || !streamerOnline}
+              disabled={isLoading}
               maxLength={maxMessageLength}
             />
             <p className="text-xs text-muted-foreground">
@@ -215,9 +166,9 @@ const AnkitPage = () => {
           <Button 
             type="submit" 
             className="w-full"
-            disabled={isLoading || !streamerOnline}
+            disabled={isLoading}
           >
-            {isLoading ? "Processing..." : streamerOnline ? "Continue to Payment" : "Streamer Offline"}
+            {isLoading ? "Processing..." : "Continue to Payment"}
           </Button>
         </form>
       </div>

@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { setStreamerLoginState } from "@/utils/streamerAuth";
 
 const AnkitLogin = () => {
   const [username, setUsername] = useState("");
@@ -21,8 +20,8 @@ const AnkitLogin = () => {
 
     // Simple authentication check
     if (username === "ankit" && password === "ankit2000") {
-      // Use the new utility function to set auth state
-      setStreamerLoginState('ankit', true);
+      // Store auth state in session storage
+      sessionStorage.setItem("ankitAuth", "true");
       
       toast({
         title: "Login successful",
