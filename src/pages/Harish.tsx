@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
+import { isStreamerLoggedIn } from "@/utils/streamerAuth";
 
 const HarishPage = () => {
   const [name, setName] = useState("");
@@ -12,7 +13,23 @@ const HarishPage = () => {
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [maxMessageLength, setMaxMessageLength] = useState(50);
+  const [streamerOnline, setStreamerOnline] = useState(false);
   const navigate = useNavigate();
+
+  // Check if streamer is logged in
+  useEffect(() => {
+    const checkStreamerStatus = () => {
+      setStreamerOnline(isStreamerLoggedIn('harish'));
+    };
+    
+    // Initial check
+    checkStreamerStatus();
+    
+    // Set up interval to check every 30 seconds
+    const interval = setInterval(checkStreamerStatus, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   // Update max message length based on amount
   useEffect(() => {
@@ -25,6 +42,15 @@ const HarishPage = () => {
   }, [amount]);
 
   const validateForm = () => {
+    if (!streamerOnline) {
+      toast({
+        title: "Streamer Offline",
+        description: "Harish is currently offline and not accepting donations",
+        variant: "destructive",
+      });
+      return false;
+    }
+
     if (!name.trim()) {
       toast({
         title: "Name is required",
@@ -110,6 +136,12 @@ const HarishPage = () => {
           <p className="text-muted-foreground mt-2">
             Support Harish's work by making a donation
           </p>
+          {!streamerOnline && (
+            <div className="mt-4 p-4 border border-red-500 bg-red-100/10 rounded-md text-center">
+              <p className="text-red-500 font-medium">Streamer Offline</p>
+              <p className="text-sm text-red-400">Donations are currently disabled</p>
+            </div>
+          )}
         </div>
         
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -122,7 +154,7 @@ const HarishPage = () => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter your name"
-              disabled={isLoading}
+              disabled={isLoading || !streamerOnline}
             />
           </div>
           
@@ -137,7 +169,7 @@ const HarishPage = () => {
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="Minimum ₹50"
-              disabled={isLoading}
+              disabled={isLoading || !streamerOnline}
             />
             <p className="text-xs text-muted-foreground">Minimum donation amount is ₹50</p>
           </div>
@@ -152,7 +184,7 @@ const HarishPage = () => {
               onChange={handleMessageChange}
               placeholder="Enter your message"
               className="h-24"
-              disabled={isLoading}
+              disabled={isLoading || !streamerOnline}
               maxLength={maxMessageLength}
             />
             <p className="text-xs text-muted-foreground">
@@ -166,9 +198,9 @@ const HarishPage = () => {
           <Button 
             type="submit" 
             className="w-full"
-            disabled={isLoading}
+            disabled={isLoading || !streamerOnline}
           >
-            {isLoading ? "Processing..." : "Continue to Payment"}
+            {isLoading ? "Processing..." : streamerOnline ? "Continue to Payment" : "Streamer Offline"}
           </Button>
         </form>
       </div>
