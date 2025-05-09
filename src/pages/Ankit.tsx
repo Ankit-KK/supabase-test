@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -19,16 +18,30 @@ const AnkitPage = () => {
   // Check if streamer is logged in
   useEffect(() => {
     const checkStreamerStatus = () => {
-      setStreamerOnline(isStreamerLoggedIn('ankit'));
+      const isLoggedIn = isStreamerLoggedIn('ankit');
+      console.log("Checking streamer status: ", isLoggedIn ? "Online" : "Offline");
+      setStreamerOnline(isLoggedIn);
     };
     
     // Initial check
     checkStreamerStatus();
     
-    // Set up interval to check every 30 seconds
-    const interval = setInterval(checkStreamerStatus, 30000);
+    // Set up interval to check every 5 seconds (more frequent for better UX)
+    const interval = setInterval(checkStreamerStatus, 5000);
     
-    return () => clearInterval(interval);
+    // Set up storage event listener to detect changes in other tabs/windows
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'ankitAuth') {
+        checkStreamerStatus();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   // Update max message length based on amount
@@ -42,7 +55,11 @@ const AnkitPage = () => {
   }, [amount]);
 
   const validateForm = () => {
-    if (!streamerOnline) {
+    // Re-check streamer status on form submission
+    const currentStreamerStatus = isStreamerLoggedIn('ankit');
+    setStreamerOnline(currentStreamerStatus);
+    
+    if (!currentStreamerStatus) {
       toast({
         title: "Streamer Offline",
         description: "Ankit is currently offline and not accepting donations",
