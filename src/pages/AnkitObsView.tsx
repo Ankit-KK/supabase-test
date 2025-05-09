@@ -189,7 +189,7 @@ const AnkitObsView = () => {
 
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-transparent overflow-hidden">
-      <div className="max-w-xl w-full animate-fade-in backdrop-blur-sm rounded-md px-4 py-3">
+      <div className="max-w-xl w-full animate-fade-in bg-black/40 backdrop-blur-sm rounded-md px-4 py-3">
         <div className="flex items-center gap-2 mb-2">
           <span className="font-bold text-lg text-purple-400">{activeDonation.name}</span>
           <span className="text-sm text-purple-300 opacity-80">· ₹{Number(activeDonation.amount).toLocaleString()}</span>
