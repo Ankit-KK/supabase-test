@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { Gamepad, Flame } from "lucide-react";
 
 interface Donation {
   id: string;
@@ -38,36 +39,6 @@ const HarishObsView = () => {
     return today.toISOString().split('T')[0];
   };
 
-  // Function to split message into lines of max 20 characters
-  const formatMessage = (message: string): string[] => {
-    if (!message) return [];
-    
-    const lines: string[] = [];
-    let currentLine = '';
-    
-    // Split the message into words
-    const words = message.split(' ');
-    
-    for (const word of words) {
-      // Check if adding this word will exceed 20 characters
-      if (currentLine.length + word.length + 1 > 20) {
-        // Push current line and start a new one
-        lines.push(currentLine);
-        currentLine = word;
-      } else {
-        // Add word to current line
-        currentLine = currentLine.length === 0 ? word : `${currentLine} ${word}`;
-      }
-    }
-    
-    // Push the last line if it has content
-    if (currentLine.length > 0) {
-      lines.push(currentLine);
-    }
-    
-    return lines;
-  };
-
   // Fetch donations from the current date only
   useEffect(() => {
     const fetchTodaysDonations = async () => {
@@ -78,7 +49,7 @@ const HarishObsView = () => {
         const { data, error } = await supabase
           .from("harish_donations")
           .select("id, name, amount, message, created_at")
-          .eq("payment_status", "success") // Changed from "failed" to "success"
+          .eq("payment_status", "success") 
           .gte("created_at", todayStart)
           .lte("created_at", todayEnd)
           .order("created_at", { ascending: false });
@@ -125,7 +96,7 @@ const HarishObsView = () => {
           event: 'INSERT', 
           schema: 'public', 
           table: 'harish_donations',
-          filter: 'payment_status=eq.success'  // Changed from "failed" to "success"
+          filter: 'payment_status=eq.success'
         },
         (payload) => {
           const newDonation = payload.new as Donation;
@@ -216,26 +187,24 @@ const HarishObsView = () => {
     );
   }
 
-  // Format message into lines
-  const messageLines = showMessages && activeDonation.message ? formatMessage(activeDonation.message) : [];
-
-  // Render the active donation with improved layout
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-transparent overflow-hidden">
-      <div className="max-w-xl w-full animate-fade-in py-3 px-5 bg-transparent rounded-lg">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="font-bold text-xl text-white">{activeDonation.name}</span>
-          <span className="text-green-400 font-bold">
-            ₹{Number(activeDonation.amount).toLocaleString()}
-          </span>
+      <div className="max-w-xl w-full animate-fade-in bg-black/40 backdrop-blur-sm rounded-md px-4 py-3">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="font-bold text-lg text-purple-400">{activeDonation.name}</span>
+          <span className="text-sm text-purple-300 opacity-80">· ₹{Number(activeDonation.amount).toLocaleString()}</span>
         </div>
-        {messageLines.length > 0 && (
-          <div className="text-white text-lg">
-            {messageLines.map((line, index) => (
-              <div key={index}>{line}</div>
-            ))}
+        
+        {showMessages && activeDonation.message && (
+          <div className="text-white text-lg mb-2">
+            {activeDonation.message}
           </div>
         )}
+        
+        <div className="flex space-x-2 mt-1">
+          <Gamepad className="h-5 w-5 text-purple-400" />
+          <Flame className="h-5 w-5 text-orange-400" />
+        </div>
       </div>
     </div>
   );
