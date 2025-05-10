@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
+import { checkStreamerStatus, setupStreamerStatusListener, StreamerStatus } from "@/utils/streamerAuth";
+import StreamerOffline from "@/components/StreamerOffline";
 
 const AnkitPage = () => {
   const [name, setName] = useState("");
@@ -12,7 +14,37 @@ const AnkitPage = () => {
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [maxMessageLength, setMaxMessageLength] = useState(50);
+  const [streamerStatus, setStreamerStatus] = useState<StreamerStatus>({ isOnline: false, lastActive: "" });
+  const [isCheckingStatus, setIsCheckingStatus] = useState(true);
   const navigate = useNavigate();
+
+  // Check streamer status on load and periodically
+  useEffect(() => {
+    const checkStatus = async () => {
+      setIsCheckingStatus(true);
+      const status = await checkStreamerStatus("ankit");
+      console.log("Ankit page - streamer status:", status);
+      setStreamerStatus(status);
+      setIsCheckingStatus(false);
+    };
+
+    // Initial check
+    checkStatus();
+
+    // Set up periodic check every 15 seconds
+    const statusInterval = setInterval(checkStatus, 15000);
+
+    // Set up cross-tab listener
+    const removeListener = setupStreamerStatusListener("ankit", (isOnline) => {
+      console.log("Ankit page - status listener triggered:", isOnline);
+      setStreamerStatus(prev => ({ ...prev, isOnline }));
+    });
+
+    return () => {
+      clearInterval(statusInterval);
+      removeListener();
+    };
+  }, []);
 
   // Update max message length based on amount
   useEffect(() => {
@@ -60,6 +92,15 @@ const AnkitPage = () => {
     e.preventDefault();
     
     if (!validateForm()) {
+      return;
+    }
+
+    if (!streamerStatus.isOnline) {
+      toast({
+        title: "Streamer is offline",
+        description: "Donations are only accepted when Ankit is online",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -112,65 +153,73 @@ const AnkitPage = () => {
           </p>
         </div>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <label htmlFor="name" className="block text-sm font-medium">
-              Your Name
-            </label>
-            <Input 
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter your name"
-              disabled={isLoading}
-            />
+        {isCheckingStatus ? (
+          <div className="text-center py-8">
+            <p>Checking streamer status...</p>
           </div>
-          
-          <div className="space-y-2">
-            <label htmlFor="amount" className="block text-sm font-medium">
-              Amount (₹)
-            </label>
-            <Input 
-              id="amount"
-              type="number"
-              min="50"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="Minimum ₹50"
+        ) : !streamerStatus.isOnline ? (
+          <StreamerOffline streamerName="Ankit" />
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="name" className="block text-sm font-medium">
+                Your Name
+              </label>
+              <Input 
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter your name"
+                disabled={isLoading}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="amount" className="block text-sm font-medium">
+                Amount (₹)
+              </label>
+              <Input 
+                id="amount"
+                type="number"
+                min="50"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="Minimum ₹50"
+                disabled={isLoading}
+              />
+              <p className="text-xs text-muted-foreground">Minimum donation amount is ₹50</p>
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="message" className="block text-sm font-medium">
+                Message
+              </label>
+              <Textarea 
+                id="message"
+                value={message}
+                onChange={handleMessageChange}
+                placeholder="Enter your message"
+                className="h-24"
+                disabled={isLoading}
+                maxLength={maxMessageLength}
+              />
+              <p className="text-xs text-muted-foreground">
+                {message.length}/{maxMessageLength} characters
+                {parseFloat(amount) >= 100 ? 
+                  " (100 characters for donations ₹100 and above)" : 
+                  " (50 characters for donations below ₹100)"}
+              </p>
+            </div>
+            
+            <Button 
+              type="submit" 
+              className="w-full"
               disabled={isLoading}
-            />
-            <p className="text-xs text-muted-foreground">Minimum donation amount is ₹50</p>
-          </div>
-          
-          <div className="space-y-2">
-            <label htmlFor="message" className="block text-sm font-medium">
-              Message
-            </label>
-            <Textarea 
-              id="message"
-              value={message}
-              onChange={handleMessageChange}
-              placeholder="Enter your message"
-              className="h-24"
-              disabled={isLoading}
-              maxLength={maxMessageLength}
-            />
-            <p className="text-xs text-muted-foreground">
-              {message.length}/{maxMessageLength} characters
-              {parseFloat(amount) >= 100 ? 
-                " (100 characters for donations ₹100 and above)" : 
-                " (50 characters for donations below ₹100)"}
-            </p>
-          </div>
-          
-          <Button 
-            type="submit" 
-            className="w-full"
-            disabled={isLoading}
-          >
-            {isLoading ? "Processing..." : "Continue to Payment"}
-          </Button>
-        </form>
+            >
+              {isLoading ? "Processing..." : "Continue to Payment"}
+            </Button>
+          </form>
+        )}
       </div>
     </div>
   );

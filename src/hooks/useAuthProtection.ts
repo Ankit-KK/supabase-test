@@ -1,38 +1,43 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
+import { hasStreamerSession, checkStreamerStatus } from "@/utils/streamerAuth";
 
-export interface AuthProtectionOptions {
+interface AuthProtectionOptions {
   redirectTo: string;
-  authKey: string;
+  authKey: "ankitAuth" | "harishAuth";
 }
 
-/**
- * A hook to protect routes that require authentication
- */
-export const useAuthProtection = (options: AuthProtectionOptions | string) => {
+export const useAuthProtection = ({ redirectTo, authKey }: AuthProtectionOptions) => {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  
-  // Handle both string and options object for backward compatibility
-  const authKey = typeof options === 'string' ? options : options.authKey;
-  const redirectTo = typeof options === 'string' 
-    ? `/${options}/login` 
-    : options.redirectTo;
-  
+  const streamerType = authKey === "ankitAuth" ? "ankit" : "harish";
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
   useEffect(() => {
-    const isAuthenticated = sessionStorage.getItem(authKey) === "true";
+    const checkAuth = async () => {
+      // Check if user is authenticated in session storage
+      const hasSession = hasStreamerSession(streamerType);
+      
+      // Double-check against database for extra security
+      if (hasSession) {
+        const status = await checkStreamerStatus(streamerType);
+        
+        // If not authenticated or streamer is not marked as online in the database
+        if (!status.isOnline) {
+          console.log(`Auth protection: ${streamerType} session exists but not online in DB, redirecting`);
+          navigate(redirectTo);
+          return;
+        }
+        
+        setIsAuthenticated(true);
+      } else {
+        console.log(`Auth protection: No ${streamerType} session, redirecting`);
+        navigate(redirectTo);
+      }
+    };
     
-    if (!isAuthenticated) {
-      toast({
-        variant: "destructive",
-        title: "Access denied",
-        description: "Please log in to view this page",
-      });
-      navigate(redirectTo);
-    }
-  }, [navigate, redirectTo, toast, authKey]);
+    checkAuth();
+  }, [navigate, redirectTo, streamerType]);
   
-  return { isAuthenticated: sessionStorage.getItem(authKey) === "true" };
+  return { isAuthenticated };
 };

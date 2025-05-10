@@ -2,6 +2,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { Gamepad, Flame, WifiOff } from "lucide-react";
+import { checkStreamerStatus, setupStreamerStatusListener, StreamerStatus } from "@/utils/streamerAuth";
 
 interface Donation {
   id: string;
@@ -23,6 +25,8 @@ const AnkitObsView = () => {
   const [activeDonation, setActiveDonation] = useState<ActiveDonation | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [showMessages, setShowMessages] = useState<boolean>(true);
+  const [streamerStatus, setStreamerStatus] = useState<StreamerStatus>({ isOnline: false, lastActive: "" });
+  const [isCheckingStatus, setIsCheckingStatus] = useState(true);
   const DISPLAY_DURATION = 15000; // 15 seconds per message
 
   // Get URL parameters
@@ -32,45 +36,47 @@ const AnkitObsView = () => {
     setShowMessages(messagesParam !== "false");
   }, [location]);
 
+  // Check streamer status
+  useEffect(() => {
+    const checkStatus = async () => {
+      setIsCheckingStatus(true);
+      const status = await checkStreamerStatus("ankit");
+      setStreamerStatus(status);
+      setIsCheckingStatus(false);
+    };
+
+    // Initial check
+    checkStatus();
+
+    // Set up periodic check every 30 seconds
+    const statusInterval = setInterval(checkStatus, 30000);
+
+    // Set up cross-tab listener
+    const removeListener = setupStreamerStatusListener("ankit", (isOnline) => {
+      setStreamerStatus(prev => ({ ...prev, isOnline }));
+    });
+
+    return () => {
+      clearInterval(statusInterval);
+      removeListener();
+    };
+  }, []);
+
   // Get the current date in ISO format (just the date part)
   const getCurrentDate = () => {
     const today = new Date();
     return today.toISOString().split('T')[0];
   };
 
-  // Function to split message into lines of max 20 characters
-  const formatMessage = (message: string): string[] => {
-    if (!message) return [];
-    
-    const lines: string[] = [];
-    let currentLine = '';
-    
-    // Split the message into words
-    const words = message.split(' ');
-    
-    for (const word of words) {
-      // Check if adding this word will exceed 20 characters
-      if (currentLine.length + word.length + 1 > 20) {
-        // Push current line and start a new one
-        lines.push(currentLine);
-        currentLine = word;
-      } else {
-        // Add word to current line
-        currentLine = currentLine.length === 0 ? word : `${currentLine} ${word}`;
-      }
-    }
-    
-    // Push the last line if it has content
-    if (currentLine.length > 0) {
-      lines.push(currentLine);
-    }
-    
-    return lines;
-  };
-
-  // Fetch donations from the current date only
+  // Fetch donations from the current date only when streamer is online
   useEffect(() => {
     const fetchTodaysDonations = async () => {
+      if (!streamerStatus.isOnline) {
+        setDonations([]);
+        setDisplayQueue([]);
+        return;
+      }
+
       try {
         const todayStart = `${getCurrentDate()}T00:00:00`;
         const todayEnd = `${getCurrentDate()}T23:59:59`;
@@ -78,7 +84,7 @@ const AnkitObsView = () => {
         const { data, error } = await supabase
           .from("ankit_donations")
           .select("id, name, amount, message, created_at")
-          .eq("payment_status", "success") // For testing purposes
+          .eq("payment_status", "success") 
           .gte("created_at", todayStart)
           .lte("created_at", todayEnd)
           .order("created_at", { ascending: false });
@@ -109,11 +115,18 @@ const AnkitObsView = () => {
       }
     };
 
-    fetchTodaysDonations();
-  }, []);
+    if (!isCheckingStatus) {
+      fetchTodaysDonations();
+    }
+  }, [streamerStatus.isOnline, isCheckingStatus]);
 
   // Set up subscription for new donations
   useEffect(() => {
+    // Only set up subscription if streamer is online
+    if (!streamerStatus.isOnline) {
+      return;
+    }
+
     // Generate a unique channel name based on the OBS view ID
     const channelName = `ankit-obs-donations-${id}`;
     
@@ -125,7 +138,7 @@ const AnkitObsView = () => {
           event: 'INSERT', 
           schema: 'public', 
           table: 'ankit_donations',
-          filter: 'payment_status=eq.success'  // For testing purposes
+          filter: 'payment_status=eq.success'
         },
         (payload) => {
           const newDonation = payload.new as Donation;
@@ -160,10 +173,16 @@ const AnkitObsView = () => {
       console.log("Cleaning up realtime subscription");
       supabase.removeChannel(channel);
     };
-  }, [id]);
+  }, [id, streamerStatus.isOnline]);
 
   // Handle displaying one donation at a time and properly clearing after all messages
   useEffect(() => {
+    // If streamer is offline, clear any active donation
+    if (!streamerStatus.isOnline) {
+      setActiveDonation(null);
+      return;
+    }
+
     let timeout: NodeJS.Timeout | null = null;
     
     // If there's an active donation being displayed
@@ -188,12 +207,38 @@ const AnkitObsView = () => {
     }
     // No active donation and queue is empty - screen remains blank
     
-  }, [activeDonation, displayQueue]);
+  }, [activeDonation, displayQueue, streamerStatus.isOnline]);
 
   // Debug log when displayQueue or activeDonation changes
   useEffect(() => {
     console.log(`OBS View: Display queue has ${displayQueue.length} items, active donation: ${activeDonation?.name || 'none'}`);
   }, [displayQueue, activeDonation]);
+
+  if (isCheckingStatus) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-transparent">
+        <div className="text-center text-white">
+          <p className="text-lg animate-pulse">Checking streamer status...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!streamerStatus.isOnline) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-transparent">
+        <div className="max-w-xl w-full animate-fade-in bg-black/40 backdrop-blur-sm rounded-md px-4 py-3">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <WifiOff className="h-6 w-6 text-red-400 mr-2" />
+            <span className="font-bold text-lg text-red-400">Ankit is offline</span>
+          </div>
+          <p className="text-center text-white text-sm">
+            Waiting for streamer to go online...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isConnected) {
     return (
@@ -216,26 +261,24 @@ const AnkitObsView = () => {
     );
   }
 
-  // Format message into lines
-  const messageLines = showMessages && activeDonation.message ? formatMessage(activeDonation.message) : [];
-
-  // Render the active donation with improved layout
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-transparent overflow-hidden">
-      <div className="max-w-xl w-full animate-fade-in py-3 px-5 bg-transparent rounded-lg">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="font-bold text-xl text-white">{activeDonation.name}</span>
-          <span className="text-green-400 font-bold">
-            ₹{Number(activeDonation.amount).toLocaleString()}
-          </span>
+      <div className="max-w-xl w-full animate-fade-in bg-black/40 backdrop-blur-sm rounded-md px-4 py-3">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="font-bold text-lg text-purple-400">{activeDonation.name}</span>
+          <span className="text-sm text-purple-300 opacity-80">· ₹{Number(activeDonation.amount).toLocaleString()}</span>
         </div>
-        {messageLines.length > 0 && (
-          <div className="text-white text-lg">
-            {messageLines.map((line, index) => (
-              <div key={index}>{line}</div>
-            ))}
+        
+        {showMessages && activeDonation.message && (
+          <div className="text-white text-lg mb-2">
+            {activeDonation.message}
           </div>
         )}
+        
+        <div className="flex space-x-2 mt-1">
+          <Gamepad className="h-5 w-5 text-purple-400" />
+          <Flame className="h-5 w-5 text-orange-400" />
+        </div>
       </div>
     </div>
   );
