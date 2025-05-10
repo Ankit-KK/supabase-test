@@ -212,7 +212,7 @@ const HarishObsView = () => {
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/30 backdrop-blur-sm animate-fade-in">
           <div className="w-96 h-96 flex items-center justify-center">
             <img 
-              src="https://media.giphy.com/media/26u4lOMA8JKSnL9Uk/giphy.gif" 
+              src="https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/sign/ankit/dancing-dog.gif?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJhbmtpdC9kYW5jaW5nLWRvZy5naWYiLCJpYXQiOjE3NDY4OTc4ODEsImV4cCI6MTc3ODQzMzg4MX0.tIzwiI3aBlSujCQIn0zQfUGLXfsMPc4wEgrpPZO15_k" 
               alt="Celebration GIF" 
               className="max-w-full max-h-full object-contain animate-scale-in" 
             />

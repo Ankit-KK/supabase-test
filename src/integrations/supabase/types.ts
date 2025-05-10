@@ -44,6 +44,7 @@ export type Database = {
           amount: number
           created_at: string | null
           id: string
+          include_gif: boolean | null
           message: string
           name: string
           order_id: string
@@ -53,6 +54,7 @@ export type Database = {
           amount: number
           created_at?: string | null
           id?: string
+          include_gif?: boolean | null
           message: string
           name: string
           order_id: string
@@ -62,6 +64,7 @@ export type Database = {
           amount?: number
           created_at?: string | null
           id?: string
+          include_gif?: boolean | null
           message?: string
           name?: string
           order_id?: string
@@ -140,6 +143,7 @@ export type Database = {
           amount: number
           created_at: string | null
           id: string
+          include_gif: boolean | null
           message: string
           name: string
           order_id: string
@@ -149,6 +153,7 @@ export type Database = {
           amount: number
           created_at?: string | null
           id?: string
+          include_gif?: boolean | null
           message: string
           name: string
           order_id: string
@@ -158,6 +163,7 @@ export type Database = {
           amount?: number
           created_at?: string | null
           id?: string
+          include_gif?: boolean | null
           message?: string
           name?: string
           order_id?: string
