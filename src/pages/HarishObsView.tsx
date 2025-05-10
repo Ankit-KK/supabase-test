@@ -2,7 +2,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Gamepad, Flame } from "lucide-react";
+import { Gamepad, Flame, WifiOff } from "lucide-react";
+import { checkStreamerStatus, setupStreamerStatusListener, StreamerStatus } from "@/utils/streamerAuth";
 
 interface Donation {
   id: string;
@@ -24,6 +25,8 @@ const HarishObsView = () => {
   const [activeDonation, setActiveDonation] = useState<ActiveDonation | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [showMessages, setShowMessages] = useState<boolean>(true);
+  const [streamerStatus, setStreamerStatus] = useState<StreamerStatus>({ isOnline: false, lastActive: "" });
+  const [isCheckingStatus, setIsCheckingStatus] = useState(true);
   const DISPLAY_DURATION = 15000; // 15 seconds per message
 
   // Get URL parameters
@@ -33,15 +36,47 @@ const HarishObsView = () => {
     setShowMessages(messagesParam !== "false");
   }, [location]);
 
+  // Check streamer status
+  useEffect(() => {
+    const checkStatus = async () => {
+      setIsCheckingStatus(true);
+      const status = await checkStreamerStatus("harish");
+      setStreamerStatus(status);
+      setIsCheckingStatus(false);
+    };
+
+    // Initial check
+    checkStatus();
+
+    // Set up periodic check every 30 seconds
+    const statusInterval = setInterval(checkStatus, 30000);
+
+    // Set up cross-tab listener
+    const removeListener = setupStreamerStatusListener("harish", (isOnline) => {
+      setStreamerStatus(prev => ({ ...prev, isOnline }));
+    });
+
+    return () => {
+      clearInterval(statusInterval);
+      removeListener();
+    };
+  }, []);
+
   // Get the current date in ISO format (just the date part)
   const getCurrentDate = () => {
     const today = new Date();
     return today.toISOString().split('T')[0];
   };
 
-  // Fetch donations from the current date only
+  // Fetch donations from the current date only when streamer is online
   useEffect(() => {
     const fetchTodaysDonations = async () => {
+      if (!streamerStatus.isOnline) {
+        setDonations([]);
+        setDisplayQueue([]);
+        return;
+      }
+
       try {
         const todayStart = `${getCurrentDate()}T00:00:00`;
         const todayEnd = `${getCurrentDate()}T23:59:59`;
@@ -80,11 +115,18 @@ const HarishObsView = () => {
       }
     };
 
-    fetchTodaysDonations();
-  }, []);
+    if (!isCheckingStatus) {
+      fetchTodaysDonations();
+    }
+  }, [streamerStatus.isOnline, isCheckingStatus]);
 
   // Set up subscription for new donations
   useEffect(() => {
+    // Only set up subscription if streamer is online
+    if (!streamerStatus.isOnline) {
+      return;
+    }
+
     // Generate a unique channel name based on the OBS view ID
     const channelName = `harish-obs-donations-${id}`;
     
@@ -131,10 +173,16 @@ const HarishObsView = () => {
       console.log("Cleaning up realtime subscription");
       supabase.removeChannel(channel);
     };
-  }, [id]);
+  }, [id, streamerStatus.isOnline]);
 
   // Handle displaying one donation at a time and properly clearing after all messages
   useEffect(() => {
+    // If streamer is offline, clear any active donation
+    if (!streamerStatus.isOnline) {
+      setActiveDonation(null);
+      return;
+    }
+
     let timeout: NodeJS.Timeout | null = null;
     
     // If there's an active donation being displayed
@@ -159,12 +207,38 @@ const HarishObsView = () => {
     }
     // No active donation and queue is empty - screen remains blank
     
-  }, [activeDonation, displayQueue]);
+  }, [activeDonation, displayQueue, streamerStatus.isOnline]);
 
   // Debug log when displayQueue or activeDonation changes
   useEffect(() => {
     console.log(`OBS View: Display queue has ${displayQueue.length} items, active donation: ${activeDonation?.name || 'none'}`);
   }, [displayQueue, activeDonation]);
+
+  if (isCheckingStatus) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-transparent">
+        <div className="text-center text-white">
+          <p className="text-lg animate-pulse">Checking streamer status...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!streamerStatus.isOnline) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-transparent">
+        <div className="max-w-xl w-full animate-fade-in bg-black/40 backdrop-blur-sm rounded-md px-4 py-3">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <WifiOff className="h-6 w-6 text-red-400 mr-2" />
+            <span className="font-bold text-lg text-red-400">Harish is offline</span>
+          </div>
+          <p className="text-center text-white text-sm">
+            Waiting for streamer to go online...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isConnected) {
     return (

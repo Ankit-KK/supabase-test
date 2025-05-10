@@ -1,11 +1,12 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { loginStreamer, hasStreamerSession } from "@/utils/streamerAuth";
 
 const AnkitLogin = () => {
   const [username, setUsername] = useState("");
@@ -14,27 +15,41 @@ const AnkitLogin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  // Check if already logged in
+  useEffect(() => {
+    if (hasStreamerSession("ankit")) {
+      navigate("/ankit/dashboard");
+    }
+  }, [navigate]);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simple authentication check
-    if (username === "ankit" && password === "ankit2000") {
-      // Store auth state in session storage
-      sessionStorage.setItem("ankitAuth", "true");
-      
-      toast({
-        title: "Login successful",
-        description: "Welcome to the Ankit Dashboard!",
-      });
-      
-      navigate("/ankit/dashboard");
-    } else {
+    try {
+      const result = await loginStreamer(username, password);
+
+      if (result.success && result.streamerType === "ankit") {
+        toast({
+          title: "Login successful",
+          description: result.message,
+        });
+        
+        navigate("/ankit/dashboard");
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Login failed",
+          description: result.message,
+        });
+      }
+    } catch (error) {
       toast({
         variant: "destructive",
-        title: "Login failed",
-        description: "Invalid username or password",
+        title: "Login error",
+        description: "An unexpected error occurred. Please try again.",
       });
+    } finally {
       setIsLoading(false);
     }
   };

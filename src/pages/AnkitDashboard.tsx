@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuthProtection } from "@/hooks/useAuthProtection";
 import { MessageSquare, Download } from "lucide-react";
 import { objectsToCSV, downloadCSV, formatDateForFilename } from "@/utils/csvExport";
+import { logoutStreamer } from "@/utils/streamerAuth";
 
 interface Donation {
   id: string;
@@ -111,7 +111,9 @@ const AnkitDashboard = () => {
   }, [toast]);
 
   const handleLogout = () => {
-    sessionStorage.removeItem("ankitAuth");
+    // Use our new logout function
+    logoutStreamer("ankit");
+    
     toast({
       title: "Logged out",
       description: "You have been successfully logged out",
