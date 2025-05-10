@@ -27,7 +27,9 @@ const AnkitLogin = () => {
     setIsLoading(true);
 
     try {
+      console.log("Attempting login for:", username);
       const result = await loginStreamer(username, password);
+      console.log("Login result:", result);
 
       if (result.success && result.streamerType === "ankit") {
         toast({
@@ -44,6 +46,7 @@ const AnkitLogin = () => {
         });
       }
     } catch (error) {
+      console.error("Login error:", error);
       toast({
         variant: "destructive",
         title: "Login error",

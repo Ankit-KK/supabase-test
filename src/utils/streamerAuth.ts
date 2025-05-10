@@ -20,6 +20,8 @@ export const checkStreamerStatus = async (streamerType: "ankit" | "harish"): Pro
       return { isOnline: false, lastActive: new Date().toISOString() };
     }
 
+    console.log(`Checked status for ${streamerType}:`, data);
+    
     return { 
       isOnline: !!data?.is_online, 
       lastActive: data?.last_active || new Date().toISOString() 
@@ -36,6 +38,8 @@ export const updateStreamerStatus = async (
   isOnline: boolean
 ): Promise<void> => {
   try {
+    console.log(`Updating ${streamerType} status to: ${isOnline}`);
+    
     const { error } = await supabase
       .from("admin_users")
       .update({
@@ -47,6 +51,8 @@ export const updateStreamerStatus = async (
     if (error) {
       console.error("Error updating streamer status:", error);
     } else {
+      console.log(`Successfully updated ${streamerType} status to ${isOnline}`);
+      
       // Update local storage to sync across tabs
       sessionStorage.setItem(`${streamerType}Auth`, isOnline ? "true" : "");
       
@@ -80,7 +86,7 @@ export const verifyStreamerCredentials = async (
 
     const user = data[0];
     
-    // Compare the password (in a real app, we'd use a proper password hashing library)
+    // Compare the password
     if (user.password_hash === password) {
       return { isValid: true, streamerType: user.admin_type as "ankit" | "harish" };
     }
@@ -101,6 +107,8 @@ export const loginStreamer = async (
     const { isValid, streamerType } = await verifyStreamerCredentials(username, password);
 
     if (isValid && streamerType) {
+      console.log(`Login successful for ${streamerType}, updating status to online`);
+      
       // Update the streamer's status to online
       await updateStreamerStatus(streamerType, true);
       
@@ -134,6 +142,8 @@ export const logoutStreamer = async (
   streamerType: "ankit" | "harish"
 ): Promise<void> => {
   try {
+    console.log(`Logging out ${streamerType}, updating status to offline`);
+    
     // Update the streamer's status to offline
     await updateStreamerStatus(streamerType, false);
     

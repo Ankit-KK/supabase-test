@@ -23,6 +23,7 @@ const AnkitPage = () => {
     const checkStatus = async () => {
       setIsCheckingStatus(true);
       const status = await checkStreamerStatus("ankit");
+      console.log("Ankit page - streamer status:", status);
       setStreamerStatus(status);
       setIsCheckingStatus(false);
     };
@@ -30,11 +31,12 @@ const AnkitPage = () => {
     // Initial check
     checkStatus();
 
-    // Set up periodic check every 30 seconds
-    const statusInterval = setInterval(checkStatus, 30000);
+    // Set up periodic check every 15 seconds
+    const statusInterval = setInterval(checkStatus, 15000);
 
     // Set up cross-tab listener
     const removeListener = setupStreamerStatusListener("ankit", (isOnline) => {
+      console.log("Ankit page - status listener triggered:", isOnline);
       setStreamerStatus(prev => ({ ...prev, isOnline }));
     });
 
