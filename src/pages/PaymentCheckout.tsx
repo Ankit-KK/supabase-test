@@ -10,9 +10,11 @@ const PaymentCheckout = () => {
   const [paymentData, setPaymentData] = useState<{
     name: string;
     amount: number;
+    totalAmount: number;
     message: string;
     orderId: string;
     donationType: string;
+    includeGif: boolean;
   } | null>(null);
   
   const navigate = useNavigate();
@@ -46,6 +48,14 @@ const PaymentCheckout = () => {
 
     try {
       const data = JSON.parse(donationDataStr);
+      // Ensure totalAmount exists for backward compatibility
+      if (data.totalAmount === undefined) {
+        data.totalAmount = data.amount;
+      }
+      // Ensure includeGif exists for backward compatibility
+      if (data.includeGif === undefined) {
+        data.includeGif = false;
+      }
       setPaymentData(data);
       setIsLoading(false);
     } catch (error) {
@@ -67,7 +77,7 @@ const PaymentCheckout = () => {
       // Create payment order using Supabase Edge Function
       const orderResponse = await createPaymentOrder(
         paymentData.orderId, 
-        paymentData.amount,
+        paymentData.totalAmount,  // Use totalAmount for payment
         paymentData.name,
         paymentData.donationType
       );
@@ -143,8 +153,18 @@ const PaymentCheckout = () => {
             <span className="font-medium">{paymentData?.name}</span>
           </div>
           <div className="flex justify-between">
-            <span>Amount:</span>
+            <span>Base Amount:</span>
             <span className="font-medium">₹{paymentData?.amount.toFixed(2)}</span>
+          </div>
+          {paymentData?.includeGif && (
+            <div className="flex justify-between">
+              <span>GIF Option:</span>
+              <span className="font-medium">₹500.00</span>
+            </div>
+          )}
+          <div className="flex justify-between font-semibold">
+            <span>Total Amount:</span>
+            <span>₹{paymentData?.totalAmount.toFixed(2)}</span>
           </div>
           <div className="flex justify-between">
             <span>Order ID:</span>
@@ -156,6 +176,12 @@ const PaymentCheckout = () => {
             <span>Donation Type:</span>
             <span className="font-medium capitalize">{paymentData?.donationType}</span>
           </div>
+          {paymentData?.includeGif && (
+            <div className="flex justify-between">
+              <span>GIF Display:</span>
+              <span className="font-medium text-emerald-500">Enabled</span>
+            </div>
+          )}
         </div>
         
         <Button 

@@ -5,11 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 const HarishPage = () => {
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [message, setMessage] = useState("");
+  const [includeGif, setIncludeGif] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [maxMessageLength, setMaxMessageLength] = useState(50);
   const navigate = useNavigate();
@@ -66,16 +69,23 @@ const HarishPage = () => {
     setIsLoading(true);
     
     try {
+      // Calculate total amount based on whether GIF option is selected
+      const baseAmount = parseFloat(amount);
+      const gifAmount = includeGif ? 500 : 0;
+      const totalAmount = baseAmount + gifAmount;
+      
       // Generate a random order ID with timestamp
       const orderId = `harish_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
       
       // Store donation data in session storage to access it during the payment flow
       const donationData = {
         name,
-        amount: parseFloat(amount),
+        amount: baseAmount,
+        totalAmount,
         message,
         orderId,
-        donationType: "harish", // Add donation type to differentiate
+        donationType: "harish",
+        includeGif,
       };
       
       sessionStorage.setItem("donationData", JSON.stringify(donationData));
@@ -128,7 +138,7 @@ const HarishPage = () => {
           
           <div className="space-y-2">
             <label htmlFor="amount" className="block text-sm font-medium">
-              Amount (₹)
+              Donation Amount (₹)
             </label>
             <Input 
               id="amount"
@@ -163,13 +173,28 @@ const HarishPage = () => {
             </p>
           </div>
           
+          <div className="flex items-center space-x-2 pt-2 pb-2">
+            <Switch
+              id="include-gif"
+              checked={includeGif}
+              onCheckedChange={setIncludeGif}
+            />
+            <Label htmlFor="include-gif">Show celebratory GIF on stream (+ ₹500)</Label>
+          </div>
+          
           <Button 
             type="submit" 
             className="w-full"
             disabled={isLoading}
           >
-            {isLoading ? "Processing..." : "Continue to Payment"}
+            {isLoading ? "Processing..." : `Continue to Payment ${includeGif ? `(₹${(parseFloat(amount) || 0) + 500})` : ''}`}
           </Button>
+          
+          {includeGif && (
+            <p className="text-xs text-center text-muted-foreground">
+              A fun celebratory GIF will play on stream for a few seconds
+            </p>
+          )}
         </form>
       </div>
     </div>

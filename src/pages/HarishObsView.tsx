@@ -10,6 +10,7 @@ interface Donation {
   amount: number;
   message: string;
   created_at: string;
+  include_gif?: boolean;
 }
 
 interface ActiveDonation extends Donation {
@@ -24,7 +25,9 @@ const HarishObsView = () => {
   const [activeDonation, setActiveDonation] = useState<ActiveDonation | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [showMessages, setShowMessages] = useState<boolean>(true);
+  const [showGif, setShowGif] = useState<boolean>(false);
   const DISPLAY_DURATION = 15000; // 15 seconds per message
+  const GIF_DURATION = 5000; // 5 seconds for the GIF
 
   // Get URL parameters
   useEffect(() => {
@@ -48,7 +51,7 @@ const HarishObsView = () => {
 
         const { data, error } = await supabase
           .from("harish_donations")
-          .select("id, name, amount, message, created_at")
+          .select("id, name, amount, message, created_at, include_gif")
           .eq("payment_status", "success") 
           .gte("created_at", todayStart)
           .lte("created_at", todayEnd)
@@ -119,6 +122,14 @@ const HarishObsView = () => {
             
             console.log("Adding new donation to display queue:", newDonationForQueue.name);
             setDisplayQueue(prev => [...prev, newDonationForQueue]);
+            
+            // Show GIF if the include_gif option is true
+            if (newDonation.include_gif) {
+              setShowGif(true);
+              setTimeout(() => {
+                setShowGif(false);
+              }, GIF_DURATION);
+            }
           } else {
             console.log("Ignoring donation from a different date:", donationDate);
           }
@@ -143,6 +154,14 @@ const HarishObsView = () => {
       timeout = setTimeout(() => {
         console.log("Finished displaying donation:", activeDonation.name);
         setActiveDonation(null);
+        
+        // Show GIF if the include_gif option is true
+        if (activeDonation.include_gif) {
+          setShowGif(true);
+          setTimeout(() => {
+            setShowGif(false);
+          }, GIF_DURATION);
+        }
       }, DISPLAY_DURATION);
       
       return () => {
@@ -176,8 +195,8 @@ const HarishObsView = () => {
     );
   }
 
-  // Render a blank screen when there's no active donation to display
-  if (!activeDonation) {
+  // Render a blank screen when there's no active donation to display and no GIF
+  if (!activeDonation && !showGif) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-transparent">
         <div className="text-center text-white opacity-0">
@@ -189,23 +208,37 @@ const HarishObsView = () => {
 
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-transparent overflow-hidden">
-      <div className="max-w-xl w-full animate-fade-in backdrop-blur-sm rounded-md px-4 py-3">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="font-bold text-lg text-purple-400">{activeDonation.name}</span>
-          <span className="text-sm text-purple-300 opacity-80">· ₹{Number(activeDonation.amount).toLocaleString()}</span>
-        </div>
-        
-        {showMessages && activeDonation.message && (
-          <div className="text-white text-lg mb-2">
-            {activeDonation.message}
+      {showGif && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/30 backdrop-blur-sm animate-fade-in">
+          <div className="w-96 h-96 flex items-center justify-center">
+            <img 
+              src="https://media.giphy.com/media/26u4lOMA8JKSnL9Uk/giphy.gif" 
+              alt="Celebration GIF" 
+              className="max-w-full max-h-full object-contain animate-scale-in" 
+            />
           </div>
-        )}
-        
-        <div className="flex space-x-2 mt-1">
-          <Gamepad className="h-5 w-5 text-purple-400" />
-          <Flame className="h-5 w-5 text-orange-400" />
         </div>
-      </div>
+      )}
+      
+      {activeDonation && (
+        <div className="max-w-xl w-full animate-fade-in backdrop-blur-sm rounded-md px-4 py-3">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="font-bold text-lg text-purple-400">{activeDonation.name}</span>
+            <span className="text-sm text-purple-300 opacity-80">· ₹{Number(activeDonation.amount).toLocaleString()}</span>
+          </div>
+          
+          {showMessages && activeDonation.message && (
+            <div className="text-white text-lg mb-2">
+              {activeDonation.message}
+            </div>
+          )}
+          
+          <div className="flex space-x-2 mt-1">
+            <Gamepad className="h-5 w-5 text-purple-400" />
+            <Flame className="h-5 w-5 text-orange-400" />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -8,6 +8,7 @@ type DonationRecord = {
   order_id: string;
   payment_status: string;
   donationType: "ankit" | "harish";
+  include_gif?: boolean;
 };
 
 /**
@@ -60,15 +61,19 @@ export const createDonationRecord = async (donation: DonationRecord) => {
   try {
     const tableName = donation.donationType === "harish" ? "harish_donations" : "ankit_donations";
     
+    // Prepare the donation record with all fields
+    const donationRecord = {
+      name: donation.name,
+      amount: donation.amount,
+      message: donation.message,
+      order_id: donation.order_id,
+      payment_status: donation.payment_status,
+      include_gif: donation.include_gif || false
+    };
+    
     const { error } = await supabase
       .from(tableName)
-      .insert({
-        name: donation.name,
-        amount: donation.amount,
-        message: donation.message,
-        order_id: donation.order_id,
-        payment_status: donation.payment_status
-      });
+      .insert(donationRecord);
 
     if (error) {
       console.error(`Error creating donation record in ${tableName}:`, error);
