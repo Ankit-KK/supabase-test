@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { isStreamerAuthenticated } from "@/services/streamerAuth";
 
 export interface AuthProtectionOptions {
   redirectTo: string;
@@ -22,7 +23,8 @@ export const useAuthProtection = (options: AuthProtectionOptions | string) => {
     : options.redirectTo;
   
   useEffect(() => {
-    const isAuthenticated = sessionStorage.getItem(authKey) === "true";
+    // Check if the user is authenticated via session storage
+    const isAuthenticated = isStreamerAuthenticated(authKey.replace('Auth', ''));
     
     if (!isAuthenticated) {
       toast({
@@ -34,5 +36,5 @@ export const useAuthProtection = (options: AuthProtectionOptions | string) => {
     }
   }, [navigate, redirectTo, toast, authKey]);
   
-  return { isAuthenticated: sessionStorage.getItem(authKey) === "true" };
+  return { isAuthenticated: isStreamerAuthenticated(authKey.replace('Auth', '')) };
 };

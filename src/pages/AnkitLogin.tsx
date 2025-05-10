@@ -6,35 +6,50 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { authenticateStreamer } from "@/services/streamerAuth";
 
 const AnkitLogin = () => {
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState("ankit");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simple authentication check
-    if (username === "ankit" && password === "ankit2000") {
-      // Store auth state in session storage
-      sessionStorage.setItem("ankitAuth", "true");
-      
-      toast({
-        title: "Login successful",
-        description: "Welcome to the Ankit Dashboard!",
+    try {
+      const result = await authenticateStreamer({
+        username,
+        password,
       });
-      
-      navigate("/ankit/dashboard");
-    } else {
+
+      if (result.success) {
+        // Store auth state in session storage
+        sessionStorage.setItem("ankitAuth", "true");
+        
+        toast({
+          title: "Login successful",
+          description: "Welcome to the Ankit Dashboard!",
+        });
+        
+        navigate("/ankit/dashboard");
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Login failed",
+          description: result.message,
+        });
+      }
+    } catch (error) {
       toast({
         variant: "destructive",
-        title: "Login failed",
-        description: "Invalid username or password",
+        title: "Login error",
+        description: "An unexpected error occurred during login",
       });
+      console.error("Login error:", error);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -59,6 +74,7 @@ const AnkitLogin = () => {
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Enter username"
                 required
+                disabled
               />
             </div>
             <div className="space-y-2">
