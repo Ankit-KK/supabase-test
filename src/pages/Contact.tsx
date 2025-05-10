@@ -117,6 +117,10 @@ const Contact = () => {
             <div className="flex flex-col items-center p-6 rounded-lg border bg-card text-card-foreground shadow-sm max-w-md mx-auto">
               <h3 className="font-medium text-xl mb-2">Ankit Kumar</h3>
               <p className="text-muted-foreground mb-4">Lead Developer</p>
+              <div className="flex items-center space-x-2 mb-2">
+                <Phone className="h-4 w-4" />
+                <span>+91 9205013630</span>
+              </div>
               <div className="flex items-center space-x-2">
                 <Mail className="h-4 w-4" />
                 <span>ankit@hyperchat.site</span>

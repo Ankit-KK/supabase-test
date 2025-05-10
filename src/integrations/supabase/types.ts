@@ -14,27 +14,18 @@ export type Database = {
           admin_type: string
           created_at: string | null
           id: string
-          is_online: boolean | null
-          last_active: string | null
-          password_hash: string
           user_email: string
         }
         Insert: {
           admin_type: string
           created_at?: string | null
           id?: string
-          is_online?: boolean | null
-          last_active?: string | null
-          password_hash?: string
           user_email: string
         }
         Update: {
           admin_type?: string
           created_at?: string | null
           id?: string
-          is_online?: boolean | null
-          last_active?: string | null
-          password_hash?: string
           user_email?: string
         }
         Relationships: []

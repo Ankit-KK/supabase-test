@@ -1,43 +1,38 @@
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { hasStreamerSession, checkStreamerStatus } from "@/utils/streamerAuth";
+import { useToast } from "@/hooks/use-toast";
 
-interface AuthProtectionOptions {
+export interface AuthProtectionOptions {
   redirectTo: string;
-  authKey: "ankitAuth" | "harishAuth";
+  authKey: string;
 }
 
-export const useAuthProtection = ({ redirectTo, authKey }: AuthProtectionOptions) => {
+/**
+ * A hook to protect routes that require authentication
+ */
+export const useAuthProtection = (options: AuthProtectionOptions | string) => {
   const navigate = useNavigate();
-  const streamerType = authKey === "ankitAuth" ? "ankit" : "harish";
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      // Check if user is authenticated in session storage
-      const hasSession = hasStreamerSession(streamerType);
-      
-      // Double-check against database for extra security
-      if (hasSession) {
-        const status = await checkStreamerStatus(streamerType);
-        
-        // If not authenticated or streamer is not marked as online in the database
-        if (!status.isOnline) {
-          console.log(`Auth protection: ${streamerType} session exists but not online in DB, redirecting`);
-          navigate(redirectTo);
-          return;
-        }
-        
-        setIsAuthenticated(true);
-      } else {
-        console.log(`Auth protection: No ${streamerType} session, redirecting`);
-        navigate(redirectTo);
-      }
-    };
-    
-    checkAuth();
-  }, [navigate, redirectTo, streamerType]);
+  const { toast } = useToast();
   
-  return { isAuthenticated };
+  // Handle both string and options object for backward compatibility
+  const authKey = typeof options === 'string' ? options : options.authKey;
+  const redirectTo = typeof options === 'string' 
+    ? `/${options}/login` 
+    : options.redirectTo;
+  
+  useEffect(() => {
+    const isAuthenticated = sessionStorage.getItem(authKey) === "true";
+    
+    if (!isAuthenticated) {
+      toast({
+        variant: "destructive",
+        title: "Access denied",
+        description: "Please log in to view this page",
+      });
+      navigate(redirectTo);
+    }
+  }, [navigate, redirectTo, toast, authKey]);
+  
+  return { isAuthenticated: sessionStorage.getItem(authKey) === "true" };
 };
