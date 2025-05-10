@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -93,7 +92,8 @@ const PaymentStatus = () => {
             message: donationData.message,
             order_id: orderId,
             payment_status: paymentStatus,
-            donationType: donationType
+            donationType: donationType,
+            include_gif: donationData.includeGif // Ensure the include_gif flag is passed
           });
           setIsRecordCreated(true);
         }
@@ -113,6 +113,10 @@ const PaymentStatus = () => {
   }, [location.search, isRecordCreated]);
 
   const getReturnLink = () => {
+    const donationType = sessionStorage.getItem("donationData") 
+      ? JSON.parse(sessionStorage.getItem("donationData")!).donationType
+      : null;
+
     if (donationType === "harish") {
       return "/harish";
     }

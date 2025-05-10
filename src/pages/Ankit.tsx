@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -38,13 +37,21 @@ const AnkitPage = () => {
     }
 
     const parsedAmount = parseFloat(amount);
-    if (isNaN(parsedAmount) || parsedAmount < 50) {
+    
+    // If include GIF is selected, we can accept zero donation amount,
+    // otherwise we need a minimum donation of ₹50
+    if (!includeGif && (isNaN(parsedAmount) || parsedAmount < 50)) {
       toast({
         title: "Invalid amount",
         description: "Please enter an amount greater than or equal to ₹50",
         variant: "destructive",
       });
       return false;
+    }
+
+    // If they're only doing a GIF and no donation, let them set 0
+    if (includeGif && (amount === "" || isNaN(parsedAmount))) {
+      setAmount("0");
     }
 
     if (!message.trim()) {
@@ -70,7 +77,7 @@ const AnkitPage = () => {
     
     try {
       // Calculate total amount based on whether GIF option is selected
-      const baseAmount = parseFloat(amount);
+      const baseAmount = parseFloat(amount) || 0; // Default to 0 if empty
       const gifAmount = includeGif ? 500 : 0;
       const totalAmount = baseAmount + gifAmount;
       
@@ -143,13 +150,17 @@ const AnkitPage = () => {
             <Input 
               id="amount"
               type="number"
-              min="50"
+              min={includeGif ? "0" : "50"}
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              placeholder="Minimum ₹50"
+              placeholder={includeGif ? "Optional (min ₹0)" : "Minimum ₹50"}
               disabled={isLoading}
             />
-            <p className="text-xs text-muted-foreground">Minimum donation amount is ₹50</p>
+            <p className="text-xs text-muted-foreground">
+              {includeGif 
+                ? "Donation amount is optional when selecting the GIF option"
+                : "Minimum donation amount is ₹50"}
+            </p>
           </div>
           
           <div className="space-y-2">
