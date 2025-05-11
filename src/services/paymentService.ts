@@ -7,7 +7,7 @@ type DonationRecord = {
   message: string;
   order_id: string;
   payment_status: string;
-  donationType: "ankit" | "harish";
+  donationType: "ankit" | "harish" | "mackletv";
 };
 
 /**
@@ -58,7 +58,15 @@ export const verifyPayment = async (orderId: string) => {
  */
 export const createDonationRecord = async (donation: DonationRecord) => {
   try {
-    const tableName = donation.donationType === "harish" ? "harish_donations" : "ankit_donations";
+    let tableName;
+    
+    if (donation.donationType === "harish") {
+      tableName = "harish_donations";
+    } else if (donation.donationType === "mackletv") {
+      tableName = "mackletv_donations";
+    } else {
+      tableName = "ankit_donations";
+    }
     
     const { error } = await supabase
       .from(tableName)
