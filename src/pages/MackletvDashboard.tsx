@@ -17,6 +17,7 @@ interface Donation {
   message: string;
   created_at: string;
   payment_status: string;
+  include_gif?: boolean;
 }
 
 const MackletvDashboard = () => {
@@ -35,17 +36,22 @@ const MackletvDashboard = () => {
   // Function to fetch donations data
   const fetchDonations = async () => {
     try {
+      console.log("Fetching mackletv donations...");
+      
       const { data, error } = await supabase
         .from("mackletv_donations")
         .select("*")
         .eq("payment_status", "success") // Only fetch successful payments
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching donations:", error);
+        throw error;
+      }
       
+      console.log("Fetched mackletv donations:", data?.length || 0);
       setDonations(data || []);
       setLastRefresh(new Date());
-      console.log("Dashboard data refreshed at:", new Date().toLocaleTimeString());
     } catch (error) {
       console.error("Error fetching donations:", error);
       toast({
@@ -60,6 +66,8 @@ const MackletvDashboard = () => {
 
   // Set up real-time subscription for new donations
   useEffect(() => {
+    console.log("Setting up realtime subscription for mackletv donations...");
+    
     const channel = supabase
       .channel('mackletv-dashboard-donations')
       .on(
@@ -98,7 +106,9 @@ const MackletvDashboard = () => {
           );
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("Realtime subscription status:", status);
+      });
 
     console.log("Dashboard realtime subscription set up");
     
@@ -109,6 +119,11 @@ const MackletvDashboard = () => {
       supabase.removeChannel(channel);
     };
   }, [toast]);
+
+  const handleRefresh = () => {
+    setIsLoading(true);
+    fetchDonations();
+  };
 
   const handleLogout = () => {
     sessionStorage.removeItem("mackletvAuth");
@@ -177,6 +192,9 @@ const MackletvDashboard = () => {
           <div className="text-sm text-muted-foreground">
             Last updated: {lastRefresh.toLocaleTimeString()}
           </div>
+          <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
+            {isLoading ? "Refreshing..." : "Refresh"}
+          </Button>
           <Button variant="outline" onClick={() => navigate("/mackletv/messages")}>
             <MessageSquare className="mr-2 h-4 w-4" />
             Donation Messages
@@ -240,6 +258,7 @@ const MackletvDashboard = () => {
                     <TableHead>Amount</TableHead>
                     <TableHead>Message</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>GIF</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -257,6 +276,9 @@ const MackletvDashboard = () => {
                         }`}>
                           {donation.payment_status}
                         </span>
+                      </TableCell>
+                      <TableCell>
+                        {donation.include_gif ? 'Yes' : 'No'}
                       </TableCell>
                     </TableRow>
                   ))}

@@ -65,24 +65,29 @@ export const createDonationRecord = async (donation: DonationRecord) => {
         ? "mackletv_donations" 
         : "ankit_donations";
     
+    console.log("Creating donation record in table:", tableName, donation);
+    
     // Prepare the donation record with all fields
     const donationRecord = {
       name: donation.name,
       amount: donation.amount,
-      message: donation.message,
+      message: donation.message || "",
       order_id: donation.order_id,
       payment_status: donation.payment_status,
       include_gif: donation.include_gif || false
     };
     
-    const { error } = await supabase
+    const { error, data } = await supabase
       .from(tableName)
-      .insert(donationRecord);
+      .insert(donationRecord)
+      .select();
 
     if (error) {
       console.error(`Error creating donation record in ${tableName}:`, error);
       throw new Error(error.message || `Failed to create donation record in ${tableName}`);
     }
+
+    console.log("Donation record created successfully:", data);
 
     // Clean up session storage after successful record creation
     if (donation.payment_status !== "pending") {

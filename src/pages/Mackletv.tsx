@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -50,9 +51,21 @@ const gifOptions = [
 
 const MackleTvPage = () => {
   const [name, setName] = useState("");
+  const [amount, setAmount] = useState<number>(100);
+  const [message, setMessage] = useState("");
   const [selectedGif, setSelectedGif] = useState<string | null>("dancing-dog");
+  const [includeGif, setIncludeGif] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  
+  // Define donation tiers
+  const donationTiers = [
+    { value: 100, label: "₹100" },
+    { value: 500, label: "₹500" },
+    { value: 1000, label: "₹1000" },
+    { value: 2000, label: "₹2000" },
+    { value: 5000, label: "₹5000" }
+  ];
 
   const validateForm = () => {
     if (!name.trim()) {
@@ -64,10 +77,10 @@ const MackleTvPage = () => {
       return false;
     }
 
-    if (!selectedGif) {
+    if (includeGif && !selectedGif) {
       toast({
         title: "GIF is required",
-        description: "Please select a GIF",
+        description: "Please select a GIF or disable the GIF option",
         variant: "destructive",
       });
       return false;
@@ -86,8 +99,9 @@ const MackleTvPage = () => {
     setIsLoading(true);
     
     try {
-      // For MackleTv, we only have GIF purchases, fixed at ₹500
-      const totalAmount = 500; // Fixed amount for any GIF
+      // Calculate total amount (donation + GIF if selected)
+      const gifCost = includeGif ? 500 : 0;
+      const totalAmount = amount + gifCost;
       
       // Generate a random order ID with timestamp
       const orderId = `mackletv_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
@@ -95,13 +109,13 @@ const MackleTvPage = () => {
       // Store donation data in session storage to access it during the payment flow
       const donationData = {
         name,
-        amount: 0,  // Always 0 because the GIF itself is the purchase
+        amount,
         totalAmount,
-        message: `${name} purchased ${selectedGif} GIF`, // Auto-generated message since users don't enter one
+        message,
         orderId,
         donationType: "mackletv",
-        includeGif: true,
-        selectedGif,
+        includeGif,
+        selectedGif: includeGif ? selectedGif : null,
       };
       
       sessionStorage.setItem("donationData", JSON.stringify(donationData));
@@ -124,72 +138,113 @@ const MackleTvPage = () => {
     <div className="container mx-auto max-w-4xl py-10">
       <div className="space-y-6">
         <div className="text-center">
-          <h1 className="text-3xl font-bold">Support MackleTv with GIFs</h1>
+          <h1 className="text-3xl font-bold">Support MackleTv</h1>
           <p className="text-muted-foreground mt-2">
-            Purchase a celebratory GIF to show on MackleTv's stream
+            Your donations help MackleTv continue creating awesome content
           </p>
         </div>
         
         <form onSubmit={handleSubmit} className="space-y-8">
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold">1. Choose a GIF</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {gifOptions.map((gif) => (
-                <Card 
-                  key={gif.id}
-                  className={`relative overflow-hidden cursor-pointer transition-all ${
-                    selectedGif === gif.id ? 'ring-2 ring-primary' : ''
-                  } ${!gif.available ? 'opacity-60' : ''}`}
-                  onClick={() => gif.available && setSelectedGif(gif.id)}
+            <h2 className="text-xl font-semibold">1. Choose a Donation Amount</h2>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              {donationTiers.map((tier) => (
+                <button
+                  key={tier.value}
+                  type="button"
+                  className={`py-2 px-4 border rounded-md transition-colors ${
+                    amount === tier.value
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background border-input hover:bg-muted"
+                  }`}
+                  onClick={() => setAmount(tier.value)}
                 >
-                  <CardContent className="p-4">
-                    <div className="aspect-square flex items-center justify-center bg-muted rounded-md overflow-hidden">
-                      <img 
-                        src={gif.url} 
-                        alt={gif.name} 
-                        className="object-contain max-h-full max-w-full"
-                      />
-                    </div>
-                    <div className="mt-4 flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">{gif.name}</p>
-                        <p className="text-sm text-muted-foreground">₹{gif.price}</p>
-                      </div>
-                      {!gif.available && (
-                        <span className="text-xs bg-muted px-2 py-1 rounded">
-                          Coming Soon
-                        </span>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                  {tier.label}
+                </button>
               ))}
             </div>
           </div>
           
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold">2. Enter your name</h2>
+            <h2 className="text-xl font-semibold">2. Your Information</h2>
             <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
               <Input 
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Enter your name"
                 disabled={isLoading}
-                className="max-w-md"
               />
-              <p className="text-xs text-muted-foreground">
-                This will be displayed along with your GIF
-              </p>
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="message">Message (Optional)</Label>
+              <Textarea 
+                id="message"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Add a message for MackleTv"
+                disabled={isLoading}
+                rows={3}
+              />
+            </div>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold">3. Add a GIF (₹500)</h2>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="include-gif"
+                  checked={includeGif}
+                  onCheckedChange={setIncludeGif}
+                />
+                <Label htmlFor="include-gif">Include GIF</Label>
+              </div>
+            </div>
+            
+            {includeGif && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                {gifOptions.map((gif) => (
+                  <Card 
+                    key={gif.id}
+                    className={`relative overflow-hidden cursor-pointer transition-all ${
+                      selectedGif === gif.id ? 'ring-2 ring-primary' : ''
+                    } ${!gif.available ? 'opacity-60' : ''}`}
+                    onClick={() => gif.available && setSelectedGif(gif.id)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="aspect-square flex items-center justify-center bg-muted rounded-md overflow-hidden">
+                        <img 
+                          src={gif.url} 
+                          alt={gif.name} 
+                          className="object-contain max-h-full max-w-full"
+                        />
+                      </div>
+                      <div className="mt-4 flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">{gif.name}</p>
+                          <p className="text-sm text-muted-foreground">₹{gif.price}</p>
+                        </div>
+                        {!gif.available && (
+                          <span className="text-xs bg-muted px-2 py-1 rounded">
+                            Coming Soon
+                          </span>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
           
           <Button 
             type="submit" 
-            className="w-full max-w-md mx-auto"
+            className="w-full" 
             disabled={isLoading}
           >
-            {isLoading ? "Processing..." : "Continue to Payment (₹500)"}
+            {isLoading ? "Processing..." : `Donate ₹${amount + (includeGif ? 500 : 0)}`}
           </Button>
         </form>
       </div>

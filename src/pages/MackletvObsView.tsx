@@ -42,12 +42,19 @@ const MackletvObsView = () => {
     return today.toISOString().split('T')[0];
   };
 
+  // Log the connection process
+  useEffect(() => {
+    console.log("Initializing MackletvObsView with ID:", id);
+  }, [id]);
+
   // Fetch donations from the current date only
   useEffect(() => {
     const fetchTodaysDonations = async () => {
       try {
         const todayStart = `${getCurrentDate()}T00:00:00`;
         const todayEnd = `${getCurrentDate()}T23:59:59`;
+
+        console.log("Fetching donations from", todayStart, "to", todayEnd);
 
         const { data, error } = await supabase
           .from("mackletv_donations")
@@ -89,7 +96,9 @@ const MackletvObsView = () => {
   // Set up subscription for new donations
   useEffect(() => {
     // Generate a unique channel name based on the OBS view ID
-    const channelName = `mackletv-obs-donations-${id}`;
+    const channelName = `mackletv-obs-donations-${id || 'default'}`;
+    
+    console.log("Setting up realtime subscription with channel:", channelName);
     
     const channel = supabase
       .channel(channelName)
@@ -102,6 +111,7 @@ const MackletvObsView = () => {
           filter: 'payment_status=eq.success'
         },
         (payload) => {
+          console.log("Received realtime INSERT event:", payload);
           const newDonation = payload.new as Donation;
           
           // Check if donation is from today
@@ -135,7 +145,9 @@ const MackletvObsView = () => {
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log("Channel subscription status:", status);
+      });
 
     console.log(`OBS View: Realtime subscription set up with channel ${channelName}`);
     return () => {
@@ -155,8 +167,8 @@ const MackletvObsView = () => {
         console.log("Finished displaying donation:", activeDonation.name);
         setActiveDonation(null);
         
-        // Show GIF if the include_gif option is true
-        if (activeDonation.include_gif) {
+        // Show GIF if the include_gif option is true and not already showing
+        if (activeDonation.include_gif && !showGif) {
           setShowGif(true);
           setTimeout(() => {
             setShowGif(false);
@@ -178,7 +190,7 @@ const MackletvObsView = () => {
     }
     // No active donation and queue is empty - screen remains blank
     
-  }, [activeDonation, displayQueue]);
+  }, [activeDonation, displayQueue, showGif]);
 
   // Debug log when displayQueue or activeDonation changes
   useEffect(() => {

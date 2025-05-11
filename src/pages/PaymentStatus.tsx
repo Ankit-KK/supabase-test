@@ -1,192 +1,193 @@
-import React, { useState, useEffect } from "react";
-import { useLocation, Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { toast } from "@/hooks/use-toast";
-import { verifyPayment, createDonationRecord } from "@/services/paymentService";
-import { CheckCircle, XCircle, AlertTriangle, Loader2 } from "lucide-react";
 
-const PaymentStatus = () => {
-  const [status, setStatus] = useState<"loading" | "success" | "failed" | "pending">("loading");
+import React, { useEffect, useState } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { verifyPayment, createDonationRecord } from '@/services/paymentService';
+
+interface DonationData {
+  name: string;
+  amount: number;
+  totalAmount: number;
+  message: string;
+  orderId: string;
+  donationType: 'ankit' | 'harish' | 'mackletv';
+  includeGif?: boolean;
+  selectedGif?: string | null;
+}
+
+const PaymentStatus: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [paymentDetails, setPaymentDetails] = useState<any>(null);
-  const [isRecordCreated, setIsRecordCreated] = useState(false);
-  const [donationType, setDonationType] = useState<"ankit" | "harish" | null>(null);
-  
-  const location = useLocation();
-  
+
   useEffect(() => {
-    const verifyAndRecordPayment = async () => {
+    const verifyPaymentStatus = async () => {
       try {
-        // Get the order_id from URL query params
-        const searchParams = new URLSearchParams(location.search);
-        const orderId = searchParams.get("order_id");
-        
+        // Get status from URL
+        const statusFromUrl = searchParams.get('status');
+        const orderId = searchParams.get('orderId');
+
         if (!orderId) {
+          setStatus('error');
           toast({
-            title: "Error",
-            description: "Order ID not found in URL",
-            variant: "destructive",
+            variant: 'destructive',
+            title: 'Missing order information',
+            description: 'Unable to verify payment status',
           });
-          setStatus("failed");
           return;
         }
 
-        // Determine donation type from order ID
-        let donationType: "ankit" | "harish" = "ankit";
-        if (orderId.startsWith("harish_")) {
-          donationType = "harish";
-        } else if (orderId.startsWith("ankit_")) {
-          donationType = "ankit";
-        }
-        
-        setDonationType(donationType);
-
-        // Get donation data from session storage
-        const donationDataStr = sessionStorage.getItem("donationData");
+        // Check if we have donation data in session storage
+        const donationDataStr = sessionStorage.getItem('donationData');
         if (!donationDataStr) {
+          setStatus('error');
           toast({
-            title: "Error",
-            description: "No donation data found",
-            variant: "destructive",
+            variant: 'destructive',
+            title: 'Missing donation information',
+            description: 'Unable to complete donation process',
           });
-          setStatus("failed");
           return;
         }
 
-        const donationData = JSON.parse(donationDataStr);
-        
-        // Verify payment status using Supabase Edge Function
-        const verificationResult = await verifyPayment(orderId);
-        
-        if (!verificationResult || !verificationResult.payments) {
-          toast({
-            title: "Error",
-            description: "Failed to verify payment status",
-            variant: "destructive",
-          });
-          setStatus("failed");
-          return;
-        }
+        // Parse donation data
+        const donationData: DonationData = JSON.parse(donationDataStr);
+        console.log("Donation data from session:", donationData);
 
-        setPaymentDetails(verificationResult);
-        
-        // Determine payment status
-        const payments = verificationResult.payments;
-        let paymentStatus = "failed";
-        
-        if (payments.some((tx: any) => tx.payment_status === "SUCCESS")) {
-          paymentStatus = "success";
-          setStatus("success");
-        } else if (payments.some((tx: any) => tx.payment_status === "PENDING")) {
-          paymentStatus = "pending";
-          setStatus("pending");
+        // If URL status is success, verify with backend
+        if (statusFromUrl === 'success') {
+          const verificationResult = await verifyPayment(orderId);
+          console.log("Payment verification result:", verificationResult);
+
+          if (verificationResult.success) {
+            // Create donation record in database
+            await createDonationRecord({
+              name: donationData.name,
+              amount: donationData.amount,
+              message: donationData.message || '',
+              order_id: donationData.orderId,
+              payment_status: 'success',
+              donationType: donationData.donationType,
+              include_gif: donationData.includeGif || false,
+            });
+
+            setStatus('success');
+            setPaymentDetails({
+              amount: donationData.totalAmount,
+              name: donationData.name,
+              donationType: donationData.donationType
+            });
+
+            toast({
+              title: 'Payment successful',
+              description: `Thank you for your support!`,
+            });
+          } else {
+            setStatus('error');
+            toast({
+              variant: 'destructive',
+              title: 'Payment verification failed',
+              description: verificationResult.message || 'Unable to verify payment',
+            });
+          }
         } else {
-          paymentStatus = "failed";
-          setStatus("failed");
-        }
-
-        // Create donation record in Supabase only after payment verification
-        if (!isRecordCreated) {
-          await createDonationRecord({
-            name: donationData.name,
-            amount: donationData.amount,
-            message: donationData.message,
-            order_id: orderId,
-            payment_status: paymentStatus,
-            donationType: donationType,
-            include_gif: donationData.includeGif // Ensure the include_gif flag is passed
+          setStatus('error');
+          toast({
+            variant: 'destructive',
+            title: 'Payment failed',
+            description: 'Your payment was not completed successfully',
           });
-          setIsRecordCreated(true);
         }
-
       } catch (error) {
-        console.error("Error verifying payment:", error);
+        console.error('Error verifying payment:', error);
+        setStatus('error');
         toast({
-          title: "Verification Error",
-          description: "Failed to verify payment status. Please contact support.",
-          variant: "destructive",
+          variant: 'destructive',
+          title: 'Error processing payment',
+          description: 'An unexpected error occurred',
         });
-        setStatus("failed");
       }
     };
 
-    verifyAndRecordPayment();
-  }, [location.search, isRecordCreated]);
+    verifyPaymentStatus();
+  }, [searchParams, toast, navigate]);
 
-  const getReturnLink = () => {
-    const donationType = sessionStorage.getItem("donationData") 
-      ? JSON.parse(sessionStorage.getItem("donationData")!).donationType
-      : null;
-
-    if (donationType === "harish") {
-      return "/harish";
+  const handleReturnClick = () => {
+    const donationDataStr = sessionStorage.getItem('donationData');
+    if (donationDataStr) {
+      const donationData: DonationData = JSON.parse(donationDataStr);
+      
+      if (donationData.donationType === 'ankit') {
+        navigate('/ankit');
+      } else if (donationData.donationType === 'harish') {
+        navigate('/harish');
+      } else if (donationData.donationType === 'mackletv') {
+        navigate('/mackletv');
+      } else {
+        navigate('/');
+      }
+    } else {
+      navigate('/');
     }
-    return "/ankit";
+
+    // Clean up session storage
+    sessionStorage.removeItem('donationData');
   };
 
   return (
-    <div className="container mx-auto max-w-md py-10">
-      <div className="border rounded-lg p-8 shadow-sm text-center space-y-6">
-        {status === "loading" && (
-          <>
+    <div className="container mx-auto flex items-center justify-center min-h-[80vh]">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle className="text-2xl">
+            {status === 'loading' && 'Processing Payment...'}
+            {status === 'success' && 'Payment Successful!'}
+            {status === 'error' && 'Payment Failed'}
+          </CardTitle>
+          <CardDescription>
+            {status === 'loading' && 'Please wait while we verify your payment.'}
+            {status === 'success' && 'Your donation has been received. Thank you for your support!'}
+            {status === 'error' && 'There was an issue processing your payment.'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {status === 'loading' && (
             <div className="flex justify-center">
-              <Loader2 className="h-16 w-16 animate-spin text-primary" />
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>
-            <h1 className="text-2xl font-bold">Verifying Payment</h1>
-            <p className="text-muted-foreground">
-              Please wait while we verify your payment status...
-            </p>
-          </>
-        )}
-        
-        {status === "success" && (
-          <>
-            <div className="flex justify-center">
-              <CheckCircle className="h-16 w-16 text-green-500" />
+          )}
+          {status === 'success' && paymentDetails && (
+            <div className="space-y-2 text-center">
+              <p className="text-lg font-medium">
+                You donated ₹{paymentDetails.amount}
+              </p>
+              <p>
+                Your generous support will help {
+                  paymentDetails.donationType === 'ankit' ? 'Ankit' : 
+                  paymentDetails.donationType === 'harish' ? 'Harish' : 'MackleTv'
+                } continue creating content.
+              </p>
             </div>
-            <h1 className="text-2xl font-bold text-green-500">Payment Successful</h1>
-            <p className="text-muted-foreground">
-              Thank you for your donation! Your payment has been successfully processed.
-            </p>
-            {paymentDetails && (
-              <div className="text-left bg-gray-50 rounded p-4 text-sm">
-                <p><span className="font-medium">Order ID:</span> {paymentDetails.order.order_id}</p>
-                <p><span className="font-medium">Amount:</span> ₹{paymentDetails.order.order_amount}</p>
-                <p><span className="font-medium">Donation for:</span> {donationType === "harish" ? "Harish" : "Ankit"}</p>
-              </div>
-            )}
-          </>
-        )}
-        
-        {status === "pending" && (
-          <>
-            <div className="flex justify-center">
-              <AlertTriangle className="h-16 w-16 text-yellow-500" />
+          )}
+          {status === 'error' && (
+            <div className="text-center space-y-2">
+              <p>
+                Your payment could not be processed or was canceled. No charges were made.
+              </p>
+              <p>
+                Please try again or contact support if the issue persists.
+              </p>
             </div>
-            <h1 className="text-2xl font-bold text-yellow-500">Payment Pending</h1>
-            <p className="text-muted-foreground">
-              Your payment is being processed. We'll update you once it's complete.
-            </p>
-          </>
-        )}
-        
-        {status === "failed" && (
-          <>
-            <div className="flex justify-center">
-              <XCircle className="h-16 w-16 text-red-500" />
-            </div>
-            <h1 className="text-2xl font-bold text-red-500">Payment Failed</h1>
-            <p className="text-muted-foreground">
-              We couldn't process your payment. Please try again or use a different payment method.
-            </p>
-          </>
-        )}
-        
-        <div className="pt-4">
-          <Link to={getReturnLink()}>
-            <Button variant="outline">Make Another Donation</Button>
-          </Link>
-        </div>
-      </div>
+          )}
+        </CardContent>
+        <CardFooter className="flex justify-center">
+          <Button onClick={handleReturnClick}>
+            {status === 'success' ? 'Return to Home' : 'Try Again'}
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
   );
 };
