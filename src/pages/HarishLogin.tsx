@@ -20,10 +20,7 @@ const HarishLogin = () => {
     setIsLoading(true);
 
     try {
-      const result = await authenticateStreamer({
-        username,
-        password,
-      });
+      const result = await authenticateStreamer("harish", username, password);
 
       if (result.success) {
         // Store auth state in session storage
