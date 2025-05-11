@@ -8,7 +8,6 @@ import { toast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // GIF options
 const gifOptions = [
@@ -106,6 +105,8 @@ const MackleTvPage = () => {
       // Generate a random order ID with timestamp
       const orderId = `mackletv_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
       
+      console.log("Creating donation with order ID:", orderId);
+      
       // Store donation data in session storage to access it during the payment flow
       const donationData = {
         name,
@@ -118,6 +119,7 @@ const MackleTvPage = () => {
         selectedGif: includeGif ? selectedGif : null,
       };
       
+      console.log("Storing donation data in session:", donationData);
       sessionStorage.setItem("donationData", JSON.stringify(donationData));
       
       // Navigate to payment checkout

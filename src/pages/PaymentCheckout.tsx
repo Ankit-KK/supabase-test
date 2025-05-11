@@ -48,6 +48,8 @@ const PaymentCheckout = () => {
 
     try {
       const data = JSON.parse(donationDataStr);
+      console.log("Loaded donation data from session:", data);
+      
       // Ensure totalAmount exists for backward compatibility
       if (data.totalAmount === undefined) {
         data.totalAmount = data.amount;
@@ -74,6 +76,13 @@ const PaymentCheckout = () => {
     
     setIsLoading(true);
     try {
+      console.log("Creating payment order with data:", {
+        orderId: paymentData.orderId,
+        amount: paymentData.totalAmount,
+        name: paymentData.name,
+        donationType: paymentData.donationType
+      });
+      
       // Create payment order using Supabase Edge Function
       const orderResponse = await createPaymentOrder(
         paymentData.orderId, 
@@ -81,6 +90,8 @@ const PaymentCheckout = () => {
         paymentData.name,
         paymentData.donationType
       );
+      
+      console.log("Payment order response:", orderResponse);
       
       if (!orderResponse || !orderResponse.payment_session_id) {
         throw new Error("Failed to create payment order");
@@ -96,6 +107,8 @@ const PaymentCheckout = () => {
         redirectTarget: "_self", // Change from _modal to _self for inline mode
       };
       
+      console.log("Initializing Cashfree checkout with options:", checkoutOptions);
+      
       cashfree.checkout(checkoutOptions).then((result: any) => {
         if (result.error) {
           console.log("Error in payment:", result.error);
@@ -106,7 +119,7 @@ const PaymentCheckout = () => {
         }
         if (result.paymentDetails) {
           console.log("Payment has been completed:", result.paymentDetails.paymentMessage);
-          navigate("/status?order_id=" + paymentData.orderId);
+          navigate("/payment-status?status=success&orderId=" + paymentData.orderId);
         }
       });
       
@@ -135,6 +148,8 @@ const PaymentCheckout = () => {
 
   const donationTitle = paymentData?.donationType === "harish" 
     ? "Donation to Harish" 
+    : paymentData?.donationType === "mackletv"
+    ? "Donation to MackleTv"
     : "Donation to Ankit";
 
   return (

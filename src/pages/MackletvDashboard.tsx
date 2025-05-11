@@ -7,7 +7,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthProtection } from "@/hooks/useAuthProtection";
-import { MessageSquare, Download } from "lucide-react";
+import { MessageSquare, Download, RefreshCw } from "lucide-react";
 import { objectsToCSV, downloadCSV, formatDateForFilename } from "@/utils/csvExport";
 
 interface Donation {
@@ -49,9 +49,16 @@ const MackletvDashboard = () => {
         throw error;
       }
       
-      console.log("Fetched mackletv donations:", data?.length || 0);
+      console.log("Fetched mackletv donations:", data?.length || 0, data);
       setDonations(data || []);
       setLastRefresh(new Date());
+      
+      if (data?.length === 0) {
+        toast({
+          title: "No donations found",
+          description: "There are currently no donations in the database.",
+        });
+      }
     } catch (error) {
       console.error("Error fetching donations:", error);
       toast({
@@ -161,7 +168,8 @@ const MackletvDashboard = () => {
       amount: "Amount (₹)",
       message: "Message",
       created_at: "Date",
-      payment_status: "Status"
+      payment_status: "Status",
+      include_gif: "GIF Included"
     };
 
     // Format the data for CSV
@@ -170,7 +178,8 @@ const MackletvDashboard = () => {
       amount: donation.amount,
       message: donation.message,
       created_at: formatDate(donation.created_at),
-      payment_status: donation.payment_status
+      payment_status: donation.payment_status,
+      include_gif: donation.include_gif ? "Yes" : "No"
     }));
 
     // Generate and download the CSV
@@ -193,6 +202,7 @@ const MackletvDashboard = () => {
             Last updated: {lastRefresh.toLocaleTimeString()}
           </div>
           <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
+            <RefreshCw className="mr-2 h-4 w-4" />
             {isLoading ? "Refreshing..." : "Refresh"}
           </Button>
           <Button variant="outline" onClick={() => navigate("/mackletv/messages")}>
@@ -227,9 +237,9 @@ const MackletvDashboard = () => {
               </p>
             </div>
             <div className="bg-muted rounded-lg p-4">
-              <h3 className="text-sm font-medium text-muted-foreground">Successful Payments</h3>
+              <h3 className="text-sm font-medium text-muted-foreground">GIF Donations</h3>
               <p className="text-2xl font-bold">
-                {donations.filter(d => d.payment_status === 'success').length}
+                {donations.filter(d => d.include_gif).length}
               </p>
             </div>
           </div>
