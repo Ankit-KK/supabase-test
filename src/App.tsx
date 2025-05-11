@@ -9,7 +9,6 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import AnkitPage from "./pages/Ankit";
 import HarishPage from "./pages/Harish";
-import MackleTvPage from "./pages/Mackletv";
 import PaymentCheckout from "./pages/PaymentCheckout";
 import PaymentStatus from "./pages/PaymentStatus";
 import Contact from "./pages/Contact";
@@ -22,10 +21,6 @@ import HarishObsView from "./pages/HarishObsView";
 import HarishDonationMessages from "./pages/HarishDonationMessages";
 import HarishDashboard from "./pages/HarishDashboard";
 import HarishLogin from "./pages/HarishLogin";
-import MackletvLogin from "./pages/MackletvLogin";
-import MackletvDashboard from "./pages/MackletvDashboard";
-import MackletvDonationMessages from "./pages/MackletvDonationMessages";
-import MackletvObsView from "./pages/MackletvObsView";
 import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
@@ -47,7 +42,6 @@ const App = () => {
               <Route path="/" element={<Index />} />
               <Route path="/ankit" element={<AnkitPage />} />
               <Route path="/harish" element={<HarishPage />} />
-              <Route path="/mackletv" element={<MackleTvPage />} />
               <Route path="/payment-checkout" element={<PaymentCheckout />} />
               <Route path="/status" element={<PaymentStatus />} />
               <Route path="/contact" element={<Contact />} />
@@ -60,10 +54,6 @@ const App = () => {
               <Route path="/harish/messages" element={<HarishDonationMessages />} />
               <Route path="/harish/dashboard" element={<HarishDashboard />} />
               <Route path="/harish/login" element={<HarishLogin />} />
-              <Route path="/mackletv/login" element={<MackletvLogin />} />
-              <Route path="/mackletv/dashboard" element={<MackletvDashboard />} />
-              <Route path="/mackletv/messages" element={<MackletvDonationMessages />} />
-              <Route path="/mackletv/obs/:id" element={<MackletvObsView />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -10,7 +10,6 @@ interface Donation {
   amount: number;
   message: string;
   created_at: string;
-  include_gif?: boolean;
 }
 
 interface ActiveDonation extends Donation {
@@ -25,9 +24,7 @@ const AnkitObsView = () => {
   const [activeDonation, setActiveDonation] = useState<ActiveDonation | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [showMessages, setShowMessages] = useState<boolean>(true);
-  const [showGif, setShowGif] = useState<boolean>(false);
   const DISPLAY_DURATION = 15000; // 15 seconds per message
-  const GIF_DURATION = 5000; // 5 seconds for the GIF
 
   // Get URL parameters
   useEffect(() => {
@@ -51,8 +48,8 @@ const AnkitObsView = () => {
 
         const { data, error } = await supabase
           .from("ankit_donations")
-          .select("id, name, amount, message, created_at, include_gif")
-          .eq("payment_status", "success") 
+          .select("id, name, amount, message, created_at")
+          .eq("payment_status", "success") // For testing purposes
           .gte("created_at", todayStart)
           .lte("created_at", todayEnd)
           .order("created_at", { ascending: false });
@@ -99,7 +96,7 @@ const AnkitObsView = () => {
           event: 'INSERT', 
           schema: 'public', 
           table: 'ankit_donations',
-          filter: 'payment_status=eq.success'
+          filter: 'payment_status=eq.success'  // For testing purposes
         },
         (payload) => {
           const newDonation = payload.new as Donation;
@@ -122,14 +119,6 @@ const AnkitObsView = () => {
             
             console.log("Adding new donation to display queue:", newDonationForQueue.name);
             setDisplayQueue(prev => [...prev, newDonationForQueue]);
-            
-            // Show GIF if the include_gif option is true
-            if (newDonation.include_gif) {
-              setShowGif(true);
-              setTimeout(() => {
-                setShowGif(false);
-              }, GIF_DURATION);
-            }
           } else {
             console.log("Ignoring donation from a different date:", donationDate);
           }
@@ -154,14 +143,6 @@ const AnkitObsView = () => {
       timeout = setTimeout(() => {
         console.log("Finished displaying donation:", activeDonation.name);
         setActiveDonation(null);
-        
-        // Show GIF if the include_gif option is true
-        if (activeDonation.include_gif) {
-          setShowGif(true);
-          setTimeout(() => {
-            setShowGif(false);
-          }, GIF_DURATION);
-        }
       }, DISPLAY_DURATION);
       
       return () => {
@@ -195,8 +176,8 @@ const AnkitObsView = () => {
     );
   }
 
-  // Render a blank screen when there's no active donation to display and no GIF
-  if (!activeDonation && !showGif) {
+  // Render a blank screen when there's no active donation to display
+  if (!activeDonation) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-transparent">
         <div className="text-center text-white opacity-0">
@@ -208,37 +189,23 @@ const AnkitObsView = () => {
 
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-transparent overflow-hidden">
-      {showGif && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/30 backdrop-blur-sm animate-fade-in">
-          <div className="w-96 h-96 flex items-center justify-center">
-            <img 
-              src="https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/sign/ankit/dancing-dog.gif?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJhbmtpdC9kYW5jaW5nLWRvZy5naWYiLCJpYXQiOjE3NDY4OTc4ODEsImV4cCI6MTc3ODQzMzg4MX0.tIzwiI3aBlSujCQIn0zQfUGLXfsMPc4wEgrpPZO15_k" 
-              alt="Celebration GIF" 
-              className="max-w-full max-h-full object-contain animate-scale-in" 
-            />
-          </div>
+      <div className="max-w-xl w-full animate-fade-in backdrop-blur-sm rounded-md px-4 py-3">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="font-bold text-lg text-purple-400">{activeDonation.name}</span>
+          <span className="text-sm text-purple-300 opacity-80">· ₹{Number(activeDonation.amount).toLocaleString()}</span>
         </div>
-      )}
-      
-      {activeDonation && (
-        <div className="max-w-xl w-full animate-fade-in backdrop-blur-sm rounded-md px-4 py-3">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="font-bold text-lg text-purple-400">{activeDonation.name}</span>
-            <span className="text-sm text-purple-300 opacity-80">· ₹{Number(activeDonation.amount).toLocaleString()}</span>
+        
+        {showMessages && activeDonation.message && (
+          <div className="text-white text-lg mb-2">
+            {activeDonation.message}
           </div>
-          
-          {showMessages && activeDonation.message && (
-            <div className="text-white text-lg mb-2">
-              {activeDonation.message}
-            </div>
-          )}
-          
-          <div className="flex space-x-2 mt-1">
-            <Gamepad className="h-5 w-5 text-purple-400" />
-            <Flame className="h-5 w-5 text-orange-400" />
-          </div>
+        )}
+        
+        <div className="flex space-x-2 mt-1">
+          <Gamepad className="h-5 w-5 text-purple-400" />
+          <Flame className="h-5 w-5 text-orange-400" />
         </div>
-      )}
+      </div>
     </div>
   );
 };

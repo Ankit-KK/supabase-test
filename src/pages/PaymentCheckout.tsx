@@ -10,11 +10,9 @@ const PaymentCheckout = () => {
   const [paymentData, setPaymentData] = useState<{
     name: string;
     amount: number;
-    totalAmount: number;
     message: string;
     orderId: string;
     donationType: string;
-    includeGif: boolean;
   } | null>(null);
   
   const navigate = useNavigate();
@@ -48,16 +46,6 @@ const PaymentCheckout = () => {
 
     try {
       const data = JSON.parse(donationDataStr);
-      console.log("Loaded donation data from session:", data);
-      
-      // Ensure totalAmount exists for backward compatibility
-      if (data.totalAmount === undefined) {
-        data.totalAmount = data.amount;
-      }
-      // Ensure includeGif exists for backward compatibility
-      if (data.includeGif === undefined) {
-        data.includeGif = false;
-      }
       setPaymentData(data);
       setIsLoading(false);
     } catch (error) {
@@ -76,22 +64,13 @@ const PaymentCheckout = () => {
     
     setIsLoading(true);
     try {
-      console.log("Creating payment order with data:", {
-        orderId: paymentData.orderId,
-        amount: paymentData.totalAmount,
-        name: paymentData.name,
-        donationType: paymentData.donationType
-      });
-      
       // Create payment order using Supabase Edge Function
       const orderResponse = await createPaymentOrder(
         paymentData.orderId, 
-        paymentData.totalAmount,  // Use totalAmount for payment
+        paymentData.amount,
         paymentData.name,
         paymentData.donationType
       );
-      
-      console.log("Payment order response:", orderResponse);
       
       if (!orderResponse || !orderResponse.payment_session_id) {
         throw new Error("Failed to create payment order");
@@ -107,8 +86,6 @@ const PaymentCheckout = () => {
         redirectTarget: "_self", // Change from _modal to _self for inline mode
       };
       
-      console.log("Initializing Cashfree checkout with options:", checkoutOptions);
-      
       cashfree.checkout(checkoutOptions).then((result: any) => {
         if (result.error) {
           console.log("Error in payment:", result.error);
@@ -119,7 +96,7 @@ const PaymentCheckout = () => {
         }
         if (result.paymentDetails) {
           console.log("Payment has been completed:", result.paymentDetails.paymentMessage);
-          navigate("/payment-status?status=success&orderId=" + paymentData.orderId);
+          navigate("/status?order_id=" + paymentData.orderId);
         }
       });
       
@@ -148,8 +125,6 @@ const PaymentCheckout = () => {
 
   const donationTitle = paymentData?.donationType === "harish" 
     ? "Donation to Harish" 
-    : paymentData?.donationType === "mackletv"
-    ? "Donation to MackleTv"
     : "Donation to Ankit";
 
   return (
@@ -168,18 +143,8 @@ const PaymentCheckout = () => {
             <span className="font-medium">{paymentData?.name}</span>
           </div>
           <div className="flex justify-between">
-            <span>Base Amount:</span>
+            <span>Amount:</span>
             <span className="font-medium">₹{paymentData?.amount.toFixed(2)}</span>
-          </div>
-          {paymentData?.includeGif && (
-            <div className="flex justify-between">
-              <span>GIF Option:</span>
-              <span className="font-medium">₹500.00</span>
-            </div>
-          )}
-          <div className="flex justify-between font-semibold">
-            <span>Total Amount:</span>
-            <span>₹{paymentData?.totalAmount.toFixed(2)}</span>
           </div>
           <div className="flex justify-between">
             <span>Order ID:</span>
@@ -191,12 +156,6 @@ const PaymentCheckout = () => {
             <span>Donation Type:</span>
             <span className="font-medium capitalize">{paymentData?.donationType}</span>
           </div>
-          {paymentData?.includeGif && (
-            <div className="flex justify-between">
-              <span>GIF Display:</span>
-              <span className="font-medium text-emerald-500">Enabled</span>
-            </div>
-          )}
         </div>
         
         <Button 

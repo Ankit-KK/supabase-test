@@ -1,17 +1,15 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 
 const HarishPage = () => {
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [message, setMessage] = useState("");
-  const [includeGif, setIncludeGif] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [maxMessageLength, setMaxMessageLength] = useState(50);
   const navigate = useNavigate();
@@ -37,21 +35,13 @@ const HarishPage = () => {
     }
 
     const parsedAmount = parseFloat(amount);
-    
-    // If include GIF is selected, we can accept zero donation amount,
-    // otherwise we need a minimum donation of ₹50
-    if (!includeGif && (isNaN(parsedAmount) || parsedAmount < 50)) {
+    if (isNaN(parsedAmount) || parsedAmount < 50) {
       toast({
         title: "Invalid amount",
         description: "Please enter an amount greater than or equal to ₹50",
         variant: "destructive",
       });
       return false;
-    }
-
-    // If they're only doing a GIF and no donation, let them set 0
-    if (includeGif && (amount === "" || isNaN(parsedAmount))) {
-      setAmount("0");
     }
 
     if (!message.trim()) {
@@ -76,23 +66,16 @@ const HarishPage = () => {
     setIsLoading(true);
     
     try {
-      // Calculate total amount based on whether GIF option is selected
-      const baseAmount = parseFloat(amount) || 0; // Default to 0 if empty
-      const gifAmount = includeGif ? 500 : 0;
-      const totalAmount = baseAmount + gifAmount;
-      
       // Generate a random order ID with timestamp
       const orderId = `harish_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
       
       // Store donation data in session storage to access it during the payment flow
       const donationData = {
         name,
-        amount: baseAmount,
-        totalAmount,
+        amount: parseFloat(amount),
         message,
         orderId,
-        donationType: "harish",
-        includeGif,
+        donationType: "harish", // Add donation type to differentiate
       };
       
       sessionStorage.setItem("donationData", JSON.stringify(donationData));
@@ -145,22 +128,18 @@ const HarishPage = () => {
           
           <div className="space-y-2">
             <label htmlFor="amount" className="block text-sm font-medium">
-              Donation Amount (₹)
+              Amount (₹)
             </label>
             <Input 
               id="amount"
               type="number"
-              min={includeGif ? "0" : "50"}
+              min="50"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              placeholder={includeGif ? "Optional (min ₹0)" : "Minimum ₹50"}
+              placeholder="Minimum ₹50"
               disabled={isLoading}
             />
-            <p className="text-xs text-muted-foreground">
-              {includeGif 
-                ? "Donation amount is optional when selecting the GIF option"
-                : "Minimum donation amount is ₹50"}
-            </p>
+            <p className="text-xs text-muted-foreground">Minimum donation amount is ₹50</p>
           </div>
           
           <div className="space-y-2">
@@ -184,28 +163,13 @@ const HarishPage = () => {
             </p>
           </div>
           
-          <div className="flex items-center space-x-2 pt-2 pb-2">
-            <Switch
-              id="include-gif"
-              checked={includeGif}
-              onCheckedChange={setIncludeGif}
-            />
-            <Label htmlFor="include-gif">Show celebratory GIF on stream (+ ₹500)</Label>
-          </div>
-          
           <Button 
             type="submit" 
             className="w-full"
             disabled={isLoading}
           >
-            {isLoading ? "Processing..." : `Continue to Payment ${includeGif ? `(₹${(parseFloat(amount) || 0) + 500})` : ''}`}
+            {isLoading ? "Processing..." : "Continue to Payment"}
           </Button>
-          
-          {includeGif && (
-            <p className="text-xs text-center text-muted-foreground">
-              A fun celebratory GIF will play on stream for a few seconds
-            </p>
-          )}
         </form>
       </div>
     </div>

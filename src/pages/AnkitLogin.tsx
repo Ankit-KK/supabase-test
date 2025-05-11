@@ -20,7 +20,10 @@ const AnkitLogin = () => {
     setIsLoading(true);
 
     try {
-      const result = await authenticateStreamer("ankit", username, password);
+      const result = await authenticateStreamer({
+        username,
+        password,
+      });
 
       if (result.success) {
         // Store auth state in session storage
