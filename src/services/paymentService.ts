@@ -7,7 +7,7 @@ type DonationRecord = {
   message: string;
   order_id: string;
   payment_status: string;
-  donationType: "ankit" | "harish";
+  donationType: "ankit" | "harish" | "mackletv";
   include_gif?: boolean;
 };
 
@@ -59,7 +59,11 @@ export const verifyPayment = async (orderId: string) => {
  */
 export const createDonationRecord = async (donation: DonationRecord) => {
   try {
-    const tableName = donation.donationType === "harish" ? "harish_donations" : "ankit_donations";
+    const tableName = donation.donationType === "harish" 
+      ? "harish_donations" 
+      : donation.donationType === "mackletv" 
+        ? "mackletv_donations" 
+        : "ankit_donations";
     
     // Prepare the donation record with all fields
     const donationRecord = {
