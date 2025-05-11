@@ -2,7 +2,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-interface LoginCredentials {
+// Define common interface types
+export interface LoginCredentials {
   username: string;
   password: string;
 }
@@ -15,16 +16,18 @@ export interface StreamerAuthResponse {
 
 // Authenticate streamer using admin_users table
 export const authenticateStreamer = async (
-  credentials: LoginCredentials
+  streamerType: string,
+  email: string,
+  password: string
 ): Promise<StreamerAuthResponse> => {
   try {
-    console.log("Authenticating streamer:", credentials.username);
+    console.log("Authenticating streamer:", streamerType);
 
     // Find the admin user with matching username (admin_type)
     const { data: adminUser, error } = await supabase
       .from("admin_users")
       .select("*")
-      .eq("admin_type", credentials.username)
+      .eq("admin_type", streamerType)
       .single();
 
     if (error || !adminUser) {
@@ -36,7 +39,7 @@ export const authenticateStreamer = async (
     }
 
     // Simple password verification (in a real app, use proper hashing)
-    if (adminUser.password_hash !== credentials.password) {
+    if (adminUser.password_hash !== password) {
       console.log("Password mismatch");
       return {
         success: false,
@@ -45,7 +48,7 @@ export const authenticateStreamer = async (
     }
 
     // Authentication successful
-    console.log(`${credentials.username} authenticated successfully`);
+    console.log(`${streamerType} authenticated successfully`);
     return {
       success: true,
       message: "Authentication successful",

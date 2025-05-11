@@ -29,6 +29,9 @@ const MackletvLogin = () => {
       const result = await authenticateStreamer("mackletv", email, password);
       
       if (result.success) {
+        // Set authentication status in session storage
+        sessionStorage.setItem("mackletvAuth", "true");
+        
         toast({
           title: "Login successful",
           description: "Welcome back to your dashboard!",
