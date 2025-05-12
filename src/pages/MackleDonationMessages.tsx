@@ -128,14 +128,10 @@ const MackleDonationMessages = () => {
       setShowMessages(savedPref === "true");
     }
     
-    // Store the preference on URL for OBS to check
+    // Restore the OBS link from sessionStorage if it exists
     const currentLink = sessionStorage.getItem("mackleObsLink");
     if (currentLink) {
-      const hasParam = currentLink.includes("?");
-      const baseLink = hasParam ? currentLink.split("?")[0] : currentLink;
-      const newLink = `${baseLink}?showMessages=${savedPref !== "false"}`;
-      sessionStorage.setItem("mackleObsLink", newLink);
-      setObsLink(newLink);
+      setObsLink(currentLink);
     }
   }, []);
 
@@ -145,20 +141,21 @@ const MackleDonationMessages = () => {
     let storedLink = sessionStorage.getItem("mackleObsLink");
     
     if (!storedLink) {
-      // Generate a new link with a random string (not UUID format)
-      // This will prevent the UUID parsing error
-      const randomId = Math.random().toString(36).substring(2, 15);
-      storedLink = `${window.location.origin}/mackle/obs/${randomId}?showMessages=${showMessages}`;
-      sessionStorage.setItem("mackleObsLink", storedLink);
+      // Generate a new link with the current timestamp
+      regenerateObsLink();
     }
-    
-    setObsLink(storedLink);
   };
 
   const regenerateObsLink = () => {
     // Generate a new link with a random string (not UUID format)
     const randomId = Math.random().toString(36).substring(2, 15);
-    const newLink = `${window.location.origin}/mackle/obs/${randomId}?showMessages=${showMessages}`;
+    
+    // Include current timestamp in the URL to mark when link was generated
+    const timestamp = Date.now();
+    const newLink = `${window.location.origin}/mackle/obs/${randomId}?showMessages=${showMessages}&timestamp=${timestamp}`;
+    
+    // Save the timestamp separately for easier access
+    sessionStorage.setItem("mackleObsLinkTimestamp", timestamp.toString());
     
     // Save the new link
     sessionStorage.setItem("mackleObsLink", newLink);
@@ -166,7 +163,7 @@ const MackleDonationMessages = () => {
     
     toast({
       title: "OBS Link Regenerated",
-      description: "Your new OBS link has been created",
+      description: "Your new OBS link has been created. Only new donations will be shown.",
     });
   };
 
@@ -189,11 +186,20 @@ const MackleDonationMessages = () => {
     localStorage.setItem("mackleShowMessages", newValue.toString());
     
     // Update the OBS link with the new preference
-    const hasParam = obsLink.includes("?");
-    const baseLink = hasParam ? obsLink.split("?")[0] : obsLink;
-    const newLink = `${baseLink}?showMessages=${newValue}`;
-    sessionStorage.setItem("mackleObsLink", newLink);
-    setObsLink(newLink);
+    if (obsLink) {
+      const url = new URL(obsLink);
+      url.searchParams.set("showMessages", newValue.toString());
+      
+      // Keep the timestamp parameter if it exists
+      const timestamp = sessionStorage.getItem("mackleObsLinkTimestamp");
+      if (timestamp) {
+        url.searchParams.set("timestamp", timestamp);
+      }
+      
+      const newLink = url.toString();
+      sessionStorage.setItem("mackleObsLink", newLink);
+      setObsLink(newLink);
+    }
     
     toast({
       title: newValue ? "Messages Enabled" : "Messages Disabled",
@@ -256,6 +262,7 @@ const MackleDonationMessages = () => {
             <div className="text-sm text-muted-foreground">
               <p>This link will display your donation messages in real-time for your stream.</p>
               <p>Each message will show for 15 seconds before moving to the next one.</p>
+              <p><strong>Note:</strong> When you regenerate the link, only new donations that arrive after the link is created will be shown.</p>
             </div>
           </div>
         </CardContent>

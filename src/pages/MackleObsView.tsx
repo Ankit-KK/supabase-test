@@ -22,6 +22,7 @@ const MackleObsView = () => {
   const [error, setError] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [showMessages, setShowMessages] = useState<boolean>(true);
+  const [startTimestamp, setStartTimestamp] = useState<number | null>(null);
   const { id } = useParams();
   const location = useLocation();
   const DISPLAY_DURATION = 15000; // 15 seconds per message
@@ -31,6 +32,12 @@ const MackleObsView = () => {
     const queryParams = new URLSearchParams(location.search);
     const messagesParam = queryParams.get("showMessages");
     setShowMessages(messagesParam !== "false");
+    
+    // Parse the timestamp from URL - this determines when the OBS link was generated
+    const timestampParam = queryParams.get("timestamp");
+    if (timestampParam) {
+      setStartTimestamp(parseInt(timestampParam, 10));
+    }
   }, [location]);
 
   // Get the current date in ISO format (just the date part)
@@ -42,23 +49,36 @@ const MackleObsView = () => {
   useEffect(() => {
     const fetchDonations = async () => {
       try {
-        // For messages view - we always fetch the donations for today
-        // We're not querying by ID anymore since ID is just for unique URLs
+        // For messages view - we fetch the donations for today
         const todayStart = `${getCurrentDate()}T00:00:00`;
         const todayEnd = `${getCurrentDate()}T23:59:59`;
-
-        const { data, error: fetchError } = await supabase
+        
+        // Build our query
+        let query = supabase
           .from("mackle_donations")
           .select("id, name, message, amount, created_at")
           .eq("payment_status", "success")
           .gte("created_at", todayStart)
           .lte("created_at", todayEnd)
           .order("created_at", { ascending: false });
+        
+        // If we have a start timestamp, only fetch donations that came in after this time
+        if (startTimestamp) {
+          // Convert the timestamp to an ISO string
+          const startTimeISO = new Date(startTimestamp).toISOString();
+          console.log("Only showing donations after:", startTimeISO);
           
+          // Update the query to only get donations after the start time
+          query = query.gte("created_at", startTimeISO);
+        }
+          
+        // Execute the query
+        const { data, error: fetchError } = await query;
+        
         if (fetchError) throw fetchError;
         
         if (data && data.length > 0) {
-          console.log(`Initial donations loaded for ${getCurrentDate()}:`, data.length);
+          console.log(`Initial donations loaded:`, data.length);
           setDonations(data);
           
           // Add donations directly to display queue
@@ -69,7 +89,7 @@ const MackleObsView = () => {
           
           setDisplayQueue(donationsForDisplay);
         } else {
-          console.log(`No donations found for ${getCurrentDate()}`);
+          console.log(`No donations found matching the criteria`);
         }
         
         setIsConnected(true);
@@ -102,7 +122,11 @@ const MackleObsView = () => {
           const donationDate = new Date(newDonation.created_at).toISOString().split('T')[0];
           const today = getCurrentDate();
           
-          if (donationDate === today) {
+          // Also check if the donation came in after our start timestamp
+          const donationTime = new Date(newDonation.created_at).getTime();
+          const isAfterStartTime = !startTimestamp || donationTime > startTimestamp;
+          
+          if (donationDate === today && isAfterStartTime) {
             console.log("OBS View: New donation received via realtime:", newDonation);
             
             // Add to donations list
@@ -117,7 +141,11 @@ const MackleObsView = () => {
             console.log("Adding new donation to display queue:", newDonationForQueue.name);
             setDisplayQueue(prev => [...prev, newDonationForQueue]);
           } else {
-            console.log("Ignoring donation from a different date:", donationDate);
+            if (donationDate !== today) {
+              console.log("Ignoring donation from a different date:", donationDate);
+            } else {
+              console.log("Ignoring donation from before the OBS link was generated");
+            }
           }
         }
       )
@@ -128,7 +156,7 @@ const MackleObsView = () => {
       console.log("Cleaning up realtime subscription");
       supabase.removeChannel(channel);
     };
-  }, [id]);
+  }, [id, startTimestamp]);
 
   // Handle displaying one donation at a time and properly clearing after all messages
   useEffect(() => {
