@@ -14,7 +14,6 @@ const MacklePage = () => {
   const [maxMessageLength, setMaxMessageLength] = useState(50);
   const navigate = useNavigate();
 
-  // Update max message length based on amount
   useEffect(() => {
     const parsedAmount = parseFloat(amount);
     if (!isNaN(parsedAmount) && parsedAmount >= 100) {
@@ -59,28 +58,19 @@ const MacklePage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setIsLoading(true);
-    
     try {
-      // Generate a random order ID with timestamp
       const orderId = `mackle_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
-      
-      // Store donation data in session storage to access it during the payment flow
       const donationData = {
         name,
         amount: parseFloat(amount),
         message,
         orderId,
-        donationType: "mackle", // Add donation type to differentiate
+        donationType: "mackle",
       };
-      
       sessionStorage.setItem("donationData", JSON.stringify(donationData));
-      
-      // Navigate to payment checkout
       navigate("/payment-checkout");
     } catch (error) {
       console.error("Error preparing payment:", error);
@@ -95,7 +85,6 @@ const MacklePage = () => {
   };
 
   const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    // Limit message to maxMessageLength characters
     const value = e.target.value;
     if (value.length <= maxMessageLength) {
       setMessage(value);
@@ -104,15 +93,15 @@ const MacklePage = () => {
 
   return (
     <div 
-      className="min-h-screen py-10 px-4"
+      className="w-full min-h-screen py-10 px-4 flex items-center justify-center"
       style={{
         backgroundImage: "url('/lovable-uploads/f097dece-abfa-4962-9cf9-6d5fa500c509.png')",
         backgroundSize: "cover",
         backgroundPosition: "center",
-        backgroundAttachment: "fixed"
+        backgroundAttachment: "fixed",
       }}
     >
-      <div className="container mx-auto max-w-md">
+      <div className="w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl xl:max-w-3xl">
         <Card className="p-6 backdrop-blur-sm bg-black/70 border border-red-600/30">
           <div className="space-y-6">
             <div className="text-center">
@@ -123,8 +112,8 @@ const MacklePage = () => {
                 Your donation helps keep the content coming
               </p>
             </div>
-            
-            <div className="rounded-xl p-4 mb-4 border border-red-500/30 bg-black/50">
+
+            <div className="rounded-xl p-4 border border-red-500/30 bg-black/50">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <label htmlFor="name" className="block text-sm font-medium text-white">
@@ -136,10 +125,10 @@ const MacklePage = () => {
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Enter your name"
                     disabled={isLoading}
-                    className="bg-black/50 border-red-500/50 focus:border-red-500"
+                    className="w-full bg-black/50 border-red-500/50 focus:border-red-500"
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <label htmlFor="amount" className="block text-sm font-medium text-white">
                     Amount (₹)
@@ -152,11 +141,11 @@ const MacklePage = () => {
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder="Minimum ₹50"
                     disabled={isLoading}
-                    className="bg-black/50 border-red-500/50 focus:border-red-500"
+                    className="w-full bg-black/50 border-red-500/50 focus:border-red-500"
                   />
                   <p className="text-xs text-gray-400">Minimum donation amount is ₹50</p>
                 </div>
-                
+
                 <div className="space-y-2">
                   <label htmlFor="message" className="block text-sm font-medium text-white">
                     Message
@@ -166,7 +155,7 @@ const MacklePage = () => {
                     value={message}
                     onChange={handleMessageChange}
                     placeholder="Enter your message"
-                    className="h-24 bg-black/50 border-red-500/50 focus:border-red-500"
+                    className="w-full h-24 bg-black/50 border-red-500/50 focus:border-red-500"
                     disabled={isLoading}
                     maxLength={maxMessageLength}
                   />
@@ -177,7 +166,7 @@ const MacklePage = () => {
                       " (50 characters for donations below ₹100)"}
                   </p>
                 </div>
-                
+
                 <Button 
                   type="submit" 
                   className="w-full bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white"
@@ -202,3 +191,4 @@ const MacklePage = () => {
 };
 
 export default MacklePage;
+
