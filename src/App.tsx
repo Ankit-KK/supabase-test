@@ -24,6 +24,10 @@ import HarishObsView from "./pages/HarishObsView";
 import HarishDonationMessages from "./pages/HarishDonationMessages";
 import HarishDashboard from "./pages/HarishDashboard";
 import HarishLogin from "./pages/HarishLogin";
+import MackleLogin from "./pages/MackleLogin";
+import MackleDashboard from "./pages/MackleDashboard";
+import MackleDonationMessages from "./pages/MackleDonationMessages";
+import MackleObsView from "./pages/MackleObsView";
 import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
@@ -60,6 +64,10 @@ const App = () => {
               <Route path="/harish/messages" element={<HarishDonationMessages />} />
               <Route path="/harish/dashboard" element={<HarishDashboard />} />
               <Route path="/harish/login" element={<HarishLogin />} />
+              <Route path="/mackle/login" element={<MackleLogin />} />
+              <Route path="/mackle/dashboard" element={<MackleDashboard />} />
+              <Route path="/mackle/messages" element={<MackleDonationMessages />} />
+              <Route path="/mackle/obs/:id" element={<MackleObsView />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
