@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -146,8 +145,9 @@ const MackleDonationMessages = () => {
     let storedLink = sessionStorage.getItem("mackleObsLink");
     
     if (!storedLink) {
-      // Generate a new link with a random ID
-      const randomId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      // Generate a new link with a random string (not UUID format)
+      // This will prevent the UUID parsing error
+      const randomId = Math.random().toString(36).substring(2, 15);
       storedLink = `${window.location.origin}/mackle/obs/${randomId}?showMessages=${showMessages}`;
       sessionStorage.setItem("mackleObsLink", storedLink);
     }
@@ -156,8 +156,8 @@ const MackleDonationMessages = () => {
   };
 
   const regenerateObsLink = () => {
-    // Generate a new link with a random ID
-    const randomId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    // Generate a new link with a random string (not UUID format)
+    const randomId = Math.random().toString(36).substring(2, 15);
     const newLink = `${window.location.origin}/mackle/obs/${randomId}?showMessages=${showMessages}`;
     
     // Save the new link
