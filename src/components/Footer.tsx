@@ -6,7 +6,7 @@ const Footer: React.FC = () => {
   return (
     <footer className="border-t border-white/10 bg-background">
       <div className="container px-4 md:px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="col-span-1">
             <div className="text-xl font-bold bg-clip-text text-transparent bg-hero-gradient mb-4">
               🎉 HyperChat
@@ -20,8 +20,16 @@ const Footer: React.FC = () => {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><a href="#" className="hover:text-hyperchat-purple transition-colors">About Us</a></li>
               <li><Link to="/contact" className="hover:text-hyperchat-purple transition-colors">Contact</Link></li>
-              <li><Link to="/privacy-policy" className="hover:text-hyperchat-purple transition-colors">Privacy Policy & Terms</Link></li>
+              <li><Link to="/privacy-policy" className="hover:text-hyperchat-purple transition-colors">Privacy Policy</Link></li>
               <li><a href="#" className="hover:text-hyperchat-purple transition-colors">Careers</a></li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="font-medium mb-4">Policies</h3>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li><Link to="/cancellation-refunds" className="hover:text-hyperchat-purple transition-colors">Cancellation & Refunds</Link></li>
+              <li><Link to="/shipping" className="hover:text-hyperchat-purple transition-colors">Shipping Information</Link></li>
+              <li><Link to="/privacy-policy" className="hover:text-hyperchat-purple transition-colors">Terms & Conditions</Link></li>
             </ul>
           </div>
         </div>

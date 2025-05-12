@@ -13,6 +13,8 @@ import PaymentCheckout from "./pages/PaymentCheckout";
 import PaymentStatus from "./pages/PaymentStatus";
 import Contact from "./pages/Contact";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import CancellationRefunds from "./pages/CancellationRefunds";
+import Shipping from "./pages/Shipping";
 import AnkitLogin from "./pages/AnkitLogin";
 import AnkitDashboard from "./pages/AnkitDashboard";
 import AnkitDonationMessages from "./pages/AnkitDonationMessages";
@@ -46,6 +48,8 @@ const App = () => {
               <Route path="/status" element={<PaymentStatus />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/cancellation-refunds" element={<CancellationRefunds />} />
+              <Route path="/shipping" element={<Shipping />} />
               <Route path="/ankit/login" element={<AnkitLogin />} />
               <Route path="/ankit/dashboard" element={<AnkitDashboard />} />
               <Route path="/ankit/messages" element={<AnkitDonationMessages />} />
