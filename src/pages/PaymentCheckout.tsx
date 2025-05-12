@@ -125,6 +125,8 @@ const PaymentCheckout = () => {
 
   const donationTitle = paymentData?.donationType === "harish" 
     ? "Donation to Harish" 
+    : paymentData?.donationType === "mackle"
+    ? "Donation to Mackle"
     : "Donation to Ankit";
 
   return (

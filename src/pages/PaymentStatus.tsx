@@ -10,7 +10,7 @@ const PaymentStatus = () => {
   const [status, setStatus] = useState<"loading" | "success" | "failed" | "pending">("loading");
   const [paymentDetails, setPaymentDetails] = useState<any>(null);
   const [isRecordCreated, setIsRecordCreated] = useState(false);
-  const [donationType, setDonationType] = useState<"ankit" | "harish" | null>(null);
+  const [donationType, setDonationType] = useState<"ankit" | "harish" | "mackle" | null>(null);
   
   const location = useLocation();
   
@@ -32,9 +32,11 @@ const PaymentStatus = () => {
         }
 
         // Determine donation type from order ID
-        let donationType: "ankit" | "harish" = "ankit";
+        let donationType: "ankit" | "harish" | "mackle" = "ankit";
         if (orderId.startsWith("harish_")) {
           donationType = "harish";
+        } else if (orderId.startsWith("mackle_")) {
+          donationType = "mackle";
         } else if (orderId.startsWith("ankit_")) {
           donationType = "ankit";
         }
@@ -115,6 +117,8 @@ const PaymentStatus = () => {
   const getReturnLink = () => {
     if (donationType === "harish") {
       return "/harish";
+    } else if (donationType === "mackle") {
+      return "/mackle";
     }
     return "/ankit";
   };
@@ -147,7 +151,14 @@ const PaymentStatus = () => {
               <div className="text-left bg-gray-50 rounded p-4 text-sm">
                 <p><span className="font-medium">Order ID:</span> {paymentDetails.order.order_id}</p>
                 <p><span className="font-medium">Amount:</span> ₹{paymentDetails.order.order_amount}</p>
-                <p><span className="font-medium">Donation for:</span> {donationType === "harish" ? "Harish" : "Ankit"}</p>
+                <p>
+                  <span className="font-medium">Donation for:</span> 
+                  {donationType === "harish" 
+                    ? "Harish" 
+                    : donationType === "mackle" 
+                      ? "Mackle" 
+                      : "Ankit"}
+                </p>
               </div>
             )}
           </>
