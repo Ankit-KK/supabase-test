@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -125,15 +124,7 @@ const MacklePage = () => {
               </p>
             </div>
             
-            <div className="rounded-xl p-4 mb-4 border border-red-500/30 bg-black/50" 
-              style={{
-                backgroundImage: "url('/lovable-uploads/3a9e1b67-eac7-488e-a7f9-e7da6fbbef36.png')",
-                backgroundSize: "120px",
-                backgroundPosition: "right -20px bottom -20px",
-                backgroundRepeat: "no-repeat",
-                backgroundBlendMode: "luminosity"
-              }}
-            >
+            <div className="rounded-xl p-4 mb-4 border border-red-500/30 bg-black/50">
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <label htmlFor="name" className="block text-sm font-medium text-white">
@@ -192,7 +183,14 @@ const MacklePage = () => {
                   className="w-full bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white"
                   disabled={isLoading}
                 >
-                  {isLoading ? "Processing..." : "Continue to Payment"}
+                  <div className="flex items-center justify-center gap-2">
+                    <img 
+                      src="/lovable-uploads/93602e11-71cc-4cea-9d98-7b029b2ffe25.png" 
+                      alt="Mackle" 
+                      className="h-8 w-8 rounded-full"
+                    />
+                    {isLoading ? "Processing..." : "Continue to Payment"}
+                  </div>
                 </Button>
               </form>
             </div>
