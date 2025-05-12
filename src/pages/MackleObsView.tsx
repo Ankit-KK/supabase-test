@@ -22,7 +22,7 @@ const MackleObsView = () => {
   const [error, setError] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [showMessages, setShowMessages] = useState<boolean>(true);
-  const [startTimestamp, setStartTimestamp] = useState<number | null>(null);
+  const [pageLoadTime, setPageLoadTime] = useState<string>(new Date().toISOString());
   const { id } = useParams();
   const location = useLocation();
   const DISPLAY_DURATION = 15000; // 15 seconds per message
@@ -33,11 +33,10 @@ const MackleObsView = () => {
     const messagesParam = queryParams.get("showMessages");
     setShowMessages(messagesParam !== "false");
     
-    // Parse the timestamp from URL - this determines when the OBS link was generated
-    const timestampParam = queryParams.get("timestamp");
-    if (timestampParam) {
-      setStartTimestamp(parseInt(timestampParam, 10));
-    }
+    // Set the initial page load time - we'll use this to filter donations
+    const timestamp = Date.now();
+    setPageLoadTime(new Date(timestamp).toISOString());
+    console.log("Page loaded at:", new Date(timestamp).toLocaleString());
   }, [location]);
 
   // Get the current date in ISO format (just the date part)
@@ -53,27 +52,18 @@ const MackleObsView = () => {
         const todayStart = `${getCurrentDate()}T00:00:00`;
         const todayEnd = `${getCurrentDate()}T23:59:59`;
         
-        // Build our query
-        let query = supabase
+        // Load time - used to only show donations that came in after the page was loaded
+        const loadTimeISO = pageLoadTime;
+        console.log("Only showing donations after:", loadTimeISO);
+        
+        // Build our query - only fetch donations AFTER the page load time
+        const { data, error: fetchError } = await supabase
           .from("mackle_donations")
           .select("id, name, message, amount, created_at")
           .eq("payment_status", "success")
-          .gte("created_at", todayStart)
+          .gte("created_at", loadTimeISO)
           .lte("created_at", todayEnd)
           .order("created_at", { ascending: false });
-        
-        // If we have a start timestamp, only fetch donations that came in after this time
-        if (startTimestamp) {
-          // Convert the timestamp to an ISO string
-          const startTimeISO = new Date(startTimestamp).toISOString();
-          console.log("Only showing donations after:", startTimeISO);
-          
-          // Update the query to only get donations after the start time
-          query = query.gte("created_at", startTimeISO);
-        }
-          
-        // Execute the query
-        const { data, error: fetchError } = await query;
         
         if (fetchError) throw fetchError;
         
@@ -118,15 +108,15 @@ const MackleObsView = () => {
         (payload) => {
           const newDonation = payload.new as Donation;
           
-          // Check if donation is from today
+          // Check if donation is from today AND created after the page was loaded
           const donationDate = new Date(newDonation.created_at).toISOString().split('T')[0];
           const today = getCurrentDate();
           
-          // Also check if the donation came in after our start timestamp
-          const donationTime = new Date(newDonation.created_at).getTime();
-          const isAfterStartTime = !startTimestamp || donationTime > startTimestamp;
+          // Check if the donation came in after our page load time
+          const donationTimestamp = new Date(newDonation.created_at).getTime();
+          const pageLoadTimestamp = new Date(pageLoadTime).getTime();
           
-          if (donationDate === today && isAfterStartTime) {
+          if (donationDate === today && donationTimestamp > pageLoadTimestamp) {
             console.log("OBS View: New donation received via realtime:", newDonation);
             
             // Add to donations list
@@ -144,7 +134,7 @@ const MackleObsView = () => {
             if (donationDate !== today) {
               console.log("Ignoring donation from a different date:", donationDate);
             } else {
-              console.log("Ignoring donation from before the OBS link was generated");
+              console.log("Ignoring donation from before the page was loaded");
             }
           }
         }
@@ -156,7 +146,7 @@ const MackleObsView = () => {
       console.log("Cleaning up realtime subscription");
       supabase.removeChannel(channel);
     };
-  }, [id, startTimestamp]);
+  }, [id, pageLoadTime]);
 
   // Handle displaying one donation at a time and properly clearing after all messages
   useEffect(() => {
