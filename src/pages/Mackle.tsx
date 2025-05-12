@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -104,16 +105,17 @@ const MacklePage = () => {
 
   return (
     <div 
-      className="min-h-screen w-full flex justify-center items-center py-10 px-4 bg-fixed bg-cover bg-center"
+      className="min-h-screen py-10 px-4"
       style={{
-        backgroundImage: "url('/lovable-uploads/6baaf08e-b2c6-40bd-86d9-0329286b56dc.png')",
+        backgroundImage: "url('/lovable-uploads/f097dece-abfa-4962-9cf9-6d5fa500c509.png')",
         backgroundSize: "cover",
         backgroundPosition: "center",
+        backgroundAttachment: "fixed"
       }}
     >
-      <div className="max-w-md w-full mx-auto">
-        <Card className="backdrop-blur-md bg-black/75 border border-red-500/30 overflow-hidden shadow-xl">
-          <div className="p-6 space-y-6">
+      <div className="container mx-auto max-w-md">
+        <Card className="p-6 backdrop-blur-sm bg-black/70 border border-red-600/30">
+          <div className="space-y-6">
             <div className="text-center">
               <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-white">
                 Support MACKLE
@@ -123,16 +125,16 @@ const MacklePage = () => {
               </p>
             </div>
             
-            <div className="rounded-xl overflow-hidden relative bg-black/50 border border-red-500/40" 
+            <div className="rounded-xl p-4 mb-4 border border-red-500/30 bg-black/50" 
               style={{
-                backgroundImage: "url('/lovable-uploads/ebddefbb-5e5d-46ec-b0e6-d4701d3bfdac.png')",
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                backgroundBlendMode: "overlay"
+                backgroundImage: "url('/lovable-uploads/3a9e1b67-eac7-488e-a7f9-e7da6fbbef36.png')",
+                backgroundSize: "120px",
+                backgroundPosition: "right -20px bottom -20px",
+                backgroundRepeat: "no-repeat",
+                backgroundBlendMode: "luminosity"
               }}
             >
-              <div className="absolute inset-0 bg-gradient-to-b from-black/70 to-black/90"></div>
-              <form onSubmit={handleSubmit} className="relative p-5 space-y-4 z-10">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <label htmlFor="name" className="block text-sm font-medium text-white">
                     Your Name
@@ -143,7 +145,7 @@ const MacklePage = () => {
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Enter your name"
                     disabled={isLoading}
-                    className="bg-black/50 border-red-500/50 focus:border-red-500 placeholder-gray-500"
+                    className="bg-black/50 border-red-500/50 focus:border-red-500"
                   />
                 </div>
                 
@@ -159,7 +161,7 @@ const MacklePage = () => {
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder="Minimum ₹50"
                     disabled={isLoading}
-                    className="bg-black/50 border-red-500/50 focus:border-red-500 placeholder-gray-500"
+                    className="bg-black/50 border-red-500/50 focus:border-red-500"
                   />
                   <p className="text-xs text-gray-400">Minimum donation amount is ₹50</p>
                 </div>
@@ -173,7 +175,7 @@ const MacklePage = () => {
                     value={message}
                     onChange={handleMessageChange}
                     placeholder="Enter your message"
-                    className="h-24 bg-black/50 border-red-500/50 focus:border-red-500 placeholder-gray-500 resize-none"
+                    className="h-24 bg-black/50 border-red-500/50 focus:border-red-500"
                     disabled={isLoading}
                     maxLength={maxMessageLength}
                   />
@@ -187,7 +189,7 @@ const MacklePage = () => {
                 
                 <Button 
                   type="submit" 
-                  className="w-full bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white font-medium shadow-md"
+                  className="w-full bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white"
                   disabled={isLoading}
                 >
                   {isLoading ? "Processing..." : "Continue to Payment"}
