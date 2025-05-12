@@ -59,7 +59,7 @@ const Contact = () => {
                 href="tel:+919205013630"
                 className="text-sm font-medium text-primary hover:underline"
               >
-                +91 9205013630
+                +91 9211460100
               </a>
             </div>
 
