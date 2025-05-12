@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -184,7 +183,7 @@ const MackleObsView = () => {
   if (error) {
     return (
       <div className="bg-black text-white p-4 min-h-screen flex items-center justify-center">
-        <p className="text-red-400">{error}</p>
+        <p className="text-rose-400">{error}</p>
       </div>
     );
   }
@@ -210,17 +209,17 @@ const MackleObsView = () => {
     );
   }
 
-  // Active message display
+  // Active message display with updated styling for better OBS visibility
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-transparent overflow-hidden">
-      <div className="max-w-xl w-full animate-fade-in backdrop-blur-sm rounded-md px-4 py-3">
+      <div className="max-w-xl w-full animate-fade-in bg-black/60 backdrop-blur-md rounded-2xl px-6 py-4 shadow-xl">
         <div className="flex items-center gap-2 mb-2">
-          <span className="font-bold text-lg text-purple-400">{activeDonation.name}</span>
-          <span className="text-sm text-purple-300 opacity-80">· ₹{Number(activeDonation.amount).toLocaleString()}</span>
+          <span className="font-bold text-xl text-yellow-400">{activeDonation.name}</span>
+          <span className="text-md text-white opacity-90">· ₹{Number(activeDonation.amount).toLocaleString()}</span>
         </div>
         
         {showMessages && activeDonation.message && (
-          <div className="text-white text-lg mb-2">
+          <div className="text-white text-lg mt-2 font-medium">
             {activeDonation.message}
           </div>
         )}
