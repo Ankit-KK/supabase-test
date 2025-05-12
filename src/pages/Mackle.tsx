@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
+import { Card } from "@/components/ui/card";
 
 const MacklePage = () => {
   const [name, setName] = useState("");
@@ -103,74 +104,100 @@ const MacklePage = () => {
   };
 
   return (
-    <div className="container mx-auto max-w-md py-10">
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Make a Donation to Mackle</h1>
-          <p className="text-muted-foreground mt-2">
-            Support Mackle's work by making a donation
-          </p>
-        </div>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <label htmlFor="name" className="block text-sm font-medium">
-              Your Name
-            </label>
-            <Input 
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter your name"
-              disabled={isLoading}
-            />
+    <div 
+      className="min-h-screen py-10 px-4"
+      style={{
+        backgroundImage: "url('/lovable-uploads/f097dece-abfa-4962-9cf9-6d5fa500c509.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed"
+      }}
+    >
+      <div className="container mx-auto max-w-md">
+        <Card className="p-6 backdrop-blur-sm bg-black/70 border border-red-600/30">
+          <div className="space-y-6">
+            <div className="text-center">
+              <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-white">
+                Support MACKLE
+              </h1>
+              <p className="text-gray-300 mt-2">
+                Your donation helps keep the content coming
+              </p>
+            </div>
+            
+            <div className="rounded-xl p-4 mb-4 border border-red-500/30 bg-black/50" 
+              style={{
+                backgroundImage: "url('/lovable-uploads/3a9e1b67-eac7-488e-a7f9-e7da6fbbef36.png')",
+                backgroundSize: "120px",
+                backgroundPosition: "right -20px bottom -20px",
+                backgroundRepeat: "no-repeat",
+                backgroundBlendMode: "luminosity"
+              }}
+            >
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <label htmlFor="name" className="block text-sm font-medium text-white">
+                    Your Name
+                  </label>
+                  <Input 
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Enter your name"
+                    disabled={isLoading}
+                    className="bg-black/50 border-red-500/50 focus:border-red-500"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label htmlFor="amount" className="block text-sm font-medium text-white">
+                    Amount (₹)
+                  </label>
+                  <Input 
+                    id="amount"
+                    type="number"
+                    min="50"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="Minimum ₹50"
+                    disabled={isLoading}
+                    className="bg-black/50 border-red-500/50 focus:border-red-500"
+                  />
+                  <p className="text-xs text-gray-400">Minimum donation amount is ₹50</p>
+                </div>
+                
+                <div className="space-y-2">
+                  <label htmlFor="message" className="block text-sm font-medium text-white">
+                    Message
+                  </label>
+                  <Textarea 
+                    id="message"
+                    value={message}
+                    onChange={handleMessageChange}
+                    placeholder="Enter your message"
+                    className="h-24 bg-black/50 border-red-500/50 focus:border-red-500"
+                    disabled={isLoading}
+                    maxLength={maxMessageLength}
+                  />
+                  <p className="text-xs text-gray-400">
+                    {message.length}/{maxMessageLength} characters
+                    {parseFloat(amount) >= 100 ? 
+                      " (100 characters for donations ₹100 and above)" : 
+                      " (50 characters for donations below ₹100)"}
+                  </p>
+                </div>
+                
+                <Button 
+                  type="submit" 
+                  className="w-full bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Processing..." : "Continue to Payment"}
+                </Button>
+              </form>
+            </div>
           </div>
-          
-          <div className="space-y-2">
-            <label htmlFor="amount" className="block text-sm font-medium">
-              Amount (₹)
-            </label>
-            <Input 
-              id="amount"
-              type="number"
-              min="50"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="Minimum ₹50"
-              disabled={isLoading}
-            />
-            <p className="text-xs text-muted-foreground">Minimum donation amount is ₹50</p>
-          </div>
-          
-          <div className="space-y-2">
-            <label htmlFor="message" className="block text-sm font-medium">
-              Message
-            </label>
-            <Textarea 
-              id="message"
-              value={message}
-              onChange={handleMessageChange}
-              placeholder="Enter your message"
-              className="h-24"
-              disabled={isLoading}
-              maxLength={maxMessageLength}
-            />
-            <p className="text-xs text-muted-foreground">
-              {message.length}/{maxMessageLength} characters
-              {parseFloat(amount) >= 100 ? 
-                " (100 characters for donations ₹100 and above)" : 
-                " (50 characters for donations below ₹100)"}
-            </p>
-          </div>
-          
-          <Button 
-            type="submit" 
-            className="w-full"
-            disabled={isLoading}
-          >
-            {isLoading ? "Processing..." : "Continue to Payment"}
-          </Button>
-        </form>
+        </Card>
       </div>
     </div>
   );
