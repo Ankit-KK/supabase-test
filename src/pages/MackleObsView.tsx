@@ -19,32 +19,29 @@ const MackleObsView = () => {
   useEffect(() => {
     const fetchDonations = async () => {
       try {
-        let query = supabase
-          .from("mackle_donations")
-          .select("id, name, message, amount, created_at")
-          .eq("payment_status", "success")
-          .order("created_at", { ascending: false })
-          .limit(20);
-        
-        // If we have a specific ID parameter, fetch only that one
         if (id && id !== "messages") {
-          query = supabase
+          // For single donation view
+          const { data, error: fetchError } = await supabase
             .from("mackle_donations")
             .select("id, name, message, amount, created_at")
             .eq("id", id)
+            .eq("payment_status", "success")
             .single();
-        }
-        
-        const { data, error: fetchError } = await query;
-        
-        if (fetchError) throw fetchError;
-        
-        // Handle the data differently based on what we fetched
-        if (id && id !== "messages") {
-          // For single donation view
+            
+          if (fetchError) throw fetchError;
+          
           setDonations(data ? [data] : []);
         } else {
           // For messages view
+          const { data, error: fetchError } = await supabase
+            .from("mackle_donations")
+            .select("id, name, message, amount, created_at")
+            .eq("payment_status", "success")
+            .order("created_at", { ascending: false })
+            .limit(20);
+            
+          if (fetchError) throw fetchError;
+          
           setDonations(data || []);
         }
       } catch (err: any) {
