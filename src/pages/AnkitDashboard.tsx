@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuthProtection } from "@/hooks/useAuthProtection";
 import { MessageSquare, Download } from "lucide-react";
 import { objectsToCSV, downloadCSV, formatDateForFilename } from "@/utils/csvExport";
+import ContractSigningButton from "@/components/ContractSigningButton";
 
 interface Donation {
   id: string;
@@ -177,6 +178,10 @@ const AnkitDashboard = () => {
           <div className="text-sm text-muted-foreground">
             Last updated: {lastRefresh.toLocaleTimeString()}
           </div>
+          <ContractSigningButton 
+            streamerName="Ankit" 
+            streamerType="ankit" 
+          />
           <Button variant="outline" onClick={() => navigate("/ankit/messages")}>
             <MessageSquare className="mr-2 h-4 w-4" />
             Donation Messages

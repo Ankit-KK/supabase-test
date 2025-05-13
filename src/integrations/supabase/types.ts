@@ -366,10 +366,10 @@ export type Database = {
     }
     Functions: {
       check_username_exists: {
-        Args: { username_to_check: string; exclude_user_id: string }
-        Returns: {
-          username_exists: boolean
-        }[]
+        Args:
+          | { username: string }
+          | { username_to_check: string; exclude_user_id: string }
+        Returns: boolean
       }
       create_visits_table: {
         Args: Record<PropertyKey, never>
