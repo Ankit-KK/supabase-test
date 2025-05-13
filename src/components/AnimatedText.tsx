@@ -33,9 +33,9 @@ const AnimatedText: React.FC<AnimatedTextProps> = ({ text, className = "" }) => 
         {textArray.map((char, index) => (
           <span
             key={index}
-            className={`char inline-block transition-all duration-500 ${
+            className={`char inline-block transition-all duration-500 bg-clip-text text-transparent bg-hero-gradient ${
               animationIndex === 1
-                ? "hover:scale-150 hover:text-white"
+                ? "hover:scale-150"
                 : animationIndex === 2
                 ? `${index % 2 === 0 ? "group-hover:translate-y-[-10px]" : "group-hover:translate-y-[10px]"}`
                 : animationIndex === 3
@@ -44,7 +44,7 @@ const AnimatedText: React.FC<AnimatedTextProps> = ({ text, className = "" }) => 
                 ? "hover:tracking-wider"
                 : animationIndex === 5
                 ? "relative before:content-[attr(data-char)] before:absolute before:opacity-0 hover:before:opacity-80 before:top-0 hover:before:animate-fall"
-                : "bg-clip-text text-transparent bg-hero-gradient animate-shimmer"
+                : ""
             }`}
             data-char={char}
             style={{ 

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import SignupDialog from "@/components/SignupDialog";
@@ -17,7 +16,7 @@ const Hero: React.FC = () => {
             <div className="group overflow-hidden">
               <AnimatedText 
                 text="Hype Your Favourite Streamer!" 
-                className="bg-clip-text text-transparent bg-hero-gradient animate-shimmer"
+                className="bg-clip-text text-transparent bg-hero-gradient"
               />
             </div>
             <p className="max-w-[700px] text-md md:text-xl text-muted-foreground mx-auto">
