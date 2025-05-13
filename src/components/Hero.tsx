@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import SignupDialog from "@/components/SignupDialog";
 import HowItWorksDialog from "@/components/HowItWorksDialog";
+import AnimatedText from "@/components/AnimatedText";
 
 const Hero: React.FC = () => {
   const [showSignupDialog, setShowSignupDialog] = useState(false);
@@ -13,9 +14,12 @@ const Hero: React.FC = () => {
       <div className="container px-4 md:px-6">
         <div className="flex flex-col items-center text-center space-y-8">
           <div className="space-y-4">
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-extrabold tracking-tighter bg-clip-text text-transparent bg-hero-gradient animate-shimmer">
-              Hype Your Favourite Streamer!
-            </h1>
+            <div className="group overflow-hidden">
+              <AnimatedText 
+                text="Hype Your Favourite Streamer!" 
+                className="bg-clip-text text-transparent bg-hero-gradient animate-shimmer"
+              />
+            </div>
             <p className="max-w-[700px] text-md md:text-xl text-muted-foreground mx-auto">
               The ultimate fan-to-streamer engagement tool that lets you stand out during live streams.
               Make your messages shine and support your favorite creators with UPI payments!

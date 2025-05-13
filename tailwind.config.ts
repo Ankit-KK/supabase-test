@@ -115,6 +115,16 @@ export default {
 				'shimmer': {
 					'0%': { backgroundPosition: '200% 0' },
 					'100%': { backgroundPosition: '-200% 0' },
+				},
+				'fall': {
+					'0%': { opacity: '0', transform: 'translateY(0)' },
+					'20%': { opacity: '1' },
+					'100%': { opacity: '0', transform: 'translateY(20px)' },
+				},
+				'jump-out': {
+					'0%': { opacity: '0', transform: 'scale(1)' },
+					'20%': { opacity: '1' },
+					'100%': { opacity: '0', transform: 'scale(2)' },
 				}
 			},
 			animation: {
@@ -122,7 +132,9 @@ export default {
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'pulse-glow': 'pulse-glow 3s ease-in-out infinite',
 				'float': 'float 6s ease-in-out infinite',
-				'shimmer': 'shimmer 8s infinite linear'
+				'shimmer': 'shimmer 8s infinite linear',
+				'fall': 'fall 1s ease-in-out forwards',
+				'jump-out': 'jump-out 0.6s ease forwards'
 			},
 			backgroundImage: {
 				'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
