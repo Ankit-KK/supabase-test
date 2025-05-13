@@ -106,7 +106,7 @@ const MacklePage = () => {
     <div 
       className="min-h-screen py-10 px-4"
       style={{
-        backgroundImage: "url('https://github.com/Ankitak-ai/hype-chat-spark/blob/main/public/lovable-uploads/f097dece-abfa-4962-9cf9-6d5fa500c509.png')",
+        backgroundImage: "url('/lovable-uploads/f097dece-abfa-4962-9cf9-6d5fa500c509.png')",
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundAttachment: "fixed"
