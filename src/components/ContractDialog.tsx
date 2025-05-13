@@ -27,6 +27,18 @@ interface ContractDialogProps {
   streamerType: string;
 }
 
+// Define the contract data type to include the revenue cut properties
+interface StreamerContractData {
+  id: string;
+  streamer_type: string;
+  streamer_name: string;
+  signature: string;
+  agreed_to_terms: boolean;
+  signed_at: string;
+  streamer_cut?: number;
+  hyperchat_cut?: number;
+}
+
 const ContractDialog: React.FC<ContractDialogProps> = ({ 
   open, 
   onOpenChange,
@@ -67,10 +79,11 @@ const ContractDialog: React.FC<ContractDialogProps> = ({
           setName(data.streamer_name);
           setSignature(data.signature);
           
-          // Set revenue sharing if available in data
-          if (data.streamer_cut && data.hyperchat_cut) {
-            setStreamerCut(data.streamer_cut);
-            setHyperChatCut(data.hyperchat_cut);
+          // Safely access revenue sharing properties with type checking
+          const contractData = data as StreamerContractData;
+          if (contractData.streamer_cut !== undefined && contractData.hyperchat_cut !== undefined) {
+            setStreamerCut(contractData.streamer_cut);
+            setHyperChatCut(contractData.hyperchat_cut);
           }
         }
       } catch (error) {
