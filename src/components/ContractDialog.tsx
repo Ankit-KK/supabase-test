@@ -202,20 +202,17 @@ const ContractDialog: React.FC<ContractDialogProps> = ({
   };
 
   const handleDownloadContract = () => {
-    // Generate PDF with improved content rendering
+    // Get current date for the contract
     const currentDate = new Date().toLocaleDateString();
     
-    // Try to generate PDF from the contract content
-    if (contractContentRef.current) {
-      toast({
-        title: "Preparing PDF",
-        description: "Generating your contract PDF...",
-      });
-      
-      // Create a temporary div for better rendering
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = `
-      <div style="font-family: Arial, sans-serif; padding: 40px; font-size: 12px; line-height: 1.5;">
+    toast({
+      title: "Preparing PDF",
+      description: "Generating your contract PDF...",
+    });
+    
+    // Create a complete contract HTML for better PDF rendering
+    const contractHTML = `
+      <div style="font-family: Arial, sans-serif; padding: 40px; color: #000; background-color: #fff; font-size: 12px; line-height: 1.5;">
         <h1 style="text-align: center; font-size: 20px; margin-bottom: 20px;">HyperChat Streamer Agreement</h1>
         
         <p><strong>This Agreement</strong> ("Agreement") is entered into by and between:</p>
@@ -275,70 +272,80 @@ const ContractDialog: React.FC<ContractDialogProps> = ({
         <h2 style="font-size: 16px; margin-top: 20px; margin-bottom: 10px;">10. Entire Agreement</h2>
         <p>This Agreement constitutes the entire understanding between the parties and supersedes any prior agreements or understandings.</p>
       </div>
-      `;
-      
-      document.body.appendChild(tempDiv);
-      
-      // Use html2canvas with the temporary div
-      html2canvas(tempDiv, {
-        scale: 2, // Better quality
-        logging: false,
-        backgroundColor: "#ffffff"
-      }).then(canvas => {
-        // Remove the temporary div after capturing
-        tempDiv.remove();
-        
-        // Create PDF with proper dimensions
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({
-          orientation: 'portrait',
-          unit: 'mm',
-          format: 'a4'
-        });
-        
-        // Calculate dimensions to fit on PDF
-        const imgWidth = 210; // A4 width in mm (portrait)
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        
-        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-        
-        // Add signature page
-        pdf.addPage();
-        pdf.setFontSize(16);
-        pdf.text('Signature Page', 105, 20, { align: 'center' });
-        
-        pdf.setFontSize(12);
-        pdf.text('HyperChat Technologies Pvt. Ltd.', 20, 40);
-        pdf.text('By: Ankit Kumar', 20, 50);
-        pdf.text('Title: Founder', 20, 60);
-        pdf.text(`Date: ${currentDate}`, 20, 70);
-        
-        pdf.text(`${name}`, 20, 100);
-        
-        // Add signature image if available
-        if (signature) {
-          pdf.addImage(signature, 'PNG', 20, 110, 50, 20);
+    `;
+    
+    // Create a temporary container for the contract content
+    const tempContainer = document.createElement('div');
+    tempContainer.innerHTML = contractHTML;
+    document.body.appendChild(tempContainer);
+    
+    // Use html2canvas to capture the contract content
+    html2canvas(tempContainer, {
+      scale: 2, // Higher scale for better quality
+      logging: false,
+      backgroundColor: "#ffffff",
+      windowWidth: 800, // Set fixed width for consistent rendering
+      onclone: (clonedDoc) => {
+        // Force rendering styles in the cloned document
+        const contract = clonedDoc.querySelector('div');
+        if (contract) {
+          contract.style.width = '800px';
+          contract.style.display = 'block';
+          contract.style.visibility = 'visible';
+          contract.style.opacity = '1';
         }
-        
-        pdf.text(`Date: ${currentDate}`, 20, 140);
-        
-        // Save the PDF
-        pdf.save(`HyperChat_${streamerType}_Agreement_${currentDate.replace(/\//g, '-')}.pdf`);
-        
-        toast({
-          title: "Contract downloaded",
-          description: "The signed agreement has been downloaded as a PDF",
-        });
-      }).catch(error => {
-        console.error("Error generating PDF:", error);
-        // Fallback to text download if PDF generation fails
-        downloadTextContract(getContractText(name, currentDate), currentDate);
+      }
+    }).then(canvas => {
+      // Remove the temporary container
+      document.body.removeChild(tempContainer);
+      
+      // Create PDF with the captured content
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
       });
-    } else {
-      // Fallback to text download if ref is not available
-      const contractText = getContractText(name, currentDate);
-      downloadTextContract(contractText, currentDate);
-    }
+      
+      // Calculate dimensions to fit on PDF
+      const imgWidth = 210; // A4 width in mm (portrait)
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const imgData = canvas.toDataURL('image/png');
+      
+      // Add the contract content as an image
+      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      
+      // Add signature page
+      pdf.addPage();
+      pdf.setFontSize(16);
+      pdf.text('Signature Page', 105, 20, { align: 'center' });
+      
+      pdf.setFontSize(12);
+      pdf.text('HyperChat Technologies Pvt. Ltd.', 20, 40);
+      pdf.text('By: Ankit Kumar', 20, 50);
+      pdf.text('Title: Founder', 20, 60);
+      pdf.text(`Date: ${currentDate}`, 20, 70);
+      
+      pdf.text(`${name}`, 20, 100);
+      
+      // Add signature image if available
+      if (signature) {
+        pdf.addImage(signature, 'PNG', 20, 110, 50, 20);
+      }
+      
+      pdf.text(`Date: ${currentDate}`, 20, 140);
+      
+      // Save the PDF
+      pdf.save(`HyperChat_${streamerType}_Agreement_${currentDate.replace(/\//g, '-')}.pdf`);
+      
+      toast({
+        title: "Contract downloaded",
+        description: "The signed agreement has been downloaded as a PDF",
+      });
+    }).catch(error => {
+      console.error("Error generating PDF:", error);
+      // Fallback to text download if PDF generation fails
+      downloadTextContract(getContractText(name, currentDate), currentDate);
+    });
   };
 
   const downloadTextContract = (contractText: string, currentDate: string) => {
