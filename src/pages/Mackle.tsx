@@ -117,7 +117,7 @@ const MacklePage = () => {
           <div className="space-y-6">
             <div className="text-center">
               <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-white">
-                Support MACKLE
+                Support MACKLETV
               </h1>
               <p className="text-gray-300 mt-2">
                 Your donation helps keep the content coming
