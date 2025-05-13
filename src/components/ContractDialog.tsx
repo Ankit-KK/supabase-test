@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -12,11 +13,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { FileText, Download } from "lucide-react";
+import { FileText, Download, Pencil, Scissors } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel } from "@/components/ui/alert-dialog";
 
 interface ContractDialogProps {
   open: boolean;
@@ -41,6 +43,14 @@ const ContractDialog: React.FC<ContractDialogProps> = ({
   const [isDrawing, setIsDrawing] = useState(false);
   const navigate = useNavigate();
   const contractContentRef = useRef<HTMLDivElement>(null);
+  
+  // Revenue sharing state
+  const [showCutsDialog, setShowCutsDialog] = useState(false);
+  const [streamerCut, setStreamerCut] = useState(80);
+  const [hyperChatCut, setHyperChatCut] = useState(20);
+  
+  // Skip signature option
+  const [skipSignature, setSkipSignature] = useState(false);
 
   // Check if contract is already signed
   React.useEffect(() => {
@@ -56,6 +66,12 @@ const ContractDialog: React.FC<ContractDialogProps> = ({
           setIsSigned(true);
           setName(data.streamer_name);
           setSignature(data.signature);
+          
+          // Set revenue sharing if available in data
+          if (data.streamer_cut && data.hyperchat_cut) {
+            setStreamerCut(data.streamer_cut);
+            setHyperChatCut(data.hyperchat_cut);
+          }
         }
       } catch (error) {
         console.error("Error checking contract status:", error);
@@ -148,10 +164,11 @@ const ContractDialog: React.FC<ContractDialogProps> = ({
       return;
     }
 
-    if (!signature) {
+    // Check if signature is required and available
+    if (!skipSignature && !signature) {
       toast({
         title: "Signature is required",
-        description: "Please sign the contract using the signature pad",
+        description: "Please sign the contract using the signature pad or check the 'Skip signature' option",
         variant: "destructive",
       });
       return;
@@ -176,9 +193,11 @@ const ContractDialog: React.FC<ContractDialogProps> = ({
           {
             streamer_type: streamerType,
             streamer_name: name,
-            signature: signature,
+            signature: skipSignature ? "Name Only: " + name : signature,
             agreed_to_terms: true,
             signed_at: new Date().toISOString(),
+            streamer_cut: streamerCut,
+            hyperchat_cut: hyperChatCut
           }
         ], { onConflict: "streamer_type" });
 
@@ -243,8 +262,8 @@ const ContractDialog: React.FC<ContractDialogProps> = ({
         <h2 style="font-size: 12px; margin-top: 12px; margin-bottom: 8px;">4. Revenue Sharing</h2>
         <p>If HyperChat includes monetized features (e.g., donations, premium messages), revenue will be shared as follows unless otherwise agreed:</p>
         <ul style="margin-left: 15px; margin-bottom: 10px; padding-left: 0;">
-          <li><strong>80%</strong> to the Streamer</li>
-          <li><strong>20%</strong> to HyperChat (as platform/service fee)</li>
+          <li><strong>${streamerCut}%</strong> to the Streamer</li>
+          <li><strong>${hyperChatCut}%</strong> to HyperChat (as platform/service fee)</li>
         </ul>
         <p>Payments will be processed on a monthly basis, subject to minimum payout thresholds and applicable fees.</p>
         
@@ -284,7 +303,7 @@ const ContractDialog: React.FC<ContractDialogProps> = ({
           
           <div style="margin-left: 40px;">
             <strong>${name}</strong><br>
-            Digital Signature<br>
+            ${skipSignature ? "Name Only (No Signature)" : "Digital Signature"}<br>
             Date: ${currentDate}
           </div>
         </div>
@@ -332,7 +351,7 @@ const ContractDialog: React.FC<ContractDialogProps> = ({
       pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
       
       // Add signature on a separate page if available
-      if (signature) {
+      if (signature && !skipSignature) {
         pdf.addPage();
         pdf.setFontSize(16);
         pdf.text('Signature Page', 105, 20, { align: 'center' });
@@ -419,8 +438,8 @@ The Streamer agrees to:
 
 If HyperChat includes monetized features (e.g., donations, premium messages), revenue will be shared as follows unless otherwise agreed:
 
-- **80%** to the Streamer  
-- **20%** to HyperChat (as platform/service fee)
+- **${streamerCut}%** to the Streamer  
+- **${hyperChatCut}%** to HyperChat (as platform/service fee)
 
 Payments will be processed on a monthly basis, subject to minimum payout thresholds and applicable fees.
 
@@ -472,190 +491,283 @@ Title: **Founder**
 Date: ${date}  
 
 **${streamerName}**  
-Signature: [Digital Signature Applied]  
+${skipSignature ? "Name Only (No Signature Applied)" : "Signature: [Digital Signature Applied]"}  
 Date: ${date}  
 `;
   };
   
+  // Function to handle revenue sharing changes
+  const handleCutChange = (newStreamerCut: number) => {
+    setStreamerCut(newStreamerCut);
+    setHyperChatCut(100 - newStreamerCut);
+  };
+  
   return (
-    <Dialog open={open} onOpenChange={(newOpen) => {
-      // Prevent closing the dialog if the contract is being signed
-      if (isSigning) return;
-      onOpenChange(newOpen);
-    }}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            HyperChat Streamer Agreement
-          </DialogTitle>
-          <DialogDescription>
-            Please review the agreement carefully before signing
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="space-y-4 mt-2">
-          <div ref={contractContentRef} className="border rounded-md p-4 h-60 overflow-auto prose prose-sm dark:prose-invert">
-            <h1>HyperChat Streamer Agreement</h1>
+    <>
+      <Dialog open={open} onOpenChange={(newOpen) => {
+        // Prevent closing the dialog if the contract is being signed
+        if (isSigning) return;
+        onOpenChange(newOpen);
+      }}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              HyperChat Streamer Agreement
+            </DialogTitle>
+            <DialogDescription>
+              Please review the agreement carefully before signing
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 mt-2">
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowCutsDialog(true)}
+                className="mb-2"
+              >
+                <Scissors className="mr-2 h-4 w-4" />
+                Adjust Revenue Sharing
+              </Button>
+            </div>
             
-            <p><strong>This Agreement</strong> ("Agreement") is entered into by and between:</p>
+            <div ref={contractContentRef} className="border rounded-md p-4 h-60 overflow-auto prose prose-sm dark:prose-invert">
+              <h1>HyperChat Streamer Agreement</h1>
+              
+              <p><strong>This Agreement</strong> ("Agreement") is entered into by and between:</p>
+              
+              <p>
+                <strong>HyperChat Technologies Pvt. Ltd.</strong>, a registered MSME under Udyam Registration No. <strong>UP29D0047796</strong>, with its principal office at <strong>Ghaziabad</strong>,<br />
+                and<br />
+                <strong>{isSigned ? name : "[Streamer Name]"}</strong>,<br />
+                collectively referred to as the "Parties".
+              </p>
+              
+              <p><strong>Effective Date:</strong> {isSigned ? new Date().toLocaleDateString() : "[Insert Date]"}</p>
+              
+              <h2>1. Purpose</h2>
+              <p>HyperChat provides a fan engagement and donation tool designed for live streamers. This Agreement outlines the terms under which the Streamer may access and use the HyperChat platform.</p>
+              
+              <h2>2. Grant of Access</h2>
+              <p>HyperChat grants the Streamer a non-exclusive, non-transferable license to use its platform for the purpose of enhancing live streams and enabling fan support through premium messages, real-time reactions, and related features.</p>
+              
+              <h2>3. Streamer Responsibilities</h2>
+              <p>The Streamer agrees to:</p>
+              <ul>
+                <li>Integrate HyperChat into their live streaming sessions (e.g., Twitch, YouTube, Kick, etc.).</li>
+                <li>Maintain an active and respectful community environment.</li>
+                <li>Not misuse the platform for offensive, illegal, or prohibited content.</li>
+              </ul>
+              
+              <h2>4. Revenue Sharing</h2>
+              <p>If HyperChat includes monetized features (e.g., donations, premium messages), revenue will be shared as follows unless otherwise agreed:</p>
+              <ul>
+                <li><strong>{streamerCut}%</strong> to the Streamer</li>
+                <li><strong>{hyperChatCut}%</strong> to HyperChat (as platform/service fee)</li>
+              </ul>
+              <p>Payments will be processed on a monthly basis, subject to minimum payout thresholds and applicable fees.</p>
+              
+              <h2>5. Intellectual Property</h2>
+              <ul>
+                <li>All platform content, branding, and underlying software remain the sole property of HyperChat.</li>
+                <li>The Streamer retains rights to their own content but grants HyperChat permission to feature their stream/channel for promotional use (with prior notice).</li>
+              </ul>
+              
+              <h2>6. Term & Termination</h2>
+              <ul>
+                <li>This Agreement begins on the Effective Date and continues until terminated by either party with <strong>7 days' written notice</strong>.</li>
+                <li>HyperChat reserves the right to suspend or terminate access for violations of terms, abuse of service, or unlawful activity.</li>
+              </ul>
+              
+              <h2>7. Confidentiality</h2>
+              <p>The Streamer agrees not to disclose any non-public information about HyperChat, including platform features under development, financial terms, or internal strategies.</p>
+              
+              <h2>8. Limitation of Liability</h2>
+              <p>HyperChat shall not be liable for indirect, incidental, or consequential damages arising from the use of its platform.</p>
+              
+              <h2>9. Governing Law</h2>
+              <p>This Agreement shall be governed by the laws of <strong>India</strong>, and any disputes shall be resolved in the courts of that jurisdiction.</p>
+              
+              <h2>10. Entire Agreement</h2>
+              <p>This Agreement constitutes the entire understanding between the parties and supersedes any prior agreements or understandings.</p>
+              
+              <h2>IN WITNESS WHEREOF, the parties have executed this Agreement as of the Effective Date.</h2>
+              
+              <p>
+                <strong>HyperChat Technologies Pvt. Ltd.</strong><br />
+                By: <strong>Ankit Kumar</strong><br />
+                Title: <strong>Founder</strong><br />
+                Date: _________________________
+              </p>
+              
+              <p>
+                <strong>{isSigned ? name : "[Streamer Name]"}</strong><br />
+                Signature: _____________________<br />
+                Date: _________________________
+              </p>
+            </div>
             
-            <p>
-              <strong>HyperChat Technologies Pvt. Ltd.</strong>, a registered MSME under Udyam Registration No. <strong>UP29D0047796</strong>, with its principal office at <strong>Ghaziabad</strong>,<br />
-              and<br />
-              <strong>{isSigned ? name : "[Streamer Name]"}</strong>,<br />
-              collectively referred to as the "Parties".
-            </p>
-            
-            <p><strong>Effective Date:</strong> {isSigned ? new Date().toLocaleDateString() : "[Insert Date]"}</p>
-            
-            <h2>1. Purpose</h2>
-            <p>HyperChat provides a fan engagement and donation tool designed for live streamers. This Agreement outlines the terms under which the Streamer may access and use the HyperChat platform.</p>
-            
-            <h2>2. Grant of Access</h2>
-            <p>HyperChat grants the Streamer a non-exclusive, non-transferable license to use its platform for the purpose of enhancing live streams and enabling fan support through premium messages, real-time reactions, and related features.</p>
-            
-            <h2>3. Streamer Responsibilities</h2>
-            <p>The Streamer agrees to:</p>
-            <ul>
-              <li>Integrate HyperChat into their live streaming sessions (e.g., Twitch, YouTube, Kick, etc.).</li>
-              <li>Maintain an active and respectful community environment.</li>
-              <li>Not misuse the platform for offensive, illegal, or prohibited content.</li>
-            </ul>
-            
-            <h2>4. Revenue Sharing</h2>
-            <p>If HyperChat includes monetized features (e.g., donations, premium messages), revenue will be shared as follows unless otherwise agreed:</p>
-            <ul>
-              <li><strong>80%</strong> to the Streamer</li>
-              <li><strong>20%</strong> to HyperChat (as platform/service fee)</li>
-            </ul>
-            <p>Payments will be processed on a monthly basis, subject to minimum payout thresholds and applicable fees.</p>
-            
-            <h2>5. Intellectual Property</h2>
-            <ul>
-              <li>All platform content, branding, and underlying software remain the sole property of HyperChat.</li>
-              <li>The Streamer retains rights to their own content but grants HyperChat permission to feature their stream/channel for promotional use (with prior notice).</li>
-            </ul>
-            
-            <h2>6. Term & Termination</h2>
-            <ul>
-              <li>This Agreement begins on the Effective Date and continues until terminated by either party with <strong>7 days' written notice</strong>.</li>
-              <li>HyperChat reserves the right to suspend or terminate access for violations of terms, abuse of service, or unlawful activity.</li>
-            </ul>
-            
-            <h2>7. Confidentiality</h2>
-            <p>The Streamer agrees not to disclose any non-public information about HyperChat, including platform features under development, financial terms, or internal strategies.</p>
-            
-            <h2>8. Limitation of Liability</h2>
-            <p>HyperChat shall not be liable for indirect, incidental, or consequential damages arising from the use of its platform.</p>
-            
-            <h2>9. Governing Law</h2>
-            <p>This Agreement shall be governed by the laws of <strong>India</strong>, and any disputes shall be resolved in the courts of that jurisdiction.</p>
-            
-            <h2>10. Entire Agreement</h2>
-            <p>This Agreement constitutes the entire understanding between the parties and supersedes any prior agreements or understandings.</p>
-            
-            <h2>IN WITNESS WHEREOF, the parties have executed this Agreement as of the Effective Date.</h2>
-            
-            <p>
-              <strong>HyperChat Technologies Pvt. Ltd.</strong><br />
-              By: <strong>Ankit Kumar</strong><br />
-              Title: <strong>Founder</strong><br />
-              Date: _________________________
-            </p>
-            
-            <p>
-              <strong>{isSigned ? name : "[Streamer Name]"}</strong><br />
-              Signature: _____________________<br />
-              Date: _________________________
-            </p>
+            {!isSigned && (
+              <>
+                <div>
+                  <Label htmlFor="streamer-name">Full Name</Label>
+                  <Input 
+                    id="streamer-name" 
+                    value={name} 
+                    onChange={(e) => setName(e.target.value)} 
+                    placeholder="Enter your full name"
+                    className="mt-1"
+                  />
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="skip-signature" 
+                    checked={skipSignature} 
+                    onCheckedChange={(checked) => {
+                      setSkipSignature(checked === true);
+                      if (checked === true) {
+                        clearSignature();
+                      }
+                    }} 
+                  />
+                  <Label htmlFor="skip-signature" className="text-sm">
+                    I prefer to use my name instead of drawing a signature
+                  </Label>
+                </div>
+                
+                {!skipSignature && (
+                  <div>
+                    <Label htmlFor="signature">Signature (Required)</Label>
+                    <div className="border rounded-md p-2 bg-white dark:bg-slate-900 mt-1">
+                      <canvas 
+                        ref={canvasRef}
+                        width={570}
+                        height={150}
+                        className="w-full h-[150px] border rounded cursor-crosshair bg-white dark:bg-gray-100"
+                        onMouseDown={startDrawing}
+                        onMouseMove={draw}
+                        onMouseUp={endDrawing}
+                        onMouseLeave={endDrawing}
+                        onTouchStart={startDrawing}
+                        onTouchMove={draw}
+                        onTouchEnd={endDrawing}
+                      />
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="mt-2" 
+                        onClick={clearSignature}
+                      >
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Clear Signature
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="terms" 
+                    checked={agreedToTerms} 
+                    onCheckedChange={(checked) => setAgreedToTerms(checked === true)} 
+                  />
+                  <Label htmlFor="terms" className="text-sm">
+                    I have read and agree to the terms and conditions
+                  </Label>
+                </div>
+              </>
+            )}
           </div>
           
-          {!isSigned && (
-            <>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            {isSigned ? (
+              <Button 
+                className="w-full sm:w-auto" 
+                onClick={handleDownloadContract}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Download PDF Contract
+              </Button>
+            ) : (
+              <>
+                <Button 
+                  variant="outline" 
+                  className="w-full sm:w-auto" 
+                  onClick={() => onOpenChange(false)}
+                  disabled={isSigning}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  className="w-full sm:w-auto" 
+                  onClick={handleSignContract}
+                  disabled={isSigning || !name || (!skipSignature && !signature) || !agreedToTerms}
+                >
+                  {isSigning ? "Processing..." : "Sign Contract"}
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Revenue Sharing Dialog */}
+      <AlertDialog open={showCutsDialog} onOpenChange={setShowCutsDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Adjust Revenue Sharing</AlertDialogTitle>
+            <AlertDialogDescription>
+              Set the percentage split between streamer and HyperChat
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className="py-4">
+            <div className="space-y-6">
               <div>
-                <Label htmlFor="streamer-name">Full Name</Label>
-                <Input 
-                  id="streamer-name" 
-                  value={name} 
-                  onChange={(e) => setName(e.target.value)} 
-                  placeholder="Enter your full name"
-                  className="mt-1"
+                <Label htmlFor="streamer-cut">Streamer: {streamerCut}%</Label>
+                <Input
+                  id="streamer-cut"
+                  type="range"
+                  min="50"
+                  max="95"
+                  step="5"
+                  value={streamerCut}
+                  onChange={(e) => handleCutChange(parseInt(e.target.value))}
+                  className="w-full"
                 />
               </div>
               
               <div>
-                <Label htmlFor="signature">Signature</Label>
-                <div className="border rounded-md p-2 bg-white dark:bg-slate-900 mt-1">
-                  <canvas 
-                    ref={canvasRef}
-                    width={570}
-                    height={150}
-                    className="w-full h-[150px] border rounded cursor-crosshair bg-white dark:bg-gray-100"
-                    onMouseDown={startDrawing}
-                    onMouseMove={draw}
-                    onMouseUp={endDrawing}
-                    onMouseLeave={endDrawing}
-                    onTouchStart={startDrawing}
-                    onTouchMove={draw}
-                    onTouchEnd={endDrawing}
-                  />
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="mt-2" 
-                    onClick={clearSignature}
-                  >
-                    Clear Signature
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="terms" 
-                  checked={agreedToTerms} 
-                  onCheckedChange={(checked) => setAgreedToTerms(checked === true)} 
+                <Label htmlFor="hyperchat-cut">HyperChat: {hyperChatCut}%</Label>
+                <Input
+                  id="hyperchat-cut"
+                  type="range"
+                  min="5"
+                  max="50"
+                  step="5"
+                  value={hyperChatCut}
+                  onChange={(e) => {
+                    const newHyperChatCut = parseInt(e.target.value);
+                    setHyperChatCut(newHyperChatCut);
+                    setStreamerCut(100 - newHyperChatCut);
+                  }}
+                  className="w-full"
+                  disabled
                 />
-                <Label htmlFor="terms" className="text-sm">
-                  I have read and agree to the terms and conditions
-                </Label>
               </div>
-            </>
-          )}
-        </div>
-        
-        <DialogFooter className="flex flex-col sm:flex-row gap-2">
-          {isSigned ? (
-            <Button 
-              className="w-full sm:w-auto" 
-              onClick={handleDownloadContract}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Download PDF Contract
-            </Button>
-          ) : (
-            <>
-              <Button 
-                variant="outline" 
-                className="w-full sm:w-auto" 
-                onClick={() => onOpenChange(false)}
-                disabled={isSigning}
-              >
-                Cancel
-              </Button>
-              <Button 
-                className="w-full sm:w-auto" 
-                onClick={handleSignContract}
-                disabled={isSigning || !name || !signature || !agreedToTerms}
-              >
-                {isSigning ? "Processing..." : "Sign Contract"}
-              </Button>
-            </>
-          )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            </div>
+          </div>
+          
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => setShowCutsDialog(false)}>Apply Changes</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 
