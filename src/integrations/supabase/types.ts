@@ -294,6 +294,33 @@ export type Database = {
         }
         Relationships: []
       }
+      streamer_contracts: {
+        Row: {
+          agreed_to_terms: boolean
+          id: string
+          signature: string
+          signed_at: string | null
+          streamer_name: string
+          streamer_type: string
+        }
+        Insert: {
+          agreed_to_terms?: boolean
+          id?: string
+          signature: string
+          signed_at?: string | null
+          streamer_name: string
+          streamer_type: string
+        }
+        Update: {
+          agreed_to_terms?: boolean
+          id?: string
+          signature?: string
+          signed_at?: string | null
+          streamer_name?: string
+          streamer_type?: string
+        }
+        Relationships: []
+      }
       user_queries: {
         Row: {
           created_at: string
