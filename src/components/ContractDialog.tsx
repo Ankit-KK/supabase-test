@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -548,9 +547,10 @@ Date: ${date}
                 size="sm"
                 onClick={() => setShowCutsDialog(true)}
                 className="mb-2"
+                disabled={isSigned} // Disable the button if contract is signed
               >
                 <Scissors className="mr-2 h-4 w-4" />
-                Adjust Revenue Sharing
+                {isSigned ? "Revenue Split Fixed" : "Adjust Revenue Sharing"}
               </Button>
             </div>
             
