@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -271,6 +272,21 @@ const ContractDialog: React.FC<ContractDialogProps> = ({
         
         <h2 style="font-size: 16px; margin-top: 20px; margin-bottom: 10px;">10. Entire Agreement</h2>
         <p>This Agreement constitutes the entire understanding between the parties and supersedes any prior agreements or understandings.</p>
+        
+        <h2 style="font-size: 16px; margin-top: 20px; margin-bottom: 10px;">IN WITNESS WHEREOF, the parties have executed this Agreement as of the Effective Date.</h2>
+        
+        <p style="margin-top: 40px;">
+          <strong>HyperChat Technologies Pvt. Ltd.</strong><br>
+          By: <strong>Ankit Kumar</strong><br>
+          Title: <strong>Founder</strong><br>
+          Date: ${currentDate}
+        </p>
+        
+        <p style="margin-top: 40px;">
+          <strong>${name}</strong><br>
+          Digital Signature<br>
+          Date: ${currentDate}
+        </p>
       </div>
     `;
     
@@ -314,25 +330,25 @@ const ContractDialog: React.FC<ContractDialogProps> = ({
       // Add the contract content as an image
       pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
       
-      // Add signature page
-      pdf.addPage();
-      pdf.setFontSize(16);
-      pdf.text('Signature Page', 105, 20, { align: 'center' });
-      
-      pdf.setFontSize(12);
-      pdf.text('HyperChat Technologies Pvt. Ltd.', 20, 40);
-      pdf.text('By: Ankit Kumar', 20, 50);
-      pdf.text('Title: Founder', 20, 60);
-      pdf.text(`Date: ${currentDate}`, 20, 70);
-      
-      pdf.text(`${name}`, 20, 100);
-      
-      // Add signature image if available
+      // Add signature on a separate page if available
       if (signature) {
+        pdf.addPage();
+        pdf.setFontSize(16);
+        pdf.text('Signature Page', 105, 20, { align: 'center' });
+        
+        pdf.setFontSize(12);
+        pdf.text('HyperChat Technologies Pvt. Ltd.', 20, 40);
+        pdf.text('By: Ankit Kumar', 20, 50);
+        pdf.text('Title: Founder', 20, 60);
+        pdf.text(`Date: ${currentDate}`, 20, 70);
+        
+        pdf.text(`${name}`, 20, 100);
+        
+        // Add signature image
         pdf.addImage(signature, 'PNG', 20, 110, 50, 20);
+        
+        pdf.text(`Date: ${currentDate}`, 20, 140);
       }
-      
-      pdf.text(`Date: ${currentDate}`, 20, 140);
       
       // Save the PDF
       pdf.save(`HyperChat_${streamerType}_Agreement_${currentDate.replace(/\//g, '-')}.pdf`);
