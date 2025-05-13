@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -16,6 +15,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { FileText, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 interface ContractDialogProps {
   open: boolean;
@@ -39,6 +40,7 @@ const ContractDialog: React.FC<ContractDialogProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const navigate = useNavigate();
+  const contractContentRef = useRef<HTMLDivElement>(null);
 
   // Check if contract is already signed
   React.useEffect(() => {
@@ -200,11 +202,70 @@ const ContractDialog: React.FC<ContractDialogProps> = ({
   };
 
   const handleDownloadContract = () => {
-    // Create contract text with filled details
+    // Generate a text version of the contract as a backup
     const currentDate = new Date().toLocaleDateString();
     const contractText = getContractText(name, currentDate);
 
-    // Create and download document
+    // Try to generate PDF from the contract content
+    if (contractContentRef.current) {
+      toast({
+        title: "Preparing PDF",
+        description: "Generating your contract PDF...",
+      });
+      
+      // Use html2canvas to capture the contract as an image
+      html2canvas(contractContentRef.current).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a4'
+        });
+        
+        // Calculate dimensions to fit on PDF
+        const imgWidth = 210; // A4 width in mm (portrait)
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+        
+        // Add signature page
+        pdf.addPage();
+        pdf.setFontSize(12);
+        pdf.text('Signature Page', 105, 20, { align: 'center' });
+        
+        pdf.text('HyperChat Technologies Pvt. Ltd.', 20, 40);
+        pdf.text('By: Ankit Kumar', 20, 50);
+        pdf.text('Title: Founder', 20, 60);
+        pdf.text(`Date: ${currentDate}`, 20, 70);
+        
+        pdf.text(name, 20, 100);
+        
+        // Add signature image if available
+        if (signature) {
+          pdf.addImage(signature, 'PNG', 20, 110, 50, 20);
+        }
+        
+        pdf.text(`Date: ${currentDate}`, 20, 140);
+        
+        // Save the PDF
+        pdf.save(`HyperChat_${streamerType}_Agreement_${currentDate.replace(/\//g, '-')}.pdf`);
+        
+        toast({
+          title: "Contract downloaded",
+          description: "The signed agreement has been downloaded as a PDF",
+        });
+      }).catch(error => {
+        console.error("Error generating PDF:", error);
+        // Fallback to text download if PDF generation fails
+        downloadTextContract(contractText, currentDate);
+      });
+    } else {
+      // Fallback to text download if ref is not available
+      downloadTextContract(contractText, currentDate);
+    }
+  };
+
+  const downloadTextContract = (contractText: string, currentDate: string) => {
     const element = document.createElement('a');
     const file = new Blob([contractText], {type: 'text/plain'});
     element.href = URL.createObjectURL(file);
@@ -212,10 +273,10 @@ const ContractDialog: React.FC<ContractDialogProps> = ({
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
-
+    
     toast({
-      title: "Contract downloaded",
-      description: "The signed agreement has been downloaded to your device",
+      title: "Contract downloaded as text",
+      description: "The signed agreement has been downloaded as a text file",
     });
   };
 
@@ -334,7 +395,7 @@ Date: ${date}
         </DialogHeader>
         
         <div className="space-y-4 mt-2">
-          <div className="border rounded-md p-4 h-60 overflow-auto prose prose-sm dark:prose-invert">
+          <div ref={contractContentRef} className="border rounded-md p-4 h-60 overflow-auto prose prose-sm dark:prose-invert">
             <h1>HyperChat Streamer Agreement</h1>
             
             <p><strong>This Agreement</strong> ("Agreement") is entered into by and between:</p>
@@ -471,7 +532,7 @@ Date: ${date}
               onClick={handleDownloadContract}
             >
               <Download className="mr-2 h-4 w-4" />
-              Download Contract
+              Download PDF Contract
             </Button>
           ) : (
             <>
