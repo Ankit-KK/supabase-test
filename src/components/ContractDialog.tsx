@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -211,14 +210,14 @@ const ContractDialog: React.FC<ContractDialogProps> = ({
       description: "Generating your contract PDF...",
     });
     
-    // Create a complete contract HTML for better PDF rendering
+    // Create a complete contract HTML with smaller font size and reduced line spacing
     const contractHTML = `
-      <div style="font-family: Arial, sans-serif; padding: 40px; color: #000; background-color: #fff; font-size: 12px; line-height: 1.5;">
-        <h1 style="text-align: center; font-size: 20px; margin-bottom: 20px;">HyperChat Streamer Agreement</h1>
+      <div style="font-family: Arial, sans-serif; padding: 30px; color: #000; background-color: #fff; font-size: 10px; line-height: 1.3;">
+        <h1 style="text-align: center; font-size: 16px; margin-bottom: 15px;">HyperChat Streamer Agreement</h1>
         
         <p><strong>This Agreement</strong> ("Agreement") is entered into by and between:</p>
         
-        <p style="margin-bottom: 15px;">
+        <p style="margin-bottom: 10px;">
           <strong>HyperChat Technologies Pvt. Ltd.</strong>, a registered MSME under Udyam Registration No. <strong>UP29D0047796</strong>, with its principal office at <strong>Ghaziabad</strong>,<br>
           and<br>
           <strong>${name}</strong>,<br>
@@ -227,66 +226,68 @@ const ContractDialog: React.FC<ContractDialogProps> = ({
         
         <p><strong>Effective Date:</strong> ${currentDate}</p>
         
-        <h2 style="font-size: 16px; margin-top: 20px; margin-bottom: 10px;">1. Purpose</h2>
+        <h2 style="font-size: 12px; margin-top: 12px; margin-bottom: 8px;">1. Purpose</h2>
         <p>HyperChat provides a fan engagement and donation tool designed for live streamers. This Agreement outlines the terms under which the Streamer may access and use the HyperChat platform.</p>
         
-        <h2 style="font-size: 16px; margin-top: 20px; margin-bottom: 10px;">2. Grant of Access</h2>
+        <h2 style="font-size: 12px; margin-top: 12px; margin-bottom: 8px;">2. Grant of Access</h2>
         <p>HyperChat grants the Streamer a non-exclusive, non-transferable license to use its platform for the purpose of enhancing live streams and enabling fan support through premium messages, real-time reactions, and related features.</p>
         
-        <h2 style="font-size: 16px; margin-top: 20px; margin-bottom: 10px;">3. Streamer Responsibilities</h2>
+        <h2 style="font-size: 12px; margin-top: 12px; margin-bottom: 8px;">3. Streamer Responsibilities</h2>
         <p>The Streamer agrees to:</p>
-        <ul style="margin-left: 20px; margin-bottom: 15px;">
+        <ul style="margin-left: 15px; margin-bottom: 10px; padding-left: 0;">
           <li>Integrate HyperChat into their live streaming sessions (e.g., Twitch, YouTube, Kick, etc.).</li>
           <li>Maintain an active and respectful community environment.</li>
           <li>Not misuse the platform for offensive, illegal, or prohibited content.</li>
         </ul>
         
-        <h2 style="font-size: 16px; margin-top: 20px; margin-bottom: 10px;">4. Revenue Sharing</h2>
+        <h2 style="font-size: 12px; margin-top: 12px; margin-bottom: 8px;">4. Revenue Sharing</h2>
         <p>If HyperChat includes monetized features (e.g., donations, premium messages), revenue will be shared as follows unless otherwise agreed:</p>
-        <ul style="margin-left: 20px; margin-bottom: 15px;">
+        <ul style="margin-left: 15px; margin-bottom: 10px; padding-left: 0;">
           <li><strong>80%</strong> to the Streamer</li>
           <li><strong>20%</strong> to HyperChat (as platform/service fee)</li>
         </ul>
         <p>Payments will be processed on a monthly basis, subject to minimum payout thresholds and applicable fees.</p>
         
-        <h2 style="font-size: 16px; margin-top: 20px; margin-bottom: 10px;">5. Intellectual Property</h2>
-        <ul style="margin-left: 20px; margin-bottom: 15px;">
+        <h2 style="font-size: 12px; margin-top: 12px; margin-bottom: 8px;">5. Intellectual Property</h2>
+        <ul style="margin-left: 15px; margin-bottom: 10px; padding-left: 0;">
           <li>All platform content, branding, and underlying software remain the sole property of HyperChat.</li>
           <li>The Streamer retains rights to their own content but grants HyperChat permission to feature their stream/channel for promotional use (with prior notice).</li>
         </ul>
         
-        <h2 style="font-size: 16px; margin-top: 20px; margin-bottom: 10px;">6. Term & Termination</h2>
-        <ul style="margin-left: 20px; margin-bottom: 15px;">
+        <h2 style="font-size: 12px; margin-top: 12px; margin-bottom: 8px;">6. Term & Termination</h2>
+        <ul style="margin-left: 15px; margin-bottom: 10px; padding-left: 0;">
           <li>This Agreement begins on the Effective Date and continues until terminated by either party with <strong>7 days' written notice</strong>.</li>
           <li>HyperChat reserves the right to suspend or terminate access for violations of terms, abuse of service, or unlawful activity.</li>
         </ul>
         
-        <h2 style="font-size: 16px; margin-top: 20px; margin-bottom: 10px;">7. Confidentiality</h2>
+        <h2 style="font-size: 12px; margin-top: 12px; margin-bottom: 8px;">7. Confidentiality</h2>
         <p>The Streamer agrees not to disclose any non-public information about HyperChat, including platform features under development, financial terms, or internal strategies.</p>
         
-        <h2 style="font-size: 16px; margin-top: 20px; margin-bottom: 10px;">8. Limitation of Liability</h2>
+        <h2 style="font-size: 12px; margin-top: 12px; margin-bottom: 8px;">8. Limitation of Liability</h2>
         <p>HyperChat shall not be liable for indirect, incidental, or consequential damages arising from the use of its platform.</p>
         
-        <h2 style="font-size: 16px; margin-top: 20px; margin-bottom: 10px;">9. Governing Law</h2>
+        <h2 style="font-size: 12px; margin-top: 12px; margin-bottom: 8px;">9. Governing Law</h2>
         <p>This Agreement shall be governed by the laws of <strong>India</strong>, and any disputes shall be resolved in the courts of that jurisdiction.</p>
         
-        <h2 style="font-size: 16px; margin-top: 20px; margin-bottom: 10px;">10. Entire Agreement</h2>
+        <h2 style="font-size: 12px; margin-top: 12px; margin-bottom: 8px;">10. Entire Agreement</h2>
         <p>This Agreement constitutes the entire understanding between the parties and supersedes any prior agreements or understandings.</p>
         
-        <h2 style="font-size: 16px; margin-top: 20px; margin-bottom: 10px;">IN WITNESS WHEREOF, the parties have executed this Agreement as of the Effective Date.</h2>
+        <h2 style="font-size: 12px; margin-top: 12px; margin-bottom: 8px;">IN WITNESS WHEREOF, the parties have executed this Agreement as of the Effective Date.</h2>
         
-        <p style="margin-top: 40px;">
-          <strong>HyperChat Technologies Pvt. Ltd.</strong><br>
-          By: <strong>Ankit Kumar</strong><br>
-          Title: <strong>Founder</strong><br>
-          Date: ${currentDate}
-        </p>
-        
-        <p style="margin-top: 40px;">
-          <strong>${name}</strong><br>
-          Digital Signature<br>
-          Date: ${currentDate}
-        </p>
+        <div style="margin-top: 25px; display: flex; justify-content: space-between;">
+          <div>
+            <strong>HyperChat Technologies Pvt. Ltd.</strong><br>
+            By: <strong>Ankit Kumar</strong><br>
+            Title: <strong>Founder</strong><br>
+            Date: ${currentDate}
+          </div>
+          
+          <div style="margin-left: 40px;">
+            <strong>${name}</strong><br>
+            Digital Signature<br>
+            Date: ${currentDate}
+          </div>
+        </div>
       </div>
     `;
     
@@ -295,7 +296,7 @@ const ContractDialog: React.FC<ContractDialogProps> = ({
     tempContainer.innerHTML = contractHTML;
     document.body.appendChild(tempContainer);
     
-    // Use html2canvas to capture the contract content
+    // Use html2canvas with optimized scale settings
     html2canvas(tempContainer, {
       scale: 2, // Higher scale for better quality
       logging: false,
