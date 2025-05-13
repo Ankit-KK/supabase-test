@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { FileText } from "lucide-react";
 import ContractDialog from "@/components/ContractDialog";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 interface ContractSigningButtonProps {
   streamerName: string;
@@ -20,14 +21,26 @@ const ContractSigningButton: React.FC<ContractSigningButtonProps> = ({
   // Check if contract has been signed
   useEffect(() => {
     const checkContractStatus = async () => {
-      const { data, error } = await supabase
-        .from("streamer_contracts")
-        .select("*")
-        .eq("streamer_type", streamerType)
-        .single();
-      
-      if (data) {
-        setIsSigned(true);
+      try {
+        const { data, error } = await supabase
+          .from("streamer_contracts")
+          .select("*")
+          .eq("streamer_type", streamerType)
+          .single();
+        
+        if (data) {
+          setIsSigned(true);
+        } else if (error && error.code !== 'PGRST116') {
+          // PGRST116 is the "not found" error, which is expected if not signed
+          console.error("Error checking contract status:", error);
+          toast({
+            title: "Error checking contract status",
+            description: "Please try again later",
+            variant: "destructive",
+          });
+        }
+      } catch (error) {
+        console.error("Error checking contract:", error);
       }
     };
     
@@ -49,6 +62,7 @@ const ContractSigningButton: React.FC<ContractSigningButtonProps> = ({
         onOpenChange={setDialogOpen}
         streamerName={streamerName}
         streamerType={streamerType}
+        onContractSigned={() => setIsSigned(true)}
       />
     </>
   );

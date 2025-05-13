@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Dialog, 
@@ -25,6 +25,7 @@ interface ContractDialogProps {
   onOpenChange: (open: boolean) => void;
   streamerName: string;
   streamerType: string;
+  onContractSigned?: () => void;
 }
 
 // Define the contract data type to include the revenue cut properties
@@ -35,15 +36,16 @@ interface StreamerContractData {
   signature: string;
   agreed_to_terms: boolean;
   signed_at: string;
-  streamer_cut?: number;
-  hyperchat_cut?: number;
+  streamer_cut: number;
+  hyperchat_cut: number;
 }
 
 const ContractDialog: React.FC<ContractDialogProps> = ({ 
   open, 
   onOpenChange,
   streamerName,
-  streamerType
+  streamerType,
+  onContractSigned
 }) => {
   const { toast } = useToast();
   const [name, setName] = useState(streamerName);
@@ -65,8 +67,10 @@ const ContractDialog: React.FC<ContractDialogProps> = ({
   const [skipSignature, setSkipSignature] = useState(false);
 
   // Check if contract is already signed
-  React.useEffect(() => {
+  useEffect(() => {
     const checkContractStatus = async () => {
+      if (!open) return;
+      
       try {
         const { data, error } = await supabase
           .from("streamer_contracts")
@@ -79,11 +83,10 @@ const ContractDialog: React.FC<ContractDialogProps> = ({
           setName(data.streamer_name);
           setSignature(data.signature);
           
-          // Safely access revenue sharing properties with type checking
-          const contractData = data as StreamerContractData;
-          if (contractData.streamer_cut !== undefined && contractData.hyperchat_cut !== undefined) {
-            setStreamerCut(contractData.streamer_cut);
-            setHyperChatCut(contractData.hyperchat_cut);
+          // Set revenue sharing values
+          if (data.streamer_cut !== null && data.hyperchat_cut !== null) {
+            setStreamerCut(data.streamer_cut);
+            setHyperChatCut(data.hyperchat_cut);
           }
         }
       } catch (error) {
@@ -91,9 +94,7 @@ const ContractDialog: React.FC<ContractDialogProps> = ({
       }
     };
 
-    if (open) {
-      checkContractStatus();
-    }
+    checkContractStatus();
   }, [open, streamerType]);
 
   // Handle mouse events for signature canvas
@@ -214,9 +215,16 @@ const ContractDialog: React.FC<ContractDialogProps> = ({
           }
         ], { onConflict: "streamer_type" });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error details:", error);
+        throw error;
+      }
 
       setIsSigned(true);
+      if (onContractSigned) {
+        onContractSigned();
+      }
+      
       toast({
         title: "Contract signed successfully",
         description: "Thank you for signing the agreement",

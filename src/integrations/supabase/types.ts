@@ -297,25 +297,31 @@ export type Database = {
       streamer_contracts: {
         Row: {
           agreed_to_terms: boolean
+          hyperchat_cut: number | null
           id: string
           signature: string
           signed_at: string | null
+          streamer_cut: number | null
           streamer_name: string
           streamer_type: string
         }
         Insert: {
           agreed_to_terms?: boolean
+          hyperchat_cut?: number | null
           id?: string
           signature: string
           signed_at?: string | null
+          streamer_cut?: number | null
           streamer_name: string
           streamer_type: string
         }
         Update: {
           agreed_to_terms?: boolean
+          hyperchat_cut?: number | null
           id?: string
           signature?: string
           signed_at?: string | null
+          streamer_cut?: number | null
           streamer_name?: string
           streamer_type?: string
         }
