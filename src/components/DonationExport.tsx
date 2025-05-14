@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Calendar as CalendarIcon, FileText, Download } from "lucide-react";
+import { Calendar as CalendarIcon, FileText, Download, FileSpreadsheet } from "lucide-react";
 import { format } from "date-fns";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { objectsToCSV, downloadCSV, formatDateForFilename } from "@/utils/csvExport";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface DonationExportProps {
   tableName: "ankit_donations" | "harish_donations" | "mackle_donations";
@@ -34,20 +35,22 @@ const DonationExport: React.FC<DonationExportProps> = ({ tableName, streamerName
   );
   const [endDate, setEndDate] = useState<Date | undefined>(new Date());
   const [isExporting, setIsExporting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [donationData, setDonationData] = useState<Donation[]>([]);
   const { toast } = useToast();
 
-  const exportToCsv = async () => {
+  const fetchDonationData = async () => {
     if (!startDate || !endDate) {
       toast({
         variant: "destructive",
         title: "Date range required",
         description: "Please select both start and end dates",
       });
-      return;
+      return null;
     }
 
     try {
-      setIsExporting(true);
+      setIsLoading(true);
 
       // Format dates for query
       const startDateStr = format(startDate, "yyyy-MM-dd");
@@ -70,6 +73,34 @@ const DonationExport: React.FC<DonationExportProps> = ({ tableName, streamerName
           title: "No data found",
           description: "No donation data available for the selected period",
         });
+        setDonationData([]);
+        return null;
+      }
+
+      // Set the donation data
+      setDonationData(data as Donation[]);
+      return data as Donation[];
+    } catch (error) {
+      console.error("Data fetch error:", error);
+      toast({
+        variant: "destructive",
+        title: "Data fetch failed",
+        description: "An error occurred while fetching the data",
+      });
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const exportToCsv = async () => {
+    try {
+      setIsExporting(true);
+      
+      // Use the already fetched data or fetch it if not available
+      const data = donationData.length > 0 ? donationData : await fetchDonationData();
+      
+      if (!data) {
         setIsExporting(false);
         return;
       }
@@ -176,20 +207,73 @@ const DonationExport: React.FC<DonationExportProps> = ({ tableName, streamerName
               </Popover>
             </div>
           </div>
-          <Button 
-            className="w-full" 
-            onClick={exportToCsv} 
-            disabled={isExporting || !startDate || !endDate}
-          >
-            {isExporting ? (
-              "Exporting..."
-            ) : (
-              <>
-                <Download className="mr-2 h-4 w-4" />
-                Export to CSV
-              </>
-            )}
-          </Button>
+
+          <div className="flex gap-4">
+            <Button 
+              className="flex-1" 
+              onClick={fetchDonationData} 
+              disabled={isLoading || !startDate || !endDate}
+              variant="outline"
+            >
+              {isLoading ? (
+                "Loading..."
+              ) : (
+                <>
+                  <FileText className="mr-2 h-4 w-4" />
+                  View Data
+                </>
+              )}
+            </Button>
+            <Button 
+              className="flex-1" 
+              onClick={exportToCsv} 
+              disabled={isExporting || !startDate || !endDate}
+            >
+              {isExporting ? (
+                "Exporting..."
+              ) : (
+                <>
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                  Export to CSV
+                </>
+              )}
+            </Button>
+          </div>
+
+          {donationData.length > 0 && (
+            <div className="mt-6 border rounded-md overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Donor</TableHead>
+                    <TableHead>Amount (₹)</TableHead>
+                    <TableHead>Message</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {donationData.map((donation) => (
+                    <TableRow key={donation.id}>
+                      <TableCell>{format(new Date(donation.created_at), "yyyy-MM-dd HH:mm")}</TableCell>
+                      <TableCell>{donation.name}</TableCell>
+                      <TableCell>{donation.amount}</TableCell>
+                      <TableCell className="max-w-md truncate" title={donation.message}>
+                        {donation.message.length > 50 ? `${donation.message.substring(0, 50)}...` : donation.message}
+                      </TableCell>
+                      <TableCell>{donation.payment_status}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <div className="p-4 bg-muted">
+                <p className="text-sm text-muted-foreground">
+                  Showing {donationData.length} donation{donationData.length !== 1 ? 's' : ''} from {format(startDate!, "MMM d, yyyy")} to {format(endDate!, "MMM d, yyyy")}
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="text-sm text-muted-foreground">
             <p>This will export all successful donation data for the selected period.</p>
           </div>
