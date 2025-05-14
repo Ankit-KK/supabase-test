@@ -28,6 +28,9 @@ import MackleLogin from "./pages/MackleLogin";
 import MackleDashboard from "./pages/MackleDashboard";
 import MackleDonationMessages from "./pages/MackleDonationMessages";
 import MackleObsView from "./pages/MackleObsView";
+import AnkitDonationExport from "./pages/AnkitDonationExport";
+import HarishDonationExport from "./pages/HarishDonationExport";
+import MackleDonationExport from "./pages/MackleDonationExport";
 import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
@@ -59,14 +62,17 @@ const App = () => {
               <Route path="/ankit/login" element={<AnkitLogin />} />
               <Route path="/ankit/dashboard" element={<AnkitDashboard />} />
               <Route path="/ankit/messages" element={<AnkitDonationMessages />} />
+              <Route path="/ankit/export" element={<AnkitDonationExport />} />
               <Route path="/ankit/obs/:id" element={<AnkitObsView />} />
               <Route path="/harish/obs/:id" element={<HarishObsView />} />
               <Route path="/harish/messages" element={<HarishDonationMessages />} />
+              <Route path="/harish/export" element={<HarishDonationExport />} />
               <Route path="/harish/dashboard" element={<HarishDashboard />} />
               <Route path="/harish/login" element={<HarishLogin />} />
               <Route path="/mackle/login" element={<MackleLogin />} />
               <Route path="/mackle/dashboard" element={<MackleDashboard />} />
               <Route path="/mackle/messages" element={<MackleDonationMessages />} />
+              <Route path="/mackle/export" element={<MackleDonationExport />} />
               <Route path="/mackle/obs/:id" element={<MackleObsView />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

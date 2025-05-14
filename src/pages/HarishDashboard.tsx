@@ -6,7 +6,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthProtection } from "@/hooks/useAuthProtection";
-import { MessageSquare, Download } from "lucide-react";
+import { MessageSquare, Download, FileText } from "lucide-react";
 import { objectsToCSV, downloadCSV, formatDateForFilename } from "@/utils/csvExport";
 import { calculateMonthlyTotal, formatCurrency } from "@/utils/dashboardUtils";
 import ContractSigningButton from "@/components/ContractSigningButton";
@@ -192,6 +192,11 @@ const HarishDashboard = () => {
           <Button variant="outline" onClick={handleDownloadCSV}>
             <Download className="mr-2 h-4 w-4" />
             Download CSV
+          </Button>
+          {/* Add this button in the navigation section */}
+          <Button onClick={() => navigate("/harish/export")} className="gap-2">
+            <FileText className="h-4 w-4" />
+            Export Data
           </Button>
           <Button variant="outline" onClick={handleLogout}>
             Logout

@@ -6,7 +6,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthProtection } from "@/hooks/useAuthProtection";
-import { MessageSquare, Download } from "lucide-react";
+import { MessageSquare, Download, FileText } from "lucide-react";
 import { objectsToCSV, downloadCSV, formatDateForFilename } from "@/utils/csvExport";
 import { calculateMonthlyTotal, formatCurrency } from "@/utils/dashboardUtils";
 import ContractSigningButton from "@/components/ContractSigningButton";
@@ -188,6 +188,11 @@ const MackleDashboard = () => {
           <Button variant="outline" onClick={() => navigate("/mackle/messages")}>
             <MessageSquare className="mr-2 h-4 w-4" />
             Donation Messages
+          </Button>
+          {/* Add this button in the navigation section */}
+          <Button onClick={() => navigate("/mackle/export")} className="gap-2">
+            <FileText className="h-4 w-4" />
+            Export Data
           </Button>
           <Button variant="outline" onClick={handleDownloadCSV}>
             <Download className="mr-2 h-4 w-4" />
