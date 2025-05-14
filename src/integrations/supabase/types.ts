@@ -180,6 +180,7 @@ export type Database = {
           created_at: string | null
           id: string
           include_gif: boolean | null
+          include_sound: boolean
           message: string
           name: string
           order_id: string
@@ -190,6 +191,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           include_gif?: boolean | null
+          include_sound?: boolean
           message: string
           name: string
           order_id: string
@@ -200,6 +202,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           include_gif?: boolean | null
+          include_sound?: boolean
           message?: string
           name?: string
           order_id?: string

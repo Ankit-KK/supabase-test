@@ -8,6 +8,7 @@ type DonationRecord = {
   order_id: string;
   payment_status: string;
   donationType: "ankit" | "harish" | "mackle";
+  include_sound?: boolean;
 };
 
 /**
@@ -75,7 +76,8 @@ export const createDonationRecord = async (donation: DonationRecord) => {
         amount: donation.amount,
         message: donation.message,
         order_id: donation.order_id,
-        payment_status: donation.payment_status
+        payment_status: donation.payment_status,
+        include_sound: donation.include_sound
       });
 
     if (error) {
