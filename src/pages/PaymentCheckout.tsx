@@ -95,6 +95,10 @@ const PaymentCheckout = () => {
       const checkoutOptions = {
         paymentSessionId: orderResponse.payment_session_id,
         redirectTarget: "_self", // Change from _modal to _self for inline mode
+        onClose: function() {
+          console.log("Payment window closed without completing payment");
+          navigate("/status");  // Navigate to status page with no parameters to handle as cancelled
+        }
       };
       
       cashfree.checkout(checkoutOptions).then((result: any) => {

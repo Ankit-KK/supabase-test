@@ -16,7 +16,29 @@ const PaymentStatus = () => {
     const status = query.get("status");
     const orderId = query.get("order_id");
 
-    // Check payment status first from URL
+    // If no query parameters, check if we have donation data in sessionStorage
+    if (!status && !orderId) {
+      const donationDataStr = sessionStorage.getItem("donationData");
+      
+      if (donationDataStr) {
+        // We have donation data but no status - assume this is a cancelled payment
+        const donationData = JSON.parse(donationDataStr);
+        setPaymentStatus("aborted");
+        setVerificationStatus("failed");
+        handleFailedPayment(donationData.orderId || "unknown", "aborted");
+      } else {
+        // No donation data and no query params - truly missing information
+        setVerificationStatus("failed");
+        toast({
+          title: "Error",
+          description: "Missing payment information",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+
+    // Check payment status from URL if we have query params
     if (status && orderId) {
       setPaymentStatus(status);
 
@@ -28,13 +50,6 @@ const PaymentStatus = () => {
         // Create a failed donation record for tracking purposes
         handleFailedPayment(orderId, status);
       }
-    } else {
-      setVerificationStatus("failed");
-      toast({
-        title: "Error",
-        description: "Missing payment information",
-        variant: "destructive",
-      });
     }
   }, [location]);
 
@@ -50,7 +65,7 @@ const PaymentStatus = () => {
           name: donationData.name,
           amount: donationData.amount,
           message: donationData.message,
-          order_id: donationData.orderId,
+          order_id: orderId,
           payment_status: status === "aborted" ? "aborted" : "failed",
           donationType: donationData.donationType || "ankit",
           include_sound: donationData.includeSoundLink ? true : false
@@ -61,17 +76,22 @@ const PaymentStatus = () => {
           name: donationData.name,
           amount: donationData.amount,
           message: donationData.message,
-          order_id: donationData.orderId,
+          order_id: orderId,
           payment_status: status === "aborted" ? "aborted" : "failed",
           donationType: donationData.donationType || "ankit",
           include_sound: donationData.includeSoundLink ? true : false
         });
         
+        // Clean up session storage
+        sessionStorage.removeItem("donationData");
+        
         toast({
           title: "Payment Not Completed",
-          description: "Your donation was not processed",
+          description: status === "aborted" ? "Payment was cancelled" : "Your donation was not processed",
           variant: "destructive",
         });
+      } else {
+        console.error("No donation data found in session storage for failed payment");
       }
     } catch (error) {
       console.error("Error recording failed payment:", error);
@@ -195,7 +215,11 @@ const PaymentStatus = () => {
               </svg>
             </div>
             <h2 className="text-xl font-semibold text-red-600 mb-2">Payment Failed</h2>
-            <p className="text-gray-600">{paymentStatus === "aborted" ? "Payment was aborted." : "There was an issue with your payment."}</p>
+            <p className="text-gray-600">
+              {paymentStatus === "aborted" 
+                ? "Payment was cancelled." 
+                : "There was an issue with your payment."}
+            </p>
           </div>
         )}
         
