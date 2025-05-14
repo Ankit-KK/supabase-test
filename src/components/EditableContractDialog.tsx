@@ -96,20 +96,36 @@ const EditableContractDialog: React.FC<EditableContractDialogProps> = ({
     try {
       setIsSaving(true);
 
-      // Save the contract template to the database
+      // First check if a contract record already exists
+      const { data: existingContract, error: checkError } = await supabase
+        .from("streamer_contracts")
+        .select("*")
+        .eq("streamer_type", streamerType)
+        .single();
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        // An error occurred that wasn't just "not found"
+        console.error("Error checking existing contract:", checkError);
+        throw checkError;
+      }
+
+      // Prepare contract data
       const contractData = {
         streamer_type: streamerType,
         streamer_name: name,
         streamer_cut: streamerCut,
         hyperchat_cut: hyperChatCut,
-        // We could save the actual contract text sections here
-        // For now, we're just storing the structure but not the content
+        // For insert, we need a signature value
+        signature: existingContract?.signature || "template_only",
+        // If it's a template, we set agreed_to_terms to false
+        agreed_to_terms: existingContract?.agreed_to_terms || false,
         updated_at: new Date().toISOString()
       };
 
+      // Use upsert operation with single object
       const { error } = await supabase
         .from("streamer_contracts")
-        .upsert([contractData], { onConflict: "streamer_type" });
+        .upsert(contractData, { onConflict: "streamer_type" });
 
       if (error) {
         console.error("Error saving contract:", error);
