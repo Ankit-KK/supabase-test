@@ -28,7 +28,7 @@ const Services: React.FC = () => {
             <ul className="space-y-2">
               <li className="flex items-start gap-2">
                 <Check size={18} className="shrink-0 mt-1 text-hyperchat-pink" />
-                <span className="text-muted-foreground">Personalized payment pages like /ankit</span>
+                <span className="text-muted-foreground">Personalized payment pages</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check size={18} className="shrink-0 mt-1 text-hyperchat-pink" />
