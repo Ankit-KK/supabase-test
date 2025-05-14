@@ -13,6 +13,7 @@ const PaymentCheckout = () => {
     message: string;
     orderId: string;
     donationType: string;
+    includeSoundLink?: string | null;
   } | null>(null);
   
   const navigate = useNavigate();
@@ -46,6 +47,7 @@ const PaymentCheckout = () => {
 
     try {
       const data = JSON.parse(donationDataStr);
+      console.log("Loaded donation data:", data);
       setPaymentData(data);
       setIsLoading(false);
     } catch (error) {
@@ -64,6 +66,13 @@ const PaymentCheckout = () => {
     
     setIsLoading(true);
     try {
+      console.log("Creating payment order with data:", {
+        orderId: paymentData.orderId,
+        amount: paymentData.amount,
+        name: paymentData.name,
+        donationType: paymentData.donationType
+      });
+      
       // Create payment order using Supabase Edge Function
       const orderResponse = await createPaymentOrder(
         paymentData.orderId, 
@@ -75,6 +84,8 @@ const PaymentCheckout = () => {
       if (!orderResponse || !orderResponse.payment_session_id) {
         throw new Error("Failed to create payment order");
       }
+
+      console.log("Payment order created:", orderResponse);
 
       // Initialize Cashfree checkout with inline mode instead of popup
       const cashfree = (window as any).Cashfree({
@@ -96,7 +107,7 @@ const PaymentCheckout = () => {
         }
         if (result.paymentDetails) {
           console.log("Payment has been completed:", result.paymentDetails.paymentMessage);
-          navigate("/status?order_id=" + paymentData.orderId);
+          navigate("/status?order_id=" + paymentData.orderId + "&status=success");
         }
       });
       

@@ -46,6 +46,16 @@ const PaymentStatus = () => {
       if (donationDataStr) {
         const donationData = JSON.parse(donationDataStr);
         
+        console.log("Creating failed donation record:", {
+          name: donationData.name,
+          amount: donationData.amount,
+          message: donationData.message,
+          order_id: donationData.orderId,
+          payment_status: status === "aborted" ? "aborted" : "failed",
+          donationType: donationData.donationType || "ankit",
+          include_sound: donationData.includeSoundLink ? true : false
+        });
+        
         // Create donation record in database with failed status
         await createDonationRecord({
           name: donationData.name,
@@ -54,7 +64,7 @@ const PaymentStatus = () => {
           order_id: donationData.orderId,
           payment_status: status === "aborted" ? "aborted" : "failed",
           donationType: donationData.donationType || "ankit",
-          include_sound: donationData.includeSoundLink ? true : undefined
+          include_sound: donationData.includeSoundLink ? true : false
         });
         
         toast({
@@ -80,6 +90,16 @@ const PaymentStatus = () => {
         if (donationDataStr) {
           const donationData = JSON.parse(donationDataStr);
           
+          console.log("Creating successful donation record:", {
+            name: donationData.name,
+            amount: donationData.amount,
+            message: donationData.message,
+            order_id: donationData.orderId,
+            payment_status: "success",
+            donationType: donationData.donationType || "ankit",
+            include_sound: donationData.includeSoundLink ? true : false
+          });
+          
           // Create donation record in database
           await createDonationRecord({
             name: donationData.name,
@@ -88,7 +108,7 @@ const PaymentStatus = () => {
             order_id: donationData.orderId,
             payment_status: "success",
             donationType: donationData.donationType || "ankit",
-            include_sound: donationData.includeSoundLink ? true : undefined
+            include_sound: donationData.includeSoundLink ? true : false
           });
           
           setVerificationStatus("success");
