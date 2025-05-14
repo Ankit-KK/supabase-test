@@ -24,8 +24,6 @@ const AnkitDashboard = () => {
   const [donations, setDonations] = useState<Donation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -34,16 +32,6 @@ const AnkitDashboard = () => {
     redirectTo: "/ankit/login",
     authKey: "ankitAuth"
   });
-
-  // Check admin status
-  useEffect(() => {
-    const adminStatus = sessionStorage.getItem("ankitAuth") === "true";
-    setIsAdmin(adminStatus);
-    
-    // Check super admin status (logged in with admin_pass)
-    const superAdminStatus = sessionStorage.getItem("ankitAdminAuth") === "true";
-    setIsSuperAdmin(superAdminStatus);
-  }, []);
 
   // Function to fetch donations data
   const fetchDonations = async () => {
@@ -125,7 +113,6 @@ const AnkitDashboard = () => {
 
   const handleLogout = () => {
     sessionStorage.removeItem("ankitAuth");
-    sessionStorage.removeItem("ankitAdminAuth");
     toast({
       title: "Logged out",
       description: "You have been successfully logged out",

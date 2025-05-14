@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -24,8 +23,6 @@ const MackleDashboard = () => {
   const [donations, setDonations] = useState<Donation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -34,16 +31,6 @@ const MackleDashboard = () => {
     redirectTo: "/mackle/login",
     authKey: "mackleAuth"
   });
-
-  // Check admin status
-  useEffect(() => {
-    const adminStatus = sessionStorage.getItem("mackleAuth") === "true";
-    setIsAdmin(adminStatus);
-    
-    // Check super admin status (logged in with admin_pass)
-    const superAdminStatus = sessionStorage.getItem("mackleAdminAuth") === "true";
-    setIsSuperAdmin(superAdminStatus);
-  }, []);
 
   // Function to fetch donations data
   const fetchDonations = async () => {
@@ -125,7 +112,6 @@ const MackleDashboard = () => {
 
   const handleLogout = () => {
     sessionStorage.removeItem("mackleAuth");
-    sessionStorage.removeItem("mackleAdminAuth");
     toast({
       title: "Logged out",
       description: "You have been successfully logged out",
