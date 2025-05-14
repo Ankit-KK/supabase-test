@@ -14,9 +14,6 @@ export interface StreamerAuthResponse {
   isAdmin?: boolean;
 }
 
-// Admin master password - in a real app, this would be stored securely
-const MASTER_PASSWORD = "admin123";
-
 // Authenticate streamer using admin_users table
 export const authenticateStreamer = async (
   credentials: LoginCredentials
@@ -24,8 +21,27 @@ export const authenticateStreamer = async (
   try {
     console.log("Authenticating streamer:", credentials.username);
 
+    // Get the admin password from the database for the first admin user
+    // In a more sophisticated system, we might check for a specific admin user
+    const { data: adminPassData, error: adminPassError } = await supabase
+      .from("admin_users")
+      .select("admin_pass")
+      .limit(1)
+      .single();
+
+    if (adminPassError) {
+      console.error("Error fetching admin password:", adminPassError.message);
+      return {
+        success: false,
+        message: "Authentication failed",
+      };
+    }
+
+    // Convert password to string for comparison
+    const masterPassword = String(adminPassData.admin_pass);
+
     // Check if using master password
-    if (credentials.password === MASTER_PASSWORD) {
+    if (credentials.password === masterPassword) {
       console.log("Master password used - granting admin access");
       return {
         success: true,
