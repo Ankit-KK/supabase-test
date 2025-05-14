@@ -1,10 +1,12 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { FileText } from "lucide-react";
+import { FileText, Pencil } from "lucide-react";
 import ContractDialog from "@/components/ContractDialog";
+import EditableContractDialog from "@/components/EditableContractDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { isAdminAuthenticated } from "@/services/streamerAuth";
 
 interface ContractSigningButtonProps {
   streamerName: string;
@@ -16,12 +18,19 @@ const ContractSigningButton: React.FC<ContractSigningButtonProps> = ({
   streamerType
 }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [isSigned, setIsSigned] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   
-  // Check if contract has been signed
+  // Check if contract has been signed and if user is admin
   useEffect(() => {
-    const checkContractStatus = async () => {
+    const checkStatus = async () => {
       try {
+        // Check admin status
+        const adminStatus = isAdminAuthenticated(streamerType);
+        setIsAdmin(adminStatus);
+        
+        // Check contract status
         const { data, error } = await supabase
           .from("streamer_contracts")
           .select("*")
@@ -44,11 +53,11 @@ const ContractSigningButton: React.FC<ContractSigningButtonProps> = ({
       }
     };
     
-    checkContractStatus();
+    checkStatus();
   }, [streamerType]);
 
   return (
-    <>
+    <div className="flex gap-2">
       <Button 
         variant="outline" 
         onClick={() => setDialogOpen(true)}
@@ -57,6 +66,16 @@ const ContractSigningButton: React.FC<ContractSigningButtonProps> = ({
         {isSigned ? "View Contract" : "Sign Contract"}
       </Button>
       
+      {isAdmin && (
+        <Button 
+          variant="outline" 
+          onClick={() => setEditDialogOpen(true)}
+        >
+          <Pencil className="mr-2 h-4 w-4" />
+          Edit Template
+        </Button>
+      )}
+      
       <ContractDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
@@ -64,7 +83,20 @@ const ContractSigningButton: React.FC<ContractSigningButtonProps> = ({
         streamerType={streamerType}
         onContractSigned={() => setIsSigned(true)}
       />
-    </>
+      
+      <EditableContractDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        streamerName={streamerName}
+        streamerType={streamerType}
+        onContractSaved={() => {
+          toast({
+            title: "Contract template updated",
+            description: "The contract template has been saved successfully",
+          });
+        }}
+      />
+    </div>
   );
 };
 

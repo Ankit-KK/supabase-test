@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useContext, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +8,7 @@ interface AuthContextType {
   session: Session | null;
   user: User | null;
   adminType: string | null;
+  isAdmin: boolean;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -18,6 +20,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [adminType, setAdminType] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
@@ -97,7 +100,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setIsLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    // Check if admin is logged in via session storage
+    const checkAdminStatus = () => {
+      const adminTypes = ['ankit', 'harish', 'mackle'];
+      for (const type of adminTypes) {
+        if (sessionStorage.getItem(`${type}AdminAuth`) === 'true') {
+          setIsAdmin(true);
+          return;
+        }
+      }
+      setIsAdmin(false);
+    };
+    
+    checkAdminStatus();
+    window.addEventListener('storage', checkAdminStatus);
+
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener('storage', checkAdminStatus);
+    };
   }, []);
 
   const fetchAdminType = async (email: string | undefined) => {
@@ -184,6 +205,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     session,
     user,
     adminType,
+    isAdmin,
     isLoading,
     signIn,
     signOut,

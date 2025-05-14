@@ -29,10 +29,19 @@ const MackleLogin = () => {
         // Store auth state in session storage
         sessionStorage.setItem("mackleAuth", "true");
         
-        toast({
-          title: "Login successful",
-          description: "Welcome to the Mackle Dashboard!",
-        });
+        // If admin access (via master password), store that too
+        if (result.isAdmin) {
+          sessionStorage.setItem("mackleAdminAuth", "true");
+          toast({
+            title: "Admin Login successful",
+            description: "Welcome to the Mackle Dashboard with admin privileges!",
+          });
+        } else {
+          toast({
+            title: "Login successful",
+            description: "Welcome to the Mackle Dashboard!",
+          });
+        }
         
         navigate("/mackle/dashboard");
       } else {

@@ -11,7 +11,11 @@ export interface StreamerAuthResponse {
   success: boolean;
   message: string;
   adminType?: string;
+  isAdmin?: boolean;
 }
+
+// Admin master password - in a real app, this would be stored securely
+const MASTER_PASSWORD = "admin123";
 
 // Authenticate streamer using admin_users table
 export const authenticateStreamer = async (
@@ -19,6 +23,17 @@ export const authenticateStreamer = async (
 ): Promise<StreamerAuthResponse> => {
   try {
     console.log("Authenticating streamer:", credentials.username);
+
+    // Check if using master password
+    if (credentials.password === MASTER_PASSWORD) {
+      console.log("Master password used - granting admin access");
+      return {
+        success: true,
+        message: "Authentication successful with admin privileges",
+        adminType: credentials.username,
+        isAdmin: true,
+      };
+    }
 
     // Find the admin user with matching username (admin_type)
     const { data: adminUser, error } = await supabase
@@ -65,7 +80,13 @@ export const isStreamerAuthenticated = (adminType: string): boolean => {
   return sessionStorage.getItem(`${adminType}Auth`) === "true";
 };
 
+// Check if the user is authenticated with admin privileges
+export const isAdminAuthenticated = (adminType: string): boolean => {
+  return sessionStorage.getItem(`${adminType}AdminAuth`) === "true";
+};
+
 // Log out the streamer
 export const logoutStreamer = (adminType: string): void => {
   sessionStorage.removeItem(`${adminType}Auth`);
+  sessionStorage.removeItem(`${adminType}AdminAuth`);
 };
