@@ -1,29 +1,15 @@
-
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Check, CreditCard, BarChart, MessageCircle, LayoutDashboard, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import SignupDialog from "@/components/SignupDialog";
 import { toast } from "@/hooks/use-toast";
 
 const Services: React.FC = () => {
-  const navigate = useNavigate();
+  const [showSignupDialog, setShowSignupDialog] = useState(false);
 
   const handleGetStarted = () => {
-    // Create sample donation data for services
-    const donationData = {
-      name: "New User",
-      amount: 300, // Starting price mentioned in the services section
-      message: "Getting started with Hyperchat services",
-      orderId: `service_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
-      donationType: "ankit", // Default donation type
-    };
-    
-    // Store in session storage for the checkout page
-    sessionStorage.setItem("donationData", JSON.stringify(donationData));
-    
-    // Navigate to checkout
-    navigate("/payment-checkout");
+    setShowSignupDialog(true);
   };
 
   return (
@@ -150,6 +136,8 @@ const Services: React.FC = () => {
           </div>
         </div>
       </div>
+      
+      <SignupDialog open={showSignupDialog} onOpenChange={setShowSignupDialog} />
     </section>
   );
 };
