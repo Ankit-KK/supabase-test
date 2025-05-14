@@ -1,198 +1,187 @@
 
-import React, { useState, useEffect } from "react";
-import { useLocation, Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { toast } from "@/hooks/use-toast";
 import { verifyPayment, createDonationRecord } from "@/services/paymentService";
-import { CheckCircle, XCircle, AlertTriangle, Loader2 } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
 
 const PaymentStatus = () => {
-  const [status, setStatus] = useState<"loading" | "success" | "failed" | "pending">("loading");
-  const [paymentDetails, setPaymentDetails] = useState<any>(null);
-  const [isRecordCreated, setIsRecordCreated] = useState(false);
-  const [donationType, setDonationType] = useState<"ankit" | "harish" | "mackle" | null>(null);
-  
+  const [verificationStatus, setVerificationStatus] = useState("verifying");
+  const [paymentStatus, setPaymentStatus] = useState("");
+  const navigate = useNavigate();
   const location = useLocation();
-  
+
   useEffect(() => {
-    const verifyAndRecordPayment = async () => {
-      try {
-        // Get the order_id from URL query params
-        const searchParams = new URLSearchParams(location.search);
-        const orderId = searchParams.get("order_id");
-        
-        if (!orderId) {
-          toast({
-            title: "Error",
-            description: "Order ID not found in URL",
-            variant: "destructive",
-          });
-          setStatus("failed");
-          return;
-        }
+    const query = new URLSearchParams(location.search);
+    const status = query.get("status");
+    const orderId = query.get("order_id");
 
-        // Determine donation type from order ID
-        let donationType: "ankit" | "harish" | "mackle" = "ankit";
-        if (orderId.startsWith("harish_")) {
-          donationType = "harish";
-        } else if (orderId.startsWith("mackle_")) {
-          donationType = "mackle";
-        } else if (orderId.startsWith("ankit_")) {
-          donationType = "ankit";
-        }
-        
-        setDonationType(donationType);
+    // Check payment status first from URL
+    if (status && orderId) {
+      setPaymentStatus(status);
 
-        // Get donation data from session storage
-        const donationDataStr = sessionStorage.getItem("donationData");
-        if (!donationDataStr) {
-          toast({
-            title: "Error",
-            description: "No donation data found",
-            variant: "destructive",
-          });
-          setStatus("failed");
-          return;
-        }
+      // If payment was successful, verify it on the backend and create donation record
+      if (status === "success") {
+        verifyAndCreateRecord(orderId);
+      } else {
+        setVerificationStatus("failed");
+        // Create a failed donation record for tracking purposes
+        handleFailedPayment(orderId, status);
+      }
+    } else {
+      setVerificationStatus("failed");
+      toast({
+        title: "Error",
+        description: "Missing payment information",
+        variant: "destructive",
+      });
+    }
+  }, [location]);
 
+  const handleFailedPayment = async (orderId: string, status: string) => {
+    try {
+      // Get donation data from session storage
+      const donationDataStr = sessionStorage.getItem("donationData");
+      
+      if (donationDataStr) {
         const donationData = JSON.parse(donationDataStr);
         
-        // Verify payment status using Supabase Edge Function
-        const verificationResult = await verifyPayment(orderId);
+        // Create donation record in database with failed status
+        await createDonationRecord({
+          name: donationData.name,
+          amount: donationData.amount,
+          message: donationData.message,
+          order_id: donationData.orderId,
+          payment_status: status === "aborted" ? "aborted" : "failed",
+          donationType: donationData.donationType || "ankit",
+          include_sound: donationData.includeSoundLink ? true : undefined
+        });
         
-        if (!verificationResult || !verificationResult.payments) {
-          toast({
-            title: "Error",
-            description: "Failed to verify payment status",
-            variant: "destructive",
-          });
-          setStatus("failed");
-          return;
-        }
+        toast({
+          title: "Payment Not Completed",
+          description: "Your donation was not processed",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error recording failed payment:", error);
+    }
+  };
 
-        setPaymentDetails(verificationResult);
+  const verifyAndCreateRecord = async (orderId: string) => {
+    try {
+      // Verify payment with backend
+      const verificationResult = await verifyPayment(orderId);
+      
+      if (verificationResult && verificationResult.status === "success") {
+        // Get donation data from session storage
+        const donationDataStr = sessionStorage.getItem("donationData");
         
-        // Determine payment status
-        const payments = verificationResult.payments;
-        let paymentStatus = "failed";
-        
-        if (payments.some((tx: any) => tx.payment_status === "SUCCESS")) {
-          paymentStatus = "success";
-          setStatus("success");
-        } else if (payments.some((tx: any) => tx.payment_status === "PENDING")) {
-          paymentStatus = "pending";
-          setStatus("pending");
-        } else {
-          paymentStatus = "failed";
-          setStatus("failed");
-        }
-
-        // Create donation record in Supabase only after payment verification
-        if (!isRecordCreated) {
+        if (donationDataStr) {
+          const donationData = JSON.parse(donationDataStr);
+          
+          // Create donation record in database
           await createDonationRecord({
             name: donationData.name,
             amount: donationData.amount,
             message: donationData.message,
-            order_id: orderId,
-            payment_status: paymentStatus,
-            donationType: donationType
+            order_id: donationData.orderId,
+            payment_status: "success",
+            donationType: donationData.donationType || "ankit",
+            include_sound: donationData.includeSoundLink ? true : undefined
           });
-          setIsRecordCreated(true);
+          
+          setVerificationStatus("success");
+          toast({
+            title: "Payment Verified",
+            description: "Your donation has been successfully verified",
+          });
+        } else {
+          setVerificationStatus("failed");
+          toast({
+            title: "Error",
+            description: "Donation data not found",
+            variant: "destructive",
+          });
         }
-
-      } catch (error) {
-        console.error("Error verifying payment:", error);
+      } else {
+        setVerificationStatus("failed");
         toast({
-          title: "Verification Error",
-          description: "Failed to verify payment status. Please contact support.",
+          title: "Verification Failed",
+          description: "Payment verification failed",
           variant: "destructive",
         });
-        setStatus("failed");
       }
-    };
-
-    verifyAndRecordPayment();
-  }, [location.search, isRecordCreated]);
-
-  const getReturnLink = () => {
-    if (donationType === "harish") {
-      return "/harish";
-    } else if (donationType === "mackle") {
-      return "/mackle";
+    } catch (error) {
+      console.error("Error verifying payment:", error);
+      setVerificationStatus("failed");
+      toast({
+        title: "Error",
+        description: "Failed to verify payment",
+        variant: "destructive",
+      });
     }
-    return "/ankit";
+  };
+
+  const getDonationType = () => {
+    const donationDataStr = sessionStorage.getItem("donationData");
+    if (donationDataStr) {
+      const donationData = JSON.parse(donationDataStr);
+      return donationData.donationType || "ankit";
+    }
+    return "ankit";
+  };
+
+  const handleReturn = () => {
+    const donationType = getDonationType();
+    if (donationType === "harish") {
+      navigate("/harish");
+    } else if (donationType === "mackle") {
+      navigate("/mackle");
+    } else {
+      navigate("/ankit");
+    }
   };
 
   return (
-    <div className="container mx-auto max-w-md py-10">
-      <div className="border rounded-lg p-8 shadow-sm text-center space-y-6">
-        {status === "loading" && (
-          <>
-            <div className="flex justify-center">
-              <Loader2 className="h-16 w-16 animate-spin text-primary" />
-            </div>
-            <h1 className="text-2xl font-bold">Verifying Payment</h1>
-            <p className="text-muted-foreground">
-              Please wait while we verify your payment status...
-            </p>
-          </>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
+      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+        <h1 className="text-2xl font-bold mb-6">Payment Status</h1>
+        
+        {verificationStatus === "verifying" && (
+          <div className="mb-6">
+            <div className="animate-spin w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p>Verifying your payment...</p>
+          </div>
         )}
         
-        {status === "success" && (
-          <>
-            <div className="flex justify-center">
-              <CheckCircle className="h-16 w-16 text-green-500" />
+        {verificationStatus === "success" && (
+          <div className="mb-6">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
             </div>
-            <h1 className="text-2xl font-bold text-green-500">Payment Successful</h1>
-            <p className="text-muted-foreground">
-              Thank you for your donation! Your payment has been successfully processed.
-            </p>
-            {paymentDetails && (
-              <div className="text-left bg-gray-50 rounded p-4 text-sm">
-                <p><span className="font-medium">Order ID:</span> {paymentDetails.order.order_id}</p>
-                <p><span className="font-medium">Amount:</span> ₹{paymentDetails.order.order_amount}</p>
-                <p>
-                  <span className="font-medium">Donation for:</span> 
-                  {donationType === "harish" 
-                    ? "Harish" 
-                    : donationType === "mackle" 
-                      ? "Mackle" 
-                      : "Ankit"}
-                </p>
-              </div>
-            )}
-          </>
+            <h2 className="text-xl font-semibold text-green-600 mb-2">Payment Successful</h2>
+            <p className="text-gray-600">Thank you for your donation!</p>
+          </div>
         )}
         
-        {status === "pending" && (
-          <>
-            <div className="flex justify-center">
-              <AlertTriangle className="h-16 w-16 text-yellow-500" />
+        {verificationStatus === "failed" && (
+          <div className="mb-6">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </div>
-            <h1 className="text-2xl font-bold text-yellow-500">Payment Pending</h1>
-            <p className="text-muted-foreground">
-              Your payment is being processed. We'll update you once it's complete.
-            </p>
-          </>
+            <h2 className="text-xl font-semibold text-red-600 mb-2">Payment Failed</h2>
+            <p className="text-gray-600">{paymentStatus === "aborted" ? "Payment was aborted." : "There was an issue with your payment."}</p>
+          </div>
         )}
         
-        {status === "failed" && (
-          <>
-            <div className="flex justify-center">
-              <XCircle className="h-16 w-16 text-red-500" />
-            </div>
-            <h1 className="text-2xl font-bold text-red-500">Payment Failed</h1>
-            <p className="text-muted-foreground">
-              We couldn't process your payment. Please try again or use a different payment method.
-            </p>
-          </>
-        )}
-        
-        <div className="pt-4">
-          <Link to={getReturnLink()}>
-            <Button variant="outline">Make Another Donation</Button>
-          </Link>
-        </div>
+        <Button onClick={handleReturn} className="w-full">
+          Return to Donation Page
+        </Button>
       </div>
     </div>
   );
