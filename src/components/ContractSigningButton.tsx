@@ -21,7 +21,6 @@ const ContractSigningButton: React.FC<ContractSigningButtonProps> = ({
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [isSigned, setIsSigned] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   
   // Check if contract has been signed and if user is admin
   useEffect(() => {
@@ -30,10 +29,6 @@ const ContractSigningButton: React.FC<ContractSigningButtonProps> = ({
         // Check admin status
         const adminStatus = isAdminAuthenticated(streamerType);
         setIsAdmin(adminStatus);
-        
-        // Check super admin status (logged in with admin_pass)
-        const superAdminStatus = sessionStorage.getItem(`${streamerType}AdminAuth`) === "true";
-        setIsSuperAdmin(superAdminStatus);
         
         // Check contract status
         const { data, error } = await supabase
@@ -71,8 +66,7 @@ const ContractSigningButton: React.FC<ContractSigningButtonProps> = ({
         {isSigned ? "View Contract" : "Sign Contract"}
       </Button>
       
-      {/* Only show Edit Template button for super admins */}
-      {isAdmin && isSuperAdmin && (
+      {isAdmin && (
         <Button 
           variant="outline" 
           onClick={() => setEditDialogOpen(true)}

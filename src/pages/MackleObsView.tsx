@@ -1,5 +1,4 @@
-
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -9,7 +8,6 @@ interface Donation {
   message: string;
   amount: number;
   created_at: string;
-  include_sound?: boolean;
 }
 
 interface ActiveDonation extends Donation {
@@ -27,7 +25,6 @@ const MackleObsView = () => {
   const { id } = useParams();
   const location = useLocation();
   const DISPLAY_DURATION = 15000; // 15 seconds per message
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Get URL parameters
   useEffect(() => {
@@ -61,7 +58,7 @@ const MackleObsView = () => {
         // Build our query - only fetch donations AFTER the page load time
         const { data, error: fetchError } = await supabase
           .from("mackle_donations")
-          .select("id, name, message, amount, created_at, include_sound")
+          .select("id, name, message, amount, created_at")
           .eq("payment_status", "success")
           .gte("created_at", loadTimeISO)
           .lte("created_at", todayEnd)
@@ -150,17 +147,6 @@ const MackleObsView = () => {
     };
   }, [id, pageLoadTime]);
 
-  // Play sound when a Casepaglu donation is active
-  useEffect(() => {
-    if (activeDonation?.include_sound) {
-      if (audioRef.current) {
-        audioRef.current.play().catch(error => {
-          console.error("Error playing sound:", error);
-        });
-      }
-    }
-  }, [activeDonation]);
-
   // Handle displaying one donation at a time and properly clearing after all messages
   useEffect(() => {
     let timeout: NodeJS.Timeout | null = null;
@@ -194,8 +180,6 @@ const MackleObsView = () => {
     console.log(`OBS View: Display queue has ${displayQueue.length} items, active donation: ${activeDonation?.name || 'none'}`);
   }, [displayQueue, activeDonation]);
 
-  const isCasepaglu = activeDonation?.amount === 1000 && activeDonation?.include_sound === true;
-
   if (error) {
     return (
       <div className="bg-black text-white p-4 min-h-screen flex items-center justify-center">
@@ -221,12 +205,6 @@ const MackleObsView = () => {
         <div className="text-center text-white opacity-0">
           <p>Waiting for donations...</p>
         </div>
-        {/* Audio element for Casepaglu sound */}
-        <audio 
-          ref={audioRef}
-          src="https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/sign/ankit/gold.mp3?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJhbmtpdC9nb2xkLm1wMyIsImlhdCI6MTc0NzI1NDYxMSwiZXhwIjoxODEwMzI2NjExfQ.dqUQLDfAVcHXQaz93HwRTN09ZwM1OrZWgVLp7UNR6TA"
-          preload="auto"
-        />
       </div>
     );
   }
@@ -234,30 +212,18 @@ const MackleObsView = () => {
   // Active message display with updated styling for better OBS visibility
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-transparent overflow-hidden">
-      <div className={`max-w-xl w-full animate-fade-in ${isCasepaglu ? "bg-yellow-900/70" : "bg-black/60"} backdrop-blur-md rounded-2xl px-6 py-4 shadow-xl ${isCasepaglu ? "border-2 border-yellow-500" : ""}`}>
+      <div className="max-w-xl w-full animate-fade-in bg-black/60 backdrop-blur-md rounded-2xl px-6 py-4 shadow-xl">
         <div className="flex items-center gap-2 mb-2">
-          <span className={`font-bold text-xl ${isCasepaglu ? "text-yellow-300" : "text-yellow-400"}`}>{activeDonation.name}</span>
+          <span className="font-bold text-xl text-yellow-400">{activeDonation.name}</span>
           <span className="text-md text-white opacity-90">· ₹{Number(activeDonation.amount).toLocaleString()}</span>
-          {isCasepaglu && (
-            <span className="bg-yellow-500 text-black text-sm font-bold px-2 py-1 rounded-full ml-2">
-              Casepaglu
-            </span>
-          )}
         </div>
         
         {showMessages && activeDonation.message && (
-          <div className={`${isCasepaglu ? "text-yellow-100" : "text-white"} text-lg mt-2 font-medium`}>
+          <div className="text-white text-lg mt-2 font-medium">
             {activeDonation.message}
           </div>
         )}
       </div>
-
-      {/* Audio element for Casepaglu sound */}
-      <audio 
-        ref={audioRef}
-        src="https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/sign/ankit/gold.mp3?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJhbmtpdC9nb2xkLm1wMyIsImlhdCI6MTc0NzI1NDYxMSwiZXhwIjoxODEwMzI2NjExfQ.dqUQLDfAVcHXQaz93HwRTN09ZwM1OrZWgVLp7UNR6TA"
-        preload="auto"
-      />
     </div>
   );
 };

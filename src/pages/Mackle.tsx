@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,8 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 
 const MacklePage = () => {
   const [name, setName] = useState("");
@@ -15,7 +12,6 @@ const MacklePage = () => {
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [maxMessageLength, setMaxMessageLength] = useState(50);
-  const [donationType, setDonationType] = useState("regular");
   const navigate = useNavigate();
 
   // Update max message length based on amount
@@ -27,14 +23,6 @@ const MacklePage = () => {
       setMaxMessageLength(50);
     }
   }, [amount]);
-
-  // Set amount to ₹1000 when Casepaglu is selected
-  useEffect(() => {
-    if (donationType === "casepaglu") {
-      setAmount("1000");
-      setMessage("Casepaglu Donation");
-    }
-  }, [donationType]);
 
   const validateForm = () => {
     if (!name.trim()) {
@@ -56,7 +44,7 @@ const MacklePage = () => {
       return false;
     }
 
-    if (donationType !== "casepaglu" && !message.trim()) {
+    if (!message.trim()) {
       toast({
         title: "Message is required",
         description: "Please enter a message",
@@ -88,7 +76,6 @@ const MacklePage = () => {
         message,
         orderId,
         donationType: "mackle", // Add donation type to differentiate
-        includeSoundLink: donationType === "casepaglu" ? "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/sign/ankit/gold.mp3?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJhbmtpdC9nb2xkLm1wMyIsImlhdCI6MTc0NzI1NDYxMSwiZXhwIjoxODEwMzI2NjExfQ.dqUQLDfAVcHXQaz93HwRTN09ZwM1OrZWgVLp7UNR6TA" : null
       };
       
       sessionStorage.setItem("donationData", JSON.stringify(donationData));
@@ -139,25 +126,6 @@ const MacklePage = () => {
             
             <div className="rounded-xl p-4 mb-4 border border-red-500/30 bg-black/50">
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-4">
-                  <Label className="text-sm font-medium text-white block mb-2">Donation Type</Label>
-                  <RadioGroup 
-                    defaultValue="regular" 
-                    value={donationType} 
-                    onValueChange={setDonationType} 
-                    className="flex flex-col space-y-2"
-                  >
-                    <div className="flex items-center space-x-2 rounded-md border border-red-500/30 p-3">
-                      <RadioGroupItem value="regular" id="regular" />
-                      <Label htmlFor="regular" className="text-white cursor-pointer">Regular Donation</Label>
-                    </div>
-                    <div className="flex items-center space-x-2 rounded-md border border-yellow-500/50 p-3 bg-yellow-900/20">
-                      <RadioGroupItem value="casepaglu" id="casepaglu" />
-                      <Label htmlFor="casepaglu" className="text-yellow-300 cursor-pointer">Casepaglu (₹1000)</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-
                 <div className="space-y-2">
                   <label htmlFor="name" className="block text-sm font-medium text-white">
                     Your Name
@@ -181,14 +149,12 @@ const MacklePage = () => {
                     type="number"
                     min="50"
                     value={amount}
-                    onChange={(e) => donationType !== "casepaglu" ? setAmount(e.target.value) : null}
+                    onChange={(e) => setAmount(e.target.value)}
                     placeholder="Minimum ₹50"
-                    disabled={isLoading || donationType === "casepaglu"}
-                    className={`bg-black/50 border-red-500/50 focus:border-red-500 ${donationType === "casepaglu" ? "opacity-75" : ""}`}
+                    disabled={isLoading}
+                    className="bg-black/50 border-red-500/50 focus:border-red-500"
                   />
-                  {donationType !== "casepaglu" && (
-                    <p className="text-xs text-gray-400">Minimum donation amount is ₹50</p>
-                  )}
+                  <p className="text-xs text-gray-400">Minimum donation amount is ₹50</p>
                 </div>
                 
                 <div className="space-y-2">
@@ -200,18 +166,16 @@ const MacklePage = () => {
                     value={message}
                     onChange={handleMessageChange}
                     placeholder="Enter your message"
-                    className={`h-24 bg-black/50 border-red-500/50 focus:border-red-500 ${donationType === "casepaglu" ? "opacity-75" : ""}`}
-                    disabled={isLoading || donationType === "casepaglu"}
+                    className="h-24 bg-black/50 border-red-500/50 focus:border-red-500"
+                    disabled={isLoading}
                     maxLength={maxMessageLength}
                   />
-                  {donationType !== "casepaglu" && (
-                    <p className="text-xs text-gray-400">
-                      {message.length}/{maxMessageLength} characters
-                      {parseFloat(amount) >= 100 ? 
-                        " (100 characters for donations ₹100 and above)" : 
-                        " (50 characters for donations below ₹100)"}
-                    </p>
-                  )}
+                  <p className="text-xs text-gray-400">
+                    {message.length}/{maxMessageLength} characters
+                    {parseFloat(amount) >= 100 ? 
+                      " (100 characters for donations ₹100 and above)" : 
+                      " (50 characters for donations below ₹100)"}
+                  </p>
                 </div>
                 
                 <Button 
