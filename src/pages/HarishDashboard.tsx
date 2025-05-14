@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuthProtection } from "@/hooks/useAuthProtection";
 import { MessageSquare, Download } from "lucide-react";
 import { objectsToCSV, downloadCSV, formatDateForFilename } from "@/utils/csvExport";
+import { calculateMonthlyTotal, formatCurrency } from "@/utils/dashboardUtils";
 import ContractSigningButton from "@/components/ContractSigningButton";
 
 interface Donation {
@@ -170,6 +170,9 @@ const HarishDashboard = () => {
     });
   };
 
+  // Calculate total monthly donations
+  const monthlyTotal = calculateMonthlyTotal(donations);
+
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="flex justify-between items-center mb-8">
@@ -202,7 +205,7 @@ const HarishDashboard = () => {
           <CardDescription>Overview of all donations received</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-muted rounded-lg p-4">
               <h3 className="text-sm font-medium text-muted-foreground">Total Donations</h3>
               <p className="text-2xl font-bold">{donations.length}</p>
@@ -211,6 +214,12 @@ const HarishDashboard = () => {
               <h3 className="text-sm font-medium text-muted-foreground">Total Amount</h3>
               <p className="text-2xl font-bold">
                 ₹{donations.reduce((sum, donation) => sum + Number(donation.amount), 0).toLocaleString()}
+              </p>
+            </div>
+            <div className="bg-muted rounded-lg p-4">
+              <h3 className="text-sm font-medium text-muted-foreground">This Month</h3>
+              <p className="text-2xl font-bold">
+                {formatCurrency(monthlyTotal)}
               </p>
             </div>
             <div className="bg-muted rounded-lg p-4">
