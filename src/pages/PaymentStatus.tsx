@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { verifyPayment, createDonationRecord } from "@/services/paymentService";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/use-toast";
 
 const PaymentStatus = () => {
   const [verificationStatus, setVerificationStatus] = useState("verifying");
@@ -25,6 +25,8 @@ const PaymentStatus = () => {
         verifyAndCreateRecord(orderId);
       } else {
         setVerificationStatus("failed");
+        // Create a failed donation record for tracking purposes
+        handleFailedPayment(orderId, status);
       }
     } else {
       setVerificationStatus("failed");
@@ -35,6 +37,36 @@ const PaymentStatus = () => {
       });
     }
   }, [location]);
+
+  const handleFailedPayment = async (orderId: string, status: string) => {
+    try {
+      // Get donation data from session storage
+      const donationDataStr = sessionStorage.getItem("donationData");
+      
+      if (donationDataStr) {
+        const donationData = JSON.parse(donationDataStr);
+        
+        // Create donation record in database with failed status
+        await createDonationRecord({
+          name: donationData.name,
+          amount: donationData.amount,
+          message: donationData.message,
+          order_id: donationData.orderId,
+          payment_status: status === "aborted" ? "aborted" : "failed",
+          donationType: donationData.donationType || "ankit",
+          include_sound: donationData.includeSoundLink ? true : undefined
+        });
+        
+        toast({
+          title: "Payment Not Completed",
+          description: "Your donation was not processed",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error recording failed payment:", error);
+    }
+  };
 
   const verifyAndCreateRecord = async (orderId: string) => {
     try {

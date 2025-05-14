@@ -69,6 +69,8 @@ export const createDonationRecord = async (donation: DonationRecord) => {
       tableName = "ankit_donations";
     }
     
+    console.log(`Creating donation record in table: ${tableName}`, donation);
+    
     const { error } = await supabase
       .from(tableName)
       .insert({
@@ -86,7 +88,7 @@ export const createDonationRecord = async (donation: DonationRecord) => {
     }
 
     // Clean up session storage after successful record creation
-    if (donation.payment_status !== "pending") {
+    if (donation.payment_status === "success") {
       sessionStorage.removeItem("donationData");
     }
 
