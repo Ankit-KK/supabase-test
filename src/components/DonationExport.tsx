@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { objectsToCSV, downloadCSV, formatDateForFilename } from "@/utils/csvExport";
 
 interface DonationExportProps {
-  tableName: string;
+  tableName: "ankit_donations" | "harish_donations" | "mackle_donations";
   streamerName: string;
 }
 
@@ -24,6 +24,8 @@ interface Donation {
   message: string;
   created_at: string;
   payment_status: string;
+  order_id: string;
+  include_gif?: boolean;
 }
 
 const DonationExport: React.FC<DonationExportProps> = ({ tableName, streamerName }) => {
@@ -51,7 +53,7 @@ const DonationExport: React.FC<DonationExportProps> = ({ tableName, streamerName
       const startDateStr = format(startDate, "yyyy-MM-dd");
       const endDateStr = format(new Date(endDate.setHours(23, 59, 59)), "yyyy-MM-dd'T'HH:mm:ss");
 
-      // Query data from Supabase
+      // Query data from Supabase with proper typing
       const { data, error } = await supabase
         .from(tableName)
         .select("*")
@@ -72,8 +74,8 @@ const DonationExport: React.FC<DonationExportProps> = ({ tableName, streamerName
         return;
       }
 
-      // Process data for CSV
-      const csvData = data.map((donation: Donation) => ({
+      // Process data for CSV with proper typing
+      const csvData = data.map((donation) => ({
         Date: format(new Date(donation.created_at), "yyyy-MM-dd HH:mm:ss"),
         Name: donation.name,
         Amount: donation.amount,
