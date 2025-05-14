@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { 
   Dialog, 
@@ -118,8 +117,7 @@ const EditableContractDialog: React.FC<EditableContractDialogProps> = ({
         // For insert, we need a signature value
         signature: existingContract?.signature || "template_only",
         // If it's a template, we set agreed_to_terms to false
-        agreed_to_terms: existingContract?.agreed_to_terms || false,
-        updated_at: new Date().toISOString()
+        agreed_to_terms: existingContract?.agreed_to_terms || false
       };
 
       // Use upsert operation with single object
