@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { verifyPayment, createDonationRecord } from "@/services/paymentService";
 import { CheckCircle, XCircle, AlertTriangle, Loader2 } from "lucide-react";
 
@@ -78,11 +78,14 @@ const PaymentStatus = () => {
         // This is important since payments array might be empty if payment wasn't attempted
         let paymentStatus = "failed";
         
+        // First check the order status - this is the most reliable indicator
         if (verificationResult.order && verificationResult.order.order_status === "PAID") {
           paymentStatus = "success";
           setStatus("success");
-        } else if (verificationResult.payments && verificationResult.payments.length > 0) {
-          // If we have payment data, check it
+        } 
+        // Then check if we have payments and their statuses
+        else if (verificationResult.payments && verificationResult.payments.length > 0) {
+          // Look for any successful payment
           if (verificationResult.payments.some((tx: any) => tx.payment_status === "SUCCESS")) {
             paymentStatus = "success";
             setStatus("success");
@@ -93,14 +96,18 @@ const PaymentStatus = () => {
             paymentStatus = "failed";
             setStatus("failed");
           }
-        } else if (verificationResult.order && verificationResult.order.order_status === "ACTIVE") {
-          // If order is active but no payments, it might be pending
+        } 
+        // If order is active but no payments, it might be pending
+        else if (verificationResult.order && verificationResult.order.order_status === "ACTIVE") {
           paymentStatus = "pending";
           setStatus("pending");
         } else {
           paymentStatus = "failed";
           setStatus("failed");
         }
+        
+        // Log the detected payment status for debugging
+        console.log("Detected payment status:", paymentStatus);
 
         // Create donation record in Supabase only after payment verification
         if (!isRecordCreated) {
