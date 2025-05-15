@@ -163,7 +163,7 @@ const MacklePage = () => {
   className="w-screen h-screen overflow-hidden"
   style={{
     backgroundImage: "url('/lovable-uploads/f097dece-abfa-4962-9cf9-6d5fa500c509.png')",
-    backgroundSize: "cover", // OR use "contain" if you want the whole image shown without cropping
+    backgroundSize: "contain", // OR use "contain" if you want the whole image shown without cropping
     backgroundRepeat: "no-repeat",
     backgroundPosition: "center",
   }}
