@@ -127,7 +127,7 @@ const MacklePage = () => {
       // Store donation data in session storage to access it during the payment flow
       const donationData = {
         name: casepagluName,
-        amount: 20, // Changed from 1000 to 20 for testing
+        amount: 5, // Changed from 20 to 5 for testing
         message: "Casepaglu", // Default message
         orderId,
         donationType: "mackle",
@@ -251,11 +251,11 @@ const MacklePage = () => {
               </form>
             </div>
 
-            {/* New Casepaglu Box */}
+            {/* Casepaglu Box */}
             <div className="rounded-xl p-4 border border-yellow-500/50 bg-black/50">
               <div className="mb-4 text-center">
                 <h2 className="text-xl font-bold text-yellow-400">Casepaglu Special</h2>
-                <p className="text-yellow-200 text-sm">₹20 with sound alert!</p>
+                <p className="text-yellow-200 text-sm">₹5 with sound alert!</p>
               </div>
               
               <form onSubmit={handleCasepagluSubmit} className="space-y-4">
@@ -278,7 +278,7 @@ const MacklePage = () => {
                   className="w-full bg-gradient-to-r from-yellow-500 to-yellow-700 hover:from-yellow-600 hover:to-yellow-800 text-black font-bold"
                   disabled={isCasepagluLoading}
                 >
-                  {isCasepagluLoading ? "Processing..." : "Casepaglu (₹20)"}
+                  {isCasepagluLoading ? "Processing..." : "Casepaglu (₹5)"}
                 </Button>
               </form>
             </div>
