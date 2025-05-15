@@ -127,7 +127,7 @@ const MacklePage = () => {
       // Store donation data in session storage to access it during the payment flow
       const donationData = {
         name: casepagluName,
-        amount: 2, // Changed from 20 to 5 for testing
+        amount: 1, // Changed from 20 to 5 for testing
         message: "Casepaglu", // Default message
         orderId,
         donationType: "mackle",
