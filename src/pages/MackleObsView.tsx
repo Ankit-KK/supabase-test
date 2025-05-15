@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+
+import React, { useEffect, useState, useRef } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -8,6 +9,7 @@ interface Donation {
   message: string;
   amount: number;
   created_at: string;
+  include_sound?: boolean;
 }
 
 interface ActiveDonation extends Donation {
@@ -25,6 +27,7 @@ const MackleObsView = () => {
   const { id } = useParams();
   const location = useLocation();
   const DISPLAY_DURATION = 15000; // 15 seconds per message
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Get URL parameters
   useEffect(() => {
@@ -58,7 +61,7 @@ const MackleObsView = () => {
         // Build our query - only fetch donations AFTER the page load time
         const { data, error: fetchError } = await supabase
           .from("mackle_donations")
-          .select("id, name, message, amount, created_at")
+          .select("id, name, message, amount, created_at, include_sound")
           .eq("payment_status", "success")
           .gte("created_at", loadTimeISO)
           .lte("created_at", todayEnd)
@@ -174,6 +177,25 @@ const MackleObsView = () => {
     // No active donation and queue is empty - screen remains blank
     
   }, [activeDonation, displayQueue]);
+
+  // Play sound when a donation with include_sound is active
+  useEffect(() => {
+    if (activeDonation?.include_sound) {
+      console.log("Playing sound for Casepaglu donation");
+      const audio = new Audio("https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/sign/ankit/gold.mp3?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJhbmtpdC9nb2xkLm1wMyIsImlhdCI6MTc0NzI5MzEyMSwiZXhwIjoxODEwMzY1MTIxfQ.k_I3m4REekeMqTGSahxNJ-TCe4NhQ_RJsW8QoVnjo1M");
+      audioRef.current = audio;
+      audio.play().catch(err => {
+        console.error("Error playing sound:", err);
+      });
+    }
+    
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, [activeDonation]);
 
   // Debug log when displayQueue or activeDonation changes
   useEffect(() => {

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,8 @@ const MacklePage = () => {
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [maxMessageLength, setMaxMessageLength] = useState(50);
+  const [casepagluName, setCasepagluName] = useState("");
+  const [isCasepagluLoading, setIsCasepagluLoading] = useState(false);
   const navigate = useNavigate();
 
   // Update max message length based on amount
@@ -56,6 +59,19 @@ const MacklePage = () => {
     return true;
   };
 
+  const validateCasepagluForm = () => {
+    if (!casepagluName.trim()) {
+      toast({
+        title: "Name is required",
+        description: "Please enter your name",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -76,6 +92,7 @@ const MacklePage = () => {
         message,
         orderId,
         donationType: "mackle", // Add donation type to differentiate
+        include_sound: false,
       };
       
       sessionStorage.setItem("donationData", JSON.stringify(donationData));
@@ -91,6 +108,45 @@ const MacklePage = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleCasepagluSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateCasepagluForm()) {
+      return;
+    }
+
+    setIsCasepagluLoading(true);
+    
+    try {
+      // Generate a random order ID with timestamp
+      const orderId = `mackle_casepaglu_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+      
+      // Store donation data in session storage to access it during the payment flow
+      const donationData = {
+        name: casepagluName,
+        amount: 1000, // Fixed amount of 1000
+        message: "Casepaglu", // Default message
+        orderId,
+        donationType: "mackle",
+        include_sound: true, // Set include_sound to true for Casepaglu donations
+      };
+      
+      sessionStorage.setItem("donationData", JSON.stringify(donationData));
+      
+      // Navigate to payment checkout
+      navigate("/payment-checkout");
+    } catch (error) {
+      console.error("Error preparing payment:", error);
+      toast({
+        title: "Error",
+        description: "Failed to process payment. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCasepagluLoading(false);
     }
   };
 
@@ -191,6 +247,38 @@ const MacklePage = () => {
                     />
                     {isLoading ? "Processing..." : "Continue to Payment"}
                   </div>
+                </Button>
+              </form>
+            </div>
+
+            {/* New Casepaglu Box */}
+            <div className="rounded-xl p-4 border border-yellow-500/50 bg-black/50">
+              <div className="mb-4 text-center">
+                <h2 className="text-xl font-bold text-yellow-400">Casepaglu Special</h2>
+                <p className="text-yellow-200 text-sm">₹1000 with sound alert!</p>
+              </div>
+              
+              <form onSubmit={handleCasepagluSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <label htmlFor="casepagluName" className="block text-sm font-medium text-white">
+                    Your Name
+                  </label>
+                  <Input 
+                    id="casepagluName"
+                    value={casepagluName}
+                    onChange={(e) => setCasepagluName(e.target.value)}
+                    placeholder="Enter your name"
+                    disabled={isCasepagluLoading}
+                    className="bg-black/50 border-yellow-500/50 focus:border-yellow-500"
+                  />
+                </div>
+                
+                <Button 
+                  type="submit" 
+                  className="w-full bg-gradient-to-r from-yellow-500 to-yellow-700 hover:from-yellow-600 hover:to-yellow-800 text-black font-bold"
+                  disabled={isCasepagluLoading}
+                >
+                  {isCasepagluLoading ? "Processing..." : "Casepaglu (₹1000)"}
                 </Button>
               </form>
             </div>

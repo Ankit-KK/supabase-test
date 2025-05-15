@@ -56,6 +56,7 @@ const PaymentStatus = () => {
         }
 
         const donationData = JSON.parse(donationDataStr);
+        console.log("Donation data from session storage:", donationData);
         
         // Verify payment status using Supabase Edge Function
         const verificationResult = await verifyPayment(orderId);
@@ -89,14 +90,23 @@ const PaymentStatus = () => {
 
         // Create donation record in Supabase only after payment verification
         if (!isRecordCreated) {
-          await createDonationRecord({
+          // Prepare donation record data with include_sound if available
+          const recordData = {
             name: donationData.name,
             amount: donationData.amount,
             message: donationData.message,
             order_id: orderId,
             payment_status: paymentStatus,
             donationType: donationType
-          });
+          };
+          
+          // Add include_sound field if it exists in the donation data
+          if (donationType === "mackle" && donationData.include_sound !== undefined) {
+            // @ts-ignore - We know include_sound exists on mackle donations
+            recordData.include_sound = !!donationData.include_sound;
+          }
+          
+          await createDonationRecord(recordData);
           setIsRecordCreated(true);
         }
 

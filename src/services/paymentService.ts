@@ -8,6 +8,7 @@ type DonationRecord = {
   order_id: string;
   payment_status: string;
   donationType: "ankit" | "harish" | "mackle";
+  include_sound?: boolean;
 };
 
 /**
@@ -68,15 +69,24 @@ export const createDonationRecord = async (donation: DonationRecord) => {
       tableName = "ankit_donations";
     }
     
+    const recordData: any = {
+      name: donation.name,
+      amount: donation.amount,
+      message: donation.message,
+      order_id: donation.order_id,
+      payment_status: donation.payment_status
+    };
+    
+    // Only add include_sound for mackle donations
+    if (donation.donationType === "mackle" && donation.include_sound !== undefined) {
+      recordData.include_sound = donation.include_sound;
+    }
+    
+    console.log(`Creating ${tableName} record with data:`, recordData);
+    
     const { error } = await supabase
       .from(tableName)
-      .insert({
-        name: donation.name,
-        amount: donation.amount,
-        message: donation.message,
-        order_id: donation.order_id,
-        payment_status: donation.payment_status
-      });
+      .insert(recordData);
 
     if (error) {
       console.error(`Error creating donation record in ${tableName}:`, error);
