@@ -186,10 +186,13 @@ const AnkitObsView = () => {
     );
   }
 
-  // Updated UI for better OBS visibility
+  // Updated UI with dynamic sizing
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-transparent overflow-hidden">
-      <div className="max-w-xl w-full animate-fade-in bg-black/60 backdrop-blur-md rounded-2xl px-6 py-4 shadow-xl">
+      <div 
+        className="animate-fade-in bg-black/60 backdrop-blur-md rounded-2xl px-6 py-4 shadow-xl"
+        style={{ width: "auto", maxWidth: "90vw" }} // Dynamic width based on content
+      >
         <div className="flex items-center gap-2 mb-2">
           <span className="font-bold text-xl text-yellow-400">{activeDonation.name}</span>
           <span className="text-md text-white opacity-90">· ₹{Number(activeDonation.amount).toLocaleString()}</span>
