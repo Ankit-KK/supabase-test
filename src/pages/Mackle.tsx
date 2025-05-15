@@ -163,12 +163,15 @@ const MacklePage = () => {
       className="min-h-screen py-10 px-4"
       style={{
   backgroundImage: "url('/lovable-uploads/f097dece-abfa-4962-9cf9-6d5fa500c509.png')",
-  backgroundSize: "cover",
-  backgroundPosition: "center",
+  backgroundSize: "100% 100%", // Stretchs to fit exactly
   backgroundRepeat: "no-repeat",
-  height: "100vh",
-  width: "100vw",
+  backgroundPosition: "center",
+  backgroundAttachment: "scroll", // or remove this if no fixed effect is desired
+  height: "100vh", // Viewport height
+  width: "100vw",  // Viewport width
+  overflow: "hidden", // Prevents scroll if anything leaks
 }}
+
 
     >
       <div className="container mx-auto max-w-md">
