@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/use-toast";
 import { verifyPayment, createDonationRecord } from "@/services/paymentService";
 import { CheckCircle, XCircle, AlertTriangle, Loader2 } from "lucide-react";
 
@@ -60,8 +60,9 @@ const PaymentStatus = () => {
         
         // Verify payment status using Supabase Edge Function
         const verificationResult = await verifyPayment(orderId);
+        console.log("Payment verification result:", verificationResult);
         
-        if (!verificationResult || !verificationResult.payments) {
+        if (!verificationResult) {
           toast({
             title: "Error",
             description: "Failed to verify payment status",
@@ -73,14 +74,27 @@ const PaymentStatus = () => {
 
         setPaymentDetails(verificationResult);
         
-        // Determine payment status
-        const payments = verificationResult.payments;
+        // Determine payment status based on order status first
+        // This is important since payments array might be empty if payment wasn't attempted
         let paymentStatus = "failed";
         
-        if (payments.some((tx: any) => tx.payment_status === "SUCCESS")) {
+        if (verificationResult.order && verificationResult.order.order_status === "PAID") {
           paymentStatus = "success";
           setStatus("success");
-        } else if (payments.some((tx: any) => tx.payment_status === "PENDING")) {
+        } else if (verificationResult.payments && verificationResult.payments.length > 0) {
+          // If we have payment data, check it
+          if (verificationResult.payments.some((tx: any) => tx.payment_status === "SUCCESS")) {
+            paymentStatus = "success";
+            setStatus("success");
+          } else if (verificationResult.payments.some((tx: any) => tx.payment_status === "PENDING")) {
+            paymentStatus = "pending";
+            setStatus("pending");
+          } else {
+            paymentStatus = "failed";
+            setStatus("failed");
+          }
+        } else if (verificationResult.order && verificationResult.order.order_status === "ACTIVE") {
+          // If order is active but no payments, it might be pending
           paymentStatus = "pending";
           setStatus("pending");
         } else {

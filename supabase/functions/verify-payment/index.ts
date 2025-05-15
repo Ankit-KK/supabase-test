@@ -44,6 +44,8 @@ serve(async (req) => {
       );
     }
 
+    console.log(`Verifying payment for order: ${orderId}`);
+
     // First get order details
     const orderResponse = await fetch(`${API_URL}/orders/${orderId}`, {
       method: "GET",
@@ -68,6 +70,8 @@ serve(async (req) => {
       );
     }
 
+    console.log("Order data retrieved:", JSON.stringify(orderData));
+
     // Now get payment details for this order
     const paymentResponse = await fetch(`${API_URL}/orders/${orderId}/payments`, {
       method: "GET",
@@ -83,15 +87,20 @@ serve(async (req) => {
     
     if (!paymentResponse.ok) {
       console.error("Error fetching payment details:", paymentData);
-      // Return order data as fallback
+      // Return order data as fallback with explicit payment_status
       return new Response(
-        JSON.stringify(orderData),
+        JSON.stringify({
+          order: orderData,
+          payments: []
+        }),
         {
           status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" }
         }
       );
     }
+
+    console.log("Payment data retrieved:", JSON.stringify(paymentData));
 
     // Combine order and payment data
     const responseData = {
