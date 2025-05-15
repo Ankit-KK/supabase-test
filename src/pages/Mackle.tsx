@@ -162,11 +162,14 @@ const MacklePage = () => {
     <div 
       className="min-h-screen py-10 px-4"
       style={{
-        backgroundImage: "url('/lovable-uploads/f097dece-abfa-4962-9cf9-6d5fa500c509.png')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundAttachment: "fixed"
-      }}
+  backgroundImage: "url('/lovable-uploads/f097dece-abfa-4962-9cf9-6d5fa500c509.png')",
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  backgroundRepeat: "no-repeat",
+  height: "100vh",
+  width: "100vw",
+}}
+
     >
       <div className="container mx-auto max-w-md">
         <Card className="p-6 backdrop-blur-sm bg-black/70 border border-red-600/30">
