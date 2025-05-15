@@ -161,16 +161,16 @@ const MacklePage = () => {
   return (
     <div 
       className="min-h-screen py-10 px-4"
-      style={{
-  backgroundImage: "url('/lovable-uploads/f097dece-abfa-4962-9cf9-6d5fa500c509.png')",
-  backgroundSize: "100% 100%", // Stretchs to fit exactly
-  backgroundRepeat: "no-repeat",
-  backgroundPosition: "center",
-  backgroundAttachment: "scroll", // or remove this if no fixed effect is desired
-  height: "100vh", // Viewport height
-  width: "100vw",  // Viewport width
-  overflow: "hidden", // Prevents scroll if anything leaks
-}}
+      <div 
+  className="w-screen h-screen overflow-hidden"
+  style={{
+    backgroundImage: "url('/lovable-uploads/f097dece-abfa-4962-9cf9-6d5fa500c509.png')",
+    backgroundSize: "contain", // OR use "contain" if you want the whole image shown without cropping
+    backgroundRepeat: "no-repeat",
+    backgroundPosition: "center",
+  }}
+>
+
 
 
     >
