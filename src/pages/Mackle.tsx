@@ -169,7 +169,6 @@ const MacklePage = () => {
     backgroundRepeat: "no-repeat",
     backgroundPosition: "center",
   }}
->
 
 
 
