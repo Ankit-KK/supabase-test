@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/use-toast";
 import { verifyPayment, createDonationRecord } from "@/services/paymentService";
 import { CheckCircle, XCircle, AlertTriangle, Loader2 } from "lucide-react";
 
@@ -11,6 +11,7 @@ const PaymentStatus = () => {
   const [paymentDetails, setPaymentDetails] = useState<any>(null);
   const [isRecordCreated, setIsRecordCreated] = useState(false);
   const [donationType, setDonationType] = useState<"ankit" | "harish" | "mackle" | null>(null);
+  const [isVerificationComplete, setIsVerificationComplete] = useState(false);
   
   const location = useLocation();
   
@@ -28,6 +29,7 @@ const PaymentStatus = () => {
             variant: "destructive",
           });
           setStatus("failed");
+          setIsVerificationComplete(true);
           return;
         }
 
@@ -52,6 +54,7 @@ const PaymentStatus = () => {
             variant: "destructive",
           });
           setStatus("failed");
+          setIsVerificationComplete(true);
           return;
         }
 
@@ -69,6 +72,7 @@ const PaymentStatus = () => {
             variant: "destructive",
           });
           setStatus("failed");
+          setIsVerificationComplete(true);
           return;
         }
 
@@ -81,34 +85,37 @@ const PaymentStatus = () => {
         // First check the order status - this is the most reliable indicator
         if (verificationResult.order && verificationResult.order.order_status === "PAID") {
           paymentStatus = "success";
-          setStatus("success");
         } 
         // Then check if we have payments and their statuses
         else if (verificationResult.payments && verificationResult.payments.length > 0) {
           // Look for any successful payment
           if (verificationResult.payments.some((tx: any) => tx.payment_status === "SUCCESS")) {
             paymentStatus = "success";
-            setStatus("success");
           } else if (verificationResult.payments.some((tx: any) => tx.payment_status === "PENDING")) {
             paymentStatus = "pending";
-            setStatus("pending");
           } else {
             paymentStatus = "failed";
-            setStatus("failed");
           }
         } 
         // If order is active but no payments, it might be pending
         else if (verificationResult.order && verificationResult.order.order_status === "ACTIVE") {
           paymentStatus = "pending";
-          setStatus("pending");
         } else {
           paymentStatus = "failed";
-          setStatus("failed");
         }
         
         // Log the detected payment status for debugging
         console.log("Detected payment status:", paymentStatus);
-
+        
+        // Set component status based on payment status
+        if (paymentStatus === "success") {
+          setStatus("success");
+        } else if (paymentStatus === "pending") {
+          setStatus("pending");
+        } else {
+          setStatus("failed");
+        }
+        
         // Create donation record in Supabase only after payment verification
         if (!isRecordCreated) {
           // Prepare donation record data with include_sound if available
@@ -130,6 +137,8 @@ const PaymentStatus = () => {
           await createDonationRecord(recordData);
           setIsRecordCreated(true);
         }
+        
+        setIsVerificationComplete(true);
 
       } catch (error) {
         console.error("Error verifying payment:", error);
@@ -139,11 +148,14 @@ const PaymentStatus = () => {
           variant: "destructive",
         });
         setStatus("failed");
+        setIsVerificationComplete(true);
       }
     };
 
-    verifyAndRecordPayment();
-  }, [location.search, isRecordCreated]);
+    if (!isVerificationComplete) {
+      verifyAndRecordPayment();
+    }
+  }, [location.search, isRecordCreated, isVerificationComplete]);
 
   const getReturnLink = () => {
     if (donationType === "harish") {
@@ -169,7 +181,7 @@ const PaymentStatus = () => {
           </>
         )}
         
-        {status === "success" && (
+        {status === "success" && isVerificationComplete && (
           <>
             <div className="flex justify-center">
               <CheckCircle className="h-16 w-16 text-green-500" />
@@ -195,7 +207,7 @@ const PaymentStatus = () => {
           </>
         )}
         
-        {status === "pending" && (
+        {status === "pending" && isVerificationComplete && (
           <>
             <div className="flex justify-center">
               <AlertTriangle className="h-16 w-16 text-yellow-500" />
@@ -207,7 +219,7 @@ const PaymentStatus = () => {
           </>
         )}
         
-        {status === "failed" && (
+        {status === "failed" && isVerificationComplete && (
           <>
             <div className="flex justify-center">
               <XCircle className="h-16 w-16 text-red-500" />
@@ -219,11 +231,13 @@ const PaymentStatus = () => {
           </>
         )}
         
-        <div className="pt-4">
-          <Link to={getReturnLink()}>
-            <Button variant="outline">Make Another Donation</Button>
-          </Link>
-        </div>
+        {isVerificationComplete && (
+          <div className="pt-4">
+            <Link to={getReturnLink()}>
+              <Button variant="outline">Make Another Donation</Button>
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );
