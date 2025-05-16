@@ -4,11 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { createPaymentOrder } from "@/services/paymentService";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
-import { useForm } from "react-hook-form";
-import { CreditCard, DollarSign } from "lucide-react";
-import { Card } from "@/components/ui/card";
 
 const PaymentCheckout = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -18,18 +13,9 @@ const PaymentCheckout = () => {
     message: string;
     orderId: string;
     donationType: string;
-    include_sound?: boolean;
   } | null>(null);
   
-  // Min amount for PayPal in INR (equivalent to approximately $10 USD)
-  const MIN_PAYPAL_AMOUNT = 800; 
-  
   const navigate = useNavigate();
-  const form = useForm({
-    defaultValues: {
-      paymentMethod: "card"
-    }
-  });
 
   useEffect(() => {
     // Load the Cashfree SDK script
@@ -73,7 +59,7 @@ const PaymentCheckout = () => {
     }
   }, [navigate]);
 
-  const handlePayNow = async (values: { paymentMethod: string }) => {
+  const handlePayNow = async () => {
     if (!paymentData) return;
     
     setIsLoading(true);
@@ -98,7 +84,6 @@ const PaymentCheckout = () => {
       const checkoutOptions = {
         paymentSessionId: orderResponse.payment_session_id,
         redirectTarget: "_self", // Change from _modal to _self for inline mode
-        components: values.paymentMethod === "paypal" ? ["paypal"] : ["card", "app", "upi", "netbanking"],
       };
       
       cashfree.checkout(checkoutOptions).then((result: any) => {
@@ -143,16 +128,14 @@ const PaymentCheckout = () => {
     : paymentData?.donationType === "mackle"
     ? "Donation to Mackle"
     : "Donation to Ankit";
-  
-  const isPaypalDisabled = paymentData ? paymentData.amount < MIN_PAYPAL_AMOUNT : true;
 
   return (
     <div className="container mx-auto max-w-md py-10">
-      <Card className="p-6 shadow-sm space-y-6 bg-card">
+      <div className="border rounded-lg p-6 shadow-sm space-y-6 bg-card">
         <div className="text-center">
           <h1 className="text-2xl font-bold">Complete Your Payment</h1>
           <p className="text-muted-foreground mt-2">
-            You're almost there! Choose your payment method to complete your {donationTitle}.
+            You're almost there! Click below to complete your {donationTitle}.
           </p>
         </div>
         
@@ -177,71 +160,18 @@ const PaymentCheckout = () => {
           </div>
         </div>
         
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handlePayNow)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="paymentMethod"
-              render={({ field }) => (
-                <FormItem className="space-y-3">
-                  <FormLabel>Payment Method</FormLabel>
-                  <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      className="flex flex-col space-y-3"
-                    >
-                      <FormItem className="flex items-center space-x-3 space-y-0">
-                        <FormControl>
-                          <RadioGroupItem value="card" id="card" />
-                        </FormControl>
-                        <FormLabel className="flex items-center gap-2 cursor-pointer font-normal" htmlFor="card">
-                          <CreditCard className="h-4 w-4" />
-                          <span>Card, UPI, NetBanking & other options</span>
-                        </FormLabel>
-                      </FormItem>
-                      
-                      <FormItem className="flex items-center space-x-3 space-y-0">
-                        <FormControl>
-                          <RadioGroupItem 
-                            value="paypal" 
-                            id="paypal" 
-                            disabled={isPaypalDisabled} 
-                          />
-                        </FormControl>
-                        <FormLabel 
-                          className={`flex items-center gap-2 cursor-pointer font-normal ${isPaypalDisabled ? 'opacity-50' : ''}`} 
-                          htmlFor="paypal"
-                        >
-                          <DollarSign className="h-4 w-4" />
-                          <span>PayPal</span>
-                          {isPaypalDisabled && (
-                            <span className="text-xs text-red-500 ml-1">
-                              (Available for donations ₹{MIN_PAYPAL_AMOUNT} and above)
-                            </span>
-                          )}
-                        </FormLabel>
-                      </FormItem>
-                    </RadioGroup>
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-            
-            <Button 
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
-            >
-              {isLoading ? "Processing..." : "Pay Now"}
-            </Button>
-          </form>
-        </Form>
+        <Button 
+          onClick={handlePayNow} 
+          className="w-full"
+          disabled={isLoading}
+        >
+          {isLoading ? "Processing..." : "Pay Now"}
+        </Button>
         
         <p className="text-xs text-center text-muted-foreground">
           You will be redirected to Cashfree's secure payment gateway
         </p>
-      </Card>
+      </div>
     </div>
   );
 };
