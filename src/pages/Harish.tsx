@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
+import { DollarSign } from "lucide-react";
 
 const HarishPage = () => {
   const [name, setName] = useState("");
@@ -13,6 +14,9 @@ const HarishPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [maxMessageLength, setMaxMessageLength] = useState(50);
   const navigate = useNavigate();
+  
+  // Min amount for PayPal in INR (equivalent to approximately $10 USD)
+  const MIN_PAYPAL_AMOUNT = 800;
 
   // Update max message length based on amount
   useEffect(() => {
@@ -102,6 +106,8 @@ const HarishPage = () => {
     }
   };
 
+  const isPaypalAvailable = parseFloat(amount) >= MIN_PAYPAL_AMOUNT;
+
   return (
     <div className="container mx-auto max-w-md py-10">
       <div className="space-y-6">
@@ -139,7 +145,17 @@ const HarishPage = () => {
               placeholder="Minimum ₹50"
               disabled={isLoading}
             />
-            <p className="text-xs text-muted-foreground">Minimum donation amount is ₹50</p>
+            <div className="flex flex-col gap-1">
+              <p className="text-xs text-muted-foreground">Minimum donation amount is ₹50</p>
+              <div className={`flex items-center gap-1 text-xs ${isPaypalAvailable ? 'text-green-500' : 'text-muted-foreground'}`}>
+                <DollarSign className="h-3 w-3" />
+                <span>
+                  {isPaypalAvailable 
+                    ? 'PayPal payment option is available for this amount' 
+                    : `PayPal payment option available for donations ₹${MIN_PAYPAL_AMOUNT} and above`}
+                </span>
+              </div>
+            </div>
           </div>
           
           <div className="space-y-2">

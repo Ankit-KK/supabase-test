@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { Card } from "@/components/ui/card";
+import { DollarSign } from "lucide-react";
 
 const MacklePage = () => {
   const [name, setName] = useState("");
@@ -16,6 +17,9 @@ const MacklePage = () => {
   const [casepagluName, setCasepagluName] = useState("");
   const [isCasepagluLoading, setIsCasepagluLoading] = useState(false);
   const navigate = useNavigate();
+  
+  // Min amount for PayPal in INR (equivalent to approximately $10 USD)
+  const MIN_PAYPAL_AMOUNT = 800;
 
   // Update max message length based on amount
   useEffect(() => {
@@ -158,6 +162,8 @@ const MacklePage = () => {
     }
   };
 
+  const isPaypalAvailable = parseFloat(amount) >= MIN_PAYPAL_AMOUNT;
+
   return (
     <div 
       className="min-h-screen py-10 px-4"
@@ -210,7 +216,17 @@ const MacklePage = () => {
                     disabled={isLoading}
                     className="bg-black/50 border-red-500/50 focus:border-red-500"
                   />
-                  <p className="text-xs text-gray-400">Minimum donation amount is ₹50</p>
+                  <div className="flex flex-col gap-1">
+                    <p className="text-xs text-gray-400">Minimum donation amount is ₹50</p>
+                    <div className={`flex items-center gap-1 text-xs ${isPaypalAvailable ? 'text-green-500' : 'text-gray-400'}`}>
+                      <DollarSign className="h-3 w-3" />
+                      <span>
+                        {isPaypalAvailable 
+                          ? 'PayPal payment option is available for this amount' 
+                          : `PayPal payment option available for donations ₹${MIN_PAYPAL_AMOUNT} and above`}
+                      </span>
+                    </div>
+                  </div>
                 </div>
                 
                 <div className="space-y-2">
