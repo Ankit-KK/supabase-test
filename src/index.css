@@ -62,6 +62,7 @@
   max-width: 100%;
   margin: auto;
   gap: 4px; /* Add spacing between letters */
+  flex-wrap: wrap; /* Allow wrapping on small screens */
 }
 
 .concept-three .hover {
@@ -72,6 +73,7 @@
   position: relative;
   margin: 0 2px;
   min-width: 30px; /* Ensure minimum width for each letter container */
+  max-width: 40px; /* Set maximum width for mobile */
 }
 
 .concept-three .hover div {
@@ -102,6 +104,28 @@
   font-size: 40px;
   text-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
   text-transform: uppercase;
+}
+
+/* Responsive font size adjustments */
+@media (max-width: 768px) {
+  .concept-three h1 {
+    font-size: 28px;
+  }
+  
+  .concept-three .hover {
+    height: 90px;
+  }
+}
+
+@media (max-width: 480px) {
+  .concept-three h1 {
+    font-size: 24px;
+  }
+  
+  .concept-three .hover {
+    height: 80px;
+    min-width: 24px;
+  }
 }
 
 /* Video Background */
