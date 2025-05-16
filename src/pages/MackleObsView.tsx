@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -230,11 +231,11 @@ const MackleObsView = () => {
     );
   }
 
-  // Active message display with dynamic sizing
+  // Active message display with left-aligned positioning
   return (
-    <div className="h-screen w-screen flex items-center justify-center bg-transparent overflow-hidden">
+    <div className="h-screen w-screen flex items-start justify-start bg-transparent overflow-hidden">
       <div 
-        className="max-w-xl animate-fade-in bg-black/60 backdrop-blur-md rounded-2xl px-6 py-4 shadow-xl"
+        className="max-w-xl animate-fade-in bg-black/60 backdrop-blur-md rounded-2xl px-6 py-4 shadow-xl m-4"
         style={{ width: "auto", maxWidth: "90vw" }} // Dynamic width based on content
       >
         <div className="flex items-center gap-2 mb-2">
