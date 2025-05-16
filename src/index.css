@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -51,7 +50,6 @@
 /* Canyon Animation Styles */
 .concept-three {
   padding: 2em;
-  background: url(https://meowlivia.s3.us-east-2.amazonaws.com/codepen/background/canyon.jpg) center center / cover;
   border-radius: 1rem;
   min-height: 100px;
 }
