@@ -10,6 +10,7 @@ import NotFound from "./pages/NotFound";
 import AnkitPage from "./pages/Ankit";
 import HarishPage from "./pages/Harish";
 import MacklePage from "./pages/Mackle";
+import ReckoningEsportsPage from "./pages/ReckoningEsports";
 import PaymentCheckout from "./pages/PaymentCheckout";
 import PaymentStatus from "./pages/PaymentStatus";
 import Contact from "./pages/Contact";
@@ -53,6 +54,7 @@ const App = () => {
               <Route path="/ankit" element={<AnkitPage />} />
               <Route path="/harish" element={<HarishPage />} />
               <Route path="/mackle" element={<MacklePage />} />
+              <Route path="/reckoningesports" element={<ReckoningEsportsPage />} />
               <Route path="/payment-checkout" element={<PaymentCheckout />} />
               <Route path="/status" element={<PaymentStatus />} />
               <Route path="/contact" element={<Contact />} />

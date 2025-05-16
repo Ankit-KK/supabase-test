@@ -23,6 +23,9 @@ const Navbar: React.FC = () => {
           <Link to="/contact" className="text-sm hover:text-hyperchat-purple transition-colors">
             Contact Us
           </Link>
+          <Link to="/reckoningesports" className="text-sm hover:text-hyperchat-purple transition-colors">
+            Reckoning Esports
+          </Link>
           <Link to="/privacy-policy" className="text-sm hover:text-hyperchat-purple transition-colors">
             Privacy Policy
           </Link>
