@@ -7,6 +7,7 @@ import Services from "@/components/Services";
 import Pricing from "@/components/Pricing";
 import Footer from "@/components/Footer";
 import VideoBackground from "@/components/VideoBackground";
+import ChatDemo from "@/components/ChatDemo";
 
 const Index = () => {
   return (
@@ -16,6 +17,7 @@ const Index = () => {
         <Navbar />
         <HeroWithCanyonAnimation />
         <Features />
+        <ChatDemo />
         <Services />
         <Pricing />
         <Footer />
