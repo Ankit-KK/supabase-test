@@ -2,6 +2,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { BadgeIndianRupee } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const ChatDemo: React.FC = () => {
   return (
@@ -42,10 +43,12 @@ const ChatDemo: React.FC = () => {
                 <p>Receive creator reactions and community recognition</p>
               </li>
             </ul>
-            <div className="pt-4">
-              <Button className="bg-hero-gradient hover:opacity-90 transition-opacity flex items-center">
-                <BadgeIndianRupee className="mr-2" /> Try Demo
-              </Button>
+            <div className="pt-4 space-x-4">
+              <Link to="/demo">
+                <Button className="bg-hero-gradient hover:opacity-90 transition-opacity flex items-center">
+                  <BadgeIndianRupee className="mr-2" /> View Demo Flow
+                </Button>
+              </Link>
             </div>
           </div>
           <div className="relative">
