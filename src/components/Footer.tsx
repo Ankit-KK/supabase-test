@@ -28,6 +28,7 @@ const Footer: React.FC = () => {
             <h3 className="font-medium mb-4">Streamers & Creators</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><Link to="/reckoningesports" className="hover:text-hyperchat-purple transition-colors">Reckoning Esports</Link></li>
+              <li><Link to="/gamer-demo" className="hover:text-hyperchat-purple transition-colors">Gamer Demo</Link></li>
               <li><Link to="/cancellation-refunds" className="hover:text-hyperchat-purple transition-colors">Cancellation & Refunds</Link></li>
               <li><Link to="/shipping" className="hover:text-hyperchat-purple transition-colors">Shipping Information</Link></li>
               <li><Link to="/privacy-policy" className="hover:text-hyperchat-purple transition-colors">Terms & Conditions</Link></li>
