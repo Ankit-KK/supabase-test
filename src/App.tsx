@@ -32,7 +32,6 @@ import MackleObsView from "./pages/MackleObsView";
 import AnkitDonationExport from "./pages/AnkitDonationExport";
 import HarishDonationExport from "./pages/HarishDonationExport";
 import MackleDonationExport from "./pages/MackleDonationExport";
-import DemoPaymentFlow from "./pages/DemoPaymentFlow";
 import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
@@ -77,7 +76,6 @@ const App = () => {
               <Route path="/mackle/messages" element={<MackleDonationMessages />} />
               <Route path="/mackle/export" element={<MackleDonationExport />} />
               <Route path="/mackle/obs/:id" element={<MackleObsView />} />
-              <Route path="/demo" element={<DemoPaymentFlow />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
