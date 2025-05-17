@@ -103,92 +103,74 @@ const AnkitPage = () => {
   };
 
   return (
-    <div 
-      className="min-h-screen bg-cover bg-center bg-no-repeat" 
-      style={{ backgroundImage: `url('/lovable-uploads/93602e11-71cc-4cea-9d98-7b029b2ffe25.png')` }}
-    >
-      <div className="container mx-auto max-w-md py-10 px-4">
-        <div className="bg-black/70 p-6 rounded-lg backdrop-blur-sm">
-          <div className="space-y-6">
-            <div>
-              <h1 className="text-2xl font-bold text-white">Make a Donation to Ankit</h1>
-              <p className="text-gray-300 mt-2">
-                Support Ankit's work by making a donation
-              </p>
-            </div>
-            
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="name" className="block text-sm font-medium text-white">
-                  Your Name
-                </label>
-                <Input 
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Enter your name"
-                  disabled={isLoading}
-                  className="bg-white/20 border-white/30 text-white placeholder:text-gray-400"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="amount" className="block text-sm font-medium text-white">
-                  Amount (₹)
-                </label>
-                <Input 
-                  id="amount"
-                  type="number"
-                  min="50"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder="Minimum ₹50"
-                  disabled={isLoading}
-                  className="bg-white/20 border-white/30 text-white placeholder:text-gray-400"
-                />
-                <p className="text-xs text-gray-300">Minimum donation amount is ₹50</p>
-              </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="message" className="block text-sm font-medium text-white">
-                  Message
-                </label>
-                <Textarea 
-                  id="message"
-                  value={message}
-                  onChange={handleMessageChange}
-                  placeholder="Enter your message"
-                  className="h-24 bg-white/20 border-white/30 text-white placeholder:text-gray-400"
-                  disabled={isLoading}
-                  maxLength={maxMessageLength}
-                />
-                <p className="text-xs text-gray-300">
-                  {message.length}/{maxMessageLength} characters
-                  {parseFloat(amount) >= 100 ? 
-                    " (100 characters for donations ₹100 and above)" : 
-                    " (50 characters for donations below ₹100)"}
-                </p>
-              </div>
-              
-              <div className="flex justify-center mt-6">
-                <button 
-                  type="submit" 
-                  disabled={isLoading}
-                  className="relative group overflow-hidden"
-                >
-                  <img 
-                    src="/lovable-uploads/3a9e1b67-eac7-488e-a7f9-e7da6fbbef36.png" 
-                    alt="Continue to Payment" 
-                    className="w-52 transform transition-transform duration-200 group-hover:scale-105"
-                  />
-                  <span className="absolute inset-0 flex items-center justify-center text-white font-bold">
-                    {isLoading ? "Processing..." : "Continue to Payment"}
-                  </span>
-                </button>
-              </div>
-            </form>
-          </div>
+    <div className="container mx-auto max-w-md py-10">
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">Make a Donation to Ankit</h1>
+          <p className="text-muted-foreground mt-2">
+            Support Ankit's work by making a donation
+          </p>
         </div>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="name" className="block text-sm font-medium">
+              Your Name
+            </label>
+            <Input 
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter your name"
+              disabled={isLoading}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <label htmlFor="amount" className="block text-sm font-medium">
+              Amount (₹)
+            </label>
+            <Input 
+              id="amount"
+              type="number"
+              min="50"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="Minimum ₹50"
+              disabled={isLoading}
+            />
+            <p className="text-xs text-muted-foreground">Minimum donation amount is ₹50</p>
+          </div>
+          
+          <div className="space-y-2">
+            <label htmlFor="message" className="block text-sm font-medium">
+              Message
+            </label>
+            <Textarea 
+              id="message"
+              value={message}
+              onChange={handleMessageChange}
+              placeholder="Enter your message"
+              className="h-24"
+              disabled={isLoading}
+              maxLength={maxMessageLength}
+            />
+            <p className="text-xs text-muted-foreground">
+              {message.length}/{maxMessageLength} characters
+              {parseFloat(amount) >= 100 ? 
+                " (100 characters for donations ₹100 and above)" : 
+                " (50 characters for donations below ₹100)"}
+            </p>
+          </div>
+          
+          <Button 
+            type="submit" 
+            className="w-full"
+            disabled={isLoading}
+          >
+            {isLoading ? "Processing..." : "Continue to Payment"}
+          </Button>
+        </form>
       </div>
     </div>
   );
