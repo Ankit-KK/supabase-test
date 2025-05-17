@@ -27,7 +27,7 @@ import { Button } from "@/components/ui/button";
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   mobile_number: z.string().min(10, { message: "Please enter a valid mobile number." }),
-  youtube_channel: z.string().optional(),
+  youtube_channel: z.string().min(1, { message: "YouTube channel link is required." }),
   email: z.string().email({ message: "Please enter a valid email address." }),
 });
 
@@ -122,7 +122,7 @@ const SignupDialog: React.FC<SignupDialogProps> = ({ open, onOpenChange }) => {
               name="youtube_channel"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>YouTube Channel (optional)</FormLabel>
+                  <FormLabel>YouTube Channel</FormLabel>
                   <FormControl>
                     <Input placeholder="YouTube channel link" {...field} />
                   </FormControl>
