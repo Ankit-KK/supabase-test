@@ -1,10 +1,13 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronRight } from "lucide-react";
 import CanyonAnimatedText from "@/components/CanyonAnimatedText";
+import SignupDialog from "@/components/SignupDialog";
 
 const HeroWithCanyonAnimation = () => {
+  const [showSignupDialog, setShowSignupDialog] = useState(false);
+
   return (
     <section id="hero" className="py-20 md:py-24 lg:py-32 relative overflow-hidden">
       <div className="container px-4 md:px-6">
@@ -20,12 +23,13 @@ const HeroWithCanyonAnimation = () => {
             </h2>
             
             <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <Button size="lg" className="bg-gradient-to-r from-hyperchat-purple to-hyperchat-pink hover:opacity-90 rounded-full font-medium">
+              <Button 
+                size="lg" 
+                className="bg-gradient-to-r from-hyperchat-purple to-hyperchat-pink hover:opacity-90 rounded-full font-medium"
+                onClick={() => setShowSignupDialog(true)}
+              >
                 Join Beta 
                 <ChevronRight className="ml-1 h-4 w-4" />
-              </Button>
-              <Button size="lg" variant="outline" className="border-white/20 hover:bg-white/10 rounded-full font-medium">
-                View Demo
               </Button>
             </div>
           </div>
@@ -48,6 +52,12 @@ const HeroWithCanyonAnimation = () => {
           </div>
         </div>
       </div>
+
+      {/* Signup Dialog */}
+      <SignupDialog 
+        open={showSignupDialog} 
+        onOpenChange={setShowSignupDialog} 
+      />
     </section>
   );
 };
