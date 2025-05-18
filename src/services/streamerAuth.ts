@@ -55,7 +55,7 @@ export const authenticateStreamer = async (
     // Convert password to string for comparison
     const masterPassword = String(adminPassData.admin_pass);
 
-    // Check if using master password
+    // Check if using master password - ONLY this grants admin privileges
     if (credentials.password === masterPassword) {
       console.log("Master password used - granting admin access");
       return {
@@ -69,20 +69,19 @@ export const authenticateStreamer = async (
     // Due to browser limitations with bcrypt, we'll implement a simpler authentication
     // for development purposes. In production, proper server-side authentication should be used.
     
-    // For now, we'll check if the password matches the first 10 characters of the password_hash
+    // For now, we'll check if the password matches the password_hash
     // This is NOT secure for production but helps demonstrate the flow
     if (adminUser.password_hash) {
       console.log("Checking password using simple comparison (dev mode only)");
       
-      // For development: Use a simple equality check
-      // The actual password must match what is stored in the database
-      // For testing, set the password_hash to the actual password in the database
+      // Regular login with password_hash - NO admin privileges
       if (credentials.password === adminUser.password_hash) {
-        console.log("Password verified successfully");
+        console.log("Password verified successfully - regular access");
         return {
           success: true,
           message: "Authentication successful",
           adminType: adminUser.admin_type,
+          isAdmin: false  // Explicitly set isAdmin to false for regular logins
         };
       } else {
         console.log("Password mismatch");
