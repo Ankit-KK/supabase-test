@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { authenticateStreamer } from "@/services/streamerAuth";
 
 const HarishLogin = () => {
-  const [username, setUsername] = useState("harish");
+  const [username] = useState("harish");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -69,7 +69,7 @@ const HarishLogin = () => {
         <CardHeader>
           <CardTitle className="text-2xl">Harish Dashboard Login</CardTitle>
           <CardDescription>
-            Enter your credentials to access the dashboard
+            Enter your password to access the dashboard
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
@@ -80,8 +80,7 @@ const HarishLogin = () => {
                 id="username"
                 type="text"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter username"
+                placeholder="harish"
                 required
                 disabled
               />

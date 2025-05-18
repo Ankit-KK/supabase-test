@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import * as bcrypt from "bcryptjs";
 
 interface LoginCredentials {
   username: string;
@@ -20,6 +21,21 @@ export const authenticateStreamer = async (
 ): Promise<StreamerAuthResponse> => {
   try {
     console.log("Authenticating streamer:", credentials.username);
+
+    // Find the admin user with matching username (admin_type)
+    const { data: adminUser, error } = await supabase
+      .from("admin_users")
+      .select("*")
+      .eq("admin_type", credentials.username)
+      .single();
+
+    if (error || !adminUser) {
+      console.error("Authentication error:", error?.message || "User not found");
+      return {
+        success: false,
+        message: "Invalid username or password",
+      };
+    }
 
     // Get the admin password from the database for the first admin user
     // In a more sophisticated system, we might check for a specific admin user
@@ -51,22 +67,8 @@ export const authenticateStreamer = async (
       };
     }
 
-    // Find the admin user with matching username (admin_type)
-    const { data: adminUser, error } = await supabase
-      .from("admin_users")
-      .select("*")
-      .eq("admin_type", credentials.username)
-      .single();
-
-    if (error || !adminUser) {
-      console.error("Authentication error:", error?.message || "User not found");
-      return {
-        success: false,
-        message: "Invalid username or password",
-      };
-    }
-
-    // Simple password verification (in a real app, use proper hashing)
+    // Simple password verification (in a real app, passwords should be hashed)
+    // Here we're comparing directly as we don't have hashed passwords in the database yet
     if (adminUser.password_hash !== credentials.password) {
       console.log("Password mismatch");
       return {
@@ -105,4 +107,17 @@ export const isAdminAuthenticated = (adminType: string): boolean => {
 export const logoutStreamer = (adminType: string): void => {
   sessionStorage.removeItem(`${adminType}Auth`);
   sessionStorage.removeItem(`${adminType}AdminAuth`);
+};
+
+// Hash a password (for future use)
+export const hashPassword = async (password: string): Promise<string> => {
+  return bcrypt.hash(password, 10);
+};
+
+// Compare a password with a hash (for future use)
+export const comparePassword = async (
+  password: string, 
+  hash: string
+): Promise<boolean> => {
+  return bcrypt.compare(password, hash);
 };
