@@ -67,14 +67,27 @@ export const authenticateStreamer = async (
       };
     }
 
-    // Simple password verification (in a real app, passwords should be hashed)
-    // Here we're comparing directly as we don't have hashed passwords in the database yet
-    if (adminUser.password_hash !== credentials.password) {
-      console.log("Password mismatch");
-      return {
-        success: false,
-        message: "Invalid username or password",
-      };
+    // Use bcrypt for password verification if a password hash exists
+    if (adminUser.password_hash) {
+      const passwordMatches = await comparePassword(credentials.password, adminUser.password_hash);
+      
+      if (!passwordMatches) {
+        console.log("Password mismatch");
+        return {
+          success: false,
+          message: "Invalid username or password",
+        };
+      }
+    } else {
+      // Fallback for non-hashed passwords (direct comparison)
+      // This branch should only be used during a transition period
+      if (adminUser.password !== credentials.password) {
+        console.log("Password mismatch (using direct comparison)");
+        return {
+          success: false,
+          message: "Invalid username or password",
+        };
+      }
     }
 
     // Authentication successful
@@ -109,12 +122,12 @@ export const logoutStreamer = (adminType: string): void => {
   sessionStorage.removeItem(`${adminType}AdminAuth`);
 };
 
-// Hash a password (for future use)
+// Hash a password
 export const hashPassword = async (password: string): Promise<string> => {
   return bcrypt.hash(password, 10);
 };
 
-// Compare a password with a hash (for future use)
+// Compare a password with a hash
 export const comparePassword = async (
   password: string, 
   hash: string
