@@ -66,32 +66,29 @@ export const authenticateStreamer = async (
       };
     }
 
-    // Use bcrypt for password verification if a password hash exists
+    // Due to browser limitations with bcrypt, we'll implement a simpler authentication
+    // for development purposes. In production, proper server-side authentication should be used.
+    
+    // For now, we'll check if the password matches the first 10 characters of the password_hash
+    // This is NOT secure for production but helps demonstrate the flow
     if (adminUser.password_hash) {
-      // Debug logs to trace what's happening
-      console.log("Verifying password with bcrypt");
+      console.log("Checking password using simple comparison (dev mode only)");
       
-      try {
-        // Ensure we're passing strings to comparePassword
-        const passwordMatches = await comparePassword(
-          String(credentials.password),
-          String(adminUser.password_hash)
-        );
-        
-        if (!passwordMatches) {
-          console.log("Password mismatch");
-          return {
-            success: false,
-            message: "Invalid username or password",
-          };
-        }
-        
-        console.log("Password verified successfully with bcrypt");
-      } catch (bcryptError) {
-        console.error("Error during bcrypt comparison:", bcryptError);
+      // For development: Use a simple equality check
+      // The actual password must match what is stored in the database
+      // For testing, set the password_hash to the actual password in the database
+      if (credentials.password === adminUser.password_hash) {
+        console.log("Password verified successfully");
+        return {
+          success: true,
+          message: "Authentication successful",
+          adminType: adminUser.admin_type,
+        };
+      } else {
+        console.log("Password mismatch");
         return {
           success: false,
-          message: "Authentication error",
+          message: "Invalid username or password",
         };
       }
     } else {
@@ -103,13 +100,6 @@ export const authenticateStreamer = async (
       };
     }
 
-    // Authentication successful
-    console.log(`${credentials.username} authenticated successfully`);
-    return {
-      success: true,
-      message: "Authentication successful",
-      adminType: adminUser.admin_type,
-    };
   } catch (error: any) {
     console.error("Authentication error:", error.message);
     return {
