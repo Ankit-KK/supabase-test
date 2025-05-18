@@ -68,22 +68,38 @@ export const authenticateStreamer = async (
 
     // Use bcrypt for password verification if a password hash exists
     if (adminUser.password_hash) {
-      const passwordMatches = await comparePassword(credentials.password, adminUser.password_hash);
+      // Debug logs to trace what's happening
+      console.log("Verifying password with bcrypt");
       
-      if (!passwordMatches) {
-        console.log("Password mismatch");
+      try {
+        // Ensure we're passing strings to comparePassword
+        const passwordMatches = await comparePassword(
+          String(credentials.password),
+          String(adminUser.password_hash)
+        );
+        
+        if (!passwordMatches) {
+          console.log("Password mismatch");
+          return {
+            success: false,
+            message: "Invalid username or password",
+          };
+        }
+        
+        console.log("Password verified successfully with bcrypt");
+      } catch (bcryptError) {
+        console.error("Error during bcrypt comparison:", bcryptError);
         return {
           success: false,
-          message: "Invalid username or password",
+          message: "Authentication error",
         };
       }
     } else {
-      // This branch should be removed or modified since there's no 'password' field
-      // in the admin_users table. We should only rely on password_hash.
-      console.log("No password hash found - authentication failed");
+      // No password hash exists
+      console.log("No password_hash found for user");
       return {
         success: false,
-        message: "Invalid username or password",
+        message: "Account setup incomplete, please contact administrator",
       };
     }
 
