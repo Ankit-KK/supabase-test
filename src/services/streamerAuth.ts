@@ -1,7 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import * as bcrypt from "bcryptjs";
+import bcryptjs from "bcryptjs";
 
 interface LoginCredentials {
   username: string;
@@ -124,7 +123,7 @@ export const logoutStreamer = (adminType: string): void => {
 
 // Hash a password
 export const hashPassword = async (password: string): Promise<string> => {
-  return bcrypt.hash(password, 10);
+  return bcryptjs.hash(password, 10);
 };
 
 // Compare a password with a hash
@@ -132,5 +131,5 @@ export const comparePassword = async (
   password: string, 
   hash: string
 ): Promise<boolean> => {
-  return bcrypt.compare(password, hash);
+  return bcryptjs.compare(password, hash);
 };
