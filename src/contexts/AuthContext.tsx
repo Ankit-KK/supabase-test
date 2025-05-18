@@ -24,7 +24,55 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  // Set up auth state listener first, then check for existing session
+  // Make sure we create these admin users in the database if they don't exist yet
+  useEffect(() => {
+    const createDefaultAdminUsers = async () => {
+      try {
+        // Only attempt to create admin users if we have an authenticated session
+        // This prevents the 401 Unauthorized error
+        if (!session?.access_token) {
+          console.log("Skipping admin user creation - no authenticated session");
+          return;
+        }
+
+        const { data, error: checkError } = await supabase
+          .from('admin_users')
+          .select('user_email')
+          .limit(1);
+        
+        if (checkError) {
+          console.error("Error checking for admin users:", checkError.message);
+          return;
+        }
+        
+        if (!data || data.length === 0) {
+          // Create default admin users
+          const adminUsers = [
+            { user_email: 'ankitashuk20@gmail.com', admin_type: 'ankit' },
+            { user_email: 'harishk0294@gmail.com', admin_type: 'harish' }
+          ];
+          
+          for (const user of adminUsers) {
+            const { error: insertError } = await supabase
+              .from('admin_users')
+              .upsert(user, { onConflict: 'user_email' });
+              
+            if (insertError) {
+              console.error(`Error creating admin user ${user.user_email}:`, insertError.message);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error setting up admin users:", err);
+      }
+    };
+    
+    // Only try to create admin users after we have a session
+    if (session) {
+      createDefaultAdminUsers();
+    }
+  }, [session]); // Depend on session to ensure we have authentication
+
   useEffect(() => {
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(

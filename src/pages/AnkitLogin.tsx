@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { authenticateStreamer } from "@/services/streamerAuth";
 
 const AnkitLogin = () => {
-  const [username] = useState("ankit");
+  const [username, setUsername] = useState("ankit");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -69,7 +69,7 @@ const AnkitLogin = () => {
         <CardHeader>
           <CardTitle className="text-2xl">Ankit Dashboard Login</CardTitle>
           <CardDescription>
-            Enter your password to access the dashboard
+            Enter your credentials to access the dashboard
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
@@ -80,7 +80,8 @@ const AnkitLogin = () => {
                 id="username"
                 type="text"
                 value={username}
-                placeholder="ankit"
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Enter username"
                 required
                 disabled
               />

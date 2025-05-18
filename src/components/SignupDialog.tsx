@@ -39,11 +39,6 @@ interface SignupDialogProps {
 }
 
 const SignupDialog: React.FC<SignupDialogProps> = ({ open, onOpenChange }) => {
-  // Only initialize the form if the dialog is open to prevent React hooks from being called conditionally
-  if (!open) {
-    return null;
-  }
-
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -56,6 +51,7 @@ const SignupDialog: React.FC<SignupDialogProps> = ({ open, onOpenChange }) => {
 
   const onSubmit = async (data: FormValues) => {
     try {
+      // Fix: Pass a single object instead of an array, and ensure all required fields are present
       const { error } = await supabase.from("user_signups").insert({
         name: data.name,
         mobile_number: data.mobile_number,

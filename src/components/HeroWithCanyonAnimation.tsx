@@ -53,13 +53,11 @@ const HeroWithCanyonAnimation = () => {
         </div>
       </div>
 
-      {/* Render SignupDialog conditionally only when needed */}
-      {showSignupDialog && (
-        <SignupDialog 
-          open={showSignupDialog} 
-          onOpenChange={setShowSignupDialog} 
-        />
-      )}
+      {/* Signup Dialog */}
+      <SignupDialog 
+        open={showSignupDialog} 
+        onOpenChange={setShowSignupDialog} 
+      />
     </section>
   );
 };
