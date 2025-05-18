@@ -78,13 +78,15 @@ export const authenticateStreamer = async (
         };
       }
     } else {
-      // This branch should be removed or modified since there's no 'password' field
-      // in the admin_users table. We should only rely on password_hash.
-      console.log("No password hash found - authentication failed");
-      return {
-        success: false,
-        message: "Invalid username or password",
-      };
+      // Fallback for non-hashed passwords (direct comparison)
+      // This branch should only be used during a transition period
+      if (adminUser.password !== credentials.password) {
+        console.log("Password mismatch (using direct comparison)");
+        return {
+          success: false,
+          message: "Invalid username or password",
+        };
+      }
     }
 
     // Authentication successful
