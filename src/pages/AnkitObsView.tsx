@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,6 +34,8 @@ const AnkitObsView = () => {
     
     setShowMessages(messagesParam !== "false");
     setShowBorder(borderParam === "true");
+    
+    console.log("OBS View parameters - showMessages:", messagesParam !== "false", "showBorder:", borderParam === "true");
   }, [location]);
 
   // Get the current date in ISO format (just the date part)
