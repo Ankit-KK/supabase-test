@@ -360,7 +360,7 @@ const AnkitObsView = () => {
       
       <div 
         id="messageBox"
-        className={`animate-fade-in ${showBorder ? 'border-2 border-dashed border-gray-400' : ''}`}
+        className={`animate-fade-in ${showBorder ? 'border-[3px] border-dashed border-white' : ''}`}
         style={{ width: "auto", maxWidth: "90vw" }}
       >
         <div id="resizeHandle"></div>
