@@ -326,7 +326,8 @@ const AnkitObsView = () => {
   // Updated UI with draggable and resizable container
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-transparent overflow-hidden">
-      <style jsx>{`
+      <style>
+        {`
         #messageBox {
           position: absolute;
           background-color: rgba(0, 0, 0, 0.6);
@@ -353,7 +354,8 @@ const AnkitObsView = () => {
           cursor: nwse-resize;
           z-index: 10;
         }
-      `}</style>
+        `}
+      </style>
       
       <div 
         id="messageBox"
