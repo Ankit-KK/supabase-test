@@ -355,12 +355,16 @@ const AnkitObsView = () => {
           cursor: nwse-resize;
           z-index: 10;
         }
+        .box-outline-visible {
+          border: 4px dashed #FFFFFF !important;
+          box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.8), 0 0 10px rgba(255, 255, 255, 0.5) !important;
+        }
         `}
       </style>
       
       <div 
         id="messageBox"
-        className={`animate-fade-in ${showBorder ? 'border-[3px] border-dashed border-white' : ''}`}
+        className={`animate-fade-in ${showBorder ? 'box-outline-visible' : ''}`}
         style={{ width: "auto", maxWidth: "90vw" }}
       >
         <div id="resizeHandle"></div>
