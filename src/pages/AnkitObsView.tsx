@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,13 +24,17 @@ const AnkitObsView = () => {
   const [activeDonation, setActiveDonation] = useState<ActiveDonation | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [showMessages, setShowMessages] = useState<boolean>(true);
+  const [showBorder, setShowBorder] = useState<boolean>(false);
   const DISPLAY_DURATION = 15000; // 15 seconds per message
 
   // Get URL parameters
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
     const messagesParam = queryParams.get("showMessages");
+    const borderParam = queryParams.get("showBorder");
+    
     setShowMessages(messagesParam !== "false");
+    setShowBorder(borderParam === "true");
   }, [location]);
 
   // Get the current date in ISO format (just the date part)
@@ -48,7 +53,7 @@ const AnkitObsView = () => {
         const { data, error } = await supabase
           .from("ankit_donations")
           .select("id, name, amount, message, created_at")
-          .eq("payment_status", "success") // For testing purposes
+          .eq("payment_status", "success")
           .gte("created_at", todayStart)
           .lte("created_at", todayEnd)
           .order("created_at", { ascending: false });
@@ -95,7 +100,7 @@ const AnkitObsView = () => {
           event: 'INSERT', 
           schema: 'public', 
           table: 'ankit_donations',
-          filter: 'payment_status=eq.success'  // For testing purposes
+          filter: 'payment_status=eq.success'
         },
         (payload) => {
           const newDonation = payload.new as Donation;
@@ -160,10 +165,142 @@ const AnkitObsView = () => {
     
   }, [activeDonation, displayQueue]);
 
-  // Debug log when displayQueue or activeDonation changes
+  // Draggable and resizable functionality
   useEffect(() => {
-    console.log(`OBS View: Display queue has ${displayQueue.length} items, active donation: ${activeDonation?.name || 'none'}`);
-  }, [displayQueue, activeDonation]);
+    if (!activeDonation) return;
+
+    const messageBox = document.getElementById('messageBox');
+    const resizeHandle = document.getElementById('resizeHandle');
+    if (!messageBox || !resizeHandle) return;
+
+    let isDragging = false;
+    let isResizing = false;
+    let dragOffsetX = 0, dragOffsetY = 0;
+    let resizeInitialX = 0, resizeInitialY = 0;
+    let initialWidth = 0, initialHeight = 0;
+
+    const REFERENCE_WIDTH = 300;
+    const BASE_FONT_SIZE = 16;
+    const MIN_FONT_SIZE = 8;
+
+    function updateScale(width: number) {
+      const scaleFactor = width / REFERENCE_WIDTH;
+      const newFontSize = Math.max(MIN_FONT_SIZE, BASE_FONT_SIZE * scaleFactor);
+      if (messageBox) messageBox.style.fontSize = `${newFontSize}px`;
+    }
+
+    // Initialize position if not set
+    if (!messageBox.style.left) messageBox.style.left = '50px';
+    if (!messageBox.style.top) messageBox.style.top = '50px';
+    if (!messageBox.style.width) messageBox.style.width = '300px';
+    updateScale(messageBox.offsetWidth);
+
+    // Mouse events for dragging
+    messageBox.addEventListener('mousedown', (e: MouseEvent) => {
+      if (e.target === messageBox) {
+        isDragging = true;
+        dragOffsetX = e.clientX - messageBox.getBoundingClientRect().left;
+        dragOffsetY = e.clientY - messageBox.getBoundingClientRect().top;
+        messageBox.style.cursor = 'move';
+      }
+    });
+
+    // Mouse events for resizing
+    resizeHandle?.addEventListener('mousedown', (e: MouseEvent) => {
+      isResizing = true;
+      resizeInitialX = e.clientX;
+      resizeInitialY = e.clientY;
+      initialWidth = messageBox.offsetWidth;
+      initialHeight = messageBox.offsetHeight;
+      e.stopPropagation();
+    });
+
+    // Mouse move handler
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDragging) {
+        const newX = e.clientX - dragOffsetX;
+        const newY = e.clientY - dragOffsetY;
+        messageBox.style.left = `${Math.max(0, newX)}px`;
+        messageBox.style.top = `${Math.max(0, newY)}px`;
+      } else if (isResizing && messageBox) {
+        const dx = e.clientX - resizeInitialX;
+        const dy = e.clientY - resizeInitialY;
+        const newWidth = Math.max(100, initialWidth + dx);
+        const newHeight = Math.max(70, initialHeight + dy);
+        messageBox.style.width = `${newWidth}px`;
+        messageBox.style.height = `${newHeight}px`;
+        updateScale(newWidth);
+      }
+    };
+
+    // Mouse up handler
+    const handleMouseUp = () => {
+      isDragging = false;
+      isResizing = false;
+      if (messageBox) messageBox.style.cursor = 'default';
+    };
+
+    // Add event listeners
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    // Touch events
+    messageBox.addEventListener('touchstart', (e: TouchEvent) => {
+      if (e.target === messageBox) {
+        isDragging = true;
+        const touch = e.touches[0];
+        dragOffsetX = touch.clientX - messageBox.getBoundingClientRect().left;
+        dragOffsetY = touch.clientY - messageBox.getBoundingClientRect().top;
+      }
+    });
+
+    resizeHandle?.addEventListener('touchstart', (e: TouchEvent) => {
+      isResizing = true;
+      const touch = e.touches[0];
+      resizeInitialX = touch.clientX;
+      resizeInitialY = touch.clientY;
+      initialWidth = messageBox.offsetWidth;
+      initialHeight = messageBox.offsetHeight;
+      e.stopPropagation();
+    });
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isDragging && !isResizing) return;
+      
+      const touch = e.touches[0];
+      if (isDragging && messageBox) {
+        const newX = touch.clientX - dragOffsetX;
+        const newY = touch.clientY - dragOffsetY;
+        messageBox.style.left = `${Math.max(0, newX)}px`;
+        messageBox.style.top = `${Math.max(0, newY)}px`;
+      } else if (isResizing && messageBox) {
+        const dx = touch.clientX - resizeInitialX;
+        const dy = touch.clientY - resizeInitialY;
+        const newWidth = Math.max(100, initialWidth + dx);
+        const newHeight = Math.max(70, initialHeight + dy);
+        messageBox.style.width = `${newWidth}px`;
+        messageBox.style.height = `${newHeight}px`;
+        updateScale(newWidth);
+      }
+    };
+
+    const handleTouchEnd = () => {
+      isDragging = false;
+      isResizing = false;
+    };
+
+    // Add touch event listeners
+    document.addEventListener('touchmove', handleTouchMove);
+    document.addEventListener('touchend', handleTouchEnd);
+
+    // Clean up
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [activeDonation]);
 
   if (!isConnected) {
     return (
@@ -186,13 +323,44 @@ const AnkitObsView = () => {
     );
   }
 
-  // Updated UI with dynamic sizing
+  // Updated UI with draggable and resizable container
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-transparent overflow-hidden">
+      <style jsx>{`
+        #messageBox {
+          position: absolute;
+          background-color: rgba(0, 0, 0, 0.6);
+          backdrop-filter: blur(8px);
+          border-radius: 12px;
+          padding: 25px;
+          color: white;
+          min-width: 100px;
+          min-height: 70px;
+          box-sizing: border-box;
+          font-family: 'Inter', sans-serif;
+          text-shadow: 1px 1px 2px #000000, -1px -1px 2px #000000, 1px -1px 2px #000000, -1px 1px 2px #000000;
+          user-select: none;
+          overflow: hidden;
+        }
+        #resizeHandle {
+          position: absolute;
+          bottom: 0px;
+          right: 0px;
+          width: 15px;
+          height: 15px;
+          background-color: rgba(204, 204, 204, 0.5);
+          border-top-left-radius: 10px;
+          cursor: nwse-resize;
+          z-index: 10;
+        }
+      `}</style>
+      
       <div 
-        className="animate-fade-in bg-black/60 backdrop-blur-md rounded-2xl px-6 py-4 shadow-xl"
-        style={{ width: "auto", maxWidth: "90vw" }} // Dynamic width based on content
+        id="messageBox"
+        className={`animate-fade-in ${showBorder ? 'border-2 border-dashed border-gray-400' : ''}`}
+        style={{ width: "auto", maxWidth: "90vw" }}
       >
+        <div id="resizeHandle"></div>
         <div className="flex items-center gap-2 mb-2">
           <span className="font-bold text-xl text-yellow-400">{activeDonation.name}</span>
           <span className="text-md text-white opacity-90">· ₹{Number(activeDonation.amount).toLocaleString()}</span>
