@@ -91,7 +91,7 @@ const RakazonePage = () => {
         amount: parseFloat(amount),
         message,
         orderId,
-        donationType: "rakazone", // Specific donation type for rakazone
+        donationType: "rakazone", // Ensure donationType is set to "rakazone"
         include_sound: false,
       };
       
@@ -130,7 +130,7 @@ const RakazonePage = () => {
         amount: 1, // Small amount for special sound donation
         message: "Casepaglu", // Default message
         orderId,
-        donationType: "rakazone",
+        donationType: "rakazone", // Ensure donationType is set to "rakazone"
         include_sound: true, // Set include_sound to true for Casepaglu donations
       };
       
