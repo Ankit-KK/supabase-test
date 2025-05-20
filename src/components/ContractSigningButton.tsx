@@ -10,7 +10,7 @@ import { isAdminAuthenticated } from "@/services/streamerAuth";
 
 interface ContractSigningButtonProps {
   streamerName: string;
-  streamerType: string; // 'ankit', 'harish', or 'mackle'
+  streamerType: string; // 'ankit', 'harish', 'mackle', or 'rakazone'
 }
 
 const ContractSigningButton: React.FC<ContractSigningButtonProps> = ({ 
@@ -30,12 +30,17 @@ const ContractSigningButton: React.FC<ContractSigningButtonProps> = ({
         const adminStatus = isAdminAuthenticated(streamerType);
         setIsAdmin(adminStatus);
         
-        // Check contract status with proper headers
+        // Check contract status with proper Accept and Content-Type headers
         const { data, error } = await supabase
           .from("streamer_contracts")
           .select("*")
           .eq("streamer_type", streamerType)
-          .single();
+          .single({
+            headers: {
+              "Accept": "application/json",
+              "Content-Type": "application/json"
+            }
+          });
         
         if (data) {
           setIsSigned(true);
