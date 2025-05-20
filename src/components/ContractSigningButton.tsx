@@ -30,7 +30,7 @@ const ContractSigningButton: React.FC<ContractSigningButtonProps> = ({
         const adminStatus = isAdminAuthenticated(streamerType);
         setIsAdmin(adminStatus);
         
-        // Check contract status
+        // Check contract status with proper headers
         const { data, error } = await supabase
           .from("streamer_contracts")
           .select("*")

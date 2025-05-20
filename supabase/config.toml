@@ -16,5 +16,8 @@ verify_jwt = false
 #   signature TEXT NOT NULL,
 #   agreed_to_terms BOOLEAN NOT NULL DEFAULT true,
 #   signed_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-#   CONSTRAINT streamer_type_check CHECK (streamer_type IN ('ankit', 'harish', 'mackle'))
+#   streamer_cut INTEGER,
+#   hyperchat_cut INTEGER,
+#   CONSTRAINT streamer_type_check CHECK (streamer_type IN ('ankit', 'harish', 'mackle', 'rakazone'))
 # );
+

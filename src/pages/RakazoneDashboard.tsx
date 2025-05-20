@@ -101,7 +101,7 @@ const RakazoneDashboard = () => {
       )
       .subscribe();
 
-    console.log("Dashboard realtime subscription set up");
+    console.log("Dashboard realtime subscription set up for payment_status=success");
     
     // Fetch donations once when component mounts
     fetchDonations();
