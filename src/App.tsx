@@ -10,6 +10,7 @@ import NotFound from "./pages/NotFound";
 import AnkitPage from "./pages/Ankit";
 import HarishPage from "./pages/Harish";
 import MacklePage from "./pages/Mackle";
+import RakazonePage from "./pages/Rakazone";
 import PaymentCheckout from "./pages/PaymentCheckout";
 import PaymentStatus from "./pages/PaymentStatus";
 import Contact from "./pages/Contact";
@@ -31,6 +32,11 @@ import MackleObsView from "./pages/MackleObsView";
 import AnkitDonationExport from "./pages/AnkitDonationExport";
 import HarishDonationExport from "./pages/HarishDonationExport";
 import MackleDonationExport from "./pages/MackleDonationExport";
+import RakazoneLogin from "./pages/RakazoneLogin";
+import RakazoneDashboard from "./pages/RakazoneDashboard";
+import RakazoneDonationMessages from "./pages/RakazoneDonationMessages";
+import RakazoneDonationExport from "./pages/RakazoneDonationExport";
+import RakazoneObsView from "./pages/RakazoneObsView";
 import ReckoningEsports from "./pages/ReckoningEsports";
 import { AuthProvider } from "./contexts/AuthContext";
 
@@ -54,6 +60,7 @@ const App = () => {
               <Route path="/ankit" element={<AnkitPage />} />
               <Route path="/harish" element={<HarishPage />} />
               <Route path="/mackle" element={<MacklePage />} />
+              <Route path="/rakazone" element={<RakazonePage />} />
               <Route path="/payment-checkout" element={<PaymentCheckout />} />
               <Route path="/status" element={<PaymentStatus />} />
               <Route path="/contact" element={<Contact />} />
@@ -75,6 +82,11 @@ const App = () => {
               <Route path="/mackle/messages" element={<MackleDonationMessages />} />
               <Route path="/mackle/export" element={<MackleDonationExport />} />
               <Route path="/mackle/obs/:id" element={<MackleObsView />} />
+              <Route path="/rakazone/login" element={<RakazoneLogin />} />
+              <Route path="/rakazone/dashboard" element={<RakazoneDashboard />} />
+              <Route path="/rakazone/messages" element={<RakazoneDonationMessages />} />
+              <Route path="/rakazone/export" element={<RakazoneDonationExport />} />
+              <Route path="/rakazone/obs/:id" element={<RakazoneObsView />} />
               <Route path="/reckoningesports" element={<ReckoningEsports />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
