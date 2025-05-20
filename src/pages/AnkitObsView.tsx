@@ -16,6 +16,20 @@ interface ActiveDonation extends Donation {
   displayUntil: number;
 }
 
+interface BoxSettings {
+  left: string;
+  top: string;
+  width: string;
+  height: string;
+}
+
+const DEFAULT_BOX_SETTINGS: BoxSettings = {
+  left: "50px",
+  top: "50px",
+  width: "300px",
+  height: "auto"
+};
+
 const AnkitObsView = () => {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
@@ -25,6 +39,7 @@ const AnkitObsView = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [showMessages, setShowMessages] = useState<boolean>(true);
   const [showBorder, setShowBorder] = useState<boolean>(false);
+  const [boxSettings, setBoxSettings] = useState<BoxSettings>(DEFAULT_BOX_SETTINGS);
   const messageBoxRef = useRef<HTMLDivElement>(null);
   const resizeHandleRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef<boolean>(false);
@@ -32,9 +47,11 @@ const AnkitObsView = () => {
   const dragOffsetRef = useRef<{x: number, y: number}>({x: 0, y: 0});
   const resizeInitialRef = useRef<{x: number, y: number, width: number, height: number}>({x: 0, y: 0, width: 0, height: 0});
   const DISPLAY_DURATION = 15000; // 15 seconds per message
+  const BOX_STORAGE_KEY = `ankit-obs-box-${id}`;
 
-  // Get URL parameters
+  // Get URL parameters and load saved box position/size
   useEffect(() => {
+    // Get URL parameters
     const queryParams = new URLSearchParams(location.search);
     const messagesParam = queryParams.get("showMessages");
     const borderParam = queryParams.get("showBorder");
@@ -43,12 +60,34 @@ const AnkitObsView = () => {
     setShowBorder(borderParam === "true");
     
     console.log("OBS View parameters - showMessages:", messagesParam !== "false", "showBorder:", borderParam === "true");
-  }, [location]);
+    
+    // Load saved box settings from localStorage
+    try {
+      const savedSettings = localStorage.getItem(BOX_STORAGE_KEY);
+      if (savedSettings) {
+        const parsed = JSON.parse(savedSettings) as BoxSettings;
+        setBoxSettings(parsed);
+        console.log("Loaded saved box settings:", parsed);
+      }
+    } catch (e) {
+      console.error("Could not load saved box settings:", e);
+    }
+  }, [location, id]);
 
   // Get the current date in ISO format (just the date part)
   const getCurrentDate = () => {
     const today = new Date();
     return today.toISOString().split('T')[0];
+  };
+
+  // Save box settings to localStorage
+  const saveBoxSettings = (settings: BoxSettings) => {
+    try {
+      localStorage.setItem(BOX_STORAGE_KEY, JSON.stringify(settings));
+      console.log("Saved box settings:", settings);
+    } catch (e) {
+      console.error("Could not save box settings:", e);
+    }
   };
 
   // Fetch donations from the current date only
@@ -179,14 +218,15 @@ const AnkitObsView = () => {
     const resizeHandle = resizeHandleRef.current;
     if (!messageBox || !resizeHandle) return;
 
-    // Initialize position if not set
-    if (!messageBox.style.left) messageBox.style.left = '50px';
-    if (!messageBox.style.top) messageBox.style.top = '50px';
-    if (!messageBox.style.width) messageBox.style.width = '300px';
-    
+    // Apply saved settings to the box
+    if (boxSettings.left) messageBox.style.left = boxSettings.left;
+    if (boxSettings.top) messageBox.style.top = boxSettings.top;
+    if (boxSettings.width) messageBox.style.width = boxSettings.width;
+    if (boxSettings.height && boxSettings.height !== 'auto') messageBox.style.height = boxSettings.height;
+
     const REFERENCE_WIDTH = 300;
     const BASE_FONT_SIZE = 16;
-    const MIN_FONT_SIZE = 8;
+    const MIN_FONT_SIZE = 10;
 
     // Update font size based on box width
     const updateScale = (width: number) => {
@@ -195,12 +235,12 @@ const AnkitObsView = () => {
       if (messageBox) messageBox.style.fontSize = `${newFontSize}px`;
     };
     
-    // Initialize scale
+    // Initialize scale based on current width
     updateScale(messageBox.offsetWidth);
     
     // Mouse down handler for dragging
     const handleMouseDown = (e: MouseEvent) => {
-      if (e.target === messageBox) {
+      if (e.target === messageBox && showBorder) {
         isDraggingRef.current = true;
         dragOffsetRef.current = {
           x: e.clientX - messageBox.getBoundingClientRect().left,
@@ -213,37 +253,68 @@ const AnkitObsView = () => {
     
     // Mouse down handler for resizing
     const handleResizeMouseDown = (e: MouseEvent) => {
-      isResizingRef.current = true;
-      resizeInitialRef.current = {
-        x: e.clientX,
-        y: e.clientY,
-        width: messageBox.offsetWidth,
-        height: messageBox.offsetHeight
-      };
-      e.stopPropagation();
-      e.preventDefault();
+      if (showBorder) {
+        isResizingRef.current = true;
+        resizeInitialRef.current = {
+          x: e.clientX,
+          y: e.clientY,
+          width: messageBox.offsetWidth,
+          height: messageBox.offsetHeight
+        };
+        e.stopPropagation();
+        e.preventDefault();
+      }
     };
     
     // Mouse move handler
     const handleMouseMove = (e: MouseEvent) => {
-      if (isDraggingRef.current) {
-        const newX = e.clientX - dragOffsetRef.current.x;
-        const newY = e.clientY - dragOffsetRef.current.y;
-        messageBox.style.left = `${Math.max(0, newX)}px`;
-        messageBox.style.top = `${Math.max(0, newY)}px`;
-      } else if (isResizingRef.current) {
+      if (isDraggingRef.current && showBorder) {
+        const newX = Math.max(0, e.clientX - dragOffsetRef.current.x);
+        const newY = Math.max(0, e.clientY - dragOffsetRef.current.y);
+        
+        messageBox.style.left = `${newX}px`;
+        messageBox.style.top = `${newY}px`;
+        
+        // Update state with new position
+        setBoxSettings(prev => ({
+          ...prev,
+          left: `${newX}px`,
+          top: `${newY}px`
+        }));
+      } else if (isResizingRef.current && showBorder) {
         const dx = e.clientX - resizeInitialRef.current.x;
         const dy = e.clientY - resizeInitialRef.current.y;
+        
         const newWidth = Math.max(100, resizeInitialRef.current.width + dx);
         const newHeight = Math.max(70, resizeInitialRef.current.height + dy);
+        
         messageBox.style.width = `${newWidth}px`;
         messageBox.style.height = `${newHeight}px`;
+        
+        // Update state with new dimensions
+        setBoxSettings(prev => ({
+          ...prev,
+          width: `${newWidth}px`,
+          height: `${newHeight}px`
+        }));
+        
+        // Update font size
         updateScale(newWidth);
       }
     };
     
-    // Mouse up handler
+    // Mouse up handler - save settings
     const handleMouseUp = () => {
+      if ((isDraggingRef.current || isResizingRef.current) && showBorder) {
+        // Save settings to localStorage
+        saveBoxSettings({
+          left: messageBox.style.left,
+          top: messageBox.style.top,
+          width: messageBox.style.width,
+          height: messageBox.style.height
+        });
+      }
+      
       isDraggingRef.current = false;
       isResizingRef.current = false;
       if (messageBox) messageBox.style.cursor = 'default';
@@ -251,7 +322,7 @@ const AnkitObsView = () => {
     
     // Touch start handler for dragging
     const handleTouchStart = (e: TouchEvent) => {
-      if (e.target === messageBox) {
+      if (e.target === messageBox && showBorder) {
         isDraggingRef.current = true;
         const touch = e.touches[0];
         dragOffsetRef.current = {
@@ -264,16 +335,18 @@ const AnkitObsView = () => {
     
     // Touch start handler for resizing
     const handleResizeTouchStart = (e: TouchEvent) => {
-      isResizingRef.current = true;
-      const touch = e.touches[0];
-      resizeInitialRef.current = {
-        x: touch.clientX,
-        y: touch.clientY,
-        width: messageBox.offsetWidth,
-        height: messageBox.offsetHeight
-      };
-      e.stopPropagation();
-      e.preventDefault();
+      if (showBorder) {
+        isResizingRef.current = true;
+        const touch = e.touches[0];
+        resizeInitialRef.current = {
+          x: touch.clientX,
+          y: touch.clientY,
+          width: messageBox.offsetWidth,
+          height: messageBox.offsetHeight
+        };
+        e.stopPropagation();
+        e.preventDefault();
+      }
     };
     
     // Touch move handler
@@ -281,18 +354,36 @@ const AnkitObsView = () => {
       if (isDraggingRef.current || isResizingRef.current) {
         const touch = e.touches[0];
         
-        if (isDraggingRef.current) {
-          const newX = touch.clientX - dragOffsetRef.current.x;
-          const newY = touch.clientY - dragOffsetRef.current.y;
-          messageBox.style.left = `${Math.max(0, newX)}px`;
-          messageBox.style.top = `${Math.max(0, newY)}px`;
-        } else if (isResizingRef.current) {
+        if (isDraggingRef.current && showBorder) {
+          const newX = Math.max(0, touch.clientX - dragOffsetRef.current.x);
+          const newY = Math.max(0, touch.clientY - dragOffsetRef.current.y);
+          
+          messageBox.style.left = `${newX}px`;
+          messageBox.style.top = `${newY}px`;
+          
+          // Update state with new position
+          setBoxSettings(prev => ({
+            ...prev,
+            left: `${newX}px`,
+            top: `${newY}px`
+          }));
+        } else if (isResizingRef.current && showBorder) {
           const dx = touch.clientX - resizeInitialRef.current.x;
           const dy = touch.clientY - resizeInitialRef.current.y;
+          
           const newWidth = Math.max(100, resizeInitialRef.current.width + dx);
           const newHeight = Math.max(70, resizeInitialRef.current.height + dy);
+          
           messageBox.style.width = `${newWidth}px`;
           messageBox.style.height = `${newHeight}px`;
+          
+          // Update state with new dimensions
+          setBoxSettings(prev => ({
+            ...prev,
+            width: `${newWidth}px`,
+            height: `${newHeight}px`
+          }));
+          
           updateScale(newWidth);
         }
         
@@ -300,8 +391,18 @@ const AnkitObsView = () => {
       }
     };
     
-    // Touch end handler
+    // Touch end handler - save settings
     const handleTouchEnd = () => {
+      if ((isDraggingRef.current || isResizingRef.current) && showBorder) {
+        // Save settings to localStorage
+        saveBoxSettings({
+          left: messageBox.style.left,
+          top: messageBox.style.top,
+          width: messageBox.style.width,
+          height: messageBox.style.height
+        });
+      }
+      
       isDraggingRef.current = false;
       isResizingRef.current = false;
     };
@@ -329,7 +430,7 @@ const AnkitObsView = () => {
       document.removeEventListener('touchmove', handleTouchMove);
       document.removeEventListener('touchend', handleTouchEnd);
     };
-  }, []); // Only run once on mount
+  }, [showBorder, boxSettings]); // Added showBorder and boxSettings as dependencies
 
   if (!isConnected) {
     return (
@@ -370,10 +471,17 @@ const AnkitObsView = () => {
           border-top-left-radius: 10px;
           cursor: nwse-resize;
           z-index: 10;
+          visibility: hidden;
+        }
+        .resize-handle-visible {
+          visibility: visible !important;
         }
         .box-outline-visible {
           border: 4px dashed #FFFFFF !important;
           box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.8), 0 0 10px rgba(255, 255, 255, 0.5) !important;
+        }
+        .box-editable {
+          cursor: move !important;
         }
         `}
       </style>
@@ -381,10 +489,24 @@ const AnkitObsView = () => {
       <div 
         id="messageBox"
         ref={messageBoxRef}
-        className={`${activeDonation ? 'animate-fade-in' : ''} ${showBorder ? 'box-outline-visible' : ''}`}
-        style={{ width: "300px", maxWidth: "90vw", left: "50px", top: "50px" }}
+        className={`
+          ${activeDonation ? 'animate-fade-in' : ''} 
+          ${showBorder ? 'box-outline-visible box-editable' : ''}
+        `}
+        style={{
+          left: boxSettings.left,
+          top: boxSettings.top,
+          width: boxSettings.width,
+          height: boxSettings.height,
+          maxWidth: "90vw"
+        }}
       >
-        <div id="resizeHandle" ref={resizeHandleRef}></div>
+        <div 
+          id="resizeHandle" 
+          ref={resizeHandleRef}
+          className={showBorder ? 'resize-handle-visible' : ''}
+        ></div>
+        
         {activeDonation ? (
           <>
             <div className="flex items-center gap-2 mb-2">
@@ -406,7 +528,7 @@ const AnkitObsView = () => {
         ) : (
           // Placeholder content when no active donation (only visible when showBorder is true)
           showBorder && (
-            <div className="text-white text-center opacity-40">
+            <div className="text-white text-center opacity-80">
               <p>Message box preview</p>
               <p className="text-xs">Drag to position and resize as needed</p>
             </div>
