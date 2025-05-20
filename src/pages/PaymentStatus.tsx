@@ -10,7 +10,7 @@ const PaymentStatus = () => {
   const [status, setStatus] = useState<"loading" | "success" | "failed" | "pending">("loading");
   const [paymentDetails, setPaymentDetails] = useState<any>(null);
   const [isRecordCreated, setIsRecordCreated] = useState(false);
-  const [donationType, setDonationType] = useState<"ankit" | "harish" | "mackle" | null>(null);
+  const [donationType, setDonationType] = useState<"ankit" | "harish" | "mackle" | "rakazone" | null>(null);
   const [isVerificationComplete, setIsVerificationComplete] = useState(false);
   
   const location = useLocation();
@@ -34,11 +34,13 @@ const PaymentStatus = () => {
         }
 
         // Determine donation type from order ID
-        let donationType: "ankit" | "harish" | "mackle" = "ankit";
+        let donationType: "ankit" | "harish" | "mackle" | "rakazone" = "ankit";
         if (orderId.startsWith("harish_")) {
           donationType = "harish";
         } else if (orderId.startsWith("mackle_")) {
           donationType = "mackle";
+        } else if (orderId.startsWith("rakazone_")) {
+          donationType = "rakazone";
         } else if (orderId.startsWith("ankit_")) {
           donationType = "ankit";
         }
@@ -125,12 +127,12 @@ const PaymentStatus = () => {
             message: donationData.message,
             order_id: orderId,
             payment_status: paymentStatus,
-            donationType: donationType
+            donationType: donationData.donationType || donationType
           };
           
           // Add include_sound field if it exists in the donation data
-          if (donationType === "mackle" && donationData.include_sound !== undefined) {
-            // @ts-ignore - We know include_sound exists on mackle donations
+          if ((donationType === "mackle" || donationType === "rakazone") && donationData.include_sound !== undefined) {
+            // @ts-ignore - We know include_sound exists on mackle/rakazone donations
             recordData.include_sound = !!donationData.include_sound;
           }
           
@@ -162,6 +164,8 @@ const PaymentStatus = () => {
       return "/harish";
     } else if (donationType === "mackle") {
       return "/mackle";
+    } else if (donationType === "rakazone") {
+      return "/rakazone";
     }
     return "/ankit";
   };
@@ -200,7 +204,9 @@ const PaymentStatus = () => {
                     ? "Harish" 
                     : donationType === "mackle" 
                       ? "Mackle" 
-                      : "Ankit"}
+                      : donationType === "rakazone"
+                        ? "Rakazone"
+                        : "Ankit"}
                 </p>
               </div>
             )}

@@ -284,7 +284,6 @@ export type Database = {
           amount: number
           created_at: string | null
           id: string
-          include_gif: boolean | null
           include_sound: boolean
           message: string
           name: string
@@ -295,7 +294,6 @@ export type Database = {
           amount: number
           created_at?: string | null
           id?: string
-          include_gif?: boolean | null
           include_sound?: boolean
           message: string
           name: string
@@ -306,7 +304,6 @@ export type Database = {
           amount?: number
           created_at?: string | null
           id?: string
-          include_gif?: boolean | null
           include_sound?: boolean
           message?: string
           name?: string
