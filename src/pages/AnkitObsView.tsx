@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -166,10 +167,8 @@ const AnkitObsView = () => {
     
   }, [activeDonation, displayQueue]);
 
-  // Draggable and resizable functionality
+  // Initialize message box and setup draggable/resizable functionality
   useEffect(() => {
-    if (!activeDonation) return;
-
     const messageBox = document.getElementById('messageBox');
     const resizeHandle = document.getElementById('resizeHandle');
     if (!messageBox || !resizeHandle) return;
@@ -301,7 +300,7 @@ const AnkitObsView = () => {
       document.removeEventListener('touchmove', handleTouchMove);
       document.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [activeDonation]);
+  }, []);
 
   if (!isConnected) {
     return (
@@ -313,18 +312,7 @@ const AnkitObsView = () => {
     );
   }
 
-  // Render a blank screen when there's no active donation to display
-  if (!activeDonation) {
-    return (
-      <div className="h-screen w-screen flex items-center justify-center bg-transparent">
-        <div className="text-center text-white opacity-0">
-          <p>Waiting for donations...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Updated UI with draggable and resizable container
+  // Updated rendering to show the box with outline even when there's no active donation
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-transparent overflow-hidden">
       <style>
@@ -364,25 +352,37 @@ const AnkitObsView = () => {
       
       <div 
         id="messageBox"
-        className={`animate-fade-in ${showBorder ? 'box-outline-visible' : ''}`}
+        className={`${activeDonation ? 'animate-fade-in' : ''} ${showBorder ? 'box-outline-visible' : ''}`}
         style={{ width: "auto", maxWidth: "90vw" }}
       >
         <div id="resizeHandle"></div>
-        <div className="flex items-center gap-2 mb-2">
-          <span className="font-bold text-xl text-yellow-400">{activeDonation.name}</span>
-          <span className="text-md text-white opacity-90">· ₹{Number(activeDonation.amount).toLocaleString()}</span>
-        </div>
-        
-        {showMessages && activeDonation.message && (
-          <div className="text-white text-lg mt-2 font-medium">
-            {activeDonation.message}
-          </div>
+        {activeDonation ? (
+          <>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="font-bold text-xl text-yellow-400">{activeDonation.name}</span>
+              <span className="text-md text-white opacity-90">· ₹{Number(activeDonation.amount).toLocaleString()}</span>
+            </div>
+            
+            {showMessages && activeDonation.message && (
+              <div className="text-white text-lg mt-2 font-medium">
+                {activeDonation.message}
+              </div>
+            )}
+            
+            <div className="flex space-x-2 mt-3">
+              <Gamepad className="h-5 w-5 text-purple-400" />
+              <Flame className="h-5 w-5 text-orange-400" />
+            </div>
+          </>
+        ) : (
+          // Placeholder content when no active donation (only visible when showBorder is true)
+          showBorder && (
+            <div className="text-white text-center opacity-40">
+              <p>Message box preview</p>
+              <p className="text-xs">Drag to position and resize as needed</p>
+            </div>
+          )
         )}
-        
-        <div className="flex space-x-2 mt-3">
-          <Gamepad className="h-5 w-5 text-purple-400" />
-          <Flame className="h-5 w-5 text-orange-400" />
-        </div>
       </div>
     </div>
   );
