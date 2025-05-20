@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Gamepad, Flame } from "lucide-react";
@@ -25,6 +25,12 @@ const AnkitObsView = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [showMessages, setShowMessages] = useState<boolean>(true);
   const [showBorder, setShowBorder] = useState<boolean>(false);
+  const messageBoxRef = useRef<HTMLDivElement>(null);
+  const resizeHandleRef = useRef<HTMLDivElement>(null);
+  const isDraggingRef = useRef<boolean>(false);
+  const isResizingRef = useRef<boolean>(false);
+  const dragOffsetRef = useRef<{x: number, y: number}>({x: 0, y: 0});
+  const resizeInitialRef = useRef<{x: number, y: number, width: number, height: number}>({x: 0, y: 0, width: 0, height: 0});
   const DISPLAY_DURATION = 15000; // 15 seconds per message
 
   // Get URL parameters
@@ -167,140 +173,163 @@ const AnkitObsView = () => {
     
   }, [activeDonation, displayQueue]);
 
-  // Initialize message box and setup draggable/resizable functionality
+  // Enhanced draggable and resizable functionality
   useEffect(() => {
-    const messageBox = document.getElementById('messageBox');
-    const resizeHandle = document.getElementById('resizeHandle');
+    const messageBox = messageBoxRef.current;
+    const resizeHandle = resizeHandleRef.current;
     if (!messageBox || !resizeHandle) return;
-
-    let isDragging = false;
-    let isResizing = false;
-    let dragOffsetX = 0, dragOffsetY = 0;
-    let resizeInitialX = 0, resizeInitialY = 0;
-    let initialWidth = 0, initialHeight = 0;
-
-    const REFERENCE_WIDTH = 300;
-    const BASE_FONT_SIZE = 16;
-    const MIN_FONT_SIZE = 8;
-
-    function updateScale(width: number) {
-      const scaleFactor = width / REFERENCE_WIDTH;
-      const newFontSize = Math.max(MIN_FONT_SIZE, BASE_FONT_SIZE * scaleFactor);
-      if (messageBox) messageBox.style.fontSize = `${newFontSize}px`;
-    }
 
     // Initialize position if not set
     if (!messageBox.style.left) messageBox.style.left = '50px';
     if (!messageBox.style.top) messageBox.style.top = '50px';
     if (!messageBox.style.width) messageBox.style.width = '300px';
+    
+    const REFERENCE_WIDTH = 300;
+    const BASE_FONT_SIZE = 16;
+    const MIN_FONT_SIZE = 8;
+
+    // Update font size based on box width
+    const updateScale = (width: number) => {
+      const scaleFactor = width / REFERENCE_WIDTH;
+      const newFontSize = Math.max(MIN_FONT_SIZE, BASE_FONT_SIZE * scaleFactor);
+      if (messageBox) messageBox.style.fontSize = `${newFontSize}px`;
+    };
+    
+    // Initialize scale
     updateScale(messageBox.offsetWidth);
-
-    // Mouse events for dragging
-    messageBox.addEventListener('mousedown', (e: MouseEvent) => {
+    
+    // Mouse down handler for dragging
+    const handleMouseDown = (e: MouseEvent) => {
       if (e.target === messageBox) {
-        isDragging = true;
-        dragOffsetX = e.clientX - messageBox.getBoundingClientRect().left;
-        dragOffsetY = e.clientY - messageBox.getBoundingClientRect().top;
+        isDraggingRef.current = true;
+        dragOffsetRef.current = {
+          x: e.clientX - messageBox.getBoundingClientRect().left,
+          y: e.clientY - messageBox.getBoundingClientRect().top
+        };
         messageBox.style.cursor = 'move';
+        e.preventDefault();
       }
-    });
-
-    // Mouse events for resizing
-    resizeHandle?.addEventListener('mousedown', (e: MouseEvent) => {
-      isResizing = true;
-      resizeInitialX = e.clientX;
-      resizeInitialY = e.clientY;
-      initialWidth = messageBox.offsetWidth;
-      initialHeight = messageBox.offsetHeight;
+    };
+    
+    // Mouse down handler for resizing
+    const handleResizeMouseDown = (e: MouseEvent) => {
+      isResizingRef.current = true;
+      resizeInitialRef.current = {
+        x: e.clientX,
+        y: e.clientY,
+        width: messageBox.offsetWidth,
+        height: messageBox.offsetHeight
+      };
       e.stopPropagation();
-    });
-
+      e.preventDefault();
+    };
+    
     // Mouse move handler
     const handleMouseMove = (e: MouseEvent) => {
-      if (isDragging) {
-        const newX = e.clientX - dragOffsetX;
-        const newY = e.clientY - dragOffsetY;
+      if (isDraggingRef.current) {
+        const newX = e.clientX - dragOffsetRef.current.x;
+        const newY = e.clientY - dragOffsetRef.current.y;
         messageBox.style.left = `${Math.max(0, newX)}px`;
         messageBox.style.top = `${Math.max(0, newY)}px`;
-      } else if (isResizing && messageBox) {
-        const dx = e.clientX - resizeInitialX;
-        const dy = e.clientY - resizeInitialY;
-        const newWidth = Math.max(100, initialWidth + dx);
-        const newHeight = Math.max(70, initialHeight + dy);
+      } else if (isResizingRef.current) {
+        const dx = e.clientX - resizeInitialRef.current.x;
+        const dy = e.clientY - resizeInitialRef.current.y;
+        const newWidth = Math.max(100, resizeInitialRef.current.width + dx);
+        const newHeight = Math.max(70, resizeInitialRef.current.height + dy);
         messageBox.style.width = `${newWidth}px`;
         messageBox.style.height = `${newHeight}px`;
         updateScale(newWidth);
       }
     };
-
+    
     // Mouse up handler
     const handleMouseUp = () => {
-      isDragging = false;
-      isResizing = false;
+      isDraggingRef.current = false;
+      isResizingRef.current = false;
       if (messageBox) messageBox.style.cursor = 'default';
     };
-
+    
+    // Touch start handler for dragging
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.target === messageBox) {
+        isDraggingRef.current = true;
+        const touch = e.touches[0];
+        dragOffsetRef.current = {
+          x: touch.clientX - messageBox.getBoundingClientRect().left,
+          y: touch.clientY - messageBox.getBoundingClientRect().top
+        };
+        e.preventDefault();
+      }
+    };
+    
+    // Touch start handler for resizing
+    const handleResizeTouchStart = (e: TouchEvent) => {
+      isResizingRef.current = true;
+      const touch = e.touches[0];
+      resizeInitialRef.current = {
+        x: touch.clientX,
+        y: touch.clientY,
+        width: messageBox.offsetWidth,
+        height: messageBox.offsetHeight
+      };
+      e.stopPropagation();
+      e.preventDefault();
+    };
+    
+    // Touch move handler
+    const handleTouchMove = (e: TouchEvent) => {
+      if (isDraggingRef.current || isResizingRef.current) {
+        const touch = e.touches[0];
+        
+        if (isDraggingRef.current) {
+          const newX = touch.clientX - dragOffsetRef.current.x;
+          const newY = touch.clientY - dragOffsetRef.current.y;
+          messageBox.style.left = `${Math.max(0, newX)}px`;
+          messageBox.style.top = `${Math.max(0, newY)}px`;
+        } else if (isResizingRef.current) {
+          const dx = touch.clientX - resizeInitialRef.current.x;
+          const dy = touch.clientY - resizeInitialRef.current.y;
+          const newWidth = Math.max(100, resizeInitialRef.current.width + dx);
+          const newHeight = Math.max(70, resizeInitialRef.current.height + dy);
+          messageBox.style.width = `${newWidth}px`;
+          messageBox.style.height = `${newHeight}px`;
+          updateScale(newWidth);
+        }
+        
+        e.preventDefault();
+      }
+    };
+    
+    // Touch end handler
+    const handleTouchEnd = () => {
+      isDraggingRef.current = false;
+      isResizingRef.current = false;
+    };
+    
     // Add event listeners
+    messageBox.addEventListener('mousedown', handleMouseDown);
+    resizeHandle.addEventListener('mousedown', handleResizeMouseDown);
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-
-    // Touch events
-    messageBox.addEventListener('touchstart', (e: TouchEvent) => {
-      if (e.target === messageBox) {
-        isDragging = true;
-        const touch = e.touches[0];
-        dragOffsetX = touch.clientX - messageBox.getBoundingClientRect().left;
-        dragOffsetY = touch.clientY - messageBox.getBoundingClientRect().top;
-      }
-    });
-
-    resizeHandle?.addEventListener('touchstart', (e: TouchEvent) => {
-      isResizing = true;
-      const touch = e.touches[0];
-      resizeInitialX = touch.clientX;
-      resizeInitialY = touch.clientY;
-      initialWidth = messageBox.offsetWidth;
-      initialHeight = messageBox.offsetHeight;
-      e.stopPropagation();
-    });
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (!isDragging && !isResizing) return;
-      
-      const touch = e.touches[0];
-      if (isDragging && messageBox) {
-        const newX = touch.clientX - dragOffsetX;
-        const newY = touch.clientY - dragOffsetY;
-        messageBox.style.left = `${Math.max(0, newX)}px`;
-        messageBox.style.top = `${Math.max(0, newY)}px`;
-      } else if (isResizing && messageBox) {
-        const dx = touch.clientX - resizeInitialX;
-        const dy = touch.clientY - resizeInitialY;
-        const newWidth = Math.max(100, initialWidth + dx);
-        const newHeight = Math.max(70, initialHeight + dy);
-        messageBox.style.width = `${newWidth}px`;
-        messageBox.style.height = `${newHeight}px`;
-        updateScale(newWidth);
-      }
-    };
-
-    const handleTouchEnd = () => {
-      isDragging = false;
-      isResizing = false;
-    };
-
-    // Add touch event listeners
-    document.addEventListener('touchmove', handleTouchMove);
+    
+    messageBox.addEventListener('touchstart', handleTouchStart);
+    resizeHandle.addEventListener('touchstart', handleResizeTouchStart);
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
     document.addEventListener('touchend', handleTouchEnd);
-
-    // Clean up
+    
+    // Cleanup event listeners
     return () => {
+      messageBox.removeEventListener('mousedown', handleMouseDown);
+      resizeHandle.removeEventListener('mousedown', handleResizeMouseDown);
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      
+      messageBox.removeEventListener('touchstart', handleTouchStart);
+      resizeHandle.removeEventListener('touchstart', handleResizeTouchStart);
       document.removeEventListener('touchmove', handleTouchMove);
       document.removeEventListener('touchend', handleTouchEnd);
     };
-  }, []);
+  }, []); // Only run once on mount
 
   if (!isConnected) {
     return (
@@ -312,7 +341,6 @@ const AnkitObsView = () => {
     );
   }
 
-  // Updated rendering to show the box with outline even when there's no active donation
   return (
     <div className="h-screen w-screen flex items-center justify-center bg-transparent overflow-hidden">
       <style>
@@ -336,9 +364,9 @@ const AnkitObsView = () => {
           position: absolute;
           bottom: 0px;
           right: 0px;
-          width: 15px;
-          height: 15px;
-          background-color: rgba(204, 204, 204, 0.5);
+          width: 20px;
+          height: 20px;
+          background-color: rgba(204, 204, 204, 0.7);
           border-top-left-radius: 10px;
           cursor: nwse-resize;
           z-index: 10;
@@ -352,10 +380,11 @@ const AnkitObsView = () => {
       
       <div 
         id="messageBox"
+        ref={messageBoxRef}
         className={`${activeDonation ? 'animate-fade-in' : ''} ${showBorder ? 'box-outline-visible' : ''}`}
-        style={{ width: "auto", maxWidth: "90vw" }}
+        style={{ width: "300px", maxWidth: "90vw", left: "50px", top: "50px" }}
       >
-        <div id="resizeHandle"></div>
+        <div id="resizeHandle" ref={resizeHandleRef}></div>
         {activeDonation ? (
           <>
             <div className="flex items-center gap-2 mb-2">
