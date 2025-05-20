@@ -30,17 +30,12 @@ const ContractSigningButton: React.FC<ContractSigningButtonProps> = ({
         const adminStatus = isAdminAuthenticated(streamerType);
         setIsAdmin(adminStatus);
         
-        // Check contract status with proper Accept and Content-Type headers
+        // Check contract status
         const { data, error } = await supabase
           .from("streamer_contracts")
           .select("*")
           .eq("streamer_type", streamerType)
-          .single({
-            headers: {
-              "Accept": "application/json",
-              "Content-Type": "application/json"
-            }
-          });
+          .single();
         
         if (data) {
           setIsSigned(true);

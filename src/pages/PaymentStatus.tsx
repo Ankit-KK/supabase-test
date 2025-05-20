@@ -4,7 +4,8 @@ import { useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import { verifyPayment, createDonationRecord } from "@/services/paymentService";
-import { CheckCircle, XCircle, AlertTriangle, Loader2 } from "lucide-react";
+import { CheckCircle, XCircle, AlertTriangle, Loader2, FileText } from "lucide-react";
+import { generateReceipt } from "@/utils/receiptGenerator";
 
 const PaymentStatus = () => {
   const [status, setStatus] = useState<"loading" | "success" | "failed" | "pending">("loading");
@@ -12,6 +13,7 @@ const PaymentStatus = () => {
   const [isRecordCreated, setIsRecordCreated] = useState(false);
   const [donationType, setDonationType] = useState<"ankit" | "harish" | "mackle" | "rakazone" | null>(null);
   const [isVerificationComplete, setIsVerificationComplete] = useState(false);
+  const [donationData, setDonationData] = useState<any>(null);
   
   const location = useLocation();
   
@@ -61,6 +63,7 @@ const PaymentStatus = () => {
         }
 
         const donationData = JSON.parse(donationDataStr);
+        setDonationData(donationData);
         console.log("Donation data from session storage:", donationData);
         
         // Verify payment status using Supabase Edge Function
@@ -170,6 +173,42 @@ const PaymentStatus = () => {
     return "/ankit";
   };
 
+  const handleDownloadReceipt = () => {
+    if (!paymentDetails || !donationData) return;
+
+    try {
+      // Format the current date
+      const date = new Date().toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      // Call receipt generator with donation data
+      generateReceipt({
+        name: donationData.name,
+        amount: donationData.amount,
+        orderId: paymentDetails.order.order_id,
+        donationType: donationType || 'ankit',
+        date: date
+      });
+
+      toast({
+        title: "Receipt Downloaded",
+        description: "Your donation receipt has been downloaded successfully.",
+      });
+    } catch (error) {
+      console.error("Error generating receipt:", error);
+      toast({
+        title: "Error",
+        description: "Failed to download receipt. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto max-w-md py-10">
       <div className="border rounded-lg p-8 shadow-sm text-center space-y-6">
@@ -210,6 +249,16 @@ const PaymentStatus = () => {
                 </p>
               </div>
             )}
+            
+            {/* Download Receipt Button */}
+            <Button 
+              onClick={handleDownloadReceipt} 
+              className="mt-4 w-full"
+              variant="outline"
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              Download Receipt
+            </Button>
           </>
         )}
         
