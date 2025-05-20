@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { authenticateStreamer } from "@/services/streamerAuth";
 
 const MackleLogin = () => {
-  const [username, setUsername] = useState("mackle");
+  const [username] = useState("mackle");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -69,7 +69,7 @@ const MackleLogin = () => {
         <CardHeader>
           <CardTitle className="text-2xl">Mackle Dashboard Login</CardTitle>
           <CardDescription>
-            Enter your credentials to access the dashboard
+            Enter your password to access the dashboard
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
@@ -80,8 +80,7 @@ const MackleLogin = () => {
                 id="username"
                 type="text"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter username"
+                placeholder="mackle"
                 required
                 disabled
               />

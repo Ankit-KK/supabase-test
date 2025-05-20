@@ -38,10 +38,13 @@ const Navbar: React.FC = () => {
         </div>
       </div>
       
-      <SignupDialog 
-        open={showSignupDialog} 
-        onOpenChange={setShowSignupDialog}
-      />
+      {/* Render SignupDialog conditionally only when needed */}
+      {showSignupDialog && (
+        <SignupDialog 
+          open={showSignupDialog} 
+          onOpenChange={setShowSignupDialog}
+        />
+      )}
     </nav>
   );
 };

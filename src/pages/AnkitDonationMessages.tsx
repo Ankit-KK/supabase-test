@@ -27,11 +27,6 @@ const AnkitDonationMessages = () => {
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [obsLink, setObsLink] = useState<string>("");
   const [showMessages, setShowMessages] = useState<boolean>(true);
-  const [showBorder, setShowBorder] = useState<boolean>(() => {
-    // Get saved preference from localStorage or default to false
-    const savedPreference = localStorage.getItem("ankitShowBorder");
-    return savedPreference === "true";
-  });
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -54,7 +49,7 @@ const AnkitDonationMessages = () => {
       const { data, error } = await supabase
         .from("ankit_donations")
         .select("*")
-        .eq("payment_status", "success")
+        .eq("payment_status", "success") // Changed from "failed" to "success"
         .gte("created_at", todayStart)
         .lte("created_at", todayEnd)
         .order("created_at", { ascending: false });
@@ -92,7 +87,7 @@ const AnkitDonationMessages = () => {
           event: 'INSERT', 
           schema: 'public', 
           table: 'ankit_donations',
-          filter: 'payment_status=eq.success'
+          filter: 'payment_status=eq.success' // Changed from "failed" to "success"
         },
         (payload) => {
           const newDonation = payload.new as Donation;
@@ -131,22 +126,15 @@ const AnkitDonationMessages = () => {
     }
     
     // Store the preference on URL for OBS to check
-    updateObsLink();
-  }, [showMessages, showBorder]);
-
-  const updateObsLink = () => {
     const currentLink = sessionStorage.getItem("ankitObsLink");
     if (currentLink) {
-      // Parse the URL to maintain any existing parts
-      const url = new URL(currentLink);
-      url.searchParams.set("showMessages", showMessages.toString());
-      url.searchParams.set("showBorder", showBorder.toString());
-      
-      const newLink = url.toString();
+      const hasParam = currentLink.includes("?");
+      const baseLink = hasParam ? currentLink.split("?")[0] : currentLink;
+      const newLink = `${baseLink}?showMessages=${savedPref !== "false"}`;
       sessionStorage.setItem("ankitObsLink", newLink);
       setObsLink(newLink);
     }
-  };
+  }, []);
 
   // Generate or retrieve OBS link
   const setupObsLink = () => {
@@ -156,7 +144,7 @@ const AnkitDonationMessages = () => {
     if (!storedLink) {
       // Generate a new link with a random ID
       const randomId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      storedLink = `${window.location.origin}/ankit/obs/${randomId}?showMessages=${showMessages}&showBorder=${showBorder}`;
+      storedLink = `${window.location.origin}/ankit/obs/${randomId}?showMessages=${showMessages}`;
       sessionStorage.setItem("ankitObsLink", storedLink);
     }
     
@@ -166,7 +154,7 @@ const AnkitDonationMessages = () => {
   const regenerateObsLink = () => {
     // Generate a new link with a random ID
     const randomId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    const newLink = `${window.location.origin}/ankit/obs/${randomId}?showMessages=${showMessages}&showBorder=${showBorder}`;
+    const newLink = `${window.location.origin}/ankit/obs/${randomId}?showMessages=${showMessages}`;
     
     // Save the new link
     sessionStorage.setItem("ankitObsLink", newLink);
@@ -196,21 +184,16 @@ const AnkitDonationMessages = () => {
     setShowMessages(newValue);
     localStorage.setItem("ankitShowMessages", newValue.toString());
     
+    // Update the OBS link with the new preference
+    const hasParam = obsLink.includes("?");
+    const baseLink = hasParam ? obsLink.split("?")[0] : obsLink;
+    const newLink = `${baseLink}?showMessages=${newValue}`;
+    sessionStorage.setItem("ankitObsLink", newLink);
+    setObsLink(newLink);
+    
     toast({
       title: newValue ? "Messages Enabled" : "Messages Disabled",
       description: newValue ? "Messages will now be shown in OBS" : "Messages will be hidden in OBS",
-    });
-  };
-
-  // Handle toggle of box outline preference
-  const handleToggleBorder = () => {
-    const newValue = !showBorder;
-    setShowBorder(newValue);
-    localStorage.setItem("ankitShowBorder", newValue.toString());
-    
-    toast({
-      title: newValue ? "Box Outline Enabled" : "Box Outline Disabled",
-      description: newValue ? "Box outline will be shown in OBS" : "Box outline will be hidden in OBS",
     });
   };
 
@@ -243,24 +226,13 @@ const AnkitDonationMessages = () => {
         <CardContent>
           <div className="flex flex-col space-y-4">
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-8">
-                <div className="flex items-center space-x-2">
-                  <Switch 
-                    id="show-messages" 
-                    checked={showMessages} 
-                    onCheckedChange={handleToggleMessages} 
-                  />
-                  <Label htmlFor="show-messages">Show donation messages in OBS</Label>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Switch 
-                    id="show-border" 
-                    checked={showBorder} 
-                    onCheckedChange={handleToggleBorder} 
-                  />
-                  <Label htmlFor="show-border">Show box outline (for positioning)</Label>
-                </div>
+              <div className="flex items-center space-x-2">
+                <Switch 
+                  id="show-messages" 
+                  checked={showMessages} 
+                  onCheckedChange={handleToggleMessages} 
+                />
+                <Label htmlFor="show-messages">Show donation messages in OBS</Label>
               </div>
             </div>
             <div className="flex items-center space-x-2">
@@ -280,7 +252,6 @@ const AnkitDonationMessages = () => {
             <div className="text-sm text-muted-foreground">
               <p>This link will display your donation messages in real-time for your stream.</p>
               <p>Each message will show for 15 seconds before moving to the next one.</p>
-              <p>Enable box outline when positioning the overlay, then disable for actual streaming.</p>
             </div>
           </div>
         </CardContent>
