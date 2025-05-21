@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
-import { Move, Resize, Square } from "lucide-react";
+import { Move, Maximize } from "lucide-react";
 
 interface Position {
   x: number;
@@ -121,7 +121,7 @@ const DraggableResizableBox: React.FC<DraggableResizableBoxProps> = ({
               {showBorder && (
                 <div className="absolute bottom-0 right-0 flex items-center gap-2 p-1 bg-black/20 rounded-tl-lg">
                   {isDraggable && <Move size={14} className="text-white/70" />}
-                  {isResizable && <Resize size={14} className="text-white/70" />}
+                  {isResizable && <Maximize size={14} className="text-white/70" />}
                 </div>
               )}
             </ResizablePanelGroup>

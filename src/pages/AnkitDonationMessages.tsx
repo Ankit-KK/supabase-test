@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthProtection } from "@/hooks/useAuthProtection";
-import { Link as LinkIcon, Square, Move, Resize } from "lucide-react";
+import { Link as LinkIcon, Square, Move, Maximize } from "lucide-react";
 import { ObsConfigProvider, useObsConfig } from "@/contexts/ObsConfigContext";
 
 interface Donation {
@@ -72,7 +72,7 @@ const ObsControls: React.FC = () => {
             onCheckedChange={toggleResizable} 
           />
           <Label htmlFor="resizable" className="flex items-center space-x-1">
-            <Resize className="w-4 h-4" />
+            <Maximize className="w-4 h-4" />
             <span>Enable Resizing</span>
           </Label>
         </div>
