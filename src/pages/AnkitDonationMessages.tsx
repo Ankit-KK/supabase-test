@@ -10,8 +10,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthProtection } from "@/hooks/useAuthProtection";
-import { Link as LinkIcon, Square, Move, Maximize } from "lucide-react";
-import { ObsConfigProvider, useObsConfig } from "@/contexts/ObsConfigContext";
+import { Link as LinkIcon } from "lucide-react";
 
 interface Donation {
   id: string;
@@ -21,70 +20,6 @@ interface Donation {
   created_at: string;
   payment_status: string;
 }
-
-const ObsControls: React.FC = () => {
-  const { 
-    showBorder, 
-    toggleBorder, 
-    isDraggable, 
-    toggleDraggable, 
-    isResizable, 
-    toggleResizable 
-  } = useObsConfig();
-
-  return (
-    <div className="flex flex-col space-y-2 border border-border p-3 rounded-md">
-      <div className="text-sm font-medium mb-2">OBS Box Controls</div>
-      
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Switch 
-            id="show-border" 
-            checked={showBorder} 
-            onCheckedChange={toggleBorder} 
-          />
-          <Label htmlFor="show-border" className="flex items-center space-x-1">
-            <Square className="w-4 h-4" />
-            <span>Show Border</span>
-          </Label>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Switch 
-            id="draggable" 
-            checked={isDraggable} 
-            onCheckedChange={toggleDraggable} 
-          />
-          <Label htmlFor="draggable" className="flex items-center space-x-1">
-            <Move className="w-4 h-4" />
-            <span>Enable Dragging</span>
-          </Label>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Switch 
-            id="resizable" 
-            checked={isResizable} 
-            onCheckedChange={toggleResizable} 
-          />
-          <Label htmlFor="resizable" className="flex items-center space-x-1">
-            <Maximize className="w-4 h-4" />
-            <span>Enable Resizing</span>
-          </Label>
-        </div>
-      </div>
-
-      <div className="text-xs text-muted-foreground mt-2">
-        These settings will be applied to the OBS browser source.
-        You may need to refresh your OBS browser source after changing settings.
-      </div>
-    </div>
-  );
-};
 
 const AnkitDonationMessages = () => {
   const [donations, setDonations] = useState<Donation[]>([]);
@@ -273,99 +208,94 @@ const AnkitDonationMessages = () => {
   };
 
   return (
-    <ObsConfigProvider>
-      <div className="container mx-auto py-8 px-4">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Donation Messages</h1>
-          <div className="flex items-center gap-4">
-            <Button variant="outline" onClick={() => navigate("/ankit/dashboard")}>
-              Back to Dashboard
-            </Button>
-          </div>
+    <div className="container mx-auto py-8 px-4">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Donation Messages</h1>
+        <div className="flex items-center gap-4">
+          <Button variant="outline" onClick={() => navigate("/ankit/dashboard")}>
+            Back to Dashboard
+          </Button>
         </div>
+      </div>
 
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>OBS Link</CardTitle>
-            <CardDescription>Use this link as a browser source in OBS to display donation messages</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col space-y-4">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-2">
-                  <Switch 
-                    id="show-messages" 
-                    checked={showMessages} 
-                    onCheckedChange={handleToggleMessages} 
-                  />
-                  <Label htmlFor="show-messages">Show donation messages in OBS</Label>
-                </div>
-              </div>
-              
-              <ObsControls />
-
-              <div className="flex items-center space-x-2 mt-2">
-                <Input 
-                  value={obsLink} 
-                  readOnly 
-                  className="font-mono text-sm flex-1"
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>OBS Link</CardTitle>
+          <CardDescription>Use this link as a browser source in OBS to display donation messages</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col space-y-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-2">
+                <Switch 
+                  id="show-messages" 
+                  checked={showMessages} 
+                  onCheckedChange={handleToggleMessages} 
                 />
-                <Button variant="outline" onClick={copyObsLink}>
-                  <LinkIcon className="mr-2 h-4 w-4" />
-                  Copy
-                </Button>
-                <Button variant="outline" onClick={regenerateObsLink}>
-                  Generate New
-                </Button>
-              </div>
-              <div className="text-sm text-muted-foreground">
-                <p>This link will display your donation messages in real-time for your stream.</p>
-                <p>Each message will show for 15 seconds before moving to the next one.</p>
+                <Label htmlFor="show-messages">Show donation messages in OBS</Label>
               </div>
             </div>
-          </CardContent>
-        </Card>
+            <div className="flex items-center space-x-2">
+              <Input 
+                value={obsLink} 
+                readOnly 
+                className="font-mono text-sm flex-1"
+              />
+              <Button variant="outline" onClick={copyObsLink}>
+                <LinkIcon className="mr-2 h-4 w-4" />
+                Copy
+              </Button>
+              <Button variant="outline" onClick={regenerateObsLink}>
+                Generate New
+              </Button>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              <p>This link will display your donation messages in real-time for your stream.</p>
+              <p>Each message will show for 15 seconds before moving to the next one.</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Donation Messages</CardTitle>
-            <CardDescription>
-              Messages are updated in real-time
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <p className="text-center py-4">Loading donation messages...</p>
-            ) : donations.length === 0 ? (
-              <p className="text-center py-4">No donation messages found</p>
-            ) : (
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead className="w-[40%]">Message</TableHead>
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Donation Messages</CardTitle>
+          <CardDescription>
+            Messages are updated in real-time
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <p className="text-center py-4">Loading donation messages...</p>
+          ) : donations.length === 0 ? (
+            <p className="text-center py-4">No donation messages found</p>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead className="w-[40%]">Message</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {donations.map((donation) => (
+                    <TableRow key={donation.id}>
+                      <TableCell>{formatDate(donation.created_at)}</TableCell>
+                      <TableCell>{donation.name}</TableCell>
+                      <TableCell>₹{Number(donation.amount).toLocaleString()}</TableCell>
+                      <TableCell>{donation.message}</TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {donations.map((donation) => (
-                      <TableRow key={donation.id}>
-                        <TableCell>{formatDate(donation.created_at)}</TableCell>
-                        <TableCell>{donation.name}</TableCell>
-                        <TableCell>₹{Number(donation.amount).toLocaleString()}</TableCell>
-                        <TableCell>{donation.message}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    </ObsConfigProvider>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

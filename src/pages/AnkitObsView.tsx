@@ -1,9 +1,7 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Gamepad, Flame } from "lucide-react";
-import DraggableResizableBox from "@/components/DraggableResizableBox";
 
 interface Donation {
   id: string;
@@ -25,25 +23,13 @@ const AnkitObsView = () => {
   const [activeDonation, setActiveDonation] = useState<ActiveDonation | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [showMessages, setShowMessages] = useState<boolean>(true);
-  const [showBorder, setShowBorder] = useState<boolean>(false);
-  const [isDraggable, setIsDraggable] = useState<boolean>(false);
-  const [isResizable, setIsResizable] = useState<boolean>(false);
   const DISPLAY_DURATION = 15000; // 15 seconds per message
 
-  // Get URL parameters and load OBS configuration
+  // Get URL parameters
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
     const messagesParam = queryParams.get("showMessages");
     setShowMessages(messagesParam !== "false");
-
-    // Load box configuration from localStorage
-    const showBorderSetting = localStorage.getItem("ankitObsShowBorder");
-    const draggableSetting = localStorage.getItem("ankitObsDraggable");
-    const resizableSetting = localStorage.getItem("ankitObsResizable");
-    
-    setShowBorder(showBorderSetting === "true");
-    setIsDraggable(draggableSetting === "true");
-    setIsResizable(resizableSetting === "true");
   }, [location]);
 
   // Get the current date in ISO format (just the date part)
@@ -200,35 +186,29 @@ const AnkitObsView = () => {
     );
   }
 
-  // Updated UI with draggable and resizable content
+  // Updated UI with dynamic sizing
   return (
-    <div className="h-screen w-screen bg-transparent overflow-hidden relative">
-      <DraggableResizableBox
-        showBorder={showBorder}
-        isDraggable={isDraggable}
-        isResizable={isResizable}
+    <div className="h-screen w-screen flex items-center justify-center bg-transparent overflow-hidden">
+      <div 
+        className="animate-fade-in bg-black/60 backdrop-blur-md rounded-2xl px-6 py-4 shadow-xl"
+        style={{ width: "auto", maxWidth: "90vw" }} // Dynamic width based on content
       >
-        <div 
-          className="animate-fade-in bg-black/60 backdrop-blur-md rounded-2xl px-6 py-4 shadow-xl"
-          style={{ width: "auto", maxWidth: "90vw" }} // Dynamic width based on content
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <span className="font-bold text-xl text-yellow-400">{activeDonation.name}</span>
-            <span className="text-md text-white opacity-90">· ₹{Number(activeDonation.amount).toLocaleString()}</span>
-          </div>
-          
-          {showMessages && activeDonation.message && (
-            <div className="text-white text-lg mt-2 font-medium">
-              {activeDonation.message}
-            </div>
-          )}
-          
-          <div className="flex space-x-2 mt-3">
-            <Gamepad className="h-5 w-5 text-purple-400" />
-            <Flame className="h-5 w-5 text-orange-400" />
-          </div>
+        <div className="flex items-center gap-2 mb-2">
+          <span className="font-bold text-xl text-yellow-400">{activeDonation.name}</span>
+          <span className="text-md text-white opacity-90">· ₹{Number(activeDonation.amount).toLocaleString()}</span>
         </div>
-      </DraggableResizableBox>
+        
+        {showMessages && activeDonation.message && (
+          <div className="text-white text-lg mt-2 font-medium">
+            {activeDonation.message}
+          </div>
+        )}
+        
+        <div className="flex space-x-2 mt-3">
+          <Gamepad className="h-5 w-5 text-purple-400" />
+          <Flame className="h-5 w-5 text-orange-400" />
+        </div>
+      </div>
     </div>
   );
 };
