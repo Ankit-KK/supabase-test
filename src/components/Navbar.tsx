@@ -26,9 +26,6 @@ const Navbar: React.FC = () => {
           <Link to="/privacy-policy" className="text-sm hover:text-hyperchat-purple transition-colors">
             Privacy Policy
           </Link>
-          <Link to="/rakazone" className="text-sm hover:text-red-500 transition-colors">
-            RakaZone
-          </Link>
         </div>
         <div className="flex items-center space-x-4">
           <Button 
