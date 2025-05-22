@@ -21,19 +21,43 @@ const defaultConfig: ObsConfig = {
   size: { width: 400, height: 'auto' },
 };
 
+const LOCAL_STORAGE_KEY = 'ankitObsConfig';
+
 const ObsConfigContext = createContext<ObsConfigContextType | undefined>(undefined);
 
 export function ObsConfigProvider({ children }: { children: React.ReactNode }) {
   const [obsConfig, setObsConfig] = useState<ObsConfig>(() => {
     // Load from localStorage if available
-    const savedConfig = localStorage.getItem('ankitObsConfig');
+    const savedConfig = localStorage.getItem(LOCAL_STORAGE_KEY);
     return savedConfig ? JSON.parse(savedConfig) : defaultConfig;
   });
 
   // Save to localStorage whenever config changes
   useEffect(() => {
-    localStorage.setItem('ankitObsConfig', JSON.stringify(obsConfig));
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(obsConfig));
+    
+    // Dispatch a custom event to notify other tabs/windows
+    const event = new CustomEvent('obsConfigChanged', { 
+      detail: { config: obsConfig } 
+    });
+    window.dispatchEvent(event);
   }, [obsConfig]);
+
+  // Listen for changes from other tabs/windows
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === LOCAL_STORAGE_KEY && e.newValue) {
+        setObsConfig(JSON.parse(e.newValue));
+      }
+    };
+    
+    // Listen for storage changes
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
   const toggleDraggable = () => {
     setObsConfig(prev => ({

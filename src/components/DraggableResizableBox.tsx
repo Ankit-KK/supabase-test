@@ -100,7 +100,9 @@ const DraggableResizableBox: React.FC<DraggableResizableBoxProps> = ({
         width: typeof obsConfig.size.width === 'number' ? `${obsConfig.size.width}px` : obsConfig.size.width,
         height: typeof obsConfig.size.height === 'number' ? `${obsConfig.size.height}px` : obsConfig.size.height,
         cursor: obsConfig.isDraggable ? 'move' : 'default',
-        transition: 'border 0.3s ease'
+        transition: 'border 0.3s ease',
+        padding: obsConfig.showBorder ? '2px' : '0',
+        boxShadow: obsConfig.showBorder ? '0 0 0 2px rgba(59, 130, 246, 0.5)' : 'none'
       }}
       onMouseDown={handleDragStart}
     >
@@ -109,17 +111,16 @@ const DraggableResizableBox: React.FC<DraggableResizableBoxProps> = ({
       {obsConfig.isDraggable && (
         <>
           <div 
-            className="absolute top-0 right-0 bg-blue-500 text-white p-1 rounded-bl-md cursor-pointer"
+            className="absolute top-0 right-0 bg-blue-500 text-white p-1 rounded-bl-md cursor-pointer z-20"
             onClick={handleResizeStart}
           >
             <Maximize size={16} />
           </div>
           
           <div 
-            className="absolute right-0 bottom-0 w-6 h-6 cursor-se-resize"
+            className="absolute right-0 bottom-0 w-6 h-6 cursor-se-resize bg-blue-500/20 rounded-tl-md"
             onMouseDown={handleResizeStart}
             style={{
-              background: 'transparent',
               zIndex: 20
             }}
           />
