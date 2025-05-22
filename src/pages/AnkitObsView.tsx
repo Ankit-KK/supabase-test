@@ -1,7 +1,10 @@
+
 import React, { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Gamepad, Flame } from "lucide-react";
+import { ObsConfigProvider, useObsConfig } from "@/contexts/ObsConfigContext";
+import DraggableResizableBox from "@/components/DraggableResizableBox";
 
 interface Donation {
   id: string;
@@ -15,7 +18,44 @@ interface ActiveDonation extends Donation {
   displayUntil: number;
 }
 
-const AnkitObsView = () => {
+const DonationBox = ({ activeDonation, showMessages }: { activeDonation: ActiveDonation | null, showMessages: boolean }) => {
+  const { obsConfig } = useObsConfig();
+  
+  if (!activeDonation) {
+    return (
+      <div className="text-center text-white opacity-0">
+        <p>Waiting for donations...</p>
+      </div>
+    );
+  }
+
+  return (
+    <DraggableResizableBox>
+      <div 
+        className="backdrop-blur-md rounded-2xl px-6 py-4 shadow-xl bg-black/60"
+        style={{ width: "auto", maxWidth: "100%" }}
+      >
+        <div className="flex items-center gap-2 mb-2">
+          <span className="font-bold text-xl text-yellow-400">{activeDonation.name}</span>
+          <span className="text-md text-white opacity-90">· ₹{Number(activeDonation.amount).toLocaleString()}</span>
+        </div>
+        
+        {showMessages && activeDonation.message && (
+          <div className="text-white text-lg mt-2 font-medium">
+            {activeDonation.message}
+          </div>
+        )}
+        
+        <div className="flex space-x-2 mt-3">
+          <Gamepad className="h-5 w-5 text-purple-400" />
+          <Flame className="h-5 w-5 text-orange-400" />
+        </div>
+      </div>
+    </DraggableResizableBox>
+  );
+};
+
+const AnkitObsViewContent = () => {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const [donations, setDonations] = useState<Donation[]>([]);
@@ -175,41 +215,27 @@ const AnkitObsView = () => {
     );
   }
 
-  // Render a blank screen when there's no active donation to display
-  if (!activeDonation) {
-    return (
-      <div className="h-screen w-screen flex items-center justify-center bg-transparent">
-        <div className="text-center text-white opacity-0">
-          <p>Waiting for donations...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Updated UI with dynamic sizing
+  // Render the content
   return (
-    <div className="h-screen w-screen flex items-center justify-center bg-transparent overflow-hidden">
-      <div 
-        className="animate-fade-in bg-black/60 backdrop-blur-md rounded-2xl px-6 py-4 shadow-xl"
-        style={{ width: "auto", maxWidth: "90vw" }} // Dynamic width based on content
-      >
-        <div className="flex items-center gap-2 mb-2">
-          <span className="font-bold text-xl text-yellow-400">{activeDonation.name}</span>
-          <span className="text-md text-white opacity-90">· ₹{Number(activeDonation.amount).toLocaleString()}</span>
-        </div>
-        
-        {showMessages && activeDonation.message && (
-          <div className="text-white text-lg mt-2 font-medium">
-            {activeDonation.message}
+    <div className="h-screen w-screen overflow-hidden bg-transparent">
+      {activeDonation ? (
+        <DonationBox activeDonation={activeDonation} showMessages={showMessages} />
+      ) : (
+        <div className="h-screen w-screen flex items-center justify-center bg-transparent">
+          <div className="text-center text-white opacity-0">
+            <p>Waiting for donations...</p>
           </div>
-        )}
-        
-        <div className="flex space-x-2 mt-3">
-          <Gamepad className="h-5 w-5 text-purple-400" />
-          <Flame className="h-5 w-5 text-orange-400" />
         </div>
-      </div>
+      )}
     </div>
+  );
+};
+
+const AnkitObsView = () => {
+  return (
+    <ObsConfigProvider>
+      <AnkitObsViewContent />
+    </ObsConfigProvider>
   );
 };
 

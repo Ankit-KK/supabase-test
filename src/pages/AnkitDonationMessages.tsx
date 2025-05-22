@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthProtection } from "@/hooks/useAuthProtection";
-import { Link as LinkIcon } from "lucide-react";
+import { Link as LinkIcon, Maximize, Move } from "lucide-react";
+import { ObsConfigProvider, useObsConfig } from "@/contexts/ObsConfigContext";
 
 interface Donation {
   id: string;
@@ -21,7 +22,37 @@ interface Donation {
   payment_status: string;
 }
 
-const AnkitDonationMessages = () => {
+const OBSControls = () => {
+  const { obsConfig, toggleDraggable } = useObsConfig();
+  const { toast } = useToast();
+  
+  const handleToggleEdit = () => {
+    toggleDraggable();
+    toast({
+      title: obsConfig.isDraggable ? "Edit Mode Disabled" : "Edit Mode Enabled",
+      description: obsConfig.isDraggable 
+        ? "Donation box is now fixed in place" 
+        : "You can now drag and resize the donation box in OBS",
+    });
+  };
+  
+  return (
+    <div className="flex items-center space-x-2 mb-4">
+      <Switch 
+        id="edit-mode" 
+        checked={obsConfig.isDraggable} 
+        onCheckedChange={handleToggleEdit} 
+      />
+      <Label htmlFor="edit-mode" className="flex items-center gap-2">
+        <Move size={16} className={obsConfig.isDraggable ? "text-blue-500" : "text-gray-500"} />
+        <Maximize size={16} className={obsConfig.isDraggable ? "text-blue-500" : "text-gray-500"} />
+        Enable edit mode (drag/resize box in OBS)
+      </Label>
+    </div>
+  );
+};
+
+const AnkitDonationMessagesContent = () => {
   const [donations, setDonations] = useState<Donation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
@@ -235,6 +266,9 @@ const AnkitDonationMessages = () => {
                 <Label htmlFor="show-messages">Show donation messages in OBS</Label>
               </div>
             </div>
+            
+            <OBSControls />
+            
             <div className="flex items-center space-x-2">
               <Input 
                 value={obsLink} 
@@ -252,6 +286,7 @@ const AnkitDonationMessages = () => {
             <div className="text-sm text-muted-foreground">
               <p>This link will display your donation messages in real-time for your stream.</p>
               <p>Each message will show for 15 seconds before moving to the next one.</p>
+              <p className="mt-2 font-medium">When edit mode is enabled, you can drag the donation box and resize it in your OBS browser source.</p>
             </div>
           </div>
         </CardContent>
@@ -296,6 +331,14 @@ const AnkitDonationMessages = () => {
         </CardContent>
       </Card>
     </div>
+  );
+};
+
+const AnkitDonationMessages = () => {
+  return (
+    <ObsConfigProvider>
+      <AnkitDonationMessagesContent />
+    </ObsConfigProvider>
   );
 };
 
