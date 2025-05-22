@@ -42,7 +42,7 @@ export function ObsConfigProvider({ children }: { children: React.ReactNode }) {
     });
     window.dispatchEvent(event);
     
-    console.log("OBS Config updated:", obsConfig);
+    console.log("OBS Config updated and saved to localStorage:", obsConfig);
   }, [obsConfig]);
 
   // Listen for changes from other tabs/windows
@@ -78,7 +78,7 @@ export function ObsConfigProvider({ children }: { children: React.ReactNode }) {
         isDraggable: !prev.isDraggable,
         showBorder: !prev.isDraggable
       };
-      console.log("Toggling draggable:", newConfig);
+      console.log("Toggling draggable mode:", newConfig);
       return newConfig;
     });
   };
