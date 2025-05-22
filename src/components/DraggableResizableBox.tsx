@@ -21,6 +21,10 @@ const DraggableResizableBox: React.FC<DraggableResizableBoxProps> = ({
   const boxRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    console.log("DraggableBox received config:", obsConfig);
+  }, [obsConfig]);
+
+  useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (isDragging && obsConfig.isDraggable) {
         const deltaX = e.clientX - dragStartPos.x;
@@ -89,10 +93,15 @@ const DraggableResizableBox: React.FC<DraggableResizableBoxProps> = ({
     }
   };
 
+  // This will add a very visible outline when edit mode is on, even if not actively dragging
+  const borderStyle = obsConfig.showBorder 
+    ? 'border-4 border-blue-500 shadow-lg shadow-blue-500/50' 
+    : '';
+
   return (
     <div
       ref={boxRef}
-      className={`${className} relative ${obsConfig.showBorder ? 'border-2 border-blue-500' : ''}`}
+      className={`${className} relative ${borderStyle}`}
       style={{
         position: 'absolute',
         left: `${obsConfig.position.x}px`,
@@ -101,8 +110,8 @@ const DraggableResizableBox: React.FC<DraggableResizableBoxProps> = ({
         height: typeof obsConfig.size.height === 'number' ? `${obsConfig.size.height}px` : obsConfig.size.height,
         cursor: obsConfig.isDraggable ? 'move' : 'default',
         transition: 'border 0.3s ease',
-        padding: obsConfig.showBorder ? '2px' : '0',
-        boxShadow: obsConfig.showBorder ? '0 0 0 2px rgba(59, 130, 246, 0.5)' : 'none'
+        padding: obsConfig.showBorder ? '8px' : '0',
+        zIndex: 1000
       }}
       onMouseDown={handleDragStart}
     >
@@ -111,19 +120,30 @@ const DraggableResizableBox: React.FC<DraggableResizableBoxProps> = ({
       {obsConfig.isDraggable && (
         <>
           <div 
-            className="absolute top-0 right-0 bg-blue-500 text-white p-1 rounded-bl-md cursor-pointer z-20"
+            className="absolute top-0 left-0 bg-blue-600 text-white p-2 rounded-br-md font-bold z-20"
+          >
+            <span className="flex items-center gap-2">
+              <Move size={16} />
+              EDIT MODE ON
+            </span>
+          </div>
+          
+          <div 
+            className="absolute top-0 right-0 bg-blue-600 text-white p-2 rounded-bl-md cursor-pointer z-20"
             onClick={handleResizeStart}
           >
             <Maximize size={16} />
           </div>
           
           <div 
-            className="absolute right-0 bottom-0 w-6 h-6 cursor-se-resize bg-blue-500/20 rounded-tl-md"
+            className="absolute right-0 bottom-0 w-8 h-8 cursor-se-resize bg-blue-600 rounded-tl-md flex items-center justify-center"
             onMouseDown={handleResizeStart}
             style={{
               zIndex: 20
             }}
-          />
+          >
+            <Maximize size={16} className="text-white" />
+          </div>
         </>
       )}
     </div>

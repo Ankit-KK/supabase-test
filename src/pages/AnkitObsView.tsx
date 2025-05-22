@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,35 +20,38 @@ interface ActiveDonation extends Donation {
 const DonationBox = ({ activeDonation, showMessages }: { activeDonation: ActiveDonation | null, showMessages: boolean }) => {
   const { obsConfig } = useObsConfig();
   
-  if (!activeDonation) {
-    return (
-      <div className="text-center text-white opacity-0">
-        <p>Waiting for donations...</p>
-      </div>
-    );
-  }
+  // If no active donation, but in edit mode, show an empty placeholder
+  const emptyMessage = obsConfig.isDraggable 
+    ? <div className="text-white text-lg">No active donations. This box will show donations when they arrive.</div>
+    : <div className="opacity-0">Waiting for donations...</div>;
 
   return (
     <DraggableResizableBox>
       <div 
-        className="backdrop-blur-md rounded-2xl px-6 py-4 shadow-xl bg-black/60"
+        className={`backdrop-blur-md rounded-2xl px-6 py-4 shadow-xl ${activeDonation ? 'bg-black/60' : obsConfig.isDraggable ? 'bg-black/40 border border-dashed border-white/40' : ''}`}
         style={{ width: "auto", maxWidth: "100%" }}
       >
-        <div className="flex items-center gap-2 mb-2">
-          <span className="font-bold text-xl text-yellow-400">{activeDonation.name}</span>
-          <span className="text-md text-white opacity-90">· ₹{Number(activeDonation.amount).toLocaleString()}</span>
-        </div>
-        
-        {showMessages && activeDonation.message && (
-          <div className="text-white text-lg mt-2 font-medium">
-            {activeDonation.message}
-          </div>
+        {activeDonation ? (
+          <>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="font-bold text-xl text-yellow-400">{activeDonation.name}</span>
+              <span className="text-md text-white opacity-90">· ₹{Number(activeDonation.amount).toLocaleString()}</span>
+            </div>
+            
+            {showMessages && activeDonation.message && (
+              <div className="text-white text-lg mt-2 font-medium">
+                {activeDonation.message}
+              </div>
+            )}
+            
+            <div className="flex space-x-2 mt-3">
+              <Gamepad className="h-5 w-5 text-purple-400" />
+              <Flame className="h-5 w-5 text-orange-400" />
+            </div>
+          </>
+        ) : (
+          emptyMessage
         )}
-        
-        <div className="flex space-x-2 mt-3">
-          <Gamepad className="h-5 w-5 text-purple-400" />
-          <Flame className="h-5 w-5 text-orange-400" />
-        </div>
       </div>
     </DraggableResizableBox>
   );
@@ -63,7 +65,12 @@ const AnkitObsViewContent = () => {
   const [activeDonation, setActiveDonation] = useState<ActiveDonation | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [showMessages, setShowMessages] = useState<boolean>(true);
+  const { obsConfig } = useObsConfig();
   const DISPLAY_DURATION = 15000; // 15 seconds per message
+
+  useEffect(() => {
+    console.log("OBS View initialized with config:", obsConfig);
+  }, [obsConfig]);
 
   // Get URL parameters
   useEffect(() => {
@@ -215,18 +222,10 @@ const AnkitObsViewContent = () => {
     );
   }
 
-  // Render the content
+  // Render the content - always show DonationBox even when no active donation in edit mode
   return (
     <div className="h-screen w-screen overflow-hidden bg-transparent">
-      {activeDonation ? (
-        <DonationBox activeDonation={activeDonation} showMessages={showMessages} />
-      ) : (
-        <div className="h-screen w-screen flex items-center justify-center bg-transparent">
-          <div className="text-center text-white opacity-0">
-            <p>Waiting for donations...</p>
-          </div>
-        </div>
-      )}
+      <DonationBox activeDonation={activeDonation} showMessages={showMessages} />
     </div>
   );
 };

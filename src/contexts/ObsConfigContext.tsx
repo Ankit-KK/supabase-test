@@ -41,30 +41,46 @@ export function ObsConfigProvider({ children }: { children: React.ReactNode }) {
       detail: { config: obsConfig } 
     });
     window.dispatchEvent(event);
+    
+    console.log("OBS Config updated:", obsConfig);
   }, [obsConfig]);
 
   // Listen for changes from other tabs/windows
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === LOCAL_STORAGE_KEY && e.newValue) {
+        console.log("Config changed in another tab, updating...");
         setObsConfig(JSON.parse(e.newValue));
+      }
+    };
+    
+    const handleCustomEvent = (e: any) => {
+      if (e.detail && e.detail.config) {
+        console.log("Received custom event with config:", e.detail.config);
+        setObsConfig(e.detail.config);
       }
     };
     
     // Listen for storage changes
     window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('obsConfigChanged', handleCustomEvent);
     
     return () => {
       window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('obsConfigChanged', handleCustomEvent);
     };
   }, []);
 
   const toggleDraggable = () => {
-    setObsConfig(prev => ({
-      ...prev,
-      isDraggable: !prev.isDraggable,
-      showBorder: !prev.isDraggable
-    }));
+    setObsConfig(prev => {
+      const newConfig = {
+        ...prev,
+        isDraggable: !prev.isDraggable,
+        showBorder: !prev.isDraggable
+      };
+      console.log("Toggling draggable:", newConfig);
+      return newConfig;
+    });
   };
 
   return (
