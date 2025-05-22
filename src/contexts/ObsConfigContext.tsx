@@ -27,22 +27,36 @@ const ObsConfigContext = createContext<ObsConfigContextType | undefined>(undefin
 
 export function ObsConfigProvider({ children }: { children: React.ReactNode }) {
   const [obsConfig, setObsConfig] = useState<ObsConfig>(() => {
-    // Load from localStorage if available
-    const savedConfig = localStorage.getItem(LOCAL_STORAGE_KEY);
-    return savedConfig ? JSON.parse(savedConfig) : defaultConfig;
+    try {
+      // Load from localStorage if available
+      const savedConfig = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (savedConfig) {
+        const parsedConfig = JSON.parse(savedConfig);
+        console.log("Loaded config from localStorage:", parsedConfig);
+        return parsedConfig;
+      }
+      return defaultConfig;
+    } catch (error) {
+      console.error("Error loading config from localStorage:", error);
+      return defaultConfig;
+    }
   });
 
   // Save to localStorage whenever config changes
   useEffect(() => {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(obsConfig));
-    
-    // Dispatch a custom event to notify other tabs/windows
-    const event = new CustomEvent('obsConfigChanged', { 
-      detail: { config: obsConfig } 
-    });
-    window.dispatchEvent(event);
-    
-    console.log("OBS Config updated and saved to localStorage:", obsConfig);
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(obsConfig));
+      
+      // Dispatch a custom event to notify other tabs/windows
+      const event = new CustomEvent('obsConfigChanged', { 
+        detail: { config: obsConfig } 
+      });
+      window.dispatchEvent(event);
+      
+      console.log("OBS Config updated and saved to localStorage:", obsConfig);
+    } catch (error) {
+      console.error("Error saving config to localStorage:", error);
+    }
   }, [obsConfig]);
 
   // Listen for changes from other tabs/windows

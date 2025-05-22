@@ -20,8 +20,21 @@ const DraggableResizableBox: React.FC<DraggableResizableBoxProps> = ({
   const [resizeStartSize, setResizeStartSize] = useState({ width: 0, height: 0 });
   const boxRef = useRef<HTMLDivElement>(null);
 
+  // Log config when component mounts and when it changes
   useEffect(() => {
-    console.log("DraggableBox received config:", obsConfig);
+    console.log("DraggableBox mounted/updated with config:", obsConfig);
+    
+    // Force a re-render to ensure the position is applied correctly
+    // This helps with OBS browser source rendering
+    const timer = setTimeout(() => {
+      if (boxRef.current) {
+        console.log("Applying position:", obsConfig.position);
+        boxRef.current.style.left = `${obsConfig.position.x}px`;
+        boxRef.current.style.top = `${obsConfig.position.y}px`;
+      }
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, [obsConfig]);
 
   useEffect(() => {
@@ -30,6 +43,7 @@ const DraggableResizableBox: React.FC<DraggableResizableBoxProps> = ({
         const deltaX = e.clientX - dragStartPos.x;
         const deltaY = e.clientY - dragStartPos.y;
         
+        // Update position in context
         setObsConfig(prev => ({
           ...prev,
           position: {
@@ -56,6 +70,12 @@ const DraggableResizableBox: React.FC<DraggableResizableBoxProps> = ({
     };
 
     const handleMouseUp = () => {
+      if (isDragging || isResizing) {
+        // Save the final position to localStorage immediately
+        localStorage.setItem('ankitObsConfig', JSON.stringify(obsConfig));
+        console.log("Position saved after drag/resize:", obsConfig.position);
+      }
+      
       setIsDragging(false);
       setIsResizing(false);
     };
@@ -76,6 +96,7 @@ const DraggableResizableBox: React.FC<DraggableResizableBoxProps> = ({
     e.preventDefault();
     setIsDragging(true);
     setDragStartPos({ x: e.clientX, y: e.clientY });
+    console.log("Starting drag from position:", obsConfig.position);
   };
 
   const handleResizeStart = (e: React.MouseEvent) => {
