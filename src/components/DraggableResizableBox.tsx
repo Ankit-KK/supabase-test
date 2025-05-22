@@ -43,9 +43,9 @@ const DraggableResizableBox: React.FC<DraggableResizableBoxProps> = ({
           ...prev,
           size: {
             width: Math.max(200, resizeStartSize.width + deltaX),
-            height: resizeStartSize.height !== 'auto' ? 
-              Math.max(100, resizeStartSize.height + deltaY) : 
-              'auto'
+            height: prev.size.height === 'auto' ? 
+              'auto' : 
+              Math.max(100, (resizeStartSize.height as number) + deltaY)
           }
         }));
       }
@@ -84,7 +84,7 @@ const DraggableResizableBox: React.FC<DraggableResizableBoxProps> = ({
     if (boxRef.current) {
       setResizeStartSize({ 
         width: boxRef.current.offsetWidth,
-        height: boxRef.current.offsetHeight !== 'auto' ? boxRef.current.offsetHeight : 'auto'
+        height: obsConfig.size.height === 'auto' ? 0 : boxRef.current.offsetHeight
       });
     }
   };

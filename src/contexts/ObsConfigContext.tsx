@@ -5,7 +5,7 @@ interface ObsConfig {
   isDraggable: boolean;
   showBorder: boolean;
   position: { x: number; y: number };
-  size: { width: number; height: number };
+  size: { width: number; height: number | string };
 }
 
 interface ObsConfigContextType {
