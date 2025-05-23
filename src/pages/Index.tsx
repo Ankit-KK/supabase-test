@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import HeroWithCanyonAnimation from "@/components/HeroWithCanyonAnimation";
 import Features from "@/components/Features";
 import Services from "@/components/Services";
+import CustomPagesShowcase from "@/components/CustomPagesShowcase";
 import Pricing from "@/components/Pricing";
 import Footer from "@/components/Footer";
 import VideoBackground from "@/components/VideoBackground";
@@ -18,6 +19,7 @@ const Index = () => {
         <HeroWithCanyonAnimation />
         <Features />
         <ChatDemo />
+        <CustomPagesShowcase />
         <Services />
         <Pricing />
         <Footer />
