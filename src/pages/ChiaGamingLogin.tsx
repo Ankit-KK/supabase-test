@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -19,7 +18,7 @@ const ChiaGamingLogin = () => {
     setIsLoading(true);
 
     try {
-      const result = await authenticateStreamer(email, password, "chia_gaming");
+      const result = await authenticateStreamer("chia_gaming", email, password);
       if (result.success) {
         toast({
           title: "Welcome back, Chia! 💖",
@@ -29,7 +28,7 @@ const ChiaGamingLogin = () => {
       } else {
         toast({
           title: "Login failed",
-          description: result.error || "Invalid credentials",
+          description: "Invalid credentials",
           variant: "destructive",
         });
       }

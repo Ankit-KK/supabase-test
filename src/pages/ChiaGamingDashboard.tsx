@@ -1,20 +1,22 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthProtection } from "@/hooks/useAuthProtection";
-import { Heart, Users, DollarSign, MessageSquare, Download, Eye, LogOut, Sparkles } from "lucide-react";
+import { getDashboardStats } from "@/utils/dashboardUtils";
+import { Heart, Users, DollarSign, MessageSquare, FileText, LogOut, Eye, Sparkles } from "lucide-react";
 
 const ChiaGamingDashboard = () => {
   useAuthProtection("chia_gaming");
   
   const [stats, setStats] = useState({
     totalDonations: 0,
-    totalAmount: 0,
-    recentDonations: [] as any[],
+    totalAmount: "0",
+    totalDonors: 0,
+    recentDonations: [] as any[]
   });
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
@@ -25,42 +27,23 @@ const ChiaGamingDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      // Fetch donation statistics
-      const { data: donations, error } = await supabase
-        .from("chia_gaming_donations")
-        .select("*")
-        .eq("payment_status", "paid")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-
-      const totalAmount = donations?.reduce((sum, donation) => sum + parseFloat(donation.amount), 0) || 0;
-      const recentDonations = donations?.slice(0, 5) || [];
-
-      setStats({
-        totalDonations: donations?.length || 0,
-        totalAmount,
-        recentDonations,
-      });
+      const dashboardStats = await getDashboardStats("chia_gaming_donations");
+      setStats(dashboardStats);
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load dashboard data",
-        variant: "destructive",
-      });
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleLogout = () => {
-    sessionStorage.removeItem("chia_gaming_auth");
-    toast({
-      title: "Logged out successfully! 👋",
-      description: "See you soon, beautiful!",
-    });
+    sessionStorage.removeItem("chiaGamingAuth");
     navigate("/chia_gaming/login");
+  };
+
+  const copyObsUrl = (obsId: string) => {
+    const url = `${window.location.origin}/chia_gaming/obs/${obsId}`;
+    navigator.clipboard.writeText(url);
   };
 
   if (isLoading) {
@@ -84,15 +67,18 @@ const ChiaGamingDashboard = () => {
     >
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <Heart className="h-8 w-8 text-pink-500" />
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">
-              Chia Gaming Dashboard
-            </h1>
-            <Sparkles className="h-8 w-8 text-purple-500" />
+            <Heart className="h-10 w-10 text-pink-500" />
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">
+                Chia Gaming Dashboard
+              </h1>
+              <p className="text-pink-600">Welcome back, beautiful! 💕</p>
+            </div>
+            <Sparkles className="h-10 w-10 text-purple-500" />
           </div>
-          <Button
+          <Button 
             onClick={handleLogout}
             variant="outline"
             className="border-pink-300 text-pink-700 hover:bg-pink-50"
@@ -104,110 +90,140 @@ const ChiaGamingDashboard = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="bg-white/70 backdrop-blur-sm border-2 border-pink-200/50">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-pink-700">Total Supporters</CardTitle>
-              <Users className="h-4 w-4 text-pink-500" />
+          <Card className="bg-white/70 backdrop-blur-sm border-2 border-pink-200/50 hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center text-pink-900">
+                <Heart className="h-5 w-5 mr-2 text-pink-500" />
+                Total Love
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-pink-900">{stats.totalDonations}</div>
-              <p className="text-xs text-pink-600">Amazing supporters! 💖</p>
+              <div className="text-3xl font-bold text-pink-700">₹{stats.totalAmount}</div>
+              <p className="text-sm text-pink-600">{stats.totalDonations} donations received</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-white/70 backdrop-blur-sm border-2 border-pink-200/50">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-pink-700">Total Love Received</CardTitle>
-              <DollarSign className="h-4 w-4 text-pink-500" />
+          <Card className="bg-white/70 backdrop-blur-sm border-2 border-pink-200/50 hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center text-pink-900">
+                <Users className="h-5 w-5 mr-2 text-pink-500" />
+                Supporters
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-pink-900">₹{stats.totalAmount.toFixed(2)}</div>
-              <p className="text-xs text-pink-600">So much love! ✨</p>
+              <div className="text-3xl font-bold text-pink-700">{stats.totalDonors}</div>
+              <p className="text-sm text-pink-600">Amazing people supporting you</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-white/70 backdrop-blur-sm border-2 border-pink-200/50">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-pink-700">Average Support</CardTitle>
-              <Heart className="h-4 w-4 text-pink-500" />
+          <Card className="bg-white/70 backdrop-blur-sm border-2 border-pink-200/50 hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center text-pink-900">
+                <MessageSquare className="h-5 w-5 mr-2 text-pink-500" />
+                Messages
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-pink-900">
-                ₹{stats.totalDonations > 0 ? (stats.totalAmount / stats.totalDonations).toFixed(2) : "0.00"}
-              </div>
-              <p className="text-xs text-pink-600">Per supporter 💕</p>
+              <div className="text-3xl font-bold text-pink-700">{stats.totalDonations}</div>
+              <p className="text-sm text-pink-600">Love messages received</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Action Buttons */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Button
-            onClick={() => navigate("/chia_gaming/messages")}
-            className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white h-12"
-          >
-            <MessageSquare className="h-4 w-4 mr-2" />
-            View Messages
-          </Button>
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="bg-white/70 backdrop-blur-sm border-2 border-pink-200/50">
+            <CardHeader>
+              <CardTitle className="text-pink-900">Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button 
+                onClick={() => navigate("/chia_gaming/messages")}
+                className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white"
+              >
+                <MessageSquare className="h-4 w-4 mr-2" />
+                View Love Messages
+              </Button>
+              
+              <Button 
+                onClick={() => navigate("/chia_gaming/export")}
+                variant="outline"
+                className="w-full border-pink-300 text-pink-700 hover:bg-pink-50"
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Export Data
+              </Button>
+              
+              <Button 
+                onClick={() => copyObsUrl("1")}
+                variant="outline"
+                className="w-full border-pink-300 text-pink-700 hover:bg-pink-50"
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                Copy OBS URL
+              </Button>
+            </CardContent>
+          </Card>
 
-          <Button
-            onClick={() => navigate("/chia_gaming/export")}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white h-12"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Export Data
-          </Button>
-
-          <Button
-            onClick={() => navigate("/chia_gaming/obs/1")}
-            className="bg-gradient-to-r from-pink-400 to-purple-400 hover:from-pink-500 hover:to-purple-500 text-white h-12"
-          >
-            <Eye className="h-4 w-4 mr-2" />
-            OBS View
-          </Button>
-
-          <Button
-            onClick={() => navigate("/chia_gaming")}
-            variant="outline"
-            className="border-pink-300 text-pink-700 hover:bg-pink-50 h-12"
-          >
-            <Heart className="h-4 w-4 mr-2" />
-            Donation Page
-          </Button>
+          {/* Recent Donations */}
+          <Card className="bg-white/70 backdrop-blur-sm border-2 border-pink-200/50">
+            <CardHeader>
+              <CardTitle className="text-pink-900">Recent Love 💕</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {stats.recentDonations.length === 0 ? (
+                <div className="text-center py-8">
+                  <Heart className="h-12 w-12 text-pink-300 mx-auto mb-2" />
+                  <p className="text-pink-600">No donations yet</p>
+                  <p className="text-sm text-pink-500">Share your page to start receiving love!</p>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {stats.recentDonations.map((donation) => (
+                    <div key={donation.id} className="flex items-center justify-between p-3 bg-pink-50/50 rounded-lg border border-pink-200/30">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-gradient-to-br from-pink-400 to-purple-500 rounded-full flex items-center justify-center">
+                          <Heart className="h-4 w-4 text-white" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-pink-900">{donation.name}</p>
+                          <p className="text-sm text-pink-600 truncate max-w-48">
+                            {donation.message}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge variant="secondary" className="bg-pink-100 text-pink-700">
+                        ₹{donation.amount}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Recent Donations */}
+        {/* Donation URL */}
         <Card className="bg-white/70 backdrop-blur-sm border-2 border-pink-200/50">
           <CardHeader>
-            <CardTitle className="text-pink-700 flex items-center">
-              <Heart className="h-5 w-5 mr-2" />
-              Recent Love & Support
-            </CardTitle>
+            <CardTitle className="text-pink-900">Your Donation Page</CardTitle>
           </CardHeader>
           <CardContent>
-            {stats.recentDonations.length === 0 ? (
-              <p className="text-pink-600 text-center py-8">No donations yet. Share your page to start receiving love! 💖</p>
-            ) : (
-              <div className="space-y-4">
-                {stats.recentDonations.map((donation) => (
-                  <div
-                    key={donation.id}
-                    className="flex justify-between items-start p-4 bg-pink-50/50 rounded-lg border border-pink-200/30"
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <span className="font-semibold text-pink-900">{donation.name}</span>
-                        <span className="text-pink-600">donated ₹{donation.amount}</span>
-                      </div>
-                      <p className="text-pink-700 mt-1">{donation.message}</p>
-                      <p className="text-xs text-pink-500 mt-2">
-                        {new Date(donation.created_at).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <div className="flex items-center space-x-3">
+              <code className="flex-1 p-3 bg-pink-50/50 rounded-lg border border-pink-200/30 text-pink-800">
+                {window.location.origin}/chia_gaming
+              </code>
+              <Button 
+                onClick={() => navigator.clipboard.writeText(`${window.location.origin}/chia_gaming`)}
+                variant="outline"
+                className="border-pink-300 text-pink-700 hover:bg-pink-50"
+              >
+                Copy Link
+              </Button>
+            </div>
+            <p className="text-sm text-pink-600 mt-2">
+              Share this link with your audience to start receiving donations! 💖
+            </p>
           </CardContent>
         </Card>
       </div>

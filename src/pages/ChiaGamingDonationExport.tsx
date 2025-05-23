@@ -2,7 +2,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { DonationExport } from "@/components/DonationExport";
+import DonationExport from "@/components/DonationExport";
 import { useAuthProtection } from "@/hooks/useAuthProtection";
 import { Heart, ArrowLeft, Sparkles } from "lucide-react";
 
