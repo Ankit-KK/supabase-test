@@ -170,7 +170,7 @@ const CustomPagesShowcase = () => {
                     • No monthly charges
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    • Keep 100% of your donations
+                    • Keep >90% of your donations
                   </p>
                   <p className="text-sm text-muted-foreground">
                     • Lifetime access to your custom page
