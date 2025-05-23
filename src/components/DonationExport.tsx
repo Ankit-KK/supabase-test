@@ -14,9 +14,8 @@ import { objectsToCSV, downloadCSV, formatDateForFilename } from "@/utils/csvExp
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface DonationExportProps {
-  tableName: "ankit_donations" | "harish_donations" | "mackle_donations" | "rakazone_donations" | "chia_gaming_donations";
+  tableName: "ankit_donations" | "harish_donations" | "mackle_donations" | "rakazone_donations";
   streamerName: string;
-  themeColor?: string;
 }
 
 interface Donation {
@@ -27,11 +26,10 @@ interface Donation {
   created_at: string;
   payment_status: string;
   order_id: string;
-  include_sound?: boolean;
   include_gif?: boolean;
 }
 
-const DonationExport: React.FC<DonationExportProps> = ({ tableName, streamerName, themeColor }) => {
+const DonationExport: React.FC<DonationExportProps> = ({ tableName, streamerName }) => {
   const [startDate, setStartDate] = useState<Date | undefined>(
     new Date(new Date().setDate(1)) // First day of current month
   );
@@ -125,7 +123,7 @@ const DonationExport: React.FC<DonationExportProps> = ({ tableName, streamerName
         Status: "Payment Status"
       });
 
-      const fileName = `${streamerName.toLowerCase()}_donations_${formatDateForFilename(startDate!.toISOString())}_to_${formatDateForFilename(endDate!.toISOString())}.csv`;
+      const fileName = `${streamerName.toLowerCase()}_donations_${formatDateForFilename(startDate.toISOString())}_to_${formatDateForFilename(endDate.toISOString())}.csv`;
       downloadCSV(csvString, fileName);
 
       toast({

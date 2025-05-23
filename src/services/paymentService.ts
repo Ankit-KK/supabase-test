@@ -7,7 +7,7 @@ type DonationRecord = {
   message: string;
   order_id: string;
   payment_status: string;
-  donationType: "ankit" | "harish" | "mackle" | "rakazone" | "chia_gaming";
+  donationType: "ankit" | "harish" | "mackle" | "rakazone";
   include_sound?: boolean;
 };
 
@@ -67,8 +67,6 @@ export const createDonationRecord = async (donation: DonationRecord) => {
       tableName = "mackle_donations";
     } else if (donation.donationType === "rakazone") {
       tableName = "rakazone_donations";
-    } else if (donation.donationType === "chia_gaming") {
-      tableName = "chia_gaming_donations";
     } else {
       tableName = "ankit_donations";
     }
