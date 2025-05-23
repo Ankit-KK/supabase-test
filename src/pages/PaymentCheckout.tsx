@@ -123,11 +123,20 @@ const PaymentCheckout = () => {
     );
   }
 
-  const donationTitle = paymentData?.donationType === "harish" 
-    ? "Donation to Harish" 
-    : paymentData?.donationType === "mackle"
-    ? "Donation to Mackle"
-    : "Donation to Ankit";
+  const getDonationTitle = () => {
+    switch (paymentData?.donationType) {
+      case "harish":
+        return "Donation to Harish";
+      case "mackle":
+        return "Donation to Mackle";
+      case "rakazone":
+        return "Donation to Rakazone";
+      case "chia_gaming":
+        return "Love & Support to Chia Gaming";
+      default:
+        return "Donation to Ankit";
+    }
+  };
 
   return (
     <div className="container mx-auto max-w-md py-10">
@@ -135,7 +144,7 @@ const PaymentCheckout = () => {
         <div className="text-center">
           <h1 className="text-2xl font-bold">Complete Your Payment</h1>
           <p className="text-muted-foreground mt-2">
-            You're almost there! Click below to complete your {donationTitle}.
+            You're almost there! Click below to complete your {getDonationTitle()}.
           </p>
         </div>
         
@@ -156,7 +165,7 @@ const PaymentCheckout = () => {
           </div>
           <div className="flex justify-between">
             <span>Donation Type:</span>
-            <span className="font-medium capitalize">{paymentData?.donationType}</span>
+            <span className="font-medium capitalize">{paymentData?.donationType?.replace('_', ' ')}</span>
           </div>
         </div>
         

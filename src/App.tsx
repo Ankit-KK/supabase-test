@@ -11,6 +11,7 @@ import AnkitPage from "./pages/Ankit";
 import HarishPage from "./pages/Harish";
 import MacklePage from "./pages/Mackle";
 import RakazonePage from "./pages/Rakazone";
+import ChiaGamingPage from "./pages/ChiaGaming";
 import PaymentCheckout from "./pages/PaymentCheckout";
 import PaymentStatus from "./pages/PaymentStatus";
 import Contact from "./pages/Contact";
@@ -37,6 +38,11 @@ import RakazoneDashboard from "./pages/RakazoneDashboard";
 import RakazoneDonationMessages from "./pages/RakazoneDonationMessages";
 import RakazoneDonationExport from "./pages/RakazoneDonationExport";
 import RakazoneObsView from "./pages/RakazoneObsView";
+import ChiaGamingLogin from "./pages/ChiaGamingLogin";
+import ChiaGamingDashboard from "./pages/ChiaGamingDashboard";
+import ChiaGamingDonationMessages from "./pages/ChiaGamingDonationMessages";
+import ChiaGamingDonationExport from "./pages/ChiaGamingDonationExport";
+import ChiaGamingObsView from "./pages/ChiaGamingObsView";
 import ReckoningEsports from "./pages/ReckoningEsports";
 import { AuthProvider } from "./contexts/AuthContext";
 
@@ -61,6 +67,7 @@ const App = () => {
               <Route path="/harish" element={<HarishPage />} />
               <Route path="/mackle" element={<MacklePage />} />
               <Route path="/rakazone" element={<RakazonePage />} />
+              <Route path="/chia_gaming" element={<ChiaGamingPage />} />
               <Route path="/payment-checkout" element={<PaymentCheckout />} />
               <Route path="/status" element={<PaymentStatus />} />
               <Route path="/contact" element={<Contact />} />
@@ -87,6 +94,11 @@ const App = () => {
               <Route path="/rakazone/messages" element={<RakazoneDonationMessages />} />
               <Route path="/rakazone/export" element={<RakazoneDonationExport />} />
               <Route path="/rakazone/obs/:id" element={<RakazoneObsView />} />
+              <Route path="/chia_gaming/login" element={<ChiaGamingLogin />} />
+              <Route path="/chia_gaming/dashboard" element={<ChiaGamingDashboard />} />
+              <Route path="/chia_gaming/messages" element={<ChiaGamingDonationMessages />} />
+              <Route path="/chia_gaming/export" element={<ChiaGamingDonationExport />} />
+              <Route path="/chia_gaming/obs/:id" element={<ChiaGamingObsView />} />
               <Route path="/reckoningesports" element={<ReckoningEsports />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
