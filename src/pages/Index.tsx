@@ -5,7 +5,6 @@ import HeroWithCanyonAnimation from "@/components/HeroWithCanyonAnimation";
 import Features from "@/components/Features";
 import Services from "@/components/Services";
 import CustomPagesShowcase from "@/components/CustomPagesShowcase";
-import Pricing from "@/components/Pricing";
 import Footer from "@/components/Footer";
 import VideoBackground from "@/components/VideoBackground";
 import ChatDemo from "@/components/ChatDemo";
@@ -21,7 +20,6 @@ const Index = () => {
         <ChatDemo />
         <CustomPagesShowcase />
         <Services />
-        <Pricing />
         <Footer />
       </div>
     </div>
