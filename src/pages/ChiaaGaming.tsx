@@ -3,9 +3,8 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
-import { Gamepad2, Heart, Sparkles, Music, Zap } from "lucide-react";
+import { Gamepad2, Heart, Sparkles, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const ChiaaGaming = () => {
@@ -13,7 +12,6 @@ const ChiaaGaming = () => {
     name: "",
     amount: "",
     message: "",
-    includeSound: false,
   });
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -31,10 +29,10 @@ const ChiaaGaming = () => {
     }
 
     const amount = parseFloat(formData.amount);
-    if (amount < 1) {
+    if (amount < 50) {
       toast({
         title: "Invalid Amount",
-        description: "Minimum donation amount is ₹1",
+        description: "Minimum donation amount is ₹50",
         variant: "destructive",
       });
       return;
@@ -51,7 +49,7 @@ const ChiaaGaming = () => {
         message: formData.message,
         orderId: orderId,
         donationType: "chiaa_gaming",
-        include_sound: formData.includeSound,
+        include_sound: false,
       };
 
       sessionStorage.setItem("donationData", JSON.stringify(donationData));
@@ -102,9 +100,6 @@ const ChiaaGaming = () => {
         <div className="absolute bottom-32 left-20 opacity-15 animate-pulse">
           <Sparkles size={45} className="text-pink-600" />
         </div>
-        <div className="absolute bottom-20 right-32 opacity-15 animate-float">
-          <Music size={40} className="text-purple-600" />
-        </div>
       </div>
 
       <div className="relative z-10 container mx-auto px-4 py-8">
@@ -151,9 +146,9 @@ const ChiaaGaming = () => {
                 <Input
                   id="amount"
                   type="number"
-                  min="1"
+                  min="50"
                   step="1"
-                  placeholder="Enter amount"
+                  placeholder="Enter amount (minimum ₹50)"
                   value={formData.amount}
                   onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                   className="border-pink-400 focus:border-pink-600 focus:ring-pink-600 bg-white text-gray-900 placeholder:text-gray-500"
@@ -186,21 +181,6 @@ const ChiaaGaming = () => {
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2 p-3 bg-pink-100 rounded-lg border border-pink-300">
-                <Checkbox
-                  id="includeSound"
-                  checked={formData.includeSound}
-                  onCheckedChange={(checked) => 
-                    setFormData({ ...formData, includeSound: checked as boolean })
-                  }
-                  className="data-[state=checked]:bg-pink-600 data-[state=checked]:border-pink-600"
-                />
-                <label htmlFor="includeSound" className="text-sm text-pink-900 flex items-center gap-2 font-medium">
-                  <Music className="h-4 w-4" />
-                  Play notification sound on stream
-                </label>
-              </div>
-
               <Button 
                 type="submit" 
                 disabled={isLoading}
@@ -227,7 +207,6 @@ const ChiaaGaming = () => {
                 Message Length Guide
               </h3>
               <div className="space-y-1 text-xs text-purple-800 font-medium">
-                <p>• ₹1-49: Up to 50 characters</p>
                 <p>• ₹50-99: Up to 75 characters</p>
                 <p>• ₹100-499: Up to 100 characters</p>
                 <p>• ₹500+: Up to 200 characters</p>
