@@ -187,7 +187,7 @@ const ChiaaGamingObsView = () => {
         </div>
       )}
 
-      <style jsx>{`
+      <style>{`
         @keyframes slide-in-right {
           from {
             transform: translateX(100%);

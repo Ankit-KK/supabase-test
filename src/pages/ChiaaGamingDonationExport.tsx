@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { isStreamerAuthenticated } from "@/services/streamerAuth";
-import { exportDonationsToCSV } from "@/utils/csvExport";
+import { objectsToCSV, downloadCSV } from "@/utils/csvExport";
 import { Heart, Download, Calendar, ArrowLeft, FileText, Sparkles } from "lucide-react";
 import { format } from "date-fns";
 
@@ -80,7 +79,7 @@ const ChiaaGamingDonationExport = () => {
 
     if (dateRange.endDate) {
       const endDate = new Date(dateRange.endDate);
-      endDate.setHours(23, 59, 59, 999); // Include the entire end date
+      endDate.setHours(23, 59, 59, 999);
       filtered = filtered.filter(donation => 
         new Date(donation.created_at) <= endDate
       );
@@ -120,7 +119,8 @@ const ChiaaGamingDonationExport = () => {
 
       const filename = `chiaa_gaming_donations${dateRangeStr}.csv`;
       
-      exportDonationsToCSV(csvData, filename);
+      const csvString = objectsToCSV(csvData);
+      downloadCSV(csvString, filename);
       
       toast({
         title: "Export Successful! 💖",
