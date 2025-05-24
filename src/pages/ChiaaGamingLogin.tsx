@@ -62,50 +62,50 @@ const ChiaaGamingLogin = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Animated Background */}
+      {/* Enhanced Background */}
       <div 
-        className="absolute inset-0 opacity-90"
+        className="absolute inset-0 opacity-95"
         style={{
           background: `
-            radial-gradient(circle at 20% 80%, rgba(236, 72, 153, 0.4) 0%, transparent 50%),
-            radial-gradient(circle at 80% 20%, rgba(219, 39, 119, 0.4) 0%, transparent 50%),
-            radial-gradient(circle at 40% 40%, rgba(168, 85, 247, 0.3) 0%, transparent 50%),
-            linear-gradient(135deg, #fce7f3 0%, #f3e8ff 25%, #fdf2f8 50%, #f0f9ff 75%, #fce7f3 100%)
+            radial-gradient(circle at 20% 80%, rgba(236, 72, 153, 0.3) 0%, transparent 50%),
+            radial-gradient(circle at 80% 20%, rgba(219, 39, 119, 0.3) 0%, transparent 50%),
+            radial-gradient(circle at 40% 40%, rgba(168, 85, 247, 0.25) 0%, transparent 50%),
+            linear-gradient(135deg, #fef7ff 0%, #faf5ff 25%, #fdf2f8 50%, #f0f9ff 75%, #fef7ff 100%)
           `
         }}
       />
 
       {/* Floating Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 opacity-20 animate-float">
-          <Heart size={60} className="text-pink-400" />
+        <div className="absolute top-20 left-10 opacity-15 animate-float">
+          <Heart size={60} className="text-pink-500" />
         </div>
-        <div className="absolute top-32 right-20 opacity-20 animate-bounce">
-          <Gamepad2 size={50} className="text-purple-400" />
+        <div className="absolute top-32 right-20 opacity-15 animate-bounce">
+          <Gamepad2 size={50} className="text-purple-500" />
         </div>
-        <div className="absolute bottom-32 left-20 opacity-20 animate-pulse">
-          <Sparkles size={45} className="text-pink-500" />
+        <div className="absolute bottom-32 left-20 opacity-15 animate-pulse">
+          <Sparkles size={45} className="text-pink-600" />
         </div>
       </div>
 
       <div className="relative z-10 w-full max-w-md">
-        <Card className="backdrop-blur-lg bg-white/80 border-pink-200 shadow-2xl shadow-pink-500/20">
+        <Card className="backdrop-blur-lg bg-white/95 border-pink-300 shadow-2xl shadow-pink-500/25">
           <CardHeader className="text-center">
             <div className="flex items-center justify-center space-x-3 mb-4">
-              <Heart className="h-8 w-8 text-pink-500 animate-pulse" />
-              <CardTitle className="text-2xl bg-gradient-to-r from-pink-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+              <Heart className="h-8 w-8 text-pink-600 animate-pulse" />
+              <CardTitle className="text-2xl bg-gradient-to-r from-pink-700 via-purple-700 to-pink-700 bg-clip-text text-transparent">
                 Chiaa Gaming
               </CardTitle>
-              <Sparkles className="h-8 w-8 text-purple-500 animate-pulse" />
+              <Sparkles className="h-8 w-8 text-purple-600 animate-pulse" />
             </div>
-            <CardDescription className="text-pink-700">
+            <CardDescription className="text-pink-800 font-medium">
               Admin Dashboard Login 🎮
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <label htmlFor="username" className="block text-sm font-medium text-pink-800">
+                <label htmlFor="username" className="block text-sm font-semibold text-pink-900">
                   Username
                 </label>
                 <Input
@@ -113,14 +113,14 @@ const ChiaaGamingLogin = () => {
                   type="text"
                   value={credentials.username}
                   onChange={(e) => setCredentials({ ...credentials, username: e.target.value })}
-                  className="border-pink-300 focus:border-pink-500 focus:ring-pink-500 bg-white/90"
+                  className="border-pink-400 focus:border-pink-600 focus:ring-pink-600 bg-white text-gray-900 placeholder:text-gray-500"
                   required
                   disabled
                 />
               </div>
               
               <div className="space-y-2">
-                <label htmlFor="password" className="block text-sm font-medium text-pink-800">
+                <label htmlFor="password" className="block text-sm font-semibold text-pink-900">
                   Password
                 </label>
                 <Input
@@ -128,7 +128,7 @@ const ChiaaGamingLogin = () => {
                   type="password"
                   value={credentials.password}
                   onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
-                  className="border-pink-300 focus:border-pink-500 focus:ring-pink-500 bg-white/90"
+                  className="border-pink-400 focus:border-pink-600 focus:ring-pink-600 bg-white text-gray-900 placeholder:text-gray-500"
                   required
                   placeholder="Enter your password"
                 />
@@ -137,7 +137,7 @@ const ChiaaGamingLogin = () => {
               <Button 
                 type="submit" 
                 disabled={isLoading}
-                className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold py-3 shadow-lg shadow-pink-500/30 transition-all duration-300 hover:scale-105"
+                className="w-full bg-gradient-to-r from-pink-600 to-purple-700 hover:from-pink-700 hover:to-purple-800 text-white font-bold py-3 shadow-lg shadow-pink-500/30 transition-all duration-300 hover:scale-105"
               >
                 {isLoading ? (
                   <div className="flex items-center justify-center space-x-2">
@@ -157,7 +157,7 @@ const ChiaaGamingLogin = () => {
               <Button
                 variant="outline"
                 onClick={() => navigate("/chiaa-gaming")}
-                className="text-pink-600 border-pink-300 hover:bg-pink-50 hover:border-pink-400"
+                className="text-pink-700 border-pink-400 hover:bg-pink-100 hover:border-pink-500"
               >
                 ← Back to Donation Page
               </Button>

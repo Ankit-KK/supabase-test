@@ -78,32 +78,32 @@ const ChiaaGaming = () => {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* Animated Background */}
+      {/* Enhanced Background */}
       <div 
-        className="absolute inset-0 opacity-90"
+        className="absolute inset-0 opacity-95"
         style={{
           background: `
-            radial-gradient(circle at 20% 80%, rgba(236, 72, 153, 0.4) 0%, transparent 50%),
-            radial-gradient(circle at 80% 20%, rgba(219, 39, 119, 0.4) 0%, transparent 50%),
-            radial-gradient(circle at 40% 40%, rgba(168, 85, 247, 0.3) 0%, transparent 50%),
-            linear-gradient(135deg, #fce7f3 0%, #f3e8ff 25%, #fdf2f8 50%, #f0f9ff 75%, #fce7f3 100%)
+            radial-gradient(circle at 20% 80%, rgba(236, 72, 153, 0.3) 0%, transparent 50%),
+            radial-gradient(circle at 80% 20%, rgba(219, 39, 119, 0.3) 0%, transparent 50%),
+            radial-gradient(circle at 40% 40%, rgba(168, 85, 247, 0.25) 0%, transparent 50%),
+            linear-gradient(135deg, #fef7ff 0%, #faf5ff 25%, #fdf2f8 50%, #f0f9ff 75%, #fef7ff 100%)
           `
         }}
       />
 
       {/* Floating Gaming Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 opacity-20 animate-float">
-          <Heart size={60} className="text-pink-400" />
+        <div className="absolute top-20 left-10 opacity-15 animate-float">
+          <Heart size={60} className="text-pink-500" />
         </div>
-        <div className="absolute top-32 right-20 opacity-20 animate-bounce">
-          <Gamepad2 size={50} className="text-purple-400" />
+        <div className="absolute top-32 right-20 opacity-15 animate-bounce">
+          <Gamepad2 size={50} className="text-purple-500" />
         </div>
-        <div className="absolute bottom-32 left-20 opacity-20 animate-pulse">
-          <Sparkles size={45} className="text-pink-500" />
+        <div className="absolute bottom-32 left-20 opacity-15 animate-pulse">
+          <Sparkles size={45} className="text-pink-600" />
         </div>
-        <div className="absolute bottom-20 right-32 opacity-20 animate-float">
-          <Music size={40} className="text-purple-500" />
+        <div className="absolute bottom-20 right-32 opacity-15 animate-float">
+          <Music size={40} className="text-purple-600" />
         </div>
       </div>
 
@@ -112,25 +112,25 @@ const ChiaaGaming = () => {
           {/* Header */}
           <div className="text-center mb-8">
             <div className="flex items-center justify-center space-x-3 mb-4">
-              <Heart className="h-8 w-8 text-pink-500 animate-pulse" />
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+              <Heart className="h-8 w-8 text-pink-600 animate-pulse" />
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-700 via-purple-700 to-pink-700 bg-clip-text text-transparent">
                 Support Chiaa Gaming
               </h1>
-              <Sparkles className="h-8 w-8 text-purple-500 animate-pulse" />
+              <Sparkles className="h-8 w-8 text-purple-600 animate-pulse" />
             </div>
-            <p className="text-pink-700 text-lg font-medium">
+            <p className="text-pink-800 text-lg font-semibold">
               Send love and support! 💕
             </p>
-            <p className="text-purple-600 text-sm mt-2">
+            <p className="text-purple-700 text-sm mt-2 font-medium">
               Your support helps create amazing gaming content
             </p>
           </div>
 
           {/* Donation Form */}
-          <div className="backdrop-blur-lg bg-white/80 p-8 rounded-2xl border border-pink-200 shadow-2xl shadow-pink-500/20">
+          <div className="backdrop-blur-lg bg-white/90 p-8 rounded-2xl border border-pink-300 shadow-2xl shadow-pink-500/25">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <label htmlFor="name" className="block text-sm font-semibold text-pink-800">
+                <label htmlFor="name" className="block text-sm font-semibold text-pink-900">
                   Your Gaming Name ✨
                 </label>
                 <Input
@@ -139,13 +139,13 @@ const ChiaaGaming = () => {
                   placeholder="Enter your gamer tag"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="border-pink-300 focus:border-pink-500 focus:ring-pink-500 bg-white/90"
+                  className="border-pink-400 focus:border-pink-600 focus:ring-pink-600 bg-white text-gray-900 placeholder:text-gray-500"
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="amount" className="block text-sm font-semibold text-pink-800">
+                <label htmlFor="amount" className="block text-sm font-semibold text-pink-900">
                   Love Amount (₹) 💖
                 </label>
                 <Input
@@ -156,15 +156,15 @@ const ChiaaGaming = () => {
                   placeholder="Enter amount"
                   value={formData.amount}
                   onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                  className="border-pink-300 focus:border-pink-500 focus:ring-pink-500 bg-white/90"
+                  className="border-pink-400 focus:border-pink-600 focus:ring-pink-600 bg-white text-gray-900 placeholder:text-gray-500"
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="message" className="block text-sm font-semibold text-pink-800">
+                <label htmlFor="message" className="block text-sm font-semibold text-pink-900">
                   Sweet Message 💌
-                  <span className="text-xs text-purple-600 ml-2">
+                  <span className="text-xs text-purple-700 ml-2 font-medium">
                     (Max {getMessageLimit()} characters)
                   </span>
                 </label>
@@ -178,24 +178,24 @@ const ChiaaGaming = () => {
                       setFormData({ ...formData, message });
                     }
                   }}
-                  className="border-pink-300 focus:border-pink-500 focus:ring-pink-500 bg-white/90 min-h-[100px] resize-none"
+                  className="border-pink-400 focus:border-pink-600 focus:ring-pink-600 bg-white text-gray-900 placeholder:text-gray-500 min-h-[100px] resize-none"
                   required
                 />
-                <div className="text-xs text-purple-600 text-right">
+                <div className="text-xs text-purple-700 text-right font-medium">
                   {formData.message.length}/{getMessageLimit()}
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2 p-3 bg-pink-50 rounded-lg border border-pink-200">
+              <div className="flex items-center space-x-2 p-3 bg-pink-100 rounded-lg border border-pink-300">
                 <Checkbox
                   id="includeSound"
                   checked={formData.includeSound}
                   onCheckedChange={(checked) => 
                     setFormData({ ...formData, includeSound: checked as boolean })
                   }
-                  className="data-[state=checked]:bg-pink-500 data-[state=checked]:border-pink-500"
+                  className="data-[state=checked]:bg-pink-600 data-[state=checked]:border-pink-600"
                 />
-                <label htmlFor="includeSound" className="text-sm text-pink-800 flex items-center gap-2">
+                <label htmlFor="includeSound" className="text-sm text-pink-900 flex items-center gap-2 font-medium">
                   <Music className="h-4 w-4" />
                   Play notification sound on stream
                 </label>
@@ -204,7 +204,7 @@ const ChiaaGaming = () => {
               <Button 
                 type="submit" 
                 disabled={isLoading}
-                className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold py-3 text-lg shadow-lg shadow-pink-500/30 transition-all duration-300 hover:scale-105"
+                className="w-full bg-gradient-to-r from-pink-600 to-purple-700 hover:from-pink-700 hover:to-purple-800 text-white font-bold py-3 text-lg shadow-lg shadow-pink-500/30 transition-all duration-300 hover:scale-105"
               >
                 {isLoading ? (
                   <div className="flex items-center justify-center space-x-2">
@@ -221,12 +221,12 @@ const ChiaaGaming = () => {
               </Button>
             </form>
 
-            <div className="mt-6 p-4 bg-gradient-to-r from-pink-100 to-purple-100 rounded-xl border border-pink-200">
-              <h3 className="font-semibold text-pink-800 mb-2 flex items-center gap-2">
+            <div className="mt-6 p-4 bg-gradient-to-r from-pink-200 to-purple-200 rounded-xl border border-pink-300">
+              <h3 className="font-semibold text-pink-900 mb-2 flex items-center gap-2">
                 <Sparkles className="h-4 w-4" />
                 Message Length Guide
               </h3>
-              <div className="space-y-1 text-xs text-purple-700">
+              <div className="space-y-1 text-xs text-purple-800 font-medium">
                 <p>• ₹1-49: Up to 50 characters</p>
                 <p>• ₹50-99: Up to 75 characters</p>
                 <p>• ₹100-499: Up to 100 characters</p>
@@ -236,7 +236,7 @@ const ChiaaGaming = () => {
           </div>
 
           <div className="text-center mt-6">
-            <p className="text-sm text-pink-600">
+            <p className="text-sm text-pink-700 font-medium">
               Payments powered by Cashfree • Secure & Fast
             </p>
           </div>

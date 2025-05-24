@@ -17,6 +17,7 @@ const ChiaaGamingObsView = () => {
   const [latestDonation, setLatestDonation] = useState<Donation | null>(null);
   const [showAlert, setShowAlert] = useState(false);
   const [recentDonations, setRecentDonations] = useState<Donation[]>([]);
+  const [obsStartTime] = useState(new Date().toISOString());
 
   useEffect(() => {
     fetchRecentDonations();
@@ -34,7 +35,10 @@ const ChiaaGamingObsView = () => {
         (payload) => {
           console.log('New donation received:', payload);
           const newDonation = payload.new as Donation;
-          if (newDonation.payment_status === 'completed' || newDonation.payment_status === 'success') {
+          
+          // Only show donations created after OBS view was loaded
+          if (newDonation.created_at > obsStartTime && 
+              (newDonation.payment_status === 'completed' || newDonation.payment_status === 'success')) {
             handleNewDonation(newDonation);
           }
         }
@@ -44,15 +48,16 @@ const ChiaaGamingObsView = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [obsStartTime]);
 
   const fetchRecentDonations = async () => {
     try {
-      console.log('Fetching recent donations...');
+      console.log('Fetching recent donations after:', obsStartTime);
       const { data, error } = await supabase
         .from("chiaa_gaming_donations")
         .select("*")
         .in("payment_status", ["completed", "success"])
+        .gte("created_at", obsStartTime)
         .order("created_at", { ascending: false })
         .limit(5);
 
@@ -78,10 +83,10 @@ const ChiaaGamingObsView = () => {
       playNotificationSound();
     }
 
-    // Hide alert after 8 seconds
+    // Hide alert after 15 seconds
     setTimeout(() => {
       setShowAlert(false);
-    }, 8000);
+    }, 15000);
 
     // Update recent donations
     fetchRecentDonations();
@@ -113,21 +118,21 @@ const ChiaaGamingObsView = () => {
 
   return (
     <div className="w-full h-screen bg-transparent relative overflow-hidden">
-      {/* Donation Alert */}
+      {/* Donation Alert with transparent background */}
       {showAlert && latestDonation && (
         <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
-          <div className="bg-gradient-to-r from-pink-500/95 to-purple-600/95 backdrop-blur-lg p-6 rounded-2xl border border-white/20 shadow-2xl max-w-md">
+          <div className="bg-gradient-to-r from-pink-500/70 to-purple-600/70 backdrop-blur-md p-6 rounded-2xl border border-white/30 shadow-2xl max-w-md">
             <div className="flex items-center space-x-3 mb-3">
               <Heart className="h-6 w-6 text-white animate-pulse" />
-              <h3 className="text-white font-bold text-lg">New Donation!</h3>
+              <h3 className="text-white font-bold text-lg drop-shadow-lg">New Donation!</h3>
               <Sparkles className="h-6 w-6 text-white animate-pulse" />
             </div>
             
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-white/90 font-medium">{latestDonation.name}</span>
+                <span className="text-white font-medium drop-shadow-md">{latestDonation.name}</span>
                 <div className="flex items-center space-x-2">
-                  <span className="bg-white/20 text-white px-3 py-1 rounded-full font-bold">
+                  <span className="bg-white/30 text-white px-3 py-1 rounded-full font-bold drop-shadow-md">
                     ₹{latestDonation.amount}
                   </span>
                   {latestDonation.include_sound && (
@@ -136,42 +141,42 @@ const ChiaaGamingObsView = () => {
                 </div>
               </div>
               
-              <div className="bg-white/10 backdrop-blur-sm p-3 rounded-lg">
-                <p className="text-white text-sm leading-relaxed">
+              <div className="bg-white/20 backdrop-blur-sm p-3 rounded-lg border border-white/20">
+                <p className="text-white text-sm leading-relaxed drop-shadow-md">
                   {latestDonation.message}
                 </p>
               </div>
             </div>
             
             <div className="mt-4 text-center">
-              <p className="text-white/80 text-xs">Thank you for your support! 💖</p>
+              <p className="text-white/90 text-xs drop-shadow-md">Thank you for your support! 💖</p>
             </div>
           </div>
         </div>
       )}
 
-      {/* Recent Donations Ticker */}
+      {/* Recent Donations Ticker with transparent background */}
       <div className="fixed bottom-4 left-4 right-4 z-40">
         {recentDonations.length > 0 && (
-          <div className="bg-gradient-to-r from-pink-500/80 to-purple-600/80 backdrop-blur-lg p-4 rounded-xl border border-white/20 shadow-lg">
+          <div className="bg-gradient-to-r from-pink-500/60 to-purple-600/60 backdrop-blur-md p-4 rounded-xl border border-white/30 shadow-lg">
             <div className="flex items-center space-x-3 mb-2">
               <Gamepad2 className="h-5 w-5 text-white" />
-              <h4 className="text-white font-semibold">Recent Support 💕</h4>
+              <h4 className="text-white font-semibold drop-shadow-md">Recent Support 💕</h4>
             </div>
             
             <div className="flex space-x-4 overflow-x-auto scrollbar-hide">
               {recentDonations.slice(0, 3).map((donation) => (
                 <div
                   key={donation.id}
-                  className="flex-shrink-0 bg-white/10 backdrop-blur-sm p-3 rounded-lg min-w-[200px]"
+                  className="flex-shrink-0 bg-white/20 backdrop-blur-sm p-3 rounded-lg min-w-[200px] border border-white/20"
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-white font-medium text-sm">{donation.name}</span>
-                    <span className="text-white text-xs bg-white/20 px-2 py-1 rounded">
+                    <span className="text-white font-medium text-sm drop-shadow-md">{donation.name}</span>
+                    <span className="text-white text-xs bg-white/30 px-2 py-1 rounded drop-shadow-md">
                       ₹{donation.amount}
                     </span>
                   </div>
-                  <p className="text-white/90 text-xs truncate">
+                  <p className="text-white/95 text-xs truncate drop-shadow-md">
                     {donation.message}
                   </p>
                 </div>
@@ -187,7 +192,7 @@ const ChiaaGamingObsView = () => {
           {Array.from({ length: 6 }).map((_, i) => (
             <Heart
               key={i}
-              className={`absolute text-pink-400 animate-float-heart opacity-80`}
+              className={`absolute text-pink-400 animate-float-heart opacity-80 drop-shadow-lg`}
               size={20 + Math.random() * 20}
               style={{
                 left: `${10 + Math.random() * 80}%`,
