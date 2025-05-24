@@ -68,9 +68,10 @@ const ChiaaGamingDashboard = () => {
           calculateStats();
           
           if (payload.eventType === 'INSERT') {
+            const newDonation = payload.new as Donation;
             toast({
               title: "New Donation! 💖",
-              description: `₹${payload.new.amount} from ${payload.new.name}`,
+              description: `₹${newDonation.amount} from ${newDonation.name}`,
             });
           }
         }
@@ -84,14 +85,20 @@ const ChiaaGamingDashboard = () => {
 
   const fetchDonations = async () => {
     try {
+      console.log('Fetching donations for dashboard...');
       const { data, error } = await supabase
         .from("chiaa_gaming_donations")
         .select("*")
-        .eq("payment_status", "completed")
+        .in("payment_status", ["completed", "success"])
         .order("created_at", { ascending: false })
         .limit(10);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching donations:", error);
+        throw error;
+      }
+      
+      console.log('Dashboard donations fetched:', data);
       setDonations(data || []);
     } catch (error) {
       console.error("Error fetching donations:", error);
@@ -105,12 +112,18 @@ const ChiaaGamingDashboard = () => {
 
   const calculateStats = async () => {
     try {
+      console.log('Calculating stats...');
       const { data, error } = await supabase
         .from("chiaa_gaming_donations")
         .select("amount, created_at")
-        .eq("payment_status", "completed");
+        .in("payment_status", ["completed", "success"]);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error calculating stats:", error);
+        throw error;
+      }
+
+      console.log('Stats data fetched:', data);
 
       const today = new Date().toDateString();
       let totalAmount = 0;
@@ -118,21 +131,25 @@ const ChiaaGamingDashboard = () => {
       let todayCount = 0;
 
       data?.forEach((donation) => {
-        totalAmount += Number(donation.amount);
+        const amount = Number(donation.amount);
+        totalAmount += amount;
         
         const donationDate = new Date(donation.created_at).toDateString();
         if (donationDate === today) {
-          todayAmount += Number(donation.amount);
+          todayAmount += amount;
           todayCount++;
         }
       });
 
-      setStats({
+      const newStats = {
         totalAmount,
         totalDonations: data?.length || 0,
         todayAmount,
         todayDonations: todayCount,
-      });
+      };
+
+      console.log('Calculated stats:', newStats);
+      setStats(newStats);
     } catch (error) {
       console.error("Error calculating stats:", error);
     } finally {
@@ -151,7 +168,7 @@ const ChiaaGamingDashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 via-purple-50 to-pink-50">
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-pink-500 border-t-transparent"></div>
       </div>
     );

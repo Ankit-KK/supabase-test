@@ -48,9 +48,10 @@ const ChiaaGamingDonationMessages = () => {
           fetchDonations();
           
           if (payload.eventType === 'INSERT') {
+            const newDonation = payload.new as Donation;
             toast({
               title: "New Donation Message! 💖",
-              description: `From ${payload.new.name}: ₹${payload.new.amount}`,
+              description: `From ${newDonation.name}: ₹${newDonation.amount}`,
             });
           }
         }
@@ -64,13 +65,19 @@ const ChiaaGamingDonationMessages = () => {
 
   const fetchDonations = async () => {
     try {
+      console.log('Fetching all donations for messages...');
       const { data, error } = await supabase
         .from("chiaa_gaming_donations")
         .select("*")
-        .eq("payment_status", "completed")
+        .in("payment_status", ["completed", "success"])
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching donations:", error);
+        throw error;
+      }
+      
+      console.log('Messages donations fetched:', data);
       setDonations(data || []);
     } catch (error) {
       console.error("Error fetching donations:", error);

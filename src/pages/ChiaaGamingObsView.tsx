@@ -32,8 +32,9 @@ const ChiaaGamingObsView = () => {
           table: 'chiaa_gaming_donations'
         },
         (payload) => {
+          console.log('New donation received:', payload);
           const newDonation = payload.new as Donation;
-          if (newDonation.payment_status === 'completed') {
+          if (newDonation.payment_status === 'completed' || newDonation.payment_status === 'success') {
             handleNewDonation(newDonation);
           }
         }
@@ -47,14 +48,20 @@ const ChiaaGamingObsView = () => {
 
   const fetchRecentDonations = async () => {
     try {
+      console.log('Fetching recent donations...');
       const { data, error } = await supabase
         .from("chiaa_gaming_donations")
         .select("*")
-        .eq("payment_status", "completed")
+        .in("payment_status", ["completed", "success"])
         .order("created_at", { ascending: false })
         .limit(5);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching donations:", error);
+        throw error;
+      }
+      
+      console.log('Recent donations fetched:', data);
       setRecentDonations(data || []);
     } catch (error) {
       console.error("Error fetching recent donations:", error);
@@ -62,6 +69,7 @@ const ChiaaGamingObsView = () => {
   };
 
   const handleNewDonation = (donation: Donation) => {
+    console.log('Handling new donation:', donation);
     setLatestDonation(donation);
     setShowAlert(true);
     
@@ -80,23 +88,27 @@ const ChiaaGamingObsView = () => {
   };
 
   const playNotificationSound = () => {
-    // Create a simple notification sound using Web Audio API
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-    
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-    
-    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-    oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
-    oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2);
-    
-    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-    
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.5);
+    try {
+      // Create a simple notification sound using Web Audio API
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+      oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2);
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.5);
+    } catch (error) {
+      console.error('Error playing sound:', error);
+    }
   };
 
   return (
