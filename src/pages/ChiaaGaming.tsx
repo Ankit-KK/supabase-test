@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,10 +28,10 @@ const ChiaaGaming = () => {
     }
 
     const amount = parseFloat(formData.amount);
-    if (amount < 50) {
+    if (amount < 1) {
       toast({
         title: "Invalid Amount",
-        description: "Minimum donation amount is ₹50",
+        description: "Minimum donation amount is ₹1",
         variant: "destructive",
       });
       return;
@@ -146,9 +145,9 @@ const ChiaaGaming = () => {
                 <Input
                   id="amount"
                   type="number"
-                  min="50"
+                  min="1"
                   step="1"
-                  placeholder="Enter amount (minimum ₹50)"
+                  placeholder="Enter amount (minimum ₹1)"
                   value={formData.amount}
                   onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                   className="border-pink-400 focus:border-pink-600 focus:ring-pink-600 bg-white text-gray-900 placeholder:text-gray-500"
@@ -207,6 +206,7 @@ const ChiaaGaming = () => {
                 Message Length Guide
               </h3>
               <div className="space-y-1 text-xs text-purple-800 font-medium">
+                <p>• ₹1-49: Up to 50 characters</p>
                 <p>• ₹50-99: Up to 75 characters</p>
                 <p>• ₹100-499: Up to 100 characters</p>
                 <p>• ₹500+: Up to 200 characters</p>
