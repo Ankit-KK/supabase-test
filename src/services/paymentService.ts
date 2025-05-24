@@ -7,7 +7,7 @@ type DonationRecord = {
   message: string;
   order_id: string;
   payment_status: string;
-  donationType: "ankit" | "harish" | "mackle" | "rakazone";
+  donationType: "ankit" | "harish" | "mackle" | "rakazone" | "chiaa_gaming";
   include_sound?: boolean;
 };
 
@@ -67,6 +67,8 @@ export const createDonationRecord = async (donation: DonationRecord) => {
       tableName = "mackle_donations";
     } else if (donation.donationType === "rakazone") {
       tableName = "rakazone_donations";
+    } else if (donation.donationType === "chiaa_gaming") {
+      tableName = "chiaa_gaming_donations";
     } else {
       tableName = "ankit_donations";
     }
@@ -79,8 +81,8 @@ export const createDonationRecord = async (donation: DonationRecord) => {
       payment_status: donation.payment_status
     };
     
-    // Only add include_sound for mackle/rakazone donations
-    if ((donation.donationType === "mackle" || donation.donationType === "rakazone") && donation.include_sound !== undefined) {
+    // Only add include_sound for mackle/rakazone/chiaa_gaming donations
+    if ((donation.donationType === "mackle" || donation.donationType === "rakazone" || donation.donationType === "chiaa_gaming") && donation.include_sound !== undefined) {
       recordData.include_sound = donation.include_sound;
     }
     

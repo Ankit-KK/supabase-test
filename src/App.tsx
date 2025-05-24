@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -38,6 +37,12 @@ import RakazoneDonationMessages from "./pages/RakazoneDonationMessages";
 import RakazoneDonationExport from "./pages/RakazoneDonationExport";
 import RakazoneObsView from "./pages/RakazoneObsView";
 import ReckoningEsports from "./pages/ReckoningEsports";
+import ChiaaGaming from "./pages/ChiaaGaming";
+import ChiaaGamingLogin from "./pages/ChiaaGamingLogin";
+import ChiaaGamingDashboard from "./pages/ChiaaGamingDashboard";
+import ChiaaGamingDonationMessages from "./pages/ChiaaGamingDonationMessages";
+import ChiaaGamingObsView from "./pages/ChiaaGamingObsView";
+import ChiaaGamingDonationExport from "./pages/ChiaaGamingDonationExport";
 import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
@@ -88,6 +93,13 @@ const App = () => {
               <Route path="/rakazone/export" element={<RakazoneDonationExport />} />
               <Route path="/rakazone/obs/:id" element={<RakazoneObsView />} />
               <Route path="/reckoningesports" element={<ReckoningEsports />} />
+              {/* Chiaa Gaming Routes */}
+              <Route path="/chiaa-gaming" element={<ChiaaGaming />} />
+              <Route path="/chiaa-gaming/login" element={<ChiaaGamingLogin />} />
+              <Route path="/chiaa-gaming/dashboard" element={<ChiaaGamingDashboard />} />
+              <Route path="/chiaa-gaming/messages" element={<ChiaaGamingDonationMessages />} />
+              <Route path="/chiaa-gaming/obs/:id" element={<ChiaaGamingObsView />} />
+              <Route path="/chiaa-gaming/export" element={<ChiaaGamingDonationExport />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

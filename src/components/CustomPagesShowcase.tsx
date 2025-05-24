@@ -105,11 +105,17 @@ const CustomPagesShowcase = () => {
               </div>
             </div>
 
-            <div className="flex justify-center mt-4">
+            <div className="flex justify-center mt-4 space-x-2">
               <Button asChild variant="outline" size="sm">
                 <Link to="/ankit" target="_blank" rel="noopener noreferrer">
                   <Eye className="h-4 w-4 mr-2" />
-                  View Full Page
+                  View Ankit
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/chiaa-gaming" target="_blank" rel="noopener noreferrer">
+                  <Eye className="h-4 w-4 mr-2" />
+                  View Chiaa Gaming
                 </Link>
               </Button>
             </div>
