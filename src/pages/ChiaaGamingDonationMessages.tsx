@@ -172,7 +172,7 @@ const ChiaaGamingDonationMessages = () => {
               <div>
                 <strong>Recommended Settings:</strong>
                 <ul className="mt-2 space-y-1">
-                  <li>• Right click source > Transform >Fit to screen </li>
+                  <li>• Right click source {'>'} Transform {'>'} Fit to screen</li>
                   <li>• FPS: 30</li>
                 </ul>
               </div>
