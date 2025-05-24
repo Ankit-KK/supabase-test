@@ -162,7 +162,7 @@ const CustomPagesShowcase = () => {
             <div className="bg-secondary/50 p-6 rounded-xl border border-white/10">
               <div className="text-center space-y-4">
                 <div>
-                  <div className="text-3xl font-bold text-white">₹300</div>
+                  <div className="text-3xl font-bold text-white">₹399</div>
                   <div className="text-muted-foreground">One-time setup fee</div>
                 </div>
                 <div className="space-y-2">
