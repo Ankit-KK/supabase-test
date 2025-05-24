@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Heart, Sparkles, Gamepad2, Music } from "lucide-react";
+import { Heart, Sparkles, Music } from "lucide-react";
 
 interface Donation {
   id: string;
@@ -16,12 +16,9 @@ interface Donation {
 const ChiaaGamingObsView = () => {
   const [latestDonation, setLatestDonation] = useState<Donation | null>(null);
   const [showAlert, setShowAlert] = useState(false);
-  const [recentDonations, setRecentDonations] = useState<Donation[]>([]);
   const [obsStartTime] = useState(new Date().toISOString());
 
   useEffect(() => {
-    fetchRecentDonations();
-
     // Set up real-time subscription for new donations
     const channel = supabase
       .channel('chiaa_gaming_obs_updates')
@@ -50,29 +47,6 @@ const ChiaaGamingObsView = () => {
     };
   }, [obsStartTime]);
 
-  const fetchRecentDonations = async () => {
-    try {
-      console.log('Fetching recent donations after:', obsStartTime);
-      const { data, error } = await supabase
-        .from("chiaa_gaming_donations")
-        .select("*")
-        .in("payment_status", ["completed", "success"])
-        .gte("created_at", obsStartTime)
-        .order("created_at", { ascending: false })
-        .limit(5);
-
-      if (error) {
-        console.error("Error fetching donations:", error);
-        throw error;
-      }
-      
-      console.log('Recent donations fetched:', data);
-      setRecentDonations(data || []);
-    } catch (error) {
-      console.error("Error fetching recent donations:", error);
-    }
-  };
-
   const handleNewDonation = (donation: Donation) => {
     console.log('Handling new donation:', donation);
     setLatestDonation(donation);
@@ -87,9 +61,6 @@ const ChiaaGamingObsView = () => {
     setTimeout(() => {
       setShowAlert(false);
     }, 15000);
-
-    // Update recent donations
-    fetchRecentDonations();
   };
 
   const playNotificationSound = () => {
@@ -155,37 +126,6 @@ const ChiaaGamingObsView = () => {
         </div>
       )}
 
-      {/* Recent Donations Ticker with transparent background */}
-      <div className="fixed bottom-4 left-4 right-4 z-40">
-        {recentDonations.length > 0 && (
-          <div className="bg-gradient-to-r from-pink-500/60 to-purple-600/60 backdrop-blur-md p-4 rounded-xl border border-white/30 shadow-lg">
-            <div className="flex items-center space-x-3 mb-2">
-              <Gamepad2 className="h-5 w-5 text-white" />
-              <h4 className="text-white font-semibold drop-shadow-md">Recent Support 💕</h4>
-            </div>
-            
-            <div className="flex space-x-4 overflow-x-auto scrollbar-hide">
-              {recentDonations.slice(0, 3).map((donation) => (
-                <div
-                  key={donation.id}
-                  className="flex-shrink-0 bg-white/20 backdrop-blur-sm p-3 rounded-lg min-w-[200px] border border-white/20"
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-white font-medium text-sm drop-shadow-md">{donation.name}</span>
-                    <span className="text-white text-xs bg-white/30 px-2 py-1 rounded drop-shadow-md">
-                      ₹{donation.amount}
-                    </span>
-                  </div>
-                  <p className="text-white/95 text-xs truncate drop-shadow-md">
-                    {donation.message}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
       {/* Floating Hearts Animation */}
       {showAlert && (
         <div className="fixed inset-0 pointer-events-none z-30">
@@ -239,15 +179,6 @@ const ChiaaGamingObsView = () => {
         
         .animate-float-heart {
           animation: float-heart linear forwards;
-        }
-        
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
         }
       `}</style>
     </div>
