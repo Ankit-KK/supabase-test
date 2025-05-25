@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { 
   DollarSign, 
   Users, 
@@ -31,6 +32,9 @@ interface DashboardData {
 }
 
 const AdminDashboard = () => {
+  // Protect admin route
+  const { isAdminAuthenticated } = useAdminAuth();
+  
   const [dashboardData, setDashboardData] = useState<DashboardData>({
     totalDonationsThisWeek: 0,
     totalAmountToBePaid: 0,
@@ -41,8 +45,10 @@ const AdminDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    if (isAdminAuthenticated) {
+      fetchDashboardData();
+    }
+  }, [isAdminAuthenticated]);
 
   const fetchDashboardData = async () => {
     try {
@@ -139,6 +145,11 @@ const AdminDashboard = () => {
     { id: "history", label: "History", icon: FileText },
     { id: "audit", label: "Audit Log", icon: Clock }
   ];
+
+  // Don't render anything if not authenticated (useAdminAuth will redirect)
+  if (!isAdminAuthenticated) {
+    return null;
+  }
 
   if (isLoading) {
     return (
