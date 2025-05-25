@@ -23,6 +23,11 @@ interface StreamerStats {
   weeklyData: WeeklyData[];
 }
 
+interface DonationRecord {
+  amount: number;
+  created_at: string;
+}
+
 const SingleStreamerAnalytics = () => {
   const [selectedStreamer, setSelectedStreamer] = useState<string>("");
   const [streamerStats, setStreamerStats] = useState<StreamerStats>({
@@ -66,16 +71,16 @@ const SingleStreamerAnalytics = () => {
     setIsLoading(true);
     
     try {
-      // Fetch all donations for total stats
+      // Fetch all donations for total stats with proper type casting
       const { data: allDonations, error: allError } = await supabase
-        .from(streamerTable as any)
+        .from(streamerTable as "ankit_donations" | "harish_donations" | "mackle_donations" | "rakazone_donations" | "chiaa_gaming_donations")
         .select('amount, created_at')
         .eq('payment_status', 'completed');
 
       if (allError) throw allError;
 
-      const totalDonations = allDonations?.reduce((sum, donation) => sum + Number(donation.amount), 0) || 0;
-      const totalDonationCount = allDonations?.length || 0;
+      const totalDonations = (allDonations as DonationRecord[])?.reduce((sum, donation) => sum + Number(donation.amount), 0) || 0;
+      const totalDonationCount = (allDonations as DonationRecord[])?.length || 0;
 
       // Fetch weekly data
       const weekRanges = getWeekRanges();
@@ -83,7 +88,7 @@ const SingleStreamerAnalytics = () => {
 
       for (const { weekStart, weekEnd } of weekRanges) {
         const { data: weeklyDonations, error: weeklyError } = await supabase
-          .from(streamerTable as any)
+          .from(streamerTable as "ankit_donations" | "harish_donations" | "mackle_donations" | "rakazone_donations" | "chiaa_gaming_donations")
           .select('amount, created_at')
           .eq('payment_status', 'completed')
           .gte('created_at', weekStart.toISOString())
@@ -91,8 +96,8 @@ const SingleStreamerAnalytics = () => {
 
         if (weeklyError) throw weeklyError;
 
-        const weeklyTotal = weeklyDonations?.reduce((sum, donation) => sum + Number(donation.amount), 0) || 0;
-        const weeklyCount = weeklyDonations?.length || 0;
+        const weeklyTotal = (weeklyDonations as DonationRecord[])?.reduce((sum, donation) => sum + Number(donation.amount), 0) || 0;
+        const weeklyCount = (weeklyDonations as DonationRecord[])?.length || 0;
         const weeklyPayout = weeklyTotal * 0.7; // 70% payout
 
         weeklyData.push({
