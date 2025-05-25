@@ -13,7 +13,8 @@ import {
   Download,
   FileText,
   TrendingUp,
-  Calendar
+  Calendar,
+  BarChart3
 } from "lucide-react";
 import DashboardMetrics from "@/components/admin/DashboardMetrics";
 import StreamerDonationsTable from "@/components/admin/StreamerDonationsTable";
@@ -23,6 +24,7 @@ import PayoutMethodManagement from "@/components/admin/PayoutMethodManagement";
 import AlertsPanel from "@/components/admin/AlertsPanel";
 import PayoutHistory from "@/components/admin/PayoutHistory";
 import AuditLog from "@/components/admin/AuditLog";
+import SingleStreamerAnalytics from "@/components/admin/SingleStreamerAnalytics";
 
 interface DashboardData {
   totalDonationsThisWeek: number;
@@ -201,6 +203,7 @@ const AdminDashboard = () => {
     { id: "overview", label: "Overview", icon: TrendingUp },
     { id: "donations", label: "Donations", icon: DollarSign },
     { id: "payouts", label: "Weekly Payouts", icon: Calendar },
+    { id: "analytics", label: "Streamer Analytics", icon: BarChart3 },
     { id: "methods", label: "Payout Methods", icon: Users },
     { id: "history", label: "History", icon: FileText },
     { id: "audit", label: "Audit Log", icon: Clock }
@@ -278,6 +281,7 @@ const AdminDashboard = () => {
 
           {activeTab === "donations" && <StreamerDonationsTable />}
           {activeTab === "payouts" && <WeeklyPayoutSummary />}
+          {activeTab === "analytics" && <SingleStreamerAnalytics />}
           {activeTab === "methods" && <PayoutMethodManagement />}
           {activeTab === "history" && <PayoutHistory />}
           {activeTab === "audit" && <AuditLog />}
