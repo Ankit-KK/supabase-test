@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,7 +33,6 @@ interface DashboardData {
 }
 
 const AdminDashboard = () => {
-  // Protect admin route
   const { isAdminAuthenticated } = useAdminAuth();
   
   const [dashboardData, setDashboardData] = useState<DashboardData>({
@@ -52,7 +52,6 @@ const AdminDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      // Get current week start (Saturday) and end (Friday)
       const now = new Date();
       const dayOfWeek = now.getDay();
       const daysUntilSaturday = dayOfWeek === 6 ? 0 : dayOfWeek + 1;
@@ -66,64 +65,43 @@ const AdminDashboard = () => {
 
       let totalWeeklyDonations = 0;
       let totalAmount = 0;
+      let allTimeAmount = 0;
 
-      // Fetch from ankit_donations
-      const { data: ankitData, error: ankitError } = await supabase
-        .from('ankit_donations')
-        .select('amount, created_at')
-        .eq('payment_status', 'completed')
-        .gte('created_at', weekStart.toISOString())
-        .lte('created_at', weekEnd.toISOString());
+      const tables = ['ankit_donations', 'harish_donations', 'mackle_donations', 'rakazone_donations', 'chiaa_gaming_donations'];
 
-      if (!ankitError && ankitData) {
-        totalWeeklyDonations += ankitData.length;
-        totalAmount += ankitData.reduce((sum, donation) => sum + Number(donation.amount), 0);
+      for (const tableName of tables) {
+        // Weekly data
+        const { data: weeklyData, error: weeklyError } = await supabase
+          .from(tableName)
+          .select('amount, created_at')
+          .eq('payment_status', 'completed')
+          .gte('created_at', weekStart.toISOString())
+          .lte('created_at', weekEnd.toISOString());
+
+        if (!weeklyError && weeklyData) {
+          totalWeeklyDonations += weeklyData.length;
+          totalAmount += weeklyData.reduce((sum, donation) => sum + Number(donation.amount), 0);
+        }
+
+        // All time completed donations for payout calculation
+        const { data: allTimeData, error: allTimeError } = await supabase
+          .from(tableName)
+          .select('amount')
+          .eq('payment_status', 'completed');
+
+        if (!allTimeError && allTimeData) {
+          allTimeAmount += allTimeData.reduce((sum, donation) => sum + Number(donation.amount), 0);
+        }
       }
 
-      // Fetch from harish_donations
-      const { data: harishData, error: harishError } = await supabase
-        .from('harish_donations')
-        .select('amount, created_at')
-        .eq('payment_status', 'completed')
-        .gte('created_at', weekStart.toISOString())
-        .lte('created_at', weekEnd.toISOString());
-
-      if (!harishError && harishData) {
-        totalWeeklyDonations += harishData.length;
-        totalAmount += harishData.reduce((sum, donation) => sum + Number(donation.amount), 0);
-      }
-
-      // Fetch from mackle_donations
-      const { data: mackleData, error: mackleError } = await supabase
-        .from('mackle_donations')
-        .select('amount, created_at')
-        .eq('payment_status', 'completed')
-        .gte('created_at', weekStart.toISOString())
-        .lte('created_at', weekEnd.toISOString());
-
-      if (!mackleError && mackleData) {
-        totalWeeklyDonations += mackleData.length;
-        totalAmount += mackleData.reduce((sum, donation) => sum + Number(donation.amount), 0);
-      }
-
-      // Fetch from rakazone_donations
-      const { data: rakazoneData, error: rakazoneError } = await supabase
-        .from('rakazone_donations')
-        .select('amount, created_at')
-        .eq('payment_status', 'completed')
-        .gte('created_at', weekStart.toISOString())
-        .lte('created_at', weekEnd.toISOString());
-
-      if (!rakazoneError && rakazoneData) {
-        totalWeeklyDonations += rakazoneData.length;
-        totalAmount += rakazoneData.reduce((sum, donation) => sum + Number(donation.amount), 0);
-      }
+      // Calculate pending payouts (70% of total completed donations)
+      const totalToBePaid = allTimeAmount * 0.7;
 
       setDashboardData({
         totalDonationsThisWeek: totalWeeklyDonations,
-        totalAmountToBePaid: totalAmount * 0.7, // Assuming 70% payout rate
-        pendingPayouts: 12, // This would be calculated based on actual payout records
-        lastPayoutProcessed: "2024-01-15"
+        totalAmountToBePaid: totalToBePaid,
+        pendingPayouts: tables.length, // Number of streamers with potential payouts
+        lastPayoutProcessed: "2024-01-15" // This would come from a payouts table in real implementation
       });
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
@@ -146,7 +124,6 @@ const AdminDashboard = () => {
     { id: "audit", label: "Audit Log", icon: Clock }
   ];
 
-  // Don't render anything if not authenticated (useAdminAuth will redirect)
   if (!isAdminAuthenticated) {
     return null;
   }

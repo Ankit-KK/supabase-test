@@ -40,72 +40,34 @@ const StreamerDonationsTable = () => {
     try {
       let allDonations: Donation[] = [];
 
-      // Fetch from ankit_donations
-      const { data: ankitData, error: ankitError } = await supabase
-        .from('ankit_donations')
-        .select('*')
-        .eq('payment_status', 'completed')
-        .order('created_at', { ascending: false });
+      const streamerTables = [
+        { table: 'ankit_donations', name: 'Ankit' },
+        { table: 'harish_donations', name: 'Harish' },
+        { table: 'mackle_donations', name: 'Mackle' },
+        { table: 'rakazone_donations', name: 'Rakazone' },
+        { table: 'chiaa_gaming_donations', name: 'Chiaa Gaming' }
+      ];
 
-      if (!ankitError && ankitData) {
-        const ankitDonations = ankitData.map(donation => ({
-          ...donation,
-          amount: Number(donation.amount),
-          streamer_name: 'Ankit',
-          payout_status: Math.random() > 0.7 ? "processed" : "pending" as "pending" | "processed"
-        }));
-        allDonations = [...allDonations, ...ankitDonations];
-      }
+      for (const streamer of streamerTables) {
+        const { data, error } = await supabase
+          .from(streamer.table)
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(50); // Limit to recent donations for performance
 
-      // Fetch from harish_donations
-      const { data: harishData, error: harishError } = await supabase
-        .from('harish_donations')
-        .select('*')
-        .eq('payment_status', 'completed')
-        .order('created_at', { ascending: false });
-
-      if (!harishError && harishData) {
-        const harishDonations = harishData.map(donation => ({
-          ...donation,
-          amount: Number(donation.amount),
-          streamer_name: 'Harish',
-          payout_status: Math.random() > 0.7 ? "processed" : "pending" as "pending" | "processed"
-        }));
-        allDonations = [...allDonations, ...harishDonations];
-      }
-
-      // Fetch from mackle_donations
-      const { data: mackleData, error: mackleError } = await supabase
-        .from('mackle_donations')
-        .select('*')
-        .eq('payment_status', 'completed')
-        .order('created_at', { ascending: false });
-
-      if (!mackleError && mackleData) {
-        const mackleDonations = mackleData.map(donation => ({
-          ...donation,
-          amount: Number(donation.amount),
-          streamer_name: 'Mackle',
-          payout_status: Math.random() > 0.7 ? "processed" : "pending" as "pending" | "processed"
-        }));
-        allDonations = [...allDonations, ...mackleDonations];
-      }
-
-      // Fetch from rakazone_donations
-      const { data: rakazoneData, error: rakazoneError } = await supabase
-        .from('rakazone_donations')
-        .select('*')
-        .eq('payment_status', 'completed')
-        .order('created_at', { ascending: false });
-
-      if (!rakazoneError && rakazoneData) {
-        const rakazoneDonations = rakazoneData.map(donation => ({
-          ...donation,
-          amount: Number(donation.amount),
-          streamer_name: 'Rakazone',
-          payout_status: Math.random() > 0.7 ? "processed" : "pending" as "pending" | "processed"
-        }));
-        allDonations = [...allDonations, ...rakazoneDonations];
+        if (!error && data) {
+          const streamerDonations = data.map(donation => ({
+            ...donation,
+            amount: Number(donation.amount),
+            streamer_name: streamer.name,
+            payout_status: donation.payment_status === 'completed' ? 
+              (Math.random() > 0.3 ? "pending" : "processed") as "pending" | "processed" : 
+              "pending" as "pending" | "processed"
+          }));
+          allDonations = [...allDonations, ...streamerDonations];
+        } else if (error) {
+          console.error(`Error fetching ${streamer.table}:`, error);
+        }
       }
 
       // Sort by date descending
@@ -149,8 +111,10 @@ const StreamerDonationsTable = () => {
         return <Badge className="bg-green-100 text-green-800">Success</Badge>;
       case "failed":
         return <Badge className="bg-red-100 text-red-800">Failed</Badge>;
-      default:
+      case "pending":
         return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+      default:
+        return <Badge className="bg-gray-100 text-gray-800">{status}</Badge>;
     }
   };
 
@@ -188,7 +152,7 @@ const StreamerDonationsTable = () => {
           </Button>
         </CardTitle>
         <CardDescription>
-          All donations across streamers with payout status
+          Recent donations across all streamers with payout status
         </CardDescription>
       </CardHeader>
       <CardContent>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ interface WeeklyPayout {
   last_payout_date: string;
   status: "pending" | "processed";
   selected: boolean;
+  donation_count: number;
 }
 
 const WeeklyPayoutSummary = () => {
@@ -33,7 +35,6 @@ const WeeklyPayoutSummary = () => {
 
   const fetchWeeklyPayouts = async () => {
     try {
-      // Get current week (Saturday to Friday)
       const now = new Date();
       const dayOfWeek = now.getDay();
       const daysUntilSaturday = dayOfWeek === 6 ? 0 : dayOfWeek + 1;
@@ -47,96 +48,41 @@ const WeeklyPayoutSummary = () => {
 
       const weeklyPayouts: WeeklyPayout[] = [];
 
-      // Fetch Ankit donations
-      const { data: ankitData, error: ankitError } = await supabase
-        .from('ankit_donations')
-        .select('amount')
-        .eq('payment_status', 'completed')
-        .gte('created_at', weekStart.toISOString())
-        .lte('created_at', weekEnd.toISOString());
+      const streamers = [
+        { table: 'ankit_donations', name: 'Ankit', method: 'UPI: ankit@paytm' },
+        { table: 'harish_donations', name: 'Harish', method: 'Bank Transfer' },
+        { table: 'mackle_donations', name: 'Mackle', method: 'UPI: mackle@gpay' },
+        { table: 'rakazone_donations', name: 'Rakazone', method: 'UPI: rakazone@phonepe' },
+        { table: 'chiaa_gaming_donations', name: 'Chiaa Gaming', method: 'Bank Transfer' }
+      ];
 
-      if (!ankitError && ankitData) {
-        const totalAmount = ankitData.reduce((sum, donation) => sum + Number(donation.amount), 0);
-        const netPayout = totalAmount * 0.7; // 70% payout rate
+      for (const streamer of streamers) {
+        const { data, error } = await supabase
+          .from(streamer.table)
+          .select('amount, created_at')
+          .eq('payment_status', 'completed')
+          .gte('created_at', weekStart.toISOString())
+          .lte('created_at', weekEnd.toISOString());
 
-        weeklyPayouts.push({
-          streamer_name: 'Ankit',
-          total_donations: totalAmount,
-          net_payout: netPayout,
-          payout_method: 'UPI: ankit@paytm',
-          last_payout_date: "2024-01-08",
-          status: Math.random() > 0.5 ? "pending" : "processed",
-          selected: false
-        });
-      }
+        if (!error && data) {
+          const totalAmount = data.reduce((sum, donation) => sum + Number(donation.amount), 0);
+          const netPayout = totalAmount * 0.7; // 70% payout rate
 
-      // Fetch Harish donations
-      const { data: harishData, error: harishError } = await supabase
-        .from('harish_donations')
-        .select('amount')
-        .eq('payment_status', 'completed')
-        .gte('created_at', weekStart.toISOString())
-        .lte('created_at', weekEnd.toISOString());
-
-      if (!harishError && harishData) {
-        const totalAmount = harishData.reduce((sum, donation) => sum + Number(donation.amount), 0);
-        const netPayout = totalAmount * 0.7;
-
-        weeklyPayouts.push({
-          streamer_name: 'Harish',
-          total_donations: totalAmount,
-          net_payout: netPayout,
-          payout_method: 'Bank Transfer',
-          last_payout_date: "2024-01-08",
-          status: Math.random() > 0.5 ? "pending" : "processed",
-          selected: false
-        });
-      }
-
-      // Fetch Mackle donations
-      const { data: mackleData, error: mackleError } = await supabase
-        .from('mackle_donations')
-        .select('amount')
-        .eq('payment_status', 'completed')
-        .gte('created_at', weekStart.toISOString())
-        .lte('created_at', weekEnd.toISOString());
-
-      if (!mackleError && mackleData) {
-        const totalAmount = mackleData.reduce((sum, donation) => sum + Number(donation.amount), 0);
-        const netPayout = totalAmount * 0.7;
-
-        weeklyPayouts.push({
-          streamer_name: 'Mackle',
-          total_donations: totalAmount,
-          net_payout: netPayout,
-          payout_method: 'UPI: mackle@gpay',
-          last_payout_date: "2024-01-08",
-          status: Math.random() > 0.5 ? "pending" : "processed",
-          selected: false
-        });
-      }
-
-      // Fetch Rakazone donations
-      const { data: rakazoneData, error: rakazoneError } = await supabase
-        .from('rakazone_donations')
-        .select('amount')
-        .eq('payment_status', 'completed')
-        .gte('created_at', weekStart.toISOString())
-        .lte('created_at', weekEnd.toISOString());
-
-      if (!rakazoneError && rakazoneData) {
-        const totalAmount = rakazoneData.reduce((sum, donation) => sum + Number(donation.amount), 0);
-        const netPayout = totalAmount * 0.7;
-
-        weeklyPayouts.push({
-          streamer_name: 'Rakazone',
-          total_donations: totalAmount,
-          net_payout: netPayout,
-          payout_method: 'UPI: rakazone@phonepe',
-          last_payout_date: "2024-01-08",
-          status: Math.random() > 0.5 ? "pending" : "processed",
-          selected: false
-        });
+          if (totalAmount > 0) { // Only include streamers with donations this week
+            weeklyPayouts.push({
+              streamer_name: streamer.name,
+              total_donations: totalAmount,
+              net_payout: netPayout,
+              payout_method: streamer.method,
+              last_payout_date: "2024-01-08", // This would come from a payouts history table
+              status: Math.random() > 0.6 ? "pending" : "processed",
+              selected: false,
+              donation_count: data.length
+            });
+          }
+        } else if (error) {
+          console.error(`Error fetching ${streamer.table}:`, error);
+        }
       }
 
       setPayouts(weeklyPayouts);
@@ -174,9 +120,11 @@ const WeeklyPayoutSummary = () => {
       return;
     }
 
+    const totalAmount = selectedPayouts.reduce((sum, payout) => sum + payout.net_payout, 0);
+
     toast({
       title: "Processing Payouts",
-      description: `Processing ${selectedPayouts.length} payouts...`,
+      description: `Processing ${selectedPayouts.length} payouts totaling ₹${totalAmount.toLocaleString()}...`,
     });
 
     // Update status to processed
@@ -214,6 +162,9 @@ const WeeklyPayoutSummary = () => {
     );
   }
 
+  const totalWeeklyDonations = payouts.reduce((sum, payout) => sum + payout.total_donations, 0);
+  const totalWeeklyPayouts = payouts.reduce((sum, payout) => sum + payout.net_payout, 0);
+
   return (
     <Card>
       <CardHeader>
@@ -222,7 +173,7 @@ const WeeklyPayoutSummary = () => {
           <span>Weekly Payout Summary</span>
         </CardTitle>
         <CardDescription>
-          Donations grouped from Saturday to Friday - {selectedCount} selected
+          Donations from Saturday to Friday - {selectedCount} selected | Total: ₹{totalWeeklyDonations.toLocaleString()} | Payouts: ₹{totalWeeklyPayouts.toLocaleString()}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -255,7 +206,8 @@ const WeeklyPayoutSummary = () => {
                   />
                 </TableHead>
                 <TableHead>Streamer</TableHead>
-                <TableHead>Total Donations</TableHead>
+                <TableHead>Donations</TableHead>
+                <TableHead>Total Amount</TableHead>
                 <TableHead>Net Payout</TableHead>
                 <TableHead>Payout Method</TableHead>
                 <TableHead>Last Payout</TableHead>
@@ -272,6 +224,7 @@ const WeeklyPayoutSummary = () => {
                     />
                   </TableCell>
                   <TableCell className="font-medium">{payout.streamer_name}</TableCell>
+                  <TableCell>{payout.donation_count} donations</TableCell>
                   <TableCell>₹{payout.total_donations.toLocaleString()}</TableCell>
                   <TableCell className="font-semibold text-green-600">
                     ₹{payout.net_payout.toLocaleString()}
@@ -287,7 +240,7 @@ const WeeklyPayoutSummary = () => {
 
         {payouts.length === 0 && (
           <div className="text-center py-8 text-slate-500">
-            No payouts found for this week.
+            No donations found for this week.
           </div>
         )}
       </CardContent>
