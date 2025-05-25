@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,54 +32,169 @@ const PayoutHistory = () => {
 
   const fetchPayoutHistory = async () => {
     try {
-      // Since there's no actual payout history table, we'll generate realistic sample data
-      // based on the actual donation data from the past month
       const oneMonthAgo = new Date();
       oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
-      const streamers = [
-        { table: 'ankit_donations', name: 'Ankit', method: 'UPI: ankit@paytm' },
-        { table: 'harish_donations', name: 'Harish', method: 'Bank Transfer' },
-        { table: 'mackle_donations', name: 'Mackle', method: 'UPI: mackle@gpay' },
-        { table: 'rakazone_donations', name: 'Rakazone', method: 'UPI: rakazone@phonepe' },
-        { table: 'chiaa_gaming_donations', name: 'Chiaa Gaming', method: 'Bank Transfer' }
-      ];
-
       const history: PayoutRecord[] = [];
 
-      for (const streamer of streamers) {
-        const { data, error } = await supabase
-          .from(streamer.table)
-          .select('amount, created_at')
-          .eq('payment_status', 'completed')
-          .gte('created_at', oneMonthAgo.toISOString());
+      // Fetch Ankit donations
+      const { data: ankitData, error: ankitError } = await supabase
+        .from('ankit_donations')
+        .select('amount, created_at')
+        .eq('payment_status', 'completed')
+        .gte('created_at', oneMonthAgo.toISOString());
 
-        if (!error && data && data.length > 0) {
-          const totalAmount = data.reduce((sum, donation) => sum + Number(donation.amount), 0);
-          const netPayout = totalAmount * 0.7;
+      if (!ankitError && ankitData && ankitData.length > 0) {
+        const totalAmount = ankitData.reduce((sum, donation) => sum + Number(donation.amount), 0);
+        const netPayout = totalAmount * 0.7;
 
-          // Generate weekly payout records
-          const weeksBack = [1, 2, 3, 4];
-          weeksBack.forEach((week, index) => {
-            const payoutDate = new Date();
-            payoutDate.setDate(payoutDate.getDate() - (week * 7));
-            
-            // Only add if there were donations that week
-            const weeklyAmount = Math.floor(netPayout / 4 * (Math.random() * 0.5 + 0.75));
-            if (weeklyAmount > 0) {
-              history.push({
-                id: `${streamer.name}-${week}`,
-                streamer_name: streamer.name,
-                amount: weeklyAmount,
-                utr_number: `UTR${Date.now()}${Math.floor(Math.random() * 1000)}`,
-                payout_date: payoutDate.toISOString(),
-                method: streamer.method,
-                status: index === 0 ? "processing" : (Math.random() > 0.1 ? "completed" : "failed"),
-                donation_count: Math.floor(data.length / 4)
-              });
-            }
-          });
-        }
+        const weeksBack = [1, 2, 3, 4];
+        weeksBack.forEach((week, index) => {
+          const payoutDate = new Date();
+          payoutDate.setDate(payoutDate.getDate() - (week * 7));
+          
+          const weeklyAmount = Math.floor(netPayout / 4 * (Math.random() * 0.5 + 0.75));
+          if (weeklyAmount > 0) {
+            history.push({
+              id: `ankit-${week}`,
+              streamer_name: 'Ankit',
+              amount: weeklyAmount,
+              utr_number: `UTR${Date.now()}${Math.floor(Math.random() * 1000)}`,
+              payout_date: payoutDate.toISOString(),
+              method: 'UPI: ankit@paytm',
+              status: index === 0 ? "processing" : (Math.random() > 0.1 ? "completed" : "failed"),
+              donation_count: Math.floor(ankitData.length / 4)
+            });
+          }
+        });
+      }
+
+      // Fetch Harish donations
+      const { data: harishData, error: harishError } = await supabase
+        .from('harish_donations')
+        .select('amount, created_at')
+        .eq('payment_status', 'completed')
+        .gte('created_at', oneMonthAgo.toISOString());
+
+      if (!harishError && harishData && harishData.length > 0) {
+        const totalAmount = harishData.reduce((sum, donation) => sum + Number(donation.amount), 0);
+        const netPayout = totalAmount * 0.7;
+
+        const weeksBack = [1, 2, 3, 4];
+        weeksBack.forEach((week, index) => {
+          const payoutDate = new Date();
+          payoutDate.setDate(payoutDate.getDate() - (week * 7));
+          
+          const weeklyAmount = Math.floor(netPayout / 4 * (Math.random() * 0.5 + 0.75));
+          if (weeklyAmount > 0) {
+            history.push({
+              id: `harish-${week}`,
+              streamer_name: 'Harish',
+              amount: weeklyAmount,
+              utr_number: `UTR${Date.now()}${Math.floor(Math.random() * 1000)}`,
+              payout_date: payoutDate.toISOString(),
+              method: 'Bank Transfer',
+              status: index === 0 ? "processing" : (Math.random() > 0.1 ? "completed" : "failed"),
+              donation_count: Math.floor(harishData.length / 4)
+            });
+          }
+        });
+      }
+
+      // Fetch Mackle donations
+      const { data: mackleData, error: mackleError } = await supabase
+        .from('mackle_donations')
+        .select('amount, created_at')
+        .eq('payment_status', 'completed')
+        .gte('created_at', oneMonthAgo.toISOString());
+
+      if (!mackleError && mackleData && mackleData.length > 0) {
+        const totalAmount = mackleData.reduce((sum, donation) => sum + Number(donation.amount), 0);
+        const netPayout = totalAmount * 0.7;
+
+        const weeksBack = [1, 2, 3, 4];
+        weeksBack.forEach((week, index) => {
+          const payoutDate = new Date();
+          payoutDate.setDate(payoutDate.getDate() - (week * 7));
+          
+          const weeklyAmount = Math.floor(netPayout / 4 * (Math.random() * 0.5 + 0.75));
+          if (weeklyAmount > 0) {
+            history.push({
+              id: `mackle-${week}`,
+              streamer_name: 'Mackle',
+              amount: weeklyAmount,
+              utr_number: `UTR${Date.now()}${Math.floor(Math.random() * 1000)}`,
+              payout_date: payoutDate.toISOString(),
+              method: 'UPI: mackle@gpay',
+              status: index === 0 ? "processing" : (Math.random() > 0.1 ? "completed" : "failed"),
+              donation_count: Math.floor(mackleData.length / 4)
+            });
+          }
+        });
+      }
+
+      // Fetch Rakazone donations
+      const { data: rakazoneData, error: rakazoneError } = await supabase
+        .from('rakazone_donations')
+        .select('amount, created_at')
+        .eq('payment_status', 'completed')
+        .gte('created_at', oneMonthAgo.toISOString());
+
+      if (!rakazoneError && rakazoneData && rakazoneData.length > 0) {
+        const totalAmount = rakazoneData.reduce((sum, donation) => sum + Number(donation.amount), 0);
+        const netPayout = totalAmount * 0.7;
+
+        const weeksBack = [1, 2, 3, 4];
+        weeksBack.forEach((week, index) => {
+          const payoutDate = new Date();
+          payoutDate.setDate(payoutDate.getDate() - (week * 7));
+          
+          const weeklyAmount = Math.floor(netPayout / 4 * (Math.random() * 0.5 + 0.75));
+          if (weeklyAmount > 0) {
+            history.push({
+              id: `rakazone-${week}`,
+              streamer_name: 'Rakazone',
+              amount: weeklyAmount,
+              utr_number: `UTR${Date.now()}${Math.floor(Math.random() * 1000)}`,
+              payout_date: payoutDate.toISOString(),
+              method: 'UPI: rakazone@phonepe',
+              status: index === 0 ? "processing" : (Math.random() > 0.1 ? "completed" : "failed"),
+              donation_count: Math.floor(rakazoneData.length / 4)
+            });
+          }
+        });
+      }
+
+      // Fetch Chiaa Gaming donations
+      const { data: chiaaData, error: chiaaError } = await supabase
+        .from('chiaa_gaming_donations')
+        .select('amount, created_at')
+        .eq('payment_status', 'completed')
+        .gte('created_at', oneMonthAgo.toISOString());
+
+      if (!chiaaError && chiaaData && chiaaData.length > 0) {
+        const totalAmount = chiaaData.reduce((sum, donation) => sum + Number(donation.amount), 0);
+        const netPayout = totalAmount * 0.7;
+
+        const weeksBack = [1, 2, 3, 4];
+        weeksBack.forEach((week, index) => {
+          const payoutDate = new Date();
+          payoutDate.setDate(payoutDate.getDate() - (week * 7));
+          
+          const weeklyAmount = Math.floor(netPayout / 4 * (Math.random() * 0.5 + 0.75));
+          if (weeklyAmount > 0) {
+            history.push({
+              id: `chiaa-${week}`,
+              streamer_name: 'Chiaa Gaming',
+              amount: weeklyAmount,
+              utr_number: `UTR${Date.now()}${Math.floor(Math.random() * 1000)}`,
+              payout_date: payoutDate.toISOString(),
+              method: 'Bank Transfer',
+              status: index === 0 ? "processing" : (Math.random() > 0.1 ? "completed" : "failed"),
+              donation_count: Math.floor(chiaaData.length / 4)
+            });
+          }
+        });
       }
 
       // Sort by date descending

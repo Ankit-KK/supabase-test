@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,41 +47,119 @@ const WeeklyPayoutSummary = () => {
 
       const weeklyPayouts: WeeklyPayout[] = [];
 
-      const streamers = [
-        { table: 'ankit_donations', name: 'Ankit', method: 'UPI: ankit@paytm' },
-        { table: 'harish_donations', name: 'Harish', method: 'Bank Transfer' },
-        { table: 'mackle_donations', name: 'Mackle', method: 'UPI: mackle@gpay' },
-        { table: 'rakazone_donations', name: 'Rakazone', method: 'UPI: rakazone@phonepe' },
-        { table: 'chiaa_gaming_donations', name: 'Chiaa Gaming', method: 'Bank Transfer' }
-      ];
+      // Fetch Ankit donations
+      const { data: ankitData, error: ankitError } = await supabase
+        .from('ankit_donations')
+        .select('amount, created_at')
+        .eq('payment_status', 'completed')
+        .gte('created_at', weekStart.toISOString())
+        .lte('created_at', weekEnd.toISOString());
 
-      for (const streamer of streamers) {
-        const { data, error } = await supabase
-          .from(streamer.table)
-          .select('amount, created_at')
-          .eq('payment_status', 'completed')
-          .gte('created_at', weekStart.toISOString())
-          .lte('created_at', weekEnd.toISOString());
+      if (!ankitError && ankitData && ankitData.length > 0) {
+        const totalAmount = ankitData.reduce((sum, donation) => sum + Number(donation.amount), 0);
+        const netPayout = totalAmount * 0.7;
+        weeklyPayouts.push({
+          streamer_name: 'Ankit',
+          total_donations: totalAmount,
+          net_payout: netPayout,
+          payout_method: 'UPI: ankit@paytm',
+          last_payout_date: "2024-01-08",
+          status: Math.random() > 0.6 ? "pending" : "processed",
+          selected: false,
+          donation_count: ankitData.length
+        });
+      }
 
-        if (!error && data) {
-          const totalAmount = data.reduce((sum, donation) => sum + Number(donation.amount), 0);
-          const netPayout = totalAmount * 0.7; // 70% payout rate
+      // Fetch Harish donations
+      const { data: harishData, error: harishError } = await supabase
+        .from('harish_donations')
+        .select('amount, created_at')
+        .eq('payment_status', 'completed')
+        .gte('created_at', weekStart.toISOString())
+        .lte('created_at', weekEnd.toISOString());
 
-          if (totalAmount > 0) { // Only include streamers with donations this week
-            weeklyPayouts.push({
-              streamer_name: streamer.name,
-              total_donations: totalAmount,
-              net_payout: netPayout,
-              payout_method: streamer.method,
-              last_payout_date: "2024-01-08", // This would come from a payouts history table
-              status: Math.random() > 0.6 ? "pending" : "processed",
-              selected: false,
-              donation_count: data.length
-            });
-          }
-        } else if (error) {
-          console.error(`Error fetching ${streamer.table}:`, error);
-        }
+      if (!harishError && harishData && harishData.length > 0) {
+        const totalAmount = harishData.reduce((sum, donation) => sum + Number(donation.amount), 0);
+        const netPayout = totalAmount * 0.7;
+        weeklyPayouts.push({
+          streamer_name: 'Harish',
+          total_donations: totalAmount,
+          net_payout: netPayout,
+          payout_method: 'Bank Transfer',
+          last_payout_date: "2024-01-08",
+          status: Math.random() > 0.6 ? "pending" : "processed",
+          selected: false,
+          donation_count: harishData.length
+        });
+      }
+
+      // Fetch Mackle donations
+      const { data: mackleData, error: mackleError } = await supabase
+        .from('mackle_donations')
+        .select('amount, created_at')
+        .eq('payment_status', 'completed')
+        .gte('created_at', weekStart.toISOString())
+        .lte('created_at', weekEnd.toISOString());
+
+      if (!mackleError && mackleData && mackleData.length > 0) {
+        const totalAmount = mackleData.reduce((sum, donation) => sum + Number(donation.amount), 0);
+        const netPayout = totalAmount * 0.7;
+        weeklyPayouts.push({
+          streamer_name: 'Mackle',
+          total_donations: totalAmount,
+          net_payout: netPayout,
+          payout_method: 'UPI: mackle@gpay',
+          last_payout_date: "2024-01-08",
+          status: Math.random() > 0.6 ? "pending" : "processed",
+          selected: false,
+          donation_count: mackleData.length
+        });
+      }
+
+      // Fetch Rakazone donations
+      const { data: rakazoneData, error: rakazoneError } = await supabase
+        .from('rakazone_donations')
+        .select('amount, created_at')
+        .eq('payment_status', 'completed')
+        .gte('created_at', weekStart.toISOString())
+        .lte('created_at', weekEnd.toISOString());
+
+      if (!rakazoneError && rakazoneData && rakazoneData.length > 0) {
+        const totalAmount = rakazoneData.reduce((sum, donation) => sum + Number(donation.amount), 0);
+        const netPayout = totalAmount * 0.7;
+        weeklyPayouts.push({
+          streamer_name: 'Rakazone',
+          total_donations: totalAmount,
+          net_payout: netPayout,
+          payout_method: 'UPI: rakazone@phonepe',
+          last_payout_date: "2024-01-08",
+          status: Math.random() > 0.6 ? "pending" : "processed",
+          selected: false,
+          donation_count: rakazoneData.length
+        });
+      }
+
+      // Fetch Chiaa Gaming donations
+      const { data: chiaaData, error: chiaaError } = await supabase
+        .from('chiaa_gaming_donations')
+        .select('amount, created_at')
+        .eq('payment_status', 'completed')
+        .gte('created_at', weekStart.toISOString())
+        .lte('created_at', weekEnd.toISOString());
+
+      if (!chiaaError && chiaaData && chiaaData.length > 0) {
+        const totalAmount = chiaaData.reduce((sum, donation) => sum + Number(donation.amount), 0);
+        const netPayout = totalAmount * 0.7;
+        weeklyPayouts.push({
+          streamer_name: 'Chiaa Gaming',
+          total_donations: totalAmount,
+          net_payout: netPayout,
+          payout_method: 'Bank Transfer',
+          last_payout_date: "2024-01-08",
+          status: Math.random() > 0.6 ? "pending" : "processed",
+          selected: false,
+          donation_count: chiaaData.length
+        });
       }
 
       setPayouts(weeklyPayouts);
