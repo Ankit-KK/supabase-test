@@ -136,7 +136,7 @@ const AnkitPage = () => {
             <div className="flex items-center justify-center space-x-3">
               <Gamepad2 className="h-8 w-8 text-purple-400" />
               <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-purple-600 bg-clip-text text-transparent">
-                Support Ankit
+                Support 'Streamer Name'
               </h1>
               <Zap className="h-8 w-8 text-pink-400" />
             </div>
