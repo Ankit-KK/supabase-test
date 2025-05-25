@@ -38,31 +38,74 @@ const StreamerDonationsTable = () => {
 
   const fetchDonations = async () => {
     try {
-      const tables = [
-        { name: 'ankit_donations', streamer: 'Ankit' },
-        { name: 'harish_donations', streamer: 'Harish' },
-        { name: 'mackle_donations', streamer: 'Mackle' },
-        { name: 'rakazone_donations', streamer: 'Rakazone' },
-        { name: 'chiaa_gaming_donations', streamer: 'Chiaa Gaming' }
-      ];
-
       let allDonations: Donation[] = [];
 
-      for (const table of tables) {
-        const { data, error } = await supabase
-          .from(table.name)
-          .select('*')
-          .eq('payment_status', 'completed')
-          .order('created_at', { ascending: false });
+      // Fetch from ankit_donations
+      const { data: ankitData, error: ankitError } = await supabase
+        .from('ankit_donations')
+        .select('*')
+        .eq('payment_status', 'completed')
+        .order('created_at', { ascending: false });
 
-        if (!error && data) {
-          const donationsWithStreamer = data.map(donation => ({
-            ...donation,
-            streamer_name: table.streamer,
-            payout_status: Math.random() > 0.7 ? "processed" : "pending" as "pending" | "processed"
-          }));
-          allDonations = [...allDonations, ...donationsWithStreamer];
-        }
+      if (!ankitError && ankitData) {
+        const ankitDonations = ankitData.map(donation => ({
+          ...donation,
+          amount: Number(donation.amount),
+          streamer_name: 'Ankit',
+          payout_status: Math.random() > 0.7 ? "processed" : "pending" as "pending" | "processed"
+        }));
+        allDonations = [...allDonations, ...ankitDonations];
+      }
+
+      // Fetch from harish_donations
+      const { data: harishData, error: harishError } = await supabase
+        .from('harish_donations')
+        .select('*')
+        .eq('payment_status', 'completed')
+        .order('created_at', { ascending: false });
+
+      if (!harishError && harishData) {
+        const harishDonations = harishData.map(donation => ({
+          ...donation,
+          amount: Number(donation.amount),
+          streamer_name: 'Harish',
+          payout_status: Math.random() > 0.7 ? "processed" : "pending" as "pending" | "processed"
+        }));
+        allDonations = [...allDonations, ...harishDonations];
+      }
+
+      // Fetch from mackle_donations
+      const { data: mackleData, error: mackleError } = await supabase
+        .from('mackle_donations')
+        .select('*')
+        .eq('payment_status', 'completed')
+        .order('created_at', { ascending: false });
+
+      if (!mackleError && mackleData) {
+        const mackleDonations = mackleData.map(donation => ({
+          ...donation,
+          amount: Number(donation.amount),
+          streamer_name: 'Mackle',
+          payout_status: Math.random() > 0.7 ? "processed" : "pending" as "pending" | "processed"
+        }));
+        allDonations = [...allDonations, ...mackleDonations];
+      }
+
+      // Fetch from rakazone_donations
+      const { data: rakazoneData, error: rakazoneError } = await supabase
+        .from('rakazone_donations')
+        .select('*')
+        .eq('payment_status', 'completed')
+        .order('created_at', { ascending: false });
+
+      if (!rakazoneError && rakazoneData) {
+        const rakazoneDonations = rakazoneData.map(donation => ({
+          ...donation,
+          amount: Number(donation.amount),
+          streamer_name: 'Rakazone',
+          payout_status: Math.random() > 0.7 ? "processed" : "pending" as "pending" | "processed"
+        }));
+        allDonations = [...allDonations, ...rakazoneDonations];
       }
 
       // Sort by date descending

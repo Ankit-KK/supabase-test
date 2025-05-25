@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -59,23 +58,59 @@ const AdminDashboard = () => {
       weekEnd.setDate(weekStart.getDate() + 6);
       weekEnd.setHours(23, 59, 59, 999);
 
-      // Fetch data from all donation tables
-      const tables = ['ankit_donations', 'harish_donations', 'mackle_donations', 'rakazone_donations', 'chiaa_gaming_donations'];
       let totalWeeklyDonations = 0;
       let totalAmount = 0;
 
-      for (const table of tables) {
-        const { data, error } = await supabase
-          .from(table)
-          .select('amount, created_at')
-          .eq('payment_status', 'completed')
-          .gte('created_at', weekStart.toISOString())
-          .lte('created_at', weekEnd.toISOString());
+      // Fetch from ankit_donations
+      const { data: ankitData, error: ankitError } = await supabase
+        .from('ankit_donations')
+        .select('amount, created_at')
+        .eq('payment_status', 'completed')
+        .gte('created_at', weekStart.toISOString())
+        .lte('created_at', weekEnd.toISOString());
 
-        if (!error && data) {
-          totalWeeklyDonations += data.length;
-          totalAmount += data.reduce((sum, donation) => sum + Number(donation.amount), 0);
-        }
+      if (!ankitError && ankitData) {
+        totalWeeklyDonations += ankitData.length;
+        totalAmount += ankitData.reduce((sum, donation) => sum + Number(donation.amount), 0);
+      }
+
+      // Fetch from harish_donations
+      const { data: harishData, error: harishError } = await supabase
+        .from('harish_donations')
+        .select('amount, created_at')
+        .eq('payment_status', 'completed')
+        .gte('created_at', weekStart.toISOString())
+        .lte('created_at', weekEnd.toISOString());
+
+      if (!harishError && harishData) {
+        totalWeeklyDonations += harishData.length;
+        totalAmount += harishData.reduce((sum, donation) => sum + Number(donation.amount), 0);
+      }
+
+      // Fetch from mackle_donations
+      const { data: mackleData, error: mackleError } = await supabase
+        .from('mackle_donations')
+        .select('amount, created_at')
+        .eq('payment_status', 'completed')
+        .gte('created_at', weekStart.toISOString())
+        .lte('created_at', weekEnd.toISOString());
+
+      if (!mackleError && mackleData) {
+        totalWeeklyDonations += mackleData.length;
+        totalAmount += mackleData.reduce((sum, donation) => sum + Number(donation.amount), 0);
+      }
+
+      // Fetch from rakazone_donations
+      const { data: rakazoneData, error: rakazoneError } = await supabase
+        .from('rakazone_donations')
+        .select('amount, created_at')
+        .eq('payment_status', 'completed')
+        .gte('created_at', weekStart.toISOString())
+        .lte('created_at', weekEnd.toISOString());
+
+      if (!rakazoneError && rakazoneData) {
+        totalWeeklyDonations += rakazoneData.length;
+        totalAmount += rakazoneData.reduce((sum, donation) => sum + Number(donation.amount), 0);
       }
 
       setDashboardData({
