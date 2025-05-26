@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -38,16 +37,21 @@ const StreamerTotalsTab = () => {
     setIsLoading(true);
     
     try {
+      console.log(`Fetching data for ${streamerTable}`);
+      
       const { data: donations, error } = await supabase
         .from(streamerTable)
         .select('amount, payment_status')
         .eq('payment_status', 'completed');
 
       if (error) {
+        console.error("Error fetching donations:", error);
         throw error;
       }
 
-      // Type guard to ensure we have the right data structure
+      console.log(`Found ${donations?.length || 0} completed donations`);
+
+      // Make sure we have data and it's an array
       if (!donations || !Array.isArray(donations)) {
         console.log(`No donations found for ${streamerTable}`);
         setStreamerTotals({
@@ -59,14 +63,8 @@ const StreamerTotalsTab = () => {
         return;
       }
 
-      const donationRecords = donations.filter((donation): donation is DonationRecord => 
-        donation && 
-        typeof donation === 'object' && 
-        'amount' in donation && 
-        'payment_status' in donation &&
-        typeof donation.amount === 'number'
-      );
-
+      // Type assertion since we know the structure matches DonationRecord
+      const donationRecords = donations as DonationRecord[];
       const totalDonations = donationRecords.reduce((sum, donation) => sum + Number(donation.amount), 0);
       const totalDonationCount = donationRecords.length;
       const totalPayout = totalDonations * 0.7;
@@ -97,8 +95,8 @@ const StreamerTotalsTab = () => {
     }
   }, [selectedStreamer]);
 
-  const handleStreamerChange = (value: string) => {
-    setSelectedStreamer(value as StreamerTableName | "");
+  const handleStreamerChange = (value: StreamerTableName | "") => {
+    setSelectedStreamer(value);
   };
 
   return (

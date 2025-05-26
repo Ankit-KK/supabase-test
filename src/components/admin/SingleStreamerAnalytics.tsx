@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -55,9 +54,7 @@ const SingleStreamerAnalytics = () => {
         throw error;
       }
 
-      console.log(`Found ${donations?.length || 0} completed donations for ${streamerTable}`);
-
-      // Type guard to ensure we have the right data structure
+      // Make sure we have data and it's an array
       if (!donations || !Array.isArray(donations)) {
         console.log(`No donations found for ${streamerTable}`);
         setStreamerStats({
@@ -69,14 +66,8 @@ const SingleStreamerAnalytics = () => {
         return;
       }
 
-      const donationRecords = donations.filter((donation): donation is DonationRecord => 
-        donation && 
-        typeof donation === 'object' && 
-        'amount' in donation && 
-        'payment_status' in donation &&
-        typeof donation.amount === 'number'
-      );
-
+      // Type assertion since we know the structure matches DonationRecord
+      const donationRecords = donations as DonationRecord[];
       const totalDonations = donationRecords.reduce((sum, donation) => sum + Number(donation.amount), 0);
       const totalDonationCount = donationRecords.length;
       const totalPayout = totalDonations * 0.7;
