@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -28,7 +27,7 @@ const WeeklyPayoutsTab = () => {
     { table: "ankit_donations", name: "Ankit" },
     { table: "harish_donations", name: "Harish" },
     { table: "mackle_donations", name: "Mackle" },
-    { table: "rakazone_donations", name: "Rakazone" },
+    { table: "rakazone_donations", name: "Mackle" },
     { table: "chiaa_gaming_donations", name: "Chiaa Gaming" }
   ];
 
