@@ -8,9 +8,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { DollarSign, CheckCircle, Clock, Send } from "lucide-react";
+import { StreamerTableName } from "@/types/donations";
 
 interface DonationRecord {
   amount: number;
+  payment_status: string;
 }
 
 interface StreamerPayout {
@@ -29,11 +31,11 @@ const PayoutsTab = () => {
   const [selectedCount, setSelectedCount] = useState(0);
 
   const streamers = [
-    { table: "ankit_donations", name: "Ankit" },
-    { table: "harish_donations", name: "Harish" },
-    { table: "mackle_donations", name: "Mackle" },
-    { table: "rakazone_donations", name: "Rakazone" },
-    { table: "chiaa_gaming_donations", name: "Chiaa Gaming" }
+    { table: "ankit_donations" as StreamerTableName, name: "Ankit" },
+    { table: "harish_donations" as StreamerTableName, name: "Harish" },
+    { table: "mackle_donations" as StreamerTableName, name: "Mackle" },
+    { table: "rakazone_donations" as StreamerTableName, name: "Rakazone" },
+    { table: "chiaa_gaming_donations" as StreamerTableName, name: "Chiaa Gaming" }
   ];
 
   useEffect(() => {
@@ -52,8 +54,8 @@ const PayoutsTab = () => {
         console.log(`Fetching payout data for ${streamer.name}`);
         
         const { data: donations, error } = await supabase
-          .from(streamer.table as any)
-          .select('amount')
+          .from(streamer.table)
+          .select('amount, payment_status')
           .eq('payment_status', 'completed');
 
         if (error) {
@@ -61,9 +63,22 @@ const PayoutsTab = () => {
           continue;
         }
 
-        const donationRecords = donations as DonationRecord[];
-        const totalDonations = donationRecords?.reduce((sum, donation) => sum + Number(donation.amount), 0) || 0;
-        const donationCount = donationRecords?.length || 0;
+        // Type guard to ensure we have the right data structure
+        if (!donations || !Array.isArray(donations)) {
+          console.log(`No donations found for ${streamer.name}`);
+          continue;
+        }
+
+        const donationRecords = donations.filter((donation): donation is DonationRecord => 
+          donation && 
+          typeof donation === 'object' && 
+          'amount' in donation && 
+          'payment_status' in donation &&
+          typeof donation.amount === 'number'
+        );
+
+        const totalDonations = donationRecords.reduce((sum, donation) => sum + Number(donation.amount), 0);
+        const donationCount = donationRecords.length;
         const payoutAmount = totalDonations * 0.7;
         const platformFee = totalDonations * 0.3;
 

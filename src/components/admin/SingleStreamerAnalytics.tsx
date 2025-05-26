@@ -5,9 +5,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { DollarSign, TrendingUp } from "lucide-react";
+import { StreamerTableName } from "@/types/donations";
 
 interface DonationRecord {
   amount: number;
+  payment_status: string;
 }
 
 interface StreamerStats {
@@ -18,7 +20,7 @@ interface StreamerStats {
 }
 
 const SingleStreamerAnalytics = () => {
-  const [selectedStreamer, setSelectedStreamer] = useState<string>("");
+  const [selectedStreamer, setSelectedStreamer] = useState<StreamerTableName | "">("");
   const [streamerStats, setStreamerStats] = useState<StreamerStats>({
     totalDonations: 0,
     totalDonationCount: 0,
@@ -28,14 +30,14 @@ const SingleStreamerAnalytics = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const streamers = [
-    { value: "ankit_donations", label: "Ankit" },
-    { value: "harish_donations", label: "Harish" },
-    { value: "mackle_donations", label: "Mackle" },
-    { value: "rakazone_donations", label: "Rakazone" },
-    { value: "chiaa_gaming_donations", label: "Chiaa Gaming" }
+    { value: "ankit_donations" as StreamerTableName, label: "Ankit" },
+    { value: "harish_donations" as StreamerTableName, label: "Harish" },
+    { value: "mackle_donations" as StreamerTableName, label: "Mackle" },
+    { value: "rakazone_donations" as StreamerTableName, label: "Rakazone" },
+    { value: "chiaa_gaming_donations" as StreamerTableName, label: "Chiaa Gaming" }
   ];
 
-  const fetchStreamerData = async (streamerTable: string) => {
+  const fetchStreamerData = async (streamerTable: StreamerTableName) => {
     if (!streamerTable) return;
     
     setIsLoading(true);
@@ -44,8 +46,8 @@ const SingleStreamerAnalytics = () => {
       console.log(`Fetching data for ${streamerTable}`);
       
       const { data: donations, error } = await supabase
-        .from(streamerTable as any)
-        .select('amount')
+        .from(streamerTable)
+        .select('amount, payment_status')
         .eq('payment_status', 'completed');
 
       if (error) {
@@ -55,9 +57,28 @@ const SingleStreamerAnalytics = () => {
 
       console.log(`Found ${donations?.length || 0} completed donations for ${streamerTable}`);
 
-      const donationRecords = donations as DonationRecord[];
-      const totalDonations = donationRecords?.reduce((sum, donation) => sum + Number(donation.amount), 0) || 0;
-      const totalDonationCount = donationRecords?.length || 0;
+      // Type guard to ensure we have the right data structure
+      if (!donations || !Array.isArray(donations)) {
+        console.log(`No donations found for ${streamerTable}`);
+        setStreamerStats({
+          totalDonations: 0,
+          totalDonationCount: 0,
+          totalPayout: 0,
+          platformFee: 0
+        });
+        return;
+      }
+
+      const donationRecords = donations.filter((donation): donation is DonationRecord => 
+        donation && 
+        typeof donation === 'object' && 
+        'amount' in donation && 
+        'payment_status' in donation &&
+        typeof donation.amount === 'number'
+      );
+
+      const totalDonations = donationRecords.reduce((sum, donation) => sum + Number(donation.amount), 0);
+      const totalDonationCount = donationRecords.length;
       const totalPayout = totalDonations * 0.7;
       const platformFee = totalDonations * 0.3;
 
@@ -86,6 +107,10 @@ const SingleStreamerAnalytics = () => {
     }
   }, [selectedStreamer]);
 
+  const handleStreamerChange = (value: string) => {
+    setSelectedStreamer(value as StreamerTableName | "");
+  };
+
   const selectedStreamerName = streamers.find(s => s.value === selectedStreamer)?.label || "";
 
   return (
@@ -97,7 +122,7 @@ const SingleStreamerAnalytics = () => {
           <CardDescription>Choose a streamer to view total donation analytics</CardDescription>
         </CardHeader>
         <CardContent>
-          <Select value={selectedStreamer} onValueChange={setSelectedStreamer}>
+          <Select value={selectedStreamer} onValueChange={handleStreamerChange}>
             <SelectTrigger className="w-full max-w-xs">
               <SelectValue placeholder="Select a streamer" />
             </SelectTrigger>

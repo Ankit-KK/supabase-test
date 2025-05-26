@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -46,7 +47,26 @@ const StreamerTotalsTab = () => {
         throw error;
       }
 
-      const donationRecords = donations as DonationRecord[];
+      // Type guard to ensure we have the right data structure
+      if (!donations || !Array.isArray(donations)) {
+        console.log(`No donations found for ${streamerTable}`);
+        setStreamerTotals({
+          totalDonations: 0,
+          totalDonationCount: 0,
+          totalPayout: 0,
+          platformFee: 0
+        });
+        return;
+      }
+
+      const donationRecords = donations.filter((donation): donation is DonationRecord => 
+        donation && 
+        typeof donation === 'object' && 
+        'amount' in donation && 
+        'payment_status' in donation &&
+        typeof donation.amount === 'number'
+      );
+
       const totalDonations = donationRecords.reduce((sum, donation) => sum + Number(donation.amount), 0);
       const totalDonationCount = donationRecords.length;
       const totalPayout = totalDonations * 0.7;
@@ -77,6 +97,10 @@ const StreamerTotalsTab = () => {
     }
   }, [selectedStreamer]);
 
+  const handleStreamerChange = (value: string) => {
+    setSelectedStreamer(value as StreamerTableName | "");
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -85,7 +109,7 @@ const StreamerTotalsTab = () => {
           <CardDescription>Choose a streamer to view donation totals</CardDescription>
         </CardHeader>
         <CardContent>
-          <Select value={selectedStreamer} onValueChange={setSelectedStreamer}>
+          <Select value={selectedStreamer} onValueChange={handleStreamerChange}>
             <SelectTrigger className="w-full max-w-xs">
               <SelectValue placeholder="Select a streamer" />
             </SelectTrigger>
