@@ -112,12 +112,6 @@ const CustomPagesShowcase = () => {
                   View Ankit
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link to="/chiaa-gaming" target="_blank" rel="noopener noreferrer">
-                  <Eye className="h-4 w-4 mr-2" />
-                  View Chiaa Gaming
-                </Link>
-              </Button>
             </div>
           </div>
 
