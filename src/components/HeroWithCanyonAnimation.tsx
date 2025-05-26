@@ -14,7 +14,7 @@ const HeroWithCanyonAnimation = () => {
         <div className="flex flex-col items-center text-center space-y-10">
           <div className="space-y-8 max-w-3xl">
             <CanyonAnimatedText
-              text="Hype Your Favourite Streamer!"
+              text="Hype Up Your Favourite Streamer!"
               className="mb-4"
             />
             
