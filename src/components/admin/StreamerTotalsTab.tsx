@@ -6,16 +6,14 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { DollarSign, TrendingUp } from "lucide-react";
 
-interface StreamerTotals {
-  totalDonations: number;
-  totalDonationCount: number;
-  totalPayout: number;
-  platformFee: number;
+interface DonationRecord {
+  amount: number;
+  payment_status: string;
 }
 
 const StreamerTotalsTab = () => {
   const [selectedStreamer, setSelectedStreamer] = useState<string>("");
-  const [streamerTotals, setStreamerTotals] = useState<StreamerTotals>({
+  const [streamerTotals, setStreamerTotals] = useState({
     totalDonations: 0,
     totalDonationCount: 0,
     totalPayout: 0,
@@ -38,7 +36,7 @@ const StreamerTotalsTab = () => {
     
     try {
       const { data: donations, error } = await supabase
-        .from(streamerTable as any)
+        .from(streamerTable)
         .select('amount')
         .eq('payment_status', 'completed');
 
@@ -47,7 +45,7 @@ const StreamerTotalsTab = () => {
         throw error;
       }
 
-      const donationRecords = (donations || []) as unknown as { amount: number }[];
+      const donationRecords = (donations || []) as DonationRecord[];
       const totalDonations = donationRecords.reduce((sum, donation) => sum + Number(donation.amount), 0);
       const totalDonationCount = donationRecords.length;
       const totalPayout = totalDonations * 0.7;
@@ -83,7 +81,7 @@ const StreamerTotalsTab = () => {
       <Card>
         <CardHeader>
           <CardTitle>Select Streamer</CardTitle>
-          <CardDescription>Choose a streamer to view total donations</CardDescription>
+          <CardDescription>Choose a streamer to view donation totals</CardDescription>
         </CardHeader>
         <CardContent>
           <Select value={selectedStreamer} onValueChange={setSelectedStreamer}>

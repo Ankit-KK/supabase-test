@@ -15,6 +15,11 @@ interface StreamerPayout {
   platform_fee: number;
 }
 
+interface DonationRecord {
+  amount: number;
+  payment_status: string;
+}
+
 const WeeklyPayoutsTab = () => {
   const [payouts, setPayouts] = useState<StreamerPayout[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,7 +42,7 @@ const WeeklyPayoutsTab = () => {
 
       for (const streamer of streamers) {
         const { data: donations, error } = await supabase
-          .from(streamer.table as any)
+          .from(streamer.table)
           .select('amount')
           .eq('payment_status', 'completed');
 
@@ -46,7 +51,7 @@ const WeeklyPayoutsTab = () => {
           continue;
         }
 
-        const donationRecords = (donations || []) as unknown as { amount: number }[];
+        const donationRecords = (donations || []) as DonationRecord[];
         const totalDonations = donationRecords.reduce((sum, donation) => sum + Number(donation.amount), 0);
         const donationCount = donationRecords.length;
         const payoutAmount = totalDonations * 0.7;
