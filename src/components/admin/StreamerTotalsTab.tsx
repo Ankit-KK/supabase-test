@@ -4,15 +4,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { DollarSign, TrendingUp } from "lucide-react";
+import { DonationRecord, StreamerTableName } from "@/types/donations";
 
-interface DonationRecord {
-  amount: number;
-  payment_status: string;
+interface StreamerTotals {
+  totalDonations: number;
+  totalDonationCount: number;
+  totalPayout: number;
+  platformFee: number;
 }
 
 const StreamerTotalsTab = () => {
-  const [selectedStreamer, setSelectedStreamer] = useState<string>("");
-  const [streamerTotals, setStreamerTotals] = useState({
+  const [selectedStreamer, setSelectedStreamer] = useState<StreamerTableName | "">("");
+  const [streamerTotals, setStreamerTotals] = useState<StreamerTotals>({
     totalDonations: 0,
     totalDonationCount: 0,
     totalPayout: 0,
@@ -21,14 +24,14 @@ const StreamerTotalsTab = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const streamers = [
-    { value: "ankit_donations", label: "Ankit" },
-    { value: "harish_donations", label: "Harish" },
-    { value: "mackle_donations", label: "Mackle" },
-    { value: "rakazone_donations", label: "Rakazone" },
-    { value: "chiaa_gaming_donations", label: "Chiaa Gaming" }
+    { value: "ankit_donations" as StreamerTableName, label: "Ankit" },
+    { value: "harish_donations" as StreamerTableName, label: "Harish" },
+    { value: "mackle_donations" as StreamerTableName, label: "Mackle" },
+    { value: "rakazone_donations" as StreamerTableName, label: "Rakazone" },
+    { value: "chiaa_gaming_donations" as StreamerTableName, label: "Chiaa Gaming" }
   ];
 
-  const fetchStreamerData = async (streamerTable: string) => {
+  const fetchStreamerData = async (streamerTable: StreamerTableName) => {
     if (!streamerTable) return;
     
     setIsLoading(true);
@@ -36,15 +39,14 @@ const StreamerTotalsTab = () => {
     try {
       const { data: donations, error } = await supabase
         .from(streamerTable)
-        .select('amount')
+        .select('amount, payment_status')
         .eq('payment_status', 'completed');
 
       if (error) {
-        console.error("Error fetching donations:", error);
         throw error;
       }
 
-      const donationRecords = (donations || []) as DonationRecord[];
+      const donationRecords = donations as DonationRecord[];
       const totalDonations = donationRecords.reduce((sum, donation) => sum + Number(donation.amount), 0);
       const totalDonationCount = donationRecords.length;
       const totalPayout = totalDonations * 0.7;

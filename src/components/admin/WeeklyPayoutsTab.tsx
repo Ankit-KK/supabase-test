@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { DollarSign, CheckCircle } from "lucide-react";
+import { DonationRecord, StreamerTableName } from "@/types/donations";
 
 interface StreamerPayout {
   streamer_name: string;
@@ -14,21 +15,16 @@ interface StreamerPayout {
   platform_fee: number;
 }
 
-interface DonationRecord {
-  amount: number;
-  payment_status: string;
-}
-
 const WeeklyPayoutsTab = () => {
   const [payouts, setPayouts] = useState<StreamerPayout[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const streamers = [
-    { table: "ankit_donations", name: "Ankit" },
-    { table: "harish_donations", name: "Harish" },
-    { table: "mackle_donations", name: "Mackle" },
-    { table: "rakazone_donations", name: "Mackle" },
-    { table: "chiaa_gaming_donations", name: "Chiaa Gaming" }
+    { table: "ankit_donations" as StreamerTableName, name: "Ankit" },
+    { table: "harish_donations" as StreamerTableName, name: "Harish" },
+    { table: "mackle_donations" as StreamerTableName, name: "Mackle" },
+    { table: "rakazone_donations" as StreamerTableName, name: "Rakazone" },
+    { table: "chiaa_gaming_donations" as StreamerTableName, name: "Chiaa Gaming" }
   ];
 
   useEffect(() => {
@@ -42,7 +38,7 @@ const WeeklyPayoutsTab = () => {
       for (const streamer of streamers) {
         const { data: donations, error } = await supabase
           .from(streamer.table)
-          .select('amount')
+          .select('amount, payment_status')
           .eq('payment_status', 'completed');
 
         if (error) {
@@ -50,7 +46,7 @@ const WeeklyPayoutsTab = () => {
           continue;
         }
 
-        const donationRecords = (donations || []) as DonationRecord[];
+        const donationRecords = donations as DonationRecord[];
         const totalDonations = donationRecords.reduce((sum, donation) => sum + Number(donation.amount), 0);
         const donationCount = donationRecords.length;
         const payoutAmount = totalDonations * 0.7;
