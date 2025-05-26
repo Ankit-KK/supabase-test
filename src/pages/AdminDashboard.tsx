@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,8 @@ import {
   FileText,
   TrendingUp,
   Calendar,
-  BarChart3
+  BarChart3,
+  Send
 } from "lucide-react";
 import DashboardMetrics from "@/components/admin/DashboardMetrics";
 import StreamerDonationsTable from "@/components/admin/StreamerDonationsTable";
@@ -25,6 +27,7 @@ import AlertsPanel from "@/components/admin/AlertsPanel";
 import PayoutHistory from "@/components/admin/PayoutHistory";
 import AuditLog from "@/components/admin/AuditLog";
 import SingleStreamerAnalytics from "@/components/admin/SingleStreamerAnalytics";
+import PayoutsTab from "@/components/admin/PayoutsTab";
 
 interface DashboardData {
   totalDonationsThisWeek: number;
@@ -53,138 +56,46 @@ const AdminDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const now = new Date();
-      const dayOfWeek = now.getDay();
-      const daysUntilSaturday = dayOfWeek === 6 ? 0 : dayOfWeek + 1;
-      const weekStart = new Date(now);
-      weekStart.setDate(now.getDate() - daysUntilSaturday);
-      weekStart.setHours(0, 0, 0, 0);
-
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekStart.getDate() + 6);
-      weekEnd.setHours(23, 59, 59, 999);
-
-      let totalWeeklyDonations = 0;
       let totalAmount = 0;
-      let allTimeAmount = 0;
+      let totalDonations = 0;
 
-      // Fetch Ankit donations
-      const { data: ankitWeeklyData, error: ankitWeeklyError } = await supabase
-        .from('ankit_donations')
-        .select('amount, created_at')
-        .eq('payment_status', 'completed')
-        .gte('created_at', weekStart.toISOString())
-        .lte('created_at', weekEnd.toISOString());
+      const streamers = [
+        'ankit_donations',
+        'harish_donations', 
+        'mackle_donations',
+        'rakazone_donations',
+        'chiaa_gaming_donations'
+      ];
 
-      if (!ankitWeeklyError && ankitWeeklyData) {
-        totalWeeklyDonations += ankitWeeklyData.length;
-        totalAmount += ankitWeeklyData.reduce((sum, donation) => sum + Number(donation.amount), 0);
+      for (const streamerTable of streamers) {
+        console.log(`Fetching data from ${streamerTable}`);
+        
+        const { data, error } = await supabase
+          .from(streamerTable as any)
+          .select('amount')
+          .eq('payment_status', 'completed');
+
+        if (error) {
+          console.error(`Error fetching ${streamerTable}:`, error);
+          continue;
+        }
+
+        if (data) {
+          const tableTotal = data.reduce((sum, donation) => sum + Number(donation.amount), 0);
+          totalAmount += tableTotal;
+          totalDonations += data.length;
+          console.log(`${streamerTable}: ${data.length} donations, ₹${tableTotal}`);
+        }
       }
 
-      const { data: ankitAllTimeData, error: ankitAllTimeError } = await supabase
-        .from('ankit_donations')
-        .select('amount')
-        .eq('payment_status', 'completed');
+      console.log(`Total: ${totalDonations} donations, ₹${totalAmount}`);
 
-      if (!ankitAllTimeError && ankitAllTimeData) {
-        allTimeAmount += ankitAllTimeData.reduce((sum, donation) => sum + Number(donation.amount), 0);
-      }
-
-      // Fetch Harish donations
-      const { data: harishWeeklyData, error: harishWeeklyError } = await supabase
-        .from('harish_donations')
-        .select('amount, created_at')
-        .eq('payment_status', 'completed')
-        .gte('created_at', weekStart.toISOString())
-        .lte('created_at', weekEnd.toISOString());
-
-      if (!harishWeeklyError && harishWeeklyData) {
-        totalWeeklyDonations += harishWeeklyData.length;
-        totalAmount += harishWeeklyData.reduce((sum, donation) => sum + Number(donation.amount), 0);
-      }
-
-      const { data: harishAllTimeData, error: harishAllTimeError } = await supabase
-        .from('harish_donations')
-        .select('amount')
-        .eq('payment_status', 'completed');
-
-      if (!harishAllTimeError && harishAllTimeData) {
-        allTimeAmount += harishAllTimeData.reduce((sum, donation) => sum + Number(donation.amount), 0);
-      }
-
-      // Fetch Mackle donations
-      const { data: mackleWeeklyData, error: mackleWeeklyError } = await supabase
-        .from('mackle_donations')
-        .select('amount, created_at')
-        .eq('payment_status', 'completed')
-        .gte('created_at', weekStart.toISOString())
-        .lte('created_at', weekEnd.toISOString());
-
-      if (!mackleWeeklyError && mackleWeeklyData) {
-        totalWeeklyDonations += mackleWeeklyData.length;
-        totalAmount += mackleWeeklyData.reduce((sum, donation) => sum + Number(donation.amount), 0);
-      }
-
-      const { data: mackleAllTimeData, error: mackleAllTimeError } = await supabase
-        .from('mackle_donations')
-        .select('amount')
-        .eq('payment_status', 'completed');
-
-      if (!mackleAllTimeError && mackleAllTimeData) {
-        allTimeAmount += mackleAllTimeData.reduce((sum, donation) => sum + Number(donation.amount), 0);
-      }
-
-      // Fetch Rakazone donations
-      const { data: rakazoneWeeklyData, error: rakazoneWeeklyError } = await supabase
-        .from('rakazone_donations')
-        .select('amount, created_at')
-        .eq('payment_status', 'completed')
-        .gte('created_at', weekStart.toISOString())
-        .lte('created_at', weekEnd.toISOString());
-
-      if (!rakazoneWeeklyError && rakazoneWeeklyData) {
-        totalWeeklyDonations += rakazoneWeeklyData.length;
-        totalAmount += rakazoneWeeklyData.reduce((sum, donation) => sum + Number(donation.amount), 0);
-      }
-
-      const { data: rakazoneAllTimeData, error: rakazoneAllTimeError } = await supabase
-        .from('rakazone_donations')
-        .select('amount')
-        .eq('payment_status', 'completed');
-
-      if (!rakazoneAllTimeError && rakazoneAllTimeData) {
-        allTimeAmount += rakazoneAllTimeData.reduce((sum, donation) => sum + Number(donation.amount), 0);
-      }
-
-      // Fetch Chiaa Gaming donations
-      const { data: chiaaWeeklyData, error: chiaaWeeklyError } = await supabase
-        .from('chiaa_gaming_donations')
-        .select('amount, created_at')
-        .eq('payment_status', 'completed')
-        .gte('created_at', weekStart.toISOString())
-        .lte('created_at', weekEnd.toISOString());
-
-      if (!chiaaWeeklyError && chiaaWeeklyData) {
-        totalWeeklyDonations += chiaaWeeklyData.length;
-        totalAmount += chiaaWeeklyData.reduce((sum, donation) => sum + Number(donation.amount), 0);
-      }
-
-      const { data: chiaaAllTimeData, error: chiaaAllTimeError } = await supabase
-        .from('chiaa_gaming_donations')
-        .select('amount')
-        .eq('payment_status', 'completed');
-
-      if (!chiaaAllTimeError && chiaaAllTimeData) {
-        allTimeAmount += chiaaAllTimeData.reduce((sum, donation) => sum + Number(donation.amount), 0);
-      }
-
-      // Calculate pending payouts (70% of total completed donations)
-      const totalToBePaid = allTimeAmount * 0.7;
+      const totalToBePaid = totalAmount * 0.7;
 
       setDashboardData({
-        totalDonationsThisWeek: totalWeeklyDonations,
+        totalDonationsThisWeek: totalDonations,
         totalAmountToBePaid: totalToBePaid,
-        pendingPayouts: 5, // Number of streamers
+        pendingPayouts: streamers.length,
         lastPayoutProcessed: "2024-01-15"
       });
     } catch (error) {
@@ -202,7 +113,7 @@ const AdminDashboard = () => {
   const tabs = [
     { id: "overview", label: "Overview", icon: TrendingUp },
     { id: "donations", label: "Donations", icon: DollarSign },
-    { id: "payouts", label: "Weekly Payouts", icon: Calendar },
+    { id: "payouts", label: "Payouts", icon: Send },
     { id: "analytics", label: "Streamer Analytics", icon: BarChart3 },
     { id: "methods", label: "Payout Methods", icon: Users },
     { id: "history", label: "History", icon: FileText },
@@ -280,7 +191,7 @@ const AdminDashboard = () => {
           )}
 
           {activeTab === "donations" && <StreamerDonationsTable />}
-          {activeTab === "payouts" && <WeeklyPayoutSummary />}
+          {activeTab === "payouts" && <PayoutsTab />}
           {activeTab === "analytics" && <SingleStreamerAnalytics />}
           {activeTab === "methods" && <PayoutMethodManagement />}
           {activeTab === "history" && <PayoutHistory />}

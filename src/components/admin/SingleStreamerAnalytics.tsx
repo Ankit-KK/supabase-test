@@ -2,30 +2,15 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { formatDistanceToNow } from "date-fns";
-import { DollarSign, Calendar, TrendingUp } from "lucide-react";
-
-interface WeeklyData {
-  weekStart: string;
-  weekEnd: string;
-  totalDonations: number;
-  donationCount: number;
-  weeklyPayout: number;
-}
+import { DollarSign, TrendingUp } from "lucide-react";
 
 interface StreamerStats {
   totalDonations: number;
   totalDonationCount: number;
-  weeklyData: WeeklyData[];
-}
-
-interface DonationRecord {
-  amount: number;
-  created_at: string;
+  totalPayout: number;
+  platformFee: number;
 }
 
 const SingleStreamerAnalytics = () => {
@@ -33,7 +18,8 @@ const SingleStreamerAnalytics = () => {
   const [streamerStats, setStreamerStats] = useState<StreamerStats>({
     totalDonations: 0,
     totalDonationCount: 0,
-    weeklyData: []
+    totalPayout: 0,
+    platformFee: 0
   });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -45,74 +31,36 @@ const SingleStreamerAnalytics = () => {
     { value: "chiaa_gaming_donations", label: "Chiaa Gaming" }
   ];
 
-  const getWeekRanges = () => {
-    const weeks = [];
-    const now = new Date();
-    
-    // Go back 12 weeks to show historical data
-    for (let i = 11; i >= 0; i--) {
-      const weekStart = new Date();
-      weekStart.setDate(now.getDate() - (i * 7) - now.getDay() + 6); // Saturday
-      weekStart.setHours(0, 0, 0, 0);
-      
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekStart.getDate() + 6); // Next Friday
-      weekEnd.setHours(23, 59, 59, 999);
-      
-      weeks.push({ weekStart, weekEnd });
-    }
-    
-    return weeks;
-  };
-
   const fetchStreamerData = async (streamerTable: string) => {
     if (!streamerTable) return;
     
     setIsLoading(true);
     
     try {
-      // Fetch all donations for total stats with proper type casting
-      const { data: allDonations, error: allError } = await supabase
-        .from(streamerTable as "ankit_donations" | "harish_donations" | "mackle_donations" | "rakazone_donations" | "chiaa_gaming_donations")
-        .select('amount, created_at')
+      console.log(`Fetching data for ${streamerTable}`);
+      
+      const { data: donations, error } = await supabase
+        .from(streamerTable as any)
+        .select('amount')
         .eq('payment_status', 'completed');
 
-      if (allError) throw allError;
-
-      const totalDonations = (allDonations as DonationRecord[])?.reduce((sum, donation) => sum + Number(donation.amount), 0) || 0;
-      const totalDonationCount = (allDonations as DonationRecord[])?.length || 0;
-
-      // Fetch weekly data
-      const weekRanges = getWeekRanges();
-      const weeklyData: WeeklyData[] = [];
-
-      for (const { weekStart, weekEnd } of weekRanges) {
-        const { data: weeklyDonations, error: weeklyError } = await supabase
-          .from(streamerTable as "ankit_donations" | "harish_donations" | "mackle_donations" | "rakazone_donations" | "chiaa_gaming_donations")
-          .select('amount, created_at')
-          .eq('payment_status', 'completed')
-          .gte('created_at', weekStart.toISOString())
-          .lte('created_at', weekEnd.toISOString());
-
-        if (weeklyError) throw weeklyError;
-
-        const weeklyTotal = (weeklyDonations as DonationRecord[])?.reduce((sum, donation) => sum + Number(donation.amount), 0) || 0;
-        const weeklyCount = (weeklyDonations as DonationRecord[])?.length || 0;
-        const weeklyPayout = weeklyTotal * 0.7; // 70% payout
-
-        weeklyData.push({
-          weekStart: weekStart.toLocaleDateString(),
-          weekEnd: weekEnd.toLocaleDateString(),
-          totalDonations: weeklyTotal,
-          donationCount: weeklyCount,
-          weeklyPayout
-        });
+      if (error) {
+        console.error("Error fetching donations:", error);
+        throw error;
       }
+
+      console.log(`Found ${donations?.length || 0} completed donations for ${streamerTable}`);
+
+      const totalDonations = donations?.reduce((sum, donation) => sum + Number(donation.amount), 0) || 0;
+      const totalDonationCount = donations?.length || 0;
+      const totalPayout = totalDonations * 0.7;
+      const platformFee = totalDonations * 0.3;
 
       setStreamerStats({
         totalDonations,
         totalDonationCount,
-        weeklyData: weeklyData.reverse() // Most recent first
+        totalPayout,
+        platformFee
       });
 
     } catch (error) {
@@ -141,7 +89,7 @@ const SingleStreamerAnalytics = () => {
       <Card>
         <CardHeader>
           <CardTitle>Select Streamer</CardTitle>
-          <CardDescription>Choose a streamer to view detailed analytics</CardDescription>
+          <CardDescription>Choose a streamer to view total donation analytics</CardDescription>
         </CardHeader>
         <CardContent>
           <Select value={selectedStreamer} onValueChange={setSelectedStreamer}>
@@ -161,112 +109,79 @@ const SingleStreamerAnalytics = () => {
 
       {selectedStreamer && (
         <>
-          {/* Summary Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-32">
+              <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Donations</CardTitle>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">₹{streamerStats.totalDonations.toLocaleString()}</div>
+                  <p className="text-xs text-muted-foreground">
+                    {streamerStats.totalDonationCount} completed donations
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Streamer Payout (70%)</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-green-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-600">
+                    ₹{streamerStats.totalPayout.toLocaleString()}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Total amount to be paid
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Platform Fee (30%)</CardTitle>
+                  <DollarSign className="h-4 w-4 text-blue-600" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-blue-600">
+                    ₹{streamerStats.platformFee.toLocaleString()}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Platform revenue share
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Average Donation</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    ₹{streamerStats.totalDonationCount > 0 ? Math.round(streamerStats.totalDonations / streamerStats.totalDonationCount) : 0}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Per donation average
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {!isLoading && streamerStats.totalDonationCount === 0 && (
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Donations</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">₹{streamerStats.totalDonations.toLocaleString()}</div>
-                <p className="text-xs text-muted-foreground">
-                  {streamerStats.totalDonationCount} donations total
-                </p>
+              <CardContent className="text-center py-8 text-slate-500">
+                No completed donations found for {selectedStreamerName}.
               </CardContent>
             </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Payout</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600">
-                  ₹{(streamerStats.totalDonations * 0.7).toLocaleString()}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  70% of total donations
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Platform Share</CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-blue-600">
-                  ₹{(streamerStats.totalDonations * 0.3).toLocaleString()}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  30% platform fee
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Weekly Breakdown */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Calendar className="h-5 w-5" />
-                <span>Weekly Breakdown - {selectedStreamerName}</span>
-              </CardTitle>
-              <CardDescription>
-                Donations and payouts by week (Saturday to Friday)
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="flex items-center justify-center h-32">
-                  <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent"></div>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Week Period</TableHead>
-                        <TableHead>Donations</TableHead>
-                        <TableHead>Total Amount</TableHead>
-                        <TableHead>Payout (70%)</TableHead>
-                        <TableHead>Platform Fee (30%)</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {streamerStats.weeklyData.map((week, index) => (
-                        <TableRow key={index} className="hover:bg-slate-50">
-                          <TableCell className="font-medium">
-                            {week.weekStart} - {week.weekEnd}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{week.donationCount} donations</Badge>
-                          </TableCell>
-                          <TableCell className="font-semibold">
-                            ₹{week.totalDonations.toLocaleString()}
-                          </TableCell>
-                          <TableCell className="font-semibold text-green-600">
-                            ₹{week.weeklyPayout.toLocaleString()}
-                          </TableCell>
-                          <TableCell className="text-blue-600">
-                            ₹{(week.totalDonations * 0.3).toLocaleString()}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-
-              {!isLoading && streamerStats.weeklyData.length === 0 && (
-                <div className="text-center py-8 text-slate-500">
-                  No donation data found for the selected period.
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          )}
         </>
       )}
     </div>
