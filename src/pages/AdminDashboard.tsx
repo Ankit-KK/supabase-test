@@ -29,6 +29,10 @@ import AuditLog from "@/components/admin/AuditLog";
 import SingleStreamerAnalytics from "@/components/admin/SingleStreamerAnalytics";
 import PayoutsTab from "@/components/admin/PayoutsTab";
 
+interface DonationRecord {
+  amount: number;
+}
+
 interface DashboardData {
   totalDonationsThisWeek: number;
   totalAmountToBePaid: number;
@@ -81,10 +85,11 @@ const AdminDashboard = () => {
         }
 
         if (data) {
-          const tableTotal = data.reduce((sum, donation) => sum + Number(donation.amount), 0);
+          const donationRecords = data as DonationRecord[];
+          const tableTotal = donationRecords.reduce((sum, donation) => sum + Number(donation.amount), 0);
           totalAmount += tableTotal;
-          totalDonations += data.length;
-          console.log(`${streamerTable}: ${data.length} donations, ₹${tableTotal}`);
+          totalDonations += donationRecords.length;
+          console.log(`${streamerTable}: ${donationRecords.length} donations, ₹${tableTotal}`);
         }
       }
 

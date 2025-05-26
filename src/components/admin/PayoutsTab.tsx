@@ -9,6 +9,10 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { DollarSign, CheckCircle, Clock, Send } from "lucide-react";
 
+interface DonationRecord {
+  amount: number;
+}
+
 interface StreamerPayout {
   streamer_name: string;
   table_name: string;
@@ -57,8 +61,9 @@ const PayoutsTab = () => {
           continue;
         }
 
-        const totalDonations = donations?.reduce((sum, donation) => sum + Number(donation.amount), 0) || 0;
-        const donationCount = donations?.length || 0;
+        const donationRecords = donations as DonationRecord[];
+        const totalDonations = donationRecords?.reduce((sum, donation) => sum + Number(donation.amount), 0) || 0;
+        const donationCount = donationRecords?.length || 0;
         const payoutAmount = totalDonations * 0.7;
         const platformFee = totalDonations * 0.3;
 

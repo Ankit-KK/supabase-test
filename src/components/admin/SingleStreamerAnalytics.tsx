@@ -6,6 +6,10 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { DollarSign, TrendingUp } from "lucide-react";
 
+interface DonationRecord {
+  amount: number;
+}
+
 interface StreamerStats {
   totalDonations: number;
   totalDonationCount: number;
@@ -51,8 +55,9 @@ const SingleStreamerAnalytics = () => {
 
       console.log(`Found ${donations?.length || 0} completed donations for ${streamerTable}`);
 
-      const totalDonations = donations?.reduce((sum, donation) => sum + Number(donation.amount), 0) || 0;
-      const totalDonationCount = donations?.length || 0;
+      const donationRecords = donations as DonationRecord[];
+      const totalDonations = donationRecords?.reduce((sum, donation) => sum + Number(donation.amount), 0) || 0;
+      const totalDonationCount = donationRecords?.length || 0;
       const totalPayout = totalDonations * 0.7;
       const platformFee = totalDonations * 0.3;
 
