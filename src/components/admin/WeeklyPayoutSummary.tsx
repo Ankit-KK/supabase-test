@@ -17,12 +17,16 @@ interface WeeklyPayout {
   status: "pending" | "processed";
   selected: boolean;
   donation_count: number;
+  week_start: string;
+  week_end: string;
 }
 
 const WeeklyPayoutSummary = () => {
   const [payouts, setPayouts] = useState<WeeklyPayout[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCount, setSelectedCount] = useState(0);
+  const [currentWeekStart, setCurrentWeekStart] = useState<string>("");
+  const [currentWeekEnd, setCurrentWeekEnd] = useState<string>("");
 
   useEffect(() => {
     fetchWeeklyPayouts();
@@ -31,6 +35,14 @@ const WeeklyPayoutSummary = () => {
   useEffect(() => {
     setSelectedCount(payouts.filter(p => p.selected).length);
   }, [payouts]);
+
+  const formatDateForDisplay = (date: Date) => {
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
 
   const fetchWeeklyPayouts = async () => {
     try {
@@ -49,6 +61,10 @@ const WeeklyPayoutSummary = () => {
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekStart.getDate() + 6);
       weekEnd.setHours(23, 59, 59, 999);
+
+      // Set the current week display dates
+      setCurrentWeekStart(formatDateForDisplay(weekStart));
+      setCurrentWeekEnd(formatDateForDisplay(weekEnd));
 
       console.log(`Weekly period: ${weekStart.toISOString()} to ${weekEnd.toISOString()}`);
 
@@ -73,7 +89,9 @@ const WeeklyPayoutSummary = () => {
           last_payout_date: "2024-01-08",
           status: Math.random() > 0.6 ? "pending" : "processed",
           selected: false,
-          donation_count: ankitData.length
+          donation_count: ankitData.length,
+          week_start: formatDateForDisplay(weekStart),
+          week_end: formatDateForDisplay(weekEnd)
         });
       }
 
@@ -96,7 +114,9 @@ const WeeklyPayoutSummary = () => {
           last_payout_date: "2024-01-08",
           status: Math.random() > 0.6 ? "pending" : "processed",
           selected: false,
-          donation_count: harishData.length
+          donation_count: harishData.length,
+          week_start: formatDateForDisplay(weekStart),
+          week_end: formatDateForDisplay(weekEnd)
         });
       }
 
@@ -119,7 +139,9 @@ const WeeklyPayoutSummary = () => {
           last_payout_date: "2024-01-08",
           status: Math.random() > 0.6 ? "pending" : "processed",
           selected: false,
-          donation_count: mackleData.length
+          donation_count: mackleData.length,
+          week_start: formatDateForDisplay(weekStart),
+          week_end: formatDateForDisplay(weekEnd)
         });
       }
 
@@ -142,7 +164,9 @@ const WeeklyPayoutSummary = () => {
           last_payout_date: "2024-01-08",
           status: Math.random() > 0.6 ? "pending" : "processed",
           selected: false,
-          donation_count: rakazoneData.length
+          donation_count: rakazoneData.length,
+          week_start: formatDateForDisplay(weekStart),
+          week_end: formatDateForDisplay(weekEnd)
         });
       }
 
@@ -165,7 +189,9 @@ const WeeklyPayoutSummary = () => {
           last_payout_date: "2024-01-08",
           status: Math.random() > 0.6 ? "pending" : "processed",
           selected: false,
-          donation_count: chiaaData.length
+          donation_count: chiaaData.length,
+          week_start: formatDateForDisplay(weekStart),
+          week_end: formatDateForDisplay(weekEnd)
         });
       }
 
@@ -257,7 +283,7 @@ const WeeklyPayoutSummary = () => {
           <span>Weekly Payout Summary</span>
         </CardTitle>
         <CardDescription>
-          Weekly donations (Saturday to Friday) - {selectedCount} selected | Total: ₹{totalWeeklyDonations.toLocaleString()} | Payouts: ₹{totalWeeklyPayouts.toLocaleString()}
+          Week: {currentWeekStart} - {currentWeekEnd} | {selectedCount} selected | Total: ₹{totalWeeklyDonations.toLocaleString()} | Payouts: ₹{totalWeeklyPayouts.toLocaleString()}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -290,6 +316,8 @@ const WeeklyPayoutSummary = () => {
                   />
                 </TableHead>
                 <TableHead>Streamer</TableHead>
+                <TableHead>Week Start</TableHead>
+                <TableHead>Week End</TableHead>
                 <TableHead>Donations</TableHead>
                 <TableHead>Total Amount</TableHead>
                 <TableHead>Net Payout</TableHead>
@@ -308,6 +336,8 @@ const WeeklyPayoutSummary = () => {
                     />
                   </TableCell>
                   <TableCell className="font-medium">{payout.streamer_name}</TableCell>
+                  <TableCell className="text-sm text-slate-600">{payout.week_start}</TableCell>
+                  <TableCell className="text-sm text-slate-600">{payout.week_end}</TableCell>
                   <TableCell>{payout.donation_count} donations</TableCell>
                   <TableCell>₹{payout.total_donations.toLocaleString()}</TableCell>
                   <TableCell className="font-semibold text-green-600">
