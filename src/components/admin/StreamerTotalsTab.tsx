@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -39,13 +40,26 @@ const StreamerTotalsTab = () => {
     try {
       console.log(`Fetching data for ${streamerTable}`);
       
+      // First, let's check all donations regardless of status
+      const { data: allDonations, error: allError } = await supabase
+        .from(streamerTable)
+        .select('amount, payment_status');
+
+      if (allError) {
+        console.error("Error fetching all donations:", allError);
+      } else {
+        console.log(`Total donations in ${streamerTable}:`, allDonations?.length || 0);
+        console.log(`Sample data from ${streamerTable}:`, allDonations?.slice(0, 3));
+      }
+
+      // Now fetch only completed donations
       const { data: donations, error } = await supabase
         .from(streamerTable)
         .select('amount, payment_status')
         .eq('payment_status', 'completed');
 
       if (error) {
-        console.error("Error fetching donations:", error);
+        console.error("Error fetching completed donations:", error);
         throw error;
       }
 
@@ -53,7 +67,7 @@ const StreamerTotalsTab = () => {
 
       // Make sure we have data and it's an array
       if (!donations || !Array.isArray(donations)) {
-        console.log(`No donations found for ${streamerTable}`);
+        console.log(`No completed donations found for ${streamerTable}`);
         setStreamerTotals({
           totalDonations: 0,
           totalDonationCount: 0,
@@ -69,6 +83,13 @@ const StreamerTotalsTab = () => {
       const totalDonationCount = donationRecords.length;
       const totalPayout = totalDonations * 0.7;
       const platformFee = totalDonations * 0.3;
+
+      console.log(`Calculated totals for ${streamerTable}:`, {
+        totalDonations,
+        totalDonationCount,
+        totalPayout,
+        platformFee
+      });
 
       setStreamerTotals({
         totalDonations,

@@ -53,6 +53,19 @@ const PayoutsTab = () => {
       for (const streamer of streamers) {
         console.log(`Fetching payout data for ${streamer.name}`);
         
+        // First check all donations
+        const { data: allDonations, error: allError } = await supabase
+          .from(streamer.table)
+          .select('amount, payment_status');
+
+        if (allError) {
+          console.error(`Error fetching all ${streamer.name} donations:`, allError);
+        } else {
+          console.log(`Total donations for ${streamer.name}:`, allDonations?.length || 0);
+          console.log(`Sample data for ${streamer.name}:`, allDonations?.slice(0, 3));
+        }
+
+        // Then fetch completed donations
         const { data: donations, error } = await supabase
           .from(streamer.table)
           .select('amount, payment_status')
@@ -65,22 +78,22 @@ const PayoutsTab = () => {
 
         // Type guard to ensure we have the right data structure
         if (!donations || !Array.isArray(donations)) {
-          console.log(`No donations found for ${streamer.name}`);
+          console.log(`No completed donations found for ${streamer.name}`);
           continue;
         }
 
-        const donationRecords = donations.filter((donation): donation is DonationRecord => 
-          donation && 
-          typeof donation === 'object' && 
-          'amount' in donation && 
-          'payment_status' in donation &&
-          typeof donation.amount === 'number'
-        );
-
+        const donationRecords = donations as DonationRecord[];
         const totalDonations = donationRecords.reduce((sum, donation) => sum + Number(donation.amount), 0);
         const donationCount = donationRecords.length;
         const payoutAmount = totalDonations * 0.7;
         const platformFee = totalDonations * 0.3;
+
+        console.log(`Calculated for ${streamer.name}:`, {
+          totalDonations,
+          donationCount,
+          payoutAmount,
+          platformFee
+        });
 
         if (donationCount > 0) {
           payoutData.push({
@@ -95,7 +108,7 @@ const PayoutsTab = () => {
         }
       }
 
-      console.log("Payout data fetched:", payoutData);
+      console.log("Final payout data:", payoutData);
       setPayouts(payoutData);
     } catch (error) {
       console.error("Error fetching payout data:", error);
@@ -283,6 +296,9 @@ const PayoutsTab = () => {
           {payouts.length === 0 && (
             <div className="text-center py-8 text-slate-500">
               No streamers with completed donations found.
+              <div className="text-sm mt-2">
+                Check console logs for detailed database information.
+              </div>
             </div>
           )}
         </CardContent>
