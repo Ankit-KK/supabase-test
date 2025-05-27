@@ -35,15 +35,22 @@ const WeeklyPayoutSummary = () => {
   const fetchWeeklyPayouts = async () => {
     try {
       const now = new Date();
-      const dayOfWeek = now.getDay();
-      const daysUntilSaturday = dayOfWeek === 6 ? 0 : dayOfWeek + 1;
+      const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+      
+      // Calculate days since last Saturday
+      const daysSinceLastSaturday = dayOfWeek === 6 ? 0 : (dayOfWeek + 1);
+      
+      // Week starts on Saturday
       const weekStart = new Date(now);
-      weekStart.setDate(now.getDate() - daysUntilSaturday);
+      weekStart.setDate(now.getDate() - daysSinceLastSaturday);
       weekStart.setHours(0, 0, 0, 0);
 
+      // Week ends on Friday (6 days after Saturday)
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekStart.getDate() + 6);
       weekEnd.setHours(23, 59, 59, 999);
+
+      console.log(`Weekly period: ${weekStart.toISOString()} to ${weekEnd.toISOString()}`);
 
       const weeklyPayouts: WeeklyPayout[] = [];
 
@@ -51,13 +58,13 @@ const WeeklyPayoutSummary = () => {
       const { data: ankitData, error: ankitError } = await supabase
         .from('ankit_donations')
         .select('amount, created_at')
-        .eq('payment_status', 'completed')
+        .eq('payment_status', 'success')
         .gte('created_at', weekStart.toISOString())
         .lte('created_at', weekEnd.toISOString());
 
       if (!ankitError && ankitData && ankitData.length > 0) {
         const totalAmount = ankitData.reduce((sum, donation) => sum + Number(donation.amount), 0);
-        const netPayout = totalAmount * 0.7;
+        const netPayout = totalAmount * 0.95;
         weeklyPayouts.push({
           streamer_name: 'Ankit',
           total_donations: totalAmount,
@@ -74,13 +81,13 @@ const WeeklyPayoutSummary = () => {
       const { data: harishData, error: harishError } = await supabase
         .from('harish_donations')
         .select('amount, created_at')
-        .eq('payment_status', 'completed')
+        .eq('payment_status', 'success')
         .gte('created_at', weekStart.toISOString())
         .lte('created_at', weekEnd.toISOString());
 
       if (!harishError && harishData && harishData.length > 0) {
         const totalAmount = harishData.reduce((sum, donation) => sum + Number(donation.amount), 0);
-        const netPayout = totalAmount * 0.7;
+        const netPayout = totalAmount * 0.95;
         weeklyPayouts.push({
           streamer_name: 'Harish',
           total_donations: totalAmount,
@@ -97,13 +104,13 @@ const WeeklyPayoutSummary = () => {
       const { data: mackleData, error: mackleError } = await supabase
         .from('mackle_donations')
         .select('amount, created_at')
-        .eq('payment_status', 'completed')
+        .eq('payment_status', 'success')
         .gte('created_at', weekStart.toISOString())
         .lte('created_at', weekEnd.toISOString());
 
       if (!mackleError && mackleData && mackleData.length > 0) {
         const totalAmount = mackleData.reduce((sum, donation) => sum + Number(donation.amount), 0);
-        const netPayout = totalAmount * 0.7;
+        const netPayout = totalAmount * 0.95;
         weeklyPayouts.push({
           streamer_name: 'Mackle',
           total_donations: totalAmount,
@@ -120,13 +127,13 @@ const WeeklyPayoutSummary = () => {
       const { data: rakazoneData, error: rakazoneError } = await supabase
         .from('rakazone_donations')
         .select('amount, created_at')
-        .eq('payment_status', 'completed')
+        .eq('payment_status', 'success')
         .gte('created_at', weekStart.toISOString())
         .lte('created_at', weekEnd.toISOString());
 
       if (!rakazoneError && rakazoneData && rakazoneData.length > 0) {
         const totalAmount = rakazoneData.reduce((sum, donation) => sum + Number(donation.amount), 0);
-        const netPayout = totalAmount * 0.7;
+        const netPayout = totalAmount * 0.95;
         weeklyPayouts.push({
           streamer_name: 'Rakazone',
           total_donations: totalAmount,
@@ -143,13 +150,13 @@ const WeeklyPayoutSummary = () => {
       const { data: chiaaData, error: chiaaError } = await supabase
         .from('chiaa_gaming_donations')
         .select('amount, created_at')
-        .eq('payment_status', 'completed')
+        .eq('payment_status', 'success')
         .gte('created_at', weekStart.toISOString())
         .lte('created_at', weekEnd.toISOString());
 
       if (!chiaaError && chiaaData && chiaaData.length > 0) {
         const totalAmount = chiaaData.reduce((sum, donation) => sum + Number(donation.amount), 0);
-        const netPayout = totalAmount * 0.7;
+        const netPayout = totalAmount * 0.95;
         weeklyPayouts.push({
           streamer_name: 'Chiaa Gaming',
           total_donations: totalAmount,
@@ -250,7 +257,7 @@ const WeeklyPayoutSummary = () => {
           <span>Weekly Payout Summary</span>
         </CardTitle>
         <CardDescription>
-          Donations from Saturday to Friday - {selectedCount} selected | Total: ₹{totalWeeklyDonations.toLocaleString()} | Payouts: ₹{totalWeeklyPayouts.toLocaleString()}
+          Weekly donations (Saturday to Friday) - {selectedCount} selected | Total: ₹{totalWeeklyDonations.toLocaleString()} | Payouts: ₹{totalWeeklyPayouts.toLocaleString()}
         </CardDescription>
       </CardHeader>
       <CardContent>
