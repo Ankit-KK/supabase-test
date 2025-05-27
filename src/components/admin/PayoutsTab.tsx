@@ -65,11 +65,11 @@ const PayoutsTab = () => {
           console.log(`Sample data for ${streamer.name}:`, allDonations?.slice(0, 3));
         }
 
-        // Then fetch completed donations
+        // Then fetch successful donations (using 'success' instead of 'completed')
         const { data: donations, error } = await supabase
           .from(streamer.table)
           .select('amount, payment_status')
-          .eq('payment_status', 'completed');
+          .eq('payment_status', 'success');
 
         if (error) {
           console.error(`Error fetching ${streamer.name} donations:`, error);
@@ -78,7 +78,7 @@ const PayoutsTab = () => {
 
         // Type guard to ensure we have the right data structure
         if (!donations || !Array.isArray(donations)) {
-          console.log(`No completed donations found for ${streamer.name}`);
+          console.log(`No successful donations found for ${streamer.name}`);
           continue;
         }
 
@@ -295,7 +295,7 @@ const PayoutsTab = () => {
 
           {payouts.length === 0 && (
             <div className="text-center py-8 text-slate-500">
-              No streamers with completed donations found.
+              No streamers with successful donations found.
               <div className="text-sm mt-2">
                 Check console logs for detailed database information.
               </div>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -47,7 +48,7 @@ const SingleStreamerAnalytics = () => {
       const { data: donations, error } = await supabase
         .from(streamerTable)
         .select('amount, payment_status')
-        .eq('payment_status', 'completed');
+        .eq('payment_status', 'success');
 
       if (error) {
         console.error("Error fetching donations:", error);
@@ -144,7 +145,7 @@ const SingleStreamerAnalytics = () => {
                 <CardContent>
                   <div className="text-2xl font-bold">₹{streamerStats.totalDonations.toLocaleString()}</div>
                   <p className="text-xs text-muted-foreground">
-                    {streamerStats.totalDonationCount} completed donations
+                    {streamerStats.totalDonationCount} successful donations
                   </p>
                 </CardContent>
               </Card>
@@ -199,7 +200,7 @@ const SingleStreamerAnalytics = () => {
           {!isLoading && streamerStats.totalDonationCount === 0 && (
             <Card>
               <CardContent className="text-center py-8 text-slate-500">
-                No completed donations found for {selectedStreamerName}.
+                No successful donations found for {selectedStreamerName}.
               </CardContent>
             </Card>
           )}

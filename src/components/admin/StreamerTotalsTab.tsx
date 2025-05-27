@@ -52,22 +52,22 @@ const StreamerTotalsTab = () => {
         console.log(`Sample data from ${streamerTable}:`, allDonations?.slice(0, 3));
       }
 
-      // Now fetch only completed donations
+      // Now fetch only successful donations (using 'success' instead of 'completed')
       const { data: donations, error } = await supabase
         .from(streamerTable)
         .select('amount, payment_status')
-        .eq('payment_status', 'completed');
+        .eq('payment_status', 'success');
 
       if (error) {
-        console.error("Error fetching completed donations:", error);
+        console.error("Error fetching successful donations:", error);
         throw error;
       }
 
-      console.log(`Found ${donations?.length || 0} completed donations`);
+      console.log(`Found ${donations?.length || 0} successful donations`);
 
       // Make sure we have data and it's an array
       if (!donations || !Array.isArray(donations)) {
-        console.log(`No completed donations found for ${streamerTable}`);
+        console.log(`No successful donations found for ${streamerTable}`);
         setStreamerTotals({
           totalDonations: 0,
           totalDonationCount: 0,
@@ -159,7 +159,7 @@ const StreamerTotalsTab = () => {
                 <CardContent>
                   <div className="text-2xl font-bold">₹{streamerTotals.totalDonations.toLocaleString()}</div>
                   <p className="text-xs text-muted-foreground">
-                    {streamerTotals.totalDonationCount} completed donations
+                    {streamerTotals.totalDonationCount} successful donations
                   </p>
                 </CardContent>
               </Card>
