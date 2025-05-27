@@ -39,7 +39,7 @@ const WeeklyPayoutsTab = () => {
         const { data: donations, error } = await supabase
           .from(streamer.table)
           .select('amount, payment_status')
-          .eq('payment_status', 'completed');
+          .eq('payment_status', 'success');
 
         if (error) {
           console.error(`Error fetching ${streamer.name} donations:`, error);
@@ -49,8 +49,8 @@ const WeeklyPayoutsTab = () => {
         const donationRecords = donations as DonationRecord[];
         const totalDonations = donationRecords.reduce((sum, donation) => sum + Number(donation.amount), 0);
         const donationCount = donationRecords.length;
-        const payoutAmount = totalDonations * 0.7;
-        const platformFee = totalDonations * 0.3;
+        const payoutAmount = totalDonations * 0.95; // 95% to streamer
+        const platformFee = totalDonations * 0.05; // 5% platform fee
 
         if (donationCount > 0) {
           payoutData.push({
@@ -119,7 +119,7 @@ const WeeklyPayoutsTab = () => {
           <CardContent>
             <div className="text-2xl font-bold text-green-600">₹{totalPayouts.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              70% to streamers
+              95% to streamers
             </p>
           </CardContent>
         </Card>
@@ -132,7 +132,7 @@ const WeeklyPayoutsTab = () => {
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">₹{totalPlatformFees.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              30% platform fee
+              5% platform fee
             </p>
           </CardContent>
         </Card>
@@ -153,8 +153,8 @@ const WeeklyPayoutsTab = () => {
                   <TableHead>Streamer</TableHead>
                   <TableHead>Donations</TableHead>
                   <TableHead>Total Amount</TableHead>
-                  <TableHead>Payout (70%)</TableHead>
-                  <TableHead>Platform Fee (30%)</TableHead>
+                  <TableHead>Payout (95%)</TableHead>
+                  <TableHead>Platform Fee (5%)</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -181,7 +181,7 @@ const WeeklyPayoutsTab = () => {
 
           {payouts.length === 0 && (
             <div className="text-center py-8 text-slate-500">
-              No streamers with completed donations found.
+              No streamers with successful donations found.
             </div>
           )}
         </CardContent>

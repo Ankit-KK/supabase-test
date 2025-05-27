@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -85,8 +84,8 @@ const PayoutsTab = () => {
         const donationRecords = donations as DonationRecord[];
         const totalDonations = donationRecords.reduce((sum, donation) => sum + Number(donation.amount), 0);
         const donationCount = donationRecords.length;
-        const payoutAmount = totalDonations * 0.7;
-        const platformFee = totalDonations * 0.3;
+        const payoutAmount = totalDonations * 0.95; // 95% to streamer
+        const platformFee = totalDonations * 0.05; // 5% platform fee
 
         console.log(`Calculated for ${streamer.name}:`, {
           totalDonations,
@@ -199,7 +198,7 @@ const PayoutsTab = () => {
           <CardContent>
             <div className="text-2xl font-bold text-green-600">₹{totalPayouts.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              70% to streamers
+              95% to streamers
             </p>
           </CardContent>
         </Card>
@@ -212,7 +211,7 @@ const PayoutsTab = () => {
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">₹{totalPlatformFees.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              30% platform fee
+              5% platform fee
             </p>
           </CardContent>
         </Card>
@@ -261,8 +260,8 @@ const PayoutsTab = () => {
                   <TableHead>Streamer</TableHead>
                   <TableHead>Donations</TableHead>
                   <TableHead>Total Amount</TableHead>
-                  <TableHead>Payout (70%)</TableHead>
-                  <TableHead>Platform Fee (30%)</TableHead>
+                  <TableHead>Payout (95%)</TableHead>
+                  <TableHead>Platform Fee (5%)</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

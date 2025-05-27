@@ -71,8 +71,8 @@ const SingleStreamerAnalytics = () => {
       const donationRecords = donations as DonationRecord[];
       const totalDonations = donationRecords.reduce((sum, donation) => sum + Number(donation.amount), 0);
       const totalDonationCount = donationRecords.length;
-      const totalPayout = totalDonations * 0.7;
-      const platformFee = totalDonations * 0.3;
+      const totalPayout = totalDonations * 0.95; // 95% to streamer
+      const platformFee = totalDonations * 0.05; // 5% platform fee
 
       setStreamerStats({
         totalDonations,
@@ -152,7 +152,7 @@ const SingleStreamerAnalytics = () => {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Streamer Payout (70%)</CardTitle>
+                  <CardTitle className="text-sm font-medium">Streamer Payout (95%)</CardTitle>
                   <TrendingUp className="h-4 w-4 text-green-600" />
                 </CardHeader>
                 <CardContent>
@@ -167,7 +167,7 @@ const SingleStreamerAnalytics = () => {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Platform Fee (30%)</CardTitle>
+                  <CardTitle className="text-sm font-medium">Platform Fee (5%)</CardTitle>
                   <DollarSign className="h-4 w-4 text-blue-600" />
                 </CardHeader>
                 <CardContent>
