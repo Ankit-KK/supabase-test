@@ -14,4 +14,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://hyperchat.site/sitemap.xml
+Sitemap: https://hyperchat.space/sitemap.xml
