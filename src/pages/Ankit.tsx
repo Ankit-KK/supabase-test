@@ -36,10 +36,10 @@ const AnkitPage = () => {
     }
 
     const parsedAmount = parseFloat(amount);
-    if (isNaN(parsedAmount) || parsedAmount < 50) {
+    if (isNaN(parsedAmount) || parsedAmount < 1) {
       toast({
         title: "Invalid amount",
-        description: "Please enter an amount greater than or equal to ₹50",
+        description: "Please enter an amount greater than or equal to ₹1",
         variant: "destructive",
       });
       return false;
@@ -168,14 +168,14 @@ const AnkitPage = () => {
                 <Input 
                   id="amount"
                   type="number"
-                  min="50"
+                  min="1"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  placeholder="Minimum ₹50"
+                  placeholder="Minimum ₹1"
                   disabled={isLoading}
                   className="bg-black/50 border-purple-500/50 text-white placeholder:text-purple-300 focus:border-pink-400 focus:ring-pink-400/50"
                 />
-                <p className="text-xs text-purple-300">Minimum power level is ₹50</p>
+                <p className="text-xs text-purple-300">Minimum power level is ₹1</p>
               </div>
               
               <div className="space-y-2">
