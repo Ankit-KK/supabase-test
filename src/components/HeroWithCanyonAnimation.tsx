@@ -14,12 +14,12 @@ const HeroWithCanyonAnimation = () => {
         <div className="flex flex-col items-center text-center space-y-10">
           <div className="space-y-8 max-w-3xl">
             <CanyonAnimatedText
-              text="Hype Up Your Favourite Streamer!"
+              text="UPI Payment Platform for Creators!"
               className="mb-4"
             />
             
-            <h2 className="text-xl md:text-2xl text-muted-foreground max-w-[40ch] mx-auto">
-              The ultimate fan-to-streamer engagement tool that lets you stand out during live streams.
+            <h2 className="text-xl md:text-2xl text-muted-foreground max-w-[50ch] mx-auto">
+              The ultimate live streaming platform for content monetization in India. Enable direct fan support via UPI, virtual gifting, and get paid by fans instantly.
             </h2>
             
             <div className="flex flex-col sm:flex-row justify-center gap-4">
@@ -28,9 +28,24 @@ const HeroWithCanyonAnimation = () => {
                 className="bg-gradient-to-r from-hyperchat-purple to-hyperchat-pink hover:opacity-90 rounded-full font-medium"
                 onClick={() => setShowSignupDialog(true)}
               >
-                Join Beta 
+                Start Monetizing Content
                 <ChevronRight className="ml-1 h-4 w-4" />
               </Button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 text-sm">
+              <div className="flex flex-col items-center space-y-2">
+                <div className="text-hyperchat-pink font-semibold">UPI Payments</div>
+                <div className="text-muted-foreground">Instant UPI-based tipping solution</div>
+              </div>
+              <div className="flex flex-col items-center space-y-2">
+                <div className="text-hyperchat-purple font-semibold">Live Chat Tipping</div>
+                <div className="text-muted-foreground">Interactive fan engagement tools</div>
+              </div>
+              <div className="flex flex-col items-center space-y-2">
+                <div className="text-hyperchat-pink font-semibold">Earn Instantly</div>
+                <div className="text-muted-foreground">Support streamers with UPI payments</div>
+              </div>
             </div>
           </div>
           
@@ -44,7 +59,7 @@ const HeroWithCanyonAnimation = () => {
                     <div className="text-md text-white opacity-90">· ₹500</div>
                   </div>
                   <div className="text-white text-lg mt-2 font-medium">
-                    Great stream today! Love your content! Can you play my favorite song next?
+                    Love supporting my favorite creator! This UPI payment was so easy! 💖
                   </div>
                 </div>
               </div>

@@ -6,36 +6,51 @@ const Footer: React.FC = () => {
   return (
     <footer className="border-t border-white/10 bg-background">
       <div className="container px-4 md:px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="col-span-1">
             <div className="text-xl font-bold bg-clip-text text-transparent bg-hero-gradient mb-4">
               🎉 HyperChat
             </div>
-            <p className="text-sm text-muted-foreground">
-              The ultimate fan-to-streamer engagement tool that lets you stand out during live streams.
+            <p className="text-sm text-muted-foreground mb-4">
+              The ultimate UPI payment platform for creators and live streaming monetization in India. Support streamers with UPI payments.
             </p>
+            <div className="space-y-1 text-xs text-muted-foreground">
+              <p>✓ Direct fan support via UPI</p>
+              <p>✓ Get paid by fans instantly</p>
+              <p>✓ Virtual gifts for live streamers</p>
+            </div>
+          </div>
+          <div>
+            <h3 className="font-medium mb-4">For Creators</h3>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li><a href="#features" className="hover:text-hyperchat-purple transition-colors">UPI Payments</a></li>
+              <li><a href="#services" className="hover:text-hyperchat-purple transition-colors">Content Monetization</a></li>
+              <li><Link to="/contact" className="hover:text-hyperchat-purple transition-colors">Live Chat Tipping</Link></li>
+              <li><a href="#" className="hover:text-hyperchat-purple transition-colors">Earn Money from Streaming</a></li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="font-medium mb-4">Features</h3>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li><a href="#" className="hover:text-hyperchat-purple transition-colors">Virtual Gifting</a></li>
+              <li><a href="#" className="hover:text-hyperchat-purple transition-colors">Fan Engagement</a></li>
+              <li><a href="#" className="hover:text-hyperchat-purple transition-colors">UPI-based Tipping Solution</a></li>
+              <li><a href="#" className="hover:text-hyperchat-purple transition-colors">Indian Streaming Monetization</a></li>
+            </ul>
           </div>
           <div>
             <h3 className="font-medium mb-4">Company</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-hyperchat-purple transition-colors">About Us</a></li>
-              <li><Link to="/contact" className="hover:text-hyperchat-purple transition-colors">Contact</Link></li>
+              <li><Link to="/contact" className="hover:text-hyperchat-purple transition-colors">Contact Us</Link></li>
               <li><Link to="/privacy-policy" className="hover:text-hyperchat-purple transition-colors">Privacy Policy</Link></li>
-              <li><a href="#" className="hover:text-hyperchat-purple transition-colors">Careers</a></li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="font-medium mb-4">Policy</h3>
-            <ul className="space-y-2 text-sm text-muted-foreground">
               <li><Link to="/cancellation-refunds" className="hover:text-hyperchat-purple transition-colors">Cancellation & Refunds</Link></li>
-              <li><Link to="/shipping" className="hover:text-hyperchat-purple transition-colors">Shipping Information</Link></li>
-              <li><Link to="/privacy-policy" className="hover:text-hyperchat-purple transition-colors">Terms & Conditions</Link></li>
+              <li><Link to="/shipping" className="hover:text-hyperchat-purple transition-colors">Support</Link></li>
             </ul>
           </div>
         </div>
         <div className="mt-12 pt-6 border-t border-white/10 flex flex-col md:flex-row justify-between items-center">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} HyperChat. All rights reserved.
+            © {new Date().getFullYear()} HyperChat - UPI Payment Platform for Creators. All rights reserved.
           </p>
           <div className="flex space-x-4 mt-4 md:mt-0">
             <a href="#" className="text-muted-foreground hover:text-hyperchat-purple transition-colors">

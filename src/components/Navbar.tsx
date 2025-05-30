@@ -14,17 +14,23 @@ const Navbar: React.FC = () => {
           <Link to="/">
             <img 
               src="/lovable-uploads/6baaf08e-b2c6-40bd-86d9-0329286b56dc.png" 
-              alt="HyperChat" 
+              alt="HyperChat - UPI Payment Platform for Creators" 
               className="h-8"
             />
           </Link>
         </div>
         <div className="hidden md:flex items-center space-x-6">
+          <a href="#features" className="text-sm hover:text-hyperchat-purple transition-colors">
+            UPI Payments
+          </a>
+          <a href="#services" className="text-sm hover:text-hyperchat-purple transition-colors">
+            For Creators
+          </a>
           <Link to="/contact" className="text-sm hover:text-hyperchat-purple transition-colors">
-            Contact Us
+            Content Monetization
           </Link>
           <Link to="/privacy-policy" className="text-sm hover:text-hyperchat-purple transition-colors">
-            Privacy Policy
+            Privacy
           </Link>
         </div>
         <div className="flex items-center space-x-4">
@@ -33,7 +39,7 @@ const Navbar: React.FC = () => {
             className="bg-hero-gradient hover:opacity-90 transition-opacity"
             onClick={() => setShowSignupDialog(true)}
           >
-            Get Started
+            Start Earning
           </Button>
         </div>
       </div>

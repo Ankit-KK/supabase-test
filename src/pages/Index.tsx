@@ -8,6 +8,7 @@ import CustomPagesShowcase from "@/components/CustomPagesShowcase";
 import Footer from "@/components/Footer";
 import VideoBackground from "@/components/VideoBackground";
 import ChatDemo from "@/components/ChatDemo";
+import HowItWorks from "@/components/HowItWorks";
 
 const Index = () => {
   return (
@@ -17,6 +18,7 @@ const Index = () => {
         <Navbar />
         <HeroWithCanyonAnimation />
         <Features />
+        <HowItWorks />
         <ChatDemo />
         <CustomPagesShowcase />
         <Services />
