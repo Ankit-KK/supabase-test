@@ -9,6 +9,8 @@ import Footer from "@/components/Footer";
 import VideoBackground from "@/components/VideoBackground";
 import ChatDemo from "@/components/ChatDemo";
 import HowItWorks from "@/components/HowItWorks";
+import BlogSection from "@/components/BlogSection";
+import FAQSection from "@/components/FAQSection";
 
 const Index = () => {
   return (
@@ -22,6 +24,8 @@ const Index = () => {
         <ChatDemo />
         <CustomPagesShowcase />
         <Services />
+        <BlogSection />
+        <FAQSection />
         <Footer />
       </div>
     </div>
