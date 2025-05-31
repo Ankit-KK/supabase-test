@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -46,6 +47,11 @@ import ChiaaGamingObsView from "./pages/ChiaaGamingObsView";
 import ChiaaGamingDonationExport from "./pages/ChiaaGamingDonationExport";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
+// Blog post imports
+import CompleteGuideMonetizeContentIndia from "./pages/blog/CompleteGuideMonetizeContentIndia";
+import EarnMoneyStreamingIndia from "./pages/blog/EarnMoneyStreamingIndia";
+import BestUpiTippingPlatforms from "./pages/blog/BestUpiTippingPlatforms";
+import FanEngagementTools2025 from "./pages/blog/FanEngagementTools2025";
 import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
@@ -66,6 +72,11 @@ const App = () => {
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/blog" element={<Blog />} />
+              {/* Blog post routes */}
+              <Route path="/blog/complete-guide-monetize-content-india" element={<CompleteGuideMonetizeContentIndia />} />
+              <Route path="/blog/earn-money-streaming-india" element={<EarnMoneyStreamingIndia />} />
+              <Route path="/blog/best-upi-tipping-platforms" element={<BestUpiTippingPlatforms />} />
+              <Route path="/blog/fan-engagement-tools-2025" element={<FanEngagementTools2025 />} />
               <Route path="/ankit" element={<AnkitPage />} />
               <Route path="/harish" element={<HarishPage />} />
               <Route path="/mackle" element={<MacklePage />} />
