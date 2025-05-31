@@ -119,7 +119,7 @@ const Contact = () => {
               <p className="text-muted-foreground mb-4">Lead Developer</p>
               <div className="flex items-center space-x-2 mb-2">
                 <Phone className="h-4 w-4" />
-                <span>+91 9205013630</span>
+                <span>+91 9211460100</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Mail className="h-4 w-4" />
