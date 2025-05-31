@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -52,6 +51,9 @@ import CompleteGuideMonetizeContentIndia from "./pages/blog/CompleteGuideMonetiz
 import EarnMoneyStreamingIndia from "./pages/blog/EarnMoneyStreamingIndia";
 import BestUpiTippingPlatforms from "./pages/blog/BestUpiTippingPlatforms";
 import FanEngagementTools2025 from "./pages/blog/FanEngagementTools2025";
+import UpiSecurityBestPractices from "./pages/blog/UpiSecurityBestPractices";
+import VirtualGiftsMaximizeRevenue from "./pages/blog/VirtualGiftsMaximizeRevenue";
+import StreamerDonationAppStrategy from "./pages/blog/StreamerDonationAppStrategy";
 import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
@@ -77,6 +79,9 @@ const App = () => {
               <Route path="/blog/earn-money-streaming-india" element={<EarnMoneyStreamingIndia />} />
               <Route path="/blog/best-upi-tipping-platforms" element={<BestUpiTippingPlatforms />} />
               <Route path="/blog/fan-engagement-tools-2025" element={<FanEngagementTools2025 />} />
+              <Route path="/blog/upi-security-best-practices" element={<UpiSecurityBestPractices />} />
+              <Route path="/blog/virtual-gifts-maximize-revenue" element={<VirtualGiftsMaximizeRevenue />} />
+              <Route path="/blog/streamer-donation-app-strategy" element={<StreamerDonationAppStrategy />} />
               <Route path="/ankit" element={<AnkitPage />} />
               <Route path="/harish" element={<HarishPage />} />
               <Route path="/mackle" element={<MacklePage />} />
