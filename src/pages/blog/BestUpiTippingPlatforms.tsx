@@ -1,12 +1,15 @@
 
-import React from "react";
+import React, { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Clock, User, Share2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import SignupDialog from "@/components/SignupDialog";
 
 const BestUpiTippingPlatforms = () => {
+  const [showSignupDialog, setShowSignupDialog] = useState(false);
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -99,17 +102,25 @@ const BestUpiTippingPlatforms = () => {
                 When choosing a tipping platform, consider ease of use and trust. Platforms built for creators (like Buy Me A Chai) optimize for quick setup and low fees, while payment gateways give more flexibility. The key is to make giving as frictionless as possible for your fans.
               </p>
               
-              <div className="bg-secondary/50 p-6 rounded-xl mt-8 mb-8">
-                <h3 className="text-xl font-semibold mb-4">Try HyperChat for Better Chat</h3>
-                <p className="mb-4">To keep your community engaged while you earn, consider enhancing your live chat. HyperChat is a free browser extension that adds advanced chat features.</p>
-                <Button className="bg-hero-gradient hover:opacity-90">
-                  Install HyperChat
+              <div className="bg-secondary/50 p-6 rounded-xl mt-8 mb-8 text-center">
+                <h3 className="text-xl font-semibold mb-4">Install HyperChat, Get Your Custom Page</h3>
+                <p className="mb-4">Ready to take your streaming to the next level? Get started with HyperChat and create your personalized donation page with enhanced chat features.</p>
+                <Button 
+                  className="bg-hero-gradient hover:opacity-90"
+                  onClick={() => setShowSignupDialog(true)}
+                >
+                  Get Started with HyperChat
                 </Button>
               </div>
             </article>
           </div>
         </div>
       </section>
+      
+      <SignupDialog 
+        open={showSignupDialog} 
+        onOpenChange={setShowSignupDialog} 
+      />
       
       <Footer />
     </div>
