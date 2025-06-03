@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -78,6 +77,12 @@ import FanEngagementTools2025 from "./pages/blog/FanEngagementTools2025";
 import StreamerDonationAppStrategy from "./pages/blog/StreamerDonationAppStrategy";
 import VirtualGiftsMaximizeRevenue from "./pages/blog/VirtualGiftsMaximizeRevenue";
 
+import BattleArenaPayment from "./pages/BattleArenaPayment";
+import CyberStrikerPayment from "./pages/CyberStrikerPayment";
+import MysticRealmPayment from "./pages/MysticRealmPayment";
+import RetroArcadePayment from "./pages/RetroArcadePayment";
+import SpaceCommandPayment from "./pages/SpaceCommandPayment";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -141,14 +146,19 @@ const App = () => (
 
             {/* Gaming showcase routes */}
             <Route path="/cyber-striker" element={<CyberStriker />} />
+            <Route path="/cyber-striker/payment" element={<CyberStrikerPayment />} />
             <Route path="/cyber-striker/dashboard" element={<CyberStrikerDashboard />} />
             <Route path="/mystic-realm" element={<MysticRealm />} />
+            <Route path="/mystic-realm/payment" element={<MysticRealmPayment />} />
             <Route path="/mystic-realm/dashboard" element={<MysticRealmDashboard />} />
             <Route path="/retro-arcade" element={<RetroArcade />} />
+            <Route path="/retro-arcade/payment" element={<RetroArcadePayment />} />
             <Route path="/retro-arcade/dashboard" element={<RetroArcadeDashboard />} />
             <Route path="/space-command" element={<SpaceCommand />} />
+            <Route path="/space-command/payment" element={<SpaceCommandPayment />} />
             <Route path="/space-command/dashboard" element={<SpaceCommandDashboard />} />
             <Route path="/battle-arena" element={<BattleArena />} />
+            <Route path="/battle-arena/payment" element={<BattleArenaPayment />} />
             <Route path="/battle-arena/dashboard" element={<BattleArenaDashboard />} />
 
             {/* Admin routes */}
