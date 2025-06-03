@@ -46,6 +46,12 @@ import ChiaaGamingObsView from "./pages/ChiaaGamingObsView";
 import ChiaaGamingDonationExport from "./pages/ChiaaGamingDonationExport";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
+// Gaming showcase pages
+import CyberStriker from "./pages/CyberStriker";
+import MysticRealm from "./pages/MysticRealm";
+import RetroArcade from "./pages/RetroArcade";
+import SpaceCommand from "./pages/SpaceCommand";
+import BattleArena from "./pages/BattleArena";
 // Blog post imports
 import CompleteGuideMonetizeContentIndia from "./pages/blog/CompleteGuideMonetizeContentIndia";
 import EarnMoneyStreamingIndia from "./pages/blog/EarnMoneyStreamingIndia";
@@ -82,6 +88,15 @@ const App = () => {
               <Route path="/blog/upi-security-best-practices" element={<UpiSecurityBestPractices />} />
               <Route path="/blog/virtual-gifts-maximize-revenue" element={<VirtualGiftsMaximizeRevenue />} />
               <Route path="/blog/streamer-donation-app-strategy" element={<StreamerDonationAppStrategy />} />
+              
+              {/* Gaming showcase pages */}
+              <Route path="/cyber-striker" element={<CyberStriker />} />
+              <Route path="/mystic-realm" element={<MysticRealm />} />
+              <Route path="/retro-arcade" element={<RetroArcade />} />
+              <Route path="/space-command" element={<SpaceCommand />} />
+              <Route path="/battle-arena" element={<BattleArena />} />
+              
+              {/* Existing streamer pages */}
               <Route path="/ankit" element={<AnkitPage />} />
               <Route path="/harish" element={<HarishPage />} />
               <Route path="/mackle" element={<MacklePage />} />
