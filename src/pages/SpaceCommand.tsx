@@ -225,7 +225,7 @@ const SpaceCommand = () => {
                     <Checkbox
                       id="includeSound"
                       checked={includeSound}
-                      onCheckedChange={setIncludeSound}
+                      onCheckedChange={(checked) => setIncludeSound(checked === true)}
                       className="border-blue-400 data-[state=checked]:bg-blue-400"
                     />
                     <label htmlFor="includeSound" className="text-sm text-gray-300 flex items-center space-x-2">
@@ -238,7 +238,7 @@ const SpaceCommand = () => {
                     <Checkbox
                       id="warpEffect"
                       checked={warpEffect}
-                      onCheckedChange={setWarpEffect}
+                      onCheckedChange={(checked) => setWarpEffect(checked === true)}
                       className="border-blue-400 data-[state=checked]:bg-blue-400"
                     />
                     <label htmlFor="warpEffect" className="text-sm text-gray-300 flex items-center space-x-2">

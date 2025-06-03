@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Zap, Circuit, Gamepad2, Volume2, VolumeX } from "lucide-react";
+import { Zap, Cpu, Gamepad2, Volume2, VolumeX } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { createPaymentOrder, createDonationRecord } from "@/services/paymentService";
 
@@ -90,7 +90,7 @@ const CyberStriker = () => {
       <nav className="bg-black/50 backdrop-blur-sm border-b border-cyan-400/30 p-4">
         <div className="container mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Circuit className="h-8 w-8 text-cyan-400" />
+            <Cpu className="h-8 w-8 text-cyan-400" />
             <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
               CYBER STRIKER
             </h1>
@@ -137,7 +137,7 @@ const CyberStriker = () => {
           <Card className="bg-black/40 backdrop-blur-sm border-cyan-400/30 shadow-2xl shadow-cyan-400/20">
             <CardHeader>
               <CardTitle className="text-2xl font-bold text-white flex items-center space-x-2">
-                <Circuit className="h-6 w-6 text-cyan-400" />
+                <Cpu className="h-6 w-6 text-cyan-400" />
                 <span>Neural Link Transfer</span>
               </CardTitle>
               <CardDescription className="text-gray-400">
@@ -204,7 +204,7 @@ const CyberStriker = () => {
                     <Checkbox
                       id="includeSound"
                       checked={includeSound}
-                      onCheckedChange={setIncludeSound}
+                      onCheckedChange={(checked) => setIncludeSound(checked === true)}
                       className="border-cyan-400 data-[state=checked]:bg-cyan-400"
                     />
                     <label htmlFor="includeSound" className="text-sm text-gray-300 flex items-center space-x-2">
@@ -217,7 +217,7 @@ const CyberStriker = () => {
                     <Checkbox
                       id="includeEffects"
                       checked={includeEffects}
-                      onCheckedChange={setIncludeEffects}
+                      onCheckedChange={(checked) => setIncludeEffects(checked === true)}
                       className="border-cyan-400 data-[state=checked]:bg-cyan-400"
                     />
                     <label htmlFor="includeEffects" className="text-sm text-gray-300 flex items-center space-x-2">
@@ -239,7 +239,7 @@ const CyberStriker = () => {
                     </div>
                   ) : (
                     <div className="flex items-center space-x-2">
-                      <Circuit className="h-4 w-4" />
+                      <Cpu className="h-4 w-4" />
                       <span>Execute Neural Transfer</span>
                     </div>
                   )}

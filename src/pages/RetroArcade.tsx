@@ -240,7 +240,7 @@ const RetroArcade = () => {
                   <Checkbox
                     id="includeSound"
                     checked={includeSound}
-                    onCheckedChange={setIncludeSound}
+                    onCheckedChange={(checked) => setIncludeSound(checked === true)}
                     className="border-2 border-yellow-400 data-[state=checked]:bg-yellow-400 data-[state=checked]:text-black"
                   />
                   <label htmlFor="includeSound" className="text-sm text-white font-bold flex items-center space-x-2">

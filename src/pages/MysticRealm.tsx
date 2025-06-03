@@ -239,7 +239,7 @@ const MysticRealm = () => {
                   <Checkbox
                     id="includeSound"
                     checked={includeSound}
-                    onCheckedChange={setIncludeSound}
+                    onCheckedChange={(checked) => setIncludeSound(checked === true)}
                     className="border-yellow-400 data-[state=checked]:bg-yellow-400"
                   />
                   <label htmlFor="includeSound" className="text-sm text-gray-300 flex items-center space-x-2">
