@@ -14,7 +14,7 @@ import { objectsToCSV, downloadCSV, formatDateForFilename } from "@/utils/csvExp
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface DonationExportProps {
-  tableName: "ankit_donations" | "harish_donations" | "mackle_donations" | "rakazone_donations";
+  tableName: "ankit_donations" | "harish_donations" | "mackle_donations" | "rakazone_donations" | "chiaa_gaming_donations" | "cyber_striker_donations" | "mystic_realm_donations" | "retro_arcade_donations" | "space_command_donations" | "battle_arena_donations";
   streamerName: string;
 }
 
