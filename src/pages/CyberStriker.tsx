@@ -1,4 +1,5 @@
 
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -283,7 +284,7 @@ const CyberStriker = () => {
                   className="w-full border-cyan-400/50 text-cyan-400 hover:bg-cyan-400/10"
                   onClick={() => window.open('/cyber-striker/leaderboard', '_blank')}
                 >
-                  <Leaderboard className="mr-2 h-4 w-4" />
+                  <BarChart3 className="mr-2 h-4 w-4" />
                   View Leaderboard
                 </Button>
                 <Button 
@@ -337,3 +338,4 @@ const CyberStriker = () => {
 };
 
 export default CyberStriker;
+
