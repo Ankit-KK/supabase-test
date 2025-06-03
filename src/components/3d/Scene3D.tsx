@@ -22,6 +22,9 @@ export const Scene3D: React.FC<Scene3DProps> = ({
         onError={(error) => {
           console.error('Three.js Canvas Error:', error);
         }}
+        onCreated={(state) => {
+          console.log('Three.js Canvas Created Successfully');
+        }}
       >
         <Suspense fallback={null}>
           {/* Lighting */}

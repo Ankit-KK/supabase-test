@@ -1,7 +1,7 @@
 
 import React, { useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { Sphere, Text } from '@react-three/drei';
+import { Text } from '@react-three/drei';
 import * as THREE from 'three';
 
 interface DonationSphereProps {
@@ -14,6 +14,7 @@ export const DonationSphere: React.FC<DonationSphereProps> = ({
   goalAmount 
 }) => {
   const meshRef = useRef<THREE.Mesh>(null);
+  const fillMeshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
   const { mouse } = useThree();
   
@@ -49,13 +50,13 @@ export const DonationSphere: React.FC<DonationSphereProps> = ({
 
   return (
     <group>
-      {/* Main sphere */}
-      <Sphere
+      {/* Main sphere using native Three.js geometry */}
+      <mesh
         ref={meshRef}
-        args={[1, 32, 32]}
         onPointerOver={() => setHovered(true)}
         onPointerOut={() => setHovered(false)}
       >
+        <sphereGeometry args={[1, 32, 32]} />
         <meshPhongMaterial
           color={progress > 0.8 ? '#10b981' : progress > 0.5 ? '#f59e0b' : '#8b5cf6'}
           transparent
@@ -63,10 +64,11 @@ export const DonationSphere: React.FC<DonationSphereProps> = ({
           emissive={progress > 0.8 ? '#065f46' : progress > 0.5 ? '#92400e' : '#581c87'}
           emissiveIntensity={0.2}
         />
-      </Sphere>
+      </mesh>
       
       {/* Fill indicator sphere */}
-      <Sphere args={[0.95, 32, 32]} position={[0, fillHeight - 1, 0]}>
+      <mesh ref={fillMeshRef} position={[0, fillHeight - 1, 0]}>
+        <sphereGeometry args={[0.95, 32, 32]} />
         <meshPhongMaterial
           color="#ec4899"
           transparent
@@ -74,7 +76,7 @@ export const DonationSphere: React.FC<DonationSphereProps> = ({
           emissive="#be185d"
           emissiveIntensity={0.3}
         />
-      </Sphere>
+      </mesh>
       
       {/* Floating donation text */}
       <Text
