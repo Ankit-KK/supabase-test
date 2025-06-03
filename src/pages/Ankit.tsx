@@ -6,6 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { Gamepad2, Zap, Trophy } from "lucide-react";
+import { Scene3D } from "@/components/3d/Scene3D";
+import { DonationSphere } from "@/components/3d/DonationSphere";
+import { use3DAnimation } from "@/hooks/use3DAnimation";
 
 const AnkitPage = () => {
   const [name, setName] = useState("");
@@ -14,6 +17,8 @@ const AnkitPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [maxMessageLength, setMaxMessageLength] = useState(50);
   const navigate = useNavigate();
+  
+  const { donationAmount, goalAmount, triggerCelebration } = use3DAnimation();
 
   // Update max message length based on amount
   useEffect(() => {
@@ -81,6 +86,9 @@ const AnkitPage = () => {
       
       sessionStorage.setItem("donationData", JSON.stringify(donationData));
       
+      // Trigger celebration effect
+      triggerCelebration();
+      
       // Navigate to payment checkout
       navigate("/payment-checkout");
     } catch (error) {
@@ -127,6 +135,16 @@ const AnkitPage = () => {
         </div>
       </div>
 
+      {/* 3D Donation Sphere */}
+      <div className="absolute top-20 right-20 w-64 h-64 pointer-events-none">
+        <Scene3D height="256px">
+          <DonationSphere 
+            donationAmount={donationAmount} 
+            goalAmount={goalAmount} 
+          />
+        </Scene3D>
+      </div>
+
       {/* Neon Border Effect */}
       <div className="absolute inset-4 border-2 border-purple-500/30 rounded-lg shadow-lg shadow-purple-500/20 pointer-events-none"></div>
       
@@ -143,6 +161,9 @@ const AnkitPage = () => {
             <p className="text-purple-200">
               Power up the stream with your awesome donation!
             </p>
+            <div className="text-sm text-purple-300">
+              Goal Progress: ₹{donationAmount.toLocaleString()} / ₹{goalAmount.toLocaleString()}
+            </div>
           </div>
           
           <div className="backdrop-blur-lg bg-black/40 p-6 rounded-xl border border-purple-500/30 shadow-2xl shadow-purple-500/20">
