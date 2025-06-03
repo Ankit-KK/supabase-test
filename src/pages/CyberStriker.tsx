@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Zap, Cpu, Gamepad2, Volume2, VolumeX, Monitor } from "lucide-react";
+import { Zap, Cpu, Gamepad2, Volume2, VolumeX, Monitor, BarChart3, Settings } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { createPaymentOrder, createDonationRecord } from "@/services/paymentService";
 
