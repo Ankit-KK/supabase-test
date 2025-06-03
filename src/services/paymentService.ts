@@ -7,19 +7,8 @@ type DonationRecord = {
   message: string;
   order_id: string;
   payment_status: string;
-  donationType: "ankit" | "harish" | "mackle" | "rakazone" | "chiaa_gaming" | "cyber_striker" | "mystic_realm" | "retro_arcade" | "space_command" | "battle_arena";
+  donationType: "ankit" | "harish" | "mackle" | "rakazone" | "chiaa_gaming";
   include_sound?: boolean;
-  // Gaming-specific fields
-  include_effects?: boolean;
-  donation_tier?: string;
-  character_class?: string;
-  spell_effect?: string;
-  powerup_type?: string;
-  pixel_animation?: string;
-  ship_type?: string;
-  warp_effect?: boolean;
-  military_rank?: string;
-  tactical_effect?: string;
 };
 
 /**
@@ -72,20 +61,17 @@ export const createDonationRecord = async (donation: DonationRecord) => {
   try {
     let tableName;
     
-    // Map donation types to table names
-    const tableMapping: Record<string, string> = {
-      "harish": "harish_donations",
-      "mackle": "mackle_donations",
-      "rakazone": "rakazone_donations",
-      "chiaa_gaming": "chiaa_gaming_donations",
-      "cyber_striker": "cyber_striker_donations",
-      "mystic_realm": "mystic_realm_donations",
-      "retro_arcade": "retro_arcade_donations",
-      "space_command": "space_command_donations",
-      "battle_arena": "battle_arena_donations",
-    };
-    
-    tableName = tableMapping[donation.donationType] || "ankit_donations";
+    if (donation.donationType === "harish") {
+      tableName = "harish_donations";
+    } else if (donation.donationType === "mackle") {
+      tableName = "mackle_donations";
+    } else if (donation.donationType === "rakazone") {
+      tableName = "rakazone_donations";
+    } else if (donation.donationType === "chiaa_gaming") {
+      tableName = "chiaa_gaming_donations";
+    } else {
+      tableName = "ankit_donations";
+    }
     
     const recordData: any = {
       name: donation.name,
@@ -95,27 +81,9 @@ export const createDonationRecord = async (donation: DonationRecord) => {
       payment_status: donation.payment_status
     };
     
-    // Add sound support for specific types
-    if (["mackle", "rakazone", "chiaa_gaming", "cyber_striker", "mystic_realm", "retro_arcade", "space_command", "battle_arena"].includes(donation.donationType) && donation.include_sound !== undefined) {
+    // Only add include_sound for mackle/rakazone/chiaa_gaming donations
+    if ((donation.donationType === "mackle" || donation.donationType === "rakazone" || donation.donationType === "chiaa_gaming") && donation.include_sound !== undefined) {
       recordData.include_sound = donation.include_sound;
-    }
-    
-    // Add gaming-specific fields based on donation type
-    if (donation.donationType === "cyber_striker") {
-      if (donation.include_effects !== undefined) recordData.include_effects = donation.include_effects;
-      if (donation.donation_tier !== undefined) recordData.donation_tier = donation.donation_tier;
-    } else if (donation.donationType === "mystic_realm") {
-      if (donation.character_class !== undefined) recordData.character_class = donation.character_class;
-      if (donation.spell_effect !== undefined) recordData.spell_effect = donation.spell_effect;
-    } else if (donation.donationType === "retro_arcade") {
-      if (donation.powerup_type !== undefined) recordData.powerup_type = donation.powerup_type;
-      if (donation.pixel_animation !== undefined) recordData.pixel_animation = donation.pixel_animation;
-    } else if (donation.donationType === "space_command") {
-      if (donation.ship_type !== undefined) recordData.ship_type = donation.ship_type;
-      if (donation.warp_effect !== undefined) recordData.warp_effect = donation.warp_effect;
-    } else if (donation.donationType === "battle_arena") {
-      if (donation.military_rank !== undefined) recordData.military_rank = donation.military_rank;
-      if (donation.tactical_effect !== undefined) recordData.tactical_effect = donation.tactical_effect;
     }
     
     console.log(`Creating ${tableName} record with data:`, recordData);
