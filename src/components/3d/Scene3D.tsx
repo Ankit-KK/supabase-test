@@ -19,6 +19,9 @@ export const Scene3D: React.FC<Scene3DProps> = ({
       <Canvas
         camera={{ position: [0, 0, 5], fov: 60 }}
         style={{ background: 'transparent' }}
+        onError={(error) => {
+          console.error('Three.js Canvas Error:', error);
+        }}
       >
         <Suspense fallback={null}>
           {/* Lighting */}

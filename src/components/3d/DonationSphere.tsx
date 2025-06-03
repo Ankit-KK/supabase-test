@@ -25,21 +25,25 @@ export const DonationSphere: React.FC<DonationSphereProps> = ({
       // Gentle rotation
       meshRef.current.rotation.y += delta * 0.5;
       
-      // Mouse following effect
-      meshRef.current.rotation.x = THREE.MathUtils.lerp(
-        meshRef.current.rotation.x,
-        mouse.y * 0.2,
-        0.05
-      );
-      meshRef.current.rotation.z = THREE.MathUtils.lerp(
-        meshRef.current.rotation.z,
-        mouse.x * 0.2,
-        0.05
-      );
+      // Mouse following effect with null checks
+      if (mouse) {
+        meshRef.current.rotation.x = THREE.MathUtils.lerp(
+          meshRef.current.rotation.x,
+          mouse.y * 0.2,
+          0.05
+        );
+        meshRef.current.rotation.z = THREE.MathUtils.lerp(
+          meshRef.current.rotation.z,
+          mouse.x * 0.2,
+          0.05
+        );
+      }
       
       // Pulsing effect when hovered
-      const scale = hovered ? 1.1 + Math.sin(state.clock.elapsedTime * 4) * 0.05 : 1;
-      meshRef.current.scale.setScalar(scale);
+      if (state.clock) {
+        const scale = hovered ? 1.1 + Math.sin(state.clock.elapsedTime * 4) * 0.05 : 1;
+        meshRef.current.scale.setScalar(scale);
+      }
     }
   });
 
