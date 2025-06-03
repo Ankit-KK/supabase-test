@@ -75,45 +75,6 @@ export type Database = {
         }
         Relationships: []
       }
-      battle_arena_donations: {
-        Row: {
-          amount: number
-          created_at: string | null
-          id: string
-          include_sound: boolean
-          message: string
-          military_rank: string | null
-          name: string
-          order_id: string
-          payment_status: string
-          tactical_effect: string | null
-        }
-        Insert: {
-          amount: number
-          created_at?: string | null
-          id?: string
-          include_sound?: boolean
-          message: string
-          military_rank?: string | null
-          name: string
-          order_id: string
-          payment_status?: string
-          tactical_effect?: string | null
-        }
-        Update: {
-          amount?: number
-          created_at?: string | null
-          id?: string
-          include_sound?: boolean
-          message?: string
-          military_rank?: string | null
-          name?: string
-          order_id?: string
-          payment_status?: string
-          tactical_effect?: string | null
-        }
-        Relationships: []
-      }
       chiaa_gaming_donations: {
         Row: {
           amount: number
@@ -139,45 +100,6 @@ export type Database = {
           amount?: number
           created_at?: string | null
           id?: string
-          include_sound?: boolean
-          message?: string
-          name?: string
-          order_id?: string
-          payment_status?: string
-        }
-        Relationships: []
-      }
-      cyber_striker_donations: {
-        Row: {
-          amount: number
-          created_at: string | null
-          donation_tier: string | null
-          id: string
-          include_effects: boolean | null
-          include_sound: boolean
-          message: string
-          name: string
-          order_id: string
-          payment_status: string
-        }
-        Insert: {
-          amount: number
-          created_at?: string | null
-          donation_tier?: string | null
-          id?: string
-          include_effects?: boolean | null
-          include_sound?: boolean
-          message: string
-          name: string
-          order_id: string
-          payment_status?: string
-        }
-        Update: {
-          amount?: number
-          created_at?: string | null
-          donation_tier?: string | null
-          id?: string
-          include_effects?: boolean | null
           include_sound?: boolean
           message?: string
           name?: string
@@ -321,45 +243,6 @@ export type Database = {
         }
         Relationships: []
       }
-      mystic_realm_donations: {
-        Row: {
-          amount: number
-          character_class: string | null
-          created_at: string | null
-          id: string
-          include_sound: boolean
-          message: string
-          name: string
-          order_id: string
-          payment_status: string
-          spell_effect: string | null
-        }
-        Insert: {
-          amount: number
-          character_class?: string | null
-          created_at?: string | null
-          id?: string
-          include_sound?: boolean
-          message: string
-          name: string
-          order_id: string
-          payment_status?: string
-          spell_effect?: string | null
-        }
-        Update: {
-          amount?: number
-          character_class?: string | null
-          created_at?: string | null
-          id?: string
-          include_sound?: boolean
-          message?: string
-          name?: string
-          order_id?: string
-          payment_status?: string
-          spell_effect?: string | null
-        }
-        Relationships: []
-      }
       page_visits: {
         Row: {
           id: string
@@ -462,45 +345,6 @@ export type Database = {
         }
         Relationships: []
       }
-      retro_arcade_donations: {
-        Row: {
-          amount: number
-          created_at: string | null
-          id: string
-          include_sound: boolean
-          message: string
-          name: string
-          order_id: string
-          payment_status: string
-          pixel_animation: string | null
-          powerup_type: string | null
-        }
-        Insert: {
-          amount: number
-          created_at?: string | null
-          id?: string
-          include_sound?: boolean
-          message: string
-          name: string
-          order_id: string
-          payment_status?: string
-          pixel_animation?: string | null
-          powerup_type?: string | null
-        }
-        Update: {
-          amount?: number
-          created_at?: string | null
-          id?: string
-          include_sound?: boolean
-          message?: string
-          name?: string
-          order_id?: string
-          payment_status?: string
-          pixel_animation?: string | null
-          powerup_type?: string | null
-        }
-        Relationships: []
-      }
       reviews: {
         Row: {
           content: string
@@ -519,45 +363,6 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
-        }
-        Relationships: []
-      }
-      space_command_donations: {
-        Row: {
-          amount: number
-          created_at: string | null
-          id: string
-          include_sound: boolean
-          message: string
-          name: string
-          order_id: string
-          payment_status: string
-          ship_type: string | null
-          warp_effect: boolean | null
-        }
-        Insert: {
-          amount: number
-          created_at?: string | null
-          id?: string
-          include_sound?: boolean
-          message: string
-          name: string
-          order_id: string
-          payment_status?: string
-          ship_type?: string | null
-          warp_effect?: boolean | null
-        }
-        Update: {
-          amount?: number
-          created_at?: string | null
-          id?: string
-          include_sound?: boolean
-          message?: string
-          name?: string
-          order_id?: string
-          payment_status?: string
-          ship_type?: string | null
-          warp_effect?: boolean | null
         }
         Relationships: []
       }
