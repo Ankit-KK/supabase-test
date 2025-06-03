@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -44,8 +45,6 @@ import ChiaaGamingDashboard from "./pages/ChiaaGamingDashboard";
 import ChiaaGamingDonationMessages from "./pages/ChiaaGamingDonationMessages";
 import ChiaaGamingObsView from "./pages/ChiaaGamingObsView";
 import ChiaaGamingDonationExport from "./pages/ChiaaGamingDonationExport";
-import AdminLogin from "./pages/AdminLogin";
-import AdminDashboard from "./pages/AdminDashboard";
 // Blog post imports
 import CompleteGuideMonetizeContentIndia from "./pages/blog/CompleteGuideMonetizeContentIndia";
 import EarnMoneyStreamingIndia from "./pages/blog/EarnMoneyStreamingIndia";
@@ -120,10 +119,6 @@ const App = () => {
               <Route path="/chiaa-gaming/messages" element={<ChiaaGamingDonationMessages />} />
               <Route path="/chiaa-gaming/obs/:id" element={<ChiaaGamingObsView />} />
               <Route path="/chiaa-gaming/export" element={<ChiaaGamingDonationExport />} />
-              {/* Admin Routes */}
-              <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/dashboard" element={<AdminDashboard />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
