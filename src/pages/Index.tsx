@@ -1,3 +1,4 @@
+
 import React from "react";
 import Navbar from "@/components/Navbar";
 import HeroWithCanyonAnimation from "@/components/HeroWithCanyonAnimation";
@@ -10,8 +11,6 @@ import ChatDemo from "@/components/ChatDemo";
 import HowItWorks from "@/components/HowItWorks";
 import BlogSection from "@/components/BlogSection";
 import FAQSection from "@/components/FAQSection";
-import InteractiveGiftsSection from "@/components/InteractiveGiftsSection";
-import VirtualGiftsShowcase from "@/components/VirtualGiftsShowcase";
 
 const Index = () => {
   return (
@@ -22,7 +21,6 @@ const Index = () => {
         <HeroWithCanyonAnimation />
         <Features />
         <HowItWorks />
-        <InteractiveGiftsSection />
         <ChatDemo />
         <CustomPagesShowcase />
         <Services />
