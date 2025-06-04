@@ -2,21 +2,10 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Gift, Heart, Star, Award } from 'lucide-react';
-import Scene3DWrapper from './Scene3DWrapper';
-import GiftBox3D from './GiftBox3D';
-import FloatingGifts from './FloatingGifts';
-import GiftParticles from './GiftParticles';
 import SignupDialog from './SignupDialog';
 
 const VirtualGiftsShowcase: React.FC = () => {
   const [showSignupDialog, setShowSignupDialog] = useState(false);
-
-  const giftData = [
-    { position: [-2, 0, 0] as [number, number, number], value: 10, color: '#9b87f5' },
-    { position: [0, 1, -1] as [number, number, number], value: 50, color: '#D946EF' },
-    { position: [2, -0.5, 1] as [number, number, number], value: 100, color: '#FF6B9D' },
-    { position: [-1, -1.5, 2] as [number, number, number], value: 500, color: '#FFD700' },
-  ];
 
   return (
     <section className="py-16 md:py-24 bg-gradient-to-b from-transparent to-secondary/20">
@@ -30,25 +19,33 @@ const VirtualGiftsShowcase: React.FC = () => {
           </p>
         </div>
 
-        {/* 3D Scene */}
-        <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-black/20 backdrop-blur-sm">
-          <Scene3DWrapper>
-            <GiftParticles />
-            <FloatingGifts />
-            {giftData.map((gift, index) => (
-              <GiftBox3D
-                key={index}
-                position={gift.position}
-                value={gift.value}
-                color={gift.color}
-              />
-            ))}
-          </Scene3DWrapper>
+        {/* Placeholder for 3D Scene - will be replaced once Three.js is working */}
+        <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-gradient-to-br from-hyperchat-purple/20 to-hyperchat-pink/20 backdrop-blur-sm">
+          <div className="h-96 flex items-center justify-center">
+            <div className="text-center space-y-4">
+              <div className="flex justify-center space-x-4 mb-6">
+                <div className="animate-bounce" style={{ animationDelay: '0s' }}>
+                  <Gift className="h-12 w-12 text-hyperchat-purple" />
+                </div>
+                <div className="animate-bounce" style={{ animationDelay: '0.2s' }}>
+                  <Heart className="h-12 w-12 text-hyperchat-pink" />
+                </div>
+                <div className="animate-bounce" style={{ animationDelay: '0.4s' }}>
+                  <Star className="h-12 w-12 text-yellow-400" />
+                </div>
+                <div className="animate-bounce" style={{ animationDelay: '0.6s' }}>
+                  <Award className="h-12 w-12 text-orange-400" />
+                </div>
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-2">Interactive 3D Gifts Coming Soon!</h3>
+              <p className="text-white/80">Experience virtual gifting like never before</p>
+            </div>
+          </div>
           
           {/* Overlay UI */}
           <div className="absolute top-4 left-4 bg-black/70 rounded-lg p-3">
             <div className="text-white text-sm font-medium">
-              💫 Hover & Click gifts to interact
+              💫 Interactive gifts experience
             </div>
           </div>
 
