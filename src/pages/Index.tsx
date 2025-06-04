@@ -11,6 +11,7 @@ import ChatDemo from "@/components/ChatDemo";
 import HowItWorks from "@/components/HowItWorks";
 import BlogSection from "@/components/BlogSection";
 import FAQSection from "@/components/FAQSection";
+import VirtualGiftsShowcase from "@/components/VirtualGiftsShowcase";
 
 const Index = () => {
   return (
@@ -21,6 +22,7 @@ const Index = () => {
         <HeroWithCanyonAnimation />
         <Features />
         <HowItWorks />
+        <VirtualGiftsShowcase />
         <ChatDemo />
         <CustomPagesShowcase />
         <Services />
