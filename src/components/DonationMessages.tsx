@@ -13,11 +13,11 @@ interface DonationMessagesProps {
 
 interface DonationRecord {
   id: string;
-  donor_name: string;
+  name: string;
   amount: number;
   message: string;
   created_at: string;
-  status: string;
+  payment_status: string;
 }
 
 const DonationMessages = ({ tableName }: DonationMessagesProps) => {
@@ -110,7 +110,7 @@ const DonationMessages = ({ tableName }: DonationMessagesProps) => {
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                   <CardTitle className="text-lg font-semibold">
-                    {donation.donor_name}
+                    {donation.name}
                   </CardTitle>
                   <div className="text-right">
                     <div className="text-lg font-bold text-green-600">
@@ -126,9 +126,9 @@ const DonationMessages = ({ tableName }: DonationMessagesProps) => {
                 <p className="text-gray-700 leading-relaxed">{donation.message}</p>
                 <div className="mt-3 flex justify-between items-center">
                   <Badge 
-                    variant={donation.status === 'completed' ? 'default' : 'secondary'}
+                    variant={donation.payment_status === 'success' ? 'default' : 'secondary'}
                   >
-                    {donation.status}
+                    {donation.payment_status}
                   </Badge>
                 </div>
               </CardContent>

@@ -13,11 +13,11 @@ interface ObsViewProps {
 
 interface DonationRecord {
   id: string;
-  donor_name: string;
+  name: string;
   amount: number;
   message: string;
   created_at: string;
-  status: string;
+  payment_status: string;
 }
 
 const ObsView = ({ tableName, donationId, streamerConfig }: ObsViewProps) => {
@@ -39,7 +39,7 @@ const ObsView = ({ tableName, donationId, streamerConfig }: ObsViewProps) => {
       const { data, error } = await supabase
         .from(tableName)
         .select('*')
-        .eq('status', 'completed')
+        .eq('payment_status', 'success')
         .order('created_at', { ascending: false })
         .limit(1);
 
@@ -135,7 +135,7 @@ const ObsView = ({ tableName, donationId, streamerConfig }: ObsViewProps) => {
             New Donation!
           </h1>
           <div className="mb-6">
-            <h2 className="text-2xl font-semibold text-white mb-2">{donation.donor_name}</h2>
+            <h2 className="text-2xl font-semibold text-white mb-2">{donation.name}</h2>
             <div className={`text-3xl font-bold text-${streamerConfig.theme.primaryColor}`}>
               {formatCurrency(donation.amount)}
             </div>
@@ -161,7 +161,7 @@ const ObsView = ({ tableName, donationId, streamerConfig }: ObsViewProps) => {
             New Donation! 💕
           </h1>
           <div className="mb-6">
-            <h2 className="text-2xl font-semibold text-pink-800 mb-2">{donation.donor_name}</h2>
+            <h2 className="text-2xl font-semibold text-pink-800 mb-2">{donation.name}</h2>
             <div className={`text-3xl font-bold bg-gradient-to-r from-${streamerConfig.theme.primaryColor} to-${streamerConfig.theme.secondaryColor} bg-clip-text text-transparent`}>
               {formatCurrency(donation.amount)}
             </div>
@@ -180,7 +180,7 @@ const ObsView = ({ tableName, donationId, streamerConfig }: ObsViewProps) => {
       <div className="bg-white rounded-lg p-8 max-w-2xl w-full text-center shadow-lg">
         <h1 className="text-4xl font-bold text-primary mb-4">New Donation!</h1>
         <div className="mb-6">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-2">{donation.donor_name}</h2>
+          <h2 className="text-2xl font-semibold text-gray-800 mb-2">{donation.name}</h2>
           <div className="text-3xl font-bold text-green-600">
             {formatCurrency(donation.amount)}
           </div>
