@@ -12,9 +12,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { objectsToCSV, downloadCSV, formatDateForFilename } from "@/utils/csvExport";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { StreamerTableName } from "@/types/donations";
 
 interface DonationExportProps {
-  tableName: "ankit_donations" | "harish_donations" | "mackle_donations" | "rakazone_donations";
+  tableName: StreamerTableName;
   streamerName: string;
 }
 

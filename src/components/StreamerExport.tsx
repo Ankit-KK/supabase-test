@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useAuthProtection } from "@/hooks/useAuthProtection";
 import DonationExport from "@/components/DonationExport";
 import { getStreamerConfig } from "@/config/streamerConfigs";
+import { StreamerTableName } from "@/types/donations";
 
 const StreamerExport = () => {
   const { streamerName } = useParams<{ streamerName: string }>();
@@ -56,7 +57,7 @@ const StreamerExport = () => {
           </div>
         </div>
 
-        <DonationExport tableName={config.tableName} streamerName={config.displayName} />
+        <DonationExport tableName={config.tableName as StreamerTableName} streamerName={config.displayName} />
       </div>
     );
   }
@@ -73,7 +74,7 @@ const StreamerExport = () => {
         </div>
       </div>
 
-      <DonationExport tableName={config.tableName} streamerName={config.displayName} />
+      <DonationExport tableName={config.tableName as StreamerTableName} streamerName={config.displayName} />
     </div>
   );
 };
