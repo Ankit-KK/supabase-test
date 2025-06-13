@@ -1,11 +1,9 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -300,13 +298,43 @@ const AnkitDonationMessages = () => {
         <CardContent>
           <div className="flex flex-col space-y-4">
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-2">
-                <Switch 
-                  id="show-messages" 
-                  checked={showMessages} 
-                  onCheckedChange={handleToggleMessages} 
-                />
-                <Label htmlFor="show-messages">Show donation messages in OBS</Label>
+              <div className="flex items-center space-x-4">
+                <label className="container cursor-pointer" onClick={handleToggleMessages}>
+                  <input 
+                    type="checkbox" 
+                    checked={showMessages} 
+                    onChange={() => {}} // Handled by the label click
+                    className="hidden"
+                  />
+                  <svg 
+                    viewBox="0 0 64 64" 
+                    height="2em" 
+                    width="2em"
+                    className="overflow-visible"
+                  >
+                    <path 
+                      d="M 0 16 V 56 A 8 8 90 0 0 8 64 H 56 A 8 8 90 0 0 64 56 V 8 A 8 8 90 0 0 56 0 H 8 A 8 8 90 0 0 0 8 V 16 L 32 48 L 64 16 V 8 A 8 8 90 0 0 56 0 H 8 A 8 8 90 0 0 0 8 V 56 A 8 8 90 0 0 8 64 H 56 A 8 8 90 0 0 64 56 V 16"
+                      pathLength="575.0541381835938"
+                      className={`
+                        fill-none stroke-white stroke-[6] rounded-[round] 
+                        transition-all duration-500 ease-out
+                        ${showMessages 
+                          ? 'stroke-dasharray-[70.5096664428711_9999999] stroke-dashoffset-[-262.2723388671875]' 
+                          : 'stroke-dasharray-[241_9999999] stroke-dashoffset-0'
+                        }
+                      `}
+                      style={{
+                        strokeLinecap: 'round',
+                        strokeLinejoin: 'round',
+                        strokeDasharray: showMessages ? '70.5096664428711 9999999' : '241 9999999',
+                        strokeDashoffset: showMessages ? '-262.2723388671875' : '0'
+                      }}
+                    />
+                  </svg>
+                </label>
+                <Label htmlFor="show-messages" className="cursor-pointer" onClick={handleToggleMessages}>
+                  Show donation messages in OBS
+                </Label>
               </div>
             </div>
             
