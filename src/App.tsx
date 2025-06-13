@@ -25,12 +25,6 @@ import UpiSecurityBestPractices from "./pages/blog/UpiSecurityBestPractices";
 import VirtualGiftsMaximizeRevenue from "./pages/blog/VirtualGiftsMaximizeRevenue";
 import StreamerDonationAppStrategy from "./pages/blog/StreamerDonationAppStrategy";
 import { AuthProvider } from "./contexts/AuthContext";
-// Generic components
-import StreamerLogin from "./components/StreamerLogin";
-import StreamerExport from "./components/StreamerExport";
-import StreamerDashboard from "./components/StreamerDashboard";
-import StreamerMessages from "./components/StreamerMessages";
-import StreamerObsView from "./components/StreamerObsView";
 
 const queryClient = new QueryClient();
 
@@ -62,13 +56,6 @@ const App = () => {
               {/* Individual streamer donation pages */}
               <Route path="/ankit" element={<AnkitPage />} />
               
-              {/* Generic streamer routes */}
-              <Route path="/:streamerName/login" element={<StreamerLogin />} />
-              <Route path="/:streamerName/dashboard" element={<StreamerDashboard />} />
-              <Route path="/:streamerName/messages" element={<StreamerMessages />} />
-              <Route path="/:streamerName/export" element={<StreamerExport />} />
-              <Route path="/:streamerName/obs/:id" element={<StreamerObsView />} />
-              
               {/* Static pages */}
               <Route path="/payment-checkout" element={<PaymentCheckout />} />
               <Route path="/status" element={<PaymentStatus />} />
@@ -88,4 +75,3 @@ const App = () => {
 };
 
 export default App;
-
