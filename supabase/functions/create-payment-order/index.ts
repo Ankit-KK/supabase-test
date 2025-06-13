@@ -13,6 +13,14 @@ const XClientSecret = Deno.env.get("XClientSecret");
 const API_VERSION = "2025-01-01";
 const API_URL = Deno.env.get("api_url") || "https://api.cashfree.com/pg";
 
+// Function to generate a random 10-digit phone number
+const generateRandomPhoneNumber = (): string => {
+  // Generate a number between 7000000000 and 9999999999 (valid Indian mobile range)
+  const min = 7000000000;
+  const max = 9999999999;
+  return Math.floor(Math.random() * (max - min + 1) + min).toString();
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -54,7 +62,7 @@ serve(async (req) => {
       order_id: orderId,
       customer_details: {
         customer_id: name ? name.replace(/\s+/g, '_').toLowerCase().substring(0, 20) : "hyperchat_user",
-        customer_phone: "9205013630" // Using a default number, in production this should be dynamic
+        customer_phone: generateRandomPhoneNumber()
       },
       order_meta: {
         return_url: `${origin}/status?order_id={order_id}`,
