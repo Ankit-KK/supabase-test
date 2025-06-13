@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -62,7 +63,7 @@ const App = () => {
               <Route path="/blog/virtual-gifts-maximize-revenue" element={<VirtualGiftsMaximizeRevenue />} />
               <Route path="/blog/streamer-donation-app-strategy" element={<StreamerDonationAppStrategy />} />
               
-              {/* Individual streamer donation pages (keeping these for now) */}
+              {/* Individual streamer donation pages */}
               <Route path="/ankit" element={<AnkitPage />} />
               <Route path="/harish" element={<HarishPage />} />
               <Route path="/mackle" element={<MacklePage />} />

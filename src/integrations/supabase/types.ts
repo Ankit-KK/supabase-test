@@ -492,45 +492,6 @@ export type Database = {
         }
         Relationships: []
       }
-      retro_arcade_donations: {
-        Row: {
-          amount: number
-          created_at: string | null
-          id: string
-          include_sound: boolean
-          message: string
-          name: string
-          order_id: string
-          payment_status: string
-          pixel_animation: string | null
-          powerup_type: string | null
-        }
-        Insert: {
-          amount: number
-          created_at?: string | null
-          id?: string
-          include_sound?: boolean
-          message: string
-          name: string
-          order_id: string
-          payment_status?: string
-          pixel_animation?: string | null
-          powerup_type?: string | null
-        }
-        Update: {
-          amount?: number
-          created_at?: string | null
-          id?: string
-          include_sound?: boolean
-          message?: string
-          name?: string
-          order_id?: string
-          payment_status?: string
-          pixel_animation?: string | null
-          powerup_type?: string | null
-        }
-        Relationships: []
-      }
       reviews: {
         Row: {
           content: string
