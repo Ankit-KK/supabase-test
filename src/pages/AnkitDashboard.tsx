@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, calculateMonthlyTotal } from "@/utils/dashboardUtils";
-import { LogOut } from "lucide-react";
+import { LogOut, MessageSquare } from "lucide-react";
 import CSVExportDialog from "@/components/CSVExportDialog";
 
 interface Donation {
@@ -156,6 +156,13 @@ const AnkitDashboard = () => {
             <p className="text-muted-foreground">Donation management and analytics</p>
           </div>
           <div className="flex items-center gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate("/ankit/donation-messages")}
+            >
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Messages
+            </Button>
             <CSVExportDialog 
               tableName="ankit_donations" 
               title="Export Donations to CSV" 
