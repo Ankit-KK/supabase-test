@@ -1,15 +1,16 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthProtection } from "@/hooks/useAuthProtection";
-import { Link as LinkIcon, ExternalLink, Monitor, ArrowLeft } from "lucide-react";
+import { Link as LinkIcon, Maximize, Move, ExternalLink } from "lucide-react";
+import { ObsConfigProvider, useObsConfig } from "@/contexts/ObsConfigContext";
 
 interface Donation {
   id: string;
@@ -20,8 +21,49 @@ interface Donation {
   payment_status: string;
 }
 
-const AnkitDonationMessages = () => {
-  const [recentDonations, setRecentDonations] = useState<Donation[]>([]);
+const OBSControls = () => {
+  const { obsConfig, toggleDraggable } = useObsConfig();
+  const { toast } = useToast();
+  
+  const handleToggleEdit = () => {
+    toggleDraggable();
+    toast({
+      title: obsConfig.isDraggable ? "Edit Mode Disabled" : "Edit Mode Enabled",
+      description: obsConfig.isDraggable 
+        ? "Donation box is now fixed in place" 
+        : "You can now drag and resize the donation box in OBS",
+    });
+  };
+  
+  return (
+    <div className="flex flex-col space-y-2">
+      <div className="flex items-center space-x-2">
+        <Switch 
+          id="edit-mode" 
+          checked={obsConfig.isDraggable} 
+          onCheckedChange={handleToggleEdit} 
+        />
+        <Label htmlFor="edit-mode" className="flex items-center gap-2">
+          <Move size={16} className={obsConfig.isDraggable ? "text-blue-500" : "text-gray-500"} />
+          <Maximize size={16} className={obsConfig.isDraggable ? "text-blue-500" : "text-gray-500"} />
+          Enable edit mode (drag/resize box in OBS)
+        </Label>
+      </div>
+      
+      {obsConfig.isDraggable && (
+        <div className="text-sm bg-blue-500/10 p-2 rounded border border-blue-500/30">
+          <p className="font-medium text-blue-600 dark:text-blue-400">Edit mode is active!</p>
+          <p className="text-xs mt-1">Changes will appear in the OBS browser source immediately.</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const AnkitDonationMessagesContent = () => {
+  const [donations, setDonations] = useState<Donation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [obsLink, setObsLink] = useState<string>("");
   const [showMessages, setShowMessages] = useState<boolean>(true);
   const navigate = useNavigate();
@@ -33,80 +75,130 @@ const AnkitDonationMessages = () => {
     authKey: "ankitAuth"
   });
 
-  // Function to fetch recent donations
-  const fetchRecentDonations = async () => {
+  // Function to fetch donations data - only from today
+  const fetchDonations = async () => {
     try {
+      setIsLoading(true);
+      
+      // Get today's date in ISO format for filtering
+      const today = new Date();
+      const todayStart = `${today.toISOString().split('T')[0]}T00:00:00`;
+      const todayEnd = `${today.toISOString().split('T')[0]}T23:59:59`;
+      
       const { data, error } = await supabase
         .from("ankit_donations")
         .select("*")
-        .eq("payment_status", "success")
-        .order("created_at", { ascending: false })
-        .limit(5);
+        .eq("payment_status", "success") // Changed from "failed" to "success"
+        .gte("created_at", todayStart)
+        .lte("created_at", todayEnd)
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setRecentDonations(data || []);
+      
+      if (data && data.length > 0) {
+        setDonations(data);
+        console.log("Donation messages refreshed at:", new Date().toLocaleTimeString(), "count:", data.length);
+      } else {
+        console.log("No donation messages found during refresh");
+        setDonations([]);
+      }
+      
+      setLastRefresh(new Date());
     } catch (error) {
       console.error("Error fetching donations:", error);
       toast({
         variant: "destructive",
         title: "Failed to load data",
-        description: "Could not retrieve recent donations",
+        description: "Could not retrieve donation messages",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   // Set up real-time subscription for new donations
   useEffect(() => {
     const channel = supabase
-      .channel('ankit-messages-dashboard')
+      .channel('ankit-donations-dashboard')
       .on(
         'postgres_changes',
         { 
           event: 'INSERT', 
           schema: 'public', 
           table: 'ankit_donations',
-          filter: 'payment_status=eq.success'
+          filter: 'payment_status=eq.success' // Changed from "failed" to "success"
         },
         (payload) => {
           const newDonation = payload.new as Donation;
-          console.log("New donation received:", newDonation);
-          setRecentDonations(prev => [newDonation, ...prev.slice(0, 4)]);
-          toast({
-            title: "New Donation Received",
-            description: `${newDonation.name} donated ₹${Number(newDonation.amount).toLocaleString()}`,
-          });
+          console.log("New donation received in dashboard via realtime:", newDonation);
+          
+          // Check if donation is from today
+          const donationDate = new Date(newDonation.created_at).toISOString().split('T')[0];
+          const today = new Date().toISOString().split('T')[0];
+          
+          if (donationDate === today) {
+            setDonations(prev => [newDonation, ...prev]);
+            toast({
+              title: "New Donation Received",
+              description: `${newDonation.name} donated ₹${Number(newDonation.amount).toLocaleString()}`,
+            });
+          }
         }
       )
       .subscribe();
 
-    fetchRecentDonations();
+    console.log("Dashboard realtime subscription set up for payment_status=success");
+    
+    // Fetch donations once when component mounts
+    fetchDonations();
     
     return () => {
       supabase.removeChannel(channel);
     };
   }, [toast]);
 
-  // Load preferences and generate OBS link
+  // Load the show messages preference from localStorage on component mount
   useEffect(() => {
     const savedPref = localStorage.getItem("ankitShowMessages");
     if (savedPref !== null) {
       setShowMessages(savedPref === "true");
     }
     
-    let storedLink = sessionStorage.getItem("ankitObsLink");
-    if (!storedLink) {
-      const randomId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      storedLink = `${window.location.origin}/ankit/obs/${randomId}?showMessages=${savedPref !== "false"}`;
-      sessionStorage.setItem("ankitObsLink", storedLink);
+    // Store the preference on URL for OBS to check
+    const currentLink = sessionStorage.getItem("ankitObsLink");
+    if (currentLink) {
+      const hasParam = currentLink.includes("?");
+      const baseLink = hasParam ? currentLink.split("?")[0] : currentLink;
+      const newLink = `${baseLink}?showMessages=${savedPref !== "false"}`;
+      sessionStorage.setItem("ankitObsLink", newLink);
+      setObsLink(newLink);
     }
-    setObsLink(storedLink);
   }, []);
 
+  // Generate or retrieve OBS link
+  const setupObsLink = () => {
+    // Check if there's an existing OBS link in sessionStorage
+    let storedLink = sessionStorage.getItem("ankitObsLink");
+    
+    if (!storedLink) {
+      // Generate a new link with a random ID
+      const randomId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      storedLink = `${window.location.origin}/ankit/obs/${randomId}?showMessages=${showMessages}`;
+      sessionStorage.setItem("ankitObsLink", storedLink);
+    }
+    
+    setObsLink(storedLink);
+  };
+
   const regenerateObsLink = () => {
+    // Generate a new link with a random ID
     const randomId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     const newLink = `${window.location.origin}/ankit/obs/${randomId}?showMessages=${showMessages}`;
+    
+    // Save the new link
     sessionStorage.setItem("ankitObsLink", newLink);
     setObsLink(newLink);
+    
     toast({
       title: "OBS Link Regenerated",
       description: "Your new OBS link has been created",
@@ -127,11 +219,17 @@ const AnkitDonationMessages = () => {
     }
   };
 
+  useEffect(() => {
+    setupObsLink();
+  }, []);
+
+  // Handle toggle of show messages preference
   const handleToggleMessages = () => {
     const newValue = !showMessages;
     setShowMessages(newValue);
     localStorage.setItem("ankitShowMessages", newValue.toString());
     
+    // Update the OBS link with the new preference
     const hasParam = obsLink.includes("?");
     const baseLink = hasParam ? obsLink.split("?")[0] : obsLink;
     const newLink = `${baseLink}?showMessages=${newValue}`;
@@ -144,16 +242,10 @@ const AnkitDonationMessages = () => {
     });
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-    }).format(amount);
-  };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
+      year: 'numeric', 
+      month: 'short', 
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
@@ -163,102 +255,109 @@ const AnkitDonationMessages = () => {
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Monitor className="h-8 w-8" />
-          OBS Integration
-        </h1>
-        <Button variant="outline" onClick={() => navigate("/ankit/dashboard")}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Dashboard
-        </Button>
+        <h1 className="text-3xl font-bold">Donation Messages</h1>
+        <div className="flex items-center gap-4">
+          <Button variant="outline" onClick={() => navigate("/ankit/dashboard")}>
+            Back to Dashboard
+          </Button>
+        </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* OBS Setup Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>OBS Browser Source</CardTitle>
-            <CardDescription>Add this URL as a browser source in OBS to display donation alerts</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Switch 
-                id="show-messages" 
-                checked={showMessages} 
-                onCheckedChange={handleToggleMessages} 
-              />
-              <Label htmlFor="show-messages">Show donation messages in alerts</Label>
-            </div>
-            
-            <div className="space-y-2">
-              <Label>OBS Browser Source URL</Label>
-              <div className="flex gap-2">
-                <Input 
-                  value={obsLink} 
-                  readOnly 
-                  className="font-mono text-sm"
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>OBS Link</CardTitle>
+          <CardDescription>Use this link as a browser source in OBS to display donation messages</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col space-y-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-2">
+                <Switch 
+                  id="show-messages" 
+                  checked={showMessages} 
+                  onCheckedChange={handleToggleMessages} 
                 />
-                <Button variant="outline" onClick={copyObsLink}>
-                  <LinkIcon className="h-4 w-4" />
-                </Button>
+                <Label htmlFor="show-messages">Show donation messages in OBS</Label>
               </div>
             </div>
             
-            <div className="flex gap-2">
-              <Button onClick={regenerateObsLink} variant="outline" className="flex-1">
-                Generate New Link
+            <OBSControls />
+            
+            <div className="flex items-center space-x-2">
+              <Input 
+                value={obsLink} 
+                readOnly 
+                className="font-mono text-sm flex-1"
+              />
+              <Button variant="outline" onClick={copyObsLink}>
+                <LinkIcon className="mr-2 h-4 w-4" />
+                Copy
               </Button>
-              <Button onClick={openObsInNewTab} className="flex-1">
+              <Button variant="outline" onClick={regenerateObsLink}>
+                Generate New
+              </Button>
+              <Button variant="outline" onClick={openObsInNewTab}>
                 <ExternalLink className="mr-2 h-4 w-4" />
-                Preview
+                Open
               </Button>
             </div>
-            
-            <div className="text-sm text-muted-foreground space-y-1">
-              <p>📋 <strong>How to use:</strong></p>
-              <p>1. Copy the URL above</p>
-              <p>2. In OBS, add a "Browser Source"</p>
-              <p>3. Paste the URL and set dimensions (recommended: 800x200)</p>
-              <p>4. Donation alerts will appear automatically!</p>
+            <div className="text-sm text-muted-foreground">
+              <p>This link will display your donation messages in real-time for your stream.</p>
+              <p>Each message will show for 15 seconds before moving to the next one.</p>
+              <p className="mt-2 font-medium">When edit mode is enabled, you can drag the donation box and resize it in your OBS browser source.</p>
+              <p className="text-blue-600 dark:text-blue-400">Tip: Use the "Open" button to preview the OBS view and see your changes in real-time.</p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </CardContent>
+      </Card>
 
-        {/* Recent Donations Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Donations</CardTitle>
-            <CardDescription>Latest 5 successful donations</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {recentDonations.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">
-                No recent donations
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {recentDonations.map((donation) => (
-                  <div key={donation.id} className="flex justify-between items-start p-3 bg-muted rounded-lg">
-                    <div className="flex-1">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="font-medium">{donation.name}</span>
-                        <span className="text-sm text-muted-foreground">
-                          {formatDate(donation.created_at)}
-                        </span>
-                      </div>
-                      <div className="text-lg font-bold text-green-600 mb-1">
-                        {formatCurrency(donation.amount)}
-                      </div>
-                      <p className="text-sm text-gray-600 truncate">{donation.message}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Donation Messages</CardTitle>
+          <CardDescription>
+            Messages are updated in real-time
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <p className="text-center py-4">Loading donation messages...</p>
+          ) : donations.length === 0 ? (
+            <p className="text-center py-4">No donation messages found</p>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead className="w-[40%]">Message</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {donations.map((donation) => (
+                    <TableRow key={donation.id}>
+                      <TableCell>{formatDate(donation.created_at)}</TableCell>
+                      <TableCell>{donation.name}</TableCell>
+                      <TableCell>₹{Number(donation.amount).toLocaleString()}</TableCell>
+                      <TableCell>{donation.message}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
+  );
+};
+
+const AnkitDonationMessages = () => {
+  return (
+    <ObsConfigProvider>
+      <AnkitDonationMessagesContent />
+    </ObsConfigProvider>
   );
 };
 
