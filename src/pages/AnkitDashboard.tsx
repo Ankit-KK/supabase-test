@@ -40,7 +40,7 @@ const AnkitDashboard = () => {
       const { data, error } = await supabase
         .from("ankit_donations")
         .select("id, name, amount, created_at, payment_status")
-        .eq("payment_status", "completed")
+        .eq("payment_status", "success")
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -128,7 +128,7 @@ const AnkitDashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle>Recent Successful Payments</CardTitle>
-            <CardDescription>All completed donations</CardDescription>
+            <CardDescription>All successful donations</CardDescription>
           </CardHeader>
           <CardContent>
             {donations.length === 0 ? (
