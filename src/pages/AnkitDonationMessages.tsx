@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -215,6 +214,122 @@ const AnkitDonationMessages = () => {
 
   return (
     <div className="container mx-auto py-8 px-4">
+      <style jsx>{`
+        .checkbox-wrapper-10 .tgl {
+          display: none;
+        }
+
+        .checkbox-wrapper-10 .tgl,
+        .checkbox-wrapper-10 .tgl:after,
+        .checkbox-wrapper-10 .tgl:before,
+        .checkbox-wrapper-10 .tgl *,
+        .checkbox-wrapper-10 .tgl *:after,
+        .checkbox-wrapper-10 .tgl *:before,
+        .checkbox-wrapper-10 .tgl + .tgl-btn {
+          box-sizing: border-box;
+        }
+
+        .checkbox-wrapper-10 .tgl::-moz-selection,
+        .checkbox-wrapper-10 .tgl:after::-moz-selection,
+        .checkbox-wrapper-10 .tgl:before::-moz-selection,
+        .checkbox-wrapper-10 .tgl *::-moz-selection,
+        .checkbox-wrapper-10 .tgl *:after::-moz-selection,
+        .checkbox-wrapper-10 .tgl *:before::-moz-selection,
+        .checkbox-wrapper-10 .tgl + .tgl-btn::-moz-selection,
+        .checkbox-wrapper-10 .tgl::selection,
+        .checkbox-wrapper-10 .tgl:after::selection,
+        .checkbox-wrapper-10 .tgl:before::selection,
+        .checkbox-wrapper-10 .tgl *::selection,
+        .checkbox-wrapper-10 .tgl *:after::selection,
+        .checkbox-wrapper-10 .tgl *:before::selection,
+        .checkbox-wrapper-10 .tgl + .tgl-btn::selection {
+          background: none;
+        }
+
+        .checkbox-wrapper-10 .tgl + .tgl-btn {
+          outline: 0;
+          display: block;
+          width: 4em;
+          height: 2em;
+          position: relative;
+          cursor: pointer;
+          user-select: none;
+        }
+
+        .checkbox-wrapper-10 .tgl + .tgl-btn:after,
+        .checkbox-wrapper-10 .tgl + .tgl-btn:before {
+          position: relative;
+          display: block;
+          content: "";
+          width: 50%;
+          height: 100%;
+        }
+
+        .checkbox-wrapper-10 .tgl + .tgl-btn:after {
+          left: 0;
+        }
+
+        .checkbox-wrapper-10 .tgl + .tgl-btn:before {
+          display: none;
+        }
+
+        .checkbox-wrapper-10 .tgl:checked + .tgl-btn:after {
+          left: 50%;
+        }
+
+        .checkbox-wrapper-10 .tgl-flip + .tgl-btn {
+          padding: 2px;
+          transition: all 0.2s ease;
+          font-family: sans-serif;
+          perspective: 100px;
+        }
+
+        .checkbox-wrapper-10 .tgl-flip + .tgl-btn:after,
+        .checkbox-wrapper-10 .tgl-flip + .tgl-btn:before {
+          display: inline-block;
+          transition: all 0.4s ease;
+          width: 100%;
+          text-align: center;
+          position: absolute;
+          line-height: 2em;
+          font-weight: bold;
+          color: #fff;
+          top: 0;
+          left: 0;
+          backface-visibility: hidden;
+          border-radius: 4px;
+        }
+
+        .checkbox-wrapper-10 .tgl-flip + .tgl-btn:after {
+          content: attr(data-tg-on);
+          background: #02C66F;
+          transform: rotateY(-180deg);
+        }
+
+        .checkbox-wrapper-10 .tgl-flip + .tgl-btn:before {
+          background: #FF3A19;
+          content: attr(data-tg-off);
+        }
+
+        .checkbox-wrapper-10 .tgl-flip + .tgl-btn:active:before {
+          transform: rotateY(-20deg);
+        }
+
+        .checkbox-wrapper-10 .tgl-flip:checked + .tgl-btn:before {
+          transform: rotateY(180deg);
+        }
+
+        .checkbox-wrapper-10 .tgl-flip:checked + .tgl-btn:after {
+          transform: rotateY(0);
+          left: 0;
+          background: #7FC6A6;
+        }
+
+        .checkbox-wrapper-10 .tgl-flip:checked + .tgl-btn:active:after {
+          transform: rotateY(20deg);
+        }
+      `}</style>
+
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Donation Messages</h1>
         <div className="flex items-center gap-4">
@@ -233,11 +348,21 @@ const AnkitDonationMessages = () => {
           <div className="flex flex-col space-y-4">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
-                <Switch 
-                  id="show-messages" 
-                  checked={showMessages} 
-                  onCheckedChange={handleToggleMessages} 
-                />
+                <div className="checkbox-wrapper-10">
+                  <input 
+                    checked={showMessages} 
+                    type="checkbox" 
+                    id="show-messages" 
+                    className="tgl tgl-flip"
+                    onChange={handleToggleMessages}
+                  />
+                  <label 
+                    htmlFor="show-messages" 
+                    data-tg-on="On" 
+                    data-tg-off="Off" 
+                    className="tgl-btn"
+                  ></label>
+                </div>
                 <Label htmlFor="show-messages">Show donation messages in OBS</Label>
               </div>
             </div>
