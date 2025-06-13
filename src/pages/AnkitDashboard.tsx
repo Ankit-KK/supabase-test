@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,7 +32,56 @@ const AnkitDashboard = () => {
     }
 
     fetchDonations();
-  }, [navigate]);
+    
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('ankit-donations-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'ankit_donations',
+          filter: 'payment_status=eq.success'
+        },
+        (payload) => {
+          console.log('New donation received:', payload);
+          const newDonation = payload.new as Donation;
+          setDonations(prev => [newDonation, ...prev]);
+          setMonthlyTotal(prev => prev + Number(newDonation.amount));
+          
+          toast({
+            title: "New Donation Received!",
+            description: `${newDonation.name} donated ₹${Number(newDonation.amount).toLocaleString()}`,
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'ankit_donations',
+          filter: 'payment_status=eq.success'
+        },
+        (payload) => {
+          console.log('Donation updated:', payload);
+          const updatedDonation = payload.new as Donation;
+          setDonations(prev => 
+            prev.map(donation => 
+              donation.id === updatedDonation.id ? updatedDonation : donation
+            )
+          );
+        }
+      )
+      .subscribe();
+
+    console.log('Real-time subscription set up for ankit_donations');
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [navigate, toast]);
 
   const fetchDonations = async () => {
     try {
