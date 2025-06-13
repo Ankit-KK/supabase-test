@@ -125,6 +125,16 @@ export default {
 					'0%': { opacity: '0', transform: 'scale(1)' },
 					'20%': { opacity: '1' },
 					'100%': { opacity: '0', transform: 'scale(2)' },
+				},
+				'gradient-x': {
+					'0%, 100%': {
+						'background-size': '200% 200%',
+						'background-position': 'left center'
+					},
+					'50%': {
+						'background-size': '200% 200%',
+						'background-position': 'right center'
+					}
 				}
 			},
 			animation: {
@@ -134,7 +144,8 @@ export default {
 				'float': 'float 6s ease-in-out infinite',
 				'shimmer': 'shimmer 8s infinite linear',
 				'fall': 'fall 1s ease-in-out forwards',
-				'jump-out': 'jump-out 0.6s ease forwards'
+				'jump-out': 'jump-out 0.6s ease forwards',
+				'gradient-x': 'gradient-x 15s ease infinite'
 			},
 			backgroundImage: {
 				'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
