@@ -1,5 +1,4 @@
 
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,6 +9,8 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Blog from "./pages/Blog";
 import AnkitPage from "./pages/Ankit";
+import AnkitLogin from "./pages/AnkitLogin";
+import AnkitDashboard from "./pages/AnkitDashboard";
 import PaymentCheckout from "./pages/PaymentCheckout";
 import PaymentStatus from "./pages/PaymentStatus";
 import Contact from "./pages/Contact";
@@ -55,6 +56,8 @@ const App = () => {
               
               {/* Individual streamer donation pages */}
               <Route path="/ankit" element={<AnkitPage />} />
+              <Route path="/ankit/login" element={<AnkitLogin />} />
+              <Route path="/ankit/dashboard" element={<AnkitDashboard />} />
               
               {/* Static pages */}
               <Route path="/payment-checkout" element={<PaymentCheckout />} />
