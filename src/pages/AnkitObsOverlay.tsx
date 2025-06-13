@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useObsConfig } from "@/contexts/ObsConfigContext";
 
 interface Donation {
   id: string;
@@ -20,7 +19,6 @@ const AnkitObsOverlay = () => {
   const [currentDonation, setCurrentDonation] = useState<Donation | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [animationPhase, setAnimationPhase] = useState<'enter' | 'show' | 'exit'>('enter');
-  const { obsConfig } = useObsConfig();
 
   useEffect(() => {
     // Set up real-time subscription for new donations
@@ -91,19 +89,10 @@ const AnkitObsOverlay = () => {
 
   return (
     <div 
-      className={`fixed inset-0 pointer-events-none ${obsConfig.isDraggable ? 'pointer-events-auto' : ''}`}
+      className="fixed inset-0 pointer-events-none"
       style={{ background: 'transparent' }}
     >
-      <div 
-        className={`
-          ${obsConfig.isDraggable ? 'resize border-2 border-dashed border-blue-500' : ''}
-          absolute top-4 right-4 w-96 max-w-md
-        `}
-        style={{
-          resize: obsConfig.isDraggable ? 'both' : 'none',
-          overflow: obsConfig.isDraggable ? 'auto' : 'visible'
-        }}
-      >
+      <div className="absolute top-4 right-4 w-96 max-w-md">
         <div 
           className={`
             relative overflow-hidden rounded-2xl shadow-2xl
@@ -169,12 +158,6 @@ const AnkitObsOverlay = () => {
           </div>
         </div>
       </div>
-      
-      {obsConfig.isDraggable && (
-        <div className="absolute top-2 left-2 bg-blue-500 text-white px-3 py-1 rounded text-sm">
-          Edit Mode: Drag & Resize
-        </div>
-      )}
     </div>
   );
 };
