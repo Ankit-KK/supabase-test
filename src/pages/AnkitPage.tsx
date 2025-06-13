@@ -43,6 +43,9 @@ const AnkitPage = () => {
     setIsLoading(true);
 
     try {
+      // Generate a unique order ID
+      const orderId = `ankit_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+      
       // Create donation record
       const { data, error } = await supabase
         .from("ankit_donations")
@@ -50,6 +53,7 @@ const AnkitPage = () => {
           name,
           amount: donationAmount,
           message,
+          order_id: orderId,
           payment_status: "pending"
         })
         .select()
