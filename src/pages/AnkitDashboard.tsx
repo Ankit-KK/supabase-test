@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, calculateMonthlyTotal } from "@/utils/dashboardUtils";
 import { LogOut } from "lucide-react";
+import CSVExportDialog from "@/components/CSVExportDialog";
 
 interface Donation {
   id: string;
@@ -153,10 +154,16 @@ const AnkitDashboard = () => {
             <h1 className="text-3xl font-bold">Ankit Dashboard</h1>
             <p className="text-muted-foreground">Donation management and analytics</p>
           </div>
-          <Button variant="outline" onClick={handleLogout}>
-            <LogOut className="w-4 h-4 mr-2" />
-            Logout
-          </Button>
+          <div className="flex items-center gap-3">
+            <CSVExportDialog 
+              tableName="ankit_donations" 
+              title="Export Donations to CSV" 
+            />
+            <Button variant="outline" onClick={handleLogout}>
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
+          </div>
         </div>
 
         {/* Monthly Total Card */}
