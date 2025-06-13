@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -180,6 +181,73 @@ const AnkitDonationMessages = () => {
     }
   };
 
+  const copyHtmlCode = () => {
+    const htmlCode = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SVG Checkbox Animation</title>
+  <style>
+    /* From Uiverse.io by SelfMadeSystem */
+    body {
+      background-color: #222; /* Optional: for better contrast with white stroke */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      cursor: pointer;
+    }
+
+    .container input {
+      display: none;
+    }
+
+    .container svg {
+      overflow: visible;
+    }
+
+    .path {
+      fill: none;
+      stroke: white;
+      stroke-width: 6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: stroke-dasharray 0.5s ease, stroke-dashoffset 0.5s ease;
+      stroke-dasharray: 241 9999999;
+      stroke-dashoffset: 0;
+    }
+
+    .container input:checked ~ svg .path {
+      stroke-dasharray: 70.5096664428711 9999999;
+      stroke-dashoffset: -262.2723388671875;
+    }
+  </style>
+</head>
+<body>
+
+  <label class="container">
+    <input type="checkbox">
+    <svg viewBox="0 0 64 64" height="2em" width="2em">
+      <path d="M 0 16 V 56 A 8 8 90 0 0 8 64 H 56 A 8 8 90 0 0 64 56 V 8 A 8 8 90 0 0 56 0 H 8 A 8 8 90 0 0 0 8 V 16 L 32 48 L 64 16 V 8 A 8 8 90 0 0 56 0 H 8 A 8 8 90 0 0 0 8 V 56 A 8 8 90 0 0 8 64 H 56 A 8 8 90 0 0 64 56 V 16"
+            pathLength="575.0541381835938"
+            class="path"></path>
+    </svg>
+  </label>
+
+</body>
+</html>`;
+    
+    navigator.clipboard.writeText(htmlCode);
+    toast({
+      title: "HTML Code Copied",
+      description: "SVG checkbox animation HTML copied to clipboard",
+    });
+  };
+
   useEffect(() => {
     setupObsLink();
   }, []);
@@ -263,6 +331,89 @@ const AnkitDonationMessages = () => {
             <div className="text-sm text-muted-foreground">
               <p>This link will display your donation messages in real-time for your stream.</p>
               <p>Each message will show for 12 seconds before moving to the next one.</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>SVG Checkbox Animation for OBS</CardTitle>
+          <CardDescription>Copy this HTML code to use as a browser source in OBS for animated checkboxes</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col space-y-4">
+            <div className="bg-gray-100 rounded p-4 font-mono text-sm overflow-x-auto">
+              <pre className="whitespace-pre-wrap">
+{`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SVG Checkbox Animation</title>
+  <style>
+    /* From Uiverse.io by SelfMadeSystem */
+    body {
+      background-color: #222; /* Optional: for better contrast with white stroke */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      cursor: pointer;
+    }
+
+    .container input {
+      display: none;
+    }
+
+    .container svg {
+      overflow: visible;
+    }
+
+    .path {
+      fill: none;
+      stroke: white;
+      stroke-width: 6;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: stroke-dasharray 0.5s ease, stroke-dashoffset 0.5s ease;
+      stroke-dasharray: 241 9999999;
+      stroke-dashoffset: 0;
+    }
+
+    .container input:checked ~ svg .path {
+      stroke-dasharray: 70.5096664428711 9999999;
+      stroke-dashoffset: -262.2723388671875;
+    }
+  </style>
+</head>
+<body>
+
+  <label class="container">
+    <input type="checkbox">
+    <svg viewBox="0 0 64 64" height="2em" width="2em">
+      <path d="M 0 16 V 56 A 8 8 90 0 0 8 64 H 56 A 8 8 90 0 0 64 56 V 8 A 8 8 90 0 0 56 0 H 8 A 8 8 90 0 0 0 8 V 16 L 32 48 L 64 16 V 8 A 8 8 90 0 0 56 0 H 8 A 8 8 90 0 0 0 8 V 56 A 8 8 90 0 0 8 64 H 56 A 8 8 90 0 0 64 56 V 16"
+            pathLength="575.0541381835938"
+            class="path"></path>
+    </svg>
+  </label>
+
+</body>
+</html>`}
+              </pre>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" onClick={copyHtmlCode}>
+                <LinkIcon className="mr-2 h-4 w-4" />
+                Copy HTML Code
+              </Button>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              <p>Use this HTML code as a browser source in OBS to display an animated SVG checkbox.</p>
+              <p>The checkbox will animate when clicked and can be used as an overlay element.</p>
             </div>
           </div>
         </CardContent>
