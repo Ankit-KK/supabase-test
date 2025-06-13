@@ -1,4 +1,5 @@
 
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,17 +10,12 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Blog from "./pages/Blog";
 import AnkitPage from "./pages/Ankit";
-import HarishPage from "./pages/Harish";
-import MacklePage from "./pages/Mackle";
-import RakazonePage from "./pages/Rakazone";
 import PaymentCheckout from "./pages/PaymentCheckout";
 import PaymentStatus from "./pages/PaymentStatus";
 import Contact from "./pages/Contact";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CancellationRefunds from "./pages/CancellationRefunds";
 import Shipping from "./pages/Shipping";
-import ReckoningEsports from "./pages/ReckoningEsports";
-import ChiaaGaming from "./pages/ChiaaGaming";
 // Blog post imports
 import CompleteGuideMonetizeContentIndia from "./pages/blog/CompleteGuideMonetizeContentIndia";
 import EarnMoneyStreamingIndia from "./pages/blog/EarnMoneyStreamingIndia";
@@ -65,10 +61,6 @@ const App = () => {
               
               {/* Individual streamer donation pages */}
               <Route path="/ankit" element={<AnkitPage />} />
-              <Route path="/harish" element={<HarishPage />} />
-              <Route path="/mackle" element={<MacklePage />} />
-              <Route path="/rakazone" element={<RakazonePage />} />
-              <Route path="/chiaa-gaming" element={<ChiaaGaming />} />
               
               {/* Generic streamer routes */}
               <Route path="/:streamerName/login" element={<StreamerLogin />} />
@@ -84,7 +76,6 @@ const App = () => {
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/cancellation-refunds" element={<CancellationRefunds />} />
               <Route path="/shipping" element={<Shipping />} />
-              <Route path="/reckoningesports" element={<ReckoningEsports />} />
               
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />
@@ -97,3 +88,4 @@ const App = () => {
 };
 
 export default App;
+
