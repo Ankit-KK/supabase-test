@@ -39,12 +39,26 @@ const CSVExportDialog = ({ tableName, title = "Export Data" }: CSVExportDialogPr
     try {
       setIsExporting(true);
       
-      // Use type assertion to tell TypeScript this is a valid table name
-      let query = supabase
-        .from(tableName as any)
-        .select("*")
-        .eq("payment_status", "success")
-        .order("created_at", { ascending: false });
+      // Build the query based on the table name
+      const buildQuery = () => {
+        if (tableName === "ankit_donations") {
+          return supabase
+            .from("ankit_donations")
+            .select("*")
+            .eq("payment_status", "success")
+            .order("created_at", { ascending: false });
+        } else if (tableName === "mackle_donations") {
+          return supabase
+            .from("mackle_donations")
+            .select("*")
+            .eq("payment_status", "success")
+            .order("created_at", { ascending: false });
+        } else {
+          throw new Error(`Unsupported table: ${tableName}`);
+        }
+      };
+
+      let query = buildQuery();
 
       // Apply date filters if provided
       if (dateFrom) {
@@ -72,11 +86,8 @@ const CSVExportDialog = ({ tableName, title = "Export Data" }: CSVExportDialogPr
         return;
       }
 
-      // Type assertion for the donation data
-      const donations = data as DonationRow[];
-
       // Format the data for CSV - specifically for donation tables
-      const formattedData = donations.map(donation => ({
+      const formattedData = data.map(donation => ({
         Name: donation.name,
         Amount: `₹${Number(donation.amount).toLocaleString()}`,
         Message: donation.message || '',
