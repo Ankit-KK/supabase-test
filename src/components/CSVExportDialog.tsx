@@ -21,9 +21,10 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { objectsToCSV, downloadCSV, formatDateForFilename } from "@/utils/csvExport";
+import { StreamerTableName } from "@/types/donations";
 
 interface CSVExportDialogProps {
-  tableName: string;
+  tableName: StreamerTableName;
   title?: string;
 }
 
@@ -70,7 +71,7 @@ const CSVExportDialog = ({ tableName, title = "Export Data" }: CSVExportDialogPr
         return;
       }
 
-      // Format the data for CSV
+      // Format the data for CSV - specifically for donation tables
       const formattedData = data.map(donation => ({
         Name: donation.name,
         Amount: `₹${Number(donation.amount).toLocaleString()}`,
@@ -153,7 +154,6 @@ const CSVExportDialog = ({ tableName, title = "Export Data" }: CSVExportDialogPr
                     selected={dateFrom}
                     onSelect={setDateFrom}
                     initialFocus
-                    className={cn("p-3 pointer-events-auto")}
                   />
                 </PopoverContent>
               </Popover>
@@ -180,7 +180,6 @@ const CSVExportDialog = ({ tableName, title = "Export Data" }: CSVExportDialogPr
                     selected={dateTo}
                     onSelect={setDateTo}
                     initialFocus
-                    className={cn("p-3 pointer-events-auto")}
                   />
                 </PopoverContent>
               </Popover>
