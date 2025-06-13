@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { objectsToCSV, downloadCSV, formatDateForFilename } from "@/utils/csvExport";
-import { StreamerTableName } from "@/types/donations";
+import { StreamerTableName, DonationRow } from "@/types/donations";
 
 interface CSVExportDialogProps {
   tableName: StreamerTableName;
@@ -39,8 +39,9 @@ const CSVExportDialog = ({ tableName, title = "Export Data" }: CSVExportDialogPr
     try {
       setIsExporting(true);
       
+      // Use type assertion to tell TypeScript this is a valid table name
       let query = supabase
-        .from(tableName)
+        .from(tableName as any)
         .select("*")
         .eq("payment_status", "success")
         .order("created_at", { ascending: false });
@@ -71,8 +72,11 @@ const CSVExportDialog = ({ tableName, title = "Export Data" }: CSVExportDialogPr
         return;
       }
 
+      // Type assertion for the donation data
+      const donations = data as DonationRow[];
+
       // Format the data for CSV - specifically for donation tables
-      const formattedData = data.map(donation => ({
+      const formattedData = donations.map(donation => ({
         Name: donation.name,
         Amount: `₹${Number(donation.amount).toLocaleString()}`,
         Message: donation.message || '',
