@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { isStreamerOnline } from "@/services/streamerAuth";
 
 const ChiaaGaming = () => {
   const [formData, setFormData] = useState({
@@ -16,23 +15,7 @@ const ChiaaGaming = () => {
     message: "",
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [isOnline, setIsOnline] = useState<boolean | null>(null);
   const { toast } = useToast();
-
-  useEffect(() => {
-    // Check if streamer is online
-    const checkStreamerStatus = async () => {
-      const online = await isStreamerOnline("chiaa_gaming");
-      setIsOnline(online);
-    };
-
-    checkStreamerStatus();
-    
-    // Check status every 30 seconds
-    const interval = setInterval(checkStreamerStatus, 30000);
-    
-    return () => clearInterval(interval);
-  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -45,15 +28,6 @@ const ChiaaGaming = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!isOnline) {
-      toast({
-        variant: "destructive",
-        title: "Streamer Offline",
-        description: "The streamer is currently offline. Please try again later.",
-      });
-      return;
-    }
-
     if (!formData.name.trim() || !formData.amount.trim()) {
       toast({
         variant: "destructive",
@@ -76,9 +50,9 @@ const ChiaaGaming = () => {
     setIsLoading(true);
 
     try {
-      // Store donation in database (we'll use the existing ankit_donations table for now)
+      // Store donation in the new chiaa_gaming_donations table
       const { data, error } = await supabase
-        .from("ankit_donations")
+        .from("chiaa_gaming_donations")
         .insert({
           name: formData.name.trim(),
           amount: amount,
@@ -115,66 +89,17 @@ const ChiaaGaming = () => {
     }
   };
 
-  if (isOnline === null) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
-        <div className="text-white text-xl">Checking streamer status...</div>
-      </div>
-    );
-  }
-
-  if (!isOnline) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-center justify-center">
-        <Card className="w-full max-w-md mx-4 bg-gray-800 border-gray-700">
-          <CardHeader className="text-center">
-            <div className="mx-auto w-16 h-16 bg-red-600 rounded-full flex items-center justify-center mb-4">
-              <div className="w-8 h-8 bg-white rounded-full"></div>
-            </div>
-            <CardTitle className="text-2xl text-white">Streamer Offline</CardTitle>
-            <CardDescription className="text-gray-300">
-              Chiaa Gaming is currently offline. Donations are not available at this time.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center">
-            <p className="text-gray-400 text-sm">
-              Please check back later when the stream is live!
-            </p>
-            <div className="mt-4">
-              <a
-                href="https://www.youtube.com/@chiaagaming"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#fa1d78] hover:bg-[#c60c5d] text-white font-semibold shadow-lg transition"
-              >
-                Visit YouTube Channel
-                <svg xmlns="http://www.w3.org/2000/svg" width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M2 12.42v-.84c0-2.27 0-3.4.44-4.28a4 4 0 0 1 1.88-1.88C5.2 5 6.33 5 8.6 5h6.8c2.27 0 3.4 0 4.28.44a4 4 0 0 1 1.88 1.88C22 8.18 22 9.3 22 11.58v.84c0 2.27 0 3.4-.44 4.28a4 4 0 0 1-1.88 1.88C20.8 19 19.67 19 17.4 19H10.6c-2.27 0-3.4 0-4.28-.44A4 4 0 0 1 4.44 16.7C4 15.82 4 14.69 4 12.42Z"/>
-                  <path d="m10 9.5 5 2.5-5 2.5v-5Z"/>
-                </svg>
-              </a>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-900 via-purple-900 to-blue-900 flex items-center justify-center p-4">
       <Card className="w-full max-w-md bg-white/10 backdrop-blur-md border-white/20">
         <CardHeader className="text-center">
-          <div className="mx-auto w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mb-4">
-            <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+          <div className="mx-auto w-16 h-16 bg-gradient-to-r from-pink-600 to-purple-600 rounded-full flex items-center justify-center mb-4">
+            <div className="w-8 h-8 bg-white rounded-full"></div>
           </div>
           <CardTitle className="text-2xl text-white">Support Chiaa Gaming</CardTitle>
           <CardDescription className="text-gray-200">
             Send a donation to show your support
           </CardDescription>
-          <div className="flex items-center justify-center gap-2 mt-2">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span className="text-green-400 text-sm font-medium">LIVE</span>
-          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

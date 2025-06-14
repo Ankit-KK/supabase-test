@@ -39,9 +39,9 @@ const CSVExportDialog = ({ tableName, title = "Export Data" }: CSVExportDialogPr
     try {
       setIsExporting(true);
       
-      // Build the query - only for ankit_donations since that's the only table that exists
+      // Build the query for the specified table
       let query = supabase
-        .from("ankit_donations")
+        .from(tableName)
         .select("*")
         .eq("payment_status", "success")
         .order("created_at", { ascending: false });

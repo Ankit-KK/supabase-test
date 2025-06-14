@@ -8,8 +8,8 @@ export interface DonationRecord {
   payment_status: string;
 }
 
-// Updated to support chiaa_gaming donations (using ankit_donations table for now)
-export type StreamerTableName = "ankit_donations";
+// Updated to support chiaa_gaming donations with its own table
+export type StreamerTableName = "ankit_donations" | "chiaa_gaming_donations";
 
 // Define the common donation structure that these tables share
 export interface DonationRow {

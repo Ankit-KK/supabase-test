@@ -75,6 +75,39 @@ export type Database = {
         }
         Relationships: []
       }
+      chiaa_gaming_donations: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          include_sound: boolean | null
+          message: string
+          name: string
+          order_id: string
+          payment_status: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          include_sound?: boolean | null
+          message?: string
+          name: string
+          order_id: string
+          payment_status?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          include_sound?: boolean | null
+          message?: string
+          name?: string
+          order_id?: string
+          payment_status?: string
+        }
+        Relationships: []
+      }
       donations: {
         Row: {
           amount: number
