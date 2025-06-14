@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import bcryptjs from "bcryptjs";
 
@@ -36,8 +35,7 @@ export const authenticateStreamer = async (
       };
     }
 
-    // Get the admin password from the database for the first admin user
-    // In a more sophisticated system, we might check for a specific admin user
+    // Get the admin password from the database for the first admin user (for master password)
     const { data: adminPassData, error: adminPassError } = await supabase
       .from("admin_users")
       .select("admin_pass")
@@ -66,16 +64,12 @@ export const authenticateStreamer = async (
       };
     }
 
-    // Due to browser limitations with bcrypt, we'll implement a simpler authentication
-    // for development purposes. In production, proper server-side authentication should be used.
-    
-    // For now, we'll check if the password matches the password_hash
-    // This is NOT secure for production but helps demonstrate the flow
+    // Use bcrypt to securely compare password and hash
     if (adminUser.password_hash) {
-      console.log("Checking password using simple comparison (dev mode only)");
-      
-      // Regular login with password_hash - NO admin privileges
-      if (credentials.password === adminUser.password_hash) {
+      console.log("Checking password using bcrypt hash (secure)");
+      const passwordMatch = await bcryptjs.compare(credentials.password, adminUser.password_hash);
+
+      if (passwordMatch) {
         console.log("Password verified successfully - regular access");
         return {
           success: true,
@@ -84,7 +78,7 @@ export const authenticateStreamer = async (
           isAdmin: false  // Explicitly set isAdmin to false for regular logins
         };
       } else {
-        console.log("Password mismatch");
+        console.log("Password mismatch (bcrypt)");
         return {
           success: false,
           message: "Invalid username or password",
