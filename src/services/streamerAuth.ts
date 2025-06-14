@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import bcryptjs from "bcryptjs";
 
@@ -64,25 +65,52 @@ export const authenticateStreamer = async (
       };
     }
 
-    // Use bcrypt to securely compare password and hash
+    // Check if password_hash exists and try bcrypt comparison
     if (adminUser.password_hash) {
-      console.log("Checking password using bcrypt hash (secure)");
-      const passwordMatch = await bcryptjs.compare(credentials.password, adminUser.password_hash);
+      console.log("Checking password using bcrypt hash");
+      console.log("Password hash exists:", !!adminUser.password_hash);
+      
+      // Check if the password_hash looks like a bcrypt hash (starts with $2a$, $2b$, etc.)
+      const isBcryptHash = /^\$2[aby]\$/.test(adminUser.password_hash);
+      console.log("Is bcrypt hash format:", isBcryptHash);
+      
+      if (isBcryptHash) {
+        const passwordMatch = await bcryptjs.compare(credentials.password, adminUser.password_hash);
+        console.log("Bcrypt comparison result:", passwordMatch);
 
-      if (passwordMatch) {
-        console.log("Password verified successfully - regular access");
-        return {
-          success: true,
-          message: "Authentication successful",
-          adminType: adminUser.admin_type,
-          isAdmin: false  // Explicitly set isAdmin to false for regular logins
-        };
+        if (passwordMatch) {
+          console.log("Password verified successfully - regular access");
+          return {
+            success: true,
+            message: "Authentication successful",
+            adminType: adminUser.admin_type,
+            isAdmin: false
+          };
+        } else {
+          console.log("Password mismatch (bcrypt)");
+          return {
+            success: false,
+            message: "Invalid username or password",
+          };
+        }
       } else {
-        console.log("Password mismatch (bcrypt)");
-        return {
-          success: false,
-          message: "Invalid username or password",
-        };
+        // If password_hash doesn't look like bcrypt, try direct comparison (legacy support)
+        console.log("Using direct comparison (legacy)");
+        if (credentials.password === adminUser.password_hash) {
+          console.log("Direct password match - regular access");
+          return {
+            success: true,
+            message: "Authentication successful",
+            adminType: adminUser.admin_type,
+            isAdmin: false
+          };
+        } else {
+          console.log("Password mismatch (direct)");
+          return {
+            success: false,
+            message: "Invalid username or password",
+          };
+        }
       }
     } else {
       // No password hash exists
