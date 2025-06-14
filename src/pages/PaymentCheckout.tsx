@@ -26,6 +26,17 @@ const PaymentCheckout = () => {
         script.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
         script.id = "cashfree-script";
         script.async = true;
+        script.onload = () => {
+          console.log("Cashfree SDK loaded successfully");
+        };
+        script.onerror = () => {
+          console.error("Failed to load Cashfree SDK");
+          toast({
+            title: "Error",
+            description: "Failed to load payment system. Please try again.",
+            variant: "destructive",
+          });
+        };
         document.body.appendChild(script);
       }
     };
@@ -35,17 +46,19 @@ const PaymentCheckout = () => {
     // Get donation data from session storage
     const donationDataStr = sessionStorage.getItem("donationData");
     if (!donationDataStr) {
+      console.error("No donation data found in session storage");
       toast({
         title: "Error",
         description: "No donation data found. Please start again.",
         variant: "destructive",
       });
-      navigate("/");
+      navigate("/ankit");
       return;
     }
 
     try {
       const data = JSON.parse(donationDataStr);
+      console.log("Loaded donation data:", data);
       setPaymentData(data);
       setIsLoading(false);
     } catch (error) {
@@ -55,15 +68,21 @@ const PaymentCheckout = () => {
         description: "Invalid donation data. Please start again.",
         variant: "destructive",
       });
-      navigate("/");
+      navigate("/ankit");
     }
   }, [navigate]);
 
   const handlePayNow = async () => {
-    if (!paymentData) return;
+    if (!paymentData) {
+      console.error("No payment data available");
+      return;
+    }
     
     setIsLoading(true);
+    
     try {
+      console.log("Creating payment order for:", paymentData);
+      
       // Create payment order using Supabase Edge Function
       const orderResponse = await createPaymentOrder(
         paymentData.orderId, 
@@ -72,46 +91,65 @@ const PaymentCheckout = () => {
         paymentData.donationType
       );
       
+      console.log("Order response:", orderResponse);
+      
       if (!orderResponse || !orderResponse.payment_session_id) {
-        throw new Error("Failed to create payment order");
+        throw new Error("Failed to create payment order - no payment session ID received");
       }
 
-      // Initialize Cashfree checkout with inline mode instead of popup
+      // Check if Cashfree SDK is loaded
+      if (typeof (window as any).Cashfree === 'undefined') {
+        throw new Error("Cashfree SDK not loaded");
+      }
+
+      // Initialize Cashfree checkout
       const cashfree = (window as any).Cashfree({
         mode: "production",
       });
       
+      console.log("Initializing Cashfree checkout with session ID:", orderResponse.payment_session_id);
+      
       const checkoutOptions = {
         paymentSessionId: orderResponse.payment_session_id,
-        redirectTarget: "_self", // Change from _modal to _self for inline mode
+        redirectTarget: "_self",
       };
       
-      cashfree.checkout(checkoutOptions).then((result: any) => {
-        if (result.error) {
-          console.log("Error in payment:", result.error);
-          setIsLoading(false);
-        }
-        if (result.redirect) {
-          console.log("Payment will be redirected");
-        }
-        if (result.paymentDetails) {
-          console.log("Payment has been completed:", result.paymentDetails.paymentMessage);
-          navigate("/status?order_id=" + paymentData.orderId);
-        }
-      });
+      const result = await cashfree.checkout(checkoutOptions);
+      
+      console.log("Cashfree checkout result:", result);
+      
+      if (result.error) {
+        console.error("Payment error:", result.error);
+        toast({
+          title: "Payment Error",
+          description: result.error.message || "Payment failed. Please try again.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      if (result.redirect) {
+        console.log("Payment will be redirected");
+      }
+      
+      if (result.paymentDetails) {
+        console.log("Payment completed:", result.paymentDetails);
+        navigate(`/payment-status?order_id=${paymentData.orderId}`);
+      }
       
     } catch (error) {
       console.error("Payment initialization error:", error);
       toast({
         title: "Payment Error",
-        description: "Failed to initialize payment. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to initialize payment. Please try again.",
         variant: "destructive",
       });
       setIsLoading(false);
     }
   };
 
-  if (isLoading) {
+  if (isLoading && !paymentData) {
     return (
       <div className="container mx-auto max-w-md py-20 text-center">
         <div className="animate-pulse space-y-4">
@@ -123,19 +161,13 @@ const PaymentCheckout = () => {
     );
   }
 
-  const donationTitle = paymentData?.donationType === "harish" 
-    ? "Donation to Harish" 
-    : paymentData?.donationType === "mackle"
-    ? "Donation to Mackle"
-    : "Donation to Ankit";
-
   return (
     <div className="container mx-auto max-w-md py-10">
       <div className="border rounded-lg p-6 shadow-sm space-y-6 bg-card">
         <div className="text-center">
           <h1 className="text-2xl font-bold">Complete Your Payment</h1>
           <p className="text-muted-foreground mt-2">
-            You're almost there! Click below to complete your {donationTitle}.
+            You're almost there! Click below to complete your donation to Ankit.
           </p>
         </div>
         
@@ -149,14 +181,16 @@ const PaymentCheckout = () => {
             <span className="font-medium">₹{paymentData?.amount.toFixed(2)}</span>
           </div>
           <div className="flex justify-between">
+            <span>Message:</span>
+            <span className="font-medium text-sm truncate max-w-[200px]">
+              {paymentData?.message}
+            </span>
+          </div>
+          <div className="flex justify-between">
             <span>Order ID:</span>
             <span className="font-medium text-sm truncate max-w-[200px]">
               {paymentData?.orderId}
             </span>
-          </div>
-          <div className="flex justify-between">
-            <span>Donation Type:</span>
-            <span className="font-medium capitalize">{paymentData?.donationType}</span>
           </div>
         </div>
         

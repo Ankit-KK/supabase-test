@@ -11,7 +11,7 @@ const corsHeaders = {
 const XClientId = Deno.env.get("XClientId");
 const XClientSecret = Deno.env.get("XClientSecret");
 const API_VERSION = "2025-01-01";
-const API_URL = Deno.env.get("api_url") || "https://api.cashfree.com/pg";
+const API_URL = "https://api.cashfree.com/pg";
 
 // Function to generate a random 10-digit phone number
 const generateRandomPhoneNumber = (): string => {
@@ -28,8 +28,11 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Creating payment order - checking credentials");
+    
     // Verify client ID and secret are available
     if (!XClientId || !XClientSecret) {
+      console.error("Missing API credentials - XClientId or XClientSecret not found");
       return new Response(
         JSON.stringify({ error: "Missing API credentials" }),
         { 
@@ -40,11 +43,29 @@ serve(async (req) => {
     }
 
     // Parse request body
-    const { orderId, amount, name, donationType = "ankit" } = await req.json();
+    const requestBody = await req.text();
+    console.log("Raw request body:", requestBody);
+    
+    let parsedBody;
+    try {
+      parsedBody = JSON.parse(requestBody);
+    } catch (parseError) {
+      console.error("JSON parse error:", parseError);
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON in request body" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        }
+      );
+    }
+
+    const { orderId, amount, name, donationType = "ankit" } = parsedBody;
     
     if (!orderId || !amount) {
+      console.error("Missing required parameters:", { orderId, amount });
       return new Response(
-        JSON.stringify({ error: "Missing required parameters" }),
+        JSON.stringify({ error: "Missing required parameters: orderId and amount are required" }),
         {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" }
@@ -54,10 +75,11 @@ serve(async (req) => {
 
     // Get origin for return URL
     const origin = req.headers.get('origin') || 'https://hyperchat.space';
+    console.log("Using origin for return URL:", origin);
 
     // Prepare request to Cashfree API
     const orderData = {
-      order_amount: amount,
+      order_amount: Number(amount),
       order_currency: "INR",
       order_id: orderId,
       customer_details: {
@@ -65,10 +87,12 @@ serve(async (req) => {
         customer_phone: generateRandomPhoneNumber()
       },
       order_meta: {
-        return_url: `${origin}/status?order_id={order_id}`,
-        notify_url: `${origin}/status`
+        return_url: `${origin}/payment-status?order_id={order_id}`,
+        notify_url: `${origin}/payment-status`
       }
     };
+
+    console.log("Creating order with data:", JSON.stringify(orderData, null, 2));
 
     // Make request to Cashfree to create an order
     const response = await fetch(`${API_URL}/orders`, {
@@ -83,6 +107,7 @@ serve(async (req) => {
     });
 
     const responseData = await response.json();
+    console.log("Cashfree API response:", JSON.stringify(responseData, null, 2));
     
     if (!response.ok) {
       console.error("Error from Cashfree:", responseData);
@@ -95,6 +120,8 @@ serve(async (req) => {
       );
     }
 
+    console.log("Order created successfully");
+    
     // Return successful response with the payment session ID
     return new Response(
       JSON.stringify(responseData),

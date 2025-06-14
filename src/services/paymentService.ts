@@ -16,6 +16,8 @@ type DonationRecord = {
  */
 export const createPaymentOrder = async (orderId: string, amount: number, name: string, donationType: string = "ankit") => {
   try {
+    console.log("Creating payment order with:", { orderId, amount, name, donationType });
+    
     const { data, error } = await supabase.functions.invoke("create-payment-order", {
       body: { orderId, amount, name, donationType },
     });
@@ -25,6 +27,7 @@ export const createPaymentOrder = async (orderId: string, amount: number, name: 
       throw new Error(error.message || "Failed to create payment order");
     }
 
+    console.log("Payment order created successfully:", data);
     return data;
   } catch (error) {
     console.error("Error in createPaymentOrder:", error);
@@ -37,6 +40,8 @@ export const createPaymentOrder = async (orderId: string, amount: number, name: 
  */
 export const verifyPayment = async (orderId: string) => {
   try {
+    console.log("Verifying payment for order:", orderId);
+    
     const { data, error } = await supabase.functions.invoke("verify-payment", {
       body: { orderId },
     });
@@ -46,6 +51,7 @@ export const verifyPayment = async (orderId: string) => {
       throw new Error(error.message || "Failed to verify payment");
     }
 
+    console.log("Payment verification result:", data);
     return data;
   } catch (error) {
     console.error("Error in verifyPayment:", error);
@@ -97,9 +103,12 @@ export const createDonationRecord = async (donation: DonationRecord) => {
       throw new Error(error.message || `Failed to create donation record in ${tableName}`);
     }
 
+    console.log(`Successfully created donation record in ${tableName}`);
+
     // Clean up session storage after successful record creation
     if (donation.payment_status !== "pending") {
       sessionStorage.removeItem("donationData");
+      console.log("Cleaned up session storage");
     }
 
     return true;

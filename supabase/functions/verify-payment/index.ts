@@ -20,8 +20,11 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Verifying payment - checking credentials");
+    
     // Verify client ID and secret are available
     if (!XClientId || !XClientSecret) {
+      console.error("Missing API credentials");
       return new Response(
         JSON.stringify({ error: "Missing API credentials" }),
         { 
@@ -32,9 +35,27 @@ serve(async (req) => {
     }
 
     // Parse request body
-    const { orderId } = await req.json();
+    const requestBody = await req.text();
+    console.log("Raw request body:", requestBody);
+    
+    let parsedBody;
+    try {
+      parsedBody = JSON.parse(requestBody);
+    } catch (parseError) {
+      console.error("JSON parse error:", parseError);
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON in request body" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        }
+      );
+    }
+    
+    const { orderId } = parsedBody;
     
     if (!orderId) {
+      console.error("Missing order ID");
       return new Response(
         JSON.stringify({ error: "Missing order ID" }),
         {
@@ -70,7 +91,7 @@ serve(async (req) => {
       );
     }
 
-    console.log("Order data retrieved:", JSON.stringify(orderData));
+    console.log("Order data retrieved:", JSON.stringify(orderData, null, 2));
 
     // Now get payment details for this order
     const paymentResponse = await fetch(`${API_URL}/orders/${orderId}/payments`, {
@@ -83,30 +104,22 @@ serve(async (req) => {
       }
     });
 
-    const paymentData = await paymentResponse.json();
+    let paymentData = [];
     
-    if (!paymentResponse.ok) {
-      console.error("Error fetching payment details:", paymentData);
-      // Return order data as fallback with explicit payment_status
-      return new Response(
-        JSON.stringify({
-          order: orderData,
-          payments: []
-        }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" }
-        }
-      );
+    if (paymentResponse.ok) {
+      paymentData = await paymentResponse.json();
+      console.log("Payment data retrieved:", JSON.stringify(paymentData, null, 2));
+    } else {
+      console.error("Error fetching payment details, but continuing with order data");
     }
-
-    console.log("Payment data retrieved:", JSON.stringify(paymentData));
 
     // Combine order and payment data
     const responseData = {
       order: orderData,
       payments: paymentData
     };
+
+    console.log("Returning combined verification data");
 
     // Return the combined data
     return new Response(

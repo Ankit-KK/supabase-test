@@ -49,6 +49,7 @@ const App = () => (
               <Route path="/shipping" element={<Shipping />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/payment/:streamerId" element={<PaymentCheckout />} />
+              <Route path="/payment-checkout" element={<PaymentCheckout />} />
               <Route path="/payment-status" element={<PaymentStatus />} />
               <Route path="/demo-payment" element={<DemoPaymentFlow />} />
               

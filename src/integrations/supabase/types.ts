@@ -75,33 +75,36 @@ export type Database = {
         }
         Relationships: []
       }
-      contact_submissions: {
+      chiaa_gaming_donations: {
         Row: {
-          created_at: string
-          email: string
+          amount: number
+          created_at: string | null
           id: string
+          include_sound: boolean | null
           message: string
           name: string
-          phone: string | null
-          status: string | null
+          order_id: string
+          payment_status: string
         }
         Insert: {
-          created_at?: string
-          email: string
+          amount: number
+          created_at?: string | null
           id?: string
-          message: string
+          include_sound?: boolean | null
+          message?: string
           name: string
-          phone?: string | null
-          status?: string | null
+          order_id: string
+          payment_status?: string
         }
         Update: {
-          created_at?: string
-          email?: string
+          amount?: number
+          created_at?: string | null
           id?: string
+          include_sound?: boolean | null
           message?: string
           name?: string
-          phone?: string | null
-          status?: string | null
+          order_id?: string
+          payment_status?: string
         }
         Relationships: []
       }
@@ -132,42 +135,6 @@ export type Database = {
           name?: string
           order_id?: string | null
           payment_status?: string | null
-        }
-        Relationships: []
-      }
-      mackle_donations: {
-        Row: {
-          amount: number
-          created_at: string | null
-          id: string
-          include_gif: boolean | null
-          include_sound: boolean
-          message: string
-          name: string
-          order_id: string
-          payment_status: string
-        }
-        Insert: {
-          amount: number
-          created_at?: string | null
-          id?: string
-          include_gif?: boolean | null
-          include_sound?: boolean
-          message: string
-          name: string
-          order_id: string
-          payment_status?: string
-        }
-        Update: {
-          amount?: number
-          created_at?: string | null
-          id?: string
-          include_gif?: boolean | null
-          include_sound?: boolean
-          message?: string
-          name?: string
-          order_id?: string
-          payment_status?: string
         }
         Relationships: []
       }

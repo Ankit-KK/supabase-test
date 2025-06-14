@@ -70,16 +70,19 @@ const AnkitPage = () => {
       // Generate a random order ID with timestamp
       const orderId = `ankit_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
       
+      console.log("Creating donation with order ID:", orderId);
+      
       // Store donation data in session storage to access it during the payment flow
       const donationData = {
-        name,
+        name: name.trim(),
         amount: parseFloat(amount),
-        message,
+        message: message.trim(),
         orderId,
-        donationType: "ankit", // Add donation type to differentiate
+        donationType: "ankit",
       };
       
       sessionStorage.setItem("donationData", JSON.stringify(donationData));
+      console.log("Stored donation data in session storage");
       
       // Navigate to payment checkout
       navigate("/payment-checkout");
@@ -136,7 +139,7 @@ const AnkitPage = () => {
             <div className="flex items-center justify-center space-x-3">
               <Gamepad2 className="h-8 w-8 text-purple-400" />
               <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-purple-600 bg-clip-text text-transparent">
-                Support 'Streamer Name'
+                Support Ankit
               </h1>
               <Zap className="h-8 w-8 text-pink-400" />
             </div>
@@ -169,6 +172,7 @@ const AnkitPage = () => {
                   id="amount"
                   type="number"
                   min="1"
+                  step="1"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder="Minimum ₹1"
@@ -187,7 +191,7 @@ const AnkitPage = () => {
                   value={message}
                   onChange={handleMessageChange}
                   placeholder="Send your epic message to the stream!"
-                  className="h-24 bg-black/50 border-purple-500/50 text-white placeholder:text-purple-300 focus:border-pink-400 focus:ring-pink-400/50"
+                  className="h-24 bg-black/50 border-purple-500/50 text-white placeholder:text-purple-300 focus:border-pink-400 focus:ring-pink-400/50 resize-none"
                   disabled={isLoading}
                   maxLength={maxMessageLength}
                 />
