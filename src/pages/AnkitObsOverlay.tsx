@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -119,14 +118,15 @@ const AnkitObsOverlay = () => {
   };
 
   const goalPercentage = Math.min((goalProgress / goalTarget) * 100, 100);
+  const isGoalCompleted = goalProgress >= goalTarget;
 
   return (
     <div 
       className="fixed inset-0 pointer-events-none"
       style={{ background: 'transparent' }}
     >
-      {/* Goal Display */}
-      {showGoal && (
+      {/* Goal Display - Only show if goal is enabled and not completed */}
+      {showGoal && !isGoalCompleted && (
         <div className="absolute top-4 left-4 w-80">
           <div className="bg-gradient-to-r from-purple-600/90 to-pink-600/90 backdrop-blur-sm rounded-xl p-4 border border-white/20 shadow-2xl">
             <div className="text-white">
