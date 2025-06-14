@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -311,7 +312,30 @@ const ChiaaGamingDonationMessages = () => {
             <CardDescription className="text-pink-300">Configure what appears in your OBS overlay</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="flex flex-col space-y-6">
+              {/* Messages Toggle */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <div className="checkbox-wrapper-10">
+                    <input 
+                      checked={showMessages} 
+                      type="checkbox" 
+                      id="show-messages" 
+                      className="tgl tgl-flip"
+                      onChange={handleToggleMessages}
+                    />
+                    <label 
+                      htmlFor="show-messages" 
+                      data-tg-on="On" 
+                      data-tg-off="Off" 
+                      className="tgl-btn"
+                    ></label>
+                  </div>
+                  <Label htmlFor="show-messages" className="text-pink-200">Show donation messages in OBS</Label>
+                </div>
+              </div>
+
+              {/* Messages OBS Link */}
               <div className="space-y-2">
                 <Label className="text-pink-200">Donation Messages OBS Link</Label>
                 <div className="flex items-center space-x-2">
@@ -320,16 +344,100 @@ const ChiaaGamingDonationMessages = () => {
                     readOnly 
                     className="font-mono text-sm flex-1 bg-black/30 border-pink-500/50 text-pink-100"
                   />
-                  <Button 
-                    variant="outline" 
-                    onClick={() => navigator.clipboard.writeText(obsLink)}
-                    className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20"
-                  >
+                  <Button variant="outline" onClick={copyMessagesLink} className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20">
                     <LinkIcon className="mr-2 h-4 w-4" />
                     Copy
                   </Button>
+                  <Button variant="outline" onClick={regenerateMessagesLink} className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20">
+                    Generate New
+                  </Button>
+                  <Button variant="outline" onClick={openMessagesInNewTab} className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20">
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Open
+                  </Button>
+                </div>
+                <p className="text-sm text-pink-300/70">
+                  This link will display donation messages. Each message shows for 12 seconds.
+                </p>
+              </div>
+
+              {/* Goal Toggle */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <div className="checkbox-wrapper-10">
+                    <input 
+                      checked={showGoal} 
+                      type="checkbox" 
+                      id="show-goal" 
+                      className="tgl tgl-flip"
+                      onChange={handleToggleGoal}
+                    />
+                    <label 
+                      htmlFor="show-goal" 
+                      data-tg-on="On" 
+                      data-tg-off="Off" 
+                      className="tgl-btn"
+                    ></label>
+                  </div>
+                  <Label htmlFor="show-goal" className="text-pink-200">Show donation goal in OBS</Label>
                 </div>
               </div>
+
+              {/* Goal Configuration */}
+              {showGoal && (
+                <div className="space-y-4 p-4 bg-pink-500/10 rounded-lg border border-pink-500/30">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="goal-name" className="text-pink-200">Goal Name</Label>
+                      <Input
+                        id="goal-name"
+                        value={goalName}
+                        onChange={handleGoalNameChange}
+                        placeholder="Enter goal name"
+                        className="mt-1 bg-black/30 border-pink-500/50 text-pink-100 placeholder:text-pink-300/70"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="goal-target" className="text-pink-200">Target Amount (₹)</Label>
+                      <Input
+                        id="goal-target"
+                        type="number"
+                        value={goalTarget}
+                        onChange={handleGoalTargetChange}
+                        placeholder="Enter target amount"
+                        className="mt-1 bg-black/30 border-pink-500/50 text-pink-100 placeholder:text-pink-300/70"
+                        min="1"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Goal OBS Link */}
+                  <div className="space-y-2">
+                    <Label className="text-pink-200">Goal OBS Link</Label>
+                    <div className="flex items-center space-x-2">
+                      <Input 
+                        value={goalObsLink} 
+                        readOnly 
+                        className="font-mono text-sm flex-1 bg-black/30 border-pink-500/50 text-pink-100"
+                      />
+                      <Button variant="outline" onClick={copyGoalLink} className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20">
+                        <LinkIcon className="mr-2 h-4 w-4" />
+                        Copy
+                      </Button>
+                      <Button variant="outline" onClick={regenerateGoalLink} className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20">
+                        Generate New
+                      </Button>
+                      <Button variant="outline" onClick={openGoalInNewTab} className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20">
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                        Open
+                      </Button>
+                    </div>
+                    <p className="text-sm text-pink-300/70">
+                      This link will only display the donation goal with real-time progress.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
