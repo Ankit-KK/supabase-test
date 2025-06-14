@@ -39,7 +39,7 @@ const CSVExportDialog = ({ tableName, title = "Export Data" }: CSVExportDialogPr
     try {
       setIsExporting(true);
       
-      // Build the query based on the table name
+      // Build the query based on the table name - only for existing tables
       const buildQuery = () => {
         if (tableName === "ankit_donations") {
           return supabase
@@ -47,9 +47,9 @@ const CSVExportDialog = ({ tableName, title = "Export Data" }: CSVExportDialogPr
             .select("*")
             .eq("payment_status", "success")
             .order("created_at", { ascending: false });
-        } else if (tableName === "mackle_donations") {
+        } else if (tableName === "chiaa_gaming_donations") {
           return supabase
-            .from("mackle_donations")
+            .from("chiaa_gaming_donations")
             .select("*")
             .eq("payment_status", "success")
             .order("created_at", { ascending: false });
