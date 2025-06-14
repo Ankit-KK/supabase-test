@@ -1,5 +1,6 @@
 
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ const ChiaaGaming = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -50,7 +52,9 @@ const ChiaaGaming = () => {
     setIsLoading(true);
 
     try {
-      // Store donation in the new chiaa_gaming_donations table
+      const orderId = `chiaa_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Store donation in the chiaa_gaming_donations table
       const { data, error } = await supabase
         .from("chiaa_gaming_donations")
         .insert({
@@ -58,24 +62,31 @@ const ChiaaGaming = () => {
           amount: amount,
           message: formData.message.trim(),
           payment_status: "pending",
-          order_id: `chiaa_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+          order_id: orderId
         })
         .select()
         .single();
 
       if (error) throw error;
 
+      // Store donation data in session storage for payment processing
+      const donationData = {
+        name: formData.name.trim(),
+        amount: amount,
+        message: formData.message.trim(),
+        orderId: orderId,
+        donationType: "chiaa_gaming"
+      };
+      
+      sessionStorage.setItem("donationData", JSON.stringify(donationData));
+
       toast({
         title: "Donation Submitted",
-        description: "Thank you for supporting Chiaa Gaming! Processing payment...",
+        description: "Thank you for supporting Chiaa Gaming! Redirecting to payment...",
       });
 
-      // Reset form
-      setFormData({
-        name: "",
-        amount: "",
-        message: "",
-      });
+      // Navigate to payment checkout
+      navigate("/payment-checkout");
 
     } catch (error: any) {
       console.error("Error submitting donation:", error);
