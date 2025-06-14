@@ -8,7 +8,7 @@ export interface DonationRecord {
   payment_status: string;
 }
 
-// Only include tables that actually exist in the database
+// Updated to support chiaa_gaming donations (using ankit_donations table for now)
 export type StreamerTableName = "ankit_donations";
 
 // Define the common donation structure that these tables share

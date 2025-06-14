@@ -1,74 +1,236 @@
 
-import React from "react";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-
-const images = [
-  {
-    src: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&w=800&q=80",
-    alt: "A woman sitting on a bed using a laptop"
-  },
-  {
-    src: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?auto=format&fit=crop&w=800&q=80",
-    alt: "Turned on gray laptop computer"
-  },
-  {
-    src: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=800&q=80",
-    alt: "Woman in white long sleeve shirt using black laptop computer"
-  },
-  {
-    src: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=80",
-    alt: "Matrix movie still"
-  },
-  {
-    src: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80",
-    alt: "Body of water surrounded by trees"
-  },
-];
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { isStreamerOnline } from "@/services/streamerAuth";
 
 const ChiaaGaming = () => {
-  return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-purple-100 via-pink-50 to-blue-100">
-      <Navbar />
-      <main className="flex-1 pt-24 pb-16 container mx-auto px-4">
-        <h1 className="text-4xl md:text-5xl font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 mb-6">
-          Chiaa Gaming Moments
-        </h1>
-        <p className="max-w-2xl mx-auto text-center text-lg text-muted-foreground mb-10">
-          Explore some highlights from the Chiaa Gaming community! Whether streaming epic gameplay or connecting with fans, Chiaa Gaming brings the best in creator energy.
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-10">
-          {images.map((img, i) => (
-            <div
-              key={i}
-              className="rounded-lg shadow-md bg-white/80 border overflow-hidden flex flex-col hover:scale-105 hover:shadow-xl transition-all"
-            >
-              <img
-                src={img.src}
-                alt={img.alt}
-                className="w-full aspect-video object-cover"
-                loading="lazy"
-              />
-              <div className="p-3 text-sm text-center text-muted-foreground">{img.alt}</div>
+  const [formData, setFormData] = useState({
+    name: "",
+    amount: "",
+    message: "",
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [isOnline, setIsOnline] = useState<boolean | null>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    // Check if streamer is online
+    const checkStreamerStatus = async () => {
+      const online = await isStreamerOnline("chiaa_gaming");
+      setIsOnline(online);
+    };
+
+    checkStreamerStatus();
+    
+    // Check status every 30 seconds
+    const interval = setInterval(checkStreamerStatus, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!isOnline) {
+      toast({
+        variant: "destructive",
+        title: "Streamer Offline",
+        description: "The streamer is currently offline. Please try again later.",
+      });
+      return;
+    }
+
+    if (!formData.name.trim() || !formData.amount.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Missing Information",
+        description: "Please fill in both name and amount fields.",
+      });
+      return;
+    }
+
+    const amount = parseFloat(formData.amount);
+    if (isNaN(amount) || amount <= 0) {
+      toast({
+        variant: "destructive",
+        title: "Invalid Amount",
+        description: "Please enter a valid amount greater than 0.",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Store donation in database (we'll use the existing ankit_donations table for now)
+      const { data, error } = await supabase
+        .from("ankit_donations")
+        .insert({
+          name: formData.name.trim(),
+          amount: amount,
+          message: formData.message.trim(),
+          payment_status: "pending",
+          order_id: `chiaa_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast({
+        title: "Donation Submitted",
+        description: "Thank you for supporting Chiaa Gaming! Processing payment...",
+      });
+
+      // Reset form
+      setFormData({
+        name: "",
+        amount: "",
+        message: "",
+      });
+
+    } catch (error: any) {
+      console.error("Error submitting donation:", error);
+      toast({
+        variant: "destructive",
+        title: "Submission Failed",
+        description: "There was an error submitting your donation. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isOnline === null) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+        <div className="text-white text-xl">Checking streamer status...</div>
+      </div>
+    );
+  }
+
+  if (!isOnline) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-center justify-center">
+        <Card className="w-full max-w-md mx-4 bg-gray-800 border-gray-700">
+          <CardHeader className="text-center">
+            <div className="mx-auto w-16 h-16 bg-red-600 rounded-full flex items-center justify-center mb-4">
+              <div className="w-8 h-8 bg-white rounded-full"></div>
             </div>
-          ))}
-        </div>
-        <div className="text-center mt-8">
-          <a
-            href="https://www.youtube.com/@chiaagaming"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-[#fa1d78] hover:bg-[#c60c5d] text-white font-semibold shadow-lg transition"
-          >
-            Visit Chiaa Gaming on YouTube
-            <svg xmlns="http://www.w3.org/2000/svg" width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-youtube">
-              <path d="M2 12.42v-.84c0-2.27 0-3.4.44-4.28a4 4 0 0 1 1.88-1.88C5.2 5 6.33 5 8.6 5h6.8c2.27 0 3.4 0 4.28.44a4 4 0 0 1 1.88 1.88C22 8.18 22 9.3 22 11.58v.84c0 2.27 0 3.4-.44 4.28a4 4 0 0 1-1.88 1.88C20.8 19 19.67 19 17.4 19H10.6c-2.27 0-3.4 0-4.28-.44A4 4 0 0 1 4.44 16.7C4 15.82 4 14.69 4 12.42Z"/>
-              <path d="m10 9.5 5 2.5-5 2.5v-5Z"/>
-            </svg>
-          </a>
-        </div>
-      </main>
-      <Footer />
+            <CardTitle className="text-2xl text-white">Streamer Offline</CardTitle>
+            <CardDescription className="text-gray-300">
+              Chiaa Gaming is currently offline. Donations are not available at this time.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center">
+            <p className="text-gray-400 text-sm">
+              Please check back later when the stream is live!
+            </p>
+            <div className="mt-4">
+              <a
+                href="https://www.youtube.com/@chiaagaming"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#fa1d78] hover:bg-[#c60c5d] text-white font-semibold shadow-lg transition"
+              >
+                Visit YouTube Channel
+                <svg xmlns="http://www.w3.org/2000/svg" width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M2 12.42v-.84c0-2.27 0-3.4.44-4.28a4 4 0 0 1 1.88-1.88C5.2 5 6.33 5 8.6 5h6.8c2.27 0 3.4 0 4.28.44a4 4 0 0 1 1.88 1.88C22 8.18 22 9.3 22 11.58v.84c0 2.27 0 3.4-.44 4.28a4 4 0 0 1-1.88 1.88C20.8 19 19.67 19 17.4 19H10.6c-2.27 0-3.4 0-4.28-.44A4 4 0 0 1 4.44 16.7C4 15.82 4 14.69 4 12.42Z"/>
+                  <path d="m10 9.5 5 2.5-5 2.5v-5Z"/>
+                </svg>
+              </a>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-pink-900 via-purple-900 to-blue-900 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md bg-white/10 backdrop-blur-md border-white/20">
+        <CardHeader className="text-center">
+          <div className="mx-auto w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mb-4">
+            <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+          </div>
+          <CardTitle className="text-2xl text-white">Support Chiaa Gaming</CardTitle>
+          <CardDescription className="text-gray-200">
+            Send a donation to show your support
+          </CardDescription>
+          <div className="flex items-center justify-center gap-2 mt-2">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            <span className="text-green-400 text-sm font-medium">LIVE</span>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-white">Your Name</Label>
+              <Input
+                id="name"
+                name="name"
+                type="text"
+                value={formData.name}
+                onChange={handleInputChange}
+                placeholder="Enter your name"
+                required
+                className="bg-white/20 border-white/30 text-white placeholder:text-gray-300"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="amount" className="text-white">Amount (₹)</Label>
+              <Input
+                id="amount"
+                name="amount"
+                type="number"
+                min="1"
+                step="0.01"
+                value={formData.amount}
+                onChange={handleInputChange}
+                placeholder="Enter amount"
+                required
+                className="bg-white/20 border-white/30 text-white placeholder:text-gray-300"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="message" className="text-white">Message (Optional)</Label>
+              <Textarea
+                id="message"
+                name="message"
+                value={formData.message}
+                onChange={handleInputChange}
+                placeholder="Leave a message..."
+                rows={3}
+                className="bg-white/20 border-white/30 text-white placeholder:text-gray-300 resize-none"
+              />
+            </div>
+
+            <Button 
+              type="submit" 
+              className="w-full bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white border-0"
+              disabled={isLoading}
+            >
+              {isLoading ? "Processing..." : "Send Donation"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 };
