@@ -25,6 +25,7 @@ const AnkitDonationMessages = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [obsLink, setObsLink] = useState<string>("");
+  const [goalObsLink, setGoalObsLink] = useState<string>("");
   const [showMessages, setShowMessages] = useState<boolean>(true);
   const [showGoal, setShowGoal] = useState<boolean>(false);
   const [goalName, setGoalName] = useState<string>("Support Goal");
@@ -141,60 +142,85 @@ const AnkitDonationMessages = () => {
     if (savedGoalTarget) {
       setGoalTarget(Number(savedGoalTarget));
     }
-    
-    // Store the preference on URL for OBS to check
-    const currentLink = sessionStorage.getItem("ankitObsLink");
-    if (currentLink) {
-      const hasParam = currentLink.includes("?");
-      const baseLink = hasParam ? currentLink.split("?")[0] : currentLink;
-      const newLink = `${baseLink}?showMessages=${savedPref !== "false"}&showGoal=${savedGoalPref === "true"}&goalName=${encodeURIComponent(savedGoalName || "Support Goal")}&goalTarget=${savedGoalTarget || 500}`;
-      sessionStorage.setItem("ankitObsLink", newLink);
-      setObsLink(newLink);
-    }
   }, []);
 
-  // Generate or retrieve OBS link
-  const setupObsLink = () => {
-    let storedLink = sessionStorage.getItem("ankitObsLink");
+  // Generate or retrieve OBS links
+  const setupObsLinks = () => {
+    let storedMessagesLink = sessionStorage.getItem("ankitObsLink");
+    let storedGoalLink = sessionStorage.getItem("ankitGoalObsLink");
     
-    if (!storedLink) {
+    if (!storedMessagesLink) {
       const randomId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      storedLink = `${window.location.origin}/ankit/obs/${randomId}?showMessages=${showMessages}&showGoal=${showGoal}&goalName=${encodeURIComponent(goalName)}&goalTarget=${goalTarget}`;
-      sessionStorage.setItem("ankitObsLink", storedLink);
+      storedMessagesLink = `${window.location.origin}/ankit/obs/${randomId}?showMessages=${showMessages}&showGoal=false`;
+      sessionStorage.setItem("ankitObsLink", storedMessagesLink);
     }
     
-    setObsLink(storedLink);
+    if (!storedGoalLink) {
+      const randomId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      storedGoalLink = `${window.location.origin}/ankit/obs/${randomId}?showMessages=false&showGoal=true&goalName=${encodeURIComponent(goalName)}&goalTarget=${goalTarget}`;
+      sessionStorage.setItem("ankitGoalObsLink", storedGoalLink);
+    }
+    
+    setObsLink(storedMessagesLink);
+    setGoalObsLink(storedGoalLink);
   };
 
-  const regenerateObsLink = () => {
+  const regenerateMessagesLink = () => {
     const randomId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    const newLink = `${window.location.origin}/ankit/obs/${randomId}?showMessages=${showMessages}&showGoal=${showGoal}&goalName=${encodeURIComponent(goalName)}&goalTarget=${goalTarget}`;
+    const newLink = `${window.location.origin}/ankit/obs/${randomId}?showMessages=${showMessages}&showGoal=false`;
     
     sessionStorage.setItem("ankitObsLink", newLink);
     setObsLink(newLink);
     
     toast({
-      title: "OBS Link Regenerated",
-      description: "Your new OBS link has been created",
+      title: "Messages Link Regenerated",
+      description: "Your new donation messages OBS link has been created",
     });
   };
 
-  const copyObsLink = () => {
+  const regenerateGoalLink = () => {
+    const randomId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const newLink = `${window.location.origin}/ankit/obs/${randomId}?showMessages=false&showGoal=true&goalName=${encodeURIComponent(goalName)}&goalTarget=${goalTarget}`;
+    
+    sessionStorage.setItem("ankitGoalObsLink", newLink);
+    setGoalObsLink(newLink);
+    
+    toast({
+      title: "Goal Link Regenerated",
+      description: "Your new goal OBS link has been created",
+    });
+  };
+
+  const copyMessagesLink = () => {
     navigator.clipboard.writeText(obsLink);
     toast({
       title: "Link Copied",
-      description: "OBS link copied to clipboard",
+      description: "Donation messages OBS link copied to clipboard",
     });
   };
 
-  const openObsInNewTab = () => {
+  const copyGoalLink = () => {
+    navigator.clipboard.writeText(goalObsLink);
+    toast({
+      title: "Link Copied",
+      description: "Goal OBS link copied to clipboard",
+    });
+  };
+
+  const openMessagesInNewTab = () => {
     if (obsLink) {
       window.open(obsLink, '_blank');
     }
   };
 
+  const openGoalInNewTab = () => {
+    if (goalObsLink) {
+      window.open(goalObsLink, '_blank');
+    }
+  };
+
   useEffect(() => {
-    setupObsLink();
+    setupObsLinks();
   }, []);
 
   // Handle toggle of show messages preference
@@ -202,7 +228,7 @@ const AnkitDonationMessages = () => {
     const newValue = !showMessages;
     setShowMessages(newValue);
     localStorage.setItem("ankitShowMessages", newValue.toString());
-    updateObsLink();
+    updateMessagesLink();
     
     toast({
       title: newValue ? "Messages Enabled" : "Messages Disabled",
@@ -215,7 +241,7 @@ const AnkitDonationMessages = () => {
     const newValue = !showGoal;
     setShowGoal(newValue);
     localStorage.setItem("ankitShowGoal", newValue.toString());
-    updateObsLink();
+    updateGoalLink();
     
     toast({
       title: newValue ? "Goal Enabled" : "Goal Disabled",
@@ -228,7 +254,7 @@ const AnkitDonationMessages = () => {
     const newName = e.target.value;
     setGoalName(newName);
     localStorage.setItem("ankitGoalName", newName);
-    updateObsLink();
+    updateGoalLink();
   };
 
   // Handle goal target change
@@ -236,16 +262,25 @@ const AnkitDonationMessages = () => {
     const newTarget = Number(e.target.value);
     setGoalTarget(newTarget);
     localStorage.setItem("ankitGoalTarget", newTarget.toString());
-    updateObsLink();
+    updateGoalLink();
   };
 
-  // Update OBS link with current settings
-  const updateObsLink = () => {
+  // Update messages link with current settings
+  const updateMessagesLink = () => {
     const hasParam = obsLink.includes("?");
     const baseLink = hasParam ? obsLink.split("?")[0] : obsLink;
-    const newLink = `${baseLink}?showMessages=${showMessages}&showGoal=${showGoal}&goalName=${encodeURIComponent(goalName)}&goalTarget=${goalTarget}`;
+    const newLink = `${baseLink}?showMessages=${showMessages}&showGoal=false`;
     sessionStorage.setItem("ankitObsLink", newLink);
     setObsLink(newLink);
+  };
+
+  // Update goal link with current settings
+  const updateGoalLink = () => {
+    const hasParam = goalObsLink.includes("?");
+    const baseLink = hasParam ? goalObsLink.split("?")[0] : goalObsLink;
+    const newLink = `${baseLink}?showMessages=false&showGoal=true&goalName=${encodeURIComponent(goalName)}&goalTarget=${goalTarget}`;
+    sessionStorage.setItem("ankitGoalObsLink", newLink);
+    setGoalObsLink(newLink);
   };
 
   const formatDate = (dateString: string) => {
@@ -298,6 +333,32 @@ const AnkitDonationMessages = () => {
               </div>
             </div>
 
+            {/* Messages OBS Link */}
+            <div className="space-y-2">
+              <Label>Donation Messages OBS Link</Label>
+              <div className="flex items-center space-x-2">
+                <Input 
+                  value={obsLink} 
+                  readOnly 
+                  className="font-mono text-sm flex-1"
+                />
+                <Button variant="outline" onClick={copyMessagesLink}>
+                  <LinkIcon className="mr-2 h-4 w-4" />
+                  Copy
+                </Button>
+                <Button variant="outline" onClick={regenerateMessagesLink}>
+                  Generate New
+                </Button>
+                <Button variant="outline" onClick={openMessagesInNewTab}>
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  Open
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                This link will display donation messages. Each message shows for 12 seconds.
+              </p>
+            </div>
+
             {/* Goal Toggle */}
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
@@ -347,32 +408,34 @@ const AnkitDonationMessages = () => {
                     />
                   </div>
                 </div>
+
+                {/* Goal OBS Link */}
+                <div className="space-y-2">
+                  <Label>Goal OBS Link</Label>
+                  <div className="flex items-center space-x-2">
+                    <Input 
+                      value={goalObsLink} 
+                      readOnly 
+                      className="font-mono text-sm flex-1"
+                    />
+                    <Button variant="outline" onClick={copyGoalLink}>
+                      <LinkIcon className="mr-2 h-4 w-4" />
+                      Copy
+                    </Button>
+                    <Button variant="outline" onClick={regenerateGoalLink}>
+                      Generate New
+                    </Button>
+                    <Button variant="outline" onClick={openGoalInNewTab}>
+                      <ExternalLink className="mr-2 h-4 w-4" />
+                      Open
+                    </Button>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    This link will only display the donation goal with real-time progress.
+                  </p>
+                </div>
               </div>
             )}
-            
-            {/* OBS Link */}
-            <div className="flex items-center space-x-2">
-              <Input 
-                value={obsLink} 
-                readOnly 
-                className="font-mono text-sm flex-1"
-              />
-              <Button variant="outline" onClick={copyObsLink}>
-                <LinkIcon className="mr-2 h-4 w-4" />
-                Copy
-              </Button>
-              <Button variant="outline" onClick={regenerateObsLink}>
-                Generate New
-              </Button>
-              <Button variant="outline" onClick={openObsInNewTab}>
-                <ExternalLink className="mr-2 h-4 w-4" />
-                Open
-              </Button>
-            </div>
-            <div className="text-sm text-muted-foreground">
-              <p>This link will display your donation messages and goal in real-time for your stream.</p>
-              <p>Each message will show for 12 seconds before moving to the next one.</p>
-            </div>
           </div>
         </CardContent>
       </Card>
