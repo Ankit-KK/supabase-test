@@ -39,55 +39,49 @@ const CSVExportDialog = ({ tableName, title = "Export Data" }: CSVExportDialogPr
     try {
       setIsExporting(true);
       
-      console.log(`Starting export for table: ${tableName}`);
-      
       // Build the query based on the table name
-      let query;
-      
-      if (tableName === "ankit_donations") {
-        query = supabase
-          .from("ankit_donations")
-          .select("*")
-          .eq("payment_status", "success")
-          .order("created_at", { ascending: false });
-      } else if (tableName === "chiaa_gaming_donations") {
-        query = supabase
-          .from("chiaa_gaming_donations")
-          .select("*")
-          .eq("payment_status", "success")
-          .order("created_at", { ascending: false });
-      } else {
-        throw new Error(`Unsupported table: ${tableName}`);
-      }
+      const buildQuery = () => {
+        if (tableName === "ankit_donations") {
+          return supabase
+            .from("ankit_donations")
+            .select("*")
+            .eq("payment_status", "success")
+            .order("created_at", { ascending: false });
+        } else if (tableName === "mackle_donations") {
+          return supabase
+            .from("mackle_donations")
+            .select("*")
+            .eq("payment_status", "success")
+            .order("created_at", { ascending: false });
+        } else {
+          throw new Error(`Unsupported table: ${tableName}`);
+        }
+      };
+
+      let query = buildQuery();
 
       // Apply date filters if provided
       if (dateFrom) {
         const fromString = format(dateFrom, 'yyyy-MM-dd') + 'T00:00:00';
         query = query.gte("created_at", fromString);
-        console.log(`Applied date filter from: ${fromString}`);
       }
       
       if (dateTo) {
         const toString = format(dateTo, 'yyyy-MM-dd') + 'T23:59:59';
         query = query.lte("created_at", toString);
-        console.log(`Applied date filter to: ${toString}`);
       }
 
-      console.log(`Executing query for ${tableName}...`);
       const { data, error } = await query;
 
       if (error) {
-        console.error("Query error:", error);
         throw error;
       }
-
-      console.log(`Query result: ${data?.length || 0} records found`);
 
       if (!data || data.length === 0) {
         toast({
           variant: "destructive",
           title: "No data found",
-          description: "No successful donations found for the selected time period",
+          description: "No donations found for the selected time period",
         });
         return;
       }
@@ -99,11 +93,7 @@ const CSVExportDialog = ({ tableName, title = "Export Data" }: CSVExportDialogPr
         Message: donation.message || '',
         Date: format(new Date(donation.created_at), 'dd/MM/yyyy'),
         Time: format(new Date(donation.created_at), 'HH:mm:ss'),
-        'Payment Status': donation.payment_status,
-        'Order ID': donation.order_id
       }));
-
-      console.log(`Formatted ${formattedData.length} records for CSV export`);
 
       // Generate CSV
       const csvData = objectsToCSV(formattedData);
@@ -214,7 +204,7 @@ const CSVExportDialog = ({ tableName, title = "Export Data" }: CSVExportDialogPr
           <div className="text-sm text-muted-foreground">
             <p>• Leave dates empty to export all data</p>
             <p>• Only successful donations will be exported</p>
-            <p>• Data includes: Name, Amount, Message, Date, Time, Payment Status, and Order ID</p>
+            <p>• Data includes: Name, Amount, Message, Date, and Time</p>
           </div>
           
           <div className="flex justify-end space-x-2 pt-4">
