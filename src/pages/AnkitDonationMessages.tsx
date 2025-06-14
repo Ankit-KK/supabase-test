@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -27,6 +26,9 @@ const AnkitDonationMessages = () => {
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [obsLink, setObsLink] = useState<string>("");
   const [showMessages, setShowMessages] = useState<boolean>(true);
+  const [showGoal, setShowGoal] = useState<boolean>(false);
+  const [goalName, setGoalName] = useState<string>("Support Goal");
+  const [goalTarget, setGoalTarget] = useState<number>(500);
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -118,11 +120,26 @@ const AnkitDonationMessages = () => {
     };
   }, [toast]);
 
-  // Load the show messages preference from localStorage on component mount
+  // Load preferences from localStorage on component mount
   useEffect(() => {
     const savedPref = localStorage.getItem("ankitShowMessages");
     if (savedPref !== null) {
       setShowMessages(savedPref === "true");
+    }
+    
+    const savedGoalPref = localStorage.getItem("ankitShowGoal");
+    if (savedGoalPref !== null) {
+      setShowGoal(savedGoalPref === "true");
+    }
+    
+    const savedGoalName = localStorage.getItem("ankitGoalName");
+    if (savedGoalName) {
+      setGoalName(savedGoalName);
+    }
+    
+    const savedGoalTarget = localStorage.getItem("ankitGoalTarget");
+    if (savedGoalTarget) {
+      setGoalTarget(Number(savedGoalTarget));
     }
     
     // Store the preference on URL for OBS to check
@@ -130,7 +147,7 @@ const AnkitDonationMessages = () => {
     if (currentLink) {
       const hasParam = currentLink.includes("?");
       const baseLink = hasParam ? currentLink.split("?")[0] : currentLink;
-      const newLink = `${baseLink}?showMessages=${savedPref !== "false"}`;
+      const newLink = `${baseLink}?showMessages=${savedPref !== "false"}&showGoal=${savedGoalPref === "true"}&goalName=${encodeURIComponent(savedGoalName || "Support Goal")}&goalTarget=${savedGoalTarget || 500}`;
       sessionStorage.setItem("ankitObsLink", newLink);
       setObsLink(newLink);
     }
@@ -138,13 +155,11 @@ const AnkitDonationMessages = () => {
 
   // Generate or retrieve OBS link
   const setupObsLink = () => {
-    // Check if there's an existing OBS link in sessionStorage
     let storedLink = sessionStorage.getItem("ankitObsLink");
     
     if (!storedLink) {
-      // Generate a new link with a random ID
       const randomId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      storedLink = `${window.location.origin}/ankit/obs/${randomId}?showMessages=${showMessages}`;
+      storedLink = `${window.location.origin}/ankit/obs/${randomId}?showMessages=${showMessages}&showGoal=${showGoal}&goalName=${encodeURIComponent(goalName)}&goalTarget=${goalTarget}`;
       sessionStorage.setItem("ankitObsLink", storedLink);
     }
     
@@ -152,11 +167,9 @@ const AnkitDonationMessages = () => {
   };
 
   const regenerateObsLink = () => {
-    // Generate a new link with a random ID
     const randomId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    const newLink = `${window.location.origin}/ankit/obs/${randomId}?showMessages=${showMessages}`;
+    const newLink = `${window.location.origin}/ankit/obs/${randomId}?showMessages=${showMessages}&showGoal=${showGoal}&goalName=${encodeURIComponent(goalName)}&goalTarget=${goalTarget}`;
     
-    // Save the new link
     sessionStorage.setItem("ankitObsLink", newLink);
     setObsLink(newLink);
     
@@ -189,18 +202,50 @@ const AnkitDonationMessages = () => {
     const newValue = !showMessages;
     setShowMessages(newValue);
     localStorage.setItem("ankitShowMessages", newValue.toString());
-    
-    // Update the OBS link with the new preference
-    const hasParam = obsLink.includes("?");
-    const baseLink = hasParam ? obsLink.split("?")[0] : obsLink;
-    const newLink = `${baseLink}?showMessages=${newValue}`;
-    sessionStorage.setItem("ankitObsLink", newLink);
-    setObsLink(newLink);
+    updateObsLink();
     
     toast({
       title: newValue ? "Messages Enabled" : "Messages Disabled",
       description: newValue ? "Messages will now be shown in OBS" : "Messages will be hidden in OBS",
     });
+  };
+
+  // Handle toggle of show goal preference
+  const handleToggleGoal = () => {
+    const newValue = !showGoal;
+    setShowGoal(newValue);
+    localStorage.setItem("ankitShowGoal", newValue.toString());
+    updateObsLink();
+    
+    toast({
+      title: newValue ? "Goal Enabled" : "Goal Disabled",
+      description: newValue ? "Goal will now be shown in OBS" : "Goal will be hidden in OBS",
+    });
+  };
+
+  // Handle goal name change
+  const handleGoalNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newName = e.target.value;
+    setGoalName(newName);
+    localStorage.setItem("ankitGoalName", newName);
+    updateObsLink();
+  };
+
+  // Handle goal target change
+  const handleGoalTargetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTarget = Number(e.target.value);
+    setGoalTarget(newTarget);
+    localStorage.setItem("ankitGoalTarget", newTarget.toString());
+    updateObsLink();
+  };
+
+  // Update OBS link with current settings
+  const updateObsLink = () => {
+    const hasParam = obsLink.includes("?");
+    const baseLink = hasParam ? obsLink.split("?")[0] : obsLink;
+    const newLink = `${baseLink}?showMessages=${showMessages}&showGoal=${showGoal}&goalName=${encodeURIComponent(goalName)}&goalTarget=${goalTarget}`;
+    sessionStorage.setItem("ankitObsLink", newLink);
+    setObsLink(newLink);
   };
 
   const formatDate = (dateString: string) => {
@@ -226,12 +271,13 @@ const AnkitDonationMessages = () => {
 
       <Card className="mb-8">
         <CardHeader>
-          <CardTitle>OBS Link</CardTitle>
-          <CardDescription>Use this link as a browser source in OBS to display donation messages</CardDescription>
+          <CardTitle>OBS Configuration</CardTitle>
+          <CardDescription>Configure what appears in your OBS overlay</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col space-y-4">
-            <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col space-y-6">
+            {/* Messages Toggle */}
+            <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <div className="checkbox-wrapper-10">
                   <input 
@@ -251,7 +297,60 @@ const AnkitDonationMessages = () => {
                 <Label htmlFor="show-messages">Show donation messages in OBS</Label>
               </div>
             </div>
+
+            {/* Goal Toggle */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <div className="checkbox-wrapper-10">
+                  <input 
+                    checked={showGoal} 
+                    type="checkbox" 
+                    id="show-goal" 
+                    className="tgl tgl-flip"
+                    onChange={handleToggleGoal}
+                  />
+                  <label 
+                    htmlFor="show-goal" 
+                    data-tg-on="On" 
+                    data-tg-off="Off" 
+                    className="tgl-btn"
+                  ></label>
+                </div>
+                <Label htmlFor="show-goal">Show donation goal in OBS</Label>
+              </div>
+            </div>
+
+            {/* Goal Configuration */}
+            {showGoal && (
+              <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="goal-name">Goal Name</Label>
+                    <Input
+                      id="goal-name"
+                      value={goalName}
+                      onChange={handleGoalNameChange}
+                      placeholder="Enter goal name"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="goal-target">Target Amount (₹)</Label>
+                    <Input
+                      id="goal-target"
+                      type="number"
+                      value={goalTarget}
+                      onChange={handleGoalTargetChange}
+                      placeholder="Enter target amount"
+                      className="mt-1"
+                      min="1"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
             
+            {/* OBS Link */}
             <div className="flex items-center space-x-2">
               <Input 
                 value={obsLink} 
@@ -271,7 +370,7 @@ const AnkitDonationMessages = () => {
               </Button>
             </div>
             <div className="text-sm text-muted-foreground">
-              <p>This link will display your donation messages in real-time for your stream.</p>
+              <p>This link will display your donation messages and goal in real-time for your stream.</p>
               <p>Each message will show for 12 seconds before moving to the next one.</p>
             </div>
           </div>

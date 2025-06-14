@@ -16,9 +16,43 @@ const AnkitObsOverlay = () => {
   const { obsId } = useParams();
   const [searchParams] = useSearchParams();
   const showMessages = searchParams.get('showMessages') !== 'false';
+  const showGoal = searchParams.get('showGoal') === 'true';
+  const goalName = searchParams.get('goalName') || 'Support Goal';
+  const goalTarget = Number(searchParams.get('goalTarget')) || 500;
+  
   const [currentDonation, setCurrentDonation] = useState<Donation | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [animationPhase, setAnimationPhase] = useState<'enter' | 'show' | 'exit'>('enter');
+  const [goalProgress, setGoalProgress] = useState<number>(0);
+
+  // Calculate goal progress from today's donations
+  const fetchGoalProgress = async () => {
+    try {
+      const today = new Date();
+      const todayStart = `${today.toISOString().split('T')[0]}T00:00:00`;
+      const todayEnd = `${today.toISOString().split('T')[0]}T23:59:59`;
+      
+      const { data, error } = await supabase
+        .from("ankit_donations")
+        .select("amount")
+        .eq("payment_status", "success")
+        .gte("created_at", todayStart)
+        .lte("created_at", todayEnd);
+
+      if (error) throw error;
+      
+      const total = data?.reduce((sum, donation) => sum + Number(donation.amount), 0) || 0;
+      setGoalProgress(total);
+    } catch (error) {
+      console.error("Error fetching goal progress:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (showGoal) {
+      fetchGoalProgress();
+    }
+  }, [showGoal]);
 
   useEffect(() => {
     // Set up real-time subscription for new donations
@@ -36,25 +70,30 @@ const AnkitObsOverlay = () => {
           const newDonation = payload.new as Donation;
           console.log('New donation received in OBS overlay:', newDonation);
           
-          // Reset animation state and show the donation alert
-          setAnimationPhase('enter');
-          setCurrentDonation(newDonation);
-          setIsVisible(true);
+          // Update goal progress
+          if (showGoal) {
+            setGoalProgress(prev => prev + Number(newDonation.amount));
+          }
           
-          // Transition through animation phases
-          setTimeout(() => setAnimationPhase('show'), 500);
-          
-          // Start exit animation after 12 seconds
-          setTimeout(() => {
-            setAnimationPhase('exit');
+          // Show donation alert if messages are enabled
+          if (showMessages) {
+            setAnimationPhase('enter');
+            setCurrentDonation(newDonation);
+            setIsVisible(true);
+            
+            setTimeout(() => setAnimationPhase('show'), 500);
+            
             setTimeout(() => {
-              setIsVisible(false);
+              setAnimationPhase('exit');
               setTimeout(() => {
-                setCurrentDonation(null);
-                setAnimationPhase('enter');
-              }, 1000);
-            }, 500);
-          }, 12000);
+                setIsVisible(false);
+                setTimeout(() => {
+                  setCurrentDonation(null);
+                  setAnimationPhase('enter');
+                }, 1000);
+              }, 500);
+            }, 12000);
+          }
         }
       )
       .subscribe();
@@ -64,15 +103,7 @@ const AnkitObsOverlay = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [obsId]);
-
-  if (!currentDonation) {
-    return (
-      <div className="w-full h-full bg-transparent">
-        {/* Empty state - transparent background for OBS */}
-      </div>
-    );
-  }
+  }, [obsId, showMessages, showGoal]);
 
   const getAnimationClasses = () => {
     switch (animationPhase) {
@@ -87,77 +118,108 @@ const AnkitObsOverlay = () => {
     }
   };
 
+  const goalPercentage = Math.min((goalProgress / goalTarget) * 100, 100);
+
   return (
     <div 
       className="fixed inset-0 pointer-events-none"
       style={{ background: 'transparent' }}
     >
-      <div className="absolute top-4 right-4 w-96 max-w-md">
-        <div 
-          className={`
-            relative overflow-hidden rounded-2xl shadow-2xl
-            transition-all duration-700 ease-out
-            ${getAnimationClasses()}
-          `}
-        >
-          {/* Animated background gradient */}
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 animate-gradient-x"></div>
-          
-          {/* Shimmer effect */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
-          
-          {/* Content */}
-          <div className="relative p-6 text-white">
-            {/* Header with bouncing emoji */}
-            <div className="flex items-center justify-between mb-4">
-              <h3 className={`text-2xl font-bold transition-all duration-500 ${animationPhase === 'show' ? 'animate-pulse-glow' : ''}`}>
-                New Donation!
-              </h3>
-              <div className={`text-4xl transition-all duration-700 ${animationPhase === 'show' ? 'animate-bounce' : ''}`}>
-                🎉
-              </div>
-            </div>
-            
-            {/* Donation details with staggered animations */}
-            <div className="space-y-3">
-              <div className={`flex justify-between items-center transition-all duration-500 delay-200 ${animationPhase === 'enter' ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
-                <span className="text-lg font-semibold">{currentDonation.name}</span>
-                <span className={`text-3xl font-bold text-yellow-300 transition-all duration-300 ${animationPhase === 'show' ? 'animate-pulse scale-110' : ''}`}>
-                  ₹{Number(currentDonation.amount).toLocaleString()}
-                </span>
-              </div>
-              
-              {showMessages && currentDonation.message && (
-                <div className={`bg-black/30 backdrop-blur-sm rounded-lg p-3 border border-white/20 transition-all duration-500 delay-400 ${animationPhase === 'enter' ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
-                  <p className="text-sm italic">"{currentDonation.message}"</p>
+      {/* Goal Display */}
+      {showGoal && (
+        <div className="absolute top-4 left-4 w-80">
+          <div className="bg-gradient-to-r from-purple-600/90 to-pink-600/90 backdrop-blur-sm rounded-xl p-4 border border-white/20 shadow-2xl">
+            <div className="text-white">
+              <h3 className="text-lg font-bold mb-2">{goalName}</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>₹{goalProgress.toLocaleString()}</span>
+                  <span>₹{goalTarget.toLocaleString()}</span>
                 </div>
-              )}
-            </div>
-            
-            {/* Thank you message with floating animation */}
-            <div className={`mt-4 text-center transition-all duration-500 delay-600 ${animationPhase === 'enter' ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
-              <div className={`inline-block bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 text-sm border border-white/30 ${animationPhase === 'show' ? 'animate-float' : ''}`}>
-                Thank you for your support! ❤️
+                <div className="w-full bg-black/30 rounded-full h-3 overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-green-400 to-blue-500 transition-all duration-1000 ease-out"
+                    style={{ width: `${goalPercentage}%` }}
+                  />
+                </div>
+                <div className="text-center text-sm font-semibold">
+                  {goalPercentage.toFixed(1)}% Complete
+                </div>
               </div>
             </div>
-          </div>
-          
-          {/* Decorative elements */}
-          <div className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-400 rounded-full animate-ping"></div>
-          <div className="absolute -bottom-1 -left-1 w-4 h-4 bg-pink-400 rounded-full animate-pulse"></div>
-          
-          {/* Progress bar animation */}
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
-            <div 
-              className="h-full bg-gradient-to-r from-yellow-400 to-orange-400 transition-all duration-[12000ms] ease-linear"
-              style={{ 
-                width: animationPhase === 'show' ? '0%' : '100%',
-                transform: animationPhase === 'exit' ? 'scaleX(0)' : 'scaleX(1)',
-              }}
-            ></div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Donation Alert */}
+      {currentDonation && showMessages && (
+        <div className="absolute top-4 right-4 w-96 max-w-md">
+          <div 
+            className={`
+              relative overflow-hidden rounded-2xl shadow-2xl
+              transition-all duration-700 ease-out
+              ${getAnimationClasses()}
+            `}
+          >
+            {/* Animated background gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 animate-gradient-x"></div>
+            
+            {/* Shimmer effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
+            
+            {/* Content */}
+            <div className="relative p-6 text-white">
+              {/* Header with bouncing emoji */}
+              <div className="flex items-center justify-between mb-4">
+                <h3 className={`text-2xl font-bold transition-all duration-500 ${animationPhase === 'show' ? 'animate-pulse-glow' : ''}`}>
+                  New Donation!
+                </h3>
+                <div className={`text-4xl transition-all duration-700 ${animationPhase === 'show' ? 'animate-bounce' : ''}`}>
+                  🎉
+                </div>
+              </div>
+              
+              {/* Donation details with staggered animations */}
+              <div className="space-y-3">
+                <div className={`flex justify-between items-center transition-all duration-500 delay-200 ${animationPhase === 'enter' ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
+                  <span className="text-lg font-semibold">{currentDonation.name}</span>
+                  <span className={`text-3xl font-bold text-yellow-300 transition-all duration-300 ${animationPhase === 'show' ? 'animate-pulse scale-110' : ''}`}>
+                    ₹{Number(currentDonation.amount).toLocaleString()}
+                  </span>
+                </div>
+                
+                {currentDonation.message && (
+                  <div className={`bg-black/30 backdrop-blur-sm rounded-lg p-3 border border-white/20 transition-all duration-500 delay-400 ${animationPhase === 'enter' ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
+                    <p className="text-sm italic">"{currentDonation.message}"</p>
+                  </div>
+                )}
+              </div>
+              
+              {/* Thank you message with floating animation */}
+              <div className={`mt-4 text-center transition-all duration-500 delay-600 ${animationPhase === 'enter' ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
+                <div className={`inline-block bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 text-sm border border-white/30 ${animationPhase === 'show' ? 'animate-float' : ''}`}>
+                  Thank you for your support! ❤️
+                </div>
+              </div>
+            </div>
+            
+            {/* Decorative elements */}
+            <div className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-400 rounded-full animate-ping"></div>
+            <div className="absolute -bottom-1 -left-1 w-4 h-4 bg-pink-400 rounded-full animate-pulse"></div>
+            
+            {/* Progress bar animation */}
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
+              <div 
+                className="h-full bg-gradient-to-r from-yellow-400 to-orange-400 transition-all duration-[12000ms] ease-linear"
+                style={{ 
+                  width: animationPhase === 'show' ? '0%' : '100%',
+                  transform: animationPhase === 'exit' ? 'scaleX(0)' : 'scaleX(1)',
+                }}
+              ></div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
