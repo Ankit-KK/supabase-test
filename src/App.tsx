@@ -22,6 +22,10 @@ import AnkitDashboard from "./pages/AnkitDashboard";
 import AnkitDonationMessages from "./pages/AnkitDonationMessages";
 import AnkitObsOverlay from "./pages/AnkitObsOverlay";
 import ChiaaGaming from "./pages/ChiaaGaming";
+import ChiaaGamingLogin from "./pages/ChiaaGamingLogin";
+import ChiaaGamingDashboard from "./pages/ChiaaGamingDashboard";
+import ChiaaGamingDonationMessages from "./pages/ChiaaGamingDonationMessages";
+import ChiaaGamingObsOverlay from "./pages/ChiaaGamingObsOverlay";
 
 // Blog posts
 import EarnMoneyStreamingIndia from "./pages/blog/EarnMoneyStreamingIndia";
@@ -63,6 +67,10 @@ const App = () => (
               
               {/* Chiaa Gaming routes */}
               <Route path="/chiaa_gaming" element={<ChiaaGaming />} />
+              <Route path="/chiaa_gaming/login" element={<ChiaaGamingLogin />} />
+              <Route path="/chiaa_gaming/dashboard" element={<ChiaaGamingDashboard />} />
+              <Route path="/chiaa_gaming/messages" element={<ChiaaGamingDonationMessages />} />
+              <Route path="/chiaa_gaming/obs/:obsId" element={<ChiaaGamingObsOverlay />} />
               
               {/* Blog posts */}
               <Route path="/blog/earn-money-streaming-india" element={<EarnMoneyStreamingIndia />} />
