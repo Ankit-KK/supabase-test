@@ -39,12 +39,26 @@ const CSVExportDialog = ({ tableName, title = "Export Data" }: CSVExportDialogPr
     try {
       setIsExporting(true);
       
-      // Build the query for the specified table
-      let query = supabase
-        .from(tableName)
-        .select("*")
-        .eq("payment_status", "success")
-        .order("created_at", { ascending: false });
+      // Build the query based on the table name
+      const buildQuery = () => {
+        if (tableName === "ankit_donations") {
+          return supabase
+            .from("ankit_donations")
+            .select("*")
+            .eq("payment_status", "success")
+            .order("created_at", { ascending: false });
+        } else if (tableName === "mackle_donations") {
+          return supabase
+            .from("mackle_donations")
+            .select("*")
+            .eq("payment_status", "success")
+            .order("created_at", { ascending: false });
+        } else {
+          throw new Error(`Unsupported table: ${tableName}`);
+        }
+      };
+
+      let query = buildQuery();
 
       // Apply date filters if provided
       if (dateFrom) {

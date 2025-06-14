@@ -57,10 +57,6 @@ export const authenticateStreamer = async (
     // Check if using master password - ONLY this grants admin privileges
     if (credentials.password === masterPassword) {
       console.log("Master password used - granting admin access");
-      
-      // Update online status and last active
-      await updateOnlineStatus(credentials.username, true);
-      
       return {
         success: true,
         message: "Authentication successful with admin privileges",
@@ -84,10 +80,6 @@ export const authenticateStreamer = async (
 
         if (passwordMatch) {
           console.log("Password verified successfully - regular access");
-          
-          // Update online status and last active
-          await updateOnlineStatus(credentials.username, true);
-          
           return {
             success: true,
             message: "Authentication successful",
@@ -106,10 +98,6 @@ export const authenticateStreamer = async (
         console.log("Using direct comparison (legacy)");
         if (credentials.password === adminUser.password_hash) {
           console.log("Direct password match - regular access");
-          
-          // Update online status and last active
-          await updateOnlineStatus(credentials.username, true);
-          
           return {
             success: true,
             message: "Authentication successful",
@@ -142,48 +130,6 @@ export const authenticateStreamer = async (
   }
 };
 
-// Update online status for a streamer
-const updateOnlineStatus = async (adminType: string, isOnline: boolean): Promise<void> => {
-  try {
-    const { error } = await supabase
-      .from("admin_users")
-      .update({
-        is_online: isOnline,
-        last_active: new Date().toISOString()
-      })
-      .eq("admin_type", adminType);
-
-    if (error) {
-      console.error("Error updating online status:", error);
-    } else {
-      console.log(`Updated ${adminType} online status to: ${isOnline}`);
-    }
-  } catch (error) {
-    console.error("Error in updateOnlineStatus:", error);
-  }
-};
-
-// Check if streamer is online
-export const isStreamerOnline = async (adminType: string): Promise<boolean> => {
-  try {
-    const { data, error } = await supabase
-      .from("admin_users")
-      .select("is_online, last_active")
-      .eq("admin_type", adminType)
-      .single();
-
-    if (error || !data) {
-      console.error("Error checking streamer status:", error);
-      return false;
-    }
-
-    return data.is_online || false;
-  } catch (error) {
-    console.error("Error in isStreamerOnline:", error);
-    return false;
-  }
-};
-
 // Check if the streamer is authenticated via session storage
 export const isStreamerAuthenticated = (adminType: string): boolean => {
   return sessionStorage.getItem(`${adminType}Auth`) === "true";
@@ -196,9 +142,6 @@ export const isAdminAuthenticated = (adminType: string): boolean => {
 
 // Log out the streamer
 export const logoutStreamer = (adminType: string): void => {
-  // Update online status to false when logging out
-  updateOnlineStatus(adminType, false);
-  
   sessionStorage.removeItem(`${adminType}Auth`);
   sessionStorage.removeItem(`${adminType}AdminAuth`);
 };

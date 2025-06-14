@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +8,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, calculateMonthlyTotal } from "@/utils/dashboardUtils";
 import { LogOut, MessageSquare } from "lucide-react";
-import { logoutStreamer } from "@/services/streamerAuth";
 import CSVExportDialog from "@/components/CSVExportDialog";
 
 interface Donation {
@@ -118,8 +118,8 @@ const AnkitDashboard = () => {
   };
 
   const handleLogout = () => {
-    // Use the updated logout function that sets online status to false
-    logoutStreamer("ankit");
+    sessionStorage.removeItem("ankitAuth");
+    sessionStorage.removeItem("ankitAdminAuth");
     navigate("/ankit/login");
     toast({
       title: "Logged out",
@@ -154,10 +154,6 @@ const AnkitDashboard = () => {
           <div>
             <h1 className="text-3xl font-bold">Ankit Dashboard</h1>
             <p className="text-muted-foreground">Donation management and analytics</p>
-            <div className="flex items-center gap-2 mt-2">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              <span className="text-green-600 text-sm font-medium">ONLINE</span>
-            </div>
           </div>
           <div className="flex items-center gap-3">
             <Button 
