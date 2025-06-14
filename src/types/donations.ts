@@ -11,7 +11,6 @@ export interface DonationRecord {
 // Only include tables that actually exist in the database
 export type StreamerTableName = 
   | "ankit_donations"
-  | "mackle_donations"
   | "chiaa_gaming_donations";
 
 // Define the common donation structure that these tables share

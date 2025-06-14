@@ -212,7 +212,7 @@ const ChiaaGaming = () => {
                   <Checkbox
                     id="includeSound"
                     checked={includeSound}
-                    onCheckedChange={setIncludeSound}
+                    onCheckedChange={(checked) => setIncludeSound(checked === true)}
                     className="border-white/20"
                   />
                   <Label htmlFor="includeSound" className="text-white text-sm">
