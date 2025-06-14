@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,6 +20,7 @@ import AnkitLogin from "./pages/AnkitLogin";
 import AnkitDashboard from "./pages/AnkitDashboard";
 import AnkitDonationMessages from "./pages/AnkitDonationMessages";
 import AnkitObsOverlay from "./pages/AnkitObsOverlay";
+import ChiaaGaming from "./pages/ChiaaGaming";
 
 // Blog posts
 import EarnMoneyStreamingIndia from "./pages/blog/EarnMoneyStreamingIndia";
@@ -67,6 +67,8 @@ const App = () => (
               <Route path="/blog/streamer-donation-app-strategy" element={<StreamerDonationAppStrategy />} />
               <Route path="/blog/upi-security-best-practices" element={<UpiSecurityBestPractices />} />
               <Route path="/blog/virtual-gifts-maximize-revenue" element={<VirtualGiftsMaximizeRevenue />} />
+              
+              <Route path="/chiaa_gaming" element={<ChiaaGaming />} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -25,6 +25,7 @@ const Footer: React.FC = () => {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><a href="#features" className="hover:text-hyperchat-purple transition-colors">UPI Payments</a></li>
               <li><a href="#services" className="hover:text-hyperchat-purple transition-colors">Content Monetization</a></li>
+              <li><Link to="/chiaa_gaming" className="hover:text-hyperchat-purple transition-colors">Chiaa Gaming</Link></li>
               <li><Link to="/contact" className="hover:text-hyperchat-purple transition-colors">Live Chat Tipping</Link></li>
               <li><a href="#" className="hover:text-hyperchat-purple transition-colors">Earn Money from Streaming</a></li>
             </ul>
