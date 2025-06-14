@@ -9,9 +9,7 @@ export interface DonationRecord {
 }
 
 // Only include tables that actually exist in the database
-export type StreamerTableName = 
-  | "ankit_donations"
-  | "mackle_donations";
+export type StreamerTableName = "ankit_donations";
 
 // Define the common donation structure that these tables share
 export interface DonationRow {
