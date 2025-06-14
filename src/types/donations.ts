@@ -8,10 +8,10 @@ export interface DonationRecord {
   payment_status: string;
 }
 
-// Only include tables that actually exist in the database
+// Updated to include all existing donation tables
 export type StreamerTableName = 
   | "ankit_donations"
-  | "mackle_donations";
+  | "chiaa_gaming_donations";
 
 // Define the common donation structure that these tables share
 export interface DonationRow {
@@ -21,4 +21,5 @@ export interface DonationRow {
   message: string;
   created_at: string;
   payment_status: string;
+  include_sound?: boolean; // Optional for chiaa_gaming
 }
