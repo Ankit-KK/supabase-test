@@ -75,36 +75,6 @@ export type Database = {
         }
         Relationships: []
       }
-      contact_submissions: {
-        Row: {
-          created_at: string
-          email: string
-          id: string
-          message: string
-          name: string
-          phone: string | null
-          status: string | null
-        }
-        Insert: {
-          created_at?: string
-          email: string
-          id?: string
-          message: string
-          name: string
-          phone?: string | null
-          status?: string | null
-        }
-        Update: {
-          created_at?: string
-          email?: string
-          id?: string
-          message?: string
-          name?: string
-          phone?: string | null
-          status?: string | null
-        }
-        Relationships: []
-      }
       donations: {
         Row: {
           amount: number
@@ -132,42 +102,6 @@ export type Database = {
           name?: string
           order_id?: string | null
           payment_status?: string | null
-        }
-        Relationships: []
-      }
-      mackle_donations: {
-        Row: {
-          amount: number
-          created_at: string | null
-          id: string
-          include_gif: boolean | null
-          include_sound: boolean
-          message: string
-          name: string
-          order_id: string
-          payment_status: string
-        }
-        Insert: {
-          amount: number
-          created_at?: string | null
-          id?: string
-          include_gif?: boolean | null
-          include_sound?: boolean
-          message: string
-          name: string
-          order_id: string
-          payment_status?: string
-        }
-        Update: {
-          amount?: number
-          created_at?: string | null
-          id?: string
-          include_gif?: boolean | null
-          include_sound?: boolean
-          message?: string
-          name?: string
-          order_id?: string
-          payment_status?: string
         }
         Relationships: []
       }

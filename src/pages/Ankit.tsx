@@ -1,228 +1,226 @@
 
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { useParams } from "react-router-dom";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "@/hooks/use-toast";
-import { Gamepad2, Zap, Trophy } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { isStreamerOnline } from "@/services/streamerAuth";
 
-const AnkitPage = () => {
-  const [name, setName] = useState("");
-  const [amount, setAmount] = useState("");
-  const [message, setMessage] = useState("");
+const Ankit = () => {
+  const { streamerId } = useParams();
+  const [formData, setFormData] = useState({
+    name: "",
+    amount: "",
+    message: "",
+  });
   const [isLoading, setIsLoading] = useState(false);
-  const [maxMessageLength, setMaxMessageLength] = useState(50);
-  const navigate = useNavigate();
+  const [isOnline, setIsOnline] = useState<boolean | null>(null);
+  const { toast } = useToast();
 
-  // Update max message length based on amount
   useEffect(() => {
-    const parsedAmount = parseFloat(amount);
-    if (!isNaN(parsedAmount) && parsedAmount >= 100) {
-      setMaxMessageLength(100);
-    } else {
-      setMaxMessageLength(50);
-    }
-  }, [amount]);
+    // Check if streamer is online
+    const checkStreamerStatus = async () => {
+      const online = await isStreamerOnline("ankit");
+      setIsOnline(online);
+    };
 
-  const validateForm = () => {
-    if (!name.trim()) {
-      toast({
-        title: "Name is required",
-        description: "Please enter your name",
-        variant: "destructive",
-      });
-      return false;
-    }
+    checkStreamerStatus();
+    
+    // Check status every 30 seconds
+    const interval = setInterval(checkStreamerStatus, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
-    const parsedAmount = parseFloat(amount);
-    if (isNaN(parsedAmount) || parsedAmount < 1) {
-      toast({
-        title: "Invalid amount",
-        description: "Please enter an amount greater than or equal to ₹1",
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    if (!message.trim()) {
-      toast({
-        title: "Message is required",
-        description: "Please enter a message",
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    return true;
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) {
+    if (!isOnline) {
+      toast({
+        variant: "destructive",
+        title: "Streamer Offline",
+        description: "The streamer is currently offline. Please try again later.",
+      });
+      return;
+    }
+
+    if (!formData.name.trim() || !formData.amount.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Missing Information",
+        description: "Please fill in both name and amount fields.",
+      });
+      return;
+    }
+
+    const amount = parseFloat(formData.amount);
+    if (isNaN(amount) || amount <= 0) {
+      toast({
+        variant: "destructive",
+        title: "Invalid Amount",
+        description: "Please enter a valid amount greater than 0.",
+      });
       return;
     }
 
     setIsLoading(true);
-    
+
     try {
-      // Generate a random order ID with timestamp
-      const orderId = `ankit_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
-      
-      // Store donation data in session storage to access it during the payment flow
-      const donationData = {
-        name,
-        amount: parseFloat(amount),
-        message,
-        orderId,
-        donationType: "ankit", // Add donation type to differentiate
-      };
-      
-      sessionStorage.setItem("donationData", JSON.stringify(donationData));
-      
-      // Navigate to payment checkout
-      navigate("/payment-checkout");
-    } catch (error) {
-      console.error("Error preparing payment:", error);
+      // Store donation in database
+      const { data, error } = await supabase
+        .from("ankit_donations")
+        .insert({
+          name: formData.name.trim(),
+          amount: amount,
+          message: formData.message.trim(),
+          payment_status: "pending",
+          order_id: `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
       toast({
-        title: "Error",
-        description: "Failed to process payment. Please try again.",
+        title: "Donation Submitted",
+        description: "Thank you for your support! Processing payment...",
+      });
+
+      // Reset form
+      setFormData({
+        name: "",
+        amount: "",
+        message: "",
+      });
+
+    } catch (error: any) {
+      console.error("Error submitting donation:", error);
+      toast({
         variant: "destructive",
+        title: "Submission Failed",
+        description: "There was an error submitting your donation. Please try again.",
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    // Limit message to maxMessageLength characters
-    const value = e.target.value;
-    if (value.length <= maxMessageLength) {
-      setMessage(value);
-    }
-  };
+  if (isOnline === null) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+        <div className="text-white text-xl">Checking streamer status...</div>
+      </div>
+    );
+  }
+
+  if (!isOnline) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-800 via-gray-900 to-black flex items-center justify-center">
+        <Card className="w-full max-w-md mx-4 bg-gray-800 border-gray-700">
+          <CardHeader className="text-center">
+            <div className="mx-auto w-16 h-16 bg-red-600 rounded-full flex items-center justify-center mb-4">
+              <div className="w-8 h-8 bg-white rounded-full"></div>
+            </div>
+            <CardTitle className="text-2xl text-white">Streamer Offline</CardTitle>
+            <CardDescription className="text-gray-300">
+              Ankit is currently offline. Donations are not available at this time.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center">
+            <p className="text-gray-400 text-sm">
+              Please check back later when the stream is live!
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <div 
-      className="min-h-screen relative overflow-hidden"
-      style={{
-        background: `
-          radial-gradient(circle at 20% 80%, rgba(168, 85, 247, 0.4) 0%, transparent 50%),
-          radial-gradient(circle at 80% 20%, rgba(236, 72, 153, 0.4) 0%, transparent 50%),
-          linear-gradient(135deg, #1e1b4b 0%, #581c87 50%, #7c2d12 100%)
-        `
-      }}
-    >
-      {/* Gaming Controller Background Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-10 left-10 opacity-20">
-          <Gamepad2 size={120} className="text-purple-400 animate-pulse" />
-        </div>
-        <div className="absolute bottom-20 right-20 opacity-20">
-          <Gamepad2 size={150} className="text-pink-400 animate-pulse" style={{ animationDelay: '1s' }} />
-        </div>
-        <div className="absolute top-1/2 right-10 opacity-10">
-          <Trophy size={100} className="text-yellow-400 animate-bounce" style={{ animationDelay: '2s' }} />
-        </div>
-      </div>
-
-      {/* Neon Border Effect */}
-      <div className="absolute inset-4 border-2 border-purple-500/30 rounded-lg shadow-lg shadow-purple-500/20 pointer-events-none"></div>
-      
-      <div className="container mx-auto max-w-md py-10 relative z-10">
-        <div className="space-y-6">
-          <div className="text-center space-y-4">
-            <div className="flex items-center justify-center space-x-3">
-              <Gamepad2 className="h-8 w-8 text-purple-400" />
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-purple-600 bg-clip-text text-transparent">
-                Support 'Streamer Name'
-              </h1>
-              <Zap className="h-8 w-8 text-pink-400" />
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md bg-white/10 backdrop-blur-md border-white/20">
+        <CardHeader className="text-center">
+          <div className="mx-auto w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mb-4">
+            <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+          </div>
+          <CardTitle className="text-2xl text-white">Support Ankit</CardTitle>
+          <CardDescription className="text-gray-200">
+            Send a donation to show your support
+          </CardDescription>
+          <div className="flex items-center justify-center gap-2 mt-2">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            <span className="text-green-400 text-sm font-medium">LIVE</span>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-white">Your Name</Label>
+              <Input
+                id="name"
+                name="name"
+                type="text"
+                value={formData.name}
+                onChange={handleInputChange}
+                placeholder="Enter your name"
+                required
+                className="bg-white/20 border-white/30 text-white placeholder:text-gray-300"
+              />
             </div>
-            <p className="text-purple-200">
-              Power up the stream with your awesome donation!
-            </p>
-          </div>
-          
-          <div className="backdrop-blur-lg bg-black/40 p-6 rounded-xl border border-purple-500/30 shadow-2xl shadow-purple-500/20">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="name" className="block text-sm font-medium text-purple-200">
-                  Gamer Tag
-                </label>
-                <Input 
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Enter your gamer name"
-                  disabled={isLoading}
-                  className="bg-black/50 border-purple-500/50 text-white placeholder:text-purple-300 focus:border-pink-400 focus:ring-pink-400/50"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="amount" className="block text-sm font-medium text-purple-200">
-                  Power Level (₹)
-                </label>
-                <Input 
-                  id="amount"
-                  type="number"
-                  min="1"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder="Minimum ₹1"
-                  disabled={isLoading}
-                  className="bg-black/50 border-purple-500/50 text-white placeholder:text-purple-300 focus:border-pink-400 focus:ring-pink-400/50"
-                />
-                <p className="text-xs text-purple-300">Minimum power level is ₹1</p>
-              </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="message" className="block text-sm font-medium text-purple-200">
-                  Epic Message
-                </label>
-                <Textarea 
-                  id="message"
-                  value={message}
-                  onChange={handleMessageChange}
-                  placeholder="Send your epic message to the stream!"
-                  className="h-24 bg-black/50 border-purple-500/50 text-white placeholder:text-purple-300 focus:border-pink-400 focus:ring-pink-400/50"
-                  disabled={isLoading}
-                  maxLength={maxMessageLength}
-                />
-                <p className="text-xs text-purple-300">
-                  {message.length}/{maxMessageLength} characters
-                  {parseFloat(amount) >= 100 ? 
-                    " (100 chars for ₹100+ donations)" : 
-                    " (50 chars for donations below ₹100)"}
-                </p>
-              </div>
-              
-              <Button 
-                type="submit" 
-                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-3 rounded-lg shadow-lg shadow-purple-500/25 transition-all duration-300 transform hover:scale-105 border border-purple-400/50"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <div className="flex items-center justify-center space-x-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                    <span>Processing...</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center space-x-2">
-                    <Zap className="h-4 w-4" />
-                    <span>Power Up Stream</span>
-                    <Zap className="h-4 w-4" />
-                  </div>
-                )}
-              </Button>
-            </form>
-          </div>
-        </div>
-      </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="amount" className="text-white">Amount (₹)</Label>
+              <Input
+                id="amount"
+                name="amount"
+                type="number"
+                min="1"
+                step="0.01"
+                value={formData.amount}
+                onChange={handleInputChange}
+                placeholder="Enter amount"
+                required
+                className="bg-white/20 border-white/30 text-white placeholder:text-gray-300"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="message" className="text-white">Message (Optional)</Label>
+              <Textarea
+                id="message"
+                name="message"
+                value={formData.message}
+                onChange={handleInputChange}
+                placeholder="Leave a message..."
+                rows={3}
+                className="bg-white/20 border-white/30 text-white placeholder:text-gray-300 resize-none"
+              />
+            </div>
+
+            <Button 
+              type="submit" 
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white border-0"
+              disabled={isLoading}
+            >
+              {isLoading ? "Processing..." : "Send Donation"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 };
 
-export default AnkitPage;
+export default Ankit;
