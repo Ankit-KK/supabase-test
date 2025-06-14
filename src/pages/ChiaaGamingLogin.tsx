@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -18,9 +17,12 @@ const ChiaaGamingLogin = () => {
     setIsLoading(true);
 
     try {
-      const isValid = await authenticateStreamer("chiaa_gaming", password);
+      const result = await authenticateStreamer({
+        username: "chiaa_gaming",
+        password: password
+      });
       
-      if (isValid) {
+      if (result.success) {
         sessionStorage.setItem("chiaaGamingAuth", "true");
         sessionStorage.setItem("chiaaGamingAdminAuth", "true");
         navigate("/chiaa_gaming/dashboard");
@@ -32,7 +34,7 @@ const ChiaaGamingLogin = () => {
         toast({
           variant: "destructive",
           title: "Login failed",
-          description: "Invalid password. Please try again.",
+          description: result.message || "Invalid password. Please try again.",
         });
       }
     } catch (error) {
