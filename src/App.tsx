@@ -21,6 +21,7 @@ import AnkitLogin from "./pages/AnkitLogin";
 import AnkitDashboard from "./pages/AnkitDashboard";
 import AnkitDonationMessages from "./pages/AnkitDonationMessages";
 import AnkitObsOverlay from "./pages/AnkitObsOverlay";
+import ChiaaGaming from "./pages/ChiaaGaming";
 
 // Blog posts
 import EarnMoneyStreamingIndia from "./pages/blog/EarnMoneyStreamingIndia";
@@ -58,6 +59,9 @@ const App = () => (
               <Route path="/ankit/dashboard" element={<AnkitDashboard />} />
               <Route path="/ankit/messages" element={<AnkitDonationMessages />} />
               <Route path="/ankit/obs/:obsId" element={<AnkitObsOverlay />} />
+              
+              {/* Chiaa Gaming routes */}
+              <Route path="/chiaa_gaming" element={<ChiaaGaming />} />
               
               {/* Blog posts */}
               <Route path="/blog/earn-money-streaming-india" element={<EarnMoneyStreamingIndia />} />

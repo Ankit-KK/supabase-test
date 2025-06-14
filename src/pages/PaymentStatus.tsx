@@ -11,7 +11,7 @@ const PaymentStatus = () => {
   const [status, setStatus] = useState<"loading" | "success" | "failed" | "pending">("loading");
   const [paymentDetails, setPaymentDetails] = useState<any>(null);
   const [isRecordCreated, setIsRecordCreated] = useState(false);
-  const [donationType, setDonationType] = useState<"ankit" | "harish" | "mackle" | "rakazone" | null>(null);
+  const [donationType, setDonationType] = useState<"ankit" | "harish" | "mackle" | "rakazone" | "chiaa_gaming" | null>(null);
   const [isVerificationComplete, setIsVerificationComplete] = useState(false);
   const [donationData, setDonationData] = useState<any>(null);
   
@@ -36,13 +36,15 @@ const PaymentStatus = () => {
         }
 
         // Determine donation type from order ID
-        let donationType: "ankit" | "harish" | "mackle" | "rakazone" = "ankit";
+        let donationType: "ankit" | "harish" | "mackle" | "rakazone" | "chiaa_gaming" = "ankit";
         if (orderId.startsWith("harish_")) {
           donationType = "harish";
         } else if (orderId.startsWith("mackle_")) {
           donationType = "mackle";
         } else if (orderId.startsWith("rakazone_")) {
           donationType = "rakazone";
+        } else if (orderId.startsWith("chiaa_gaming_")) {
+          donationType = "chiaa_gaming";
         } else if (orderId.startsWith("ankit_")) {
           donationType = "ankit";
         }
@@ -134,8 +136,8 @@ const PaymentStatus = () => {
           };
           
           // Add include_sound field if it exists in the donation data
-          if ((donationType === "mackle" || donationType === "rakazone") && donationData.include_sound !== undefined) {
-            // @ts-ignore - We know include_sound exists on mackle/rakazone donations
+          if ((donationType === "mackle" || donationType === "rakazone" || donationType === "chiaa_gaming") && donationData.include_sound !== undefined) {
+            // @ts-ignore - We know include_sound exists on mackle/rakazone/chiaa_gaming donations
             recordData.include_sound = !!donationData.include_sound;
           }
           
@@ -169,6 +171,8 @@ const PaymentStatus = () => {
       return "/mackle";
     } else if (donationType === "rakazone") {
       return "/rakazone";
+    } else if (donationType === "chiaa_gaming") {
+      return "/chiaa_gaming";
     }
     return "/ankit";
   };
@@ -245,7 +249,9 @@ const PaymentStatus = () => {
                       ? "Mackle" 
                       : donationType === "rakazone"
                         ? "Rakazone"
-                        : "Ankit"}
+                        : donationType === "chiaa_gaming"
+                          ? "Chiaa Gaming"
+                          : "Ankit"}
                 </p>
               </div>
             )}
