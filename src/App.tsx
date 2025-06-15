@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,6 +12,7 @@ import CancellationRefunds from "./pages/CancellationRefunds";
 import Shipping from "./pages/Shipping";
 import Blog from "./pages/Blog";
 import Sitemap from "./pages/Sitemap";
+import SitemapXml from "./pages/SitemapXml";
 import NotFound from "./pages/NotFound";
 import PaymentCheckout from "./pages/PaymentCheckout";
 import PaymentStatus from "./pages/PaymentStatus";
@@ -54,6 +54,8 @@ const App = () => (
               <Route path="/cancellation-refunds" element={<CancellationRefunds />} />
               <Route path="/shipping" element={<Shipping />} />
               <Route path="/blog" element={<Blog />} />
+              <Route path="/sitemap" element={<Sitemap />} />
+              <Route path="/sitemap.xml" element={<SitemapXml />} />
               <Route path="/payment/:streamerId" element={<PaymentCheckout />} />
               <Route path="/payment-checkout" element={<PaymentCheckout />} />
               <Route path="/payment-status" element={<PaymentStatus />} />
