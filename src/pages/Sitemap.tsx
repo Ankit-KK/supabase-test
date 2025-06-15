@@ -1,0 +1,172 @@
+
+import React from "react";
+import { Link } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Home, FileText, Users, MessageSquare, ExternalLink } from "lucide-react";
+
+const Sitemap = () => {
+  const mainPages = [
+    { path: "/", title: "Home", description: "Main landing page with features and services" },
+    { path: "/contact", title: "Contact", description: "Get in touch with our team" },
+    { path: "/blog", title: "Blog", description: "Latest articles and insights" },
+    { path: "/demo-payment", title: "Demo Payment", description: "Try our payment system" },
+  ];
+
+  const legalPages = [
+    { path: "/privacy-policy", title: "Privacy Policy", description: "Our privacy and data protection policy" },
+    { path: "/cancellation-refunds", title: "Cancellation & Refunds", description: "Refund and cancellation terms" },
+    { path: "/shipping", title: "Shipping", description: "Shipping information and policies" },
+  ];
+
+  const creatorPages = [
+    { path: "/ankit", title: "Ankit", description: "Support Ankit with donations" },
+    { path: "/chiaa_gaming", title: "Chiaa Gaming", description: "Support Chiaa Gaming with donations" },
+  ];
+
+  const blogPosts = [
+    { path: "/blog/earn-money-streaming-india", title: "Earn Money Streaming in India", description: "Complete guide to monetizing your streaming content" },
+    { path: "/blog/best-upi-tipping-platforms", title: "Best UPI Tipping Platforms", description: "Top platforms for UPI-based tipping in India" },
+    { path: "/blog/complete-guide-monetize-content-india", title: "Complete Guide to Monetize Content in India", description: "Comprehensive monetization strategies for Indian creators" },
+    { path: "/blog/fan-engagement-tools-2025", title: "Fan Engagement Tools 2025", description: "Latest tools and strategies for fan engagement" },
+    { path: "/blog/streamer-donation-app-strategy", title: "Streamer Donation App Strategy", description: "Strategic approach to donation apps for streamers" },
+    { path: "/blog/upi-security-best-practices", title: "UPI Security Best Practices", description: "Essential security practices for UPI transactions" },
+    { path: "/blog/virtual-gifts-maximize-revenue", title: "Virtual Gifts Maximize Revenue", description: "How to use virtual gifts to boost your revenue" },
+  ];
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+            Site Map
+          </h1>
+          <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+            Explore all pages and content available on HyperChat. Find exactly what you're looking for.
+          </p>
+        </div>
+
+        <div className="grid gap-8">
+          {/* Main Pages */}
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <Home className="h-5 w-5" />
+                Main Pages
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-2 gap-4">
+                {mainPages.map((page) => (
+                  <Link
+                    key={page.path}
+                    to={page.path}
+                    className="block p-4 border rounded-lg hover:border-purple-300 hover:shadow-md transition-all duration-200 group"
+                  >
+                    <h3 className="font-semibold text-purple-700 group-hover:text-purple-800 mb-1">
+                      {page.title}
+                    </h3>
+                    <p className="text-gray-600 text-sm">{page.description}</p>
+                    <ExternalLink className="h-4 w-4 text-gray-400 mt-2 group-hover:text-purple-600" />
+                  </Link>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Creator Pages */}
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <Users className="h-5 w-5" />
+                Creator Pages
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-2 gap-4">
+                {creatorPages.map((page) => (
+                  <Link
+                    key={page.path}
+                    to={page.path}
+                    className="block p-4 border rounded-lg hover:border-pink-300 hover:shadow-md transition-all duration-200 group"
+                  >
+                    <h3 className="font-semibold text-pink-700 group-hover:text-pink-800 mb-1">
+                      {page.title}
+                    </h3>
+                    <p className="text-gray-600 text-sm">{page.description}</p>
+                    <ExternalLink className="h-4 w-4 text-gray-400 mt-2 group-hover:text-pink-600" />
+                  </Link>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Blog Posts */}
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <FileText className="h-5 w-5" />
+                Blog Articles
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {blogPosts.map((post) => (
+                  <Link
+                    key={post.path}
+                    to={post.path}
+                    className="block p-4 border rounded-lg hover:border-blue-300 hover:shadow-md transition-all duration-200 group"
+                  >
+                    <h3 className="font-semibold text-blue-700 group-hover:text-blue-800 mb-1 text-sm">
+                      {post.title}
+                    </h3>
+                    <p className="text-gray-600 text-xs">{post.description}</p>
+                    <ExternalLink className="h-3 w-3 text-gray-400 mt-2 group-hover:text-blue-600" />
+                  </Link>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Legal Pages */}
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <MessageSquare className="h-5 w-5" />
+                Legal & Policies
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-3 gap-4">
+                {legalPages.map((page) => (
+                  <Link
+                    key={page.path}
+                    to={page.path}
+                    className="block p-4 border rounded-lg hover:border-gray-400 hover:shadow-md transition-all duration-200 group"
+                  >
+                    <h3 className="font-semibold text-gray-700 group-hover:text-gray-800 mb-1">
+                      {page.title}
+                    </h3>
+                    <p className="text-gray-600 text-sm">{page.description}</p>
+                    <ExternalLink className="h-4 w-4 text-gray-400 mt-2 group-hover:text-gray-600" />
+                  </Link>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="text-center mt-8">
+          <Link to="/">
+            <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+              <Home className="h-4 w-4 mr-2" />
+              Return to Home
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Sitemap;

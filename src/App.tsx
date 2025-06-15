@@ -12,6 +12,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CancellationRefunds from "./pages/CancellationRefunds";
 import Shipping from "./pages/Shipping";
 import Blog from "./pages/Blog";
+import Sitemap from "./pages/Sitemap";
 import NotFound from "./pages/NotFound";
 import PaymentCheckout from "./pages/PaymentCheckout";
 import PaymentStatus from "./pages/PaymentStatus";
