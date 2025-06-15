@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -119,37 +120,37 @@ const ChiaaGamingPage = () => {
       {/* Overlay for better text readability */}
       <div className="absolute inset-0 bg-black/30"></div>
       
-      {/* Gaming Elements Background */}
+      {/* Gaming Elements Background - Responsive positioning */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-10 left-10 opacity-30">
-          <Heart size={80} className="text-pink-400 animate-pulse" />
+        <div className="absolute top-4 left-4 md:top-10 md:left-10 opacity-30">
+          <Heart size={40} className="md:w-20 md:h-20 text-pink-400 animate-pulse" />
         </div>
-        <div className="absolute bottom-20 right-20 opacity-30">
-          <Gamepad2 size={100} className="text-pink-400 animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute bottom-10 right-4 md:bottom-20 md:right-20 opacity-30">
+          <Gamepad2 size={60} className="md:w-24 md:h-24 text-pink-400 animate-pulse" style={{ animationDelay: '1s' }} />
         </div>
       </div>
 
-      {/* Pink Border Effect */}
-      <div className="absolute inset-4 border-2 border-pink-400/40 rounded-lg shadow-lg shadow-pink-400/20 pointer-events-none"></div>
+      {/* Pink Border Effect - Responsive */}
+      <div className="absolute inset-2 md:inset-4 border-2 border-pink-400/40 rounded-lg shadow-lg shadow-pink-400/20 pointer-events-none"></div>
       
-      <div className="container mx-auto max-w-md py-10 relative z-10">
-        <div className="space-y-6">
-          <div className="text-center space-y-4">
-            <div className="flex items-center justify-center space-x-3">
-              <Heart className="h-8 w-8 text-pink-400" />
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-pink-400 via-pink-500 to-pink-600 bg-clip-text text-transparent">
+      <div className="container mx-auto max-w-md px-4 py-6 md:py-10 relative z-10">
+        <div className="space-y-4 md:space-y-6">
+          <div className="text-center space-y-2 md:space-y-4">
+            <div className="flex items-center justify-center space-x-2 md:space-x-3">
+              <Heart className="h-6 w-6 md:h-8 md:w-8 text-pink-400" />
+              <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-pink-400 via-pink-500 to-pink-600 bg-clip-text text-transparent">
                 Support Chiaa Gaming
               </h1>
-              <Heart className="h-8 w-8 text-pink-400" />
+              <Heart className="h-6 w-6 md:h-8 md:w-8 text-pink-400" />
             </div>
-            <p className="text-white/90 text-lg font-medium">
+            <p className="text-white/90 text-base md:text-lg font-medium px-2">
               Send love and support to your favorite gamer!
             </p>
           </div>
           
-          <div className="backdrop-blur-lg bg-white/20 p-6 rounded-xl border border-pink-400/30 shadow-2xl shadow-pink-400/20">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
+          <div className="backdrop-blur-lg bg-white/20 p-4 md:p-6 rounded-xl border border-pink-400/30 shadow-2xl shadow-pink-400/20">
+            <form onSubmit={handleSubmit} className="space-y-3 md:space-y-4">
+              <div className="space-y-1 md:space-y-2">
                 <label htmlFor="name" className="block text-sm font-medium text-white">
                   Your Name
                 </label>
@@ -159,11 +160,11 @@ const ChiaaGamingPage = () => {
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Enter your name"
                   disabled={isLoading}
-                  className="bg-white/90 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50"
+                  className="bg-white/90 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 h-10 md:h-10"
                 />
               </div>
               
-              <div className="space-y-2">
+              <div className="space-y-1 md:space-y-2">
                 <label htmlFor="amount" className="block text-sm font-medium text-white">
                   Donation Amount (₹)
                 </label>
@@ -176,12 +177,12 @@ const ChiaaGamingPage = () => {
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder="Minimum ₹1"
                   disabled={isLoading}
-                  className="bg-white/90 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50"
+                  className="bg-white/90 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 h-10 md:h-10"
                 />
                 <p className="text-xs text-white/80">Minimum donation is ₹1</p>
               </div>
               
-              <div className="space-y-2">
+              <div className="space-y-1 md:space-y-2">
                 <label htmlFor="message" className="block text-sm font-medium text-white">
                   Sweet Message
                 </label>
@@ -190,7 +191,7 @@ const ChiaaGamingPage = () => {
                   value={message}
                   onChange={handleMessageChange}
                   placeholder="Send your sweet message to Chiaa!"
-                  className="h-24 bg-white/90 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 resize-none"
+                  className="h-20 md:h-24 bg-white/90 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 resize-none text-sm"
                   disabled={isLoading}
                   maxLength={maxMessageLength}
                 />
@@ -204,7 +205,7 @@ const ChiaaGamingPage = () => {
               
               <Button 
                 type="submit" 
-                className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white font-bold py-3 rounded-lg shadow-lg shadow-pink-500/25 transition-all duration-300 transform hover:scale-105 border border-pink-400/50"
+                className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white font-bold py-2.5 md:py-3 rounded-lg shadow-lg shadow-pink-500/25 transition-all duration-300 transform hover:scale-105 border border-pink-400/50 text-sm md:text-base"
                 disabled={isLoading}
               >
                 {isLoading ? (
