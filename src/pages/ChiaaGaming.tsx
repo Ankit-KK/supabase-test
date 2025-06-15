@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -221,24 +220,25 @@ const ChiaaGamingPage = () => {
                 </label>
               </div>
               
-              <Button 
-                type="submit" 
-                className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white font-bold py-3 rounded-lg shadow-lg shadow-pink-500/25 transition-all duration-300 transform hover:scale-105 border border-pink-400/50"
+              <button 
+                type="submit"
                 disabled={isLoading}
+                className="w-full relative group transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoading ? (
-                  <div className="flex items-center justify-center space-x-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                    <span>Processing...</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center space-x-2">
-                    <Heart className="h-4 w-4" />
-                    <span>Send Love & Support</span>
-                    <Heart className="h-4 w-4" />
+                <img 
+                  src="/lovable-uploads/43d601ba-5acb-4ff6-9d24-4da882bca35a.png"
+                  alt="Send Love & Support"
+                  className="w-full h-auto rounded-lg shadow-lg shadow-pink-500/25 border border-pink-400/50"
+                />
+                {isLoading && (
+                  <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center">
+                    <div className="flex items-center space-x-2 text-white">
+                      <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"></div>
+                      <span className="font-bold">Processing...</span>
+                    </div>
                   </div>
                 )}
-              </Button>
+              </button>
             </form>
           </div>
         </div>
