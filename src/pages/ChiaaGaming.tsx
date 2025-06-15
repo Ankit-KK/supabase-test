@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,13 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
-import { Heart, Gamepad2, Volume2 } from "lucide-react";
+import { Heart, Gamepad2 } from "lucide-react";
 
 const ChiaaGamingPage = () => {
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [message, setMessage] = useState("");
-  const [includeSound, setIncludeSound] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [maxMessageLength, setMaxMessageLength] = useState(50);
   const navigate = useNavigate();
@@ -81,7 +79,6 @@ const ChiaaGamingPage = () => {
         message: message.trim(),
         orderId,
         donationType: "chiaa_gaming",
-        include_sound: includeSound,
       };
       
       sessionStorage.setItem("donationData", JSON.stringify(donationData));
@@ -129,9 +126,6 @@ const ChiaaGamingPage = () => {
         </div>
         <div className="absolute bottom-20 right-20 opacity-30">
           <Gamepad2 size={100} className="text-pink-400 animate-pulse" style={{ animationDelay: '1s' }} />
-        </div>
-        <div className="absolute top-1/2 right-10 opacity-20">
-          <Volume2 size={90} className="text-white animate-bounce" style={{ animationDelay: '2s' }} />
         </div>
       </div>
 
@@ -206,19 +200,6 @@ const ChiaaGamingPage = () => {
                     " (100 chars for ₹100+ donations)" : 
                     " (50 chars for donations below ₹100)"}
                 </p>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="includeSound"
-                  checked={includeSound}
-                  onCheckedChange={(checked) => setIncludeSound(checked as boolean)}
-                  className="border-pink-300 data-[state=checked]:bg-pink-500 data-[state=checked]:border-pink-500"
-                />
-                <label htmlFor="includeSound" className="text-sm text-white flex items-center space-x-1">
-                  <Volume2 className="h-4 w-4" />
-                  <span>Include sound notification</span>
-                </label>
               </div>
               
               <Button 
