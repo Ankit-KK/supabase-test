@@ -223,12 +223,12 @@ const ChiaaGamingPage = () => {
               <button 
                 type="submit"
                 disabled={isLoading}
-                className="w-full relative group transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full relative group transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 rounded-lg shadow-lg shadow-pink-500/25 border border-pink-400/50 py-3 px-4"
               >
                 <img 
                   src="/lovable-uploads/43d601ba-5acb-4ff6-9d24-4da882bca35a.png"
                   alt="Send Love & Support"
-                  className="w-full h-auto rounded-lg shadow-lg shadow-pink-500/25 border border-pink-400/50"
+                  className="h-6 w-auto mx-auto"
                 />
                 {isLoading && (
                   <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center">
