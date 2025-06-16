@@ -121,6 +121,7 @@ const ChiaaGamingObsOverlay = () => {
         (payload) => {
           const newDonation = payload.new as Donation;
           console.log("New donation received in OBS overlay:", newDonation);
+          console.log("Donation has GIF URL:", newDonation.gif_url);
           
           // Update total for goal
           setTotalDonations(prev => prev + Number(newDonation.amount));
@@ -132,6 +133,7 @@ const ChiaaGamingObsOverlay = () => {
             // Auto-hide after 12 seconds and cleanup GIF if present
             setTimeout(() => {
               if (newDonation.gif_url) {
+                console.log("Cleaning up GIF after display:", newDonation.gif_url);
                 cleanupGif(newDonation.id, newDonation.gif_url);
               }
               setCurrentDonation(null);
@@ -157,7 +159,7 @@ const ChiaaGamingObsOverlay = () => {
         {showMessages && currentDonation && (
           <DraggableResizableBox className="animate-slide-in-right">
             <div className="bg-gradient-to-r from-pink-600/90 to-purple-600/90 backdrop-blur-sm rounded-lg p-4 shadow-2xl border border-pink-500/50 max-w-md">
-              {/* GIF Display */}
+              {/* GIF Display - improved error handling and visibility */}
               {currentDonation.gif_url && (
                 <div className="mb-3 flex justify-center">
                   <img
@@ -165,8 +167,12 @@ const ChiaaGamingObsOverlay = () => {
                     alt="Donation GIF"
                     className="max-w-full max-h-32 rounded-lg border border-pink-300/50"
                     style={{ objectFit: 'contain' }}
+                    onLoad={() => {
+                      console.log("GIF loaded successfully:", currentDonation.gif_url);
+                    }}
                     onError={(e) => {
                       console.error("Failed to load GIF:", currentDonation.gif_url);
+                      console.error("Image error event:", e);
                       e.currentTarget.style.display = 'none';
                     }}
                   />

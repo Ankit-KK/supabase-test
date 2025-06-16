@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 type DonationRecord = {
@@ -95,9 +94,10 @@ export const createDonationRecord = async (donation: DonationRecord) => {
       recordData.include_sound = donation.include_sound;
     }
 
-    // Add gif_url for chiaa_gaming donations
+    // Add gif_url for chiaa_gaming donations - ensure it's properly included
     if (donation.donationType === "chiaa_gaming" && donation.gifUrl) {
       recordData.gif_url = donation.gifUrl;
+      console.log("Adding GIF URL to donation record:", donation.gifUrl);
     }
     
     console.log(`Creating ${tableName} record with data:`, recordData);
@@ -126,7 +126,7 @@ export const createDonationRecord = async (donation: DonationRecord) => {
 
     // Create donation_gifs record if GIF was uploaded for chiaa_gaming
     if (donation.donationType === "chiaa_gaming" && donation.gifUrl && donation.gifFileName && donation.gifFileSize) {
-      console.log("Creating donation_gifs record for:", validatedData.id);
+      console.log("Creating donation_gifs record for donation ID:", validatedData.id);
       
       const { error: gifRecordError } = await supabase
         .from('donation_gifs')
@@ -142,7 +142,7 @@ export const createDonationRecord = async (donation: DonationRecord) => {
         console.error("Error creating GIF record:", gifRecordError);
         // Don't throw error here - donation was successful, GIF record is secondary
       } else {
-        console.log("Successfully created donation_gifs record");
+        console.log("Successfully created donation_gifs record with URL:", donation.gifUrl);
       }
     }
 
