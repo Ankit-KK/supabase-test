@@ -2,15 +2,23 @@
 import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { Mic, MicOff, Play, Pause, X, Upload } from "lucide-react";
+import { Mic, MicOff, Play, Pause, X } from "lucide-react";
 
 interface VoiceRecordingProps {
   onVoiceSelect: (file: File | null) => void;
   selectedVoice: File | null;
   disabled?: boolean;
+  minAmount?: number;
+  currentAmount?: number;
 }
 
-const VoiceRecording: React.FC<VoiceRecordingProps> = ({ onVoiceSelect, selectedVoice, disabled }) => {
+const VoiceRecording: React.FC<VoiceRecordingProps> = ({ 
+  onVoiceSelect, 
+  selectedVoice, 
+  disabled,
+  minAmount = 0,
+  currentAmount = 0
+}) => {
   const [isRecording, setIsRecording] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -20,6 +28,9 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({ onVoiceSelect, selected
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+
+  const isEligible = currentAmount >= minAmount;
+  const isDisabled = disabled || !isEligible;
 
   const startRecording = async () => {
     try {
@@ -130,9 +141,9 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({ onVoiceSelect, selected
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <label className="block text-xs sm:text-sm font-medium text-white">
-        Voice Message (Optional) {disabled && "(Disabled - GIF selected)"}
+        Voice Message (₹{minAmount}+) {!isEligible && `- Need ₹${minAmount - currentAmount} more`}
       </label>
       
       {!selectedVoice ? (
@@ -142,11 +153,14 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({ onVoiceSelect, selected
               type="button"
               variant="outline"
               onClick={startRecording}
-              disabled={disabled}
-              className="w-full bg-white/95 border-pink-300 text-gray-800 hover:bg-white hover:border-pink-400 h-10 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isDisabled}
+              className="w-full bg-white/95 border-pink-300 text-gray-800 hover:bg-white hover:border-pink-400 h-8 sm:h-9 md:h-10 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Mic className="w-4 h-4 mr-2" />
-              {disabled ? "GIF selected - Voice disabled" : "Start Recording"}
+              {!isEligible 
+                ? `Donate ₹${minAmount}+ to unlock voice messages`
+                : "Start Recording"
+              }
             </Button>
           ) : (
             <div className="space-y-2">
@@ -154,7 +168,7 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({ onVoiceSelect, selected
                 type="button"
                 variant="destructive"
                 onClick={stopRecording}
-                className="w-full h-10 text-sm"
+                className="w-full h-8 sm:h-9 md:h-10 text-sm"
               >
                 <MicOff className="w-4 h-4 mr-2" />
                 Stop Recording ({formatTime(recordingTime)})
@@ -212,12 +226,15 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({ onVoiceSelect, selected
               </div>
             )}
           </div>
-          
-          <p className="text-xs text-white/80">
-            Your voice message will be played as an audio alert on stream
-          </p>
         </div>
       )}
+      
+      <p className="text-xs text-white/80">
+        {isEligible 
+          ? "Your voice message will be played as an audio alert on stream"
+          : `Donate ₹${minAmount}+ to unlock voice messages that play on stream`
+        }
+      </p>
     </div>
   );
 };

@@ -9,12 +9,23 @@ interface GifUploadProps {
   onGifSelect: (file: File | null) => void;
   selectedGif: File | null;
   disabled?: boolean;
+  minAmount?: number;
+  currentAmount?: number;
 }
 
-const GifUpload: React.FC<GifUploadProps> = ({ onGifSelect, selectedGif, disabled }) => {
+const GifUpload: React.FC<GifUploadProps> = ({ 
+  onGifSelect, 
+  selectedGif, 
+  disabled,
+  minAmount = 0,
+  currentAmount = 0
+}) => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isEligible = currentAmount >= minAmount;
+  const isDisabled = disabled || !isEligible;
 
   const validateGif = (file: File): boolean => {
     // Check file type
@@ -85,9 +96,9 @@ const GifUpload: React.FC<GifUploadProps> = ({ onGifSelect, selectedGif, disable
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <label className="block text-xs sm:text-sm font-medium text-white">
-        Upload GIF Alert (Optional) {disabled && "(Disabled - Voice selected)"}
+        Upload GIF Alert (₹{minAmount}+) {!isEligible && `- Need ₹${minAmount - currentAmount} more`}
       </label>
       
       {!selectedGif ? (
@@ -97,18 +108,21 @@ const GifUpload: React.FC<GifUploadProps> = ({ onGifSelect, selectedGif, disable
             type="file"
             accept=".gif"
             onChange={handleFileSelect}
-            disabled={disabled}
+            disabled={isDisabled}
             className="hidden"
           />
           <Button
             type="button"
             variant="outline"
             onClick={() => fileInputRef.current?.click()}
-            disabled={disabled}
-            className="w-full bg-white/95 border-pink-300 text-gray-800 hover:bg-white hover:border-pink-400 h-10 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isDisabled}
+            className="w-full bg-white/95 border-pink-300 text-gray-800 hover:bg-white hover:border-pink-400 h-8 sm:h-9 md:h-10 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Upload className="w-4 h-4 mr-2" />
-            {disabled ? "Voice selected - GIF disabled" : "Choose GIF (Max 5MB)"}
+            {!isEligible 
+              ? `Donate ₹${minAmount}+ to unlock GIF alerts`
+              : "Choose GIF (Max 5MB)"
+            }
           </Button>
         </div>
       ) : (
@@ -141,7 +155,7 @@ const GifUpload: React.FC<GifUploadProps> = ({ onGifSelect, selectedGif, disable
                   alt="GIF preview"
                   className="w-full max-w-xs mx-auto rounded-lg border border-pink-300/30"
                   style={{ 
-                    maxHeight: '150px',
+                    maxHeight: '120px',
                     objectFit: 'contain',
                     animationPlayState: isPlaying ? 'running' : 'paused'
                   }}
@@ -158,12 +172,15 @@ const GifUpload: React.FC<GifUploadProps> = ({ onGifSelect, selectedGif, disable
               </div>
             )}
           </div>
-          
-          <p className="text-xs text-white/80">
-            Your GIF will be displayed as an animated alert on stream for 12 seconds
-          </p>
         </div>
       )}
+      
+      <p className="text-xs text-white/80">
+        {isEligible 
+          ? "Your GIF will be displayed as an animated alert on stream for 12 seconds"
+          : `Donate ₹${minAmount}+ to unlock GIF alerts that display on stream`
+        }
+      </p>
     </div>
   );
 };

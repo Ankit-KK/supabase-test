@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,25 @@ const ChiaaGamingPage = () => {
     }
   }, [amount]);
 
+  // Clear premium features when amount drops below ₹100
+  useEffect(() => {
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount) || parsedAmount < 100) {
+      // Clear GIF if selected and amount < 100
+      if (selectedGif) {
+        setSelectedGif(null);
+      }
+      // Clear Voice if selected and amount < 100
+      if (selectedVoice) {
+        setSelectedVoice(null);
+      }
+      // Clear Custom Sound if selected and amount < 100
+      if (selectedCustomSoundUrl) {
+        setSelectedCustomSoundUrl(null);
+      }
+    }
+  }, [amount, selectedGif, selectedVoice, selectedCustomSoundUrl]);
+
   // Clear message when GIF or voice is selected
   useEffect(() => {
     if (selectedGif || selectedVoice) {
@@ -48,6 +68,16 @@ const ChiaaGamingPage = () => {
   }, [selectedCustomSoundUrl, amount]);
 
   const handleGifSelect = (file: File | null) => {
+    const parsedAmount = parseFloat(amount);
+    if (file && (isNaN(parsedAmount) || parsedAmount < 100)) {
+      toast({
+        title: "Premium feature",
+        description: "GIF uploads require a donation of ₹100 or more",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setSelectedGif(file);
     // Clear voice if GIF is selected
     if (file && selectedVoice) {
@@ -56,6 +86,16 @@ const ChiaaGamingPage = () => {
   };
 
   const handleVoiceSelect = (file: File | null) => {
+    const parsedAmount = parseFloat(amount);
+    if (file && (isNaN(parsedAmount) || parsedAmount < 100)) {
+      toast({
+        title: "Premium feature", 
+        description: "Voice messages require a donation of ₹100 or more",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setSelectedVoice(file);
     // Clear GIF if voice is selected
     if (file && selectedGif) {
@@ -240,9 +280,12 @@ const ChiaaGamingPage = () => {
   // Check if message input should be disabled (when GIF or voice is uploaded)
   const isMessageDisabled = !!selectedGif || !!selectedVoice || isLoading;
 
+  // Check if premium features are eligible
+  const isPremiumEligible = parseFloat(amount) >= 100;
+
   return (
     <div 
-      className="min-h-screen relative overflow-hidden"
+      className="min-h-screen relative overflow-hidden flex items-center justify-center"
       style={{
         backgroundImage: `url('/lovable-uploads/7d0bcc0f-fdef-47a2-9c88-4a052346971f.png')`,
         backgroundSize: 'cover',
@@ -266,7 +309,7 @@ const ChiaaGamingPage = () => {
       {/* Pink Border Effect - Responsive */}
       <div className="absolute inset-1 sm:inset-2 md:inset-4 border border-pink-400/30 sm:border-2 sm:border-pink-400/40 rounded-lg shadow-lg shadow-pink-400/20 pointer-events-none"></div>
       
-      <div className="container mx-auto max-w-sm sm:max-w-md px-3 sm:px-4 py-4 sm:py-6 md:py-8 lg:py-10 relative z-10">
+      <div className="container mx-auto max-w-sm sm:max-w-md px-3 sm:px-4 py-4 sm:py-6 md:py-8 lg:py-10 relative z-10 w-full">
         <div className="space-y-3 sm:space-y-4 md:space-y-6">
           <div className="text-center space-y-1 sm:space-y-2 md:space-y-4">
             <div className="flex items-center justify-center space-x-1 sm:space-x-2 md:space-x-3">
@@ -282,7 +325,7 @@ const ChiaaGamingPage = () => {
           </div>
           
           <div 
-            className="relative p-3 sm:p-4 md:p-6 rounded-xl border border-pink-400/30 shadow-2xl shadow-pink-400/20 overflow-hidden"
+            className="relative p-3 sm:p-4 md:p-6 rounded-xl border border-pink-400/30 shadow-2xl shadow-pink-400/20 overflow-hidden flex-1"
             style={{
               backgroundImage: `url('/lovable-uploads/162f24fe-3b90-4626-8223-c7e095161c73.png')`,
               backgroundSize: 'cover',
@@ -293,7 +336,7 @@ const ChiaaGamingPage = () => {
             {/* Overlay for form readability */}
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-xl"></div>
             
-            <form onSubmit={handleSubmit} className="relative z-10 space-y-2 sm:space-y-3 md:space-y-4">
+            <form onSubmit={handleSubmit} className="relative z-10 space-y-2 sm:space-y-3 md:space-y-4 h-full flex flex-col">
               <div className="space-y-1 md:space-y-2">
                 <label htmlFor="name" className="block text-xs sm:text-sm font-medium text-white">
                   Your Name
@@ -323,7 +366,9 @@ const ChiaaGamingPage = () => {
                   disabled={isLoading}
                   className="bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 h-8 sm:h-9 md:h-10 text-sm"
                 />
-                <p className="text-xs text-white/80">Minimum donation is ₹1</p>
+                <p className="text-xs text-white/80">
+                  ₹1+ for messages • ₹100+ for GIF, Voice & Sound alerts
+                </p>
               </div>
               
               <div className="space-y-1 md:space-y-2">
@@ -335,7 +380,7 @@ const ChiaaGamingPage = () => {
                   value={message}
                   onChange={handleMessageChange}
                   placeholder={getMessagePlaceholder()}
-                  className="h-16 sm:h-18 md:h-20 lg:h-24 bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 resize-none text-xs sm:text-sm"
+                  className="h-12 sm:h-14 md:h-16 bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 resize-none text-xs sm:text-sm"
                   disabled={isMessageDisabled}
                   maxLength={maxMessageLength}
                 />
@@ -343,7 +388,7 @@ const ChiaaGamingPage = () => {
                   {!selectedGif && !selectedVoice ? (
                     <>
                       {message.length}/{maxMessageLength} characters
-                      {parseFloat(amount) >= 100 ? 
+                      {isPremiumEligible ? 
                         " (100 chars for ₹100+ donations)" : 
                         " (50 chars for donations below ₹100)"}
                     </>
@@ -358,13 +403,17 @@ const ChiaaGamingPage = () => {
               <GifUpload
                 onGifSelect={handleGifSelect}
                 selectedGif={selectedGif}
-                disabled={isLoading || !!selectedVoice}
+                disabled={isLoading || !!selectedVoice || !isPremiumEligible}
+                minAmount={100}
+                currentAmount={parseFloat(amount) || 0}
               />
 
               <VoiceRecording
                 onVoiceSelect={handleVoiceSelect}
                 selectedVoice={selectedVoice}
-                disabled={isLoading || !!selectedGif}
+                disabled={isLoading || !!selectedGif || !isPremiumEligible}
+                minAmount={100}
+                currentAmount={parseFloat(amount) || 0}
               />
 
               <CustomSoundSelector
@@ -377,7 +426,7 @@ const ChiaaGamingPage = () => {
               
               <Button 
                 type="submit" 
-                className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white font-bold py-2 sm:py-2.5 md:py-3 rounded-lg shadow-lg shadow-pink-500/25 transition-all duration-300 transform hover:scale-105 border border-pink-400/50 text-xs sm:text-sm md:text-base mt-3 sm:mt-4"
+                className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white font-bold py-2 sm:py-2.5 md:py-3 rounded-lg shadow-lg shadow-pink-500/25 transition-all duration-300 transform hover:scale-105 border border-pink-400/50 text-xs sm:text-sm md:text-base mt-auto"
                 disabled={isLoading}
               >
                 {isLoading ? (

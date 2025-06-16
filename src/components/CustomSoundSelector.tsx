@@ -28,7 +28,7 @@ const CustomSoundSelector: React.FC<CustomSoundSelectorProps> = ({
   const [previewAudio, setPreviewAudio] = useState<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  // Updated sound options with the correct URLs you provided
+  // All 4 sound options - always visible
   const sounds: CustomSound[] = [
     {
       id: "knock_left",
@@ -58,6 +58,10 @@ const CustomSoundSelector: React.FC<CustomSoundSelectorProps> = ({
   const selectedSound = sounds.find(sound => sound.file_url === selectedSoundUrl);
 
   const handleSoundSelect = (value: string) => {
+    if (!isEligible) {
+      return;
+    }
+    
     if (value === "none") {
       onSoundSelect(null);
     } else {
@@ -69,6 +73,8 @@ const CustomSoundSelector: React.FC<CustomSoundSelectorProps> = ({
   };
 
   const playPreview = (fileUrl: string) => {
+    if (!isEligible) return;
+    
     if (previewAudio) {
       previewAudio.pause();
       setPreviewAudio(null);
@@ -109,7 +115,7 @@ const CustomSoundSelector: React.FC<CustomSoundSelectorProps> = ({
           disabled={isDisabled}
         >
           <SelectTrigger className="bg-white/95 border-pink-300 text-gray-800 focus:border-pink-500 focus:ring-pink-500/50 h-8 sm:h-9 md:h-10 text-sm disabled:opacity-50">
-            <SelectValue placeholder="Choose a sound alert" />
+            <SelectValue placeholder={isEligible ? "Choose a sound alert" : `Donate ₹${minAmount}+ to unlock`} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="none">
@@ -119,10 +125,11 @@ const CustomSoundSelector: React.FC<CustomSoundSelectorProps> = ({
               </div>
             </SelectItem>
             {sounds.map((sound) => (
-              <SelectItem key={sound.id} value={sound.id}>
-                <div className="flex items-center space-x-2">
+              <SelectItem key={sound.id} value={sound.id} disabled={!isEligible}>
+                <div className={`flex items-center space-x-2 ${!isEligible ? 'opacity-50' : ''}`}>
                   <Volume2 className="w-4 h-4" />
                   <span>{sound.name}</span>
+                  {!isEligible && <span className="text-xs">(₹{minAmount}+)</span>}
                 </div>
               </SelectItem>
             ))}
