@@ -124,11 +124,12 @@ export const createDonationRecord = async (donation: DonationRecord) => {
       throw new Error("Failed to create donation record - invalid response");
     }
 
+    // Now we can safely assert the type since we've checked data exists and has id
     const donationRecord = data as { id: string; [key: string]: any };
     console.log(`Successfully created donation record in ${tableName}:`, donationRecord);
 
     // Create donation_gifs record if GIF was uploaded for chiaa_gaming
-    if (donation.donationType === "chiaa_gaming" && donation.gifUrl && donation.gifFileName && donation.gifFileSize && donationRecord?.id) {
+    if (donation.donationType === "chiaa_gaming" && donation.gifUrl && donation.gifFileName && donation.gifFileSize && donationRecord.id) {
       console.log("Creating donation_gifs record for:", donationRecord.id);
       
       const { error: gifRecordError } = await supabase
