@@ -87,7 +87,7 @@ const GifUpload: React.FC<GifUploadProps> = ({ onGifSelect, selectedGif, disable
   return (
     <div className="space-y-3">
       <label className="block text-xs sm:text-sm font-medium text-white">
-        Upload GIF Alert (Optional) {disabled && "(Disabled - Voice/Sound selected)"}
+        Upload GIF Alert (Optional) {disabled && "(Disabled - Voice selected)"}
       </label>
       
       {!selectedGif ? (
@@ -108,7 +108,7 @@ const GifUpload: React.FC<GifUploadProps> = ({ onGifSelect, selectedGif, disable
             className="w-full bg-white/95 border-pink-300 text-gray-800 hover:bg-white hover:border-pink-400 h-10 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Upload className="w-4 h-4 mr-2" />
-            {disabled ? "Voice/Sound selected - GIF disabled" : "Choose GIF (Max 5MB)"}
+            {disabled ? "Voice selected - GIF disabled" : "Choose GIF (Max 5MB)"}
           </Button>
         </div>
       ) : (

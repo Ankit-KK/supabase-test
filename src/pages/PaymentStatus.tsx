@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -68,7 +67,7 @@ const PaymentStatus = () => {
         setDonationData(donationData);
         console.log("Donation data from session storage:", donationData);
         
-        // Verify payment status using Supabase Edge Function - pass orderId as string
+        // Verify payment status using Supabase Edge Function
         const verificationResult = await verifyPayment(orderId);
         console.log("Payment verification result:", verificationResult);
         

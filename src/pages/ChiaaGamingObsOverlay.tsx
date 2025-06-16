@@ -13,11 +13,6 @@ interface Donation {
   created_at: string;
   gif_url?: string;
   voice_url?: string;
-  include_sound?: boolean;
-  custom_sound_id?: string;
-  custom_sound_name?: string;
-  custom_sound_url?: string;
-  payment_status: string;
 }
 
 const ChiaaGamingObsOverlay = () => {
@@ -39,122 +34,6 @@ const ChiaaGamingObsOverlay = () => {
     goalName,
     goalTarget
   });
-
-  // Function to play custom sound from donation data
-  const playCustomSound = async (donation: Donation) => {
-    console.log("🔊 CUSTOM SOUND: playCustomSound called with donation:", {
-      id: donation.id,
-      name: donation.name,
-      custom_sound_url: donation.custom_sound_url,
-      custom_sound_name: donation.custom_sound_name,
-      custom_sound_id: donation.custom_sound_id
-    });
-
-    if (!donation.custom_sound_url) {
-      console.log("❌ CUSTOM SOUND: No custom sound URL found in donation");
-      return;
-    }
-
-    console.log("🎵 CUSTOM SOUND: Attempting to play custom sound:", {
-      name: donation.custom_sound_name,
-      url: donation.custom_sound_url
-    });
-    
-    try {
-      // Test if the URL is accessible first
-      console.log("🔍 CUSTOM SOUND: Testing URL accessibility...");
-      const testResponse = await fetch(donation.custom_sound_url, { method: 'HEAD' });
-      console.log("🔍 CUSTOM SOUND: URL test response:", {
-        status: testResponse.status,
-        ok: testResponse.ok,
-        headers: Object.fromEntries(testResponse.headers.entries())
-      });
-
-      if (!testResponse.ok) {
-        throw new Error(`URL not accessible: ${testResponse.status}`);
-      }
-
-      // Create and configure audio element
-      const audio = new Audio();
-      
-      // Set up event listeners first
-      audio.addEventListener('loadstart', () => {
-        console.log("🔄 CUSTOM SOUND: Audio loading started");
-      });
-      
-      audio.addEventListener('canplaythrough', () => {
-        console.log("✅ CUSTOM SOUND: Audio can play through");
-      });
-      
-      audio.addEventListener('loadeddata', () => {
-        console.log("📊 CUSTOM SOUND: Audio data loaded");
-      });
-      
-      audio.addEventListener('error', (e) => {
-        console.error("❌ CUSTOM SOUND: Audio error:", e);
-        console.error("❌ CUSTOM SOUND: Audio error details:", {
-          error: audio.error,
-          src: audio.src,
-          networkState: audio.networkState,
-          readyState: audio.readyState,
-          currentTime: audio.currentTime,
-          duration: audio.duration
-        });
-      });
-      
-      audio.addEventListener('ended', () => {
-        console.log("🏁 CUSTOM SOUND: Custom sound playback ended");
-      });
-
-      audio.addEventListener('play', () => {
-        console.log("▶️ CUSTOM SOUND: Audio started playing");
-      });
-
-      audio.addEventListener('pause', () => {
-        console.log("⏸️ CUSTOM SOUND: Audio paused");
-      });
-
-      // Configure audio settings
-      audio.crossOrigin = "anonymous";
-      audio.volume = 0.8;
-      audio.preload = "auto";
-      
-      // Set the source
-      audio.src = donation.custom_sound_url;
-      
-      console.log("🎵 CUSTOM SOUND: Audio element configured:", {
-        src: audio.src,
-        volume: audio.volume,
-        crossOrigin: audio.crossOrigin,
-        preload: audio.preload
-      });
-
-      // Attempt to play
-      const playPromise = audio.play();
-      
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-            console.log("🎉 CUSTOM SOUND: Audio started playing successfully");
-          })
-          .catch(error => {
-            console.error("❌ CUSTOM SOUND: Failed to play audio:", error);
-            console.error("❌ CUSTOM SOUND: Play error details:", {
-              name: error.name,
-              message: error.message,
-              audioSrc: audio.src,
-              audioVolume: audio.volume,
-              audioMuted: audio.muted,
-              audioPaused: audio.paused,
-              audioReadyState: audio.readyState,
-              audioNetworkState: audio.networkState
-            });
-          });
-      }
-    } catch (error) {
-      console.error("❌ CUSTOM SOUND: Error in playCustomSound:", error);
-    }
-  };
 
   // Clean up media after it's displayed
   const cleanupMedia = async (donationId: string, mediaUrl: string, mediaType: 'gif' | 'voice') => {
@@ -231,7 +110,7 @@ const ChiaaGamingObsOverlay = () => {
 
     fetchTotalDonations();
 
-    // Set up real-time subscription for new donations - SHOW ALERTS FOR ALL PAYMENTS for testing
+    // Set up real-time subscription for new donations - show ALL donations regardless of payment status
     const channel = supabase
       .channel(`chiaa-gaming-obs-${obsId}`)
       .on(
@@ -240,51 +119,32 @@ const ChiaaGamingObsOverlay = () => {
           event: 'INSERT',
           schema: 'public',
           table: 'chiaa_gaming_donations'
-          // Removed filter to show all payments for testing
+          // Removed payment_status filter to show all donations
         },
         (payload) => {
           const newDonation = payload.new as Donation;
-          console.log("🔔 NEW DONATION: New donation received in OBS overlay (testing mode - all payments):", newDonation);
-          console.log("💳 PAYMENT STATUS:", newDonation.payment_status);
-          console.log("🖼️ HAS GIF:", !!newDonation.gif_url);
-          console.log("🎤 HAS VOICE:", !!newDonation.voice_url);
-          console.log("🔊 CUSTOM SOUND details:", {
-            custom_sound_id: newDonation.custom_sound_id,
-            custom_sound_name: newDonation.custom_sound_name,
-            custom_sound_url: newDonation.custom_sound_url,
-            include_sound: newDonation.include_sound
-          });
+          console.log("New donation received in OBS overlay:", newDonation);
+          console.log("Donation has GIF URL:", newDonation.gif_url);
+          console.log("Donation has Voice URL:", newDonation.voice_url);
+          console.log("Payment status:", (payload.new as any).payment_status);
           
-          // Only update goal total for successful payments
-          if (newDonation.payment_status === "success") {
+          // Update total for goal only if payment is successful
+          if ((payload.new as any).payment_status === "success") {
             setTotalDonations(prev => prev + Number(newDonation.amount));
           }
           
-          // Show message for ALL donations (success AND failed) if enabled and has content to display
-          if (showMessages && (newDonation.message || newDonation.gif_url || newDonation.voice_url || newDonation.custom_sound_url)) {
+          // Show message if enabled - regardless of payment status for testing
+          if (showMessages && (newDonation.message || newDonation.gif_url || newDonation.voice_url)) {
             setCurrentDonation(newDonation);
-            
-            // Play custom sound if present - this should happen immediately
-            if (newDonation.custom_sound_url) {
-              console.log("🎵 ABOUT TO PLAY: Custom sound for donation:", {
-                id: newDonation.id,
-                name: newDonation.custom_sound_name,
-                url: newDonation.custom_sound_url
-              });
-              // Play sound immediately with a small delay to ensure DOM is ready
-              setTimeout(() => {
-                playCustomSound(newDonation);
-              }, 500); // Increased delay to ensure everything is ready
-            }
             
             // Auto-hide after 12 seconds and cleanup media if present
             setTimeout(() => {
               if (newDonation.gif_url) {
-                console.log("🧹 CLEANUP: Cleaning up GIF after display:", newDonation.gif_url);
+                console.log("Cleaning up GIF after display:", newDonation.gif_url);
                 cleanupMedia(newDonation.id, newDonation.gif_url, 'gif');
               }
               if (newDonation.voice_url) {
-                console.log("🧹 CLEANUP: Cleaning up Voice after display:", newDonation.voice_url);
+                console.log("Cleaning up Voice after display:", newDonation.voice_url);
                 cleanupMedia(newDonation.id, newDonation.voice_url, 'voice');
               }
               setCurrentDonation(null);
@@ -294,7 +154,7 @@ const ChiaaGamingObsOverlay = () => {
       )
       .subscribe();
 
-    console.log(`📡 REALTIME: Real-time subscription set up for chiaa_gaming OBS overlay: ${obsId} (TESTING MODE - showing all payments)`);
+    console.log(`Real-time subscription set up for chiaa_gaming OBS overlay: ${obsId}`);
 
     return () => {
       supabase.removeChannel(channel);
@@ -306,72 +166,24 @@ const ChiaaGamingObsOverlay = () => {
   // Check if we should hide the donation box (when GIF or voice is present)
   const shouldHideDonationBox = currentDonation && (currentDonation.gif_url || currentDonation.voice_url);
   
-  // Check if we should show text message (only if no voice message and no custom sound)
-  const shouldShowTextMessage = currentDonation && currentDonation.message && !currentDonation.voice_url && !currentDonation.custom_sound_url;
-
-  // Get border color based on payment status for testing visual feedback
-  const getBorderColor = (status: string) => {
-    switch (status) {
-      case 'success':
-        return 'border-green-500/50';
-      case 'failed':
-        return 'border-red-500/50';
-      case 'pending':
-        return 'border-yellow-500/50';
-      default:
-        return 'border-pink-500/50';
-    }
-  };
+  // Check if we should show text message (only if no voice message)
+  const shouldShowTextMessage = currentDonation && currentDonation.message && !currentDonation.voice_url;
 
   return (
     <ObsConfigProvider>
       <div className="w-screen h-screen bg-transparent overflow-hidden relative">
-        {/* Donation Messages - Only show pink box if no GIF, voice, or custom sound */}
-        {showMessages && currentDonation && !shouldHideDonationBox && !currentDonation.custom_sound_url && (
+        {/* Donation Messages - Only show pink box if no GIF or voice */}
+        {showMessages && currentDonation && !shouldHideDonationBox && (
           <DraggableResizableBox className="animate-slide-in-right">
-            <div className={`bg-gradient-to-r from-pink-600/90 to-purple-600/90 backdrop-blur-sm rounded-lg p-4 shadow-2xl border ${getBorderColor(currentDonation.payment_status)} max-w-md`}>
+            <div className="bg-gradient-to-r from-pink-600/90 to-purple-600/90 backdrop-blur-sm rounded-lg p-4 shadow-2xl border border-pink-500/50 max-w-md">
               <div className="flex items-center space-x-3 mb-2">
                 <div className="w-3 h-3 bg-pink-400 rounded-full animate-pulse"></div>
                 <span className="text-pink-100 font-bold text-lg">{currentDonation.name}</span>
                 <span className="text-pink-300 font-semibold">₹{Number(currentDonation.amount).toLocaleString()}</span>
-                {/* Testing indicator */}
-                <span className={`text-xs px-2 py-1 rounded ${
-                  currentDonation.payment_status === 'success' ? 'bg-green-600' : 
-                  currentDonation.payment_status === 'failed' ? 'bg-red-600' : 'bg-yellow-600'
-                }`}>
-                  {currentDonation.payment_status.toUpperCase()}
-                </span>
               </div>
               {shouldShowTextMessage && (
                 <p className="text-pink-50 text-sm leading-relaxed">{currentDonation.message}</p>
               )}
-            </div>
-          </DraggableResizableBox>
-        )}
-
-        {/* Custom Sound Alert Display - when custom sound is present */}
-        {showMessages && currentDonation && currentDonation.custom_sound_url && !currentDonation.gif_url && !currentDonation.voice_url && (
-          <DraggableResizableBox className="animate-slide-in-right">
-            <div className={`bg-gradient-to-r from-purple-600/90 to-blue-600/90 backdrop-blur-sm rounded-lg p-6 shadow-2xl border ${getBorderColor(currentDonation.payment_status)} max-w-md`}>
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="w-4 h-4 bg-purple-400 rounded-full animate-pulse"></div>
-                <span className="text-purple-100 font-bold text-xl">{currentDonation.name}</span>
-                <span className="text-purple-300 font-semibold text-lg">₹{Number(currentDonation.amount).toLocaleString()}</span>
-                {/* Testing indicator */}
-                <span className={`text-xs px-2 py-1 rounded ${
-                  currentDonation.payment_status === 'success' ? 'bg-green-600' : 
-                  currentDonation.payment_status === 'failed' ? 'bg-red-600' : 'bg-yellow-600'
-                }`}>
-                  {currentDonation.payment_status.toUpperCase()}
-                </span>
-              </div>
-              <div className="text-center">
-                <div className="text-purple-200 text-lg font-semibold mb-2">🔊 {currentDonation.custom_sound_name}!</div>
-                <div className="text-purple-100 text-sm">Playing custom sound...</div>
-                <div className="text-purple-300 text-xs mt-2">
-                  Sound URL: {currentDonation.custom_sound_url?.substring(0, 50)}...
-                </div>
-              </div>
             </div>
           </DraggableResizableBox>
         )}

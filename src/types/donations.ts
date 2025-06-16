@@ -21,14 +21,11 @@ export interface DonationRow {
   message: string;
   created_at: string;
   payment_status: string;
-  include_sound?: boolean; // This column exists in chiaa_gaming_donations
+  include_sound?: boolean; // Optional for chiaa_gaming
   gif_url?: string; // Optional for chiaa_gaming
   voice_url?: string; // Optional for chiaa_gaming
   voice_file_name?: string; // Optional for chiaa_gaming
   voice_file_size?: number; // Optional for chiaa_gaming
-  custom_sound_id?: string; // Custom sound alert ID
-  custom_sound_name?: string; // Custom sound alert name
-  custom_sound_url?: string; // Custom sound alert URL
 }
 
 // Type for GIF and Voice tracking
@@ -43,13 +40,4 @@ export interface DonationGif {
   displayed_at?: string;
   deleted_at?: string;
   status: 'uploaded' | 'displayed' | 'deleted';
-}
-
-// Type for Custom Sound Alerts
-export interface CustomSoundAlert {
-  id: string;
-  name: string;
-  file_url: string;
-  file_path?: string;
-  created_at: string;
 }

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,6 @@ import { Heart, Gamepad2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import GifUpload from "@/components/GifUpload";
 import VoiceRecording from "@/components/VoiceRecording";
-import CustomSoundAlerts from "@/components/CustomSoundAlerts";
 
 const ChiaaGamingPage = () => {
   const [name, setName] = useState("");
@@ -17,7 +15,6 @@ const ChiaaGamingPage = () => {
   const [message, setMessage] = useState("");
   const [selectedGif, setSelectedGif] = useState<File | null>(null);
   const [selectedVoice, setSelectedVoice] = useState<File | null>(null);
-  const [selectedCustomSound, setSelectedCustomSound] = useState<{id: string, name: string, url: string} | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [maxMessageLength, setMaxMessageLength] = useState(50);
   const navigate = useNavigate();
@@ -32,19 +29,6 @@ const ChiaaGamingPage = () => {
     }
   }, [amount]);
 
-  // Reset custom sound when amount drops below 100
-  useEffect(() => {
-    const parsedAmount = parseFloat(amount);
-    if (selectedCustomSound && (isNaN(parsedAmount) || parsedAmount < 100)) {
-      setSelectedCustomSound(null);
-      toast({
-        title: "Custom sound alert removed",
-        description: "Amount must be ₹100 or more for custom sound alerts",
-        variant: "default",
-      });
-    }
-  }, [amount, selectedCustomSound]);
-
   // Clear message when GIF or voice is selected
   useEffect(() => {
     if (selectedGif || selectedVoice) {
@@ -58,10 +42,6 @@ const ChiaaGamingPage = () => {
     if (file && selectedVoice) {
       setSelectedVoice(null);
     }
-    // Clear custom sound if GIF is selected
-    if (file && selectedCustomSound) {
-      setSelectedCustomSound(null);
-    }
   };
 
   const handleVoiceSelect = (file: File | null) => {
@@ -69,23 +49,6 @@ const ChiaaGamingPage = () => {
     // Clear GIF if voice is selected
     if (file && selectedGif) {
       setSelectedGif(null);
-    }
-    // Clear custom sound if voice is selected
-    if (file && selectedCustomSound) {
-      setSelectedCustomSound(null);
-    }
-  };
-
-  const handleCustomSoundSelect = (sound: {id: string, name: string, url: string} | null) => {
-    setSelectedCustomSound(sound);
-    // Clear other media if custom sound is selected
-    if (sound) {
-      if (selectedGif) {
-        setSelectedGif(null);
-      }
-      if (selectedVoice) {
-        setSelectedVoice(null);
-      }
     }
   };
 
@@ -109,11 +72,11 @@ const ChiaaGamingPage = () => {
       return false;
     }
 
-    // Only require message if no GIF, voice, or custom sound is selected
-    if (!message.trim() && !selectedGif && !selectedVoice && !selectedCustomSound) {
+    // Only require message if no GIF or voice is uploaded
+    if (!message.trim() && !selectedGif && !selectedVoice) {
       toast({
-        title: "Message, GIF, Voice, or Sound required",
-        description: "Please enter a message, upload a GIF, record a voice message, or select a custom sound",
+        title: "Message, GIF, or Voice required",
+        description: "Please enter a message, upload a GIF, or record a voice message",
         variant: "destructive",
       });
       return false;
@@ -216,7 +179,7 @@ const ChiaaGamingPage = () => {
       let gifUrl = null;
       let voiceUrl = null;
       
-      // Upload GIF if selected
+      // Upload GIF if selected - ALWAYS try to upload regardless of payment status
       if (selectedGif) {
         console.log("DONATION: Uploading GIF for donation:", {
           orderId,
@@ -238,7 +201,7 @@ const ChiaaGamingPage = () => {
         }
       }
 
-      // Upload Voice if selected
+      // Upload Voice if selected - ALWAYS try to upload regardless of payment status
       if (selectedVoice) {
         console.log("DONATION: Uploading voice for donation:", {
           orderId,
@@ -259,8 +222,8 @@ const ChiaaGamingPage = () => {
           console.log("DONATION: Voice uploaded successfully with URL:", voiceUrl);
         }
       }
-
-      // Store donation data in session storage for payment flow
+      
+      // Store donation data in session storage to access it during the payment flow
       const donationData = {
         name: name.trim(),
         amount: parseFloat(amount),
@@ -273,15 +236,18 @@ const ChiaaGamingPage = () => {
         voiceUrl,
         voiceFileName: selectedVoice?.name || null,
         voiceFileSize: selectedVoice?.size || null,
-        include_sound: !!selectedCustomSound,
-        customSoundId: selectedCustomSound?.id || null,
-        customSoundName: selectedCustomSound?.name || null,
-        customSoundUrl: selectedCustomSound?.url || null,
       };
       
-      console.log("DONATION: Final donation data being stored:", donationData);
+      console.log("DONATION: Storing donation data in session storage:", {
+        ...donationData,
+        hasGif: !!gifUrl,
+        hasVoice: !!voiceUrl,
+        gifUrlPreview: gifUrl ? gifUrl.substring(0, 50) + "..." : null,
+        voiceUrlPreview: voiceUrl ? voiceUrl.substring(0, 50) + "..." : null
+      });
       
       sessionStorage.setItem("donationData", JSON.stringify(donationData));
+      console.log("DONATION: Successfully stored Chiaa Gaming donation data in session storage");
       
       // Navigate to payment checkout
       navigate("/payment-checkout");
@@ -319,8 +285,8 @@ const ChiaaGamingPage = () => {
     return "Sweet Message";
   };
 
-  // Check if message input should be disabled (when GIF, voice, or custom sound is selected)
-  const isMessageDisabled = !!selectedGif || !!selectedVoice || !!selectedCustomSound || isLoading;
+  // Check if message input should be disabled (when GIF or voice is uploaded)
+  const isMessageDisabled = !!selectedGif || !!selectedVoice || isLoading;
 
   return (
     <div 
@@ -337,34 +303,34 @@ const ChiaaGamingPage = () => {
       
       {/* Gaming Elements Background - Responsive positioning */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1 left-1 sm:top-2 sm:left-2 opacity-20 sm:opacity-30">
-          <Heart size={16} className="sm:w-6 sm:h-6 md:w-8 md:h-8 text-pink-400 animate-pulse" />
+        <div className="absolute top-2 left-2 sm:top-4 sm:left-4 md:top-8 md:left-8 opacity-20 sm:opacity-30">
+          <Heart size={24} className="sm:w-8 sm:h-8 md:w-12 md:h-12 lg:w-16 lg:h-16 text-pink-400 animate-pulse" />
         </div>
-        <div className="absolute bottom-2 right-1 sm:bottom-4 sm:right-2 opacity-20 sm:opacity-30">
-          <Gamepad2 size={20} className="sm:w-8 sm:h-8 md:w-10 md:h-10 text-pink-400 animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute bottom-4 right-2 sm:bottom-8 sm:right-4 md:bottom-12 md:right-8 opacity-20 sm:opacity-30">
+          <Gamepad2 size={32} className="sm:w-10 sm:h-10 md:w-16 md:h-16 lg:w-20 lg:h-20 text-pink-400 animate-pulse" style={{ animationDelay: '1s' }} />
         </div>
       </div>
 
       {/* Pink Border Effect - Responsive */}
-      <div className="absolute inset-1 border border-pink-400/30 rounded-lg shadow-lg shadow-pink-400/20 pointer-events-none"></div>
+      <div className="absolute inset-1 sm:inset-2 md:inset-4 border border-pink-400/30 sm:border-2 sm:border-pink-400/40 rounded-lg shadow-lg shadow-pink-400/20 pointer-events-none"></div>
       
-      <div className="container mx-auto max-w-sm sm:max-w-md px-2 sm:px-3 py-2 sm:py-3 relative z-10 h-screen flex flex-col">
-        <div className="flex-1 flex flex-col space-y-2 sm:space-y-3 min-h-0">
-          <div className="text-center space-y-1 sm:space-y-2 flex-shrink-0">
-            <div className="flex items-center justify-center space-x-1 sm:space-x-2">
-              <Heart className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 text-pink-400" />
-              <h1 className="text-base sm:text-lg md:text-xl font-bold bg-gradient-to-r from-pink-400 via-pink-500 to-pink-600 bg-clip-text text-transparent">
+      <div className="container mx-auto max-w-sm sm:max-w-md px-3 sm:px-4 py-4 sm:py-6 md:py-8 lg:py-10 relative z-10">
+        <div className="space-y-3 sm:space-y-4 md:space-y-6">
+          <div className="text-center space-y-1 sm:space-y-2 md:space-y-4">
+            <div className="flex items-center justify-center space-x-1 sm:space-x-2 md:space-x-3">
+              <Heart className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 lg:h-8 lg:w-8 text-pink-400" />
+              <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-pink-400 via-pink-500 to-pink-600 bg-clip-text text-transparent">
                 Support Chiaa Gaming
               </h1>
-              <Heart className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 text-pink-400" />
+              <Heart className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 lg:h-8 lg:w-8 text-pink-400" />
             </div>
-            <p className="text-white/90 text-xs sm:text-sm font-medium px-2">
+            <p className="text-white/90 text-sm sm:text-base md:text-lg font-medium px-2">
               Send love and support to your favorite gamer!
             </p>
           </div>
           
           <div 
-            className="relative p-2 sm:p-3 rounded-xl border border-pink-400/30 shadow-2xl shadow-pink-400/20 flex-1 min-h-0 flex flex-col overflow-hidden"
+            className="relative p-3 sm:p-4 md:p-6 rounded-xl border border-pink-400/30 shadow-2xl shadow-pink-400/20 overflow-hidden"
             style={{
               backgroundImage: `url('/lovable-uploads/162f24fe-3b90-4626-8223-c7e095161c73.png')`,
               backgroundSize: 'cover',
@@ -375,108 +341,99 @@ const ChiaaGamingPage = () => {
             {/* Overlay for form readability */}
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-xl"></div>
             
-            <div className="relative z-10 h-full overflow-y-auto">
-              <form onSubmit={handleSubmit} className="space-y-2 sm:space-y-3">
-                <div className="space-y-1">
-                  <label htmlFor="name" className="block text-xs font-medium text-white">
-                    Your Name
-                  </label>
-                  <Input 
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Enter your name"
-                    disabled={isLoading}
-                    className="bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 h-7 sm:h-8 text-xs sm:text-sm"
-                  />
-                </div>
-                
-                <div className="space-y-1">
-                  <label htmlFor="amount" className="block text-xs font-medium text-white">
-                    Donation Amount (₹)
-                  </label>
-                  <Input 
-                    id="amount"
-                    type="number"
-                    min="1"
-                    step="1"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    placeholder="Minimum ₹1"
-                    disabled={isLoading}
-                    className="bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 h-7 sm:h-8 text-xs sm:text-sm"
-                  />
-                  <p className="text-xs text-white/80">Minimum donation is ₹1</p>
-                </div>
-                
-                <div className="space-y-1">
-                  <label htmlFor="message" className="block text-xs font-medium text-white">
-                    {getMessageLabel()}
-                  </label>
-                  <Textarea 
-                    id="message"
-                    value={message}
-                    onChange={handleMessageChange}
-                    placeholder={getMessagePlaceholder()}
-                    className="h-10 sm:h-12 bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 resize-none text-xs"
-                    disabled={isMessageDisabled}
-                    maxLength={maxMessageLength}
-                  />
-                  <p className="text-xs text-white/80">
-                    {!selectedGif && !selectedVoice ? (
-                      <>
-                        {message.length}/{maxMessageLength} characters
-                        {parseFloat(amount) >= 100 ? 
-                          " (100 chars for ₹100+ donations)" : 
-                          " (50 chars for donations below ₹100)"}
-                      </>
-                    ) : (
-                      <>
-                        Message disabled when {selectedGif ? "GIF" : "voice"} is {selectedGif ? "uploaded" : "recorded"}
-                      </>
-                    )}
-                  </p>
-                </div>
-
-                <GifUpload
-                  onGifSelect={handleGifSelect}
-                  selectedGif={selectedGif}
-                  disabled={isLoading || !!selectedVoice || !!selectedCustomSound}
-                />
-
-                <VoiceRecording
-                  onVoiceSelect={handleVoiceSelect}
-                  selectedVoice={selectedVoice}
-                  disabled={isLoading || !!selectedGif || !!selectedCustomSound}
-                />
-                
-                <CustomSoundAlerts
-                  onSoundSelect={handleCustomSoundSelect}
-                  selectedSound={selectedCustomSound}
-                  disabled={isLoading || !!selectedGif || !!selectedVoice}
-                  amount={amount}
-                />
-                
-                <Button 
-                  type="submit" 
-                  className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white font-bold py-1.5 sm:py-2 rounded-lg shadow-lg shadow-pink-500/25 transition-all duration-300 transform hover:scale-105 border border-pink-400/50 text-xs sm:text-sm mt-2 sm:mt-3"
+            <form onSubmit={handleSubmit} className="relative z-10 space-y-2 sm:space-y-3 md:space-y-4">
+              <div className="space-y-1 md:space-y-2">
+                <label htmlFor="name" className="block text-xs sm:text-sm font-medium text-white">
+                  Your Name
+                </label>
+                <Input 
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Enter your name"
                   disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <div className="flex items-center justify-center space-x-2">
-                      <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
-                      <span className="text-xs">Processing...</span>
-                    </div>
+                  className="bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 h-8 sm:h-9 md:h-10 text-sm"
+                />
+              </div>
+              
+              <div className="space-y-1 md:space-y-2">
+                <label htmlFor="amount" className="block text-xs sm:text-sm font-medium text-white">
+                  Donation Amount (₹)
+                </label>
+                <Input 
+                  id="amount"
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="Minimum ₹1"
+                  disabled={isLoading}
+                  className="bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 h-8 sm:h-9 md:h-10 text-sm"
+                />
+                <p className="text-xs text-white/80">Minimum donation is ₹1</p>
+              </div>
+              
+              <div className="space-y-1 md:space-y-2">
+                <label htmlFor="message" className="block text-xs sm:text-sm font-medium text-white">
+                  {getMessageLabel()}
+                </label>
+                <Textarea 
+                  id="message"
+                  value={message}
+                  onChange={handleMessageChange}
+                  placeholder={getMessagePlaceholder()}
+                  className="h-16 sm:h-18 md:h-20 lg:h-24 bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 resize-none text-xs sm:text-sm"
+                  disabled={isMessageDisabled}
+                  maxLength={maxMessageLength}
+                />
+                <p className="text-xs text-white/80">
+                  {!selectedGif && !selectedVoice ? (
+                    <>
+                      {message.length}/{maxMessageLength} characters
+                      {parseFloat(amount) >= 100 ? 
+                        " (100 chars for ₹100+ donations)" : 
+                        " (50 chars for donations below ₹100)"}
+                    </>
                   ) : (
-                    <div className="flex items-center justify-center space-x-2">
-                      <Heart className="h-3 w-3" />
-                      <span className="text-xs sm:text-sm">Send Love & Support</span>
-                      <Heart className="h-3 w-3" />
-                    </div>
+                    <>
+                      Message disabled when {selectedGif ? "GIF" : "voice"} is {selectedGif ? "uploaded" : "recorded"}
+                    </>
                   )}
-                </Button>
-              </form>
-            </div>
+                </p>
+              </div>
+
+              <GifUpload
+                onGifSelect={handleGifSelect}
+                selectedGif={selectedGif}
+                disabled={isLoading || !!selectedVoice}
+              />
+
+              <VoiceRecording
+                onVoiceSelect={handleVoiceSelect}
+                selectedVoice={selectedVoice}
+                disabled={isLoading || !!selectedGif}
+              />
+              
+              <Button 
+                type="submit" 
+                className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white font-bold py-2 sm:py-2.5 md:py-3 rounded-lg shadow-lg shadow-pink-500/25 transition-all duration-300 transform hover:scale-105 border border-pink-400/50 text-xs sm:text-sm md:text-base mt-3 sm:mt-4"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-2 border-white border-t-transparent"></div>
+                    <span className="text-xs sm:text-sm">Processing...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center space-x-2">
+                    <Heart className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="text-xs sm:text-sm md:text-base">Send Love & Support</span>
+                    <Heart className="h-3 w-3 sm:h-4 sm:w-4" />
+                  </div>
+                )}
+              </Button>
+            </form>
           </div>
         </div>
       </div>
