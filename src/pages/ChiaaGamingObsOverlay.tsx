@@ -134,7 +134,7 @@ const ChiaaGamingObsOverlay = () => {
           }
           
           // Show message if enabled - regardless of payment status for testing
-          if (showMessages && newDonation.message) {
+          if (showMessages && (newDonation.message || newDonation.gif_url || newDonation.voice_url)) {
             setCurrentDonation(newDonation);
             
             // Auto-hide after 12 seconds and cleanup media if present
@@ -163,62 +163,72 @@ const ChiaaGamingObsOverlay = () => {
 
   const progressPercentage = Math.min((totalDonations / goalTarget) * 100, 100);
 
+  // Check if we should hide the donation box (when GIF or voice is present)
+  const shouldHideDonationBox = currentDonation && (currentDonation.gif_url || currentDonation.voice_url);
+  
+  // Check if we should show text message (only if no voice message)
+  const shouldShowTextMessage = currentDonation && currentDonation.message && !currentDonation.voice_url;
+
   return (
     <ObsConfigProvider>
       <div className="w-screen h-screen bg-transparent overflow-hidden relative">
-        {/* Donation Messages */}
-        {showMessages && currentDonation && (
+        {/* Donation Messages - Only show pink box if no GIF or voice */}
+        {showMessages && currentDonation && !shouldHideDonationBox && (
           <DraggableResizableBox className="animate-slide-in-right">
             <div className="bg-gradient-to-r from-pink-600/90 to-purple-600/90 backdrop-blur-sm rounded-lg p-4 shadow-2xl border border-pink-500/50 max-w-md">
-              {/* GIF Display - improved error handling and visibility */}
-              {currentDonation.gif_url && (
-                <div className="mb-3 flex justify-center">
-                  <img
-                    src={currentDonation.gif_url}
-                    alt="Donation GIF"
-                    className="max-w-full max-h-32 rounded-lg border border-pink-300/50"
-                    style={{ objectFit: 'contain' }}
-                    onLoad={() => {
-                      console.log("GIF loaded successfully:", currentDonation.gif_url);
-                    }}
-                    onError={(e) => {
-                      console.error("Failed to load GIF:", currentDonation.gif_url);
-                      console.error("Image error event:", e);
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                </div>
-              )}
-
-              {/* Voice Audio Player - auto-play voice messages */}
-              {currentDonation.voice_url && (
-                <div className="mb-3 flex justify-center">
-                  <audio
-                    src={currentDonation.voice_url}
-                    autoPlay
-                    className="w-full max-w-xs"
-                    onLoad={() => {
-                      console.log("Voice audio loaded successfully:", currentDonation.voice_url);
-                    }}
-                    onError={(e) => {
-                      console.error("Failed to load voice audio:", currentDonation.voice_url);
-                      console.error("Audio error event:", e);
-                    }}
-                    onEnded={() => {
-                      console.log("Voice audio playback ended");
-                    }}
-                  />
-                </div>
-              )}
-              
               <div className="flex items-center space-x-3 mb-2">
                 <div className="w-3 h-3 bg-pink-400 rounded-full animate-pulse"></div>
                 <span className="text-pink-100 font-bold text-lg">{currentDonation.name}</span>
                 <span className="text-pink-300 font-semibold">₹{Number(currentDonation.amount).toLocaleString()}</span>
               </div>
-              <p className="text-pink-50 text-sm leading-relaxed">{currentDonation.message}</p>
+              {shouldShowTextMessage && (
+                <p className="text-pink-50 text-sm leading-relaxed">{currentDonation.message}</p>
+              )}
             </div>
           </DraggableResizableBox>
+        )}
+
+        {/* Standalone GIF Display - no pink box */}
+        {currentDonation && currentDonation.gif_url && (
+          <DraggableResizableBox className="animate-slide-in-right">
+            <div className="flex justify-center">
+              <img
+                src={currentDonation.gif_url}
+                alt="Donation GIF"
+                className="max-w-full max-h-64 rounded-lg"
+                style={{ objectFit: 'contain' }}
+                onLoad={() => {
+                  console.log("GIF loaded successfully:", currentDonation.gif_url);
+                }}
+                onError={(e) => {
+                  console.error("Failed to load GIF:", currentDonation.gif_url);
+                  console.error("Image error event:", e);
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            </div>
+          </DraggableResizableBox>
+        )}
+
+        {/* Standalone Voice Audio Player - no pink box, auto-play */}
+        {currentDonation && currentDonation.voice_url && (
+          <div className="absolute top-4 left-4">
+            <audio
+              src={currentDonation.voice_url}
+              autoPlay
+              className="hidden"
+              onLoad={() => {
+                console.log("Voice audio loaded successfully:", currentDonation.voice_url);
+              }}
+              onError={(e) => {
+                console.error("Failed to load voice audio:", currentDonation.voice_url);
+                console.error("Audio error event:", e);
+              }}
+              onEnded={() => {
+                console.log("Voice audio playback ended");
+              }}
+            />
+          </div>
         )}
 
         {/* Goal Progress */}
