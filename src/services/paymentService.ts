@@ -114,28 +114,22 @@ export const createDonationRecord = async (donation: DonationRecord) => {
     }
 
     // Check if data exists and has required properties
-    if (!data) {
-      console.error("No donation record returned from database");
-      throw new Error("Failed to create donation record - no data returned");
-    }
-
-    if (typeof data !== 'object' || !('id' in data)) {
+    if (!data || typeof data !== 'object' || !('id' in data) || typeof data.id !== 'string') {
       console.error("Invalid donation record returned:", data);
       throw new Error("Failed to create donation record - invalid response");
     }
 
-    // Now we can safely assert the type since we've checked data exists and has id
-    const donationRecord = data as { id: string; [key: string]: any };
-    console.log(`Successfully created donation record in ${tableName}:`, donationRecord);
+    // Now we can safely use data since we've verified it exists and has the correct structure
+    console.log(`Successfully created donation record in ${tableName}:`, data);
 
     // Create donation_gifs record if GIF was uploaded for chiaa_gaming
-    if (donation.donationType === "chiaa_gaming" && donation.gifUrl && donation.gifFileName && donation.gifFileSize && donationRecord.id) {
-      console.log("Creating donation_gifs record for:", donationRecord.id);
+    if (donation.donationType === "chiaa_gaming" && donation.gifUrl && donation.gifFileName && donation.gifFileSize && data.id) {
+      console.log("Creating donation_gifs record for:", data.id);
       
       const { error: gifRecordError } = await supabase
         .from('donation_gifs')
         .insert({
-          donation_id: donationRecord.id,
+          donation_id: data.id,
           gif_url: donation.gifUrl,
           file_name: donation.gifFileName,
           file_size: donation.gifFileSize,
