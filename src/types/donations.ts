@@ -22,4 +22,18 @@ export interface DonationRow {
   created_at: string;
   payment_status: string;
   include_sound?: boolean; // Optional for chiaa_gaming
+  gif_url?: string; // Optional for chiaa_gaming
+}
+
+// Type for GIF tracking
+export interface DonationGif {
+  id: string;
+  donation_id: string;
+  gif_url: string;
+  file_name: string;
+  file_size: number;
+  uploaded_at: string;
+  displayed_at?: string;
+  deleted_at?: string;
+  status: 'uploaded' | 'displayed' | 'deleted';
 }

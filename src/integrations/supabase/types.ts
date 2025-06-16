@@ -79,6 +79,7 @@ export type Database = {
         Row: {
           amount: number
           created_at: string | null
+          gif_url: string | null
           id: string
           include_sound: boolean | null
           message: string
@@ -89,6 +90,7 @@ export type Database = {
         Insert: {
           amount: number
           created_at?: string | null
+          gif_url?: string | null
           id?: string
           include_sound?: boolean | null
           message?: string
@@ -99,6 +101,7 @@ export type Database = {
         Update: {
           amount?: number
           created_at?: string | null
+          gif_url?: string | null
           id?: string
           include_sound?: boolean | null
           message?: string
@@ -107,6 +110,50 @@ export type Database = {
           payment_status?: string
         }
         Relationships: []
+      }
+      donation_gifs: {
+        Row: {
+          deleted_at: string | null
+          displayed_at: string | null
+          donation_id: string | null
+          file_name: string
+          file_size: number
+          gif_url: string
+          id: string
+          status: string | null
+          uploaded_at: string | null
+        }
+        Insert: {
+          deleted_at?: string | null
+          displayed_at?: string | null
+          donation_id?: string | null
+          file_name: string
+          file_size: number
+          gif_url: string
+          id?: string
+          status?: string | null
+          uploaded_at?: string | null
+        }
+        Update: {
+          deleted_at?: string | null
+          displayed_at?: string | null
+          donation_id?: string | null
+          file_name?: string
+          file_size?: number
+          gif_url?: string
+          id?: string
+          status?: string | null
+          uploaded_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donation_gifs_donation_id_fkey"
+            columns: ["donation_id"]
+            isOneToOne: false
+            referencedRelation: "chiaa_gaming_donations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       donations: {
         Row: {

@@ -11,6 +11,7 @@ interface Donation {
   amount: number;
   message: string;
   created_at: string;
+  gif_url?: string;
 }
 
 const ChiaaGamingObsOverlay = () => {
@@ -32,6 +33,57 @@ const ChiaaGamingObsOverlay = () => {
     goalName,
     goalTarget
   });
+
+  // Clean up GIF after it's displayed
+  const cleanupGif = async (donationId: string, gifUrl: string) => {
+    try {
+      console.log("Cleaning up GIF for donation:", donationId);
+      
+      // Mark GIF as displayed in the database
+      const { error: updateError } = await supabase
+        .from("donation_gifs")
+        .update({ 
+          displayed_at: new Date().toISOString(),
+          status: 'displayed'
+        })
+        .eq("donation_id", donationId);
+
+      if (updateError) {
+        console.error("Error marking GIF as displayed:", updateError);
+      }
+
+      // Extract file path from URL for deletion
+      const urlParts = gifUrl.split('/');
+      const fileName = urlParts[urlParts.length - 1];
+      
+      // Delete the file from storage
+      const { error: deleteError } = await supabase.storage
+        .from('donation-gifs')
+        .remove([fileName]);
+
+      if (deleteError) {
+        console.error("Error deleting GIF file:", deleteError);
+      } else {
+        console.log("GIF file deleted successfully:", fileName);
+      }
+
+      // Mark as deleted in database
+      const { error: markDeletedError } = await supabase
+        .from("donation_gifs")
+        .update({ 
+          deleted_at: new Date().toISOString(),
+          status: 'deleted'
+        })
+        .eq("donation_id", donationId);
+
+      if (markDeletedError) {
+        console.error("Error marking GIF as deleted:", markDeletedError);
+      }
+
+    } catch (error) {
+      console.error("Error in cleanupGif:", error);
+    }
+  };
 
   useEffect(() => {
     // Fetch today's total donations for goal progress
@@ -76,8 +128,12 @@ const ChiaaGamingObsOverlay = () => {
           // Show message if enabled
           if (showMessages && newDonation.message) {
             setCurrentDonation(newDonation);
-            // Auto-hide after 12 seconds
+            
+            // Auto-hide after 12 seconds and cleanup GIF if present
             setTimeout(() => {
+              if (newDonation.gif_url) {
+                cleanupGif(newDonation.id, newDonation.gif_url);
+              }
               setCurrentDonation(null);
             }, 12000);
           }
@@ -101,6 +157,22 @@ const ChiaaGamingObsOverlay = () => {
         {showMessages && currentDonation && (
           <DraggableResizableBox className="animate-slide-in-right">
             <div className="bg-gradient-to-r from-pink-600/90 to-purple-600/90 backdrop-blur-sm rounded-lg p-4 shadow-2xl border border-pink-500/50 max-w-md">
+              {/* GIF Display */}
+              {currentDonation.gif_url && (
+                <div className="mb-3 flex justify-center">
+                  <img
+                    src={currentDonation.gif_url}
+                    alt="Donation GIF"
+                    className="max-w-full max-h-32 rounded-lg border border-pink-300/50"
+                    style={{ objectFit: 'contain' }}
+                    onError={(e) => {
+                      console.error("Failed to load GIF:", currentDonation.gif_url);
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+              
               <div className="flex items-center space-x-3 mb-2">
                 <div className="w-3 h-3 bg-pink-400 rounded-full animate-pulse"></div>
                 <span className="text-pink-100 font-bold text-lg">{currentDonation.name}</span>

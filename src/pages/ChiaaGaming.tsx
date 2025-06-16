@@ -6,11 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { Heart, Gamepad2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import GifUpload from "@/components/GifUpload";
 
 const ChiaaGamingPage = () => {
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [message, setMessage] = useState("");
+  const [selectedGif, setSelectedGif] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [maxMessageLength, setMaxMessageLength] = useState(50);
   const navigate = useNavigate();
@@ -57,6 +60,56 @@ const ChiaaGamingPage = () => {
     return true;
   };
 
+  const uploadGif = async (file: File, donationId: string): Promise<string | null> => {
+    try {
+      const fileExt = 'gif';
+      const fileName = `${donationId}-${Date.now()}.${fileExt}`;
+      const filePath = fileName;
+
+      console.log("Uploading GIF to storage:", { fileName, fileSize: file.size });
+
+      const { data, error } = await supabase.storage
+        .from('donation-gifs')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) {
+        console.error("Error uploading GIF:", error);
+        throw error;
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('donation-gifs')
+        .getPublicUrl(filePath);
+
+      console.log("GIF uploaded successfully:", { publicUrl });
+
+      // Create donation_gifs record
+      const { error: gifRecordError } = await supabase
+        .from('donation_gifs')
+        .insert({
+          donation_id: donationId,
+          gif_url: publicUrl,
+          file_name: fileName,
+          file_size: file.size,
+          status: 'uploaded'
+        });
+
+      if (gifRecordError) {
+        console.error("Error creating GIF record:", gifRecordError);
+        throw gifRecordError;
+      }
+
+      return publicUrl;
+    } catch (error) {
+      console.error("Error in uploadGif:", error);
+      return null;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -72,6 +125,22 @@ const ChiaaGamingPage = () => {
       
       console.log("Creating Chiaa Gaming donation with order ID:", orderId);
       
+      let gifUrl = null;
+      
+      // Upload GIF if selected
+      if (selectedGif) {
+        console.log("Uploading GIF for donation:", orderId);
+        gifUrl = await uploadGif(selectedGif, orderId);
+        
+        if (!gifUrl) {
+          toast({
+            title: "GIF upload failed",
+            description: "Proceeding without GIF. You can still donate!",
+            variant: "destructive",
+          });
+        }
+      }
+      
       // Store donation data in session storage to access it during the payment flow
       const donationData = {
         name: name.trim(),
@@ -79,10 +148,11 @@ const ChiaaGamingPage = () => {
         message: message.trim(),
         orderId,
         donationType: "chiaa_gaming",
+        gifUrl,
       };
       
       sessionStorage.setItem("donationData", JSON.stringify(donationData));
-      console.log("Stored Chiaa Gaming donation data in session storage");
+      console.log("Stored Chiaa Gaming donation data in session storage", { hasGif: !!gifUrl });
       
       // Navigate to payment checkout
       navigate("/payment-checkout");
@@ -212,6 +282,12 @@ const ChiaaGamingPage = () => {
                     " (50 chars for donations below ₹100)"}
                 </p>
               </div>
+
+              <GifUpload
+                onGifSelect={setSelectedGif}
+                selectedGif={selectedGif}
+                disabled={isLoading}
+              />
               
               <Button 
                 type="submit" 

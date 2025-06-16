@@ -9,6 +9,7 @@ type DonationRecord = {
   payment_status: string;
   donationType: "ankit" | "harish" | "mackle" | "rakazone" | "chiaa_gaming";
   include_sound?: boolean;
+  gifUrl?: string;
 };
 
 /**
@@ -90,6 +91,11 @@ export const createDonationRecord = async (donation: DonationRecord) => {
     // Only add include_sound for mackle/rakazone/chiaa_gaming donations
     if ((donation.donationType === "mackle" || donation.donationType === "rakazone" || donation.donationType === "chiaa_gaming") && donation.include_sound !== undefined) {
       recordData.include_sound = donation.include_sound;
+    }
+
+    // Add gif_url for chiaa_gaming donations
+    if (donation.donationType === "chiaa_gaming" && donation.gifUrl) {
+      recordData.gif_url = donation.gifUrl;
     }
     
     console.log(`Creating ${tableName} record with data:`, recordData);
