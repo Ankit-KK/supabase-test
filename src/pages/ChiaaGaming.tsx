@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -17,7 +16,7 @@ const ChiaaGamingPage = () => {
   const [message, setMessage] = useState("");
   const [selectedGif, setSelectedGif] = useState<File | null>(null);
   const [selectedVoice, setSelectedVoice] = useState<File | null>(null);
-  const [selectedCustomSoundId, setSelectedCustomSoundId] = useState<string | null>(null);
+  const [selectedCustomSoundUrl, setSelectedCustomSoundUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [maxMessageLength, setMaxMessageLength] = useState(50);
   const navigate = useNavigate();
@@ -42,11 +41,11 @@ const ChiaaGamingPage = () => {
   // Debug logging for custom sound selection
   useEffect(() => {
     console.log("CHIAA GAMING: Custom sound selected:", {
-      selectedCustomSoundId,
+      selectedCustomSoundUrl,
       amount: parseFloat(amount),
       isEligible: parseFloat(amount) >= 100
     });
-  }, [selectedCustomSoundId, amount]);
+  }, [selectedCustomSoundUrl, amount]);
 
   const handleGifSelect = (file: File | null) => {
     setSelectedGif(file);
@@ -64,13 +63,13 @@ const ChiaaGamingPage = () => {
     }
   };
 
-  const handleCustomSoundSelect = (soundId: string | null) => {
+  const handleCustomSoundSelect = (soundUrl: string | null) => {
     console.log("CHIAA GAMING: Custom sound selection changed:", {
-      newSoundId: soundId,
-      previousSoundId: selectedCustomSoundId,
+      newSoundUrl: soundUrl,
+      previousSoundUrl: selectedCustomSoundUrl,
       amount: parseFloat(amount)
     });
-    setSelectedCustomSoundId(soundId);
+    setSelectedCustomSoundUrl(soundUrl);
   };
 
   const validateForm = () => {
@@ -121,7 +120,7 @@ const ChiaaGamingPage = () => {
       
       console.log("DONATION: Creating Chiaa Gaming donation with order ID:", orderId);
       console.log("DONATION: Custom sound data being processed:", {
-        selectedCustomSoundId,
+        selectedCustomSoundUrl,
         amount: parseFloat(amount),
         isEligibleForCustomSound: parseFloat(amount) >= 100
       });
@@ -186,15 +185,15 @@ const ChiaaGamingPage = () => {
         voiceUrl,
         voiceFileName: selectedVoice?.name || null,
         voiceFileSize: selectedVoice?.size || null,
-        customSoundId: selectedCustomSoundId, // Ensure this is properly passed
+        customSoundUrl: selectedCustomSoundUrl, // Store the URL instead of ID
       };
       
       console.log("DONATION: Storing donation data in session storage:", {
         ...donationData,
         hasGif: !!gifUrl,
         hasVoice: !!voiceUrl,
-        hasCustomSound: !!selectedCustomSoundId,
-        customSoundIdValue: selectedCustomSoundId,
+        hasCustomSound: !!selectedCustomSoundUrl,
+        customSoundUrlValue: selectedCustomSoundUrl,
         gifUrlPreview: gifUrl ? gifUrl.substring(0, 50) + "..." : null,
         voiceUrlPreview: voiceUrl ? voiceUrl.substring(0, 50) + "..." : null
       });
@@ -370,7 +369,7 @@ const ChiaaGamingPage = () => {
 
               <CustomSoundSelector
                 onSoundSelect={handleCustomSoundSelect}
-                selectedSoundId={selectedCustomSoundId}
+                selectedSoundUrl={selectedCustomSoundUrl}
                 disabled={isLoading}
                 minAmount={100}
                 currentAmount={parseFloat(amount) || 0}

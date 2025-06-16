@@ -15,7 +15,7 @@ type DonationRecord = {
   voiceUrl?: string;
   voiceFileName?: string;
   voiceFileSize?: number;
-  customSoundId?: string;
+  customSoundUrl?: string;
 };
 
 /**
@@ -96,13 +96,13 @@ export const createDonationRecord = async (donation: DonationRecord) => {
     
     // For chiaa_gaming donations, handle custom sound and other features
     if (donation.donationType === "chiaa_gaming") {
-      // Add custom_sound_id if provided
-      if (donation.customSoundId) {
-        recordData.custom_sound_id = donation.customSoundId;
+      // Add custom_sound_url if provided
+      if (donation.customSoundUrl) {
+        recordData.custom_sound_url = donation.customSoundUrl;
         // For testing: Set include_sound to true if custom sound is selected, regardless of payment status
         recordData.include_sound = true;
-        console.log("STORING CUSTOM SOUND ID FOR CHIAA GAMING:", {
-          customSoundId: donation.customSoundId,
+        console.log("STORING CUSTOM SOUND URL FOR CHIAA GAMING:", {
+          customSoundUrl: donation.customSoundUrl,
           include_sound: true,
           orderId: donation.order_id,
           paymentStatus: donation.payment_status
@@ -144,7 +144,7 @@ export const createDonationRecord = async (donation: DonationRecord) => {
     console.log(`Creating ${tableName} record with data:`, recordData);
     console.log("Payment status being saved:", donation.payment_status);
     console.log("Include sound flag:", recordData.include_sound);
-    console.log("Custom Sound ID being saved:", recordData.custom_sound_id);
+    console.log("Custom Sound URL being saved:", recordData.custom_sound_url);
     
     const { data, error } = await supabase
       .from(tableName)
@@ -164,10 +164,10 @@ export const createDonationRecord = async (donation: DonationRecord) => {
     }
 
     // Now TypeScript knows data is not null and has the required structure
-    const validatedData = data as { id: string; gif_url?: string; voice_url?: string; custom_sound_id?: string; include_sound?: boolean; [key: string]: any };
+    const validatedData = data as { id: string; gif_url?: string; voice_url?: string; custom_sound_url?: string; include_sound?: boolean; [key: string]: any };
     
     console.log(`Successfully created donation record in ${tableName}:`, validatedData);
-    console.log("VERIFICATION: Custom Sound ID in created record:", validatedData.custom_sound_id);
+    console.log("VERIFICATION: Custom Sound URL in created record:", validatedData.custom_sound_url);
     console.log("VERIFICATION: Include sound flag in created record:", validatedData.include_sound);
 
     // Create donation_gifs record if GIF was uploaded for chiaa_gaming

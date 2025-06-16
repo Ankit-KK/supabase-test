@@ -6,8 +6,8 @@ import { Volume2, VolumeX, Play, Pause } from "lucide-react";
 import { useCustomSounds } from "@/hooks/useCustomSounds";
 
 interface CustomSoundSelectorProps {
-  onSoundSelect: (soundId: string | null) => void;
-  selectedSoundId: string | null;
+  onSoundSelect: (soundUrl: string | null) => void;
+  selectedSoundUrl: string | null;
   disabled?: boolean;
   minAmount?: number;
   currentAmount?: number;
@@ -15,7 +15,7 @@ interface CustomSoundSelectorProps {
 
 const CustomSoundSelector: React.FC<CustomSoundSelectorProps> = ({
   onSoundSelect,
-  selectedSoundId,
+  selectedSoundUrl,
   disabled,
   minAmount = 100,
   currentAmount = 0
@@ -27,13 +27,16 @@ const CustomSoundSelector: React.FC<CustomSoundSelectorProps> = ({
   const isEligible = currentAmount >= minAmount;
   const isDisabled = disabled || !isEligible;
 
-  const selectedSound = sounds.find(sound => sound.id === selectedSoundId);
+  const selectedSound = sounds.find(sound => sound.file_url === selectedSoundUrl);
 
-  const handleSoundSelect = (soundId: string) => {
-    if (soundId === "none") {
+  const handleSoundSelect = (value: string) => {
+    if (value === "none") {
       onSoundSelect(null);
     } else {
-      onSoundSelect(soundId);
+      const sound = sounds.find(s => s.id === value);
+      if (sound) {
+        onSoundSelect(sound.file_url);
+      }
     }
   };
 
@@ -84,7 +87,7 @@ const CustomSoundSelector: React.FC<CustomSoundSelectorProps> = ({
       
       <div className="space-y-2">
         <Select
-          value={selectedSoundId || "none"}
+          value={selectedSound?.id || "none"}
           onValueChange={handleSoundSelect}
           disabled={isDisabled || isLoading}
         >
