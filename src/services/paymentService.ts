@@ -96,12 +96,12 @@ export const createDonationRecord = async (donation: DonationRecord) => {
     
     // For chiaa_gaming donations, handle custom sound and other features
     if (donation.donationType === "chiaa_gaming") {
-      // Add custom_sound_url if provided
+      // Add custom_sound_url if provided - FOR TESTING: Store even for failed payments
       if (donation.customSoundUrl) {
         recordData.custom_sound_url = donation.customSoundUrl;
         // For testing: Set include_sound to true if custom sound is selected, regardless of payment status
         recordData.include_sound = true;
-        console.log("STORING CUSTOM SOUND URL FOR CHIAA GAMING:", {
+        console.log("STORING CUSTOM SOUND URL FOR CHIAA GAMING (including failed payments for testing):", {
           customSoundUrl: donation.customSoundUrl,
           include_sound: true,
           orderId: donation.order_id,

@@ -166,12 +166,13 @@ const ChiaaGamingObsOverlay = () => {
             setTotalDonations(prev => prev + Number(newDonation.amount));
           }
           
-          // Play custom sound if present and amount >= 100
+          // FOR TESTING: Play custom sound if present and amount >= 100, regardless of payment status
           if (newDonation.custom_sound_url && Number(newDonation.amount) >= 100) {
-            console.log("Playing custom sound for donation:", {
+            console.log("Playing custom sound for donation (including failed payments for testing):", {
               customSoundUrl: newDonation.custom_sound_url,
               amount: newDonation.amount,
-              donationId: newDonation.id
+              donationId: newDonation.id,
+              paymentStatus: (payload.new as any).payment_status
             });
             playCustomSound(newDonation.custom_sound_url);
           }
