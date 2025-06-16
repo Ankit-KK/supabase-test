@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -60,10 +59,10 @@ const ChiaaGamingPage = () => {
     return true;
   };
 
-  const uploadGif = async (file: File, donationId: string): Promise<string | null> => {
+  const uploadGif = async (file: File): Promise<string | null> => {
     try {
       const fileExt = 'gif';
-      const fileName = `${donationId}-${Date.now()}.${fileExt}`;
+      const fileName = `${Date.now()}-${Math.floor(Math.random() * 10000)}.${fileExt}`;
       const filePath = fileName;
 
       console.log("Uploading GIF to storage:", { fileName, fileSize: file.size });
@@ -86,23 +85,6 @@ const ChiaaGamingPage = () => {
         .getPublicUrl(filePath);
 
       console.log("GIF uploaded successfully:", { publicUrl });
-
-      // Create donation_gifs record
-      const { error: gifRecordError } = await supabase
-        .from('donation_gifs')
-        .insert({
-          donation_id: donationId,
-          gif_url: publicUrl,
-          file_name: fileName,
-          file_size: file.size,
-          status: 'uploaded'
-        });
-
-      if (gifRecordError) {
-        console.error("Error creating GIF record:", gifRecordError);
-        throw gifRecordError;
-      }
-
       return publicUrl;
     } catch (error) {
       console.error("Error in uploadGif:", error);
@@ -130,7 +112,7 @@ const ChiaaGamingPage = () => {
       // Upload GIF if selected
       if (selectedGif) {
         console.log("Uploading GIF for donation:", orderId);
-        gifUrl = await uploadGif(selectedGif, orderId);
+        gifUrl = await uploadGif(selectedGif);
         
         if (!gifUrl) {
           toast({
@@ -149,6 +131,8 @@ const ChiaaGamingPage = () => {
         orderId,
         donationType: "chiaa_gaming",
         gifUrl,
+        gifFileName: selectedGif?.name || null,
+        gifFileSize: selectedGif?.size || null,
       };
       
       sessionStorage.setItem("donationData", JSON.stringify(donationData));

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 type DonationRecord = {
@@ -10,6 +9,8 @@ type DonationRecord = {
   donationType: "ankit" | "harish" | "mackle" | "rakazone" | "chiaa_gaming";
   include_sound?: boolean;
   gifUrl?: string;
+  gifFileName?: string;
+  gifFileSize?: number;
 };
 
 /**
@@ -100,16 +101,40 @@ export const createDonationRecord = async (donation: DonationRecord) => {
     
     console.log(`Creating ${tableName} record with data:`, recordData);
     
-    const { error } = await supabase
+    const { data: donationRecord, error } = await supabase
       .from(tableName)
-      .insert(recordData);
+      .insert(recordData)
+      .select()
+      .single();
 
     if (error) {
       console.error(`Error creating donation record in ${tableName}:`, error);
       throw new Error(error.message || `Failed to create donation record in ${tableName}`);
     }
 
-    console.log(`Successfully created donation record in ${tableName}`);
+    console.log(`Successfully created donation record in ${tableName}:`, donationRecord);
+
+    // Create donation_gifs record if GIF was uploaded for chiaa_gaming
+    if (donation.donationType === "chiaa_gaming" && donation.gifUrl && donation.gifFileName && donation.gifFileSize) {
+      console.log("Creating donation_gifs record for:", donationRecord.id);
+      
+      const { error: gifRecordError } = await supabase
+        .from('donation_gifs')
+        .insert({
+          donation_id: donationRecord.id,
+          gif_url: donation.gifUrl,
+          file_name: donation.gifFileName,
+          file_size: donation.gifFileSize,
+          status: 'uploaded'
+        });
+
+      if (gifRecordError) {
+        console.error("Error creating GIF record:", gifRecordError);
+        // Don't throw error here - donation was successful, GIF record is secondary
+      } else {
+        console.log("Successfully created donation_gifs record");
+      }
+    }
 
     // Clean up session storage after successful record creation
     if (donation.payment_status !== "pending") {
