@@ -93,49 +93,55 @@ export const createDonationRecord = async (donation: DonationRecord) => {
       payment_status: donation.payment_status
     };
     
-    // Only add include_sound for mackle/rakazone/chiaa_gaming donations
-    if ((donation.donationType === "mackle" || donation.donationType === "rakazone" || donation.donationType === "chiaa_gaming") && donation.include_sound !== undefined) {
-      recordData.include_sound = donation.include_sound;
-    }
+    // For chiaa_gaming donations, set include_sound to true if custom sound is selected
+    if (donation.donationType === "chiaa_gaming") {
+      // Set include_sound to true if a custom sound is selected
+      recordData.include_sound = !!donation.customSoundId;
+      
+      // Add custom_sound_id if provided
+      if (donation.customSoundId) {
+        recordData.custom_sound_id = donation.customSoundId;
+        console.log("STORING CUSTOM SOUND ID:", {
+          customSoundId: donation.customSoundId,
+          include_sound: recordData.include_sound,
+          orderId: donation.order_id,
+          paymentStatus: donation.payment_status
+        });
+      }
 
-    // Add gif_url for chiaa_gaming donations if provided
-    if (donation.donationType === "chiaa_gaming" && donation.gifUrl) {
-      recordData.gif_url = donation.gifUrl;
-      console.log("STORING GIF URL:", {
-        gifUrl: donation.gifUrl,
-        orderId: donation.order_id,
-        paymentStatus: donation.payment_status
-      });
-    }
+      // Add gif_url for chiaa_gaming donations if provided
+      if (donation.gifUrl) {
+        recordData.gif_url = donation.gifUrl;
+        console.log("STORING GIF URL:", {
+          gifUrl: donation.gifUrl,
+          orderId: donation.order_id,
+          paymentStatus: donation.payment_status
+        });
+      }
 
-    // Add voice_url for chiaa_gaming donations if provided
-    if (donation.donationType === "chiaa_gaming" && donation.voiceUrl) {
-      recordData.voice_url = donation.voiceUrl;
-      recordData.voice_file_name = donation.voiceFileName;
-      recordData.voice_file_size = donation.voiceFileSize;
-      console.log("STORING VOICE URL:", {
-        voiceUrl: donation.voiceUrl,
-        voiceFileName: donation.voiceFileName,
-        voiceFileSize: donation.voiceFileSize,
-        orderId: donation.order_id,
-        paymentStatus: donation.payment_status
-      });
-    }
-
-    // Add custom_sound_id for chiaa_gaming donations if provided
-    if (donation.donationType === "chiaa_gaming" && donation.customSoundId) {
-      recordData.custom_sound_id = donation.customSoundId;
-      console.log("STORING CUSTOM SOUND ID:", {
-        customSoundId: donation.customSoundId,
-        orderId: donation.order_id,
-        paymentStatus: donation.payment_status
-      });
+      // Add voice_url for chiaa_gaming donations if provided
+      if (donation.voiceUrl) {
+        recordData.voice_url = donation.voiceUrl;
+        recordData.voice_file_name = donation.voiceFileName;
+        recordData.voice_file_size = donation.voiceFileSize;
+        console.log("STORING VOICE URL:", {
+          voiceUrl: donation.voiceUrl,
+          voiceFileName: donation.voiceFileName,
+          voiceFileSize: donation.voiceFileSize,
+          orderId: donation.order_id,
+          paymentStatus: donation.payment_status
+        });
+      }
+    } else {
+      // For other donation types (mackle/rakazone), only add include_sound if explicitly provided
+      if (donation.include_sound !== undefined) {
+        recordData.include_sound = donation.include_sound;
+      }
     }
     
     console.log(`Creating ${tableName} record with data:`, recordData);
     console.log("Payment status being saved:", donation.payment_status);
-    console.log("GIF URL being saved:", recordData.gif_url);
-    console.log("Voice URL being saved:", recordData.voice_url);
+    console.log("Include sound flag:", recordData.include_sound);
     console.log("Custom Sound ID being saved:", recordData.custom_sound_id);
     
     const { data, error } = await supabase
@@ -156,12 +162,11 @@ export const createDonationRecord = async (donation: DonationRecord) => {
     }
 
     // Now TypeScript knows data is not null and has the required structure
-    const validatedData = data as { id: string; gif_url?: string; voice_url?: string; custom_sound_id?: string; [key: string]: any };
+    const validatedData = data as { id: string; gif_url?: string; voice_url?: string; custom_sound_id?: string; include_sound?: boolean; [key: string]: any };
     
     console.log(`Successfully created donation record in ${tableName}:`, validatedData);
-    console.log("VERIFICATION: GIF URL in created record:", validatedData.gif_url);
-    console.log("VERIFICATION: Voice URL in created record:", validatedData.voice_url);
     console.log("VERIFICATION: Custom Sound ID in created record:", validatedData.custom_sound_id);
+    console.log("VERIFICATION: Include sound flag in created record:", validatedData.include_sound);
 
     // Create donation_gifs record if GIF was uploaded for chiaa_gaming
     if (donation.donationType === "chiaa_gaming" && donation.gifUrl && donation.gifFileName && donation.gifFileSize) {
