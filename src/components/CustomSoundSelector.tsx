@@ -1,7 +1,6 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Volume2, VolumeX, Play, Pause } from "lucide-react";
 
 interface CustomSound {
@@ -26,9 +25,8 @@ const CustomSoundSelector: React.FC<CustomSoundSelectorProps> = ({
   currentAmount = 0
 }) => {
   const [previewAudio, setPreviewAudio] = useState<HTMLAudioElement | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [playingId, setPlayingId] = useState<string | null>(null);
 
-  // All 4 sound options - always visible
   const sounds: CustomSound[] = [
     {
       id: "knock_left",
@@ -55,50 +53,49 @@ const CustomSoundSelector: React.FC<CustomSoundSelectorProps> = ({
   const isEligible = currentAmount >= minAmount;
   const isDisabled = disabled || !isEligible;
 
-  const selectedSound = sounds.find(sound => sound.file_url === selectedSoundUrl);
-
-  const handleSoundSelect = (value: string) => {
-    if (!isEligible) {
-      return;
-    }
+  const handleSoundSelect = (sound: CustomSound) => {
+    if (!isEligible) return;
     
-    if (value === "none") {
+    if (selectedSoundUrl === sound.file_url) {
+      // Deselect if already selected
       onSoundSelect(null);
     } else {
-      const sound = sounds.find(s => s.id === value);
-      if (sound) {
-        onSoundSelect(sound.file_url);
-      }
+      onSoundSelect(sound.file_url);
     }
   };
 
-  const playPreview = (fileUrl: string) => {
+  const handleNoSoundSelect = () => {
+    onSoundSelect(null);
+  };
+
+  const playPreview = (sound: CustomSound) => {
     if (!isEligible) return;
     
+    // Stop any currently playing audio
     if (previewAudio) {
       previewAudio.pause();
       setPreviewAudio(null);
-      setIsPlaying(false);
+      setPlayingId(null);
     }
 
-    const audio = new Audio(fileUrl);
+    const audio = new Audio(sound.file_url);
     audio.volume = 0.5;
     
     audio.addEventListener('ended', () => {
-      setIsPlaying(false);
+      setPlayingId(null);
       setPreviewAudio(null);
     });
 
     audio.play();
     setPreviewAudio(audio);
-    setIsPlaying(true);
+    setPlayingId(sound.id);
   };
 
   const stopPreview = () => {
     if (previewAudio) {
       previewAudio.pause();
       setPreviewAudio(null);
-      setIsPlaying(false);
+      setPlayingId(null);
     }
   };
 
@@ -109,59 +106,72 @@ const CustomSoundSelector: React.FC<CustomSoundSelectorProps> = ({
       </label>
       
       <div className="space-y-1">
-        <Select
-          value={selectedSound?.id || "none"}
-          onValueChange={handleSoundSelect}
-          disabled={isDisabled}
+        {/* No Sound Option */}
+        <Button
+          type="button"
+          variant={selectedSoundUrl === null ? "default" : "outline"}
+          onClick={handleNoSoundSelect}
+          className={`w-full h-6 text-xs justify-start ${
+            selectedSoundUrl === null 
+              ? "bg-pink-500 text-white border-pink-400 hover:bg-pink-600" 
+              : "bg-white/95 border-pink-300 text-gray-800 hover:bg-white hover:border-pink-400"
+          }`}
         >
-          <SelectTrigger className="bg-white/95 border-pink-300 text-gray-800 focus:border-pink-500 focus:ring-pink-500/50 h-7 text-xs disabled:opacity-50">
-            <SelectValue placeholder={isEligible ? "Choose a sound alert" : `Donate ₹${minAmount}+ to unlock`} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">
-              <div className="flex items-center space-x-2">
-                <VolumeX className="w-3 h-3" />
-                <span className="text-xs">No sound alert</span>
+          <VolumeX className="w-3 h-3 mr-1" />
+          No sound alert
+        </Button>
+
+        {/* Sound Options */}
+        <div className="grid grid-cols-2 gap-1">
+          {sounds.map((sound) => {
+            const isSelected = selectedSoundUrl === sound.file_url;
+            const isPlaying = playingId === sound.id;
+            
+            return (
+              <div key={sound.id} className="space-y-1">
+                <Button
+                  type="button"
+                  variant={isSelected ? "default" : "outline"}
+                  onClick={() => handleSoundSelect(sound)}
+                  disabled={isDisabled}
+                  className={`w-full h-6 text-xs justify-start ${
+                    isSelected 
+                      ? "bg-pink-500 text-white border-pink-400 hover:bg-pink-600" 
+                      : "bg-white/95 border-pink-300 text-gray-800 hover:bg-white hover:border-pink-400"
+                  } ${!isEligible ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <Volume2 className="w-3 h-3 mr-1" />
+                  {sound.name}
+                  {!isEligible && <span className="ml-1">(₹{minAmount}+)</span>}
+                </Button>
+                
+                {isEligible && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => isPlaying ? stopPreview() : playPreview(sound)}
+                    className="w-full bg-white/20 border-pink-300/50 text-pink-100 hover:bg-white/30 text-xs h-5"
+                  >
+                    {isPlaying ? (
+                      <>
+                        <Pause className="w-2 h-2 mr-1" />
+                        Stop
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-2 h-2 mr-1" />
+                        Preview
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
-            </SelectItem>
-            {sounds.map((sound) => (
-              <SelectItem key={sound.id} value={sound.id} disabled={!isEligible}>
-                <div className={`flex items-center space-x-2 ${!isEligible ? 'opacity-50' : ''}`}>
-                  <Volume2 className="w-3 h-3" />
-                  <span className="text-xs">{sound.name}</span>
-                  {!isEligible && <span className="text-xs">(₹{minAmount}+)</span>}
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+            );
+          })}
+        </div>
 
-        {selectedSound && isEligible && (
-          <div className="flex items-center space-x-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => isPlaying ? stopPreview() : playPreview(selectedSound.file_url)}
-              className="bg-white/95 border-pink-300 text-gray-800 hover:bg-white hover:border-pink-400 text-xs h-6"
-            >
-              {isPlaying ? (
-                <>
-                  <Pause className="w-3 h-3 mr-1" />
-                  Stop
-                </>
-              ) : (
-                <>
-                  <Play className="w-3 h-3 mr-1" />
-                  Preview
-                </>
-              )}
-            </Button>
-            <span className="text-white/80 text-xs">Selected: {selectedSound.name}</span>
-          </div>
-        )}
-
-        <p className="text-xs text-white/80">
+        <p className="text-xs text-white/80 text-center">
           {isEligible 
             ? "Custom sound alerts play during donation messages on stream"
             : `Donate ₹${minAmount}+ to unlock custom sound alerts`
