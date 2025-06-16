@@ -8,6 +8,7 @@ import { Heart, Gamepad2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import GifUpload from "@/components/GifUpload";
 import VoiceRecording from "@/components/VoiceRecording";
+import CustomSoundAlerts from "@/components/CustomSoundAlerts";
 
 const ChiaaGamingPage = () => {
   const [name, setName] = useState("");
@@ -15,6 +16,7 @@ const ChiaaGamingPage = () => {
   const [message, setMessage] = useState("");
   const [selectedGif, setSelectedGif] = useState<File | null>(null);
   const [selectedVoice, setSelectedVoice] = useState<File | null>(null);
+  const [selectedCustomSound, setSelectedCustomSound] = useState<{id: string, name: string, url: string} | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [maxMessageLength, setMaxMessageLength] = useState(50);
   const navigate = useNavigate();
@@ -42,6 +44,10 @@ const ChiaaGamingPage = () => {
     if (file && selectedVoice) {
       setSelectedVoice(null);
     }
+    // Clear custom sound if GIF is selected
+    if (file && selectedCustomSound) {
+      setSelectedCustomSound(null);
+    }
   };
 
   const handleVoiceSelect = (file: File | null) => {
@@ -49,6 +55,23 @@ const ChiaaGamingPage = () => {
     // Clear GIF if voice is selected
     if (file && selectedGif) {
       setSelectedGif(null);
+    }
+    // Clear custom sound if voice is selected
+    if (file && selectedCustomSound) {
+      setSelectedCustomSound(null);
+    }
+  };
+
+  const handleCustomSoundSelect = (sound: {id: string, name: string, url: string} | null) => {
+    setSelectedCustomSound(sound);
+    // Clear other media if custom sound is selected
+    if (sound) {
+      if (selectedGif) {
+        setSelectedGif(null);
+      }
+      if (selectedVoice) {
+        setSelectedVoice(null);
+      }
     }
   };
 
@@ -236,12 +259,15 @@ const ChiaaGamingPage = () => {
         voiceUrl,
         voiceFileName: selectedVoice?.name || null,
         voiceFileSize: selectedVoice?.size || null,
+        customSoundUrl: selectedCustomSound?.url || null,
+        customSoundName: selectedCustomSound?.name || null,
       };
       
       console.log("DONATION: Storing donation data in session storage:", {
         ...donationData,
         hasGif: !!gifUrl,
         hasVoice: !!voiceUrl,
+        hasCustomSound: !!selectedCustomSound,
         gifUrlPreview: gifUrl ? gifUrl.substring(0, 50) + "..." : null,
         voiceUrlPreview: voiceUrl ? voiceUrl.substring(0, 50) + "..." : null
       });
@@ -285,8 +311,8 @@ const ChiaaGamingPage = () => {
     return "Sweet Message";
   };
 
-  // Check if message input should be disabled (when GIF or voice is uploaded)
-  const isMessageDisabled = !!selectedGif || !!selectedVoice || isLoading;
+  // Check if message input should be disabled (when GIF, voice, or custom sound is selected)
+  const isMessageDisabled = !!selectedGif || !!selectedVoice || !!selectedCustomSound || isLoading;
 
   return (
     <div 
@@ -406,13 +432,21 @@ const ChiaaGamingPage = () => {
               <GifUpload
                 onGifSelect={handleGifSelect}
                 selectedGif={selectedGif}
-                disabled={isLoading || !!selectedVoice}
+                disabled={isLoading || !!selectedVoice || !!selectedCustomSound}
               />
 
               <VoiceRecording
                 onVoiceSelect={handleVoiceSelect}
                 selectedVoice={selectedVoice}
-                disabled={isLoading || !!selectedGif}
+                disabled={isLoading || !!selectedGif || !!selectedCustomSound}
+              />
+              
+              {/* Custom Sound Alerts Section */}
+              <CustomSoundAlerts
+                onSoundSelect={handleCustomSoundSelect}
+                selectedSound={selectedCustomSound}
+                disabled={isLoading || !!selectedGif || !!selectedVoice}
+                amount={amount}
               />
               
               <Button 
