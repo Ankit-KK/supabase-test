@@ -113,17 +113,23 @@ export const createDonationRecord = async (donation: DonationRecord) => {
       throw new Error(error.message || `Failed to create donation record in ${tableName}`);
     }
 
-    // Check if data exists and has required properties
-    if (!data || typeof data !== 'object' || !('id' in data) || typeof data.id !== 'string') {
+    // Early return if data is null
+    if (!data) {
+      console.error("No donation record returned from database");
+      throw new Error("Failed to create donation record - no data returned");
+    }
+
+    // Type guard to ensure data has the required structure
+    if (typeof data !== 'object' || !('id' in data) || typeof data.id !== 'string') {
       console.error("Invalid donation record returned:", data);
       throw new Error("Failed to create donation record - invalid response");
     }
 
-    // Now we can safely use data since we've verified it exists and has the correct structure
+    // Now TypeScript knows data is not null and has an id property
     console.log(`Successfully created donation record in ${tableName}:`, data);
 
     // Create donation_gifs record if GIF was uploaded for chiaa_gaming
-    if (donation.donationType === "chiaa_gaming" && donation.gifUrl && donation.gifFileName && donation.gifFileSize && data.id) {
+    if (donation.donationType === "chiaa_gaming" && donation.gifUrl && donation.gifFileName && donation.gifFileSize) {
       console.log("Creating donation_gifs record for:", data.id);
       
       const { error: gifRecordError } = await supabase
