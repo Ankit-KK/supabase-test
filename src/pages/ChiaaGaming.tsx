@@ -279,6 +279,8 @@ const ChiaaGamingPage = () => {
         customSoundUrl: selectedCustomSound?.url || null,
       };
       
+      console.log("DONATION: Final donation data being stored:", donationData);
+      
       sessionStorage.setItem("donationData", JSON.stringify(donationData));
       
       // Navigate to payment checkout

@@ -75,6 +75,9 @@ export const createDonationRecord = async (donationData: {
   voiceFileName?: string | null;
   voiceFileSize?: number | null;
   include_sound?: boolean;
+  customSoundId?: string | null;
+  customSoundName?: string | null;
+  customSoundUrl?: string | null;
 }) => {
   try {
     console.log("Creating donation record:", donationData);
@@ -91,7 +94,10 @@ export const createDonationRecord = async (donationData: {
         voice_url: donationData.voiceUrl,
         voice_file_name: donationData.voiceFileName,
         voice_file_size: donationData.voiceFileSize,
-        include_sound: donationData.include_sound || false
+        include_sound: donationData.include_sound || false,
+        custom_sound_id: donationData.customSoundId,
+        custom_sound_name: donationData.customSoundName,
+        custom_sound_url: donationData.customSoundUrl
       }]);
 
     if (error) {

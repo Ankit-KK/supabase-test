@@ -129,6 +129,30 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_sound_alerts: {
+        Row: {
+          created_at: string | null
+          file_path: string | null
+          file_url: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          file_path?: string | null
+          file_url: string
+          id: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          file_path?: string | null
+          file_url?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       donation_gifs: {
         Row: {
           deleted_at: string | null
