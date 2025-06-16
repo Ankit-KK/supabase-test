@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -91,51 +92,66 @@ const ChiaaGamingObsOverlay = () => {
     }
   };
 
-  // Process donation queue - fixed to handle multiple donations properly
-  const processNextDonation = () => {
-    console.log("processNextDonation called, queue length:", donationQueue.length);
-    
-    if (donationQueue.length === 0) {
-      console.log("Queue is empty, stopping processing");
-      setIsProcessingQueue(false);
+  // Process donation queue - completely rewritten to fix race conditions
+  useEffect(() => {
+    if (!isProcessingQueue || donationQueue.length === 0) {
       return;
     }
 
-    const nextDonation = donationQueue[0];
-    console.log("Processing donation from queue:", nextDonation);
-    
-    // Remove the donation from queue immediately
-    setDonationQueue(prev => {
-      const newQueue = prev.slice(1);
-      console.log("Queue after removing donation:", newQueue.length);
-      return newQueue;
-    });
-    
-    setCurrentDonation(nextDonation);
-
-    // Auto-hide after 12 seconds and cleanup media if present
-    setTimeout(() => {
-      console.log("Hiding donation after 12 seconds:", nextDonation.id);
+    const processNext = () => {
+      console.log("processNext called, queue length:", donationQueue.length);
       
-      if (nextDonation.gif_url) {
-        console.log("Cleaning up GIF after display:", nextDonation.gif_url);
-        cleanupMedia(nextDonation.id, nextDonation.gif_url, 'gif');
+      if (donationQueue.length === 0) {
+        console.log("Queue is empty, stopping processing");
+        setIsProcessingQueue(false);
+        return;
       }
-      if (nextDonation.voice_url) {
-        console.log("Cleaning up Voice after display:", nextDonation.voice_url);
-        cleanupMedia(nextDonation.id, nextDonation.voice_url, 'voice');
-      }
-      
-      setCurrentDonation(null);
-      
-      // Process next donation after 3 seconds
-      setTimeout(() => {
-        processNextDonation();
-      }, 3000);
-    }, 12000);
-  };
 
-  // Add donation to queue - fixed to properly queue all donations
+      // Get the first donation from queue
+      const nextDonation = donationQueue[0];
+      console.log("Processing donation from queue:", nextDonation.id, nextDonation.name);
+      
+      // Remove from queue and show the donation
+      setDonationQueue(prev => {
+        const newQueue = prev.slice(1);
+        console.log("Queue after removing donation:", newQueue.length);
+        return newQueue;
+      });
+      
+      setCurrentDonation(nextDonation);
+
+      // Auto-hide after 12 seconds and cleanup media if present
+      const hideTimeout = setTimeout(() => {
+        console.log("Hiding donation after 12 seconds:", nextDonation.id);
+        
+        if (nextDonation.gif_url) {
+          console.log("Cleaning up GIF after display:", nextDonation.gif_url);
+          cleanupMedia(nextDonation.id, nextDonation.gif_url, 'gif');
+        }
+        if (nextDonation.voice_url) {
+          console.log("Cleaning up Voice after display:", nextDonation.voice_url);
+          cleanupMedia(nextDonation.id, nextDonation.voice_url, 'voice');
+        }
+        
+        setCurrentDonation(null);
+        
+        // Process next donation after 3 seconds
+        const nextTimeout = setTimeout(() => {
+          processNext();
+        }, 3000);
+
+        return () => clearTimeout(nextTimeout);
+      }, 12000);
+
+      return () => clearTimeout(hideTimeout);
+    };
+
+    // Start processing immediately
+    const timeout = setTimeout(processNext, 100);
+    return () => clearTimeout(timeout);
+  }, [isProcessingQueue, donationQueue.length]);
+
+  // Add donation to queue - simplified
   const addDonationToQueue = (donation: Donation) => {
     console.log("Adding donation to queue:", donation.id, donation.name);
     
@@ -166,10 +182,6 @@ const ChiaaGamingObsOverlay = () => {
       if (!isProcessingQueue) {
         console.log("Starting queue processing");
         setIsProcessingQueue(true);
-        // Start processing immediately for the first donation
-        setTimeout(() => {
-          processNextDonation();
-        }, 500);
       }
     }
   };
