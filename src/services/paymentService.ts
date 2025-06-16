@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 type DonationRecord = {
@@ -15,6 +14,7 @@ type DonationRecord = {
   voiceUrl?: string;
   voiceFileName?: string;
   voiceFileSize?: number;
+  customSoundId?: string;
 };
 
 /**
@@ -98,26 +98,35 @@ export const createDonationRecord = async (donation: DonationRecord) => {
       recordData.include_sound = donation.include_sound;
     }
 
-    // ALWAYS add gif_url for chiaa_gaming donations if provided - regardless of payment status
+    // Add gif_url for chiaa_gaming donations if provided
     if (donation.donationType === "chiaa_gaming" && donation.gifUrl) {
       recordData.gif_url = donation.gifUrl;
-      console.log("STORING GIF URL (regardless of payment status):", {
+      console.log("STORING GIF URL:", {
         gifUrl: donation.gifUrl,
         orderId: donation.order_id,
-        paymentStatus: donation.payment_status,
-        recordData: recordData
+        paymentStatus: donation.payment_status
       });
     }
 
-    // ALWAYS add voice_url for chiaa_gaming donations if provided - regardless of payment status
+    // Add voice_url for chiaa_gaming donations if provided
     if (donation.donationType === "chiaa_gaming" && donation.voiceUrl) {
       recordData.voice_url = donation.voiceUrl;
       recordData.voice_file_name = donation.voiceFileName;
       recordData.voice_file_size = donation.voiceFileSize;
-      console.log("STORING VOICE URL (regardless of payment status):", {
+      console.log("STORING VOICE URL:", {
         voiceUrl: donation.voiceUrl,
         voiceFileName: donation.voiceFileName,
         voiceFileSize: donation.voiceFileSize,
+        orderId: donation.order_id,
+        paymentStatus: donation.payment_status
+      });
+    }
+
+    // Add custom_sound_id for chiaa_gaming donations if provided
+    if (donation.donationType === "chiaa_gaming" && donation.customSoundId) {
+      recordData.custom_sound_id = donation.customSoundId;
+      console.log("STORING CUSTOM SOUND ID:", {
+        customSoundId: donation.customSoundId,
         orderId: donation.order_id,
         paymentStatus: donation.payment_status
       });
@@ -127,6 +136,7 @@ export const createDonationRecord = async (donation: DonationRecord) => {
     console.log("Payment status being saved:", donation.payment_status);
     console.log("GIF URL being saved:", recordData.gif_url);
     console.log("Voice URL being saved:", recordData.voice_url);
+    console.log("Custom Sound ID being saved:", recordData.custom_sound_id);
     
     const { data, error } = await supabase
       .from(tableName)
@@ -146,15 +156,16 @@ export const createDonationRecord = async (donation: DonationRecord) => {
     }
 
     // Now TypeScript knows data is not null and has the required structure
-    const validatedData = data as { id: string; gif_url?: string; voice_url?: string; [key: string]: any };
+    const validatedData = data as { id: string; gif_url?: string; voice_url?: string; custom_sound_id?: string; [key: string]: any };
     
     console.log(`Successfully created donation record in ${tableName}:`, validatedData);
     console.log("VERIFICATION: GIF URL in created record:", validatedData.gif_url);
     console.log("VERIFICATION: Voice URL in created record:", validatedData.voice_url);
+    console.log("VERIFICATION: Custom Sound ID in created record:", validatedData.custom_sound_id);
 
-    // Create donation_gifs record if GIF was uploaded for chiaa_gaming - REGARDLESS of payment status
+    // Create donation_gifs record if GIF was uploaded for chiaa_gaming
     if (donation.donationType === "chiaa_gaming" && donation.gifUrl && donation.gifFileName && donation.gifFileSize) {
-      console.log("Creating donation_gifs record for GIF (regardless of payment status):", validatedData.id);
+      console.log("Creating donation_gifs record for GIF:", validatedData.id);
       
       const { error: gifRecordError } = await supabase
         .from('donation_gifs')
@@ -175,9 +186,9 @@ export const createDonationRecord = async (donation: DonationRecord) => {
       }
     }
 
-    // Create donation_gifs record if Voice was uploaded for chiaa_gaming - REGARDLESS of payment status
+    // Create donation_gifs record if Voice was uploaded for chiaa_gaming
     if (donation.donationType === "chiaa_gaming" && donation.voiceUrl && donation.voiceFileName && donation.voiceFileSize) {
-      console.log("Creating donation_gifs record for Voice (regardless of payment status):", validatedData.id);
+      console.log("Creating donation_gifs record for Voice:", validatedData.id);
       
       const { error: voiceRecordError } = await supabase
         .from('donation_gifs')

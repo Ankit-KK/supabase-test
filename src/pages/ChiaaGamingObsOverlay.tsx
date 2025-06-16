@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +12,13 @@ interface Donation {
   created_at: string;
   gif_url?: string;
   voice_url?: string;
+  custom_sound_id?: string;
+}
+
+interface CustomSound {
+  id: string;
+  name: string;
+  file_url: string;
 }
 
 const ChiaaGamingObsOverlay = () => {
@@ -20,6 +26,7 @@ const ChiaaGamingObsOverlay = () => {
   const [searchParams] = useSearchParams();
   const [currentDonation, setCurrentDonation] = useState<Donation | null>(null);
   const [totalDonations, setTotalDonations] = useState(0);
+  const [customSounds, setCustomSounds] = useState<CustomSound[]>([]);
   
   // Parse URL parameters
   const showMessages = searchParams.get("showMessages") === "true";
@@ -34,6 +41,67 @@ const ChiaaGamingObsOverlay = () => {
     goalName,
     goalTarget
   });
+
+  // Load custom sounds on mount
+  useEffect(() => {
+    const fetchCustomSounds = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('custom_sound_alerts')
+          .select('*');
+
+        if (error) {
+          console.error('Error fetching custom sounds:', error);
+          return;
+        }
+
+        setCustomSounds(data || []);
+        console.log('Loaded custom sounds:', data);
+      } catch (error) {
+        console.error('Error in fetchCustomSounds:', error);
+      }
+    };
+
+    fetchCustomSounds();
+  }, []);
+
+  // Play custom sound
+  const playCustomSound = (customSoundId: string) => {
+    const sound = customSounds.find(s => s.id === customSoundId);
+    if (!sound) {
+      console.error('Custom sound not found:', customSoundId);
+      return;
+    }
+
+    console.log('Playing custom sound:', sound);
+    
+    const audio = new Audio(sound.file_url);
+    audio.volume = 0.7; // Set volume to 70%
+    
+    audio.addEventListener('loadstart', () => {
+      console.log('Custom sound loading started:', sound.file_url);
+    });
+    
+    audio.addEventListener('canplay', () => {
+      console.log('Custom sound can play:', sound.file_url);
+    });
+    
+    audio.addEventListener('play', () => {
+      console.log('Custom sound playback started:', sound.name);
+    });
+    
+    audio.addEventListener('ended', () => {
+      console.log('Custom sound playback ended:', sound.name);
+    });
+    
+    audio.addEventListener('error', (e) => {
+      console.error('Custom sound playback error:', e, sound.file_url);
+    });
+
+    audio.play().catch(error => {
+      console.error('Failed to play custom sound:', error, sound.file_url);
+    });
+  };
 
   // Clean up media after it's displayed
   const cleanupMedia = async (donationId: string, mediaUrl: string, mediaType: 'gif' | 'voice') => {
@@ -110,7 +178,7 @@ const ChiaaGamingObsOverlay = () => {
 
     fetchTotalDonations();
 
-    // Set up real-time subscription for new donations - show ALL donations regardless of payment status
+    // Set up real-time subscription for new donations
     const channel = supabase
       .channel(`chiaa-gaming-obs-${obsId}`)
       .on(
@@ -119,13 +187,13 @@ const ChiaaGamingObsOverlay = () => {
           event: 'INSERT',
           schema: 'public',
           table: 'chiaa_gaming_donations'
-          // Removed payment_status filter to show all donations
         },
         (payload) => {
           const newDonation = payload.new as Donation;
           console.log("New donation received in OBS overlay:", newDonation);
           console.log("Donation has GIF URL:", newDonation.gif_url);
           console.log("Donation has Voice URL:", newDonation.voice_url);
+          console.log("Donation has Custom Sound ID:", newDonation.custom_sound_id);
           console.log("Payment status:", (payload.new as any).payment_status);
           
           // Update total for goal only if payment is successful
@@ -133,7 +201,17 @@ const ChiaaGamingObsOverlay = () => {
             setTotalDonations(prev => prev + Number(newDonation.amount));
           }
           
-          // Show message if enabled - regardless of payment status for testing
+          // Play custom sound if present and amount >= 100
+          if (newDonation.custom_sound_id && Number(newDonation.amount) >= 100) {
+            console.log("Playing custom sound for donation:", {
+              customSoundId: newDonation.custom_sound_id,
+              amount: newDonation.amount,
+              donationId: newDonation.id
+            });
+            playCustomSound(newDonation.custom_sound_id);
+          }
+          
+          // Show message if enabled and has content to show
           if (showMessages && (newDonation.message || newDonation.gif_url || newDonation.voice_url)) {
             setCurrentDonation(newDonation);
             
@@ -159,7 +237,7 @@ const ChiaaGamingObsOverlay = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [obsId, showMessages]);
+  }, [obsId, showMessages, customSounds]);
 
   const progressPercentage = Math.min((totalDonations / goalTarget) * 100, 100);
 

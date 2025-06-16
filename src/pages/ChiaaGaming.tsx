@@ -8,6 +8,7 @@ import { Heart, Gamepad2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import GifUpload from "@/components/GifUpload";
 import VoiceRecording from "@/components/VoiceRecording";
+import CustomSoundSelector from "@/components/CustomSoundSelector";
 
 const ChiaaGamingPage = () => {
   const [name, setName] = useState("");
@@ -15,6 +16,7 @@ const ChiaaGamingPage = () => {
   const [message, setMessage] = useState("");
   const [selectedGif, setSelectedGif] = useState<File | null>(null);
   const [selectedVoice, setSelectedVoice] = useState<File | null>(null);
+  const [selectedCustomSoundId, setSelectedCustomSoundId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [maxMessageLength, setMaxMessageLength] = useState(50);
   const navigate = useNavigate();
@@ -179,7 +181,7 @@ const ChiaaGamingPage = () => {
       let gifUrl = null;
       let voiceUrl = null;
       
-      // Upload GIF if selected - ALWAYS try to upload regardless of payment status
+      // Upload GIF if selected
       if (selectedGif) {
         console.log("DONATION: Uploading GIF for donation:", {
           orderId,
@@ -201,7 +203,7 @@ const ChiaaGamingPage = () => {
         }
       }
 
-      // Upload Voice if selected - ALWAYS try to upload regardless of payment status
+      // Upload Voice if selected
       if (selectedVoice) {
         console.log("DONATION: Uploading voice for donation:", {
           orderId,
@@ -236,12 +238,14 @@ const ChiaaGamingPage = () => {
         voiceUrl,
         voiceFileName: selectedVoice?.name || null,
         voiceFileSize: selectedVoice?.size || null,
+        customSoundId: selectedCustomSoundId,
       };
       
       console.log("DONATION: Storing donation data in session storage:", {
         ...donationData,
         hasGif: !!gifUrl,
         hasVoice: !!voiceUrl,
+        hasCustomSound: !!selectedCustomSoundId,
         gifUrlPreview: gifUrl ? gifUrl.substring(0, 50) + "..." : null,
         voiceUrlPreview: voiceUrl ? voiceUrl.substring(0, 50) + "..." : null
       });
@@ -413,6 +417,14 @@ const ChiaaGamingPage = () => {
                 onVoiceSelect={handleVoiceSelect}
                 selectedVoice={selectedVoice}
                 disabled={isLoading || !!selectedGif}
+              />
+
+              <CustomSoundSelector
+                onSoundSelect={setSelectedCustomSoundId}
+                selectedSoundId={selectedCustomSoundId}
+                disabled={isLoading}
+                minAmount={100}
+                currentAmount={parseFloat(amount) || 0}
               />
               
               <Button 

@@ -79,6 +79,9 @@ export type Database = {
         Row: {
           amount: number
           created_at: string | null
+          custom_sound_id: string | null
+          custom_sound_name: string | null
+          custom_sound_url: string | null
           gif_url: string | null
           id: string
           include_sound: boolean | null
@@ -93,6 +96,9 @@ export type Database = {
         Insert: {
           amount: number
           created_at?: string | null
+          custom_sound_id?: string | null
+          custom_sound_name?: string | null
+          custom_sound_url?: string | null
           gif_url?: string | null
           id?: string
           include_sound?: boolean | null
@@ -107,6 +113,9 @@ export type Database = {
         Update: {
           amount?: number
           created_at?: string | null
+          custom_sound_id?: string | null
+          custom_sound_name?: string | null
+          custom_sound_url?: string | null
           gif_url?: string | null
           id?: string
           include_sound?: boolean | null
@@ -117,6 +126,30 @@ export type Database = {
           voice_file_name?: string | null
           voice_file_size?: number | null
           voice_url?: string | null
+        }
+        Relationships: []
+      }
+      custom_sound_alerts: {
+        Row: {
+          created_at: string | null
+          file_path: string | null
+          file_url: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          file_path?: string | null
+          file_url: string
+          id: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          file_path?: string | null
+          file_url?: string
+          id?: string
+          name?: string
         }
         Relationships: []
       }
