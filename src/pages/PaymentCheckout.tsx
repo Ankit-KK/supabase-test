@@ -83,13 +83,14 @@ const PaymentCheckout = () => {
     try {
       console.log("Creating payment order for:", paymentData);
       
-      // Create payment order using Supabase Edge Function
-      const orderResponse = await createPaymentOrder(
-        paymentData.orderId, 
-        paymentData.amount,
-        paymentData.name,
-        paymentData.donationType
-      );
+      // Create payment order using the correct DonationData interface
+      const orderResponse = await createPaymentOrder({
+        name: paymentData.name,
+        amount: paymentData.amount,
+        message: paymentData.message,
+        orderId: paymentData.orderId,
+        donationType: paymentData.donationType as "general" | "ankit" | "chiaa_gaming"
+      });
       
       console.log("Order response:", orderResponse);
       
