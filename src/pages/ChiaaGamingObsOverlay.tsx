@@ -42,14 +42,65 @@ const ChiaaGamingObsOverlay = () => {
 
   // Function to play custom sound from donation data
   const playCustomSound = (donation: Donation) => {
+    console.log("playCustomSound called with donation:", {
+      id: donation.id,
+      name: donation.name,
+      custom_sound_url: donation.custom_sound_url,
+      custom_sound_name: donation.custom_sound_name,
+      custom_sound_id: donation.custom_sound_id
+    });
+
     if (donation.custom_sound_url) {
       console.log("Playing custom sound:", donation.custom_sound_name, donation.custom_sound_url);
       
-      const audio = new Audio(donation.custom_sound_url);
-      audio.volume = 0.7; // Set volume to 70%
-      audio.play().catch(error => {
-        console.error("Failed to play custom sound:", error);
-      });
+      try {
+        const audio = new Audio(donation.custom_sound_url);
+        audio.volume = 0.7; // Set volume to 70%
+        
+        audio.addEventListener('loadstart', () => {
+          console.log("Audio loading started");
+        });
+        
+        audio.addEventListener('canplaythrough', () => {
+          console.log("Audio can play through");
+        });
+        
+        audio.addEventListener('error', (e) => {
+          console.error("Audio error:", e);
+          console.error("Audio error details:", {
+            error: e.error,
+            src: audio.src,
+            networkState: audio.networkState,
+            readyState: audio.readyState
+          });
+        });
+        
+        audio.addEventListener('ended', () => {
+          console.log("Custom sound playback ended");
+        });
+
+        const playPromise = audio.play();
+        
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              console.log("Custom sound started playing successfully");
+            })
+            .catch(error => {
+              console.error("Failed to play custom sound:", error);
+              console.error("Audio element details:", {
+                src: audio.src,
+                volume: audio.volume,
+                muted: audio.muted,
+                paused: audio.paused
+              });
+            });
+        }
+      } catch (error) {
+        console.error("Error creating/playing audio:", error);
+      }
+    } else {
+      console.log("No custom sound URL found in donation");
     }
   };
 
@@ -128,7 +179,7 @@ const ChiaaGamingObsOverlay = () => {
 
     fetchTotalDonations();
 
-    // Set up real-time subscription for new donations - SHOW ALERTS FOR ALL PAYMENTS (success AND failed) for testing
+    // Set up real-time subscription for new donations - SHOW ALERTS FOR ALL PAYMENTS for testing
     const channel = supabase
       .channel(`chiaa-gaming-obs-${obsId}`)
       .on(
@@ -145,7 +196,12 @@ const ChiaaGamingObsOverlay = () => {
           console.log("Payment status:", newDonation.payment_status);
           console.log("Donation has GIF URL:", newDonation.gif_url);
           console.log("Donation has Voice URL:", newDonation.voice_url);
-          console.log("Donation has custom sound:", newDonation.custom_sound_name);
+          console.log("Donation custom sound details:", {
+            custom_sound_id: newDonation.custom_sound_id,
+            custom_sound_name: newDonation.custom_sound_name,
+            custom_sound_url: newDonation.custom_sound_url,
+            include_sound: newDonation.include_sound
+          });
           
           // Only update goal total for successful payments
           if (newDonation.payment_status === "success") {
@@ -156,10 +212,17 @@ const ChiaaGamingObsOverlay = () => {
           if (showMessages && (newDonation.message || newDonation.gif_url || newDonation.voice_url || newDonation.custom_sound_url)) {
             setCurrentDonation(newDonation);
             
-            // Play custom sound if present
+            // Play custom sound if present - this should happen immediately
             if (newDonation.custom_sound_url) {
-              console.log("Playing custom sound for donation:", newDonation.custom_sound_name);
-              playCustomSound(newDonation);
+              console.log("About to play custom sound for donation:", {
+                id: newDonation.id,
+                name: newDonation.custom_sound_name,
+                url: newDonation.custom_sound_url
+              });
+              // Play sound immediately
+              setTimeout(() => {
+                playCustomSound(newDonation);
+              }, 100); // Small delay to ensure DOM is ready
             }
             
             // Auto-hide after 12 seconds and cleanup media if present
@@ -253,6 +316,9 @@ const ChiaaGamingObsOverlay = () => {
               <div className="text-center">
                 <div className="text-purple-200 text-lg font-semibold mb-2">🔊 {currentDonation.custom_sound_name}!</div>
                 <div className="text-purple-100 text-sm">Playing custom sound...</div>
+                <div className="text-purple-300 text-xs mt-2">
+                  Sound URL: {currentDonation.custom_sound_url?.substring(0, 50)}...
+                </div>
               </div>
             </div>
           </DraggableResizableBox>
