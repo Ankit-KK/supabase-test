@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 type DonationRecord = {
@@ -96,11 +95,10 @@ export const createDonationRecord = async (donation: DonationRecord) => {
     
     // For chiaa_gaming donations, handle custom sound and other features
     if (donation.donationType === "chiaa_gaming") {
-      // Add custom_sound_url if provided - FOR TESTING: Store even for failed payments
+      // FOR TESTING: Always set include_sound to true if custom sound is selected, regardless of payment status
       if (donation.customSoundUrl) {
         recordData.custom_sound_url = donation.customSoundUrl;
-        // For testing: Set include_sound to true if custom sound is selected, regardless of payment status
-        recordData.include_sound = true;
+        recordData.include_sound = true; // Always true for testing, even for failed payments
         console.log("STORING CUSTOM SOUND URL FOR CHIAA GAMING (including failed payments for testing):", {
           customSoundUrl: donation.customSoundUrl,
           include_sound: true,

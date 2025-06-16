@@ -28,7 +28,7 @@ const CustomSoundSelector: React.FC<CustomSoundSelectorProps> = ({
   const [previewAudio, setPreviewAudio] = useState<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  // Hardcoded sound options with direct URLs
+  // Updated sound options with the correct URLs you provided
   const sounds: CustomSound[] = [
     {
       id: "knock_left",
