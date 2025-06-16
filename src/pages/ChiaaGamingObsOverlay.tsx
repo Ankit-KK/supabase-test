@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -92,21 +91,32 @@ const ChiaaGamingObsOverlay = () => {
     }
   };
 
-  // Process donation queue
+  // Process donation queue - fixed to handle multiple donations properly
   const processNextDonation = () => {
+    console.log("processNextDonation called, queue length:", donationQueue.length);
+    
     if (donationQueue.length === 0) {
+      console.log("Queue is empty, stopping processing");
       setIsProcessingQueue(false);
       return;
     }
 
     const nextDonation = donationQueue[0];
-    setDonationQueue(prev => prev.slice(1));
-    setCurrentDonation(nextDonation);
-
     console.log("Processing donation from queue:", nextDonation);
+    
+    // Remove the donation from queue immediately
+    setDonationQueue(prev => {
+      const newQueue = prev.slice(1);
+      console.log("Queue after removing donation:", newQueue.length);
+      return newQueue;
+    });
+    
+    setCurrentDonation(nextDonation);
 
     // Auto-hide after 12 seconds and cleanup media if present
     setTimeout(() => {
+      console.log("Hiding donation after 12 seconds:", nextDonation.id);
+      
       if (nextDonation.gif_url) {
         console.log("Cleaning up GIF after display:", nextDonation.gif_url);
         cleanupMedia(nextDonation.id, nextDonation.gif_url, 'gif');
@@ -115,6 +125,7 @@ const ChiaaGamingObsOverlay = () => {
         console.log("Cleaning up Voice after display:", nextDonation.voice_url);
         cleanupMedia(nextDonation.id, nextDonation.voice_url, 'voice');
       }
+      
       setCurrentDonation(null);
       
       // Process next donation after 3 seconds
@@ -124,9 +135,9 @@ const ChiaaGamingObsOverlay = () => {
     }, 12000);
   };
 
-  // Add donation to queue
+  // Add donation to queue - fixed to properly queue all donations
   const addDonationToQueue = (donation: Donation) => {
-    console.log("Adding donation to queue:", donation);
+    console.log("Adding donation to queue:", donation.id, donation.name);
     
     // Handle custom sound immediately if present
     if (donation.custom_sound_url && Number(donation.amount) >= 100) {
@@ -143,17 +154,22 @@ const ChiaaGamingObsOverlay = () => {
       }, 5000);
     }
 
-    // Only add to message queue if messages are enabled and has content to show
+    // Always add to message queue if messages are enabled and has content to show
     if (showMessages && (donation.message || donation.gif_url || donation.voice_url)) {
-      setDonationQueue(prev => [...prev, donation]);
+      setDonationQueue(prev => {
+        const newQueue = [...prev, donation];
+        console.log("Donation added to queue. New queue length:", newQueue.length);
+        return newQueue;
+      });
       
       // Start processing if not already processing
       if (!isProcessingQueue) {
+        console.log("Starting queue processing");
         setIsProcessingQueue(true);
-        // Start processing after a short delay to allow multiple donations to queue up
+        // Start processing immediately for the first donation
         setTimeout(() => {
           processNextDonation();
-        }, 1000);
+        }, 500);
       }
     }
   };
@@ -192,7 +208,7 @@ const ChiaaGamingObsOverlay = () => {
         },
         (payload) => {
           const newDonation = payload.new as Donation;
-          console.log("New donation received in OBS overlay:", newDonation);
+          console.log("New donation received in OBS overlay:", newDonation.id, newDonation.name);
           
           // Update total for goal only if payment is successful
           if ((payload.new as any).payment_status === "success") {
@@ -210,7 +226,7 @@ const ChiaaGamingObsOverlay = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [obsId, showMessages, isProcessingQueue]);
+  }, [obsId, showMessages]);
 
   const progressPercentage = Math.min((totalDonations / goalTarget) * 100, 100);
 
@@ -245,10 +261,10 @@ const ChiaaGamingObsOverlay = () => {
           </div>
         )}
 
-        {/* Queue Status Indicator (for debugging) */}
+        {/* Queue Status Indicator - Enhanced with more info */}
         {donationQueue.length > 0 && (
-          <div className="absolute top-2 right-2 bg-black/50 text-white px-2 py-1 rounded text-xs">
-            Queue: {donationQueue.length}
+          <div className="absolute top-2 right-2 bg-black/50 text-white px-2 py-1 rounded text-xs z-50">
+            Queue: {donationQueue.length} | Processing: {isProcessingQueue ? 'Yes' : 'No'}
           </div>
         )}
 
