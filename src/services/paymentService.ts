@@ -119,13 +119,13 @@ export const createDonationRecord = async (donation: DonationRecord) => {
       throw new Error("Failed to create donation record - no data returned");
     }
 
-    // Now check if data has the required structure
-    if (typeof data !== 'object' || !('id' in data) || typeof data.id !== 'string') {
+    // Now check if data has the required structure and use type assertion
+    if (typeof data !== 'object' || !('id' in data) || typeof (data as any).id !== 'string') {
       console.error("Invalid donation record returned:", data);
       throw new Error("Failed to create donation record - invalid response");
     }
 
-    // Cast to a type that TypeScript understands has an id
+    // Use type assertion after validation
     const validatedData = data as { id: string; [key: string]: any };
     
     console.log(`Successfully created donation record in ${tableName}:`, validatedData);
