@@ -1,4 +1,5 @@
 
+
 import { supabase } from "@/integrations/supabase/client";
 
 type DonationRecord = {
@@ -113,7 +114,8 @@ export const createDonationRecord = async (donation: DonationRecord) => {
       throw new Error(error.message || `Failed to create donation record in ${tableName}`);
     }
 
-    const donationRecord = data;
+    // Type assertion to tell TypeScript that data has an id property
+    const donationRecord = data as { id: string; [key: string]: any };
     console.log(`Successfully created donation record in ${tableName}:`, donationRecord);
 
     // Create donation_gifs record if GIF was uploaded for chiaa_gaming
@@ -150,3 +152,4 @@ export const createDonationRecord = async (donation: DonationRecord) => {
     throw error;
   }
 };
+
