@@ -316,7 +316,7 @@ const ChiaaGamingPage = () => {
 
   return (
     <div 
-      className="min-h-screen relative overflow-hidden"
+      className="min-h-screen max-h-screen overflow-hidden relative"
       style={{
         backgroundImage: `url('/lovable-uploads/7d0bcc0f-fdef-47a2-9c88-4a052346971f.png')`,
         backgroundSize: 'cover',
@@ -329,34 +329,34 @@ const ChiaaGamingPage = () => {
       
       {/* Gaming Elements Background - Responsive positioning */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-2 left-2 sm:top-4 sm:left-4 md:top-8 md:left-8 opacity-20 sm:opacity-30">
-          <Heart size={24} className="sm:w-8 sm:h-8 md:w-12 md:h-12 lg:w-16 lg:h-16 text-pink-400 animate-pulse" />
+        <div className="absolute top-1 left-1 sm:top-2 sm:left-2 opacity-20 sm:opacity-30">
+          <Heart size={16} className="sm:w-6 sm:h-6 md:w-8 md:h-8 text-pink-400 animate-pulse" />
         </div>
-        <div className="absolute bottom-4 right-2 sm:bottom-8 sm:right-4 md:bottom-12 md:right-8 opacity-20 sm:opacity-30">
-          <Gamepad2 size={32} className="sm:w-10 sm:h-10 md:w-16 md:h-16 lg:w-20 lg:h-20 text-pink-400 animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute bottom-2 right-1 sm:bottom-4 sm:right-2 opacity-20 sm:opacity-30">
+          <Gamepad2 size={20} className="sm:w-8 sm:h-8 md:w-10 md:h-10 text-pink-400 animate-pulse" style={{ animationDelay: '1s' }} />
         </div>
       </div>
 
       {/* Pink Border Effect - Responsive */}
-      <div className="absolute inset-1 sm:inset-2 md:inset-4 border border-pink-400/30 sm:border-2 sm:border-pink-400/40 rounded-lg shadow-lg shadow-pink-400/20 pointer-events-none"></div>
+      <div className="absolute inset-1 border border-pink-400/30 rounded-lg shadow-lg shadow-pink-400/20 pointer-events-none"></div>
       
-      <div className="container mx-auto max-w-sm sm:max-w-md px-3 sm:px-4 py-4 sm:py-6 md:py-8 lg:py-10 relative z-10">
-        <div className="space-y-3 sm:space-y-4 md:space-y-6">
-          <div className="text-center space-y-1 sm:space-y-2 md:space-y-4">
-            <div className="flex items-center justify-center space-x-1 sm:space-x-2 md:space-x-3">
-              <Heart className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 lg:h-8 lg:w-8 text-pink-400" />
-              <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-pink-400 via-pink-500 to-pink-600 bg-clip-text text-transparent">
+      <div className="container mx-auto max-w-sm sm:max-w-md px-2 sm:px-3 py-2 sm:py-3 relative z-10 h-screen overflow-y-auto">
+        <div className="space-y-2 sm:space-y-3">
+          <div className="text-center space-y-1 sm:space-y-2">
+            <div className="flex items-center justify-center space-x-1 sm:space-x-2">
+              <Heart className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 text-pink-400" />
+              <h1 className="text-base sm:text-lg md:text-xl font-bold bg-gradient-to-r from-pink-400 via-pink-500 to-pink-600 bg-clip-text text-transparent">
                 Support Chiaa Gaming
               </h1>
-              <Heart className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 lg:h-8 lg:w-8 text-pink-400" />
+              <Heart className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 text-pink-400" />
             </div>
-            <p className="text-white/90 text-sm sm:text-base md:text-lg font-medium px-2">
+            <p className="text-white/90 text-xs sm:text-sm font-medium px-2">
               Send love and support to your favorite gamer!
             </p>
           </div>
           
           <div 
-            className="relative p-3 sm:p-4 md:p-6 rounded-xl border border-pink-400/30 shadow-2xl shadow-pink-400/20 overflow-hidden"
+            className="relative p-2 sm:p-3 rounded-xl border border-pink-400/30 shadow-2xl shadow-pink-400/20 overflow-hidden"
             style={{
               backgroundImage: `url('/lovable-uploads/162f24fe-3b90-4626-8223-c7e095161c73.png')`,
               backgroundSize: 'cover',
@@ -367,9 +367,9 @@ const ChiaaGamingPage = () => {
             {/* Overlay for form readability */}
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-xl"></div>
             
-            <form onSubmit={handleSubmit} className="relative z-10 space-y-2 sm:space-y-3 md:space-y-4">
-              <div className="space-y-1 md:space-y-2">
-                <label htmlFor="name" className="block text-xs sm:text-sm font-medium text-white">
+            <form onSubmit={handleSubmit} className="relative z-10 space-y-2 sm:space-y-3">
+              <div className="space-y-1">
+                <label htmlFor="name" className="block text-xs font-medium text-white">
                   Your Name
                 </label>
                 <Input 
@@ -378,12 +378,12 @@ const ChiaaGamingPage = () => {
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Enter your name"
                   disabled={isLoading}
-                  className="bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 h-8 sm:h-9 md:h-10 text-sm"
+                  className="bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 h-7 sm:h-8 text-xs sm:text-sm"
                 />
               </div>
               
-              <div className="space-y-1 md:space-y-2">
-                <label htmlFor="amount" className="block text-xs sm:text-sm font-medium text-white">
+              <div className="space-y-1">
+                <label htmlFor="amount" className="block text-xs font-medium text-white">
                   Donation Amount (₹)
                 </label>
                 <Input 
@@ -395,13 +395,13 @@ const ChiaaGamingPage = () => {
                   onChange={(e) => setAmount(e.target.value)}
                   placeholder="Minimum ₹1"
                   disabled={isLoading}
-                  className="bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 h-8 sm:h-9 md:h-10 text-sm"
+                  className="bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 h-7 sm:h-8 text-xs sm:text-sm"
                 />
                 <p className="text-xs text-white/80">Minimum donation is ₹1</p>
               </div>
               
-              <div className="space-y-1 md:space-y-2">
-                <label htmlFor="message" className="block text-xs sm:text-sm font-medium text-white">
+              <div className="space-y-1">
+                <label htmlFor="message" className="block text-xs font-medium text-white">
                   {getMessageLabel()}
                 </label>
                 <Textarea 
@@ -409,7 +409,7 @@ const ChiaaGamingPage = () => {
                   value={message}
                   onChange={handleMessageChange}
                   placeholder={getMessagePlaceholder()}
-                  className="h-16 sm:h-18 md:h-20 lg:h-24 bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 resize-none text-xs sm:text-sm"
+                  className="h-12 sm:h-14 bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 resize-none text-xs"
                   disabled={isMessageDisabled}
                   maxLength={maxMessageLength}
                 />
@@ -451,19 +451,19 @@ const ChiaaGamingPage = () => {
               
               <Button 
                 type="submit" 
-                className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white font-bold py-2 sm:py-2.5 md:py-3 rounded-lg shadow-lg shadow-pink-500/25 transition-all duration-300 transform hover:scale-105 border border-pink-400/50 text-xs sm:text-sm md:text-base mt-3 sm:mt-4"
+                className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white font-bold py-1.5 sm:py-2 rounded-lg shadow-lg shadow-pink-500/25 transition-all duration-300 transform hover:scale-105 border border-pink-400/50 text-xs sm:text-sm mt-2 sm:mt-3"
                 disabled={isLoading}
               >
                 {isLoading ? (
                   <div className="flex items-center justify-center space-x-2">
-                    <div className="animate-spin rounded-full h-3 w-3 sm:h-4 sm:w-4 border-2 border-white border-t-transparent"></div>
-                    <span className="text-xs sm:text-sm">Processing...</span>
+                    <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
+                    <span className="text-xs">Processing...</span>
                   </div>
                 ) : (
                   <div className="flex items-center justify-center space-x-2">
-                    <Heart className="h-3 w-3 sm:h-4 sm:w-4" />
-                    <span className="text-xs sm:text-sm md:text-base">Send Love & Support</span>
-                    <Heart className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <Heart className="h-3 w-3" />
+                    <span className="text-xs sm:text-sm">Send Love & Support</span>
+                    <Heart className="h-3 w-3" />
                   </div>
                 )}
               </Button>
