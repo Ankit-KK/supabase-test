@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -5,10 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { Heart, Gamepad2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import GifUpload from "@/components/GifUpload";
 import VoiceRecording from "@/components/VoiceRecording";
 import CustomSoundSelector from "@/components/CustomSoundSelector";
+import { uploadGif, uploadVoice } from "@/utils/mediaUpload";
 
 const ChiaaGamingPage = () => {
   const [name, setName] = useState("");
@@ -38,6 +39,15 @@ const ChiaaGamingPage = () => {
     }
   }, [selectedGif, selectedVoice]);
 
+  // Debug logging for custom sound selection
+  useEffect(() => {
+    console.log("CHIAA GAMING: Custom sound selected:", {
+      selectedCustomSoundId,
+      amount: parseFloat(amount),
+      isEligible: parseFloat(amount) >= 100
+    });
+  }, [selectedCustomSoundId, amount]);
+
   const handleGifSelect = (file: File | null) => {
     setSelectedGif(file);
     // Clear voice if GIF is selected
@@ -52,6 +62,15 @@ const ChiaaGamingPage = () => {
     if (file && selectedGif) {
       setSelectedGif(null);
     }
+  };
+
+  const handleCustomSoundSelect = (soundId: string | null) => {
+    console.log("CHIAA GAMING: Custom sound selection changed:", {
+      newSoundId: soundId,
+      previousSoundId: selectedCustomSoundId,
+      amount: parseFloat(amount)
+    });
+    setSelectedCustomSoundId(soundId);
   };
 
   const validateForm = () => {
@@ -87,82 +106,6 @@ const ChiaaGamingPage = () => {
     return true;
   };
 
-  const uploadGif = async (file: File): Promise<string | null> => {
-    try {
-      const fileExt = 'gif';
-      const fileName = `${Date.now()}-${Math.floor(Math.random() * 10000)}.${fileExt}`;
-      const filePath = fileName;
-
-      console.log("UPLOAD: Starting GIF upload to storage:", { fileName, fileSize: file.size });
-
-      const { data, error } = await supabase.storage
-        .from('donation-gifs')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (error) {
-        console.error("UPLOAD ERROR: Error uploading GIF:", error);
-        throw error;
-      }
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('donation-gifs')
-        .getPublicUrl(filePath);
-
-      console.log("UPLOAD SUCCESS: GIF uploaded successfully:", { 
-        publicUrl,
-        filePath,
-        fileName 
-      });
-      
-      return publicUrl;
-    } catch (error) {
-      console.error("UPLOAD ERROR: Error in uploadGif:", error);
-      return null;
-    }
-  };
-
-  const uploadVoice = async (file: File): Promise<string | null> => {
-    try {
-      const fileExt = 'webm';
-      const fileName = `voice-${Date.now()}-${Math.floor(Math.random() * 10000)}.${fileExt}`;
-      const filePath = fileName;
-
-      console.log("UPLOAD: Starting voice upload to storage:", { fileName, fileSize: file.size });
-
-      const { data, error } = await supabase.storage
-        .from('donation-gifs')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (error) {
-        console.error("UPLOAD ERROR: Error uploading voice:", error);
-        throw error;
-      }
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('donation-gifs')
-        .getPublicUrl(filePath);
-
-      console.log("UPLOAD SUCCESS: Voice uploaded successfully:", { 
-        publicUrl,
-        filePath,
-        fileName 
-      });
-      
-      return publicUrl;
-    } catch (error) {
-      console.error("UPLOAD ERROR: Error in uploadVoice:", error);
-      return null;
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -177,6 +120,11 @@ const ChiaaGamingPage = () => {
       const orderId = `chiaa_gaming_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
       
       console.log("DONATION: Creating Chiaa Gaming donation with order ID:", orderId);
+      console.log("DONATION: Custom sound data being processed:", {
+        selectedCustomSoundId,
+        amount: parseFloat(amount),
+        isEligibleForCustomSound: parseFloat(amount) >= 100
+      });
       
       let gifUrl = null;
       let voiceUrl = null;
@@ -238,7 +186,7 @@ const ChiaaGamingPage = () => {
         voiceUrl,
         voiceFileName: selectedVoice?.name || null,
         voiceFileSize: selectedVoice?.size || null,
-        customSoundId: selectedCustomSoundId,
+        customSoundId: selectedCustomSoundId, // Ensure this is properly passed
       };
       
       console.log("DONATION: Storing donation data in session storage:", {
@@ -246,6 +194,7 @@ const ChiaaGamingPage = () => {
         hasGif: !!gifUrl,
         hasVoice: !!voiceUrl,
         hasCustomSound: !!selectedCustomSoundId,
+        customSoundIdValue: selectedCustomSoundId,
         gifUrlPreview: gifUrl ? gifUrl.substring(0, 50) + "..." : null,
         voiceUrlPreview: voiceUrl ? voiceUrl.substring(0, 50) + "..." : null
       });
@@ -420,7 +369,7 @@ const ChiaaGamingPage = () => {
               />
 
               <CustomSoundSelector
-                onSoundSelect={setSelectedCustomSoundId}
+                onSoundSelect={handleCustomSoundSelect}
                 selectedSoundId={selectedCustomSoundId}
                 disabled={isLoading}
                 minAmount={100}
