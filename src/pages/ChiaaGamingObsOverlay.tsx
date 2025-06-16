@@ -4,8 +4,6 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ObsConfigProvider } from "@/contexts/ObsConfigContext";
 import DraggableResizableBox from "@/components/DraggableResizableBox";
-import { Button } from "@/components/ui/button";
-import { Volume2 } from "lucide-react";
 
 interface Donation {
   id: string;
@@ -23,8 +21,7 @@ const ChiaaGamingObsOverlay = () => {
   const [searchParams] = useSearchParams();
   const [currentDonation, setCurrentDonation] = useState<Donation | null>(null);
   const [totalDonations, setTotalDonations] = useState(0);
-  const [pendingCustomSound, setPendingCustomSound] = useState<string | null>(null);
-  const [audioEnabled, setAudioEnabled] = useState(false);
+  const [currentCustomSound, setCurrentCustomSound] = useState<string | null>(null);
   
   // Parse URL parameters
   const showMessages = searchParams.get("showMessages") === "true";
@@ -39,67 +36,6 @@ const ChiaaGamingObsOverlay = () => {
     goalName,
     goalTarget
   });
-
-  // Enable audio with user interaction
-  const enableAudio = async () => {
-    try {
-      // Create a silent audio context to enable audio
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      await audioContext.resume();
-      setAudioEnabled(true);
-      
-      // Play pending custom sound if any
-      if (pendingCustomSound) {
-        playCustomSound(pendingCustomSound);
-        setPendingCustomSound(null);
-      }
-      
-      console.log("Audio enabled successfully");
-    } catch (error) {
-      console.error("Failed to enable audio:", error);
-    }
-  };
-
-  // Play custom sound using URL
-  const playCustomSound = (customSoundUrl: string) => {
-    console.log('Playing custom sound from URL:', customSoundUrl);
-    
-    // If audio is not enabled, store the sound URL for later
-    if (!audioEnabled) {
-      console.log('Audio not enabled, storing sound for later playback:', customSoundUrl);
-      setPendingCustomSound(customSoundUrl);
-      return;
-    }
-    
-    const audio = new Audio(customSoundUrl);
-    audio.volume = 0.7; // Set volume to 70%
-    
-    audio.addEventListener('loadstart', () => {
-      console.log('Custom sound loading started:', customSoundUrl);
-    });
-    
-    audio.addEventListener('canplay', () => {
-      console.log('Custom sound can play:', customSoundUrl);
-    });
-    
-    audio.addEventListener('play', () => {
-      console.log('Custom sound playback started:', customSoundUrl);
-    });
-    
-    audio.addEventListener('ended', () => {
-      console.log('Custom sound playback ended:', customSoundUrl);
-    });
-    
-    audio.addEventListener('error', (e) => {
-      console.error('Custom sound playback error:', e, customSoundUrl);
-    });
-
-    audio.play().catch(error => {
-      console.error('Failed to play custom sound:', error, customSoundUrl);
-      // If it still fails, store for later
-      setPendingCustomSound(customSoundUrl);
-    });
-  };
 
   // Clean up media after it's displayed
   const cleanupMedia = async (donationId: string, mediaUrl: string, mediaType: 'gif' | 'voice') => {
@@ -207,7 +143,12 @@ const ChiaaGamingObsOverlay = () => {
               donationId: newDonation.id,
               paymentStatus: (payload.new as any).payment_status
             });
-            playCustomSound(newDonation.custom_sound_url);
+            setCurrentCustomSound(newDonation.custom_sound_url);
+            
+            // Clear custom sound after 5 seconds
+            setTimeout(() => {
+              setCurrentCustomSound(null);
+            }, 5000);
           }
           
           // Show message if enabled and has content to show
@@ -236,7 +177,7 @@ const ChiaaGamingObsOverlay = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [obsId, showMessages, audioEnabled]);
+  }, [obsId, showMessages]);
 
   const progressPercentage = Math.min((totalDonations / goalTarget) * 100, 100);
 
@@ -249,20 +190,25 @@ const ChiaaGamingObsOverlay = () => {
   return (
     <ObsConfigProvider>
       <div className="w-screen h-screen bg-transparent overflow-hidden relative">
-        {/* Audio Enable Button - Only show if audio is not enabled and there's a pending sound */}
-        {!audioEnabled && pendingCustomSound && (
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50">
-            <div className="bg-gradient-to-r from-pink-600/90 to-purple-600/90 backdrop-blur-sm rounded-lg p-6 shadow-2xl border border-pink-500/50 text-center">
-              <h3 className="text-white font-bold text-lg mb-4">🎵 Custom Sound Alert!</h3>
-              <p className="text-pink-100 text-sm mb-4">Click to enable audio and play custom donation sound</p>
-              <Button
-                onClick={enableAudio}
-                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-2 px-4 rounded-lg shadow-lg"
-              >
-                <Volume2 className="w-4 h-4 mr-2" />
-                Enable Audio & Play Sound
-              </Button>
-            </div>
+        {/* Custom Sound Player - auto-play just like voice messages */}
+        {currentCustomSound && (
+          <div className="absolute top-4 left-4">
+            <audio
+              src={currentCustomSound}
+              autoPlay
+              className="hidden"
+              onLoad={() => {
+                console.log("Custom sound loaded successfully:", currentCustomSound);
+              }}
+              onError={(e) => {
+                console.error("Failed to load custom sound:", currentCustomSound);
+                console.error("Audio error event:", e);
+              }}
+              onEnded={() => {
+                console.log("Custom sound playback ended");
+                setCurrentCustomSound(null);
+              }}
+            />
           </div>
         )}
 
