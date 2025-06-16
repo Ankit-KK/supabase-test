@@ -113,19 +113,13 @@ export const createDonationRecord = async (donation: DonationRecord) => {
       throw new Error(error.message || `Failed to create donation record in ${tableName}`);
     }
 
-    // Check if data exists first
-    if (!data) {
-      console.error("No donation record returned from database");
-      throw new Error("Failed to create donation record - no data returned");
-    }
-
-    // Now check if data has the required structure and use type assertion
-    if (typeof data !== 'object' || !('id' in data) || typeof (data as any).id !== 'string') {
-      console.error("Invalid donation record returned:", data);
+    // Combined null check and type validation
+    if (!data || typeof data !== 'object' || typeof (data as any).id !== 'string') {
+      console.error("Invalid or missing donation record:", data);
       throw new Error("Failed to create donation record - invalid response");
     }
 
-    // Use type assertion after validation
+    // Now TypeScript knows data is not null and has the required structure
     const validatedData = data as { id: string; [key: string]: any };
     
     console.log(`Successfully created donation record in ${tableName}:`, validatedData);
