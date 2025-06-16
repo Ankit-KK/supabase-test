@@ -113,29 +113,25 @@ export const createDonationRecord = async (donation: DonationRecord) => {
       throw new Error(error.message || `Failed to create donation record in ${tableName}`);
     }
 
-    // Early return if data is null
-    if (!data) {
-      console.error("No donation record returned from database");
-      throw new Error("Failed to create donation record - no data returned");
-    }
-
-    // Type guard to ensure data has the required structure
-    if (typeof data !== 'object' || !('id' in data) || typeof data.id !== 'string') {
+    // Validate and cast data to ensure it has the expected structure
+    if (!data || typeof data !== 'object' || !('id' in data) || typeof data.id !== 'string') {
       console.error("Invalid donation record returned:", data);
       throw new Error("Failed to create donation record - invalid response");
     }
 
-    // Now TypeScript knows data is not null and has an id property
-    console.log(`Successfully created donation record in ${tableName}:`, data);
+    // Cast to a type that TypeScript understands has an id
+    const validatedData = data as { id: string; [key: string]: any };
+    
+    console.log(`Successfully created donation record in ${tableName}:`, validatedData);
 
     // Create donation_gifs record if GIF was uploaded for chiaa_gaming
     if (donation.donationType === "chiaa_gaming" && donation.gifUrl && donation.gifFileName && donation.gifFileSize) {
-      console.log("Creating donation_gifs record for:", data.id);
+      console.log("Creating donation_gifs record for:", validatedData.id);
       
       const { error: gifRecordError } = await supabase
         .from('donation_gifs')
         .insert({
-          donation_id: data.id,
+          donation_id: validatedData.id,
           gif_url: donation.gifUrl,
           file_name: donation.gifFileName,
           file_size: donation.gifFileSize,
