@@ -110,7 +110,7 @@ const ChiaaGamingObsOverlay = () => {
 
     fetchTotalDonations();
 
-    // Set up real-time subscription for new donations - show ALL donations regardless of payment status
+    // Set up real-time subscription for new donations - show ALL donations regardless of payment status for testing
     const channel = supabase
       .channel(`chiaa-gaming-obs-${obsId}`)
       .on(
@@ -119,7 +119,7 @@ const ChiaaGamingObsOverlay = () => {
           event: 'INSERT',
           schema: 'public',
           table: 'chiaa_gaming_donations'
-          // Removed payment_status filter to show all donations
+          // Removed payment_status filter to show all donations including failed ones for testing
         },
         (payload) => {
           const newDonation = payload.new as Donation;
@@ -134,7 +134,7 @@ const ChiaaGamingObsOverlay = () => {
             setTotalDonations(prev => prev + Number(newDonation.amount));
           }
           
-          // Show message if enabled - regardless of payment status for testing
+          // Show message if enabled - show ALL donations for testing (including failed)
           // Display if there's a message, GIF, voice, or custom sound alert
           if (showMessages && (newDonation.message || newDonation.gif_url || newDonation.voice_url || newDonation.include_sound)) {
             setCurrentDonation(newDonation);

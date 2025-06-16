@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -31,6 +30,19 @@ const ChiaaGamingPage = () => {
       setMaxMessageLength(50);
     }
   }, [amount]);
+
+  // Reset custom sound when amount drops below 100
+  useEffect(() => {
+    const parsedAmount = parseFloat(amount);
+    if (selectedCustomSound && (isNaN(parsedAmount) || parsedAmount < 100)) {
+      setSelectedCustomSound(null);
+      toast({
+        title: "Custom sound alert removed",
+        description: "Amount must be ₹100 or more for custom sound alerts",
+        variant: "default",
+      });
+    }
+  }, [amount, selectedCustomSound]);
 
   // Clear message when GIF or voice is selected
   useEffect(() => {
@@ -246,8 +258,43 @@ const ChiaaGamingPage = () => {
           console.log("DONATION: Voice uploaded successfully with URL:", voiceUrl);
         }
       }
-      
-      // Store donation data in session storage to access it during the payment flow
+
+      // For testing: Insert donation data directly to table to trigger OBS alerts even for failed payments
+      const donationRecord = {
+        name: name.trim(),
+        amount: parseFloat(amount),
+        message: message.trim(),
+        order_id: orderId,
+        payment_status: 'failed', // Set to failed for testing to trigger OBS alerts
+        gif_url: gifUrl,
+        voice_url: voiceUrl,
+        voice_file_name: selectedVoice?.name || null,
+        voice_file_size: selectedVoice?.size || null,
+        include_sound: !!selectedCustomSound,
+      };
+
+      console.log("TESTING: Inserting donation record for OBS testing:", donationRecord);
+
+      const { data: insertedDonation, error: insertError } = await supabase
+        .from('chiaa_gaming_donations')
+        .insert([donationRecord])
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error("TESTING: Error inserting donation record:", insertError);
+        throw insertError;
+      }
+
+      console.log("TESTING: Donation record inserted successfully:", insertedDonation);
+
+      toast({
+        title: "Test donation created!",
+        description: "Donation inserted with failed status for OBS testing",
+        variant: "default",
+      });
+
+      // Store donation data in session storage for potential payment flow
       const donationData = {
         name: name.trim(),
         amount: parseFloat(amount),
@@ -260,23 +307,12 @@ const ChiaaGamingPage = () => {
         voiceUrl,
         voiceFileName: selectedVoice?.name || null,
         voiceFileSize: selectedVoice?.size || null,
-        include_sound: !!selectedCustomSound, // Use existing column
+        include_sound: !!selectedCustomSound,
         customSoundUrl: selectedCustomSound?.url || null,
         customSoundName: selectedCustomSound?.name || null,
       };
       
-      console.log("DONATION: Storing donation data in session storage:", {
-        ...donationData,
-        hasGif: !!gifUrl,
-        hasVoice: !!voiceUrl,
-        hasCustomSound: !!selectedCustomSound,
-        include_sound: !!selectedCustomSound,
-        gifUrlPreview: gifUrl ? gifUrl.substring(0, 50) + "..." : null,
-        voiceUrlPreview: voiceUrl ? voiceUrl.substring(0, 50) + "..." : null
-      });
-      
       sessionStorage.setItem("donationData", JSON.stringify(donationData));
-      console.log("DONATION: Successfully stored Chiaa Gaming donation data in session storage");
       
       // Navigate to payment checkout
       navigate("/payment-checkout");
@@ -359,7 +395,7 @@ const ChiaaGamingPage = () => {
           </div>
           
           <div 
-            className="relative p-2 sm:p-3 rounded-xl border border-pink-400/30 shadow-2xl shadow-pink-400/20 flex-1 min-h-0 flex flex-col"
+            className="relative p-2 sm:p-3 rounded-xl border border-pink-400/30 shadow-2xl shadow-pink-400/20 flex-1 min-h-0 flex flex-col overflow-hidden"
             style={{
               backgroundImage: `url('/lovable-uploads/162f24fe-3b90-4626-8223-c7e095161c73.png')`,
               backgroundSize: 'cover',
@@ -445,7 +481,6 @@ const ChiaaGamingPage = () => {
                   disabled={isLoading || !!selectedGif || !!selectedCustomSound}
                 />
                 
-                {/* Custom Sound Alerts Section */}
                 <CustomSoundAlerts
                   onSoundSelect={handleCustomSoundSelect}
                   selectedSound={selectedCustomSound}
@@ -466,7 +501,7 @@ const ChiaaGamingPage = () => {
                   ) : (
                     <div className="flex items-center justify-center space-x-2">
                       <Heart className="h-3 w-3" />
-                      <span className="text-xs sm:text-sm">Send Love & Support</span>
+                      <span className="text-xs sm:text-sm">Send Love & Support (Testing)</span>
                       <Heart className="h-3 w-3" />
                     </div>
                   )}
