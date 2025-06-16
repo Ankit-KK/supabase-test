@@ -114,7 +114,12 @@ export const createDonationRecord = async (donation: DonationRecord) => {
     }
 
     // Check if data exists and has required properties
-    if (!data || typeof data !== 'object' || !('id' in data)) {
+    if (!data) {
+      console.error("No donation record returned from database");
+      throw new Error("Failed to create donation record - no data returned");
+    }
+
+    if (typeof data !== 'object' || !('id' in data)) {
       console.error("Invalid donation record returned:", data);
       throw new Error("Failed to create donation record - invalid response");
     }
