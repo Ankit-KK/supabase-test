@@ -139,7 +139,9 @@ const PaymentStatus = () => {
             // ALWAYS include Voice data for chiaa_gaming donations, regardless of payment status
             voiceUrl: donationData.voiceUrl,
             voiceFileName: donationData.voiceFileName,
-            voiceFileSize: donationData.voiceFileSize
+            voiceFileSize: donationData.voiceFileSize,
+            // ALWAYS include Custom Sound URL for chiaa_gaming donations, regardless of payment status
+            customSoundUrl: donationData.customSoundUrl
           };
           
           // Add include_sound field if it exists in the donation data
@@ -148,9 +150,10 @@ const PaymentStatus = () => {
             recordData.include_sound = !!donationData.include_sound;
           }
           
-          console.log("Creating donation record with GIF and Voice data (regardless of payment status):", {
+          console.log("Creating donation record with GIF, Voice and Custom Sound data (regardless of payment status):", {
             hasGifUrl: !!recordData.gifUrl,
             hasVoiceUrl: !!recordData.voiceUrl,
+            hasCustomSoundUrl: !!recordData.customSoundUrl,
             paymentStatus,
             orderId
           });
