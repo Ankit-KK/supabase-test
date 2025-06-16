@@ -79,7 +79,6 @@ export type Database = {
         Row: {
           amount: number
           created_at: string | null
-          custom_sound_id: string | null
           custom_sound_name: string | null
           custom_sound_url: string | null
           gif_url: string | null
@@ -96,7 +95,6 @@ export type Database = {
         Insert: {
           amount: number
           created_at?: string | null
-          custom_sound_id?: string | null
           custom_sound_name?: string | null
           custom_sound_url?: string | null
           gif_url?: string | null
@@ -113,7 +111,6 @@ export type Database = {
         Update: {
           amount?: number
           created_at?: string | null
-          custom_sound_id?: string | null
           custom_sound_name?: string | null
           custom_sound_url?: string | null
           gif_url?: string | null

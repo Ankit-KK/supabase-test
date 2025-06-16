@@ -3,7 +3,12 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Volume2, VolumeX, Play, Pause } from "lucide-react";
-import { useCustomSounds } from "@/hooks/useCustomSounds";
+
+interface CustomSound {
+  id: string;
+  name: string;
+  file_url: string;
+}
 
 interface CustomSoundSelectorProps {
   onSoundSelect: (soundUrl: string | null) => void;
@@ -20,9 +25,32 @@ const CustomSoundSelector: React.FC<CustomSoundSelectorProps> = ({
   minAmount = 100,
   currentAmount = 0
 }) => {
-  const { sounds, isLoading, error } = useCustomSounds();
   const [previewAudio, setPreviewAudio] = useState<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+
+  // Hardcoded sound options with direct URLs
+  const sounds: CustomSound[] = [
+    {
+      id: "knock_left",
+      name: "Knock left",
+      file_url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/custom-sounds/knock-left-ear-made-with-Voicemod.mp3"
+    },
+    {
+      id: "raze_ult",
+      name: "Raze ult",
+      file_url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/custom-sounds/raze-fire-in-the-hole.mp3"
+    },
+    {
+      id: "sova_ult",
+      name: "Sova ult",
+      file_url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/custom-sounds/valorant-sova-made-with-Voicemod.mp3"
+    },
+    {
+      id: "spike_plant",
+      name: "Spike plant",
+      file_url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/custom-sounds/valorant-spike-plant.mp3"
+    }
+  ];
 
   const isEligible = currentAmount >= minAmount;
   const isDisabled = disabled || !isEligible;
@@ -68,17 +96,6 @@ const CustomSoundSelector: React.FC<CustomSoundSelectorProps> = ({
     }
   };
 
-  if (error) {
-    return (
-      <div className="space-y-2">
-        <label className="block text-xs sm:text-sm font-medium text-white">
-          Custom Sound Alert (₹{minAmount}+)
-        </label>
-        <p className="text-red-400 text-xs">Failed to load custom sounds</p>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-2">
       <label className="block text-xs sm:text-sm font-medium text-white">
@@ -89,10 +106,10 @@ const CustomSoundSelector: React.FC<CustomSoundSelectorProps> = ({
         <Select
           value={selectedSound?.id || "none"}
           onValueChange={handleSoundSelect}
-          disabled={isDisabled || isLoading}
+          disabled={isDisabled}
         >
           <SelectTrigger className="bg-white/95 border-pink-300 text-gray-800 focus:border-pink-500 focus:ring-pink-500/50 h-8 sm:h-9 md:h-10 text-sm disabled:opacity-50">
-            <SelectValue placeholder={isLoading ? "Loading sounds..." : "Choose a sound alert"} />
+            <SelectValue placeholder="Choose a sound alert" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="none">
