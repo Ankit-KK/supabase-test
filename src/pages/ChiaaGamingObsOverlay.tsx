@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +12,7 @@ interface Donation {
   created_at: string;
   gif_url?: string;
   voice_url?: string;
+  include_sound?: boolean;
 }
 
 const ChiaaGamingObsOverlay = () => {
@@ -126,6 +126,7 @@ const ChiaaGamingObsOverlay = () => {
           console.log("New donation received in OBS overlay:", newDonation);
           console.log("Donation has GIF URL:", newDonation.gif_url);
           console.log("Donation has Voice URL:", newDonation.voice_url);
+          console.log("Donation has custom sound (include_sound):", newDonation.include_sound);
           console.log("Payment status:", (payload.new as any).payment_status);
           
           // Update total for goal only if payment is successful
@@ -134,7 +135,8 @@ const ChiaaGamingObsOverlay = () => {
           }
           
           // Show message if enabled - regardless of payment status for testing
-          if (showMessages && (newDonation.message || newDonation.gif_url || newDonation.voice_url)) {
+          // Display if there's a message, GIF, voice, or custom sound alert
+          if (showMessages && (newDonation.message || newDonation.gif_url || newDonation.voice_url || newDonation.include_sound)) {
             setCurrentDonation(newDonation);
             
             // Auto-hide after 12 seconds and cleanup media if present
@@ -166,14 +168,14 @@ const ChiaaGamingObsOverlay = () => {
   // Check if we should hide the donation box (when GIF or voice is present)
   const shouldHideDonationBox = currentDonation && (currentDonation.gif_url || currentDonation.voice_url);
   
-  // Check if we should show text message (only if no voice message)
-  const shouldShowTextMessage = currentDonation && currentDonation.message && !currentDonation.voice_url;
+  // Check if we should show text message (only if no voice message and no custom sound)
+  const shouldShowTextMessage = currentDonation && currentDonation.message && !currentDonation.voice_url && !currentDonation.include_sound;
 
   return (
     <ObsConfigProvider>
       <div className="w-screen h-screen bg-transparent overflow-hidden relative">
-        {/* Donation Messages - Only show pink box if no GIF or voice */}
-        {showMessages && currentDonation && !shouldHideDonationBox && (
+        {/* Donation Messages - Only show pink box if no GIF, voice, or custom sound */}
+        {showMessages && currentDonation && !shouldHideDonationBox && !currentDonation.include_sound && (
           <DraggableResizableBox className="animate-slide-in-right">
             <div className="bg-gradient-to-r from-pink-600/90 to-purple-600/90 backdrop-blur-sm rounded-lg p-4 shadow-2xl border border-pink-500/50 max-w-md">
               <div className="flex items-center space-x-3 mb-2">
@@ -184,6 +186,23 @@ const ChiaaGamingObsOverlay = () => {
               {shouldShowTextMessage && (
                 <p className="text-pink-50 text-sm leading-relaxed">{currentDonation.message}</p>
               )}
+            </div>
+          </DraggableResizableBox>
+        )}
+
+        {/* Custom Sound Alert Display - when include_sound is true */}
+        {showMessages && currentDonation && currentDonation.include_sound && !currentDonation.gif_url && !currentDonation.voice_url && (
+          <DraggableResizableBox className="animate-slide-in-right">
+            <div className="bg-gradient-to-r from-purple-600/90 to-blue-600/90 backdrop-blur-sm rounded-lg p-6 shadow-2xl border border-purple-500/50 max-w-md">
+              <div className="flex items-center space-x-3 mb-3">
+                <div className="w-4 h-4 bg-purple-400 rounded-full animate-pulse"></div>
+                <span className="text-purple-100 font-bold text-xl">{currentDonation.name}</span>
+                <span className="text-purple-300 font-semibold text-lg">₹{Number(currentDonation.amount).toLocaleString()}</span>
+              </div>
+              <div className="text-center">
+                <div className="text-purple-200 text-lg font-semibold mb-2">🔊 Custom Sound Alert!</div>
+                <div className="text-purple-100 text-sm">Playing custom sound...</div>
+              </div>
             </div>
           </DraggableResizableBox>
         )}

@@ -21,7 +21,7 @@ export interface DonationRow {
   message: string;
   created_at: string;
   payment_status: string;
-  include_sound?: boolean; // Optional for chiaa_gaming
+  include_sound?: boolean; // This column exists in chiaa_gaming_donations
   gif_url?: string; // Optional for chiaa_gaming
   voice_url?: string; // Optional for chiaa_gaming
   voice_file_name?: string; // Optional for chiaa_gaming

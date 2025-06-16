@@ -96,11 +96,11 @@ const ChiaaGamingPage = () => {
       return false;
     }
 
-    // Only require message if no GIF or voice is uploaded
-    if (!message.trim() && !selectedGif && !selectedVoice) {
+    // Only require message if no GIF, voice, or custom sound is selected
+    if (!message.trim() && !selectedGif && !selectedVoice && !selectedCustomSound) {
       toast({
-        title: "Message, GIF, or Voice required",
-        description: "Please enter a message, upload a GIF, or record a voice message",
+        title: "Message, GIF, Voice, or Sound required",
+        description: "Please enter a message, upload a GIF, record a voice message, or select a custom sound",
         variant: "destructive",
       });
       return false;
@@ -260,6 +260,7 @@ const ChiaaGamingPage = () => {
         voiceUrl,
         voiceFileName: selectedVoice?.name || null,
         voiceFileSize: selectedVoice?.size || null,
+        include_sound: !!selectedCustomSound, // Use existing column
         customSoundUrl: selectedCustomSound?.url || null,
         customSoundName: selectedCustomSound?.name || null,
       };
@@ -269,6 +270,7 @@ const ChiaaGamingPage = () => {
         hasGif: !!gifUrl,
         hasVoice: !!voiceUrl,
         hasCustomSound: !!selectedCustomSound,
+        include_sound: !!selectedCustomSound,
         gifUrlPreview: gifUrl ? gifUrl.substring(0, 50) + "..." : null,
         voiceUrlPreview: voiceUrl ? voiceUrl.substring(0, 50) + "..." : null
       });
