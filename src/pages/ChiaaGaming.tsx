@@ -29,6 +29,29 @@ const ChiaaGamingPage = () => {
     }
   }, [amount]);
 
+  // Clear message when GIF or voice is selected
+  useEffect(() => {
+    if (selectedGif || selectedVoice) {
+      setMessage("");
+    }
+  }, [selectedGif, selectedVoice]);
+
+  const handleGifSelect = (file: File | null) => {
+    setSelectedGif(file);
+    // Clear voice if GIF is selected
+    if (file && selectedVoice) {
+      setSelectedVoice(null);
+    }
+  };
+
+  const handleVoiceSelect = (file: File | null) => {
+    setSelectedVoice(file);
+    // Clear GIF if voice is selected
+    if (file && selectedGif) {
+      setSelectedGif(null);
+    }
+  };
+
   const validateForm = () => {
     if (!name.trim()) {
       toast({
@@ -248,8 +271,22 @@ const ChiaaGamingPage = () => {
     }
   };
 
-  // Check if message input should be disabled (when GIF is uploaded)
-  const isMessageDisabled = !!selectedGif || isLoading;
+  // Get placeholder text based on what's selected
+  const getMessagePlaceholder = () => {
+    if (selectedGif) return "Message disabled when GIF is uploaded";
+    if (selectedVoice) return "Message disabled when voice is recorded";
+    return "Send your sweet message to Chiaa!";
+  };
+
+  // Get message label based on what's selected
+  const getMessageLabel = () => {
+    if (selectedGif) return "Sweet Message (Disabled - GIF uploaded)";
+    if (selectedVoice) return "Sweet Message (Disabled - Voice recorded)";
+    return "Sweet Message";
+  };
+
+  // Check if message input should be disabled (when GIF or voice is uploaded)
+  const isMessageDisabled = !!selectedGif || !!selectedVoice || isLoading;
 
   return (
     <div 
@@ -339,36 +376,43 @@ const ChiaaGamingPage = () => {
               
               <div className="space-y-1 md:space-y-2">
                 <label htmlFor="message" className="block text-xs sm:text-sm font-medium text-white">
-                  Sweet Message {selectedGif ? "(Disabled - GIF uploaded)" : ""}
+                  {getMessageLabel()}
                 </label>
                 <Textarea 
                   id="message"
                   value={message}
                   onChange={handleMessageChange}
-                  placeholder={selectedGif ? "Message disabled when GIF is uploaded" : "Send your sweet message to Chiaa!"}
+                  placeholder={getMessagePlaceholder()}
                   className="h-16 sm:h-18 md:h-20 lg:h-24 bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 resize-none text-xs sm:text-sm"
                   disabled={isMessageDisabled}
                   maxLength={maxMessageLength}
                 />
                 <p className="text-xs text-white/80">
-                  {message.length}/{maxMessageLength} characters
-                  {parseFloat(amount) >= 100 ? 
-                    " (100 chars for ₹100+ donations)" : 
-                    " (50 chars for donations below ₹100)"}
-                  {selectedGif && " - Message disabled when GIF is uploaded"}
+                  {!selectedGif && !selectedVoice ? (
+                    <>
+                      {message.length}/{maxMessageLength} characters
+                      {parseFloat(amount) >= 100 ? 
+                        " (100 chars for ₹100+ donations)" : 
+                        " (50 chars for donations below ₹100)"}
+                    </>
+                  ) : (
+                    <>
+                      Message disabled when {selectedGif ? "GIF" : "voice"} is {selectedGif ? "uploaded" : "recorded"}
+                    </>
+                  )}
                 </p>
               </div>
 
               <GifUpload
-                onGifSelect={setSelectedGif}
+                onGifSelect={handleGifSelect}
                 selectedGif={selectedGif}
-                disabled={isLoading}
+                disabled={isLoading || !!selectedVoice}
               />
 
               <VoiceRecording
-                onVoiceSelect={setSelectedVoice}
+                onVoiceSelect={handleVoiceSelect}
                 selectedVoice={selectedVoice}
-                disabled={isLoading}
+                disabled={isLoading || !!selectedGif}
               />
               
               <Button 

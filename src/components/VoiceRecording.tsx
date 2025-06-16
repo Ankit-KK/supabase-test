@@ -132,7 +132,7 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({ onVoiceSelect, selected
   return (
     <div className="space-y-3">
       <label className="block text-xs sm:text-sm font-medium text-white">
-        Voice Message (Optional)
+        Voice Message (Optional) {disabled && "(Disabled - GIF selected)"}
       </label>
       
       {!selectedVoice ? (
@@ -143,10 +143,10 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({ onVoiceSelect, selected
               variant="outline"
               onClick={startRecording}
               disabled={disabled}
-              className="w-full bg-white/95 border-pink-300 text-gray-800 hover:bg-white hover:border-pink-400 h-10 text-sm"
+              className="w-full bg-white/95 border-pink-300 text-gray-800 hover:bg-white hover:border-pink-400 h-10 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Mic className="w-4 h-4 mr-2" />
-              Start Recording
+              {disabled ? "GIF selected - Voice disabled" : "Start Recording"}
             </Button>
           ) : (
             <div className="space-y-2">
