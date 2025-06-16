@@ -12,6 +12,7 @@ interface Donation {
   message: string;
   created_at: string;
   gif_url?: string;
+  voice_url?: string;
 }
 
 const ChiaaGamingObsOverlay = () => {
@@ -34,26 +35,27 @@ const ChiaaGamingObsOverlay = () => {
     goalTarget
   });
 
-  // Clean up GIF after it's displayed
-  const cleanupGif = async (donationId: string, gifUrl: string) => {
+  // Clean up media after it's displayed
+  const cleanupMedia = async (donationId: string, mediaUrl: string, mediaType: 'gif' | 'voice') => {
     try {
-      console.log("Cleaning up GIF for donation:", donationId);
+      console.log(`Cleaning up ${mediaType} for donation:`, donationId);
       
-      // Mark GIF as displayed in the database
+      // Mark media as displayed in the database
       const { error: updateError } = await supabase
         .from("donation_gifs")
         .update({ 
           displayed_at: new Date().toISOString(),
           status: 'displayed'
         })
-        .eq("donation_id", donationId);
+        .eq("donation_id", donationId)
+        .eq("file_type", mediaType);
 
       if (updateError) {
-        console.error("Error marking GIF as displayed:", updateError);
+        console.error(`Error marking ${mediaType} as displayed:`, updateError);
       }
 
       // Extract file path from URL for deletion
-      const urlParts = gifUrl.split('/');
+      const urlParts = mediaUrl.split('/');
       const fileName = urlParts[urlParts.length - 1];
       
       // Delete the file from storage
@@ -62,9 +64,9 @@ const ChiaaGamingObsOverlay = () => {
         .remove([fileName]);
 
       if (deleteError) {
-        console.error("Error deleting GIF file:", deleteError);
+        console.error(`Error deleting ${mediaType} file:`, deleteError);
       } else {
-        console.log("GIF file deleted successfully:", fileName);
+        console.log(`${mediaType} file deleted successfully:`, fileName);
       }
 
       // Mark as deleted in database
@@ -74,14 +76,15 @@ const ChiaaGamingObsOverlay = () => {
           deleted_at: new Date().toISOString(),
           status: 'deleted'
         })
-        .eq("donation_id", donationId);
+        .eq("donation_id", donationId)
+        .eq("file_type", mediaType);
 
       if (markDeletedError) {
-        console.error("Error marking GIF as deleted:", markDeletedError);
+        console.error(`Error marking ${mediaType} as deleted:`, markDeletedError);
       }
 
     } catch (error) {
-      console.error("Error in cleanupGif:", error);
+      console.error(`Error in cleanup${mediaType}:`, error);
     }
   };
 
@@ -122,6 +125,7 @@ const ChiaaGamingObsOverlay = () => {
           const newDonation = payload.new as Donation;
           console.log("New donation received in OBS overlay:", newDonation);
           console.log("Donation has GIF URL:", newDonation.gif_url);
+          console.log("Donation has Voice URL:", newDonation.voice_url);
           console.log("Payment status:", (payload.new as any).payment_status);
           
           // Update total for goal only if payment is successful
@@ -133,11 +137,15 @@ const ChiaaGamingObsOverlay = () => {
           if (showMessages && newDonation.message) {
             setCurrentDonation(newDonation);
             
-            // Auto-hide after 12 seconds and cleanup GIF if present
+            // Auto-hide after 12 seconds and cleanup media if present
             setTimeout(() => {
               if (newDonation.gif_url) {
                 console.log("Cleaning up GIF after display:", newDonation.gif_url);
-                cleanupGif(newDonation.id, newDonation.gif_url);
+                cleanupMedia(newDonation.id, newDonation.gif_url, 'gif');
+              }
+              if (newDonation.voice_url) {
+                console.log("Cleaning up Voice after display:", newDonation.voice_url);
+                cleanupMedia(newDonation.id, newDonation.voice_url, 'voice');
               }
               setCurrentDonation(null);
             }, 12000);
@@ -177,6 +185,27 @@ const ChiaaGamingObsOverlay = () => {
                       console.error("Failed to load GIF:", currentDonation.gif_url);
                       console.error("Image error event:", e);
                       e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Voice Audio Player - auto-play voice messages */}
+              {currentDonation.voice_url && (
+                <div className="mb-3 flex justify-center">
+                  <audio
+                    src={currentDonation.voice_url}
+                    autoPlay
+                    className="w-full max-w-xs"
+                    onLoad={() => {
+                      console.log("Voice audio loaded successfully:", currentDonation.voice_url);
+                    }}
+                    onError={(e) => {
+                      console.error("Failed to load voice audio:", currentDonation.voice_url);
+                      console.error("Audio error event:", e);
+                    }}
+                    onEnded={() => {
+                      console.log("Voice audio playback ended");
                     }}
                   />
                 </div>

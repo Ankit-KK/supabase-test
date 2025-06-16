@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -157,7 +156,7 @@ const ChiaaGamingPage = () => {
       let gifUrl = null;
       let voiceUrl = null;
       
-      // Upload GIF if selected
+      // Upload GIF if selected - ALWAYS try to upload regardless of payment status
       if (selectedGif) {
         console.log("DONATION: Uploading GIF for donation:", {
           orderId,
@@ -179,7 +178,7 @@ const ChiaaGamingPage = () => {
         }
       }
 
-      // Upload Voice if selected
+      // Upload Voice if selected - ALWAYS try to upload regardless of payment status
       if (selectedVoice) {
         console.log("DONATION: Uploading voice for donation:", {
           orderId,

@@ -86,6 +86,9 @@ export type Database = {
           name: string
           order_id: string
           payment_status: string
+          voice_file_name: string | null
+          voice_file_size: number | null
+          voice_url: string | null
         }
         Insert: {
           amount: number
@@ -97,6 +100,9 @@ export type Database = {
           name: string
           order_id: string
           payment_status?: string
+          voice_file_name?: string | null
+          voice_file_size?: number | null
+          voice_url?: string | null
         }
         Update: {
           amount?: number
@@ -108,6 +114,9 @@ export type Database = {
           name?: string
           order_id?: string
           payment_status?: string
+          voice_file_name?: string | null
+          voice_file_size?: number | null
+          voice_url?: string | null
         }
         Relationships: []
       }
@@ -118,6 +127,7 @@ export type Database = {
           donation_id: string | null
           file_name: string
           file_size: number
+          file_type: string | null
           gif_url: string
           id: string
           status: string | null
@@ -129,6 +139,7 @@ export type Database = {
           donation_id?: string | null
           file_name: string
           file_size: number
+          file_type?: string | null
           gif_url: string
           id?: string
           status?: string | null
@@ -140,6 +151,7 @@ export type Database = {
           donation_id?: string | null
           file_name?: string
           file_size?: number
+          file_type?: string | null
           gif_url?: string
           id?: string
           status?: string | null
