@@ -82,31 +82,63 @@ export const createDonationRecord = async (donationData: {
   try {
     console.log("Creating donation record:", donationData);
     
-    const { data, error } = await supabase
-      .from('chiaa_gaming_donations')
-      .insert([{
-        name: donationData.name,
-        amount: donationData.amount,
-        message: donationData.message,
-        order_id: donationData.order_id,
-        payment_status: donationData.payment_status,
-        gif_url: donationData.gifUrl,
-        voice_url: donationData.voiceUrl,
-        voice_file_name: donationData.voiceFileName,
-        voice_file_size: donationData.voiceFileSize,
-        include_sound: donationData.include_sound || false,
-        custom_sound_id: donationData.customSoundId,
-        custom_sound_name: donationData.customSoundName,
-        custom_sound_url: donationData.customSoundUrl
-      }]);
+    // Determine which table to insert into based on donation type
+    const tableName = donationData.donationType === 'ankit' ? 'ankit_donations' : 'chiaa_gaming_donations';
+    
+    if (donationData.donationType === 'ankit') {
+      // Insert into ankit_donations table (simpler schema)
+      const { data, error } = await supabase
+        .from('ankit_donations')
+        .insert([{
+          name: donationData.name,
+          amount: donationData.amount,
+          message: donationData.message,
+          order_id: donationData.order_id,
+          payment_status: donationData.payment_status
+        }]);
 
-    if (error) {
-      console.error("Error creating donation record:", error);
-      throw error;
+      if (error) {
+        console.error("Error creating ankit donation record:", error);
+        throw error;
+      }
+
+      console.log("Ankit donation record created successfully:", data);
+      return data;
+    } else {
+      // Insert into chiaa_gaming_donations table (full schema with media and custom sounds)
+      console.log("🔊 CUSTOM SOUND: Inserting donation with custom sound data:", {
+        customSoundId: donationData.customSoundId,
+        customSoundName: donationData.customSoundName,
+        customSoundUrl: donationData.customSoundUrl,
+        include_sound: donationData.include_sound
+      });
+
+      const { data, error } = await supabase
+        .from('chiaa_gaming_donations')
+        .insert([{
+          name: donationData.name,
+          amount: donationData.amount,
+          message: donationData.message,
+          order_id: donationData.order_id,
+          payment_status: donationData.payment_status,
+          gif_url: donationData.gifUrl,
+          voice_url: donationData.voiceUrl,
+          voice_file_name: donationData.voiceFileName,
+          voice_file_size: donationData.voiceFileSize,
+          include_sound: donationData.include_sound || false,
+          custom_sound_id: donationData.customSoundId,
+          custom_sound_name: donationData.customSoundName,
+          custom_sound_url: donationData.customSoundUrl
+        }]);
+
+      if (error) {
+        console.error("Error creating chiaa gaming donation record:", error);
+        throw error;
+      }
+
+      console.log("🎵 CUSTOM SOUND: Chiaa gaming donation record created successfully with custom sound data:", data);
+      return data;
     }
-
-    console.log("Donation record created successfully:", data);
-    return data;
   } catch (error) {
     console.error("Error in createDonationRecord:", error);
     throw error;
