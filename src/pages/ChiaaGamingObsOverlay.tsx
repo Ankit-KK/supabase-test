@@ -14,31 +14,10 @@ interface Donation {
   gif_url?: string;
   voice_url?: string;
   include_sound?: boolean;
+  custom_sound_id?: string;
+  custom_sound_name?: string;
+  custom_sound_url?: string;
 }
-
-// Custom sound alerts URLs (same as in CustomSoundAlerts component)
-const soundAlerts = [
-  {
-    id: "knock_left",
-    name: "Knock Left",
-    url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/sign/ankit/knock-left-ear-made-with-Voicemod.mp3?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8wNjE0Mzg4Ni1lZTVhLTQxZGYtYWZmMC0xNDZiYjJlYWRjYTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhbmtpdC9rbm9jay1sZWZ0LWVhci1tYWRlLXdpdGgtVm9pY2Vtb2QubXAzIiwiaWF0IjoxNzUwMTAyMjY1LCJleHAiOjE3ODE2MzgyNjV9.DcGT2DWtGaHhBXp_2wMRZqUf1CbU20c0qYjc6KSrd8w"
-  },
-  {
-    id: "raze_ult",
-    name: "Raze Ult",
-    url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/sign/ankit/raze-fire-in-the-hole.mp3?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8wNjE0Mzg4Ni1lZTVhLTQxZGYtYWZmMC0xNDZiYjJlYWRjYTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhbmtpdC9yYXplLWZpcmUtaW4tdGhlLWhvbGUubXAzIiwiaWF0IjoxNzUwMTAyMjg0LCJleHAiOjE3ODE2MzgyODR9.OCq6GIUUZnrv7XwELWUd061_mkukaPswNEWfa8Ym-nk"
-  },
-  {
-    id: "sova_ult",
-    name: "Sova Ult",
-    url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/sign/ankit/valorant-sova-made-with-Voicemod.mp3?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8wNjE0Mzg4Ni1lZTVhLTQxZGYtYWZmMC0xNDZiYjJlYWRjYTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhbmtpdC92YWxvcmFudC1zb3ZhLW1hZGUtd2l0aC1Wb2ljZW1vZC5tcDMiLCJpYXQiOjE3NTAxMDIzMDQsImV4cCI6MTc4MTYzODMwNH0.jO6w7EOQX26Grqam2DvKylzCLQNqbfEKtKyvjPkEu2Q"
-  },
-  {
-    id: "spike_plant",
-    name: "Spike Plant",
-    url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/sign/ankit/valorant-spike-plant.mp3?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8wNjE0Mzg4Ni1lZTVhLTQxZGYtYWZmMC0xNDZiYjJlYWRjYTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhbmtpdC92YWxvcmFudC1zcGlrZS1wbGFudC5tcDMiLCJpYXQiOjE3NTAxMDIzMTYsImV4cCI6MTc4MTYzODMxNn0.LiWtdJaD5FeJNRWiQaYvADesOo7sXhcg_MZbpRT1gHg"
-  }
-];
 
 const ChiaaGamingObsOverlay = () => {
   const { obsId } = useParams();
@@ -60,16 +39,17 @@ const ChiaaGamingObsOverlay = () => {
     goalTarget
   });
 
-  // Function to play random custom sound
-  const playRandomCustomSound = () => {
-    const randomSound = soundAlerts[Math.floor(Math.random() * soundAlerts.length)];
-    console.log("Playing random custom sound:", randomSound.name);
-    
-    const audio = new Audio(randomSound.url);
-    audio.volume = 0.7; // Set volume to 70%
-    audio.play().catch(error => {
-      console.error("Failed to play custom sound:", error);
-    });
+  // Function to play custom sound from donation data
+  const playCustomSound = (donation: Donation) => {
+    if (donation.custom_sound_url) {
+      console.log("Playing custom sound:", donation.custom_sound_name, donation.custom_sound_url);
+      
+      const audio = new Audio(donation.custom_sound_url);
+      audio.volume = 0.7; // Set volume to 70%
+      audio.play().catch(error => {
+        console.error("Failed to play custom sound:", error);
+      });
+    }
   };
 
   // Clean up media after it's displayed
@@ -147,7 +127,7 @@ const ChiaaGamingObsOverlay = () => {
 
     fetchTotalDonations();
 
-    // Set up real-time subscription for new donations - show ALL donations regardless of payment status for testing
+    // Set up real-time subscription for new donations - only show successful payments
     const channel = supabase
       .channel(`chiaa-gaming-obs-${obsId}`)
       .on(
@@ -155,31 +135,27 @@ const ChiaaGamingObsOverlay = () => {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'chiaa_gaming_donations'
-          // Removed payment_status filter to show all donations including failed ones for testing
+          table: 'chiaa_gaming_donations',
+          filter: 'payment_status=eq.success'
         },
         (payload) => {
           const newDonation = payload.new as Donation;
-          console.log("New donation received in OBS overlay:", newDonation);
+          console.log("New successful donation received in OBS overlay:", newDonation);
           console.log("Donation has GIF URL:", newDonation.gif_url);
           console.log("Donation has Voice URL:", newDonation.voice_url);
-          console.log("Donation has custom sound (include_sound):", newDonation.include_sound);
-          console.log("Payment status:", (payload.new as any).payment_status);
+          console.log("Donation has custom sound:", newDonation.custom_sound_name);
           
-          // Update total for goal only if payment is successful
-          if ((payload.new as any).payment_status === "success") {
-            setTotalDonations(prev => prev + Number(newDonation.amount));
-          }
+          // Update total for goal
+          setTotalDonations(prev => prev + Number(newDonation.amount));
           
-          // Show message if enabled - show ALL donations for testing (including failed)
-          // Display if there's a message, GIF, voice, or custom sound alert
-          if (showMessages && (newDonation.message || newDonation.gif_url || newDonation.voice_url || newDonation.include_sound)) {
+          // Show message if enabled and has content to display
+          if (showMessages && (newDonation.message || newDonation.gif_url || newDonation.voice_url || newDonation.custom_sound_url)) {
             setCurrentDonation(newDonation);
             
-            // Play custom sound if include_sound is true
-            if (newDonation.include_sound) {
-              console.log("Playing custom sound for donation with include_sound=true");
-              playRandomCustomSound();
+            // Play custom sound if present
+            if (newDonation.custom_sound_url) {
+              console.log("Playing custom sound for donation:", newDonation.custom_sound_name);
+              playCustomSound(newDonation);
             }
             
             // Auto-hide after 12 seconds and cleanup media if present
@@ -212,13 +188,13 @@ const ChiaaGamingObsOverlay = () => {
   const shouldHideDonationBox = currentDonation && (currentDonation.gif_url || currentDonation.voice_url);
   
   // Check if we should show text message (only if no voice message and no custom sound)
-  const shouldShowTextMessage = currentDonation && currentDonation.message && !currentDonation.voice_url && !currentDonation.include_sound;
+  const shouldShowTextMessage = currentDonation && currentDonation.message && !currentDonation.voice_url && !currentDonation.custom_sound_url;
 
   return (
     <ObsConfigProvider>
       <div className="w-screen h-screen bg-transparent overflow-hidden relative">
         {/* Donation Messages - Only show pink box if no GIF, voice, or custom sound */}
-        {showMessages && currentDonation && !shouldHideDonationBox && !currentDonation.include_sound && (
+        {showMessages && currentDonation && !shouldHideDonationBox && !currentDonation.custom_sound_url && (
           <DraggableResizableBox className="animate-slide-in-right">
             <div className="bg-gradient-to-r from-pink-600/90 to-purple-600/90 backdrop-blur-sm rounded-lg p-4 shadow-2xl border border-pink-500/50 max-w-md">
               <div className="flex items-center space-x-3 mb-2">
@@ -233,8 +209,8 @@ const ChiaaGamingObsOverlay = () => {
           </DraggableResizableBox>
         )}
 
-        {/* Custom Sound Alert Display - when include_sound is true */}
-        {showMessages && currentDonation && currentDonation.include_sound && !currentDonation.gif_url && !currentDonation.voice_url && (
+        {/* Custom Sound Alert Display - when custom sound is present */}
+        {showMessages && currentDonation && currentDonation.custom_sound_url && !currentDonation.gif_url && !currentDonation.voice_url && (
           <DraggableResizableBox className="animate-slide-in-right">
             <div className="bg-gradient-to-r from-purple-600/90 to-blue-600/90 backdrop-blur-sm rounded-lg p-6 shadow-2xl border border-purple-500/50 max-w-md">
               <div className="flex items-center space-x-3 mb-3">
@@ -243,7 +219,7 @@ const ChiaaGamingObsOverlay = () => {
                 <span className="text-purple-300 font-semibold text-lg">₹{Number(currentDonation.amount).toLocaleString()}</span>
               </div>
               <div className="text-center">
-                <div className="text-purple-200 text-lg font-semibold mb-2">🔊 Custom Sound Alert!</div>
+                <div className="text-purple-200 text-lg font-semibold mb-2">🔊 {currentDonation.custom_sound_name}!</div>
                 <div className="text-purple-100 text-sm">Playing custom sound...</div>
               </div>
             </div>

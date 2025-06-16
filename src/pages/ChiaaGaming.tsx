@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -215,7 +216,7 @@ const ChiaaGamingPage = () => {
       let gifUrl = null;
       let voiceUrl = null;
       
-      // Upload GIF if selected - ALWAYS try to upload regardless of payment status
+      // Upload GIF if selected
       if (selectedGif) {
         console.log("DONATION: Uploading GIF for donation:", {
           orderId,
@@ -237,7 +238,7 @@ const ChiaaGamingPage = () => {
         }
       }
 
-      // Upload Voice if selected - ALWAYS try to upload regardless of payment status
+      // Upload Voice if selected
       if (selectedVoice) {
         console.log("DONATION: Uploading voice for donation:", {
           orderId,
@@ -259,42 +260,7 @@ const ChiaaGamingPage = () => {
         }
       }
 
-      // For testing: Insert donation data directly to table to trigger OBS alerts even for failed payments
-      const donationRecord = {
-        name: name.trim(),
-        amount: parseFloat(amount),
-        message: message.trim(),
-        order_id: orderId,
-        payment_status: 'failed', // Set to failed for testing to trigger OBS alerts
-        gif_url: gifUrl,
-        voice_url: voiceUrl,
-        voice_file_name: selectedVoice?.name || null,
-        voice_file_size: selectedVoice?.size || null,
-        include_sound: !!selectedCustomSound,
-      };
-
-      console.log("TESTING: Inserting donation record for OBS testing:", donationRecord);
-
-      const { data: insertedDonation, error: insertError } = await supabase
-        .from('chiaa_gaming_donations')
-        .insert([donationRecord])
-        .select()
-        .single();
-
-      if (insertError) {
-        console.error("TESTING: Error inserting donation record:", insertError);
-        throw insertError;
-      }
-
-      console.log("TESTING: Donation record inserted successfully:", insertedDonation);
-
-      toast({
-        title: "Test donation created!",
-        description: "Donation inserted with failed status for OBS testing",
-        variant: "default",
-      });
-
-      // Store donation data in session storage for potential payment flow
+      // Store donation data in session storage for payment flow
       const donationData = {
         name: name.trim(),
         amount: parseFloat(amount),
@@ -308,8 +274,9 @@ const ChiaaGamingPage = () => {
         voiceFileName: selectedVoice?.name || null,
         voiceFileSize: selectedVoice?.size || null,
         include_sound: !!selectedCustomSound,
-        customSoundUrl: selectedCustomSound?.url || null,
+        customSoundId: selectedCustomSound?.id || null,
         customSoundName: selectedCustomSound?.name || null,
+        customSoundUrl: selectedCustomSound?.url || null,
       };
       
       sessionStorage.setItem("donationData", JSON.stringify(donationData));
@@ -501,7 +468,7 @@ const ChiaaGamingPage = () => {
                   ) : (
                     <div className="flex items-center justify-center space-x-2">
                       <Heart className="h-3 w-3" />
-                      <span className="text-xs sm:text-sm">Send Love & Support (Testing)</span>
+                      <span className="text-xs sm:text-sm">Send Love & Support</span>
                       <Heart className="h-3 w-3" />
                     </div>
                   )}
