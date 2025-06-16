@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 type DonationRecord = {
@@ -101,7 +102,7 @@ export const createDonationRecord = async (donation: DonationRecord) => {
     
     console.log(`Creating ${tableName} record with data:`, recordData);
     
-    const { data: donationRecord, error } = await supabase
+    const { data, error } = await supabase
       .from(tableName)
       .insert(recordData)
       .select()
@@ -112,10 +113,11 @@ export const createDonationRecord = async (donation: DonationRecord) => {
       throw new Error(error.message || `Failed to create donation record in ${tableName}`);
     }
 
+    const donationRecord = data;
     console.log(`Successfully created donation record in ${tableName}:`, donationRecord);
 
     // Create donation_gifs record if GIF was uploaded for chiaa_gaming
-    if (donation.donationType === "chiaa_gaming" && donation.gifUrl && donation.gifFileName && donation.gifFileSize) {
+    if (donation.donationType === "chiaa_gaming" && donation.gifUrl && donation.gifFileName && donation.gifFileSize && donationRecord?.id) {
       console.log("Creating donation_gifs record for:", donationRecord.id);
       
       const { error: gifRecordError } = await supabase
