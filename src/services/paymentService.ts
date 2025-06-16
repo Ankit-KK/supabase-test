@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 type DonationRecord = {
@@ -94,14 +95,25 @@ export const createDonationRecord = async (donation: DonationRecord) => {
       recordData.include_sound = donation.include_sound;
     }
 
-    // Add gif_url for chiaa_gaming donations - ensure it's properly included
+    // Add gif_url for chiaa_gaming donations - ENSURE it's properly included
     if (donation.donationType === "chiaa_gaming" && donation.gifUrl) {
       recordData.gif_url = donation.gifUrl;
-      console.log("Adding GIF URL to donation record:", donation.gifUrl);
+      console.log("IMPORTANT: Adding GIF URL to donation record:", {
+        gifUrl: donation.gifUrl,
+        orderId: donation.order_id,
+        recordData: recordData
+      });
+    } else if (donation.donationType === "chiaa_gaming") {
+      console.log("WARNING: No GIF URL provided for chiaa_gaming donation:", {
+        orderId: donation.order_id,
+        hasGifUrl: !!donation.gifUrl,
+        gifUrl: donation.gifUrl
+      });
     }
     
     console.log(`Creating ${tableName} record with data:`, recordData);
     console.log("Payment status being saved:", donation.payment_status);
+    console.log("GIF URL being saved:", recordData.gif_url);
     
     const { data, error } = await supabase
       .from(tableName)
@@ -121,13 +133,19 @@ export const createDonationRecord = async (donation: DonationRecord) => {
     }
 
     // Now TypeScript knows data is not null and has the required structure
-    const validatedData = data as { id: string; [key: string]: any };
+    const validatedData = data as { id: string; gif_url?: string; [key: string]: any };
     
     console.log(`Successfully created donation record in ${tableName}:`, validatedData);
+    console.log("VERIFICATION: GIF URL in created record:", validatedData.gif_url);
 
     // Create donation_gifs record if GIF was uploaded for chiaa_gaming
     if (donation.donationType === "chiaa_gaming" && donation.gifUrl && donation.gifFileName && donation.gifFileSize) {
       console.log("Creating donation_gifs record for donation ID:", validatedData.id);
+      console.log("GIF details:", {
+        gifUrl: donation.gifUrl,
+        fileName: donation.gifFileName,
+        fileSize: donation.gifFileSize
+      });
       
       const { error: gifRecordError } = await supabase
         .from('donation_gifs')
@@ -145,6 +163,12 @@ export const createDonationRecord = async (donation: DonationRecord) => {
       } else {
         console.log("Successfully created donation_gifs record with URL:", donation.gifUrl);
       }
+    } else if (donation.donationType === "chiaa_gaming") {
+      console.log("No GIF to create record for:", {
+        hasGifUrl: !!donation.gifUrl,
+        hasFileName: !!donation.gifFileName,
+        hasFileSize: !!donation.gifFileSize
+      });
     }
 
     // Clean up session storage after successful record creation

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -65,7 +66,7 @@ const ChiaaGamingPage = () => {
       const fileName = `${Date.now()}-${Math.floor(Math.random() * 10000)}.${fileExt}`;
       const filePath = fileName;
 
-      console.log("Uploading GIF to storage:", { fileName, fileSize: file.size });
+      console.log("UPLOAD: Starting GIF upload to storage:", { fileName, fileSize: file.size });
 
       const { data, error } = await supabase.storage
         .from('donation-gifs')
@@ -75,7 +76,7 @@ const ChiaaGamingPage = () => {
         });
 
       if (error) {
-        console.error("Error uploading GIF:", error);
+        console.error("UPLOAD ERROR: Error uploading GIF:", error);
         throw error;
       }
 
@@ -84,10 +85,15 @@ const ChiaaGamingPage = () => {
         .from('donation-gifs')
         .getPublicUrl(filePath);
 
-      console.log("GIF uploaded successfully:", { publicUrl });
+      console.log("UPLOAD SUCCESS: GIF uploaded successfully:", { 
+        publicUrl,
+        filePath,
+        fileName 
+      });
+      
       return publicUrl;
     } catch (error) {
-      console.error("Error in uploadGif:", error);
+      console.error("UPLOAD ERROR: Error in uploadGif:", error);
       return null;
     }
   };
@@ -105,21 +111,29 @@ const ChiaaGamingPage = () => {
       // Generate a random order ID with timestamp
       const orderId = `chiaa_gaming_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
       
-      console.log("Creating Chiaa Gaming donation with order ID:", orderId);
+      console.log("DONATION: Creating Chiaa Gaming donation with order ID:", orderId);
       
       let gifUrl = null;
       
       // Upload GIF if selected
       if (selectedGif) {
-        console.log("Uploading GIF for donation:", orderId);
+        console.log("DONATION: Uploading GIF for donation:", {
+          orderId,
+          fileName: selectedGif.name,
+          fileSize: selectedGif.size
+        });
+        
         gifUrl = await uploadGif(selectedGif);
         
         if (!gifUrl) {
+          console.error("DONATION: GIF upload failed but proceeding");
           toast({
             title: "GIF upload failed",
             description: "Proceeding without GIF. You can still donate!",
             variant: "destructive",
           });
+        } else {
+          console.log("DONATION: GIF uploaded successfully with URL:", gifUrl);
         }
       }
       
@@ -135,13 +149,19 @@ const ChiaaGamingPage = () => {
         gifFileSize: selectedGif?.size || null,
       };
       
+      console.log("DONATION: Storing donation data in session storage:", {
+        ...donationData,
+        hasGif: !!gifUrl,
+        gifUrlPreview: gifUrl ? gifUrl.substring(0, 50) + "..." : null
+      });
+      
       sessionStorage.setItem("donationData", JSON.stringify(donationData));
-      console.log("Stored Chiaa Gaming donation data in session storage", { hasGif: !!gifUrl });
+      console.log("DONATION: Successfully stored Chiaa Gaming donation data in session storage");
       
       // Navigate to payment checkout
       navigate("/payment-checkout");
     } catch (error) {
-      console.error("Error preparing payment:", error);
+      console.error("DONATION ERROR: Error preparing payment:", error);
       toast({
         title: "Error",
         description: "Failed to process payment. Please try again.",
