@@ -114,8 +114,8 @@ export const createDonationRecord = async (donation: DonationRecord) => {
       throw new Error(error.message || `Failed to create donation record in ${tableName}`);
     }
 
-    // Type assertion to tell TypeScript that data has an id property
-    const donationRecord = data as { id: string; [key: string]: any };
+    // Properly handle the response - data should contain the inserted record
+    const donationRecord = data;
     console.log(`Successfully created donation record in ${tableName}:`, donationRecord);
 
     // Create donation_gifs record if GIF was uploaded for chiaa_gaming
