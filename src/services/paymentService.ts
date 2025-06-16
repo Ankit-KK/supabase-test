@@ -63,7 +63,7 @@ export const verifyPayment = async (orderId: string) => {
 
 /**
  * Creates a donation record in Supabase
- * Only called after payment verification
+ * Now creates records regardless of payment status for testing purposes
  */
 export const createDonationRecord = async (donation: DonationRecord) => {
   try {
@@ -101,6 +101,7 @@ export const createDonationRecord = async (donation: DonationRecord) => {
     }
     
     console.log(`Creating ${tableName} record with data:`, recordData);
+    console.log("Payment status being saved:", donation.payment_status);
     
     const { data, error } = await supabase
       .from(tableName)
@@ -147,7 +148,8 @@ export const createDonationRecord = async (donation: DonationRecord) => {
     }
 
     // Clean up session storage after successful record creation
-    if (donation.payment_status !== "pending") {
+    // Only clean up for successful payments in production, but keep for testing
+    if (donation.payment_status === "success") {
       sessionStorage.removeItem("donationData");
       console.log("Cleaned up session storage");
     }

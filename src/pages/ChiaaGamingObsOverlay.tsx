@@ -86,7 +86,7 @@ const ChiaaGamingObsOverlay = () => {
   };
 
   useEffect(() => {
-    // Fetch today's total donations for goal progress
+    // Fetch today's total donations for goal progress (only successful ones for goal)
     const fetchTotalDonations = async () => {
       const today = new Date();
       const todayStart = `${today.toISOString().split('T')[0]}T00:00:00`;
@@ -107,7 +107,7 @@ const ChiaaGamingObsOverlay = () => {
 
     fetchTotalDonations();
 
-    // Set up real-time subscription for new donations
+    // Set up real-time subscription for new donations - show ALL donations regardless of payment status
     const channel = supabase
       .channel(`chiaa-gaming-obs-${obsId}`)
       .on(
@@ -115,18 +115,21 @@ const ChiaaGamingObsOverlay = () => {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'chiaa_gaming_donations',
-          filter: 'payment_status=eq.success'
+          table: 'chiaa_gaming_donations'
+          // Removed payment_status filter to show all donations
         },
         (payload) => {
           const newDonation = payload.new as Donation;
           console.log("New donation received in OBS overlay:", newDonation);
           console.log("Donation has GIF URL:", newDonation.gif_url);
+          console.log("Payment status:", (payload.new as any).payment_status);
           
-          // Update total for goal
-          setTotalDonations(prev => prev + Number(newDonation.amount));
+          // Update total for goal only if payment is successful
+          if ((payload.new as any).payment_status === "success") {
+            setTotalDonations(prev => prev + Number(newDonation.amount));
+          }
           
-          // Show message if enabled
+          // Show message if enabled - regardless of payment status for testing
           if (showMessages && newDonation.message) {
             setCurrentDonation(newDonation);
             
