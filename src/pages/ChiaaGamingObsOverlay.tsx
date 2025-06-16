@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +15,30 @@ interface Donation {
   voice_url?: string;
   include_sound?: boolean;
 }
+
+// Custom sound alerts URLs (same as in CustomSoundAlerts component)
+const soundAlerts = [
+  {
+    id: "knock_left",
+    name: "Knock Left",
+    url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/sign/ankit/knock-left-ear-made-with-Voicemod.mp3?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8wNjE0Mzg4Ni1lZTVhLTQxZGYtYWZmMC0xNDZiYjJlYWRjYTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhbmtpdC9rbm9jay1sZWZ0LWVhci1tYWRlLXdpdGgtVm9pY2Vtb2QubXAzIiwiaWF0IjoxNzUwMTAyMjY1LCJleHAiOjE3ODE2MzgyNjV9.DcGT2DWtGaHhBXp_2wMRZqUf1CbU20c0qYjc6KSrd8w"
+  },
+  {
+    id: "raze_ult",
+    name: "Raze Ult",
+    url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/sign/ankit/raze-fire-in-the-hole.mp3?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8wNjE0Mzg4Ni1lZTVhLTQxZGYtYWZmMC0xNDZiYjJlYWRjYTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhbmtpdC9yYXplLWZpcmUtaW4tdGhlLWhvbGUubXAzIiwiaWF0IjoxNzUwMTAyMjg0LCJleHAiOjE3ODE2MzgyODR9.OCq6GIUUZnrv7XwELWUd061_mkukaPswNEWfa8Ym-nk"
+  },
+  {
+    id: "sova_ult",
+    name: "Sova Ult",
+    url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/sign/ankit/valorant-sova-made-with-Voicemod.mp3?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8wNjE0Mzg4Ni1lZTVhLTQxZGYtYWZmMC0xNDZiYjJlYWRjYTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhbmtpdC92YWxvcmFudC1zb3ZhLW1hZGUtd2l0aC1Wb2ljZW1vZC5tcDMiLCJpYXQiOjE3NTAxMDIzMDQsImV4cCI6MTc4MTYzODMwNH0.jO6w7EOQX26Grqam2DvKylzCLQNqbfEKtKyvjPkEu2Q"
+  },
+  {
+    id: "spike_plant",
+    name: "Spike Plant",
+    url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/sign/ankit/valorant-spike-plant.mp3?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8wNjE0Mzg4Ni1lZTVhLTQxZGYtYWZmMC0xNDZiYjJlYWRjYTAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhbmtpdC92YWxvcmFudC1zcGlrZS1wbGFudC5tcDMiLCJpYXQiOjE3NTAxMDIzMTYsImV4cCI6MTc4MTYzODMxNn0.LiWtdJaD5FeJNRWiQaYvADesOo7sXhcg_MZbpRT1gHg"
+  }
+];
 
 const ChiaaGamingObsOverlay = () => {
   const { obsId } = useParams();
@@ -34,6 +59,18 @@ const ChiaaGamingObsOverlay = () => {
     goalName,
     goalTarget
   });
+
+  // Function to play random custom sound
+  const playRandomCustomSound = () => {
+    const randomSound = soundAlerts[Math.floor(Math.random() * soundAlerts.length)];
+    console.log("Playing random custom sound:", randomSound.name);
+    
+    const audio = new Audio(randomSound.url);
+    audio.volume = 0.7; // Set volume to 70%
+    audio.play().catch(error => {
+      console.error("Failed to play custom sound:", error);
+    });
+  };
 
   // Clean up media after it's displayed
   const cleanupMedia = async (donationId: string, mediaUrl: string, mediaType: 'gif' | 'voice') => {
@@ -138,6 +175,12 @@ const ChiaaGamingObsOverlay = () => {
           // Display if there's a message, GIF, voice, or custom sound alert
           if (showMessages && (newDonation.message || newDonation.gif_url || newDonation.voice_url || newDonation.include_sound)) {
             setCurrentDonation(newDonation);
+            
+            // Play custom sound if include_sound is true
+            if (newDonation.include_sound) {
+              console.log("Playing custom sound for donation with include_sound=true");
+              playRandomCustomSound();
+            }
             
             // Auto-hide after 12 seconds and cleanup media if present
             setTimeout(() => {
