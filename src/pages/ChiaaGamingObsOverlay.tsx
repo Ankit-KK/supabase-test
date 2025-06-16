@@ -1,5 +1,6 @@
 
-import React, { useEffect, useState } from "react";
+
+import React, { useEffect, useState, useRef } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ObsConfigProvider } from "@/contexts/ObsConfigContext";
@@ -21,9 +22,12 @@ const ChiaaGamingObsOverlay = () => {
   const [searchParams] = useSearchParams();
   const [currentDonation, setCurrentDonation] = useState<Donation | null>(null);
   const [donationQueue, setDonationQueue] = useState<Donation[]>([]);
-  const [isProcessingQueue, setIsProcessingQueue] = useState(false);
   const [totalDonations, setTotalDonations] = useState(0);
   const [currentCustomSound, setCurrentCustomSound] = useState<string | null>(null);
+  
+  // Use refs to track processing state without causing re-renders
+  const isProcessingRef = useRef(false);
+  const processingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Parse URL parameters
   const showMessages = searchParams.get("showMessages") === "true";
@@ -92,64 +96,79 @@ const ChiaaGamingObsOverlay = () => {
     }
   };
 
-  // Process donation queue - completely rewritten to fix race conditions
-  useEffect(() => {
-    if (!isProcessingQueue || donationQueue.length === 0) {
+  // Process the next donation in queue
+  const processNextDonation = () => {
+    console.log("processNextDonation called, current queue length:", donationQueue.length);
+    
+    if (donationQueue.length === 0) {
+      console.log("Queue is empty, stopping processing");
+      isProcessingRef.current = false;
       return;
     }
 
-    const processNext = () => {
-      console.log("processNext called, queue length:", donationQueue.length);
+    if (isProcessingRef.current) {
+      console.log("Already processing, skipping");
+      return;
+    }
+
+    isProcessingRef.current = true;
+    const nextDonation = donationQueue[0];
+    console.log("Processing donation from queue:", nextDonation.id, nextDonation.name);
+    
+    // Remove from queue
+    setDonationQueue(prev => {
+      const newQueue = prev.slice(1);
+      console.log("Queue after removing donation:", newQueue.length);
+      return newQueue;
+    });
+    
+    // Show the donation
+    setCurrentDonation(nextDonation);
+
+    // Auto-hide after 12 seconds and cleanup media if present
+    setTimeout(() => {
+      console.log("Hiding donation after 12 seconds:", nextDonation.id);
       
-      if (donationQueue.length === 0) {
-        console.log("Queue is empty, stopping processing");
-        setIsProcessingQueue(false);
-        return;
+      if (nextDonation.gif_url) {
+        console.log("Cleaning up GIF after display:", nextDonation.gif_url);
+        cleanupMedia(nextDonation.id, nextDonation.gif_url, 'gif');
       }
-
-      // Get the first donation from queue
-      const nextDonation = donationQueue[0];
-      console.log("Processing donation from queue:", nextDonation.id, nextDonation.name);
+      if (nextDonation.voice_url) {
+        console.log("Cleaning up Voice after display:", nextDonation.voice_url);
+        cleanupMedia(nextDonation.id, nextDonation.voice_url, 'voice');
+      }
       
-      // Remove from queue and show the donation
-      setDonationQueue(prev => {
-        const newQueue = prev.slice(1);
-        console.log("Queue after removing donation:", newQueue.length);
-        return newQueue;
-      });
+      setCurrentDonation(null);
+      isProcessingRef.current = false;
       
-      setCurrentDonation(nextDonation);
+      // Process next donation after 3 seconds
+      processingTimeoutRef.current = setTimeout(() => {
+        processNextDonation();
+      }, 3000);
+    }, 12000);
+  };
 
-      // Auto-hide after 12 seconds and cleanup media if present
-      const hideTimeout = setTimeout(() => {
-        console.log("Hiding donation after 12 seconds:", nextDonation.id);
-        
-        if (nextDonation.gif_url) {
-          console.log("Cleaning up GIF after display:", nextDonation.gif_url);
-          cleanupMedia(nextDonation.id, nextDonation.gif_url, 'gif');
-        }
-        if (nextDonation.voice_url) {
-          console.log("Cleaning up Voice after display:", nextDonation.voice_url);
-          cleanupMedia(nextDonation.id, nextDonation.voice_url, 'voice');
-        }
-        
-        setCurrentDonation(null);
-        
-        // Process next donation after 3 seconds
-        const nextTimeout = setTimeout(() => {
-          processNext();
-        }, 3000);
+  // Monitor queue changes and start processing if needed
+  useEffect(() => {
+    if (donationQueue.length > 0 && !isProcessingRef.current) {
+      console.log("Starting queue processing, queue length:", donationQueue.length);
+      // Clear any existing timeout
+      if (processingTimeoutRef.current) {
+        clearTimeout(processingTimeoutRef.current);
+      }
+      // Start processing immediately
+      processingTimeoutRef.current = setTimeout(() => {
+        processNextDonation();
+      }, 100);
+    }
 
-        return () => clearTimeout(nextTimeout);
-      }, 12000);
-
-      return () => clearTimeout(hideTimeout);
+    // Cleanup timeout on unmount
+    return () => {
+      if (processingTimeoutRef.current) {
+        clearTimeout(processingTimeoutRef.current);
+      }
     };
-
-    // Start processing immediately
-    const timeout = setTimeout(processNext, 100);
-    return () => clearTimeout(timeout);
-  }, [isProcessingQueue, donationQueue.length]);
+  }, [donationQueue.length]);
 
   // Add donation to queue - simplified
   const addDonationToQueue = (donation: Donation) => {
@@ -177,12 +196,6 @@ const ChiaaGamingObsOverlay = () => {
         console.log("Donation added to queue. New queue length:", newQueue.length);
         return newQueue;
       });
-      
-      // Start processing if not already processing
-      if (!isProcessingQueue) {
-        console.log("Starting queue processing");
-        setIsProcessingQueue(true);
-      }
     }
   };
 
@@ -237,6 +250,10 @@ const ChiaaGamingObsOverlay = () => {
 
     return () => {
       supabase.removeChannel(channel);
+      // Clean up timeouts
+      if (processingTimeoutRef.current) {
+        clearTimeout(processingTimeoutRef.current);
+      }
     };
   }, [obsId, showMessages]);
 
@@ -276,7 +293,7 @@ const ChiaaGamingObsOverlay = () => {
         {/* Queue Status Indicator - Enhanced with more info */}
         {donationQueue.length > 0 && (
           <div className="absolute top-2 right-2 bg-black/50 text-white px-2 py-1 rounded text-xs z-50">
-            Queue: {donationQueue.length} | Processing: {isProcessingQueue ? 'Yes' : 'No'}
+            Queue: {donationQueue.length} | Processing: {isProcessingRef.current ? 'Yes' : 'No'}
           </div>
         )}
 
@@ -369,3 +386,4 @@ const ChiaaGamingObsOverlay = () => {
 };
 
 export default ChiaaGamingObsOverlay;
+
