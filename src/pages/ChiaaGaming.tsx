@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -316,7 +317,7 @@ const ChiaaGamingPage = () => {
 
   return (
     <div 
-      className="min-h-screen max-h-screen overflow-hidden relative"
+      className="min-h-screen relative overflow-hidden"
       style={{
         backgroundImage: `url('/lovable-uploads/7d0bcc0f-fdef-47a2-9c88-4a052346971f.png')`,
         backgroundSize: 'cover',
@@ -340,9 +341,9 @@ const ChiaaGamingPage = () => {
       {/* Pink Border Effect - Responsive */}
       <div className="absolute inset-1 border border-pink-400/30 rounded-lg shadow-lg shadow-pink-400/20 pointer-events-none"></div>
       
-      <div className="container mx-auto max-w-sm sm:max-w-md px-2 sm:px-3 py-2 sm:py-3 relative z-10 h-screen overflow-y-auto">
-        <div className="space-y-2 sm:space-y-3">
-          <div className="text-center space-y-1 sm:space-y-2">
+      <div className="container mx-auto max-w-sm sm:max-w-md px-2 sm:px-3 py-2 sm:py-3 relative z-10 h-screen flex flex-col">
+        <div className="flex-1 flex flex-col space-y-2 sm:space-y-3 min-h-0">
+          <div className="text-center space-y-1 sm:space-y-2 flex-shrink-0">
             <div className="flex items-center justify-center space-x-1 sm:space-x-2">
               <Heart className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 text-pink-400" />
               <h1 className="text-base sm:text-lg md:text-xl font-bold bg-gradient-to-r from-pink-400 via-pink-500 to-pink-600 bg-clip-text text-transparent">
@@ -356,7 +357,7 @@ const ChiaaGamingPage = () => {
           </div>
           
           <div 
-            className="relative p-2 sm:p-3 rounded-xl border border-pink-400/30 shadow-2xl shadow-pink-400/20 overflow-hidden"
+            className="relative p-2 sm:p-3 rounded-xl border border-pink-400/30 shadow-2xl shadow-pink-400/20 flex-1 min-h-0 flex flex-col"
             style={{
               backgroundImage: `url('/lovable-uploads/162f24fe-3b90-4626-8223-c7e095161c73.png')`,
               backgroundSize: 'cover',
@@ -367,107 +368,109 @@ const ChiaaGamingPage = () => {
             {/* Overlay for form readability */}
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-xl"></div>
             
-            <form onSubmit={handleSubmit} className="relative z-10 space-y-2 sm:space-y-3">
-              <div className="space-y-1">
-                <label htmlFor="name" className="block text-xs font-medium text-white">
-                  Your Name
-                </label>
-                <Input 
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Enter your name"
+            <div className="relative z-10 h-full overflow-y-auto">
+              <form onSubmit={handleSubmit} className="space-y-2 sm:space-y-3">
+                <div className="space-y-1">
+                  <label htmlFor="name" className="block text-xs font-medium text-white">
+                    Your Name
+                  </label>
+                  <Input 
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Enter your name"
+                    disabled={isLoading}
+                    className="bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 h-7 sm:h-8 text-xs sm:text-sm"
+                  />
+                </div>
+                
+                <div className="space-y-1">
+                  <label htmlFor="amount" className="block text-xs font-medium text-white">
+                    Donation Amount (₹)
+                  </label>
+                  <Input 
+                    id="amount"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="Minimum ₹1"
+                    disabled={isLoading}
+                    className="bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 h-7 sm:h-8 text-xs sm:text-sm"
+                  />
+                  <p className="text-xs text-white/80">Minimum donation is ₹1</p>
+                </div>
+                
+                <div className="space-y-1">
+                  <label htmlFor="message" className="block text-xs font-medium text-white">
+                    {getMessageLabel()}
+                  </label>
+                  <Textarea 
+                    id="message"
+                    value={message}
+                    onChange={handleMessageChange}
+                    placeholder={getMessagePlaceholder()}
+                    className="h-10 sm:h-12 bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 resize-none text-xs"
+                    disabled={isMessageDisabled}
+                    maxLength={maxMessageLength}
+                  />
+                  <p className="text-xs text-white/80">
+                    {!selectedGif && !selectedVoice ? (
+                      <>
+                        {message.length}/{maxMessageLength} characters
+                        {parseFloat(amount) >= 100 ? 
+                          " (100 chars for ₹100+ donations)" : 
+                          " (50 chars for donations below ₹100)"}
+                      </>
+                    ) : (
+                      <>
+                        Message disabled when {selectedGif ? "GIF" : "voice"} is {selectedGif ? "uploaded" : "recorded"}
+                      </>
+                    )}
+                  </p>
+                </div>
+
+                <GifUpload
+                  onGifSelect={handleGifSelect}
+                  selectedGif={selectedGif}
+                  disabled={isLoading || !!selectedVoice || !!selectedCustomSound}
+                />
+
+                <VoiceRecording
+                  onVoiceSelect={handleVoiceSelect}
+                  selectedVoice={selectedVoice}
+                  disabled={isLoading || !!selectedGif || !!selectedCustomSound}
+                />
+                
+                {/* Custom Sound Alerts Section */}
+                <CustomSoundAlerts
+                  onSoundSelect={handleCustomSoundSelect}
+                  selectedSound={selectedCustomSound}
+                  disabled={isLoading || !!selectedGif || !!selectedVoice}
+                  amount={amount}
+                />
+                
+                <Button 
+                  type="submit" 
+                  className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white font-bold py-1.5 sm:py-2 rounded-lg shadow-lg shadow-pink-500/25 transition-all duration-300 transform hover:scale-105 border border-pink-400/50 text-xs sm:text-sm mt-2 sm:mt-3"
                   disabled={isLoading}
-                  className="bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 h-7 sm:h-8 text-xs sm:text-sm"
-                />
-              </div>
-              
-              <div className="space-y-1">
-                <label htmlFor="amount" className="block text-xs font-medium text-white">
-                  Donation Amount (₹)
-                </label>
-                <Input 
-                  id="amount"
-                  type="number"
-                  min="1"
-                  step="1"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder="Minimum ₹1"
-                  disabled={isLoading}
-                  className="bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 h-7 sm:h-8 text-xs sm:text-sm"
-                />
-                <p className="text-xs text-white/80">Minimum donation is ₹1</p>
-              </div>
-              
-              <div className="space-y-1">
-                <label htmlFor="message" className="block text-xs font-medium text-white">
-                  {getMessageLabel()}
-                </label>
-                <Textarea 
-                  id="message"
-                  value={message}
-                  onChange={handleMessageChange}
-                  placeholder={getMessagePlaceholder()}
-                  className="h-12 sm:h-14 bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 resize-none text-xs"
-                  disabled={isMessageDisabled}
-                  maxLength={maxMessageLength}
-                />
-                <p className="text-xs text-white/80">
-                  {!selectedGif && !selectedVoice ? (
-                    <>
-                      {message.length}/{maxMessageLength} characters
-                      {parseFloat(amount) >= 100 ? 
-                        " (100 chars for ₹100+ donations)" : 
-                        " (50 chars for donations below ₹100)"}
-                    </>
+                >
+                  {isLoading ? (
+                    <div className="flex items-center justify-center space-x-2">
+                      <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
+                      <span className="text-xs">Processing...</span>
+                    </div>
                   ) : (
-                    <>
-                      Message disabled when {selectedGif ? "GIF" : "voice"} is {selectedGif ? "uploaded" : "recorded"}
-                    </>
+                    <div className="flex items-center justify-center space-x-2">
+                      <Heart className="h-3 w-3" />
+                      <span className="text-xs sm:text-sm">Send Love & Support</span>
+                      <Heart className="h-3 w-3" />
+                    </div>
                   )}
-                </p>
-              </div>
-
-              <GifUpload
-                onGifSelect={handleGifSelect}
-                selectedGif={selectedGif}
-                disabled={isLoading || !!selectedVoice || !!selectedCustomSound}
-              />
-
-              <VoiceRecording
-                onVoiceSelect={handleVoiceSelect}
-                selectedVoice={selectedVoice}
-                disabled={isLoading || !!selectedGif || !!selectedCustomSound}
-              />
-              
-              {/* Custom Sound Alerts Section */}
-              <CustomSoundAlerts
-                onSoundSelect={handleCustomSoundSelect}
-                selectedSound={selectedCustomSound}
-                disabled={isLoading || !!selectedGif || !!selectedVoice}
-                amount={amount}
-              />
-              
-              <Button 
-                type="submit" 
-                className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white font-bold py-1.5 sm:py-2 rounded-lg shadow-lg shadow-pink-500/25 transition-all duration-300 transform hover:scale-105 border border-pink-400/50 text-xs sm:text-sm mt-2 sm:mt-3"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <div className="flex items-center justify-center space-x-2">
-                    <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
-                    <span className="text-xs">Processing...</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center space-x-2">
-                    <Heart className="h-3 w-3" />
-                    <span className="text-xs sm:text-sm">Send Love & Support</span>
-                    <Heart className="h-3 w-3" />
-                  </div>
-                )}
-              </Button>
-            </form>
+                </Button>
+              </form>
+            </div>
           </div>
         </div>
       </div>
