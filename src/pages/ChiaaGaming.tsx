@@ -8,12 +8,14 @@ import { toast } from "@/hooks/use-toast";
 import { Heart, Gamepad2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import GifUpload from "@/components/GifUpload";
+import VoiceRecording from "@/components/VoiceRecording";
 
 const ChiaaGamingPage = () => {
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [message, setMessage] = useState("");
   const [selectedGif, setSelectedGif] = useState<File | null>(null);
+  const [selectedVoice, setSelectedVoice] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [maxMessageLength, setMaxMessageLength] = useState(50);
   const navigate = useNavigate();
@@ -48,10 +50,11 @@ const ChiaaGamingPage = () => {
       return false;
     }
 
-    if (!message.trim()) {
+    // Only require message if no GIF or voice is uploaded
+    if (!message.trim() && !selectedGif && !selectedVoice) {
       toast({
-        title: "Message is required",
-        description: "Please enter a message",
+        title: "Message, GIF, or Voice required",
+        description: "Please enter a message, upload a GIF, or record a voice message",
         variant: "destructive",
       });
       return false;
@@ -98,6 +101,44 @@ const ChiaaGamingPage = () => {
     }
   };
 
+  const uploadVoice = async (file: File): Promise<string | null> => {
+    try {
+      const fileExt = 'webm';
+      const fileName = `voice-${Date.now()}-${Math.floor(Math.random() * 10000)}.${fileExt}`;
+      const filePath = fileName;
+
+      console.log("UPLOAD: Starting voice upload to storage:", { fileName, fileSize: file.size });
+
+      const { data, error } = await supabase.storage
+        .from('donation-gifs')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) {
+        console.error("UPLOAD ERROR: Error uploading voice:", error);
+        throw error;
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('donation-gifs')
+        .getPublicUrl(filePath);
+
+      console.log("UPLOAD SUCCESS: Voice uploaded successfully:", { 
+        publicUrl,
+        filePath,
+        fileName 
+      });
+      
+      return publicUrl;
+    } catch (error) {
+      console.error("UPLOAD ERROR: Error in uploadVoice:", error);
+      return null;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -114,6 +155,7 @@ const ChiaaGamingPage = () => {
       console.log("DONATION: Creating Chiaa Gaming donation with order ID:", orderId);
       
       let gifUrl = null;
+      let voiceUrl = null;
       
       // Upload GIF if selected
       if (selectedGif) {
@@ -136,6 +178,28 @@ const ChiaaGamingPage = () => {
           console.log("DONATION: GIF uploaded successfully with URL:", gifUrl);
         }
       }
+
+      // Upload Voice if selected
+      if (selectedVoice) {
+        console.log("DONATION: Uploading voice for donation:", {
+          orderId,
+          fileName: selectedVoice.name,
+          fileSize: selectedVoice.size
+        });
+        
+        voiceUrl = await uploadVoice(selectedVoice);
+        
+        if (!voiceUrl) {
+          console.error("DONATION: Voice upload failed but proceeding");
+          toast({
+            title: "Voice upload failed",
+            description: "Proceeding without voice. You can still donate!",
+            variant: "destructive",
+          });
+        } else {
+          console.log("DONATION: Voice uploaded successfully with URL:", voiceUrl);
+        }
+      }
       
       // Store donation data in session storage to access it during the payment flow
       const donationData = {
@@ -147,12 +211,17 @@ const ChiaaGamingPage = () => {
         gifUrl,
         gifFileName: selectedGif?.name || null,
         gifFileSize: selectedGif?.size || null,
+        voiceUrl,
+        voiceFileName: selectedVoice?.name || null,
+        voiceFileSize: selectedVoice?.size || null,
       };
       
       console.log("DONATION: Storing donation data in session storage:", {
         ...donationData,
         hasGif: !!gifUrl,
-        gifUrlPreview: gifUrl ? gifUrl.substring(0, 50) + "..." : null
+        hasVoice: !!voiceUrl,
+        gifUrlPreview: gifUrl ? gifUrl.substring(0, 50) + "..." : null,
+        voiceUrlPreview: voiceUrl ? voiceUrl.substring(0, 50) + "..." : null
       });
       
       sessionStorage.setItem("donationData", JSON.stringify(donationData));
@@ -179,6 +248,9 @@ const ChiaaGamingPage = () => {
       setMessage(value);
     }
   };
+
+  // Check if message input should be disabled (when GIF is uploaded)
+  const isMessageDisabled = !!selectedGif || isLoading;
 
   return (
     <div 
@@ -268,15 +340,15 @@ const ChiaaGamingPage = () => {
               
               <div className="space-y-1 md:space-y-2">
                 <label htmlFor="message" className="block text-xs sm:text-sm font-medium text-white">
-                  Sweet Message
+                  Sweet Message {selectedGif ? "(Disabled - GIF uploaded)" : ""}
                 </label>
                 <Textarea 
                   id="message"
                   value={message}
                   onChange={handleMessageChange}
-                  placeholder="Send your sweet message to Chiaa!"
+                  placeholder={selectedGif ? "Message disabled when GIF is uploaded" : "Send your sweet message to Chiaa!"}
                   className="h-16 sm:h-18 md:h-20 lg:h-24 bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 resize-none text-xs sm:text-sm"
-                  disabled={isLoading}
+                  disabled={isMessageDisabled}
                   maxLength={maxMessageLength}
                 />
                 <p className="text-xs text-white/80">
@@ -284,12 +356,19 @@ const ChiaaGamingPage = () => {
                   {parseFloat(amount) >= 100 ? 
                     " (100 chars for ₹100+ donations)" : 
                     " (50 chars for donations below ₹100)"}
+                  {selectedGif && " - Message disabled when GIF is uploaded"}
                 </p>
               </div>
 
               <GifUpload
                 onGifSelect={setSelectedGif}
                 selectedGif={selectedGif}
+                disabled={isLoading}
+              />
+
+              <VoiceRecording
+                onVoiceSelect={setSelectedVoice}
+                selectedVoice={selectedVoice}
                 disabled={isLoading}
               />
               
