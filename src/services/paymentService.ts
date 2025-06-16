@@ -95,19 +95,21 @@ export const createDonationRecord = async (donation: DonationRecord) => {
       recordData.include_sound = donation.include_sound;
     }
 
-    // Add gif_url for chiaa_gaming donations - ENSURE it's properly included
+    // ALWAYS add gif_url for chiaa_gaming donations if provided - regardless of payment status
     if (donation.donationType === "chiaa_gaming" && donation.gifUrl) {
       recordData.gif_url = donation.gifUrl;
-      console.log("IMPORTANT: Adding GIF URL to donation record:", {
+      console.log("STORING GIF URL (regardless of payment status):", {
         gifUrl: donation.gifUrl,
         orderId: donation.order_id,
+        paymentStatus: donation.payment_status,
         recordData: recordData
       });
     } else if (donation.donationType === "chiaa_gaming") {
       console.log("WARNING: No GIF URL provided for chiaa_gaming donation:", {
         orderId: donation.order_id,
         hasGifUrl: !!donation.gifUrl,
-        gifUrl: donation.gifUrl
+        gifUrl: donation.gifUrl,
+        paymentStatus: donation.payment_status
       });
     }
     
@@ -138,13 +140,14 @@ export const createDonationRecord = async (donation: DonationRecord) => {
     console.log(`Successfully created donation record in ${tableName}:`, validatedData);
     console.log("VERIFICATION: GIF URL in created record:", validatedData.gif_url);
 
-    // Create donation_gifs record if GIF was uploaded for chiaa_gaming
+    // Create donation_gifs record if GIF was uploaded for chiaa_gaming - REGARDLESS of payment status
     if (donation.donationType === "chiaa_gaming" && donation.gifUrl && donation.gifFileName && donation.gifFileSize) {
-      console.log("Creating donation_gifs record for donation ID:", validatedData.id);
+      console.log("Creating donation_gifs record for donation ID (regardless of payment status):", validatedData.id);
       console.log("GIF details:", {
         gifUrl: donation.gifUrl,
         fileName: donation.gifFileName,
-        fileSize: donation.gifFileSize
+        fileSize: donation.gifFileSize,
+        paymentStatus: donation.payment_status
       });
       
       const { error: gifRecordError } = await supabase
@@ -161,21 +164,23 @@ export const createDonationRecord = async (donation: DonationRecord) => {
         console.error("Error creating GIF record:", gifRecordError);
         // Don't throw error here - donation was successful, GIF record is secondary
       } else {
-        console.log("Successfully created donation_gifs record with URL:", donation.gifUrl);
+        console.log("Successfully created donation_gifs record with URL (regardless of payment status):", donation.gifUrl);
       }
     } else if (donation.donationType === "chiaa_gaming") {
       console.log("No GIF to create record for:", {
         hasGifUrl: !!donation.gifUrl,
         hasFileName: !!donation.gifFileName,
-        hasFileSize: !!donation.gifFileSize
+        hasFileSize: !!donation.gifFileSize,
+        paymentStatus: donation.payment_status
       });
     }
 
-    // Clean up session storage after successful record creation
-    // Only clean up for successful payments in production, but keep for testing
+    // Clean up session storage only for successful payments
     if (donation.payment_status === "success") {
       sessionStorage.removeItem("donationData");
-      console.log("Cleaned up session storage");
+      console.log("Cleaned up session storage for successful payment");
+    } else {
+      console.log("Keeping session storage for failed/pending payment - payment status:", donation.payment_status);
     }
 
     return true;

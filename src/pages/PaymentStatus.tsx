@@ -122,7 +122,7 @@ const PaymentStatus = () => {
           setStatus("failed");
         }
         
-        // Create donation record in Supabase only after payment verification
+        // Create donation record in Supabase - ALWAYS create record regardless of payment status
         if (!isRecordCreated) {
           // Prepare donation record data with include_sound if available
           const recordData = {
@@ -131,7 +131,11 @@ const PaymentStatus = () => {
             message: donationData.message,
             order_id: orderId,
             payment_status: paymentStatus,
-            donationType: donationData.donationType || donationType
+            donationType: donationData.donationType || donationType,
+            // ALWAYS include GIF data for chiaa_gaming donations, regardless of payment status
+            gifUrl: donationData.gifUrl,
+            gifFileName: donationData.gifFileName,
+            gifFileSize: donationData.gifFileSize
           };
           
           // Add include_sound field if it exists in the donation data
@@ -139,6 +143,12 @@ const PaymentStatus = () => {
             // @ts-ignore - We know include_sound exists on these donation types
             recordData.include_sound = !!donationData.include_sound;
           }
+          
+          console.log("Creating donation record with GIF data (regardless of payment status):", {
+            hasGifUrl: !!recordData.gifUrl,
+            paymentStatus,
+            orderId
+          });
           
           await createDonationRecord(recordData);
           setIsRecordCreated(true);
