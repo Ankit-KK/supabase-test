@@ -96,8 +96,8 @@ const GifUpload: React.FC<GifUploadProps> = ({
   };
 
   return (
-    <div className="space-y-2">
-      <label className="block text-xs sm:text-sm font-medium text-white">
+    <div className="space-y-1">
+      <label className="block text-xs font-medium text-white">
         Upload GIF Alert (₹{minAmount}+) {!isEligible && `- Need ₹${minAmount - currentAmount} more`}
       </label>
       
@@ -116,21 +116,21 @@ const GifUpload: React.FC<GifUploadProps> = ({
             variant="outline"
             onClick={() => fileInputRef.current?.click()}
             disabled={isDisabled}
-            className="w-full bg-white/95 border-pink-300 text-gray-800 hover:bg-white hover:border-pink-400 h-8 sm:h-9 md:h-10 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-white/95 border-pink-300 text-gray-800 hover:bg-white hover:border-pink-400 h-7 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Upload className="w-4 h-4 mr-2" />
+            <Upload className="w-3 h-3 mr-1" />
             {!isEligible 
-              ? `Donate ₹${minAmount}+ to unlock GIF alerts`
+              ? `Donate ₹${minAmount}+ to unlock`
               : "Choose GIF (Max 5MB)"
             }
           </Button>
         </div>
       ) : (
-        <div className="space-y-2">
-          <div className="relative bg-black/20 rounded-lg p-3 border border-pink-300/50">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center space-x-2">
-                <span className="text-white text-sm font-medium">
+        <div className="space-y-1">
+          <div className="relative bg-black/20 rounded-lg p-2 border border-pink-300/50">
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center space-x-1">
+                <span className="text-white text-xs font-medium truncate">
                   {selectedGif.name}
                 </span>
                 <span className="text-white/70 text-xs">
@@ -142,9 +142,9 @@ const GifUpload: React.FC<GifUploadProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={handleRemoveGif}
-                className="text-pink-200 hover:text-pink-100 hover:bg-pink-500/20 h-6 w-6 p-0"
+                className="text-pink-200 hover:text-pink-100 hover:bg-pink-500/20 h-5 w-5 p-0"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3 h-3" />
               </Button>
             </div>
             
@@ -155,7 +155,7 @@ const GifUpload: React.FC<GifUploadProps> = ({
                   alt="GIF preview"
                   className="w-full max-w-xs mx-auto rounded-lg border border-pink-300/30"
                   style={{ 
-                    maxHeight: '120px',
+                    maxHeight: '80px',
                     objectFit: 'contain',
                     animationPlayState: isPlaying ? 'running' : 'paused'
                   }}
@@ -165,9 +165,9 @@ const GifUpload: React.FC<GifUploadProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={togglePlayback}
-                  className="absolute top-2 right-2 bg-black/50 text-white hover:bg-black/70 h-8 w-8 p-0"
+                  className="absolute top-1 right-1 bg-black/50 text-white hover:bg-black/70 h-6 w-6 p-0"
                 >
-                  {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                  {isPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
                 </Button>
               </div>
             )}
@@ -177,8 +177,8 @@ const GifUpload: React.FC<GifUploadProps> = ({
       
       <p className="text-xs text-white/80">
         {isEligible 
-          ? "Your GIF will be displayed as an animated alert on stream for 12 seconds"
-          : `Donate ₹${minAmount}+ to unlock GIF alerts that display on stream`
+          ? "GIF displays on stream for 12 seconds"
+          : `Donate ₹${minAmount}+ to unlock GIF alerts`
         }
       </p>
     </div>

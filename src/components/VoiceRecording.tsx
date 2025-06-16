@@ -141,51 +141,51 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
   };
 
   return (
-    <div className="space-y-2">
-      <label className="block text-xs sm:text-sm font-medium text-white">
+    <div className="space-y-1">
+      <label className="block text-xs font-medium text-white">
         Voice Message (₹{minAmount}+) {!isEligible && `- Need ₹${minAmount - currentAmount} more`}
       </label>
       
       {!selectedVoice ? (
-        <div className="space-y-2">
+        <div className="space-y-1">
           {!isRecording ? (
             <Button
               type="button"
               variant="outline"
               onClick={startRecording}
               disabled={isDisabled}
-              className="w-full bg-white/95 border-pink-300 text-gray-800 hover:bg-white hover:border-pink-400 h-8 sm:h-9 md:h-10 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-white/95 border-pink-300 text-gray-800 hover:bg-white hover:border-pink-400 h-7 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Mic className="w-4 h-4 mr-2" />
+              <Mic className="w-3 h-3 mr-1" />
               {!isEligible 
-                ? `Donate ₹${minAmount}+ to unlock voice messages`
+                ? `Donate ₹${minAmount}+ to unlock`
                 : "Start Recording"
               }
             </Button>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-1">
               <Button
                 type="button"
                 variant="destructive"
                 onClick={stopRecording}
-                className="w-full h-8 sm:h-9 md:h-10 text-sm"
+                className="w-full h-7 text-xs"
               >
-                <MicOff className="w-4 h-4 mr-2" />
+                <MicOff className="w-3 h-3 mr-1" />
                 Stop Recording ({formatTime(recordingTime)})
               </Button>
-              <div className="flex items-center justify-center space-x-2">
-                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+              <div className="flex items-center justify-center space-x-1">
+                <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div>
                 <span className="text-white/80 text-xs">Recording...</span>
               </div>
             </div>
           )}
         </div>
       ) : (
-        <div className="space-y-2">
-          <div className="relative bg-black/20 rounded-lg p-3 border border-pink-300/50">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center space-x-2">
-                <span className="text-white text-sm font-medium">
+        <div className="space-y-1">
+          <div className="relative bg-black/20 rounded-lg p-2 border border-pink-300/50">
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center space-x-1">
+                <span className="text-white text-xs font-medium">
                   Voice Message
                 </span>
                 <span className="text-white/70 text-xs">
@@ -197,14 +197,14 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={removeVoice}
-                className="text-pink-200 hover:text-pink-100 hover:bg-pink-500/20 h-6 w-6 p-0"
+                className="text-pink-200 hover:text-pink-100 hover:bg-pink-500/20 h-5 w-5 p-0"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3 h-3" />
               </Button>
             </div>
             
             {audioUrl && (
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <audio
                   ref={audioRef}
                   src={audioUrl}
@@ -218,10 +218,10 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
                   variant="outline"
                   size="sm"
                   onClick={isPlaying ? pauseAudio : playAudio}
-                  className="bg-pink-500/20 border-pink-300/50 text-pink-100 hover:bg-pink-500/30"
+                  className="bg-pink-500/20 border-pink-300/50 text-pink-100 hover:bg-pink-500/30 text-xs h-6"
                 >
-                  {isPlaying ? <Pause className="w-4 h-4 mr-2" /> : <Play className="w-4 h-4 mr-2" />}
-                  {isPlaying ? 'Pause' : 'Play'} Voice Message
+                  {isPlaying ? <Pause className="w-3 h-3 mr-1" /> : <Play className="w-3 h-3 mr-1" />}
+                  {isPlaying ? 'Pause' : 'Play'}
                 </Button>
               </div>
             )}
@@ -231,8 +231,8 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
       
       <p className="text-xs text-white/80">
         {isEligible 
-          ? "Your voice message will be played as an audio alert on stream"
-          : `Donate ₹${minAmount}+ to unlock voice messages that play on stream`
+          ? "Voice plays as audio alert on stream"
+          : `Donate ₹${minAmount}+ to unlock voice messages`
         }
       </p>
     </div>

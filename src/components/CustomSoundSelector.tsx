@@ -103,32 +103,32 @@ const CustomSoundSelector: React.FC<CustomSoundSelectorProps> = ({
   };
 
   return (
-    <div className="space-y-2">
-      <label className="block text-xs sm:text-sm font-medium text-white">
+    <div className="space-y-1">
+      <label className="block text-xs font-medium text-white">
         Custom Sound Alert (₹{minAmount}+) {!isEligible && `- Need ₹${minAmount - currentAmount} more`}
       </label>
       
-      <div className="space-y-2">
+      <div className="space-y-1">
         <Select
           value={selectedSound?.id || "none"}
           onValueChange={handleSoundSelect}
           disabled={isDisabled}
         >
-          <SelectTrigger className="bg-white/95 border-pink-300 text-gray-800 focus:border-pink-500 focus:ring-pink-500/50 h-8 sm:h-9 md:h-10 text-sm disabled:opacity-50">
+          <SelectTrigger className="bg-white/95 border-pink-300 text-gray-800 focus:border-pink-500 focus:ring-pink-500/50 h-7 text-xs disabled:opacity-50">
             <SelectValue placeholder={isEligible ? "Choose a sound alert" : `Donate ₹${minAmount}+ to unlock`} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="none">
               <div className="flex items-center space-x-2">
-                <VolumeX className="w-4 h-4" />
-                <span>No sound alert</span>
+                <VolumeX className="w-3 h-3" />
+                <span className="text-xs">No sound alert</span>
               </div>
             </SelectItem>
             {sounds.map((sound) => (
               <SelectItem key={sound.id} value={sound.id} disabled={!isEligible}>
                 <div className={`flex items-center space-x-2 ${!isEligible ? 'opacity-50' : ''}`}>
-                  <Volume2 className="w-4 h-4" />
-                  <span>{sound.name}</span>
+                  <Volume2 className="w-3 h-3" />
+                  <span className="text-xs">{sound.name}</span>
                   {!isEligible && <span className="text-xs">(₹{minAmount}+)</span>}
                 </div>
               </SelectItem>
@@ -143,17 +143,17 @@ const CustomSoundSelector: React.FC<CustomSoundSelectorProps> = ({
               variant="outline"
               size="sm"
               onClick={() => isPlaying ? stopPreview() : playPreview(selectedSound.file_url)}
-              className="bg-white/95 border-pink-300 text-gray-800 hover:bg-white hover:border-pink-400 text-xs"
+              className="bg-white/95 border-pink-300 text-gray-800 hover:bg-white hover:border-pink-400 text-xs h-6"
             >
               {isPlaying ? (
                 <>
                   <Pause className="w-3 h-3 mr-1" />
-                  Stop Preview
+                  Stop
                 </>
               ) : (
                 <>
                   <Play className="w-3 h-3 mr-1" />
-                  Preview Sound
+                  Preview
                 </>
               )}
             </Button>
@@ -163,7 +163,7 @@ const CustomSoundSelector: React.FC<CustomSoundSelectorProps> = ({
 
         <p className="text-xs text-white/80">
           {isEligible 
-            ? "Custom sound alerts play during your donation message on stream"
+            ? "Custom sound alerts play during donation messages on stream"
             : `Donate ₹${minAmount}+ to unlock custom sound alerts`
           }
         </p>
