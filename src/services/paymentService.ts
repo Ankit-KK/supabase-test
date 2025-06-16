@@ -1,5 +1,4 @@
 
-
 import { supabase } from "@/integrations/supabase/client";
 
 type DonationRecord = {
@@ -114,8 +113,13 @@ export const createDonationRecord = async (donation: DonationRecord) => {
       throw new Error(error.message || `Failed to create donation record in ${tableName}`);
     }
 
-    // Properly handle the response - data should contain the inserted record
-    const donationRecord = data;
+    // Check if data exists and has required properties
+    if (!data || typeof data !== 'object' || !('id' in data)) {
+      console.error("Invalid donation record returned:", data);
+      throw new Error("Failed to create donation record - invalid response");
+    }
+
+    const donationRecord = data as { id: string; [key: string]: any };
     console.log(`Successfully created donation record in ${tableName}:`, donationRecord);
 
     // Create donation_gifs record if GIF was uploaded for chiaa_gaming
@@ -152,4 +156,3 @@ export const createDonationRecord = async (donation: DonationRecord) => {
     throw error;
   }
 };
-
