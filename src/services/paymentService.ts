@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 type DonationRecord = {
@@ -93,20 +94,21 @@ export const createDonationRecord = async (donation: DonationRecord) => {
       payment_status: donation.payment_status
     };
     
-    // For chiaa_gaming donations, set include_sound to true if custom sound is selected
+    // For chiaa_gaming donations, handle custom sound and other features
     if (donation.donationType === "chiaa_gaming") {
-      // Set include_sound to true if a custom sound is selected
-      recordData.include_sound = !!donation.customSoundId;
-      
       // Add custom_sound_id if provided
       if (donation.customSoundId) {
         recordData.custom_sound_id = donation.customSoundId;
-        console.log("STORING CUSTOM SOUND ID:", {
+        // For testing: Set include_sound to true if custom sound is selected, regardless of payment status
+        recordData.include_sound = true;
+        console.log("STORING CUSTOM SOUND ID FOR CHIAA GAMING:", {
           customSoundId: donation.customSoundId,
-          include_sound: recordData.include_sound,
+          include_sound: true,
           orderId: donation.order_id,
           paymentStatus: donation.payment_status
         });
+      } else {
+        recordData.include_sound = false;
       }
 
       // Add gif_url for chiaa_gaming donations if provided
