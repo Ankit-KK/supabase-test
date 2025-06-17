@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,23 +16,20 @@ interface Donation {
   custom_sound_url?: string;
 }
 
-// Global queue and processing state to persist across component remounts
-const globalDonationQueue: Donation[] = [];
-let isGloballyProcessing = false;
-let globalProcessingTimeout: NodeJS.Timeout | null = null;
-const processedDonationIds = new Set<string>();
-
-// Global custom sound queue and processing
+// Global queues for sequential processing
+const globalMessageQueue: Donation[] = [];
+const globalGifQueue: { donation: Donation; duration: number }[] = [];
 const globalCustomSoundQueue: { donation: Donation; audioElement: HTMLAudioElement }[] = [];
-let isProcessingCustomSounds = false;
-
-// Global voice recording queue and processing
 const globalVoiceQueue: { donation: Donation; audioElement: HTMLAudioElement; duration: number }[] = [];
+
+// Global processing states
+let isProcessingMessages = false;
+let isProcessingGifs = false;
+let isProcessingCustomSounds = false;
 let isProcessingVoiceRecordings = false;
 
-// Global GIF queue and processing
-const globalGifQueue: { donation: Donation; duration: number }[] = [];
-let isProcessingGifs = false;
+let globalProcessingTimeout: NodeJS.Timeout | null = null;
+const processedDonationIds = new Set<string>();
 
 const ChiaaGamingObsOverlay = () => {
   const { obsId } = useParams();
@@ -111,10 +109,59 @@ const ChiaaGamingObsOverlay = () => {
     }
   };
 
-  // Process GIF queue with synchronized alerts
+  // Process message queue (highest priority)
+  const processNextMessage = () => {
+    if (globalMessageQueue.length === 0) {
+      isProcessingMessages = false;
+      // Start GIF processing after messages are done
+      processNextGif();
+      return;
+    }
+
+    if (isProcessingMessages) {
+      return;
+    }
+
+    isProcessingMessages = true;
+    const nextDonation = globalMessageQueue.shift();
+    
+    if (!nextDonation) {
+      isProcessingMessages = false;
+      processNextGif();
+      return;
+    }
+
+    console.log(`[${componentId.current}] Processing message from queue:`, nextDonation.id, nextDonation.name);
+    
+    // Update all component instances with the new queue length
+    setQueueLength(globalMessageQueue.length + globalGifQueue.length + globalCustomSoundQueue.length + globalVoiceQueue.length);
+    
+    // Mark this donation as processed
+    processedDonationIds.add(nextDonation.id);
+    
+    // Show the donation on all component instances
+    setCurrentDonation(nextDonation);
+
+    // Auto-hide after 12 seconds
+    const hideTimeout = setTimeout(() => {
+      console.log(`[${componentId.current}] Hiding message after 12 seconds:`, nextDonation.id);
+      
+      setCurrentDonation(null);
+      isProcessingMessages = false;
+      
+      // Process next message after 3 seconds
+      globalProcessingTimeout = setTimeout(() => {
+        processNextMessage();
+      }, 3000);
+    }, 12000);
+  };
+
+  // Process GIF queue (second priority)
   const processNextGif = () => {
     if (globalGifQueue.length === 0) {
       isProcessingGifs = false;
+      // Start sound processing after GIFs are done
+      processNextCustomSound();
       return;
     }
 
@@ -127,6 +174,7 @@ const ChiaaGamingObsOverlay = () => {
     
     if (!gifItem) {
       isProcessingGifs = false;
+      processNextCustomSound();
       return;
     }
 
@@ -154,24 +202,68 @@ const ChiaaGamingObsOverlay = () => {
     }, duration);
   };
 
-  // Add GIF to queue with calculated duration
-  const addGifToQueue = (donation: Donation, gifUrl: string) => {
-    console.log(`[${componentId.current}] Adding GIF to queue:`, donation.name, gifUrl);
-    
-    // Calculate duration: 12 seconds for GIFs
-    const duration = 12000;
-    
-    globalGifQueue.push({ donation, duration });
-    
-    // Start processing if not already processing
-    if (!isProcessingGifs) {
-      setTimeout(() => {
-        processNextGif();
-      }, 100);
+  // Process custom sound queue (third priority)
+  const processNextCustomSound = () => {
+    if (globalCustomSoundQueue.length === 0) {
+      isProcessingCustomSounds = false;
+      // Start voice processing after custom sounds are done
+      processNextVoiceRecording();
+      return;
     }
+
+    if (isProcessingCustomSounds) {
+      return;
+    }
+
+    isProcessingCustomSounds = true;
+    const soundItem = globalCustomSoundQueue.shift();
+    
+    if (!soundItem) {
+      isProcessingCustomSounds = false;
+      processNextVoiceRecording();
+      return;
+    }
+
+    const { donation, audioElement } = soundItem;
+    
+    console.log(`[${componentId.current}] Playing custom sound and showing alert:`, donation.name);
+    
+    // Show the custom sound alert
+    setCurrentCustomSoundAlert(donation);
+    
+    audioElement.onended = () => {
+      console.log(`[${componentId.current}] Custom sound ended, hiding alert`);
+      setCurrentCustomSoundAlert(null);
+      isProcessingCustomSounds = false;
+      
+      // Process next sound after a short delay
+      setTimeout(() => {
+        processNextCustomSound();
+      }, 500);
+    };
+    
+    audioElement.onerror = (e) => {
+      console.error(`[${componentId.current}] Failed to play custom sound:`, e);
+      setCurrentCustomSoundAlert(null);
+      isProcessingCustomSounds = false;
+      
+      // Process next sound even on error
+      setTimeout(() => {
+        processNextCustomSound();
+      }, 500);
+    };
+    
+    audioElement.play().catch(e => {
+      console.error(`[${componentId.current}] Audio play failed:`, e);
+      setCurrentCustomSoundAlert(null);
+      isProcessingCustomSounds = false;
+      setTimeout(() => {
+        processNextCustomSound();
+      }, 500);
+    });
   };
 
-  // Process voice recording queue with synchronized alerts
+  // Process voice recording queue (lowest priority)
   const processNextVoiceRecording = () => {
     if (globalVoiceQueue.length === 0) {
       isProcessingVoiceRecordings = false;
@@ -258,155 +350,9 @@ const ChiaaGamingObsOverlay = () => {
     });
   };
 
-  // Add voice recording to queue with pre-loaded audio and calculated duration
-  const addVoiceRecordingToQueue = (donation: Donation, voiceUrl: string) => {
-    console.log(`[${componentId.current}] Adding voice recording to queue:`, donation.name, voiceUrl);
-    
-    const audio = new Audio(voiceUrl);
-    audio.volume = 0.8;
-    audio.preload = 'auto';
-    
-    // Calculate duration based on donation amount
-    const duration = Number(donation.amount) < 150 ? 30000 : 60000; // 30s or 60s
-    
-    globalVoiceQueue.push({ donation, audioElement: audio, duration });
-    
-    // Start processing if not already processing
-    if (!isProcessingVoiceRecordings) {
-      setTimeout(() => {
-        processNextVoiceRecording();
-      }, 100);
-    }
-  };
-
-  // Process custom sound queue with synchronized alerts
-  const processNextCustomSound = () => {
-    if (globalCustomSoundQueue.length === 0) {
-      isProcessingCustomSounds = false;
-      return;
-    }
-
-    if (isProcessingCustomSounds) {
-      return;
-    }
-
-    isProcessingCustomSounds = true;
-    const soundItem = globalCustomSoundQueue.shift();
-    
-    if (!soundItem) {
-      isProcessingCustomSounds = false;
-      return;
-    }
-
-    const { donation, audioElement } = soundItem;
-    
-    console.log(`[${componentId.current}] Playing custom sound and showing alert:`, donation.name);
-    
-    // Show the custom sound alert
-    setCurrentCustomSoundAlert(donation);
-    
-    audioElement.onended = () => {
-      console.log(`[${componentId.current}] Custom sound ended, hiding alert`);
-      setCurrentCustomSoundAlert(null);
-      isProcessingCustomSounds = false;
-      
-      // Process next sound after a short delay
-      setTimeout(() => {
-        processNextCustomSound();
-      }, 500);
-    };
-    
-    audioElement.onerror = (e) => {
-      console.error(`[${componentId.current}] Failed to play custom sound:`, e);
-      setCurrentCustomSoundAlert(null);
-      isProcessingCustomSounds = false;
-      
-      // Process next sound even on error
-      setTimeout(() => {
-        processNextCustomSound();
-      }, 500);
-    };
-    
-    audioElement.play().catch(e => {
-      console.error(`[${componentId.current}] Audio play failed:`, e);
-      setCurrentCustomSoundAlert(null);
-      isProcessingCustomSounds = false;
-      setTimeout(() => {
-        processNextCustomSound();
-      }, 500);
-    });
-  };
-
-  // Add custom sound to queue with pre-loaded audio
-  const addCustomSoundToQueue = (donation: Donation, soundUrl: string) => {
-    console.log(`[${componentId.current}] Adding custom sound to queue:`, donation.name, soundUrl);
-    
-    const audio = new Audio(soundUrl);
-    audio.volume = 0.7;
-    audio.preload = 'auto';
-    
-    globalCustomSoundQueue.push({ donation, audioElement: audio });
-    
-    // Start processing if not already processing
-    if (!isProcessingCustomSounds) {
-      setTimeout(() => {
-        processNextCustomSound();
-      }, 100);
-    }
-  };
-
-  // Global queue processor that works across component instances
-  const processNextDonation = () => {
-    console.log(`[${componentId.current}] processNext called, global queue length:`, globalDonationQueue.length);
-    
-    if (globalDonationQueue.length === 0) {
-      console.log(`[${componentId.current}] Global queue is empty, stopping processing`);
-      isGloballyProcessing = false;
-      return;
-    }
-
-    if (isGloballyProcessing) {
-      console.log(`[${componentId.current}] Already processing globally, skipping`);
-      return;
-    }
-
-    isGloballyProcessing = true;
-    const nextDonation = globalDonationQueue.shift();
-    
-    if (!nextDonation) {
-      isGloballyProcessing = false;
-      return;
-    }
-
-    console.log(`[${componentId.current}] Processing donation from global queue:`, nextDonation.id, nextDonation.name);
-    console.log(`[${componentId.current}] Global queue after removing donation:`, globalDonationQueue.length);
-    
-    // Update all component instances with the new queue length
-    setQueueLength(globalDonationQueue.length);
-    
-    // Mark this donation as processed
-    processedDonationIds.add(nextDonation.id);
-    
-    // Show the donation on all component instances
-    setCurrentDonation(nextDonation);
-
-    // Auto-hide after 12 seconds
-    const hideTimeout = setTimeout(() => {
-      console.log(`[${componentId.current}] Hiding donation after 12 seconds:`, nextDonation.id);
-      
-      setCurrentDonation(null);
-      isGloballyProcessing = false;
-      
-      // Process next donation after 3 seconds
-      globalProcessingTimeout = setTimeout(() => {
-        processNextDonation();
-      }, 3000);
-    }, 12000);
-  };
-
-  // Add donation to global queue - handles simultaneous donations properly
-  const addDonationToGlobalQueue = (donation: Donation) => {
-    console.log(`[${componentId.current}] Processing donation with multiple media types:`, {
+  // Add donation to queues in priority order: messages first, then GIFs, then sounds
+  const addDonationToQueues = (donation: Donation) => {
+    console.log(`[${componentId.current}] Processing donation with sequential priority:`, {
       donationId: donation.id,
       name: donation.name,
       hasCustomSound: !!donation.custom_sound_url,
@@ -416,39 +362,55 @@ const ChiaaGamingObsOverlay = () => {
       amount: donation.amount
     });
 
-    // Handle custom sound if present and amount >= 100
-    if (donation.custom_sound_url && Number(donation.amount) >= 100) {
-      console.log(`[${componentId.current}] Adding custom sound to queue for donation:`, donation.id);
-      addCustomSoundToQueue(donation, donation.custom_sound_url);
-    }
-
-    // Handle voice recording if present and amount >= 100
-    if (donation.voice_url && Number(donation.amount) >= 100) {
-      console.log(`[${componentId.current}] Adding voice recording to queue for donation:`, donation.id);
-      addVoiceRecordingToQueue(donation, donation.voice_url);
-    }
-
-    // Handle GIF if present
-    if (donation.gif_url) {
-      console.log(`[${componentId.current}] Adding GIF to queue for donation:`, donation.id);
-      addGifToQueue(donation, donation.gif_url);
-    }
-
-    // ALWAYS add to message queue if messages are enabled and has text message content
-    // This ensures that donations with both media and messages show both
+    // 1. ALWAYS add message to queue first if messages are enabled and has text message content
     if (showMessages && donation.message && donation.message.trim()) {
       console.log(`[${componentId.current}] Adding message to donation queue for donation:`, donation.id);
-      globalDonationQueue.push(donation);
-      setQueueLength(globalDonationQueue.length);
-      console.log(`[${componentId.current}] Donation message added to global queue. New queue length:`, globalDonationQueue.length);
-      
-      // Start processing if not already processing
-      if (!isGloballyProcessing) {
-        console.log(`[${componentId.current}] Starting global queue processing for messages`);
-        setTimeout(() => {
-          processNextDonation();
-        }, 100);
-      }
+      globalMessageQueue.push(donation);
+    }
+
+    // 2. Add GIF to queue (will be processed after messages)
+    if (donation.gif_url) {
+      console.log(`[${componentId.current}] Adding GIF to queue for donation:`, donation.id);
+      const duration = 12000; // 12 seconds for GIFs
+      globalGifQueue.push({ donation, duration });
+    }
+
+    // 3. Add custom sound to queue (will be processed after GIFs)
+    if (donation.custom_sound_url && Number(donation.amount) >= 100) {
+      console.log(`[${componentId.current}] Adding custom sound to queue for donation:`, donation.id);
+      const audio = new Audio(donation.custom_sound_url);
+      audio.volume = 0.7;
+      audio.preload = 'auto';
+      globalCustomSoundQueue.push({ donation, audioElement: audio });
+    }
+
+    // 4. Add voice recording to queue (will be processed after custom sounds)
+    if (donation.voice_url && Number(donation.amount) >= 100) {
+      console.log(`[${componentId.current}] Adding voice recording to queue for donation:`, donation.id);
+      const audio = new Audio(donation.voice_url);
+      audio.volume = 0.8;
+      audio.preload = 'auto';
+      const duration = Number(donation.amount) < 150 ? 30000 : 60000; // 30s or 60s
+      globalVoiceQueue.push({ donation, audioElement: audio, duration });
+    }
+
+    // Update queue length display
+    setQueueLength(globalMessageQueue.length + globalGifQueue.length + globalCustomSoundQueue.length + globalVoiceQueue.length);
+    
+    console.log(`[${componentId.current}] Updated queue lengths:`, {
+      messages: globalMessageQueue.length,
+      gifs: globalGifQueue.length,
+      customSounds: globalCustomSoundQueue.length,
+      voice: globalVoiceQueue.length,
+      total: globalMessageQueue.length + globalGifQueue.length + globalCustomSoundQueue.length + globalVoiceQueue.length
+    });
+
+    // Start processing if not already processing (messages have highest priority)
+    if (!isProcessingMessages && !isProcessingGifs && !isProcessingCustomSounds && !isProcessingVoiceRecordings) {
+      console.log(`[${componentId.current}] Starting sequential queue processing`);
+      setTimeout(() => {
+        processNextMessage();
+      }, 100);
     }
 
     // Mark as processed to avoid duplicate processing
@@ -478,7 +440,7 @@ const ChiaaGamingObsOverlay = () => {
     fetchTotalDonations();
 
     // Set queue length from global state
-    setQueueLength(globalDonationQueue.length);
+    setQueueLength(globalMessageQueue.length + globalGifQueue.length + globalCustomSoundQueue.length + globalVoiceQueue.length);
 
     // Set up real-time subscription for new donations
     const channel = supabase
@@ -499,8 +461,8 @@ const ChiaaGamingObsOverlay = () => {
             setTotalDonations(prev => prev + Number(newDonation.amount));
           }
           
-          // Add donation to global queue for processing
-          addDonationToGlobalQueue(newDonation);
+          // Add donation to sequential queues for processing
+          addDonationToQueues(newDonation);
         }
       )
       .subscribe();
@@ -527,9 +489,9 @@ const ChiaaGamingObsOverlay = () => {
     <ObsConfigProvider>
       <div className="w-screen h-screen bg-transparent overflow-hidden relative">
         {/* Global Queue Status Indicator */}
-        {(queueLength > 0 || globalCustomSoundQueue.length > 0 || globalVoiceQueue.length > 0 || globalGifQueue.length > 0) && (
+        {(globalMessageQueue.length > 0 || globalCustomSoundQueue.length > 0 || globalVoiceQueue.length > 0 || globalGifQueue.length > 0) && (
           <div className="absolute top-2 right-2 bg-black/50 text-white px-2 py-1 rounded text-xs z-50">
-            Queue: {queueLength} | Processing: {isGloballyProcessing ? 'Yes' : 'No'} | Sounds: {globalCustomSoundQueue.length} | Voice: {globalVoiceQueue.length} | GIFs: {globalGifQueue.length} | ID: {componentId.current.substr(0, 4)}
+            Queue: M:{globalMessageQueue.length} | G:{globalGifQueue.length} | CS:{globalCustomSoundQueue.length} | V:{globalVoiceQueue.length} | Processing: {isProcessingMessages || isProcessingGifs || isProcessingCustomSounds || isProcessingVoiceRecordings ? 'Yes' : 'No'} | ID: {componentId.current.substr(0, 4)}
           </div>
         )}
 
