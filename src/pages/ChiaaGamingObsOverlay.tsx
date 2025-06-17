@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,7 +16,7 @@ interface Donation {
   custom_sound_url?: string;
 }
 
-// Global queues for sequential processing
+// Global queues for sequential processing with improved cleanup
 const globalMessageQueue: Donation[] = [];
 const globalGifQueue: { donation: Donation; duration: number }[] = [];
 const globalCustomSoundQueue: { donation: Donation; audioElement: HTMLAudioElement }[] = [];
@@ -30,6 +31,49 @@ let isProcessingVoiceRecordings = false;
 let globalProcessingTimeout: NodeJS.Timeout | null = null;
 const processedDonationIds = new Set<string>();
 
+// Global cleanup function to prevent memory leaks
+const cleanupGlobalState = () => {
+  // Clear all queues
+  globalMessageQueue.length = 0;
+  globalGifQueue.length = 0;
+  
+  // Clean up audio elements
+  globalCustomSoundQueue.forEach(item => {
+    try {
+      item.audioElement.pause();
+      item.audioElement.src = '';
+    } catch (error) {
+      console.warn('Error cleaning up custom sound audio element:', error);
+    }
+  });
+  globalCustomSoundQueue.length = 0;
+  
+  globalVoiceQueue.forEach(item => {
+    try {
+      item.audioElement.pause();
+      item.audioElement.src = '';
+    } catch (error) {
+      console.warn('Error cleaning up voice audio element:', error);
+    }
+  });
+  globalVoiceQueue.length = 0;
+  
+  // Reset processing states
+  isProcessingMessages = false;
+  isProcessingGifs = false;
+  isProcessingCustomSounds = false;
+  isProcessingVoiceRecordings = false;
+  
+  // Clear timeout
+  if (globalProcessingTimeout) {
+    clearTimeout(globalProcessingTimeout);
+    globalProcessingTimeout = null;
+  }
+  
+  // Clear processed IDs
+  processedDonationIds.clear();
+};
+
 const ChiaaGamingObsOverlay = () => {
   const { obsId } = useParams();
   const [searchParams] = useSearchParams();
@@ -38,11 +82,10 @@ const ChiaaGamingObsOverlay = () => {
   const [currentVoiceAlert, setCurrentVoiceAlert] = useState<Donation | null>(null);
   const [currentGifAlert, setCurrentGifAlert] = useState<Donation | null>(null);
   const [totalDonations, setTotalDonations] = useState(0);
-  const [queueLength, setQueueLength] = useState(0);
   
-  // Use ref to track if this component instance is the active processor
-  const isActiveProcessor = useRef(false);
-  const componentId = useRef(Math.random().toString(36).substr(2, 9));
+  // Use ref to track component instance
+  const componentId = useRef(Math.random().toString(36).substring(2, 9));
+  const cleanupRef = useRef<(() => void) | null>(null);
   
   // Parse URL parameters
   const showMessages = searchParams.get("showMessages") === "true";
@@ -59,48 +102,65 @@ const ChiaaGamingObsOverlay = () => {
     componentId: componentId.current
   });
 
-  // Clean up media after it's displayed
+  // Clean up media after it's displayed with improved error handling
   const cleanupMedia = async (donationId: string, mediaUrl: string, mediaType: 'gif' | 'voice') => {
     try {
       console.log(`Cleaning up ${mediaType} for donation:`, donationId);
       
-      const { error: updateError } = await supabase
-        .from("donation_gifs")
-        .update({ 
-          displayed_at: new Date().toISOString(),
-          status: 'displayed'
-        })
-        .eq("donation_id", donationId)
-        .eq("file_type", mediaType);
+      // Mark as displayed with error handling
+      try {
+        const { error: updateError } = await supabase
+          .from("donation_gifs")
+          .update({ 
+            displayed_at: new Date().toISOString(),
+            status: 'displayed'
+          })
+          .eq("donation_id", donationId)
+          .eq("file_type", mediaType);
 
-      if (updateError) {
-        console.error(`Error marking ${mediaType} as displayed:`, updateError);
+        if (updateError) {
+          console.error(`Error marking ${mediaType} as displayed:`, updateError);
+        }
+      } catch (dbError) {
+        console.error(`Database error when marking ${mediaType} as displayed:`, dbError);
       }
 
-      const urlParts = mediaUrl.split('/');
-      const fileName = urlParts[urlParts.length - 1];
-      
-      const { error: deleteError } = await supabase.storage
-        .from('donation-gifs')
-        .remove([fileName]);
+      // Extract filename safely
+      try {
+        const urlParts = mediaUrl.split('/');
+        const fileName = urlParts[urlParts.length - 1];
+        
+        if (fileName) {
+          const { error: deleteError } = await supabase.storage
+            .from('donation-gifs')
+            .remove([fileName]);
 
-      if (deleteError) {
-        console.error(`Error deleting ${mediaType} file:`, deleteError);
-      } else {
-        console.log(`${mediaType} file deleted successfully:`, fileName);
-      }
+          if (deleteError) {
+            console.error(`Error deleting ${mediaType} file:`, deleteError);
+          } else {
+            console.log(`${mediaType} file deleted successfully:`, fileName);
+          }
 
-      const { error: markDeletedError } = await supabase
-        .from("donation_gifs")
-        .update({ 
-          deleted_at: new Date().toISOString(),
-          status: 'deleted'
-        })
-        .eq("donation_id", donationId)
-        .eq("file_type", mediaType);
+          // Mark as deleted
+          try {
+            const { error: markDeletedError } = await supabase
+              .from("donation_gifs")
+              .update({ 
+                deleted_at: new Date().toISOString(),
+                status: 'deleted'
+              })
+              .eq("donation_id", donationId)
+              .eq("file_type", mediaType);
 
-      if (markDeletedError) {
-        console.error(`Error marking ${mediaType} as deleted:`, markDeletedError);
+            if (markDeletedError) {
+              console.error(`Error marking ${mediaType} as deleted:`, markDeletedError);
+            }
+          } catch (markError) {
+            console.error(`Error marking ${mediaType} as deleted:`, markError);
+          }
+        }
+      } catch (fileError) {
+        console.error(`Error processing file deletion for ${mediaType}:`, fileError);
       }
 
     } catch (error) {
@@ -131,9 +191,6 @@ const ChiaaGamingObsOverlay = () => {
     }
 
     console.log(`[${componentId.current}] Processing message from queue:`, nextDonation.id, nextDonation.name);
-    
-    // Update all component instances with the new queue length
-    setQueueLength(globalMessageQueue.length + globalGifQueue.length + globalCustomSoundQueue.length + globalVoiceQueue.length);
     
     // Mark this donation as processed
     processedDonationIds.add(nextDonation.id);
@@ -377,24 +434,29 @@ const ChiaaGamingObsOverlay = () => {
     // 3. Add custom sound to queue (will be processed after GIFs)
     if (donation.custom_sound_url && Number(donation.amount) >= 100) {
       console.log(`[${componentId.current}] Adding custom sound to queue for donation:`, donation.id);
-      const audio = new Audio(donation.custom_sound_url);
-      audio.volume = 0.7;
-      audio.preload = 'auto';
-      globalCustomSoundQueue.push({ donation, audioElement: audio });
+      try {
+        const audio = new Audio(donation.custom_sound_url);
+        audio.volume = 0.7;
+        audio.preload = 'auto';
+        globalCustomSoundQueue.push({ donation, audioElement: audio });
+      } catch (error) {
+        console.error(`[${componentId.current}] Error creating custom sound audio element:`, error);
+      }
     }
 
     // 4. Add voice recording to queue (will be processed after custom sounds)
     if (donation.voice_url && Number(donation.amount) >= 100) {
       console.log(`[${componentId.current}] Adding voice recording to queue for donation:`, donation.id);
-      const audio = new Audio(donation.voice_url);
-      audio.volume = 0.8;
-      audio.preload = 'auto';
-      const duration = Number(donation.amount) < 150 ? 30000 : 60000; // 30s or 60s
-      globalVoiceQueue.push({ donation, audioElement: audio, duration });
+      try {
+        const audio = new Audio(donation.voice_url);
+        audio.volume = 0.8;
+        audio.preload = 'auto';
+        const duration = Number(donation.amount) < 150 ? 30000 : 60000; // 30s or 60s
+        globalVoiceQueue.push({ donation, audioElement: audio, duration });
+      } catch (error) {
+        console.error(`[${componentId.current}] Error creating voice audio element:`, error);
+      }
     }
-
-    // Update queue length display
-    setQueueLength(globalMessageQueue.length + globalGifQueue.length + globalCustomSoundQueue.length + globalVoiceQueue.length);
     
     console.log(`[${componentId.current}] Updated queue lengths:`, {
       messages: globalMessageQueue.length,
@@ -419,27 +481,33 @@ const ChiaaGamingObsOverlay = () => {
   useEffect(() => {
     // Fetch today's total donations for goal progress
     const fetchTotalDonations = async () => {
-      const today = new Date();
-      const todayStart = `${today.toISOString().split('T')[0]}T00:00:00`;
-      const todayEnd = `${today.toISOString().split('T')[0]}T23:59:59`;
-      
-      const { data } = await supabase
-        .from("chiaa_gaming_donations")
-        .select("amount")
-        .eq("payment_status", "success")
-        .gte("created_at", todayStart)
-        .lte("created_at", todayEnd);
+      try {
+        const today = new Date();
+        const todayStart = `${today.toISOString().split('T')[0]}T00:00:00`;
+        const todayEnd = `${today.toISOString().split('T')[0]}T23:59:59`;
+        
+        const { data, error } = await supabase
+          .from("chiaa_gaming_donations")
+          .select("amount")
+          .eq("payment_status", "success")
+          .gte("created_at", todayStart)
+          .lte("created_at", todayEnd);
 
-      if (data) {
-        const total = data.reduce((sum, donation) => sum + Number(donation.amount), 0);
-        setTotalDonations(total);
+        if (error) {
+          console.error('Error fetching total donations:', error);
+          return;
+        }
+
+        if (data) {
+          const total = data.reduce((sum, donation) => sum + Number(donation.amount), 0);
+          setTotalDonations(total);
+        }
+      } catch (error) {
+        console.error('Exception when fetching total donations:', error);
       }
     };
 
     fetchTotalDonations();
-
-    // Set queue length from global state
-    setQueueLength(globalMessageQueue.length + globalGifQueue.length + globalCustomSoundQueue.length + globalVoiceQueue.length);
 
     // Set up real-time subscription for new donations
     const channel = supabase
@@ -452,33 +520,52 @@ const ChiaaGamingObsOverlay = () => {
           table: 'chiaa_gaming_donations'
         },
         (payload) => {
-          const newDonation = payload.new as Donation;
-          console.log(`[${componentId.current}] New donation received in OBS overlay:`, newDonation.id, newDonation.name);
-          
-          // Update total for goal only if payment is successful
-          if ((payload.new as any).payment_status === "success") {
-            setTotalDonations(prev => prev + Number(newDonation.amount));
+          try {
+            const newDonation = payload.new as Donation;
+            console.log(`[${componentId.current}] New donation received in OBS overlay:`, newDonation.id, newDonation.name);
+            
+            // Update total for goal only if payment is successful
+            if ((payload.new as any).payment_status === "success") {
+              setTotalDonations(prev => prev + Number(newDonation.amount));
+            }
+            
+            // Add donation to sequential queues for processing
+            addDonationToQueues(newDonation);
+          } catch (error) {
+            console.error(`[${componentId.current}] Error processing new donation:`, error);
           }
-          
-          // Add donation to sequential queues for processing
-          addDonationToQueues(newDonation);
         }
       )
       .subscribe();
 
     console.log(`[${componentId.current}] Real-time subscription set up for chiaa_gaming OBS overlay: ${obsId}`);
 
-    return () => {
-      console.log(`[${componentId.current}] Component unmounting, cleaning up`);
+    // Store cleanup function
+    cleanupRef.current = () => {
+      console.log(`[${componentId.current}] Component cleanup initiated`);
       supabase.removeChannel(channel);
       
-      // Clear timeouts if this was the active processor
+      // Clear timeouts
       if (globalProcessingTimeout) {
         clearTimeout(globalProcessingTimeout);
         globalProcessingTimeout = null;
       }
     };
+
+    return () => {
+      if (cleanupRef.current) {
+        cleanupRef.current();
+      }
+    };
   }, [obsId, showMessages]);
+
+  // Cleanup on component unmount
+  useEffect(() => {
+    return () => {
+      console.log(`[${componentId.current}] Component unmounting, performing cleanup`);
+      cleanupGlobalState();
+    };
+  }, []);
 
   const progressPercentage = Math.min((totalDonations / goalTarget) * 100, 100);
   const shouldHideDonationBox = currentDonation && (currentDonation.gif_url || currentDonation.voice_url);
