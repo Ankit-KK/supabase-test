@@ -1,5 +1,4 @@
 
-
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,17 +16,23 @@ interface Donation {
   custom_sound_url?: string;
 }
 
+// Global queue and processing state to persist across component remounts
+const globalDonationQueue: Donation[] = [];
+let isGloballyProcessing = false;
+let globalProcessingTimeout: NodeJS.Timeout | null = null;
+const processedDonationIds = new Set<string>();
+
 const ChiaaGamingObsOverlay = () => {
   const { obsId } = useParams();
   const [searchParams] = useSearchParams();
   const [currentDonation, setCurrentDonation] = useState<Donation | null>(null);
-  const [donationQueue, setDonationQueue] = useState<Donation[]>([]);
   const [totalDonations, setTotalDonations] = useState(0);
   const [currentCustomSound, setCurrentCustomSound] = useState<string | null>(null);
+  const [queueLength, setQueueLength] = useState(0);
   
-  // Use refs to track processing state without causing re-renders
-  const isProcessingRef = useRef(false);
-  const processingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Use ref to track if this component instance is the active processor
+  const isActiveProcessor = useRef(false);
+  const componentId = useRef(Math.random().toString(36).substr(2, 9));
   
   // Parse URL parameters
   const showMessages = searchParams.get("showMessages") === "true";
@@ -40,7 +45,8 @@ const ChiaaGamingObsOverlay = () => {
     showMessages,
     showGoal,
     goalName,
-    goalTarget
+    goalTarget,
+    componentId: componentId.current
   });
 
   // Clean up media after it's displayed
@@ -48,7 +54,6 @@ const ChiaaGamingObsOverlay = () => {
     try {
       console.log(`Cleaning up ${mediaType} for donation:`, donationId);
       
-      // Mark media as displayed in the database
       const { error: updateError } = await supabase
         .from("donation_gifs")
         .update({ 
@@ -62,11 +67,9 @@ const ChiaaGamingObsOverlay = () => {
         console.error(`Error marking ${mediaType} as displayed:`, updateError);
       }
 
-      // Extract file path from URL for deletion
       const urlParts = mediaUrl.split('/');
       const fileName = urlParts[urlParts.length - 1];
       
-      // Delete the file from storage
       const { error: deleteError } = await supabase.storage
         .from('donation-gifs')
         .remove([fileName]);
@@ -77,7 +80,6 @@ const ChiaaGamingObsOverlay = () => {
         console.log(`${mediaType} file deleted successfully:`, fileName);
       }
 
-      // Mark as deleted in database
       const { error: markDeletedError } = await supabase
         .from("donation_gifs")
         .update({ 
@@ -96,111 +98,104 @@ const ChiaaGamingObsOverlay = () => {
     }
   };
 
-  // Process the next donation in queue
+  // Global queue processor that works across component instances
   const processNextDonation = () => {
-    console.log("processNextDonation called, current queue length:", donationQueue.length);
+    console.log(`[${componentId.current}] processNext called, global queue length:`, globalDonationQueue.length);
     
-    if (donationQueue.length === 0) {
-      console.log("Queue is empty, stopping processing");
-      isProcessingRef.current = false;
+    if (globalDonationQueue.length === 0) {
+      console.log(`[${componentId.current}] Global queue is empty, stopping processing`);
+      isGloballyProcessing = false;
       return;
     }
 
-    if (isProcessingRef.current) {
-      console.log("Already processing, skipping");
+    if (isGloballyProcessing) {
+      console.log(`[${componentId.current}] Already processing globally, skipping`);
       return;
     }
 
-    isProcessingRef.current = true;
-    const nextDonation = donationQueue[0];
-    console.log("Processing donation from queue:", nextDonation.id, nextDonation.name);
+    isGloballyProcessing = true;
+    const nextDonation = globalDonationQueue.shift();
     
-    // Remove from queue
-    setDonationQueue(prev => {
-      const newQueue = prev.slice(1);
-      console.log("Queue after removing donation:", newQueue.length);
-      return newQueue;
-    });
+    if (!nextDonation) {
+      isGloballyProcessing = false;
+      return;
+    }
+
+    console.log(`[${componentId.current}] Processing donation from global queue:`, nextDonation.id, nextDonation.name);
+    console.log(`[${componentId.current}] Global queue after removing donation:`, globalDonationQueue.length);
     
-    // Show the donation
+    // Update all component instances with the new queue length
+    setQueueLength(globalDonationQueue.length);
+    
+    // Mark this donation as processed
+    processedDonationIds.add(nextDonation.id);
+    
+    // Show the donation on all component instances
     setCurrentDonation(nextDonation);
 
     // Auto-hide after 12 seconds and cleanup media if present
     setTimeout(() => {
-      console.log("Hiding donation after 12 seconds:", nextDonation.id);
+      console.log(`[${componentId.current}] Hiding donation after 12 seconds:`, nextDonation.id);
       
       if (nextDonation.gif_url) {
-        console.log("Cleaning up GIF after display:", nextDonation.gif_url);
         cleanupMedia(nextDonation.id, nextDonation.gif_url, 'gif');
       }
       if (nextDonation.voice_url) {
-        console.log("Cleaning up Voice after display:", nextDonation.voice_url);
         cleanupMedia(nextDonation.id, nextDonation.voice_url, 'voice');
       }
       
       setCurrentDonation(null);
-      isProcessingRef.current = false;
+      isGloballyProcessing = false;
       
       // Process next donation after 3 seconds
-      processingTimeoutRef.current = setTimeout(() => {
+      globalProcessingTimeout = setTimeout(() => {
         processNextDonation();
       }, 3000);
     }, 12000);
   };
 
-  // Monitor queue changes and start processing if needed
-  useEffect(() => {
-    if (donationQueue.length > 0 && !isProcessingRef.current) {
-      console.log("Starting queue processing, queue length:", donationQueue.length);
-      // Clear any existing timeout
-      if (processingTimeoutRef.current) {
-        clearTimeout(processingTimeoutRef.current);
-      }
-      // Start processing immediately
-      processingTimeoutRef.current = setTimeout(() => {
-        processNextDonation();
-      }, 100);
+  // Add donation to global queue
+  const addDonationToGlobalQueue = (donation: Donation) => {
+    // Check if this donation was already processed
+    if (processedDonationIds.has(donation.id)) {
+      console.log(`[${componentId.current}] Donation already processed, skipping:`, donation.id);
+      return;
     }
 
-    // Cleanup timeout on unmount
-    return () => {
-      if (processingTimeoutRef.current) {
-        clearTimeout(processingTimeoutRef.current);
-      }
-    };
-  }, [donationQueue.length]);
-
-  // Add donation to queue - simplified
-  const addDonationToQueue = (donation: Donation) => {
-    console.log("Adding donation to queue:", donation.id, donation.name);
+    console.log(`[${componentId.current}] Adding donation to global queue:`, donation.id, donation.name);
     
     // Handle custom sound immediately if present
     if (donation.custom_sound_url && Number(donation.amount) >= 100) {
-      console.log("Playing custom sound for donation:", {
+      console.log(`[${componentId.current}] Playing custom sound for donation:`, {
         customSoundUrl: donation.custom_sound_url,
         amount: donation.amount,
         donationId: donation.id
       });
       setCurrentCustomSound(donation.custom_sound_url);
       
-      // Clear custom sound after 5 seconds
       setTimeout(() => {
         setCurrentCustomSound(null);
       }, 5000);
     }
 
-    // Always add to message queue if messages are enabled and has content to show
+    // Add to message queue if messages are enabled and has content to show
     if (showMessages && (donation.message || donation.gif_url || donation.voice_url)) {
-      setDonationQueue(prev => {
-        const newQueue = [...prev, donation];
-        console.log("Donation added to queue. New queue length:", newQueue.length);
-        return newQueue;
-      });
+      globalDonationQueue.push(donation);
+      setQueueLength(globalDonationQueue.length);
+      console.log(`[${componentId.current}] Donation added to global queue. New queue length:`, globalDonationQueue.length);
+      
+      // Start processing if not already processing
+      if (!isGloballyProcessing) {
+        console.log(`[${componentId.current}] Starting global queue processing`);
+        setTimeout(() => {
+          processNextDonation();
+        }, 100);
+      }
     }
   };
 
   useEffect(() => {
-    // Fetch today's total donations for goal progress (only successful ones for goal)
+    // Fetch today's total donations for goal progress
     const fetchTotalDonations = async () => {
       const today = new Date();
       const todayStart = `${today.toISOString().split('T')[0]}T00:00:00`;
@@ -221,9 +216,12 @@ const ChiaaGamingObsOverlay = () => {
 
     fetchTotalDonations();
 
+    // Set queue length from global state
+    setQueueLength(globalDonationQueue.length);
+
     // Set up real-time subscription for new donations
     const channel = supabase
-      .channel(`chiaa-gaming-obs-${obsId}`)
+      .channel(`chiaa-gaming-obs-${obsId}-${componentId.current}`)
       .on(
         'postgres_changes',
         {
@@ -233,42 +231,41 @@ const ChiaaGamingObsOverlay = () => {
         },
         (payload) => {
           const newDonation = payload.new as Donation;
-          console.log("New donation received in OBS overlay:", newDonation.id, newDonation.name);
+          console.log(`[${componentId.current}] New donation received in OBS overlay:`, newDonation.id, newDonation.name);
           
           // Update total for goal only if payment is successful
           if ((payload.new as any).payment_status === "success") {
             setTotalDonations(prev => prev + Number(newDonation.amount));
           }
           
-          // Add donation to queue for processing
-          addDonationToQueue(newDonation);
+          // Add donation to global queue for processing
+          addDonationToGlobalQueue(newDonation);
         }
       )
       .subscribe();
 
-    console.log(`Real-time subscription set up for chiaa_gaming OBS overlay: ${obsId}`);
+    console.log(`[${componentId.current}] Real-time subscription set up for chiaa_gaming OBS overlay: ${obsId}`);
 
     return () => {
+      console.log(`[${componentId.current}] Component unmounting, cleaning up`);
       supabase.removeChannel(channel);
-      // Clean up timeouts
-      if (processingTimeoutRef.current) {
-        clearTimeout(processingTimeoutRef.current);
+      
+      // Clear timeouts if this was the active processor
+      if (globalProcessingTimeout) {
+        clearTimeout(globalProcessingTimeout);
+        globalProcessingTimeout = null;
       }
     };
   }, [obsId, showMessages]);
 
   const progressPercentage = Math.min((totalDonations / goalTarget) * 100, 100);
-
-  // Check if we should hide the donation box (when GIF or voice is present)
   const shouldHideDonationBox = currentDonation && (currentDonation.gif_url || currentDonation.voice_url);
-  
-  // Check if we should show text message (only if no voice message)
   const shouldShowTextMessage = currentDonation && currentDonation.message && !currentDonation.voice_url;
 
   return (
     <ObsConfigProvider>
       <div className="w-screen h-screen bg-transparent overflow-hidden relative">
-        {/* Custom Sound Player - auto-play just like voice messages */}
+        {/* Custom Sound Player */}
         {currentCustomSound && (
           <div className="absolute top-4 left-4">
             <audio
@@ -276,28 +273,27 @@ const ChiaaGamingObsOverlay = () => {
               autoPlay
               className="hidden"
               onLoad={() => {
-                console.log("Custom sound loaded successfully:", currentCustomSound);
+                console.log(`[${componentId.current}] Custom sound loaded successfully:`, currentCustomSound);
               }}
               onError={(e) => {
-                console.error("Failed to load custom sound:", currentCustomSound);
-                console.error("Audio error event:", e);
+                console.error(`[${componentId.current}] Failed to load custom sound:`, currentCustomSound);
               }}
               onEnded={() => {
-                console.log("Custom sound playback ended");
+                console.log(`[${componentId.current}] Custom sound playback ended`);
                 setCurrentCustomSound(null);
               }}
             />
           </div>
         )}
 
-        {/* Queue Status Indicator - Enhanced with more info */}
-        {donationQueue.length > 0 && (
+        {/* Global Queue Status Indicator */}
+        {queueLength > 0 && (
           <div className="absolute top-2 right-2 bg-black/50 text-white px-2 py-1 rounded text-xs z-50">
-            Queue: {donationQueue.length} | Processing: {isProcessingRef.current ? 'Yes' : 'No'}
+            Queue: {queueLength} | Processing: {isGloballyProcessing ? 'Yes' : 'No'} | ID: {componentId.current.substr(0, 4)}
           </div>
         )}
 
-        {/* Donation Messages - Only show pink box if no GIF or voice */}
+        {/* Donation Messages */}
         {showMessages && currentDonation && !shouldHideDonationBox && (
           <DraggableResizableBox className="animate-slide-in-right">
             <div className="bg-gradient-to-r from-pink-600/90 to-purple-600/90 backdrop-blur-sm rounded-lg p-4 shadow-2xl border border-pink-500/50 max-w-md">
@@ -313,7 +309,7 @@ const ChiaaGamingObsOverlay = () => {
           </DraggableResizableBox>
         )}
 
-        {/* Standalone GIF Display - no pink box */}
+        {/* Standalone GIF Display */}
         {currentDonation && currentDonation.gif_url && (
           <DraggableResizableBox className="animate-slide-in-right">
             <div className="flex justify-center">
@@ -323,11 +319,10 @@ const ChiaaGamingObsOverlay = () => {
                 className="max-w-full max-h-64 rounded-lg"
                 style={{ objectFit: 'contain' }}
                 onLoad={() => {
-                  console.log("GIF loaded successfully:", currentDonation.gif_url);
+                  console.log(`[${componentId.current}] GIF loaded successfully:`, currentDonation.gif_url);
                 }}
                 onError={(e) => {
-                  console.error("Failed to load GIF:", currentDonation.gif_url);
-                  console.error("Image error event:", e);
+                  console.error(`[${componentId.current}] Failed to load GIF:`, currentDonation.gif_url);
                   e.currentTarget.style.display = 'none';
                 }}
               />
@@ -335,7 +330,7 @@ const ChiaaGamingObsOverlay = () => {
           </DraggableResizableBox>
         )}
 
-        {/* Standalone Voice Audio Player - no pink box, auto-play */}
+        {/* Standalone Voice Audio Player */}
         {currentDonation && currentDonation.voice_url && (
           <div className="absolute top-4 left-4">
             <audio
@@ -343,14 +338,13 @@ const ChiaaGamingObsOverlay = () => {
               autoPlay
               className="hidden"
               onLoad={() => {
-                console.log("Voice audio loaded successfully:", currentDonation.voice_url);
+                console.log(`[${componentId.current}] Voice audio loaded successfully:`, currentDonation.voice_url);
               }}
               onError={(e) => {
-                console.error("Failed to load voice audio:", currentDonation.voice_url);
-                console.error("Audio error event:", e);
+                console.error(`[${componentId.current}] Failed to load voice audio:`, currentDonation.voice_url);
               }}
               onEnded={() => {
-                console.log("Voice audio playback ended");
+                console.log(`[${componentId.current}] Voice audio playback ended`);
               }}
             />
           </div>
@@ -386,4 +380,3 @@ const ChiaaGamingObsOverlay = () => {
 };
 
 export default ChiaaGamingObsOverlay;
-
