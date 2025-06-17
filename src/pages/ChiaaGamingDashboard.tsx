@@ -4,18 +4,25 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, calculateMonthlyTotal } from "@/utils/dashboardUtils";
-import { LogOut, MessageSquare } from "lucide-react";
+import { LogOut, MessageSquare, Image, Mic, Volume2, MessageCircle } from "lucide-react";
 import CSVExportDialog from "@/components/CSVExportDialog";
 
 interface Donation {
   id: string;
   name: string;
   amount: number;
+  message: string;
   created_at: string;
   payment_status: string;
+  gif_url?: string;
+  voice_url?: string;
+  custom_sound_name?: string;
+  custom_sound_url?: string;
+  include_sound?: boolean;
 }
 
 const ChiaaGamingDashboard = () => {
@@ -89,7 +96,7 @@ const ChiaaGamingDashboard = () => {
     try {
       const { data, error } = await supabase
         .from("chiaa_gaming_donations")
-        .select("id, name, amount, created_at, payment_status")
+        .select("id, name, amount, message, created_at, payment_status, gif_url, voice_url, custom_sound_name, custom_sound_url, include_sound")
         .eq("payment_status", "success")
         .order("created_at", { ascending: false });
 
@@ -136,6 +143,48 @@ const ChiaaGamingDashboard = () => {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const renderMediaBadges = (donation: Donation) => {
+    const badges = [];
+    
+    if (donation.gif_url) {
+      badges.push(
+        <Badge key="gif" variant="secondary" className="text-xs bg-purple-500/20 text-purple-300 border-purple-500/50">
+          <Image className="w-3 h-3 mr-1" />
+          GIF
+        </Badge>
+      );
+    }
+    
+    if (donation.voice_url) {
+      badges.push(
+        <Badge key="voice" variant="secondary" className="text-xs bg-blue-500/20 text-blue-300 border-blue-500/50">
+          <Mic className="w-3 h-3 mr-1" />
+          Voice
+        </Badge>
+      );
+    }
+    
+    if (donation.custom_sound_name || donation.custom_sound_url) {
+      badges.push(
+        <Badge key="sound" variant="secondary" className="text-xs bg-orange-500/20 text-orange-300 border-orange-500/50">
+          <Volume2 className="w-3 h-3 mr-1" />
+          Sound
+        </Badge>
+      );
+    }
+    
+    if (donation.message && donation.message.trim() !== '') {
+      badges.push(
+        <Badge key="message" variant="secondary" className="text-xs bg-green-500/20 text-green-300 border-green-500/50">
+          <MessageCircle className="w-3 h-3 mr-1" />
+          Message
+        </Badge>
+      );
+    }
+    
+    return badges;
   };
 
   if (loading) {
@@ -196,7 +245,7 @@ const ChiaaGamingDashboard = () => {
         <Card className="bg-black/50 border-pink-500/30">
           <CardHeader>
             <CardTitle className="text-pink-100">Recent Successful Payments</CardTitle>
-            <CardDescription className="text-pink-300">All successful donations</CardDescription>
+            <CardDescription className="text-pink-300">All successful donations with media attachments</CardDescription>
           </CardHeader>
           <CardContent>
             {donations.length === 0 ? (
@@ -210,6 +259,7 @@ const ChiaaGamingDashboard = () => {
                     <TableHead className="text-pink-200">Name</TableHead>
                     <TableHead className="text-pink-200">Amount</TableHead>
                     <TableHead className="text-pink-200">Date & Time</TableHead>
+                    <TableHead className="text-pink-200">Media</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -220,6 +270,11 @@ const ChiaaGamingDashboard = () => {
                         {formatCurrency(Number(donation.amount))}
                       </TableCell>
                       <TableCell className="text-pink-200">{formatDate(donation.created_at)}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {renderMediaBadges(donation)}
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
