@@ -427,17 +427,12 @@ const ChiaaGamingDonationMessages = () => {
               </div>
 
               {/* Messages Only OBS Link */}
-              <div className="space-y-2">
+              <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <MessageSquare className="w-5 h-5 text-blue-400" />
                   <Label className="text-pink-200">Donation Messages OBS Link</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Input 
-                    value={obsLink} 
-                    readOnly 
-                    className="font-mono text-sm flex-1 bg-black/30 border-pink-500/50 text-pink-100"
-                  />
                   <Button variant="outline" onClick={copyMessagesLink} className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20">
                     <LinkIcon className="mr-2 h-4 w-4" />
                     Copy
@@ -450,23 +445,23 @@ const ChiaaGamingDonationMessages = () => {
                     Open
                   </Button>
                 </div>
+                <Input 
+                  value={obsLink} 
+                  readOnly 
+                  className="font-mono text-sm bg-black/30 border-pink-500/50 text-pink-100"
+                />
                 <p className="text-sm text-pink-300/70">
                   This link will only display donation messages. Each message shows for 12 seconds.
                 </p>
               </div>
 
               {/* Goal Only OBS Link */}
-              <div className="space-y-2">
+              <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <Target className="w-5 h-5 text-green-400" />
                   <Label className="text-pink-200">Goal Only OBS Link</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Input 
-                    value={goalObsLink} 
-                    readOnly 
-                    className="font-mono text-sm flex-1 bg-black/30 border-pink-500/50 text-pink-100"
-                  />
                   <Button variant="outline" onClick={copyGoalLink} className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20">
                     <LinkIcon className="mr-2 h-4 w-4" />
                     Copy
@@ -479,6 +474,11 @@ const ChiaaGamingDonationMessages = () => {
                     Open
                   </Button>
                 </div>
+                <Input 
+                  value={goalObsLink} 
+                  readOnly 
+                  className="font-mono text-sm bg-black/30 border-pink-500/50 text-pink-100"
+                />
                 <p className="text-sm text-pink-300/70">
                   This link will only display the donation goal with real-time progress.
                 </p>
