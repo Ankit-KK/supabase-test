@@ -390,7 +390,7 @@ const ChiaaGamingObsOverlay = () => {
     // Show the donation on all component instances
     setCurrentDonation(nextDonation);
 
-    // Auto-hide after 12 seconds and cleanup media if present
+    // Auto-hide after 12 seconds
     const hideTimeout = setTimeout(() => {
       console.log(`[${componentId.current}] Hiding donation after 12 seconds:`, nextDonation.id);
       
@@ -404,14 +404,8 @@ const ChiaaGamingObsOverlay = () => {
     }, 12000);
   };
 
-  // Add donation to global queue - FIXED: Now handles simultaneous donations properly
+  // Add donation to global queue - handles simultaneous donations properly
   const addDonationToGlobalQueue = (donation: Donation) => {
-    // Check if this donation was already processed
-    if (processedDonationIds.has(donation.id)) {
-      console.log(`[${componentId.current}] Donation already processed, skipping:`, donation.id);
-      return;
-    }
-
     console.log(`[${componentId.current}] Processing donation with multiple media types:`, {
       donationId: donation.id,
       name: donation.name,
