@@ -23,13 +23,14 @@ let globalProcessingTimeout: NodeJS.Timeout | null = null;
 const processedDonationIds = new Set<string>();
 
 // Global custom sound queue and processing
-const globalCustomSoundQueue: string[] = [];
+const globalCustomSoundQueue: { donation: Donation; audioElement: HTMLAudioElement }[] = [];
 let isProcessingCustomSounds = false;
 
 const ChiaaGamingObsOverlay = () => {
   const { obsId } = useParams();
   const [searchParams] = useSearchParams();
   const [currentDonation, setCurrentDonation] = useState<Donation | null>(null);
+  const [currentCustomSoundAlert, setCurrentCustomSoundAlert] = useState<Donation | null>(null);
   const [totalDonations, setTotalDonations] = useState(0);
   const [queueLength, setQueueLength] = useState(0);
   
@@ -52,7 +53,7 @@ const ChiaaGamingObsOverlay = () => {
     componentId: componentId.current
   });
 
-  // Process custom sound queue
+  // Process custom sound queue with synchronized alerts
   const processNextCustomSound = () => {
     if (globalCustomSoundQueue.length === 0) {
       isProcessingCustomSounds = false;
@@ -64,38 +65,45 @@ const ChiaaGamingObsOverlay = () => {
     }
 
     isProcessingCustomSounds = true;
-    const soundUrl = globalCustomSoundQueue.shift();
+    const soundItem = globalCustomSoundQueue.shift();
     
-    if (!soundUrl) {
+    if (!soundItem) {
       isProcessingCustomSounds = false;
       return;
     }
 
-    console.log(`[${componentId.current}] Playing custom sound:`, soundUrl);
+    const { donation, audioElement } = soundItem;
     
-    const audio = new Audio(soundUrl);
-    audio.volume = 0.7;
+    console.log(`[${componentId.current}] Playing custom sound and showing alert:`, donation.name);
     
-    audio.onended = () => {
-      console.log(`[${componentId.current}] Custom sound ended, processing next`);
+    // Show the custom sound alert
+    setCurrentCustomSoundAlert(donation);
+    
+    audioElement.onended = () => {
+      console.log(`[${componentId.current}] Custom sound ended, hiding alert`);
+      setCurrentCustomSoundAlert(null);
       isProcessingCustomSounds = false;
+      
       // Process next sound after a short delay
       setTimeout(() => {
         processNextCustomSound();
       }, 500);
     };
     
-    audio.onerror = (e) => {
-      console.error(`[${componentId.current}] Failed to play custom sound:`, soundUrl, e);
+    audioElement.onerror = (e) => {
+      console.error(`[${componentId.current}] Failed to play custom sound:`, e);
+      setCurrentCustomSoundAlert(null);
       isProcessingCustomSounds = false;
+      
       // Process next sound even on error
       setTimeout(() => {
         processNextCustomSound();
       }, 500);
     };
     
-    audio.play().catch(e => {
+    audioElement.play().catch(e => {
       console.error(`[${componentId.current}] Audio play failed:`, e);
+      setCurrentCustomSoundAlert(null);
       isProcessingCustomSounds = false;
       setTimeout(() => {
         processNextCustomSound();
@@ -103,10 +111,15 @@ const ChiaaGamingObsOverlay = () => {
     });
   };
 
-  // Add custom sound to queue
-  const addCustomSoundToQueue = (soundUrl: string) => {
-    console.log(`[${componentId.current}] Adding custom sound to queue:`, soundUrl);
-    globalCustomSoundQueue.push(soundUrl);
+  // Add custom sound to queue with pre-loaded audio
+  const addCustomSoundToQueue = (donation: Donation, soundUrl: string) => {
+    console.log(`[${componentId.current}] Adding custom sound to queue:`, donation.name, soundUrl);
+    
+    const audio = new Audio(soundUrl);
+    audio.volume = 0.7;
+    audio.preload = 'auto';
+    
+    globalCustomSoundQueue.push({ donation, audioElement: audio });
     
     // Start processing if not already processing
     if (!isProcessingCustomSounds) {
@@ -231,17 +244,18 @@ const ChiaaGamingObsOverlay = () => {
 
     console.log(`[${componentId.current}] Adding donation to global queue:`, donation.id, donation.name);
     
-    // Handle custom sound immediately if present - add to sound queue
+    // Handle custom sound immediately if present - add to sound queue instead of donation queue
     if (donation.custom_sound_url && Number(donation.amount) >= 100) {
       console.log(`[${componentId.current}] Adding custom sound to queue for donation:`, {
         customSoundUrl: donation.custom_sound_url,
         amount: donation.amount,
         donationId: donation.id
       });
-      addCustomSoundToQueue(donation.custom_sound_url);
+      addCustomSoundToQueue(donation, donation.custom_sound_url);
+      return; // Don't add to regular donation queue if it has custom sound
     }
 
-    // Add to message queue if messages are enabled and has content to show
+    // Add to message queue if messages are enabled and has content to show (excluding custom sounds)
     if (showMessages && (donation.message || donation.gif_url || donation.voice_url)) {
       globalDonationQueue.push(donation);
       setQueueLength(globalDonationQueue.length);
@@ -329,13 +343,26 @@ const ChiaaGamingObsOverlay = () => {
     <ObsConfigProvider>
       <div className="w-screen h-screen bg-transparent overflow-hidden relative">
         {/* Global Queue Status Indicator */}
-        {queueLength > 0 && (
+        {(queueLength > 0 || globalCustomSoundQueue.length > 0) && (
           <div className="absolute top-2 right-2 bg-black/50 text-white px-2 py-1 rounded text-xs z-50">
             Queue: {queueLength} | Processing: {isGloballyProcessing ? 'Yes' : 'No'} | Sounds: {globalCustomSoundQueue.length} | ID: {componentId.current.substr(0, 4)}
           </div>
         )}
 
-        {/* Donation Messages */}
+        {/* Custom Sound Alert */}
+        {showMessages && currentCustomSoundAlert && (
+          <DraggableResizableBox className="animate-slide-in-right">
+            <div className="bg-gradient-to-r from-orange-600/90 to-red-600/90 backdrop-blur-sm rounded-lg p-4 shadow-2xl border border-orange-500/50 max-w-md">
+              <div className="flex items-center space-x-3">
+                <div className="w-3 h-3 bg-orange-400 rounded-full animate-pulse"></div>
+                <span className="text-orange-100 font-bold text-lg">{currentCustomSoundAlert.name}</span>
+                <span className="text-orange-300 font-semibold">played custom voice</span>
+              </div>
+            </div>
+          </DraggableResizableBox>
+        )}
+
+        {/* Regular Donation Messages */}
         {showMessages && currentDonation && !shouldHideDonationBox && (
           <DraggableResizableBox className="animate-slide-in-right">
             <div className="bg-gradient-to-r from-pink-600/90 to-purple-600/90 backdrop-blur-sm rounded-lg p-4 shadow-2xl border border-pink-500/50 max-w-md">
