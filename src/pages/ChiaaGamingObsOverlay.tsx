@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -488,13 +487,6 @@ const ChiaaGamingObsOverlay = () => {
   return (
     <ObsConfigProvider>
       <div className="w-screen h-screen bg-transparent overflow-hidden relative">
-        {/* Global Queue Status Indicator */}
-        {(globalMessageQueue.length > 0 || globalCustomSoundQueue.length > 0 || globalVoiceQueue.length > 0 || globalGifQueue.length > 0) && (
-          <div className="absolute top-2 right-2 bg-black/50 text-white px-2 py-1 rounded text-xs z-50">
-            Queue: M:{globalMessageQueue.length} | G:{globalGifQueue.length} | CS:{globalCustomSoundQueue.length} | V:{globalVoiceQueue.length} | Processing: {isProcessingMessages || isProcessingGifs || isProcessingCustomSounds || isProcessingVoiceRecordings ? 'Yes' : 'No'} | ID: {componentId.current.substr(0, 4)}
-          </div>
-        )}
-
         {/* Voice Recording Alert */}
         {showMessages && currentVoiceAlert && (
           <DraggableResizableBox className="animate-slide-in-right">
