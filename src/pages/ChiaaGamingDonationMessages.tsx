@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -5,11 +6,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthProtection } from "@/hooks/useAuthProtection";
-import { Link as LinkIcon, ExternalLink, MessageSquare, Image, Mic, Volume2, Target } from "lucide-react";
+import { Link as LinkIcon, ExternalLink } from "lucide-react";
 
 interface Donation {
   id: string;
@@ -18,10 +18,6 @@ interface Donation {
   message: string;
   created_at: string;
   payment_status: string;
-  gif_url?: string;
-  voice_url?: string;
-  custom_sound_url?: string;
-  custom_sound_name?: string;
 }
 
 const ChiaaGamingDonationMessages = () => {
@@ -294,48 +290,11 @@ const ChiaaGamingDonationMessages = () => {
     });
   };
 
-  const renderMediaBadges = (donation: Donation) => {
-    const badges = [];
-    
-    if (donation.gif_url) {
-      badges.push(
-        <Badge key="gif" variant="secondary" className="bg-green-500/20 text-green-300 border-green-500/50">
-          <Image className="w-3 h-3 mr-1" />
-          GIF
-        </Badge>
-      );
-    }
-    
-    if (donation.voice_url) {
-      badges.push(
-        <Badge key="voice" variant="secondary" className="bg-purple-500/20 text-purple-300 border-purple-500/50">
-          <Mic className="w-3 h-3 mr-1" />
-          Voice
-        </Badge>
-      );
-    }
-    
-    if (donation.custom_sound_url && Number(donation.amount) >= 100) {
-      badges.push(
-        <Badge key="sound" variant="secondary" className="bg-orange-500/20 text-orange-300 border-orange-500/50">
-          <Volume2 className="w-3 h-3 mr-1" />
-          {donation.custom_sound_name || 'Sound Alert'}
-        </Badge>
-      );
-    }
-    
-    return badges.length > 0 ? (
-      <div className="flex flex-wrap gap-1">
-        {badges}
-      </div>
-    ) : null;
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-900 via-purple-900 to-black">
       <div className="container mx-auto py-8 px-4">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-pink-100">OBS Integration & Messages</h1>
+          <h1 className="text-3xl font-bold text-pink-100">Donation Messages</h1>
           <div className="flex items-center gap-4">
             <Button 
               variant="outline" 
@@ -376,6 +335,32 @@ const ChiaaGamingDonationMessages = () => {
                 </div>
               </div>
 
+              {/* Messages OBS Link */}
+              <div className="space-y-2">
+                <Label className="text-pink-200">Donation Messages OBS Link</Label>
+                <div className="flex items-center space-x-2">
+                  <Input 
+                    value={obsLink} 
+                    readOnly 
+                    className="font-mono text-sm flex-1 bg-black/30 border-pink-500/50 text-pink-100"
+                  />
+                  <Button variant="outline" onClick={copyMessagesLink} className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20">
+                    <LinkIcon className="mr-2 h-4 w-4" />
+                    Copy
+                  </Button>
+                  <Button variant="outline" onClick={regenerateMessagesLink} className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20">
+                    Generate New
+                  </Button>
+                  <Button variant="outline" onClick={openMessagesInNewTab} className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20">
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Open
+                  </Button>
+                </div>
+                <p className="text-sm text-pink-300/70">
+                  This link will display donation messages. Each message shows for 12 seconds.
+                </p>
+              </div>
+
               {/* Goal Toggle */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
@@ -399,106 +384,76 @@ const ChiaaGamingDonationMessages = () => {
               </div>
 
               {/* Goal Configuration */}
-              <div className="space-y-4 p-4 bg-pink-500/10 rounded-lg border border-pink-500/30">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="goal-name" className="text-pink-200">Goal Name</Label>
-                    <Input
-                      id="goal-name"
-                      value={goalName}
-                      onChange={handleGoalNameChange}
-                      placeholder="Enter goal name"
-                      className="mt-1 bg-black/30 border-pink-500/50 text-pink-100 placeholder:text-pink-300/70"
-                    />
+              {showGoal && (
+                <div className="space-y-4 p-4 bg-pink-500/10 rounded-lg border border-pink-500/30">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="goal-name" className="text-pink-200">Goal Name</Label>
+                      <Input
+                        id="goal-name"
+                        value={goalName}
+                        onChange={handleGoalNameChange}
+                        placeholder="Enter goal name"
+                        className="mt-1 bg-black/30 border-pink-500/50 text-pink-100 placeholder:text-pink-300/70"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="goal-target" className="text-pink-200">Target Amount (₹)</Label>
+                      <Input
+                        id="goal-target"
+                        type="number"
+                        value={goalTarget}
+                        onChange={handleGoalTargetChange}
+                        placeholder="Enter target amount"
+                        className="mt-1 bg-black/30 border-pink-500/50 text-pink-100 placeholder:text-pink-300/70"
+                        min="1"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <Label htmlFor="goal-target" className="text-pink-200">Target Amount (₹)</Label>
-                    <Input
-                      id="goal-target"
-                      type="number"
-                      value={goalTarget}
-                      onChange={handleGoalTargetChange}
-                      placeholder="Enter target amount"
-                      className="mt-1 bg-black/30 border-pink-500/50 text-pink-100 placeholder:text-pink-300/70"
-                      min="1"
-                    />
+
+                  {/* Goal OBS Link */}
+                  <div className="space-y-2">
+                    <Label className="text-pink-200">Goal OBS Link</Label>
+                    <div className="flex items-center space-x-2">
+                      <Input 
+                        value={goalObsLink} 
+                        readOnly 
+                        className="font-mono text-sm flex-1 bg-black/30 border-pink-500/50 text-pink-100"
+                      />
+                      <Button variant="outline" onClick={copyGoalLink} className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20">
+                        <LinkIcon className="mr-2 h-4 w-4" />
+                        Copy
+                      </Button>
+                      <Button variant="outline" onClick={regenerateGoalLink} className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20">
+                        Generate New
+                      </Button>
+                      <Button variant="outline" onClick={openGoalInNewTab} className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20">
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                        Open
+                      </Button>
+                    </div>
+                    <p className="text-sm text-pink-300/70">
+                      This link will only display the donation goal with real-time progress.
+                    </p>
                   </div>
                 </div>
-              </div>
-
-              {/* Messages Only OBS Link */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5 text-blue-400" />
-                  <Label className="text-pink-200">Donation Messages OBS Link</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Button variant="outline" onClick={copyMessagesLink} className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20">
-                    <LinkIcon className="mr-2 h-4 w-4" />
-                    Copy
-                  </Button>
-                  <Button variant="outline" onClick={regenerateMessagesLink} className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20">
-                    Generate New
-                  </Button>
-                  <Button variant="outline" onClick={openMessagesInNewTab} className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20">
-                    <ExternalLink className="mr-2 h-4 w-4" />
-                    Open
-                  </Button>
-                </div>
-                <Input 
-                  value={obsLink} 
-                  readOnly 
-                  className="font-mono text-sm bg-black/30 border-pink-500/50 text-pink-100"
-                />
-                <p className="text-sm text-pink-300/70">
-                  This link will only display donation messages. Each message shows for 12 seconds.
-                </p>
-              </div>
-
-              {/* Goal Only OBS Link */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Target className="w-5 h-5 text-green-400" />
-                  <Label className="text-pink-200">Goal Only OBS Link</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Button variant="outline" onClick={copyGoalLink} className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20">
-                    <LinkIcon className="mr-2 h-4 w-4" />
-                    Copy
-                  </Button>
-                  <Button variant="outline" onClick={regenerateGoalLink} className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20">
-                    Generate New
-                  </Button>
-                  <Button variant="outline" onClick={openGoalInNewTab} className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20">
-                    <ExternalLink className="mr-2 h-4 w-4" />
-                    Open
-                  </Button>
-                </div>
-                <Input 
-                  value={goalObsLink} 
-                  readOnly 
-                  className="font-mono text-sm bg-black/30 border-pink-500/50 text-pink-100"
-                />
-                <p className="text-sm text-pink-300/70">
-                  This link will only display the donation goal with real-time progress.
-                </p>
-              </div>
+              )}
             </div>
           </CardContent>
         </Card>
 
         <Card className="bg-black/50 border-pink-500/30">
           <CardHeader>
-            <CardTitle className="text-pink-100">Today's Donation Messages</CardTitle>
+            <CardTitle className="text-pink-100">Recent Donation Messages</CardTitle>
             <CardDescription className="text-pink-300">
-              Messages with media content from today - updated in real-time
+              Messages are updated in real-time
             </CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <p className="text-center py-4 text-pink-200">Loading donation messages...</p>
             ) : donations.length === 0 ? (
-              <p className="text-center py-4 text-pink-300">No donation messages found for today</p>
+              <p className="text-center py-4 text-pink-300">No donation messages found</p>
             ) : (
               <div className="rounded-md border border-pink-500/30">
                 <Table>
@@ -507,7 +462,6 @@ const ChiaaGamingDonationMessages = () => {
                       <TableHead className="text-pink-200">Date</TableHead>
                       <TableHead className="text-pink-200">Name</TableHead>
                       <TableHead className="text-pink-200">Amount</TableHead>
-                      <TableHead className="text-pink-200">Media</TableHead>
                       <TableHead className="w-[40%] text-pink-200">Message</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -517,10 +471,7 @@ const ChiaaGamingDonationMessages = () => {
                         <TableCell className="text-pink-100">{formatDate(donation.created_at)}</TableCell>
                         <TableCell className="text-pink-100">{donation.name}</TableCell>
                         <TableCell className="text-pink-400 font-semibold">₹{Number(donation.amount).toLocaleString()}</TableCell>
-                        <TableCell>{renderMediaBadges(donation)}</TableCell>
-                        <TableCell className="text-pink-100">
-                          {donation.message || <span className="text-pink-400 text-sm italic">No text message</span>}
-                        </TableCell>
+                        <TableCell className="text-pink-100">{donation.message}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

@@ -4,25 +4,18 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, calculateMonthlyTotal } from "@/utils/dashboardUtils";
-import { LogOut, MessageSquare, Image, Mic, Volume2 } from "lucide-react";
+import { LogOut, MessageSquare } from "lucide-react";
 import CSVExportDialog from "@/components/CSVExportDialog";
 
 interface Donation {
   id: string;
   name: string;
   amount: number;
-  message: string;
   created_at: string;
   payment_status: string;
-  gif_url?: string;
-  voice_url?: string;
-  custom_sound_url?: string;
-  custom_sound_name?: string;
-  include_sound?: boolean;
 }
 
 const ChiaaGamingDashboard = () => {
@@ -96,7 +89,7 @@ const ChiaaGamingDashboard = () => {
     try {
       const { data, error } = await supabase
         .from("chiaa_gaming_donations")
-        .select("*")
+        .select("id, name, amount, created_at, payment_status")
         .eq("payment_status", "success")
         .order("created_at", { ascending: false });
 
@@ -145,54 +138,6 @@ const ChiaaGamingDashboard = () => {
     });
   };
 
-  const renderMediaBadges = (donation: Donation) => {
-    const badges = [];
-    
-    if (donation.message && donation.message.trim()) {
-      badges.push(
-        <Badge key="message" variant="secondary" className="bg-blue-500/20 text-blue-300 border-blue-500/50">
-          <MessageSquare className="w-3 h-3 mr-1" />
-          Message
-        </Badge>
-      );
-    }
-    
-    if (donation.gif_url) {
-      badges.push(
-        <Badge key="gif" variant="secondary" className="bg-green-500/20 text-green-300 border-green-500/50">
-          <Image className="w-3 h-3 mr-1" />
-          GIF
-        </Badge>
-      );
-    }
-    
-    if (donation.voice_url) {
-      badges.push(
-        <Badge key="voice" variant="secondary" className="bg-purple-500/20 text-purple-300 border-purple-500/50">
-          <Mic className="w-3 h-3 mr-1" />
-          Voice
-        </Badge>
-      );
-    }
-    
-    if (donation.custom_sound_url && Number(donation.amount) >= 100) {
-      badges.push(
-        <Badge key="sound" variant="secondary" className="bg-orange-500/20 text-orange-300 border-orange-500/50">
-          <Volume2 className="w-3 h-3 mr-1" />
-          Sound Alert
-        </Badge>
-      );
-    }
-    
-    return badges.length > 0 ? (
-      <div className="flex flex-wrap gap-1">
-        {badges}
-      </div>
-    ) : (
-      <span className="text-pink-400 text-sm">No media</span>
-    );
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-900 via-purple-900 to-black flex items-center justify-center">
@@ -203,7 +148,7 @@ const ChiaaGamingDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-900 via-purple-900 to-black p-4">
-      <div className="container mx-auto max-w-7xl">
+      <div className="container mx-auto max-w-6xl">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
@@ -217,7 +162,7 @@ const ChiaaGamingDashboard = () => {
               className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20"
             >
               <MessageSquare className="w-4 h-4 mr-2" />
-              Messages & OBS
+              Messages
             </Button>
             <CSVExportDialog 
               tableName="chiaa_gaming_donations" 
@@ -250,51 +195,35 @@ const ChiaaGamingDashboard = () => {
         {/* Donations Table */}
         <Card className="bg-black/50 border-pink-500/30">
           <CardHeader>
-            <CardTitle className="text-pink-100">Recent Successful Donations</CardTitle>
-            <CardDescription className="text-pink-300">All successful donations with media attachments</CardDescription>
+            <CardTitle className="text-pink-100">Recent Successful Payments</CardTitle>
+            <CardDescription className="text-pink-300">All successful donations</CardDescription>
           </CardHeader>
           <CardContent>
             {donations.length === 0 ? (
               <div className="text-center py-8 text-pink-300">
-                No successful donations found
+                No successful payments found
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-pink-500/30">
-                      <TableHead className="text-pink-200">Name</TableHead>
-                      <TableHead className="text-pink-200">Amount</TableHead>
-                      <TableHead className="text-pink-200">Media Content</TableHead>
-                      <TableHead className="text-pink-200">Message</TableHead>
-                      <TableHead className="text-pink-200">Date & Time</TableHead>
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-pink-500/30">
+                    <TableHead className="text-pink-200">Name</TableHead>
+                    <TableHead className="text-pink-200">Amount</TableHead>
+                    <TableHead className="text-pink-200">Date & Time</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {donations.map((donation) => (
+                    <TableRow key={donation.id} className="border-pink-500/20 hover:bg-pink-500/10">
+                      <TableCell className="font-medium text-pink-100">{donation.name}</TableCell>
+                      <TableCell className="text-pink-400 font-semibold">
+                        {formatCurrency(Number(donation.amount))}
+                      </TableCell>
+                      <TableCell className="text-pink-200">{formatDate(donation.created_at)}</TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {donations.map((donation) => (
-                      <TableRow key={donation.id} className="border-pink-500/20 hover:bg-pink-500/10">
-                        <TableCell className="font-medium text-pink-100">{donation.name}</TableCell>
-                        <TableCell className="text-pink-400 font-semibold">
-                          {formatCurrency(Number(donation.amount))}
-                        </TableCell>
-                        <TableCell className="min-w-[200px]">
-                          {renderMediaBadges(donation)}
-                        </TableCell>
-                        <TableCell className="text-pink-200 max-w-[300px]">
-                          {donation.message ? (
-                            <div className="truncate" title={donation.message}>
-                              {donation.message}
-                            </div>
-                          ) : (
-                            <span className="text-pink-400 text-sm">No message</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-pink-200">{formatDate(donation.created_at)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                  ))}
+                </TableBody>
+              </Table>
             )}
           </CardContent>
         </Card>
