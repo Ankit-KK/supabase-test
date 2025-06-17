@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -335,7 +336,7 @@ const ChiaaGamingObsOverlay = () => {
     const originalOnEnded = audioElement.onended;
     audioElement.onended = () => {
       clearTimeout(fallbackTimeout);
-      if (originalOnEnded) originalOnEnded();
+      if (originalOnEnded) originalOnEnded.call(audioElement);
     };
     
     audioElement.play().catch(e => {
