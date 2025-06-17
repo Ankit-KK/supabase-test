@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -61,6 +62,55 @@ const ChiaaGamingObsOverlay = () => {
     goalTarget,
     componentId: componentId.current
   });
+
+  // Clean up media after it's displayed
+  const cleanupMedia = async (donationId: string, mediaUrl: string, mediaType: 'gif' | 'voice') => {
+    try {
+      console.log(`Cleaning up ${mediaType} for donation:`, donationId);
+      
+      const { error: updateError } = await supabase
+        .from("donation_gifs")
+        .update({ 
+          displayed_at: new Date().toISOString(),
+          status: 'displayed'
+        })
+        .eq("donation_id", donationId)
+        .eq("file_type", mediaType);
+
+      if (updateError) {
+        console.error(`Error marking ${mediaType} as displayed:`, updateError);
+      }
+
+      const urlParts = mediaUrl.split('/');
+      const fileName = urlParts[urlParts.length - 1];
+      
+      const { error: deleteError } = await supabase.storage
+        .from('donation-gifs')
+        .remove([fileName]);
+
+      if (deleteError) {
+        console.error(`Error deleting ${mediaType} file:`, deleteError);
+      } else {
+        console.log(`${mediaType} file deleted successfully:`, fileName);
+      }
+
+      const { error: markDeletedError } = await supabase
+        .from("donation_gifs")
+        .update({ 
+          deleted_at: new Date().toISOString(),
+          status: 'deleted'
+        })
+        .eq("donation_id", donationId)
+        .eq("file_type", mediaType);
+
+      if (markDeletedError) {
+        console.error(`Error marking ${mediaType} as deleted:`, markDeletedError);
+      }
+
+    } catch (error) {
+      console.error(`Error in cleanup${mediaType}:`, error);
+    }
+  };
 
   // Process GIF queue with synchronized alerts
   const processNextGif = () => {
