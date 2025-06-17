@@ -22,12 +22,15 @@ let isGloballyProcessing = false;
 let globalProcessingTimeout: NodeJS.Timeout | null = null;
 const processedDonationIds = new Set<string>();
 
+// Global custom sound queue and processing
+const globalCustomSoundQueue: string[] = [];
+let isProcessingCustomSounds = false;
+
 const ChiaaGamingObsOverlay = () => {
   const { obsId } = useParams();
   const [searchParams] = useSearchParams();
   const [currentDonation, setCurrentDonation] = useState<Donation | null>(null);
   const [totalDonations, setTotalDonations] = useState(0);
-  const [currentCustomSound, setCurrentCustomSound] = useState<string | null>(null);
   const [queueLength, setQueueLength] = useState(0);
   
   // Use ref to track if this component instance is the active processor
@@ -48,6 +51,70 @@ const ChiaaGamingObsOverlay = () => {
     goalTarget,
     componentId: componentId.current
   });
+
+  // Process custom sound queue
+  const processNextCustomSound = () => {
+    if (globalCustomSoundQueue.length === 0) {
+      isProcessingCustomSounds = false;
+      return;
+    }
+
+    if (isProcessingCustomSounds) {
+      return;
+    }
+
+    isProcessingCustomSounds = true;
+    const soundUrl = globalCustomSoundQueue.shift();
+    
+    if (!soundUrl) {
+      isProcessingCustomSounds = false;
+      return;
+    }
+
+    console.log(`[${componentId.current}] Playing custom sound:`, soundUrl);
+    
+    const audio = new Audio(soundUrl);
+    audio.volume = 0.7;
+    
+    audio.onended = () => {
+      console.log(`[${componentId.current}] Custom sound ended, processing next`);
+      isProcessingCustomSounds = false;
+      // Process next sound after a short delay
+      setTimeout(() => {
+        processNextCustomSound();
+      }, 500);
+    };
+    
+    audio.onerror = (e) => {
+      console.error(`[${componentId.current}] Failed to play custom sound:`, soundUrl, e);
+      isProcessingCustomSounds = false;
+      // Process next sound even on error
+      setTimeout(() => {
+        processNextCustomSound();
+      }, 500);
+    };
+    
+    audio.play().catch(e => {
+      console.error(`[${componentId.current}] Audio play failed:`, e);
+      isProcessingCustomSounds = false;
+      setTimeout(() => {
+        processNextCustomSound();
+      }, 500);
+    });
+  };
+
+  // Add custom sound to queue
+  const addCustomSoundToQueue = (soundUrl: string) => {
+    console.log(`[${componentId.current}] Adding custom sound to queue:`, soundUrl);
+    globalCustomSoundQueue.push(soundUrl);
+    
+    // Start processing if not already processing
+    if (!isProcessingCustomSounds) {
+      setTimeout(() => {
+        processNextCustomSound();
+      }, 100);
+    }
+  };
 
   // Clean up media after it's displayed
   const cleanupMedia = async (donationId: string, mediaUrl: string, mediaType: 'gif' | 'voice') => {
@@ -164,18 +231,14 @@ const ChiaaGamingObsOverlay = () => {
 
     console.log(`[${componentId.current}] Adding donation to global queue:`, donation.id, donation.name);
     
-    // Handle custom sound immediately if present
+    // Handle custom sound immediately if present - add to sound queue
     if (donation.custom_sound_url && Number(donation.amount) >= 100) {
-      console.log(`[${componentId.current}] Playing custom sound for donation:`, {
+      console.log(`[${componentId.current}] Adding custom sound to queue for donation:`, {
         customSoundUrl: donation.custom_sound_url,
         amount: donation.amount,
         donationId: donation.id
       });
-      setCurrentCustomSound(donation.custom_sound_url);
-      
-      setTimeout(() => {
-        setCurrentCustomSound(null);
-      }, 5000);
+      addCustomSoundToQueue(donation.custom_sound_url);
     }
 
     // Add to message queue if messages are enabled and has content to show
@@ -265,31 +328,10 @@ const ChiaaGamingObsOverlay = () => {
   return (
     <ObsConfigProvider>
       <div className="w-screen h-screen bg-transparent overflow-hidden relative">
-        {/* Custom Sound Player */}
-        {currentCustomSound && (
-          <div className="absolute top-4 left-4">
-            <audio
-              src={currentCustomSound}
-              autoPlay
-              className="hidden"
-              onLoad={() => {
-                console.log(`[${componentId.current}] Custom sound loaded successfully:`, currentCustomSound);
-              }}
-              onError={(e) => {
-                console.error(`[${componentId.current}] Failed to load custom sound:`, currentCustomSound);
-              }}
-              onEnded={() => {
-                console.log(`[${componentId.current}] Custom sound playback ended`);
-                setCurrentCustomSound(null);
-              }}
-            />
-          </div>
-        )}
-
         {/* Global Queue Status Indicator */}
         {queueLength > 0 && (
           <div className="absolute top-2 right-2 bg-black/50 text-white px-2 py-1 rounded text-xs z-50">
-            Queue: {queueLength} | Processing: {isGloballyProcessing ? 'Yes' : 'No'} | ID: {componentId.current.substr(0, 4)}
+            Queue: {queueLength} | Processing: {isGloballyProcessing ? 'Yes' : 'No'} | Sounds: {globalCustomSoundQueue.length} | ID: {componentId.current.substr(0, 4)}
           </div>
         )}
 
