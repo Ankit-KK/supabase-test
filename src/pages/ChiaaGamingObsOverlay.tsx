@@ -143,7 +143,7 @@ const ChiaaGamingObsOverlay = () => {
       setCurrentGifAlert(null);
       isProcessingGifs = false;
       
-      // Clean up the GIF after display - FIX: Provide required arguments
+      // Clean up the GIF after display
       if (donation.gif_url) {
         cleanupMedia(donation.id, donation.gif_url, 'gif');
       }
