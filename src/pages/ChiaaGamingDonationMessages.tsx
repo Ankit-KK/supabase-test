@@ -9,7 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthProtection } from "@/hooks/useAuthProtection";
-import { Link as LinkIcon, ExternalLink, Image, Mic, Volume2 } from "lucide-react";
+import { useCustomAlerts } from "@/hooks/useCustomAlerts";
+import { Link as LinkIcon, ExternalLink, Image, Mic, Volume2, Crown, AlertTriangle } from "lucide-react";
 
 interface Donation {
   id: string;
@@ -36,12 +37,25 @@ const ChiaaGamingDonationMessages = () => {
   const [goalTarget, setGoalTarget] = useState<number>(1000);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { customAlertsEnabled } = useCustomAlerts();
   
   // Use the auth protection hook to guard this route
   useAuthProtection({
     redirectTo: "/chiaa_gaming/login",
     authKey: "chiaaGamingAuth"
   });
+
+  // Redirect to dashboard if custom alerts are enabled
+  useEffect(() => {
+    if (customAlertsEnabled) {
+      toast({
+        variant: "destructive",
+        title: "Messages Tab Disabled",
+        description: "Premium alerts are enabled. Please disable them to access the messages tab.",
+      });
+      navigate("/chiaa_gaming/dashboard");
+    }
+  }, [customAlertsEnabled, navigate, toast]);
 
   // Function to fetch donations data - only from today
   const fetchDonations = async () => {
@@ -351,6 +365,39 @@ const ChiaaGamingDonationMessages = () => {
     
     return badges;
   };
+
+  if (customAlertsEnabled) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-900 via-purple-900 to-black">
+        <div className="container mx-auto py-8 px-4">
+          <Card className="max-w-md mx-auto bg-black/50 border-orange-500/50">
+            <CardHeader>
+              <CardTitle className="text-orange-100 flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-orange-400" />
+                Messages Tab Disabled
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-2 text-orange-200">
+                <Crown className="w-4 h-4 text-orange-400" />
+                <span>Premium alerts are currently enabled</span>
+              </div>
+              <p className="text-orange-200 text-sm">
+                The messages tab is disabled when premium features (custom sounds, voice messages, GIFs) are active 
+                to prevent conflicts with the advanced alert system.
+              </p>
+              <Button 
+                onClick={() => navigate("/chiaa_gaming/dashboard")}
+                className="w-full bg-pink-600 hover:bg-pink-700"
+              >
+                Return to Dashboard
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-900 via-purple-900 to-black">

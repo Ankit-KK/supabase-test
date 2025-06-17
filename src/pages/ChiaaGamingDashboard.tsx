@@ -1,15 +1,16 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, calculateMonthlyTotal } from "@/utils/dashboardUtils";
-import { LogOut, MessageSquare, Image, Mic, Volume2, MessageCircle } from "lucide-react";
+import { LogOut, MessageSquare, Image, Mic, Volume2, MessageCircle, Crown } from "lucide-react";
 import CSVExportDialog from "@/components/CSVExportDialog";
+import { useCustomAlerts } from "@/hooks/useCustomAlerts";
 
 interface Donation {
   id: string;
@@ -31,6 +32,7 @@ const ChiaaGamingDashboard = () => {
   const [monthlyTotal, setMonthlyTotal] = useState(0);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { customAlertsEnabled, toggleCustomAlerts } = useCustomAlerts();
 
   useEffect(() => {
     // Check if user is authenticated
@@ -134,6 +136,18 @@ const ChiaaGamingDashboard = () => {
     });
   };
 
+  const handleToggleCustomAlerts = () => {
+    const newValue = !customAlertsEnabled;
+    toggleCustomAlerts(newValue);
+    
+    toast({
+      title: newValue ? "Premium Alerts Enabled" : "Premium Alerts Disabled",
+      description: newValue 
+        ? "Custom sounds, voice messages, and GIFs are now enabled. Messages tab is disabled." 
+        : "Premium features disabled. Messages tab is now available.",
+    });
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleString("en-IN", {
@@ -205,14 +219,22 @@ const ChiaaGamingDashboard = () => {
             <p className="text-pink-300">Donation management and analytics</p>
           </div>
           <div className="flex items-center gap-3">
-            <Button 
-              variant="outline" 
-              onClick={() => navigate("/chiaa_gaming/messages")}
-              className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20"
-            >
-              <MessageSquare className="w-4 h-4 mr-2" />
-              Messages
-            </Button>
+            {!customAlertsEnabled && (
+              <Button 
+                variant="outline" 
+                onClick={() => navigate("/chiaa_gaming/messages")}
+                className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20"
+              >
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Messages
+              </Button>
+            )}
+            {customAlertsEnabled && (
+              <div className="flex items-center gap-2 px-3 py-2 bg-orange-500/20 border border-orange-500/50 rounded-md">
+                <Crown className="w-4 h-4 text-orange-300" />
+                <span className="text-orange-300 text-sm">Premium Mode</span>
+              </div>
+            )}
             <CSVExportDialog 
               tableName="chiaa_gaming_donations" 
               title="Export Donations to CSV" 
@@ -227,6 +249,57 @@ const ChiaaGamingDashboard = () => {
             </Button>
           </div>
         </div>
+
+        {/* Premium Features Toggle Card */}
+        <Card className="mb-6 bg-black/50 border-pink-500/30">
+          <CardHeader>
+            <CardTitle className="text-pink-100 flex items-center gap-2">
+              <Crown className="w-5 h-5 text-orange-400" />
+              Premium Features
+            </CardTitle>
+            <CardDescription className="text-pink-300">
+              Enable custom sounds, voice messages, and GIF alerts (disables regular messages tab)
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <div className="checkbox-wrapper-10">
+                  <input 
+                    checked={customAlertsEnabled} 
+                    type="checkbox" 
+                    id="custom-alerts" 
+                    className="tgl tgl-flip"
+                    onChange={handleToggleCustomAlerts}
+                  />
+                  <label 
+                    htmlFor="custom-alerts" 
+                    data-tg-on="On" 
+                    data-tg-off="Off" 
+                    className="tgl-btn"
+                  ></label>
+                </div>
+                <Label htmlFor="custom-alerts" className="text-pink-200">
+                  Enable Premium Alerts (Custom Sounds, Voice Messages, GIFs)
+                </Label>
+              </div>
+              {customAlertsEnabled && (
+                <Badge variant="secondary" className="bg-orange-500/20 text-orange-300 border-orange-500/50">
+                  <Crown className="w-3 h-3 mr-1" />
+                  Premium Active
+                </Badge>
+              )}
+            </div>
+            {customAlertsEnabled && (
+              <div className="mt-4 p-3 bg-orange-500/10 border border-orange-500/30 rounded-lg">
+                <p className="text-orange-200 text-sm">
+                  <strong>Premium Mode Active:</strong> Custom sound alerts, voice messages, and GIF uploads are enabled. 
+                  The messages tab is disabled to prevent conflicts with premium features.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Monthly Total Card */}
         <Card className="mb-6 bg-black/50 border-pink-500/30">
