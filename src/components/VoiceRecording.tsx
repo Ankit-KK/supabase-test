@@ -27,10 +27,20 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const maxDurationTimerRef = useRef<NodeJS.Timeout | null>(null);
   const chunksRef = useRef<Blob[]>([]);
 
   const isEligible = currentAmount >= minAmount;
   const isDisabled = disabled || !isEligible;
+
+  // Calculate max recording duration based on donation amount
+  const getMaxDuration = (): number => {
+    if (currentAmount < 150) return 15; // 15 seconds for donations less than ₹150
+    if (currentAmount >= 150 && currentAmount < 300) return 30; // 30 seconds for ₹150-299
+    return 60; // 60 seconds for ₹300+
+  };
+
+  const maxDuration = getMaxDuration();
 
   const startRecording = async () => {
     try {
@@ -66,9 +76,20 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
         setRecordingTime(prev => prev + 1);
       }, 1000);
 
+      // Auto-stop recording when max duration is reached
+      maxDurationTimerRef.current = setTimeout(() => {
+        if (isRecording && mediaRecorderRef.current) {
+          stopRecording();
+          toast({
+            title: "Recording stopped",
+            description: `Maximum duration of ${maxDuration} seconds reached`,
+          });
+        }
+      }, maxDuration * 1000);
+
       toast({
         title: "Recording started",
-        description: "Speak your message into the microphone",
+        description: `Speak your message (max ${maxDuration} seconds)`,
       });
     } catch (error) {
       console.error("Error starting recording:", error);
@@ -88,6 +109,11 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
+      }
+
+      if (maxDurationTimerRef.current) {
+        clearTimeout(maxDurationTimerRef.current);
+        maxDurationTimerRef.current = null;
       }
 
       toast({
@@ -124,6 +150,11 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
+
+    if (maxDurationTimerRef.current) {
+      clearTimeout(maxDurationTimerRef.current);
+      maxDurationTimerRef.current = null;
+    }
   };
 
   const formatTime = (seconds: number): string => {
@@ -138,6 +169,12 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
     const sizes = ['Bytes', 'KB', 'MB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const getDurationText = (): string => {
+    if (currentAmount < 150) return "15s max";
+    if (currentAmount >= 150 && currentAmount < 300) return "30s max";
+    return "60s max";
   };
 
   return (
@@ -159,7 +196,7 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
               <Mic className="w-3 h-3 mr-1" />
               {!isEligible 
                 ? `Donate ₹${minAmount}+ to unlock`
-                : "Start Recording"
+                : `Start Recording (${getDurationText()})`
               }
             </Button>
           ) : (
@@ -171,11 +208,11 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
                 className="w-full h-7 text-xs"
               >
                 <MicOff className="w-3 h-3 mr-1" />
-                Stop Recording ({formatTime(recordingTime)})
+                Stop Recording ({formatTime(recordingTime)}/{maxDuration}s)
               </Button>
               <div className="flex items-center justify-center space-x-1">
                 <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></div>
-                <span className="text-white/80 text-xs">Recording...</span>
+                <span className="text-white/80 text-xs">Recording... ({getDurationText()})</span>
               </div>
             </div>
           )}
@@ -231,7 +268,7 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
       
       <p className="text-xs text-white/80">
         {isEligible 
-          ? "Voice plays as audio alert on stream"
+          ? `Voice plays as audio alert on stream (${getDurationText()})`
           : `Donate ₹${minAmount}+ to unlock voice messages`
         }
       </p>
