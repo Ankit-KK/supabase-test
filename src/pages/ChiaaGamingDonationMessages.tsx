@@ -29,7 +29,6 @@ const ChiaaGamingDonationMessages = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [obsLink, setObsLink] = useState<string>("");
   const [goalObsLink, setGoalObsLink] = useState<string>("");
-  const [combinedObsLink, setCombinedObsLink] = useState<string>("");
   const [showMessages, setShowMessages] = useState<boolean>(true);
   const [showGoal, setShowGoal] = useState<boolean>(false);
   const [goalName, setGoalName] = useState<string>("Gaming Goal");
@@ -150,7 +149,6 @@ const ChiaaGamingDonationMessages = () => {
   const setupObsLinks = () => {
     let storedMessagesLink = sessionStorage.getItem("chiaaGamingObsLink");
     let storedGoalLink = sessionStorage.getItem("chiaaGamingGoalObsLink");
-    let storedCombinedLink = sessionStorage.getItem("chiaaGamingCombinedObsLink");
     
     if (!storedMessagesLink) {
       const randomId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -163,16 +161,9 @@ const ChiaaGamingDonationMessages = () => {
       storedGoalLink = `${window.location.origin}/chiaa_gaming/obs/${randomId}?showMessages=false&showGoal=true&goalName=${encodeURIComponent(goalName)}&goalTarget=${goalTarget}`;
       sessionStorage.setItem("chiaaGamingGoalObsLink", storedGoalLink);
     }
-
-    if (!storedCombinedLink) {
-      const randomId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      storedCombinedLink = `${window.location.origin}/chiaa_gaming/obs/${randomId}?showMessages=${showMessages}&showGoal=${showGoal}&goalName=${encodeURIComponent(goalName)}&goalTarget=${goalTarget}`;
-      sessionStorage.setItem("chiaaGamingCombinedObsLink", storedCombinedLink);
-    }
     
     setObsLink(storedMessagesLink);
     setGoalObsLink(storedGoalLink);
-    setCombinedObsLink(storedCombinedLink);
   };
 
   const regenerateMessagesLink = () => {
@@ -201,19 +192,6 @@ const ChiaaGamingDonationMessages = () => {
     });
   };
 
-  const regenerateCombinedLink = () => {
-    const randomId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    const newLink = `${window.location.origin}/chiaa_gaming/obs/${randomId}?showMessages=${showMessages}&showGoal=${showGoal}&goalName=${encodeURIComponent(goalName)}&goalTarget=${goalTarget}`;
-    
-    sessionStorage.setItem("chiaaGamingCombinedObsLink", newLink);
-    setCombinedObsLink(newLink);
-    
-    toast({
-      title: "Combined Link Regenerated",
-      description: "Your new combined OBS link has been created",
-    });
-  };
-
   const copyMessagesLink = () => {
     navigator.clipboard.writeText(obsLink);
     toast({
@@ -230,14 +208,6 @@ const ChiaaGamingDonationMessages = () => {
     });
   };
 
-  const copyCombinedLink = () => {
-    navigator.clipboard.writeText(combinedObsLink);
-    toast({
-      title: "Link Copied",
-      description: "Combined OBS link copied to clipboard",
-    });
-  };
-
   const openMessagesInNewTab = () => {
     if (obsLink) {
       window.open(obsLink, '_blank');
@@ -247,12 +217,6 @@ const ChiaaGamingDonationMessages = () => {
   const openGoalInNewTab = () => {
     if (goalObsLink) {
       window.open(goalObsLink, '_blank');
-    }
-  };
-
-  const openCombinedInNewTab = () => {
-    if (combinedObsLink) {
-      window.open(combinedObsLink, '_blank');
     }
   };
 
@@ -266,7 +230,6 @@ const ChiaaGamingDonationMessages = () => {
     setShowMessages(newValue);
     localStorage.setItem("chiaaGamingShowMessages", newValue.toString());
     updateMessagesLink();
-    updateCombinedLink();
     
     toast({
       title: newValue ? "Messages Enabled" : "Messages Disabled",
@@ -280,7 +243,6 @@ const ChiaaGamingDonationMessages = () => {
     setShowGoal(newValue);
     localStorage.setItem("chiaaGamingShowGoal", newValue.toString());
     updateGoalLink();
-    updateCombinedLink();
     
     toast({
       title: newValue ? "Goal Enabled" : "Goal Disabled",
@@ -294,7 +256,6 @@ const ChiaaGamingDonationMessages = () => {
     setGoalName(newName);
     localStorage.setItem("chiaaGamingGoalName", newName);
     updateGoalLink();
-    updateCombinedLink();
   };
 
   // Handle goal target change
@@ -303,7 +264,6 @@ const ChiaaGamingDonationMessages = () => {
     setGoalTarget(newTarget);
     localStorage.setItem("chiaaGamingGoalTarget", newTarget.toString());
     updateGoalLink();
-    updateCombinedLink();
   };
 
   // Update messages link with current settings
@@ -322,15 +282,6 @@ const ChiaaGamingDonationMessages = () => {
     const newLink = `${baseLink}?showMessages=false&showGoal=true&goalName=${encodeURIComponent(goalName)}&goalTarget=${goalTarget}`;
     sessionStorage.setItem("chiaaGamingGoalObsLink", newLink);
     setGoalObsLink(newLink);
-  };
-
-  // Update combined link with current settings
-  const updateCombinedLink = () => {
-    const hasParam = combinedObsLink.includes("?");
-    const baseLink = hasParam ? combinedObsLink.split("?")[0] : combinedObsLink;
-    const newLink = `${baseLink}?showMessages=${showMessages}&showGoal=${showGoal}&goalName=${encodeURIComponent(goalName)}&goalTarget=${goalTarget}`;
-    sessionStorage.setItem("chiaaGamingCombinedObsLink", newLink);
-    setCombinedObsLink(newLink);
   };
 
   const formatDate = (dateString: string) => {
@@ -475,40 +426,11 @@ const ChiaaGamingDonationMessages = () => {
                 </div>
               </div>
 
-              {/* Combined OBS Link (Messages + Goal) */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Target className="w-5 h-5 text-pink-400" />
-                  <Label className="text-pink-200">Combined OBS Link (Messages + Goal)</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Input 
-                    value={combinedObsLink} 
-                    readOnly 
-                    className="font-mono text-sm flex-1 bg-black/30 border-pink-500/50 text-pink-100"
-                  />
-                  <Button variant="outline" onClick={copyCombinedLink} className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20">
-                    <LinkIcon className="mr-2 h-4 w-4" />
-                    Copy
-                  </Button>
-                  <Button variant="outline" onClick={regenerateCombinedLink} className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20">
-                    Generate New
-                  </Button>
-                  <Button variant="outline" onClick={openCombinedInNewTab} className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20">
-                    <ExternalLink className="mr-2 h-4 w-4" />
-                    Open
-                  </Button>
-                </div>
-                <p className="text-sm text-pink-300/70">
-                  This link combines both messages and goal display. Configure settings above to control what appears.
-                </p>
-              </div>
-
               {/* Messages Only OBS Link */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <MessageSquare className="w-5 h-5 text-blue-400" />
-                  <Label className="text-pink-200">Messages Only OBS Link</Label>
+                  <Label className="text-pink-200">Donation Messages OBS Link</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Input 
