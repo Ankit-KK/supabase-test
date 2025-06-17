@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -297,21 +296,27 @@ const ChiaaGamingDonationMessages = () => {
   };
 
   const renderPremiumFeatures = (donation: Donation) => {
+    // Always show the user's message if it exists, regardless of premium features
+    if (donation.message && donation.message.trim()) {
+      return donation.message;
+    }
+    
+    // If no message but has premium features, show what premium features were used
     const features = [];
     
     if (donation.gif_url) {
-      features.push("Premium Feature Used");
+      features.push("GIF shared");
     }
     
     if (donation.voice_url) {
-      features.push("Premium Feature Used");
+      features.push("Voice message");
     }
     
     if (donation.custom_sound_name || donation.custom_sound_url) {
-      features.push(`Premium Feature Used - ${donation.custom_sound_name || 'Custom Sound'}`);
+      features.push(`Custom sound: ${donation.custom_sound_name || 'Audio'}`);
     }
     
-    return features.length > 0 ? features.join(", ") : donation.message;
+    return features.length > 0 ? features.join(", ") : "No message";
   };
 
   const renderMediaBadges = (donation: Donation) => {
