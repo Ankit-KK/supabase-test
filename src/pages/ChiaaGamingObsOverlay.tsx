@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -405,7 +404,7 @@ const ChiaaGamingObsOverlay = () => {
     }, 12000);
   };
 
-  // Add donation to global queue
+  // Add donation to global queue - FIXED: Now handles simultaneous donations properly
   const addDonationToGlobalQueue = (donation: Donation) => {
     // Check if this donation was already processed
     if (processedDonationIds.has(donation.id)) {
@@ -413,55 +412,53 @@ const ChiaaGamingObsOverlay = () => {
       return;
     }
 
-    console.log(`[${componentId.current}] Adding donation to global queue:`, donation.id, donation.name);
-    
-    // Handle custom sound immediately if present - add to sound queue instead of donation queue
+    console.log(`[${componentId.current}] Processing donation with multiple media types:`, {
+      donationId: donation.id,
+      name: donation.name,
+      hasCustomSound: !!donation.custom_sound_url,
+      hasVoice: !!donation.voice_url,
+      hasGif: !!donation.gif_url,
+      hasMessage: !!donation.message,
+      amount: donation.amount
+    });
+
+    // Handle custom sound if present and amount >= 100
     if (donation.custom_sound_url && Number(donation.amount) >= 100) {
-      console.log(`[${componentId.current}] Adding custom sound to queue for donation:`, {
-        customSoundUrl: donation.custom_sound_url,
-        amount: donation.amount,
-        donationId: donation.id
-      });
+      console.log(`[${componentId.current}] Adding custom sound to queue for donation:`, donation.id);
       addCustomSoundToQueue(donation, donation.custom_sound_url);
-      return; // Don't add to regular donation queue if it has custom sound
     }
 
-    // Handle voice recording immediately if present - add to voice queue instead of donation queue
+    // Handle voice recording if present and amount >= 100
     if (donation.voice_url && Number(donation.amount) >= 100) {
-      console.log(`[${componentId.current}] Adding voice recording to queue for donation:`, {
-        voiceUrl: donation.voice_url,
-        amount: donation.amount,
-        donationId: donation.id
-      });
+      console.log(`[${componentId.current}] Adding voice recording to queue for donation:`, donation.id);
       addVoiceRecordingToQueue(donation, donation.voice_url);
-      return; // Don't add to regular donation queue if it has voice recording
     }
 
-    // Handle GIF immediately if present - add to GIF queue instead of donation queue
+    // Handle GIF if present
     if (donation.gif_url) {
-      console.log(`[${componentId.current}] Adding GIF to queue for donation:`, {
-        gifUrl: donation.gif_url,
-        amount: donation.amount,
-        donationId: donation.id
-      });
+      console.log(`[${componentId.current}] Adding GIF to queue for donation:`, donation.id);
       addGifToQueue(donation, donation.gif_url);
-      return; // Don't add to regular donation queue if it has GIF
     }
 
-    // Add to message queue if messages are enabled and has text message content to show
-    if (showMessages && donation.message) {
+    // ALWAYS add to message queue if messages are enabled and has text message content
+    // This ensures that donations with both media and messages show both
+    if (showMessages && donation.message && donation.message.trim()) {
+      console.log(`[${componentId.current}] Adding message to donation queue for donation:`, donation.id);
       globalDonationQueue.push(donation);
       setQueueLength(globalDonationQueue.length);
-      console.log(`[${componentId.current}] Donation added to global queue. New queue length:`, globalDonationQueue.length);
+      console.log(`[${componentId.current}] Donation message added to global queue. New queue length:`, globalDonationQueue.length);
       
       // Start processing if not already processing
       if (!isGloballyProcessing) {
-        console.log(`[${componentId.current}] Starting global queue processing`);
+        console.log(`[${componentId.current}] Starting global queue processing for messages`);
         setTimeout(() => {
           processNextDonation();
         }, 100);
       }
     }
+
+    // Mark as processed to avoid duplicate processing
+    processedDonationIds.add(donation.id);
   };
 
   useEffect(() => {
