@@ -511,11 +511,17 @@ const ChiaaGamingObsOverlay = () => {
         {showMessages && currentCustomSoundAlert && (
           <DraggableResizableBox className="animate-slide-in-right">
             <div className="bg-gradient-to-r from-orange-600/90 to-red-600/90 backdrop-blur-sm rounded-lg p-4 shadow-2xl border border-orange-500/50 max-w-md">
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-3 mb-2">
                 <div className="w-3 h-3 bg-orange-400 rounded-full animate-pulse"></div>
                 <span className="text-orange-100 font-bold text-lg">{currentCustomSoundAlert.name}</span>
-                <span className="text-orange-300 font-semibold">played custom voice</span>
+                <span className="text-orange-300 font-semibold">₹{Number(currentCustomSoundAlert.amount).toLocaleString()}</span>
               </div>
+              <div className="flex items-center space-x-2 mb-2">
+                <span className="text-orange-300 font-semibold">played custom sound</span>
+              </div>
+              {currentCustomSoundAlert.message && (
+                <p className="text-orange-50 text-sm leading-relaxed">{currentCustomSoundAlert.message}</p>
+              )}
             </div>
           </DraggableResizableBox>
         )}
