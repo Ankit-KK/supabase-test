@@ -26,11 +26,16 @@ const processedDonationIds = new Set<string>();
 const globalCustomSoundQueue: { donation: Donation; audioElement: HTMLAudioElement }[] = [];
 let isProcessingCustomSounds = false;
 
+// Global voice recording queue and processing
+const globalVoiceQueue: { donation: Donation; audioElement: HTMLAudioElement; duration: number }[] = [];
+let isProcessingVoiceRecordings = false;
+
 const ChiaaGamingObsOverlay = () => {
   const { obsId } = useParams();
   const [searchParams] = useSearchParams();
   const [currentDonation, setCurrentDonation] = useState<Donation | null>(null);
   const [currentCustomSoundAlert, setCurrentCustomSoundAlert] = useState<Donation | null>(null);
+  const [currentVoiceAlert, setCurrentVoiceAlert] = useState<Donation | null>(null);
   const [totalDonations, setTotalDonations] = useState(0);
   const [queueLength, setQueueLength] = useState(0);
   
@@ -52,6 +57,103 @@ const ChiaaGamingObsOverlay = () => {
     goalTarget,
     componentId: componentId.current
   });
+
+  // Process voice recording queue with synchronized alerts
+  const processNextVoiceRecording = () => {
+    if (globalVoiceQueue.length === 0) {
+      isProcessingVoiceRecordings = false;
+      return;
+    }
+
+    if (isProcessingVoiceRecordings) {
+      return;
+    }
+
+    isProcessingVoiceRecordings = true;
+    const voiceItem = globalVoiceQueue.shift();
+    
+    if (!voiceItem) {
+      isProcessingVoiceRecordings = false;
+      return;
+    }
+
+    const { donation, audioElement, duration } = voiceItem;
+    
+    console.log(`[${componentId.current}] Playing voice recording and showing alert:`, donation.name, `Duration: ${duration}ms`);
+    
+    // Show the voice recording alert
+    setCurrentVoiceAlert(donation);
+    
+    audioElement.onended = () => {
+      console.log(`[${componentId.current}] Voice recording ended, hiding alert`);
+      setCurrentVoiceAlert(null);
+      isProcessingVoiceRecordings = false;
+      
+      // Process next voice recording after a short delay
+      setTimeout(() => {
+        processNextVoiceRecording();
+      }, 500);
+    };
+    
+    audioElement.onerror = (e) => {
+      console.error(`[${componentId.current}] Failed to play voice recording:`, e);
+      setCurrentVoiceAlert(null);
+      isProcessingVoiceRecordings = false;
+      
+      // Process next voice recording even on error
+      setTimeout(() => {
+        processNextVoiceRecording();
+      }, 500);
+    };
+    
+    // Set a timeout based on the calculated duration as fallback
+    const fallbackTimeout = setTimeout(() => {
+      console.log(`[${componentId.current}] Voice recording timeout reached, hiding alert`);
+      setCurrentVoiceAlert(null);
+      isProcessingVoiceRecordings = false;
+      setTimeout(() => {
+        processNextVoiceRecording();
+      }, 500);
+    }, duration);
+    
+    // Clear fallback timeout if audio ends normally
+    const originalOnEnded = audioElement.onended;
+    audioElement.onended = () => {
+      clearTimeout(fallbackTimeout);
+      if (originalOnEnded) originalOnEnded();
+    };
+    
+    audioElement.play().catch(e => {
+      console.error(`[${componentId.current}] Voice audio play failed:`, e);
+      clearTimeout(fallbackTimeout);
+      setCurrentVoiceAlert(null);
+      isProcessingVoiceRecordings = false;
+      setTimeout(() => {
+        processNextVoiceRecording();
+      }, 500);
+    });
+  };
+
+  // Add voice recording to queue with pre-loaded audio and calculated duration
+  const addVoiceRecordingToQueue = (donation: Donation, voiceUrl: string) => {
+    console.log(`[${componentId.current}] Adding voice recording to queue:`, donation.name, voiceUrl);
+    
+    const audio = new Audio(voiceUrl);
+    audio.volume = 0.8;
+    audio.preload = 'auto';
+    
+    // Calculate duration based on donation amount
+    const duration = Number(donation.amount) < 150 ? 30000 : 60000; // 30s or 60s
+    
+    globalVoiceQueue.push({ donation, audioElement: audio, duration });
+    
+    // Start processing if not already processing
+    if (!isProcessingVoiceRecordings) {
+      setTimeout(() => {
+        processNextVoiceRecording();
+      }, 100);
+    }
+  };
 
   // Process custom sound queue with synchronized alerts
   const processNextCustomSound = () => {
@@ -255,8 +357,19 @@ const ChiaaGamingObsOverlay = () => {
       return; // Don't add to regular donation queue if it has custom sound
     }
 
-    // Add to message queue if messages are enabled and has content to show (excluding custom sounds)
-    if (showMessages && (donation.message || donation.gif_url || donation.voice_url)) {
+    // Handle voice recording immediately if present - add to voice queue instead of donation queue
+    if (donation.voice_url && Number(donation.amount) >= 100) {
+      console.log(`[${componentId.current}] Adding voice recording to queue for donation:`, {
+        voiceUrl: donation.voice_url,
+        amount: donation.amount,
+        donationId: donation.id
+      });
+      addVoiceRecordingToQueue(donation, donation.voice_url);
+      return; // Don't add to regular donation queue if it has voice recording
+    }
+
+    // Add to message queue if messages are enabled and has content to show (excluding custom sounds and voice recordings)
+    if (showMessages && (donation.message || donation.gif_url)) {
       globalDonationQueue.push(donation);
       setQueueLength(globalDonationQueue.length);
       console.log(`[${componentId.current}] Donation added to global queue. New queue length:`, globalDonationQueue.length);
@@ -343,10 +456,23 @@ const ChiaaGamingObsOverlay = () => {
     <ObsConfigProvider>
       <div className="w-screen h-screen bg-transparent overflow-hidden relative">
         {/* Global Queue Status Indicator */}
-        {(queueLength > 0 || globalCustomSoundQueue.length > 0) && (
+        {(queueLength > 0 || globalCustomSoundQueue.length > 0 || globalVoiceQueue.length > 0) && (
           <div className="absolute top-2 right-2 bg-black/50 text-white px-2 py-1 rounded text-xs z-50">
-            Queue: {queueLength} | Processing: {isGloballyProcessing ? 'Yes' : 'No'} | Sounds: {globalCustomSoundQueue.length} | ID: {componentId.current.substr(0, 4)}
+            Queue: {queueLength} | Processing: {isGloballyProcessing ? 'Yes' : 'No'} | Sounds: {globalCustomSoundQueue.length} | Voice: {globalVoiceQueue.length} | ID: {componentId.current.substr(0, 4)}
           </div>
+        )}
+
+        {/* Voice Recording Alert */}
+        {showMessages && currentVoiceAlert && (
+          <DraggableResizableBox className="animate-slide-in-right">
+            <div className="bg-gradient-to-r from-blue-600/90 to-purple-600/90 backdrop-blur-sm rounded-lg p-4 shadow-2xl border border-blue-500/50 max-w-md">
+              <div className="flex items-center space-x-3">
+                <div className="w-3 h-3 bg-blue-400 rounded-full animate-pulse"></div>
+                <span className="text-blue-100 font-bold text-lg">{currentVoiceAlert.name}</span>
+                <span className="text-blue-300 font-semibold">played voice message</span>
+              </div>
+            </div>
+          </DraggableResizableBox>
         )}
 
         {/* Custom Sound Alert */}
@@ -397,26 +523,6 @@ const ChiaaGamingObsOverlay = () => {
               />
             </div>
           </DraggableResizableBox>
-        )}
-
-        {/* Standalone Voice Audio Player */}
-        {currentDonation && currentDonation.voice_url && (
-          <div className="absolute top-4 left-4">
-            <audio
-              src={currentDonation.voice_url}
-              autoPlay
-              className="hidden"
-              onLoad={() => {
-                console.log(`[${componentId.current}] Voice audio loaded successfully:`, currentDonation.voice_url);
-              }}
-              onError={(e) => {
-                console.error(`[${componentId.current}] Failed to load voice audio:`, currentDonation.voice_url);
-              }}
-              onEnded={() => {
-                console.log(`[${componentId.current}] Voice audio playback ended`);
-              }}
-            />
-          </div>
         )}
 
         {/* Goal Progress */}
