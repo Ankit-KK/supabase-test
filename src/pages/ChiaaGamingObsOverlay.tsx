@@ -30,12 +30,17 @@ let isProcessingCustomSounds = false;
 const globalVoiceQueue: { donation: Donation; audioElement: HTMLAudioElement; duration: number }[] = [];
 let isProcessingVoiceRecordings = false;
 
+// Global GIF queue and processing
+const globalGifQueue: { donation: Donation; duration: number }[] = [];
+let isProcessingGifs = false;
+
 const ChiaaGamingObsOverlay = () => {
   const { obsId } = useParams();
   const [searchParams] = useSearchParams();
   const [currentDonation, setCurrentDonation] = useState<Donation | null>(null);
   const [currentCustomSoundAlert, setCurrentCustomSoundAlert] = useState<Donation | null>(null);
   const [currentVoiceAlert, setCurrentVoiceAlert] = useState<Donation | null>(null);
+  const [currentGifAlert, setCurrentGifAlert] = useState<Donation | null>(null);
   const [totalDonations, setTotalDonations] = useState(0);
   const [queueLength, setQueueLength] = useState(0);
   
@@ -57,6 +62,66 @@ const ChiaaGamingObsOverlay = () => {
     goalTarget,
     componentId: componentId.current
   });
+
+  // Process GIF queue with synchronized alerts
+  const processNextGif = () => {
+    if (globalGifQueue.length === 0) {
+      isProcessingGifs = false;
+      return;
+    }
+
+    if (isProcessingGifs) {
+      return;
+    }
+
+    isProcessingGifs = true;
+    const gifItem = globalGifQueue.shift();
+    
+    if (!gifItem) {
+      isProcessingGifs = false;
+      return;
+    }
+
+    const { donation, duration } = gifItem;
+    
+    console.log(`[${componentId.current}] Showing GIF alert:`, donation.name, `Duration: ${duration}ms`);
+    
+    // Show the GIF alert
+    setCurrentGifAlert(donation);
+    
+    // Set a timeout for the GIF duration
+    const gifTimeout = setTimeout(() => {
+      console.log(`[${componentId.current}] GIF timeout reached, hiding alert`);
+      setCurrentGifAlert(null);
+      isProcessingGifs = false;
+      
+      // Clean up the GIF after display
+      if (donation.gif_url) {
+        cleanupMedia(donation.id, donation.gif_url, 'gif');
+      }
+      
+      setTimeout(() => {
+        processNextGif();
+      }, 500);
+    }, duration);
+  };
+
+  // Add GIF to queue with calculated duration
+  const addGifToQueue = (donation: Donation, gifUrl: string) => {
+    console.log(`[${componentId.current}] Adding GIF to queue:`, donation.name, gifUrl);
+    
+    // Calculate duration: 12 seconds for GIFs
+    const duration = 12000;
+    
+    globalGifQueue.push({ donation, duration });
+    
+    // Start processing if not already processing
+    if (!isProcessingGifs) {
+      setTimeout(() => {
+        processNextGif();
+      }, 100);
+    }
+  };
 
   // Process voice recording queue with synchronized alerts
   const processNextVoiceRecording = () => {
@@ -89,6 +154,11 @@ const ChiaaGamingObsOverlay = () => {
       setCurrentVoiceAlert(null);
       isProcessingVoiceRecordings = false;
       
+      // Clean up voice recording after playback
+      if (donation.voice_url) {
+        cleanupMedia(donation.id, donation.voice_url, 'voice');
+      }
+      
       // Process next voice recording after a short delay
       setTimeout(() => {
         processNextVoiceRecording();
@@ -111,6 +181,12 @@ const ChiaaGamingObsOverlay = () => {
       console.log(`[${componentId.current}] Voice recording timeout reached, hiding alert`);
       setCurrentVoiceAlert(null);
       isProcessingVoiceRecordings = false;
+      
+      // Clean up voice recording
+      if (donation.voice_url) {
+        cleanupMedia(donation.id, donation.voice_url, 'voice');
+      }
+      
       setTimeout(() => {
         processNextVoiceRecording();
       }, 500);
@@ -316,15 +392,8 @@ const ChiaaGamingObsOverlay = () => {
     setCurrentDonation(nextDonation);
 
     // Auto-hide after 12 seconds and cleanup media if present
-    setTimeout(() => {
+    const hideTimeout = setTimeout(() => {
       console.log(`[${componentId.current}] Hiding donation after 12 seconds:`, nextDonation.id);
-      
-      if (nextDonation.gif_url) {
-        cleanupMedia(nextDonation.id, nextDonation.gif_url, 'gif');
-      }
-      if (nextDonation.voice_url) {
-        cleanupMedia(nextDonation.id, nextDonation.voice_url, 'voice');
-      }
       
       setCurrentDonation(null);
       isGloballyProcessing = false;
@@ -368,8 +437,19 @@ const ChiaaGamingObsOverlay = () => {
       return; // Don't add to regular donation queue if it has voice recording
     }
 
-    // Add to message queue if messages are enabled and has content to show (excluding custom sounds and voice recordings)
-    if (showMessages && (donation.message || donation.gif_url)) {
+    // Handle GIF immediately if present - add to GIF queue instead of donation queue
+    if (donation.gif_url) {
+      console.log(`[${componentId.current}] Adding GIF to queue for donation:`, {
+        gifUrl: donation.gif_url,
+        amount: donation.amount,
+        donationId: donation.id
+      });
+      addGifToQueue(donation, donation.gif_url);
+      return; // Don't add to regular donation queue if it has GIF
+    }
+
+    // Add to message queue if messages are enabled and has text message content to show
+    if (showMessages && donation.message) {
       globalDonationQueue.push(donation);
       setQueueLength(globalDonationQueue.length);
       console.log(`[${componentId.current}] Donation added to global queue. New queue length:`, globalDonationQueue.length);
@@ -456,9 +536,9 @@ const ChiaaGamingObsOverlay = () => {
     <ObsConfigProvider>
       <div className="w-screen h-screen bg-transparent overflow-hidden relative">
         {/* Global Queue Status Indicator */}
-        {(queueLength > 0 || globalCustomSoundQueue.length > 0 || globalVoiceQueue.length > 0) && (
+        {(queueLength > 0 || globalCustomSoundQueue.length > 0 || globalVoiceQueue.length > 0 || globalGifQueue.length > 0) && (
           <div className="absolute top-2 right-2 bg-black/50 text-white px-2 py-1 rounded text-xs z-50">
-            Queue: {queueLength} | Processing: {isGloballyProcessing ? 'Yes' : 'No'} | Sounds: {globalCustomSoundQueue.length} | Voice: {globalVoiceQueue.length} | ID: {componentId.current.substr(0, 4)}
+            Queue: {queueLength} | Processing: {isGloballyProcessing ? 'Yes' : 'No'} | Sounds: {globalCustomSoundQueue.length} | Voice: {globalVoiceQueue.length} | GIFs: {globalGifQueue.length} | ID: {componentId.current.substr(0, 4)}
           </div>
         )}
 
@@ -488,6 +568,19 @@ const ChiaaGamingObsOverlay = () => {
           </DraggableResizableBox>
         )}
 
+        {/* GIF Alert */}
+        {showMessages && currentGifAlert && (
+          <DraggableResizableBox className="animate-slide-in-right">
+            <div className="bg-gradient-to-r from-green-600/90 to-teal-600/90 backdrop-blur-sm rounded-lg p-4 shadow-2xl border border-green-500/50 max-w-md">
+              <div className="flex items-center space-x-3">
+                <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                <span className="text-green-100 font-bold text-lg">{currentGifAlert.name}</span>
+                <span className="text-green-300 font-semibold">shared a GIF</span>
+              </div>
+            </div>
+          </DraggableResizableBox>
+        )}
+
         {/* Regular Donation Messages */}
         {showMessages && currentDonation && !shouldHideDonationBox && (
           <DraggableResizableBox className="animate-slide-in-right">
@@ -505,19 +598,19 @@ const ChiaaGamingObsOverlay = () => {
         )}
 
         {/* Standalone GIF Display */}
-        {currentDonation && currentDonation.gif_url && (
+        {currentGifAlert && currentGifAlert.gif_url && (
           <DraggableResizableBox className="animate-slide-in-right">
             <div className="flex justify-center">
               <img
-                src={currentDonation.gif_url}
+                src={currentGifAlert.gif_url}
                 alt="Donation GIF"
                 className="max-w-full max-h-64 rounded-lg"
                 style={{ objectFit: 'contain' }}
                 onLoad={() => {
-                  console.log(`[${componentId.current}] GIF loaded successfully:`, currentDonation.gif_url);
+                  console.log(`[${componentId.current}] GIF loaded successfully:`, currentGifAlert.gif_url);
                 }}
                 onError={(e) => {
-                  console.error(`[${componentId.current}] Failed to load GIF:`, currentDonation.gif_url);
+                  console.error(`[${componentId.current}] Failed to load GIF:`, currentGifAlert.gif_url);
                   e.currentTarget.style.display = 'none';
                 }}
               />
