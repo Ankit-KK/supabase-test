@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -50,12 +51,12 @@ const ChiaaGamingPage = () => {
     }
   }, [amount, selectedGif, selectedVoice, selectedCustomSoundUrl]);
 
-  // Clear message when GIF or voice is selected
+  // Clear message when GIF, voice, or custom sound is selected
   useEffect(() => {
-    if (selectedGif || selectedVoice) {
+    if (selectedGif || selectedVoice || selectedCustomSoundUrl) {
       setMessage("");
     }
-  }, [selectedGif, selectedVoice]);
+  }, [selectedGif, selectedVoice, selectedCustomSoundUrl]);
 
   // Debug logging for custom sound selection
   useEffect(() => {
@@ -78,9 +79,14 @@ const ChiaaGamingPage = () => {
     }
     
     setSelectedGif(file);
-    // Clear voice if GIF is selected
-    if (file && selectedVoice) {
-      setSelectedVoice(null);
+    // Clear voice and custom sound if GIF is selected
+    if (file) {
+      if (selectedVoice) {
+        setSelectedVoice(null);
+      }
+      if (selectedCustomSoundUrl) {
+        setSelectedCustomSoundUrl(null);
+      }
     }
   };
 
@@ -96,9 +102,14 @@ const ChiaaGamingPage = () => {
     }
     
     setSelectedVoice(file);
-    // Clear GIF if voice is selected
-    if (file && selectedGif) {
-      setSelectedGif(null);
+    // Clear GIF and custom sound if voice is selected
+    if (file) {
+      if (selectedGif) {
+        setSelectedGif(null);
+      }
+      if (selectedCustomSoundUrl) {
+        setSelectedCustomSoundUrl(null);
+      }
     }
   };
 
@@ -109,6 +120,15 @@ const ChiaaGamingPage = () => {
       amount: parseFloat(amount)
     });
     setSelectedCustomSoundUrl(soundUrl);
+    // Clear GIF and voice if custom sound is selected
+    if (soundUrl) {
+      if (selectedGif) {
+        setSelectedGif(null);
+      }
+      if (selectedVoice) {
+        setSelectedVoice(null);
+      }
+    }
   };
 
   const validateForm = () => {
@@ -131,11 +151,11 @@ const ChiaaGamingPage = () => {
       return false;
     }
 
-    // Only require message if no GIF or voice is uploaded
-    if (!message.trim() && !selectedGif && !selectedVoice) {
+    // Only require message if no GIF, voice, or custom sound is selected
+    if (!message.trim() && !selectedGif && !selectedVoice && !selectedCustomSoundUrl) {
       toast({
-        title: "Message, GIF, or Voice required",
-        description: "Please enter a message, upload a GIF, or record a voice message",
+        title: "Message, GIF, Voice, or Sound required",
+        description: "Please enter a message, upload a GIF, record a voice message, or select a custom sound",
         variant: "destructive",
       });
       return false;
@@ -266,6 +286,7 @@ const ChiaaGamingPage = () => {
   const getMessagePlaceholder = () => {
     if (selectedGif) return "Message disabled when GIF is uploaded";
     if (selectedVoice) return "Message disabled when voice is recorded";
+    if (selectedCustomSoundUrl) return "Message disabled when custom sound is selected";
     return "Send your sweet message to Chiaa!";
   };
 
@@ -273,11 +294,12 @@ const ChiaaGamingPage = () => {
   const getMessageLabel = () => {
     if (selectedGif) return "Sweet Message (Disabled - GIF uploaded)";
     if (selectedVoice) return "Sweet Message (Disabled - Voice recorded)";
+    if (selectedCustomSoundUrl) return "Sweet Message (Disabled - Custom sound selected)";
     return "Sweet Message";
   };
 
-  // Check if message input should be disabled (when GIF or voice is uploaded)
-  const isMessageDisabled = !!selectedGif || !!selectedVoice || isLoading;
+  // Check if message input should be disabled (when GIF, voice, or custom sound is selected)
+  const isMessageDisabled = !!selectedGif || !!selectedVoice || !!selectedCustomSoundUrl || isLoading;
 
   // Check if premium features are eligible
   const isPremiumEligible = parseFloat(amount) >= 100;
@@ -387,13 +409,19 @@ const ChiaaGamingPage = () => {
                   maxLength={maxMessageLength}
                 />
                 <p className="text-xs text-white/80">
-                  {!selectedGif && !selectedVoice ? (
+                  {!selectedGif && !selectedVoice && !selectedCustomSoundUrl ? (
                     <>
                       {message.length}/{maxMessageLength} chars
                       {isPremiumEligible ? " (100 for ₹100+)" : " (50 for <₹100)"}
                     </>
                   ) : (
-                    <>Message disabled when {selectedGif ? "GIF uploaded" : "voice recorded"}</>
+                    <>
+                      Message disabled when {
+                        selectedGif ? "GIF uploaded" : 
+                        selectedVoice ? "voice recorded" : 
+                        "custom sound selected"
+                      }
+                    </>
                   )}
                 </p>
               </div>
@@ -402,7 +430,7 @@ const ChiaaGamingPage = () => {
                 <GifUpload
                   onGifSelect={handleGifSelect}
                   selectedGif={selectedGif}
-                  disabled={isLoading || !!selectedVoice || !isPremiumEligible}
+                  disabled={isLoading || !!selectedVoice || !!selectedCustomSoundUrl || !isPremiumEligible}
                   minAmount={100}
                   currentAmount={parseFloat(amount) || 0}
                 />
@@ -410,7 +438,7 @@ const ChiaaGamingPage = () => {
                 <VoiceRecording
                   onVoiceSelect={handleVoiceSelect}
                   selectedVoice={selectedVoice}
-                  disabled={isLoading || !!selectedGif || !isPremiumEligible}
+                  disabled={isLoading || !!selectedGif || !!selectedCustomSoundUrl || !isPremiumEligible}
                   minAmount={100}
                   currentAmount={parseFloat(amount) || 0}
                 />
@@ -419,7 +447,7 @@ const ChiaaGamingPage = () => {
               <CustomSoundSelector
                 onSoundSelect={handleCustomSoundSelect}
                 selectedSoundUrl={selectedCustomSoundUrl}
-                disabled={isLoading}
+                disabled={isLoading || !!selectedGif || !!selectedVoice}
                 minAmount={100}
                 currentAmount={parseFloat(amount) || 0}
               />
