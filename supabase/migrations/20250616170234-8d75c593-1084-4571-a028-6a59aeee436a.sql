@@ -1,3 +1,4 @@
+
 -- Add gif_url column to chiaa_gaming_donations table
 ALTER TABLE public.chiaa_gaming_donations 
 ADD COLUMN gif_url TEXT;

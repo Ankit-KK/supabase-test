@@ -1,3 +1,4 @@
+
 -- Add voice recording columns to chiaa_gaming_donations table
 ALTER TABLE public.chiaa_gaming_donations 
 ADD COLUMN voice_url TEXT,

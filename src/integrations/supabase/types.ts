@@ -9,36 +9,69 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_users: {
+        Row: {
+          admin_pass: number
+          admin_type: string
+          created_at: string | null
+          id: string
+          is_online: boolean | null
+          last_active: string | null
+          password_hash: string
+          user_email: string
+        }
+        Insert: {
+          admin_pass?: number
+          admin_type: string
+          created_at?: string | null
+          id?: string
+          is_online?: boolean | null
+          last_active?: string | null
+          password_hash?: string
+          user_email: string
+        }
+        Update: {
+          admin_pass?: number
+          admin_type?: string
+          created_at?: string | null
+          id?: string
+          is_online?: boolean | null
+          last_active?: string | null
+          password_hash?: string
+          user_email?: string
+        }
+        Relationships: []
+      }
       ankit_donations: {
         Row: {
           amount: number
           created_at: string | null
           id: string
-          message: string | null
+          include_gif: boolean | null
+          message: string
           name: string
-          order_id: string | null
-          payment_id: string | null
-          payment_status: string | null
+          order_id: string
+          payment_status: string
         }
         Insert: {
           amount: number
           created_at?: string | null
           id?: string
-          message?: string | null
+          include_gif?: boolean | null
+          message: string
           name: string
-          order_id?: string | null
-          payment_id?: string | null
-          payment_status?: string | null
+          order_id: string
+          payment_status?: string
         }
         Update: {
           amount?: number
           created_at?: string | null
           id?: string
-          message?: string | null
+          include_gif?: boolean | null
+          message?: string
           name?: string
-          order_id?: string | null
-          payment_id?: string | null
-          payment_status?: string | null
+          order_id?: string
+          payment_status?: string
         }
         Relationships: []
       }
@@ -51,11 +84,10 @@ export type Database = {
           gif_url: string | null
           id: string
           include_sound: boolean | null
-          message: string | null
+          message: string
           name: string
-          order_id: string | null
-          payment_id: string | null
-          payment_status: string | null
+          order_id: string
+          payment_status: string
           voice_file_name: string | null
           voice_file_size: number | null
           voice_url: string | null
@@ -68,11 +100,10 @@ export type Database = {
           gif_url?: string | null
           id?: string
           include_sound?: boolean | null
-          message?: string | null
+          message?: string
           name: string
-          order_id?: string | null
-          payment_id?: string | null
-          payment_status?: string | null
+          order_id: string
+          payment_status?: string
           voice_file_name?: string | null
           voice_file_size?: number | null
           voice_url?: string | null
@@ -85,14 +116,37 @@ export type Database = {
           gif_url?: string | null
           id?: string
           include_sound?: boolean | null
-          message?: string | null
+          message?: string
           name?: string
-          order_id?: string | null
-          payment_id?: string | null
-          payment_status?: string | null
+          order_id?: string
+          payment_status?: string
           voice_file_name?: string | null
           voice_file_size?: number | null
           voice_url?: string | null
+        }
+        Relationships: []
+      }
+      custom_sound_alerts: {
+        Row: {
+          created_at: string | null
+          file_path: string | null
+          file_url: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          file_path?: string | null
+          file_url: string
+          id: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          file_path?: string | null
+          file_url?: string
+          id?: string
+          name?: string
         }
         Relationships: []
       }
@@ -143,39 +197,222 @@ export type Database = {
           },
         ]
       }
+      donations: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          message: string
+          name: string
+          order_id: string | null
+          payment_status: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          message: string
+          name: string
+          order_id?: string | null
+          payment_status?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          message?: string
+          name?: string
+          order_id?: string | null
+          payment_status?: string | null
+        }
+        Relationships: []
+      }
+      page_visits: {
+        Row: {
+          id: string
+          ip_address: string
+          page_path: string
+          user_agent: string | null
+          visited_at: string | null
+        }
+        Insert: {
+          id?: string
+          ip_address: string
+          page_path: string
+          user_agent?: string | null
+          visited_at?: string | null
+        }
+        Update: {
+          id?: string
+          ip_address?: string
+          page_path?: string
+          user_agent?: string | null
+          visited_at?: string | null
+        }
+        Relationships: []
+      }
+      predefined_queries: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          query_text: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          query_text: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          query_text?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      reviews: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       streamer_contracts: {
         Row: {
-          agreed_to_terms: boolean | null
-          created_at: string | null
-          hyperchat_cut: number
+          agreed_to_terms: boolean
+          hyperchat_cut: number | null
           id: string
           signature: string
           signed_at: string | null
-          streamer_cut: number
+          streamer_cut: number | null
           streamer_name: string
           streamer_type: string
         }
         Insert: {
-          agreed_to_terms?: boolean | null
-          created_at?: string | null
-          hyperchat_cut?: number
+          agreed_to_terms?: boolean
+          hyperchat_cut?: number | null
           id?: string
           signature: string
           signed_at?: string | null
-          streamer_cut?: number
+          streamer_cut?: number | null
           streamer_name: string
           streamer_type: string
         }
         Update: {
-          agreed_to_terms?: boolean | null
-          created_at?: string | null
-          hyperchat_cut?: number
+          agreed_to_terms?: boolean
+          hyperchat_cut?: number | null
           id?: string
           signature?: string
           signed_at?: string | null
-          streamer_cut?: number
+          streamer_cut?: number | null
           streamer_name?: string
           streamer_type?: string
+        }
+        Relationships: []
+      }
+      user_queries: {
+        Row: {
+          created_at: string
+          id: string
+          query_text: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          query_text: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          query_text?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_signups: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          mobile_number: string
+          name: string
+          youtube_channel: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          mobile_number: string
+          name: string
+          youtube_channel?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          mobile_number?: string
+          name?: string
+          youtube_channel?: string | null
+        }
+        Relationships: []
+      }
+      visits: {
+        Row: {
+          id: string
+          ip_address: string
+          visited_at: string | null
+        }
+        Insert: {
+          id?: string
+          ip_address: string
+          visited_at?: string | null
+        }
+        Update: {
+          id?: string
+          ip_address?: string
+          visited_at?: string | null
         }
         Relationships: []
       }
@@ -184,7 +421,45 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      check_username_exists: {
+        Args:
+          | { username: string }
+          | { username_to_check: string; exclude_user_id: string }
+        Returns: {
+          username_exists: boolean
+        }[]
+      }
+      create_visits_table: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      get_page_visitor_stats: {
+        Args: { page: string }
+        Returns: {
+          total_visits: number
+          unique_visitors: number
+        }[]
+      }
+      get_user_profile: {
+        Args: { user_id: string }
+        Returns: {
+          id: string
+          username: string
+          created_at: string
+          updated_at: string
+        }[]
+      }
+      get_visitor_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          total_visits: number
+          unique_visitors: number
+        }[]
+      }
+      update_user_profile: {
+        Args: { user_id: string; new_username: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
