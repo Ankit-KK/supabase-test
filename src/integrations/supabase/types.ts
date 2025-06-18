@@ -9,7 +9,176 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      ankit_donations: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          message: string | null
+          name: string
+          order_id: string | null
+          payment_id: string | null
+          payment_status: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          name: string
+          order_id?: string | null
+          payment_id?: string | null
+          payment_status?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          name?: string
+          order_id?: string | null
+          payment_id?: string | null
+          payment_status?: string | null
+        }
+        Relationships: []
+      }
+      chiaa_gaming_donations: {
+        Row: {
+          amount: number
+          created_at: string | null
+          custom_sound_name: string | null
+          custom_sound_url: string | null
+          gif_url: string | null
+          id: string
+          include_sound: boolean | null
+          message: string | null
+          name: string
+          order_id: string | null
+          payment_id: string | null
+          payment_status: string | null
+          voice_file_name: string | null
+          voice_file_size: number | null
+          voice_url: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          custom_sound_name?: string | null
+          custom_sound_url?: string | null
+          gif_url?: string | null
+          id?: string
+          include_sound?: boolean | null
+          message?: string | null
+          name: string
+          order_id?: string | null
+          payment_id?: string | null
+          payment_status?: string | null
+          voice_file_name?: string | null
+          voice_file_size?: number | null
+          voice_url?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          custom_sound_name?: string | null
+          custom_sound_url?: string | null
+          gif_url?: string | null
+          id?: string
+          include_sound?: boolean | null
+          message?: string | null
+          name?: string
+          order_id?: string | null
+          payment_id?: string | null
+          payment_status?: string | null
+          voice_file_name?: string | null
+          voice_file_size?: number | null
+          voice_url?: string | null
+        }
+        Relationships: []
+      }
+      donation_gifs: {
+        Row: {
+          deleted_at: string | null
+          displayed_at: string | null
+          donation_id: string | null
+          file_name: string
+          file_size: number
+          file_type: string | null
+          gif_url: string
+          id: string
+          status: string | null
+          uploaded_at: string | null
+        }
+        Insert: {
+          deleted_at?: string | null
+          displayed_at?: string | null
+          donation_id?: string | null
+          file_name: string
+          file_size: number
+          file_type?: string | null
+          gif_url: string
+          id?: string
+          status?: string | null
+          uploaded_at?: string | null
+        }
+        Update: {
+          deleted_at?: string | null
+          displayed_at?: string | null
+          donation_id?: string | null
+          file_name?: string
+          file_size?: number
+          file_type?: string | null
+          gif_url?: string
+          id?: string
+          status?: string | null
+          uploaded_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donation_gifs_donation_id_fkey"
+            columns: ["donation_id"]
+            isOneToOne: false
+            referencedRelation: "chiaa_gaming_donations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streamer_contracts: {
+        Row: {
+          agreed_to_terms: boolean | null
+          created_at: string | null
+          hyperchat_cut: number
+          id: string
+          signature: string
+          signed_at: string | null
+          streamer_cut: number
+          streamer_name: string
+          streamer_type: string
+        }
+        Insert: {
+          agreed_to_terms?: boolean | null
+          created_at?: string | null
+          hyperchat_cut?: number
+          id?: string
+          signature: string
+          signed_at?: string | null
+          streamer_cut?: number
+          streamer_name: string
+          streamer_type: string
+        }
+        Update: {
+          agreed_to_terms?: boolean | null
+          created_at?: string | null
+          hyperchat_cut?: number
+          id?: string
+          signature?: string
+          signed_at?: string | null
+          streamer_cut?: number
+          streamer_name?: string
+          streamer_type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
