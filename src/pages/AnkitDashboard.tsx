@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,16 +35,20 @@ const AnkitDashboard = () => {
 
     fetchDonations();
     
-    // Cleanup any existing channel
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-    }
-
-    // Set up real-time subscription with proper cleanup
+    // Set up real-time subscription
     const setupRealtimeSubscription = () => {
+      // Clean up existing channel first
+      if (channelRef.current) {
+        console.log('Cleaning up existing channel');
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+
+      // Create a unique channel name
+      const channelName = `ankit-donations-realtime-${Date.now()}`;
+      
       channelRef.current = supabase
-        .channel('ankit-donations-realtime')
+        .channel(channelName)
         .on(
           'postgres_changes',
           {
@@ -55,9 +58,14 @@ const AnkitDashboard = () => {
             filter: 'payment_status=eq.success'
           },
           (payload) => {
-            console.log('New donation received:', payload);
+            console.log('New donation received via realtime:', payload);
             const newDonation = payload.new as Donation;
-            setDonations(prev => [newDonation, ...prev]);
+            setDonations(prev => {
+              // Check if donation already exists to prevent duplicates
+              const exists = prev.some(d => d.id === newDonation.id);
+              if (exists) return prev;
+              return [newDonation, ...prev];
+            });
             setMonthlyTotal(prev => prev + Number(newDonation.amount));
             
             toast({
@@ -75,7 +83,7 @@ const AnkitDashboard = () => {
             filter: 'payment_status=eq.success'
           },
           (payload) => {
-            console.log('Donation updated:', payload);
+            console.log('Donation updated via realtime:', payload);
             const updatedDonation = payload.new as Donation;
             setDonations(prev => 
               prev.map(donation => 
@@ -84,17 +92,27 @@ const AnkitDashboard = () => {
             );
           }
         )
-        .subscribe();
+        .subscribe((status) => {
+          console.log('Realtime subscription status:', status);
+          if (status === 'SUBSCRIBED') {
+            console.log('Successfully subscribed to ankit_donations realtime updates');
+          } else if (status === 'CHANNEL_ERROR') {
+            console.error('Channel subscription error');
+          } else if (status === 'TIMED_OUT') {
+            console.error('Channel subscription timed out');
+          }
+        });
 
       console.log('Real-time subscription set up for ankit_donations');
     };
 
-    // Setup with a small delay to prevent WebSocket connection issues
-    const timer = setTimeout(setupRealtimeSubscription, 100);
+    // Setup subscription with a small delay
+    const timer = setTimeout(setupRealtimeSubscription, 500);
 
     return () => {
       clearTimeout(timer);
       if (channelRef.current) {
+        console.log('Component unmounting, cleaning up channel');
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }

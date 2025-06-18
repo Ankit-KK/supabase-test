@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -83,16 +82,19 @@ const AnkitDonationMessages = () => {
 
   // Set up real-time subscription for new donations
   useEffect(() => {
-    // Cleanup any existing channel
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-    }
+    const setupRealtimeSubscription = () => {
+      // Clean up existing channel first
+      if (channelRef.current) {
+        console.log('Cleaning up existing channel');
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
 
-    // Create new channel with a delay to ensure proper cleanup
-    const setupChannel = () => {
+      // Create a unique channel name
+      const channelName = `ankit-donations-dashboard-${Date.now()}`;
+      
       channelRef.current = supabase
-        .channel('ankit-donations-dashboard')
+        .channel(channelName)
         .on(
           'postgres_changes',
           { 
@@ -110,7 +112,12 @@ const AnkitDonationMessages = () => {
             const today = new Date().toISOString().split('T')[0];
             
             if (donationDate === today) {
-              setDonations(prev => [newDonation, ...prev]);
+              setDonations(prev => {
+                // Check if donation already exists to prevent duplicates
+                const exists = prev.some(d => d.id === newDonation.id);
+                if (exists) return prev;
+                return [newDonation, ...prev];
+              });
               toast({
                 title: "New Donation Received",
                 description: `${newDonation.name} donated ₹${Number(newDonation.amount).toLocaleString()}`,
@@ -118,13 +125,22 @@ const AnkitDonationMessages = () => {
             }
           }
         )
-        .subscribe();
+        .subscribe((status) => {
+          console.log('Dashboard realtime subscription status:', status);
+          if (status === 'SUBSCRIBED') {
+            console.log('Successfully subscribed to ankit_donations dashboard updates');
+          } else if (status === 'CHANNEL_ERROR') {
+            console.error('Dashboard channel subscription error');
+          } else if (status === 'TIMED_OUT') {
+            console.error('Dashboard channel subscription timed out');
+          }
+        });
 
       console.log("Dashboard realtime subscription set up for payment_status=success");
     };
 
-    // Setup with a small delay to prevent WebSocket connection issues
-    const timer = setTimeout(setupChannel, 100);
+    // Setup subscription with a small delay
+    const timer = setTimeout(setupRealtimeSubscription, 500);
     
     // Fetch donations once when component mounts
     fetchDonations();
@@ -132,6 +148,7 @@ const AnkitDonationMessages = () => {
     return () => {
       clearTimeout(timer);
       if (channelRef.current) {
+        console.log('Component unmounting, cleaning up dashboard channel');
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
@@ -196,7 +213,7 @@ const AnkitDonationMessages = () => {
   };
 
   const regenerateGoalLink = () => {
-    const randomId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const randomId = Math.random().toString(36).substring(2,15) + Math.random().toString(36).substring(2, 15);
     const newLink = `${window.location.origin}/ankit/obs/${randomId}?showMessages=false&showGoal=true&goalName=${encodeURIComponent(goalName)}&goalTarget=${goalTarget}`;
     
     sessionStorage.setItem("ankitGoalObsLink", newLink);
