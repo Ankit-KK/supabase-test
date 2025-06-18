@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +10,6 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthProtection } from "@/hooks/useAuthProtection";
 import { Link as LinkIcon, ExternalLink } from "lucide-react";
-import { ObsConfigProvider, useObsConfig } from "@/contexts/ObsConfigContext";
 
 interface Donation {
   id: string;
@@ -32,6 +32,7 @@ const AnkitDonationMessages = () => {
   const [goalTarget, setGoalTarget] = useState<number>(500);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const channelRef = useRef<any>(null);
   
   // Use the auth protection hook to guard this route
   useAuthProtection({
@@ -52,7 +53,7 @@ const AnkitDonationMessages = () => {
       const { data, error } = await supabase
         .from("ankit_donations")
         .select("*")
-        .eq("payment_status", "success") // Changed from "failed" to "success"
+        .eq("payment_status", "success")
         .gte("created_at", todayStart)
         .lte("created_at", todayEnd)
         .order("created_at", { ascending: false });
@@ -82,42 +83,58 @@ const AnkitDonationMessages = () => {
 
   // Set up real-time subscription for new donations
   useEffect(() => {
-    const channel = supabase
-      .channel('ankit-donations-dashboard')
-      .on(
-        'postgres_changes',
-        { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'ankit_donations',
-          filter: 'payment_status=eq.success' // Changed from "failed" to "success"
-        },
-        (payload) => {
-          const newDonation = payload.new as Donation;
-          console.log("New donation received in dashboard via realtime:", newDonation);
-          
-          // Check if donation is from today
-          const donationDate = new Date(newDonation.created_at).toISOString().split('T')[0];
-          const today = new Date().toISOString().split('T')[0];
-          
-          if (donationDate === today) {
-            setDonations(prev => [newDonation, ...prev]);
-            toast({
-              title: "New Donation Received",
-              description: `${newDonation.name} donated ₹${Number(newDonation.amount).toLocaleString()}`,
-            });
-          }
-        }
-      )
-      .subscribe();
+    // Cleanup any existing channel
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
 
-    console.log("Dashboard realtime subscription set up for payment_status=success");
+    // Create new channel with a delay to ensure proper cleanup
+    const setupChannel = () => {
+      channelRef.current = supabase
+        .channel('ankit-donations-dashboard')
+        .on(
+          'postgres_changes',
+          { 
+            event: 'INSERT', 
+            schema: 'public', 
+            table: 'ankit_donations',
+            filter: 'payment_status=eq.success'
+          },
+          (payload) => {
+            const newDonation = payload.new as Donation;
+            console.log("New donation received in dashboard via realtime:", newDonation);
+            
+            // Check if donation is from today
+            const donationDate = new Date(newDonation.created_at).toISOString().split('T')[0];
+            const today = new Date().toISOString().split('T')[0];
+            
+            if (donationDate === today) {
+              setDonations(prev => [newDonation, ...prev]);
+              toast({
+                title: "New Donation Received",
+                description: `${newDonation.name} donated ₹${Number(newDonation.amount).toLocaleString()}`,
+              });
+            }
+          }
+        )
+        .subscribe();
+
+      console.log("Dashboard realtime subscription set up for payment_status=success");
+    };
+
+    // Setup with a small delay to prevent WebSocket connection issues
+    const timer = setTimeout(setupChannel, 100);
     
     // Fetch donations once when component mounts
     fetchDonations();
     
     return () => {
-      supabase.removeChannel(channel);
+      clearTimeout(timer);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, [toast]);
 

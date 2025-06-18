@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -24,6 +24,7 @@ const AnkitDashboard = () => {
   const [monthlyTotal, setMonthlyTotal] = useState(0);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const channelRef = useRef<any>(null);
 
   useEffect(() => {
     // Check if user is authenticated
@@ -35,53 +36,68 @@ const AnkitDashboard = () => {
 
     fetchDonations();
     
-    // Set up real-time subscription
-    const channel = supabase
-      .channel('ankit-donations-realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'ankit_donations',
-          filter: 'payment_status=eq.success'
-        },
-        (payload) => {
-          console.log('New donation received:', payload);
-          const newDonation = payload.new as Donation;
-          setDonations(prev => [newDonation, ...prev]);
-          setMonthlyTotal(prev => prev + Number(newDonation.amount));
-          
-          toast({
-            title: "New Donation Received!",
-            description: `${newDonation.name} donated ₹${Number(newDonation.amount).toLocaleString()}`,
-          });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'ankit_donations',
-          filter: 'payment_status=eq.success'
-        },
-        (payload) => {
-          console.log('Donation updated:', payload);
-          const updatedDonation = payload.new as Donation;
-          setDonations(prev => 
-            prev.map(donation => 
-              donation.id === updatedDonation.id ? updatedDonation : donation
-            )
-          );
-        }
-      )
-      .subscribe();
+    // Cleanup any existing channel
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
 
-    console.log('Real-time subscription set up for ankit_donations');
+    // Set up real-time subscription with proper cleanup
+    const setupRealtimeSubscription = () => {
+      channelRef.current = supabase
+        .channel('ankit-donations-realtime')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'ankit_donations',
+            filter: 'payment_status=eq.success'
+          },
+          (payload) => {
+            console.log('New donation received:', payload);
+            const newDonation = payload.new as Donation;
+            setDonations(prev => [newDonation, ...prev]);
+            setMonthlyTotal(prev => prev + Number(newDonation.amount));
+            
+            toast({
+              title: "New Donation Received!",
+              description: `${newDonation.name} donated ₹${Number(newDonation.amount).toLocaleString()}`,
+            });
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'ankit_donations',
+            filter: 'payment_status=eq.success'
+          },
+          (payload) => {
+            console.log('Donation updated:', payload);
+            const updatedDonation = payload.new as Donation;
+            setDonations(prev => 
+              prev.map(donation => 
+                donation.id === updatedDonation.id ? updatedDonation : donation
+              )
+            );
+          }
+        )
+        .subscribe();
+
+      console.log('Real-time subscription set up for ankit_donations');
+    };
+
+    // Setup with a small delay to prevent WebSocket connection issues
+    const timer = setTimeout(setupRealtimeSubscription, 100);
 
     return () => {
-      supabase.removeChannel(channel);
+      clearTimeout(timer);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, [navigate, toast]);
 
