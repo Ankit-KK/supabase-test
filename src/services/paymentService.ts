@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 type DonationRecord = {
@@ -42,7 +43,8 @@ export const createPaymentOrder = async (orderId: string, amount: number, name: 
 };
 
 /**
- * Verifies payment status via Supabase Edge Function
+ * Verifies payment status via enhanced Supabase Edge Function
+ * Now returns backend-determined status with standardized format
  */
 export const verifyPayment = async (orderId: string) => {
   try {
@@ -112,11 +114,6 @@ export const createDonationRecord = async (donation: DonationRecord) => {
       // Add gif_url for chiaa_gaming donations if provided
       if (donation.gifUrl) {
         recordData.gif_url = donation.gifUrl;
-        console.log("STORING GIF URL:", {
-          gifUrl: donation.gifUrl,
-          orderId: donation.order_id,
-          paymentStatus: donation.payment_status
-        });
       }
 
       // Add voice_url for chiaa_gaming donations if provided
@@ -124,13 +121,6 @@ export const createDonationRecord = async (donation: DonationRecord) => {
         recordData.voice_url = donation.voiceUrl;
         recordData.voice_file_name = donation.voiceFileName;
         recordData.voice_file_size = donation.voiceFileSize;
-        console.log("STORING VOICE URL:", {
-          voiceUrl: donation.voiceUrl,
-          voiceFileName: donation.voiceFileName,
-          voiceFileSize: donation.voiceFileSize,
-          orderId: donation.order_id,
-          paymentStatus: donation.payment_status
-        });
       }
     } else {
       // For other donation types (mackle/rakazone), only add include_sound if explicitly provided
@@ -139,10 +129,7 @@ export const createDonationRecord = async (donation: DonationRecord) => {
       }
     }
     
-    console.log(`Creating ${tableName} record with data:`, recordData);
-    console.log("Payment status being saved:", donation.payment_status);
-    console.log("Include sound flag:", recordData.include_sound);
-    console.log("Custom Sound URL being saved:", recordData.custom_sound_url);
+    console.log(`Creating ${tableName} record with backend-verified status:`, recordData.payment_status);
     
     const { data, error } = await supabase
       .from(tableName)
@@ -165,13 +152,9 @@ export const createDonationRecord = async (donation: DonationRecord) => {
     const validatedData = data as { id: string; gif_url?: string; voice_url?: string; custom_sound_url?: string; include_sound?: boolean; [key: string]: any };
     
     console.log(`Successfully created donation record in ${tableName}:`, validatedData);
-    console.log("VERIFICATION: Custom Sound URL in created record:", validatedData.custom_sound_url);
-    console.log("VERIFICATION: Include sound flag in created record:", validatedData.include_sound);
 
     // Create donation_gifs record if GIF was uploaded for chiaa_gaming
     if (donation.donationType === "chiaa_gaming" && donation.gifUrl && donation.gifFileName && donation.gifFileSize) {
-      console.log("Creating donation_gifs record for GIF:", validatedData.id);
-      
       const { error: gifRecordError } = await supabase
         .from('donation_gifs')
         .insert({
@@ -186,15 +169,11 @@ export const createDonationRecord = async (donation: DonationRecord) => {
       if (gifRecordError) {
         console.error("Error creating GIF record:", gifRecordError);
         // Don't throw error here - donation was successful, GIF record is secondary
-      } else {
-        console.log("Successfully created donation_gifs record for GIF:", donation.gifUrl);
       }
     }
 
     // Create donation_gifs record if Voice was uploaded for chiaa_gaming
     if (donation.donationType === "chiaa_gaming" && donation.voiceUrl && donation.voiceFileName && donation.voiceFileSize) {
-      console.log("Creating donation_gifs record for Voice:", validatedData.id);
-      
       const { error: voiceRecordError } = await supabase
         .from('donation_gifs')
         .insert({
@@ -209,8 +188,6 @@ export const createDonationRecord = async (donation: DonationRecord) => {
       if (voiceRecordError) {
         console.error("Error creating voice record:", voiceRecordError);
         // Don't throw error here - donation was successful, voice record is secondary
-      } else {
-        console.log("Successfully created donation_gifs record for voice:", donation.voiceUrl);
       }
     }
 

@@ -36,7 +36,7 @@ serve(async (req) => {
 
     // Parse request body
     const requestBody = await req.text();
-    console.log("Raw request body:", requestBody);
+    console.log("Processing payment verification request");
     
     let parsedBody;
     try {
@@ -91,7 +91,7 @@ serve(async (req) => {
       );
     }
 
-    console.log("Order data retrieved:", JSON.stringify(orderData, null, 2));
+    console.log("Order data retrieved successfully");
 
     // Now get payment details for this order
     const paymentResponse = await fetch(`${API_URL}/orders/${orderId}/payments`, {
@@ -108,20 +108,47 @@ serve(async (req) => {
     
     if (paymentResponse.ok) {
       paymentData = await paymentResponse.json();
-      console.log("Payment data retrieved:", JSON.stringify(paymentData, null, 2));
+      console.log("Payment data retrieved successfully");
     } else {
       console.error("Error fetching payment details, but continuing with order data");
     }
 
-    // Combine order and payment data
+    // Implement Cashfree's official payment status logic
+    let finalStatus = "FAILURE"; // Default to failure
+    
+    // Check for SUCCESS transactions first (highest priority)
+    if (paymentData.length > 0 && paymentData.filter((transaction: any) => transaction.payment_status === "SUCCESS").length > 0) {
+      finalStatus = "SUCCESS";
+    } 
+    // Check for PENDING transactions (medium priority)
+    else if (paymentData.length > 0 && paymentData.filter((transaction: any) => transaction.payment_status === "PENDING").length > 0) {
+      finalStatus = "PENDING";
+    }
+    // If order is PAID but no successful payment transactions, mark as success
+    else if (orderData.order_status === "PAID") {
+      finalStatus = "SUCCESS";
+    }
+    // If order is ACTIVE and no payments attempted yet, mark as pending
+    else if (orderData.order_status === "ACTIVE" && paymentData.length === 0) {
+      finalStatus = "PENDING";
+    }
+    // All other cases remain as FAILURE
+
+    console.log(`Final payment status determined: ${finalStatus}`);
+
+    // Prepare standardized response
     const responseData = {
       order: orderData,
-      payments: paymentData
+      payments: paymentData,
+      status: finalStatus,
+      order_id: orderId,
+      payment_verified: finalStatus === "SUCCESS",
+      verification_timestamp: new Date().toISOString()
     };
 
-    console.log("Returning combined verification data");
+    console.log("Returning payment verification result");
 
-    // Return the combined data
+    // Return the standardized verification result
     return new Response(
       JSON.stringify(responseData),
       {

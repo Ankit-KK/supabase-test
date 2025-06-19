@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -65,11 +66,9 @@ const PaymentStatus = () => {
 
         const donationData = JSON.parse(donationDataStr);
         setDonationData(donationData);
-        console.log("Donation data from session storage:", donationData);
         
-        // Verify payment status using Supabase Edge Function
+        // Verify payment status using enhanced backend verification
         const verificationResult = await verifyPayment(orderId);
-        console.log("Payment verification result:", verificationResult);
         
         if (!verificationResult) {
           toast({
@@ -84,63 +83,40 @@ const PaymentStatus = () => {
 
         setPaymentDetails(verificationResult);
         
-        // Determine payment status based on order status first
-        // This is important since payments array might be empty if payment wasn't attempted
-        let paymentStatus = "failed";
+        // Use the backend-determined status directly
+        const backendStatus = verificationResult.status;
+        let componentStatus = "failed";
         
-        // First check the order status - this is the most reliable indicator
-        if (verificationResult.order && verificationResult.order.order_status === "PAID") {
-          paymentStatus = "success";
-        } 
-        // Then check if we have payments and their statuses
-        else if (verificationResult.payments && verificationResult.payments.length > 0) {
-          // Look for any successful payment
-          if (verificationResult.payments.some((tx: any) => tx.payment_status === "SUCCESS")) {
-            paymentStatus = "success";
-          } else if (verificationResult.payments.some((tx: any) => tx.payment_status === "PENDING")) {
-            paymentStatus = "pending";
-          } else {
-            paymentStatus = "failed";
-          }
-        } 
-        // If order is active but no payments, it might be pending
-        else if (verificationResult.order && verificationResult.order.order_status === "ACTIVE") {
-          paymentStatus = "pending";
+        if (backendStatus === "SUCCESS") {
+          componentStatus = "success";
+        } else if (backendStatus === "PENDING") {
+          componentStatus = "pending";
         } else {
-          paymentStatus = "failed";
+          componentStatus = "failed";
         }
         
-        // Log the detected payment status for debugging
-        console.log("Detected payment status:", paymentStatus);
-        
-        // Set component status based on payment status
-        if (paymentStatus === "success") {
-          setStatus("success");
-        } else if (paymentStatus === "pending") {
-          setStatus("pending");
-        } else {
-          setStatus("failed");
-        }
+        setStatus(componentStatus as "success" | "pending" | "failed");
         
         // Create donation record in Supabase - ALWAYS create record regardless of payment status
         if (!isRecordCreated) {
-          // Prepare donation record data with include_sound if available
+          // Map backend status to database status
+          const dbPaymentStatus = backendStatus.toLowerCase();
+          
+          // Prepare donation record data
           const recordData = {
             name: donationData.name,
             amount: donationData.amount,
             message: donationData.message,
             order_id: orderId,
-            payment_status: paymentStatus,
+            payment_status: dbPaymentStatus,
             donationType: donationData.donationType || donationType,
-            // ALWAYS include GIF data for chiaa_gaming donations, regardless of payment status
+            // ALWAYS include media data for chiaa_gaming donations, regardless of payment status
             gifUrl: donationData.gifUrl,
             gifFileName: donationData.gifFileName,
             gifFileSize: donationData.gifFileSize,
-            // ALWAYS include Voice data for chiaa_gaming donations, regardless of payment status
             voiceUrl: donationData.voiceUrl,
             voiceFileName: donationData.voiceFileName,
             voiceFileSize: donationData.voiceFileSize,
-            // ALWAYS include Custom Sound URL for chiaa_gaming donations, regardless of payment status
             customSoundUrl: donationData.customSoundUrl
           };
           
@@ -149,14 +125,6 @@ const PaymentStatus = () => {
             // @ts-ignore - We know include_sound exists on these donation types
             recordData.include_sound = !!donationData.include_sound;
           }
-          
-          console.log("Creating donation record with GIF, Voice and Custom Sound data (regardless of payment status):", {
-            hasGifUrl: !!recordData.gifUrl,
-            hasVoiceUrl: !!recordData.voiceUrl,
-            hasCustomSoundUrl: !!recordData.customSoundUrl,
-            paymentStatus,
-            orderId
-          });
           
           await createDonationRecord(recordData);
           setIsRecordCreated(true);
