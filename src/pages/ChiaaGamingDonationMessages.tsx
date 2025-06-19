@@ -38,11 +38,10 @@ const ChiaaGamingDonationMessages = () => {
   const { toast } = useToast();
   const channelRef = useRef<any>(null);
   
-  // Use the auth protection hook to guard this route
+  // Use the auth protection hook to guard this route with consistent key
   useAuthProtection({
     redirectTo: "/chiaa_gaming/login",
-    authKey: "chiaaGamingAuth",
-    requiredAdminType: "chiaa_gaming"
+    authKey: "chiaa_gaming"
   });
 
   // Function to fetch donations data - only from today
