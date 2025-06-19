@@ -9,6 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, calculateMonthlyTotal } from "@/utils/dashboardUtils";
 import { LogOut, MessageSquare, Image, Mic, Volume2, MessageCircle } from "lucide-react";
 import CSVExportDialog from "@/components/CSVExportDialog";
+import SecureDataDisplay from "@/components/SecureDataDisplay";
+import { logSecurityEvent } from "@/utils/rateLimiting";
 
 interface Donation {
   id: string;
@@ -36,6 +38,7 @@ const ChiaaGamingDashboard = () => {
     // Check if user is authenticated
     const isAuthenticated = sessionStorage.getItem("chiaaGamingAuth") === "true";
     if (!isAuthenticated) {
+      logSecurityEvent('UNAUTHORIZED_DASHBOARD_ACCESS', 'chiaa_gaming_dashboard');
       navigate("/chiaa_gaming/login");
       return;
     }
@@ -75,6 +78,8 @@ const ChiaaGamingDashboard = () => {
             });
             setMonthlyTotal(prev => prev + Number(newDonation.amount));
             
+            logSecurityEvent('NEW_DONATION_RECEIVED', `Amount: ${newDonation.amount}, Name: ${newDonation.name}`);
+            
             toast({
               title: "New Donation Received!",
               description: `${newDonation.name} donated ₹${Number(newDonation.amount).toLocaleString()}`,
@@ -103,10 +108,8 @@ const ChiaaGamingDashboard = () => {
           console.log('Realtime subscription status:', status);
           if (status === 'SUBSCRIBED') {
             console.log('Successfully subscribed to chiaa_gaming_donations realtime updates');
-          } else if (status === 'CHANNEL_ERROR') {
-            console.error('Channel subscription error');
-          } else if (status === 'TIMED_OUT') {
-            console.error('Channel subscription timed out');
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            logSecurityEvent('REALTIME_SUBSCRIPTION_ERROR', `Status: ${status}`);
           }
         });
 
@@ -128,6 +131,8 @@ const ChiaaGamingDashboard = () => {
 
   const fetchDonations = async () => {
     try {
+      logSecurityEvent('DASHBOARD_DATA_FETCH', 'chiaa_gaming_donations');
+      
       const { data, error } = await supabase
         .from("chiaa_gaming_donations")
         .select("id, name, amount, message, created_at, payment_status, gif_url, voice_url, custom_sound_name, custom_sound_url, include_sound")
@@ -136,6 +141,7 @@ const ChiaaGamingDashboard = () => {
 
       if (error) {
         console.error("Error fetching donations:", error);
+        logSecurityEvent('DATA_FETCH_ERROR', `chiaa_gaming_donations: ${error.message}`);
         toast({
           variant: "destructive",
           title: "Error",
@@ -148,6 +154,7 @@ const ChiaaGamingDashboard = () => {
       setMonthlyTotal(calculateMonthlyTotal(data || []));
     } catch (error) {
       console.error("Error:", error);
+      logSecurityEvent('DASHBOARD_ERROR', error instanceof Error ? error.message : 'Unknown error');
       toast({
         variant: "destructive",
         title: "Error",
@@ -159,6 +166,7 @@ const ChiaaGamingDashboard = () => {
   };
 
   const handleLogout = () => {
+    logSecurityEvent('USER_LOGOUT', 'chiaa_gaming_dashboard');
     sessionStorage.removeItem("chiaaGamingAuth");
     sessionStorage.removeItem("chiaaGamingAdminAuth");
     navigate("/chiaa_gaming/login");
@@ -230,94 +238,96 @@ const ChiaaGamingDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-900 via-purple-900 to-black p-4">
-      <div className="container mx-auto max-w-6xl">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-pink-100">Chiaa Gaming Dashboard</h1>
-            <p className="text-pink-300">Donation management and analytics</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="outline" 
-              onClick={() => navigate("/chiaa_gaming/messages")}
-              className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20"
-            >
-              <MessageSquare className="w-4 h-4 mr-2" />
-              Messages
-            </Button>
-            <CSVExportDialog 
-              tableName="chiaa_gaming_donations" 
-              title="Export Donations to CSV" 
-            />
-            <Button 
-              variant="outline" 
-              onClick={handleLogout}
-              className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
-            </Button>
-          </div>
-        </div>
-
-        {/* Monthly Total Card */}
-        <Card className="mb-6 bg-black/50 border-pink-500/30">
-          <CardHeader>
-            <CardTitle className="text-pink-100">Monthly Total</CardTitle>
-            <CardDescription className="text-pink-300">Total donations received this month</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-pink-400">
-              {formatCurrency(monthlyTotal)}
+    <SecureDataDisplay requiredAuth={true}>
+      <div className="min-h-screen bg-gradient-to-br from-pink-900 via-purple-900 to-black p-4">
+        <div className="container mx-auto max-w-6xl">
+          {/* Header */}
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h1 className="text-3xl font-bold text-pink-100">Chiaa Gaming Dashboard</h1>
+              <p className="text-pink-300">Donation management and analytics</p>
             </div>
-          </CardContent>
-        </Card>
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="outline" 
+                onClick={() => navigate("/chiaa_gaming/messages")}
+                className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20"
+              >
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Messages
+              </Button>
+              <CSVExportDialog 
+                tableName="chiaa_gaming_donations" 
+                title="Export Donations to CSV" 
+              />
+              <Button 
+                variant="outline" 
+                onClick={handleLogout}
+                className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Logout
+              </Button>
+            </div>
+          </div>
 
-        {/* Donations Table */}
-        <Card className="bg-black/50 border-pink-500/30">
-          <CardHeader>
-            <CardTitle className="text-pink-100">Recent Successful Payments</CardTitle>
-            <CardDescription className="text-pink-300">All successful donations with media attachments</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {donations.length === 0 ? (
-              <div className="text-center py-8 text-pink-300">
-                No successful payments found
+          {/* Monthly Total Card */}
+          <Card className="mb-6 bg-black/50 border-pink-500/30">
+            <CardHeader>
+              <CardTitle className="text-pink-100">Monthly Total</CardTitle>
+              <CardDescription className="text-pink-300">Total donations received this month</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-pink-400">
+                {formatCurrency(monthlyTotal)}
               </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-pink-500/30">
-                    <TableHead className="text-pink-200">Name</TableHead>
-                    <TableHead className="text-pink-200">Amount</TableHead>
-                    <TableHead className="text-pink-200">Date & Time</TableHead>
-                    <TableHead className="text-pink-200">Media</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {donations.map((donation) => (
-                    <TableRow key={donation.id} className="border-pink-500/20 hover:bg-pink-500/10">
-                      <TableCell className="font-medium text-pink-100">{donation.name}</TableCell>
-                      <TableCell className="text-pink-400 font-semibold">
-                        {formatCurrency(Number(donation.amount))}
-                      </TableCell>
-                      <TableCell className="text-pink-200">{formatDate(donation.created_at)}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {renderMediaBadges(donation)}
-                        </div>
-                      </TableCell>
+            </CardContent>
+          </Card>
+
+          {/* Donations Table */}
+          <Card className="bg-black/50 border-pink-500/30">
+            <CardHeader>
+              <CardTitle className="text-pink-100">Recent Successful Payments</CardTitle>
+              <CardDescription className="text-pink-300">All successful donations with media attachments</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {donations.length === 0 ? (
+                <div className="text-center py-8 text-pink-300">
+                  No successful payments found
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-pink-500/30">
+                      <TableHead className="text-pink-200">Name</TableHead>
+                      <TableHead className="text-pink-200">Amount</TableHead>
+                      <TableHead className="text-pink-200">Date & Time</TableHead>
+                      <TableHead className="text-pink-200">Media</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {donations.map((donation) => (
+                      <TableRow key={donation.id} className="border-pink-500/20 hover:bg-pink-500/10">
+                        <TableCell className="font-medium text-pink-100">{donation.name}</TableCell>
+                        <TableCell className="text-pink-400 font-semibold">
+                          {formatCurrency(Number(donation.amount))}
+                        </TableCell>
+                        <TableCell className="text-pink-200">{formatDate(donation.created_at)}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {renderMediaBadges(donation)}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
+    </SecureDataDisplay>
   );
 };
 
