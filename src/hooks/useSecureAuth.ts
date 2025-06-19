@@ -23,22 +23,35 @@ export const useSecureAuth = () => {
   const { toast } = useToast();
   const initializedRef = useRef(false);
   const fetchingAdminTypeRef = useRef(false);
+  const lastFetchTimeRef = useRef(0);
 
   const fetchAdminType = async (session: Session) => {
-    if (fetchingAdminTypeRef.current) return null;
+    const now = Date.now();
+    // Prevent multiple calls within 1 second
+    if (fetchingAdminTypeRef.current || (now - lastFetchTimeRef.current) < 1000) {
+      return null;
+    }
     
     fetchingAdminTypeRef.current = true;
+    lastFetchTimeRef.current = now;
+    
     try {
       console.log("Fetching admin type for user:", session.user.email);
-      const { data: adminType, error } = await supabase.rpc('get_user_admin_type');
+      
+      // Use direct table query instead of RPC function
+      const { data: adminData, error } = await supabase
+        .from('admin_users')
+        .select('admin_type')
+        .eq('user_email', session.user.email)
+        .single();
       
       if (error) {
         console.error('Error fetching admin type:', error);
         return null;
       }
       
-      console.log("Admin type fetched:", adminType);
-      return adminType;
+      console.log("Admin type fetched:", adminData?.admin_type);
+      return adminData?.admin_type || null;
     } catch (error) {
       console.error('Exception fetching admin type:', error);
       return null;
@@ -70,7 +83,7 @@ export const useSecureAuth = () => {
               isLoading: false,
             });
 
-            // Log authentication event
+            // Log authentication event (but don't let it block auth flow)
             try {
               await supabase.rpc('log_access_attempt', {
                 p_action: `AUTH_STATE_CHANGE_${event}`,
