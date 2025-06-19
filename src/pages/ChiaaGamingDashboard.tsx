@@ -1,381 +1,263 @@
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { formatCurrency, calculateMonthlyTotal } from "@/utils/dashboardUtils";
-import { LogOut, MessageSquare, Image, Mic, Volume2, MessageCircle } from "lucide-react";
-import CSVExportDialog from "@/components/CSVExportDialog";
-import { useAuthProtection } from "@/hooks/useAuthProtection";
-import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useSecureAuthProtection } from "@/hooks/useSecureAuthProtection";
+import { useSecureAuth } from "@/hooks/useSecureAuth";
+import { logSecurityEvent } from "@/services/secureAuth";
+import { 
+  Users, 
+  DollarSign, 
+  MessageSquare, 
+  TrendingUp, 
+  Calendar,
+  Shield,
+  Activity
+} from "lucide-react";
 
-interface Donation {
-  id: string;
-  name: string;
-  amount: number;
-  message: string;
-  created_at: string;
-  payment_status: string;
-  gif_url?: string;
-  voice_url?: string;
-  custom_sound_name?: string;
-  custom_sound_url?: string;
-  include_sound?: boolean;
+interface DashboardStats {
+  totalDonations: number;
+  totalAmount: number;
+  todayDonations: number;
+  todayAmount: number;
+  averageDonation: number;
 }
 
 const ChiaaGamingDashboard = () => {
-  const [donations, setDonations] = useState<Donation[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [monthlyTotal, setMonthlyTotal] = useState(0);
+  const [stats, setStats] = useState<DashboardStats>({
+    totalDonations: 0,
+    totalAmount: 0,
+    todayDonations: 0,
+    todayAmount: 0,
+    averageDonation: 0,
+  });
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const channelRef = useRef<any>(null);
-  const { signOut } = useAuth();
-
-  // Use the auth protection hook to guard this route with consistent key
-  useAuthProtection({
+  
+  // Use secure auth protection
+  const { isAuthenticated, adminType } = useSecureAuthProtection({
     redirectTo: "/chiaa_gaming/login",
-    authKey: "chiaa_gaming"
+    requiredAdminType: "chiaa_gaming"
   });
+  
+  const { signOut } = useSecureAuth();
 
   useEffect(() => {
-    fetchDonations();
-    
-    // Set up real-time subscription
-    const setupRealtimeSubscription = () => {
-      // Clean up existing channel first
-      if (channelRef.current) {
-        console.log('Cleaning up existing channel');
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
+    if (isAuthenticated) {
+      fetchDashboardData();
+    }
+  }, [isAuthenticated]);
 
-      // Create a unique channel name
-      const channelName = `chiaa-gaming-donations-realtime-${Date.now()}`;
-      
-      channelRef.current = supabase
-        .channel(channelName)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'chiaa_gaming_donations',
-            filter: 'payment_status=eq.success'
-          },
-          (payload) => {
-            console.log('New donation received via realtime:', payload);
-            const newDonation = payload.new as Donation;
-            setDonations(prev => {
-              // Check if donation already exists to prevent duplicates
-              const exists = prev.some(d => d.id === newDonation.id);
-              if (exists) return prev;
-              return [newDonation, ...prev];
-            });
-            setMonthlyTotal(prev => prev + Number(newDonation.amount));
-            
-            toast({
-              title: "New Donation Received!",
-              description: `${newDonation.name} donated ₹${Number(newDonation.amount).toLocaleString()}`,
-            });
-          }
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'chiaa_gaming_donations',
-            filter: 'payment_status=eq.success'
-          },
-          (payload) => {
-            console.log('Donation updated via realtime:', payload);
-            const updatedDonation = payload.new as Donation;
-            setDonations(prev => 
-              prev.map(donation => 
-                donation.id === updatedDonation.id ? updatedDonation : donation
-              )
-            );
-          }
-        )
-        .subscribe((status) => {
-          console.log('Realtime subscription status:', status);
-          if (status === 'SUBSCRIBED') {
-            console.log('Successfully subscribed to chiaa_gaming_donations realtime updates');
-          } else if (status === 'CHANNEL_ERROR') {
-            console.error('Channel subscription error');
-          } else if (status === 'TIMED_OUT') {
-            console.error('Channel subscription timed out');
-          }
-        });
-
-      console.log('Real-time subscription set up for chiaa_gaming_donations');
-    };
-
-    // Setup subscription with a small delay
-    const timer = setTimeout(setupRealtimeSubscription, 500);
-
-    return () => {
-      clearTimeout(timer);
-      if (channelRef.current) {
-        console.log('Component unmounting, cleaning up channel');
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
-    };
-  }, [toast]);
-
-  const fetchDonations = async () => {
+  const fetchDashboardData = async () => {
     try {
-      const { data, error } = await supabase
+      setIsLoading(true);
+      
+      // Log dashboard access
+      await logSecurityEvent('ACCESS_DASHBOARD', { table: 'chiaa_gaming_donations' });
+      
+      // Get today's date for filtering
+      const today = new Date();
+      const todayStart = `${today.toISOString().split('T')[0]}T00:00:00`;
+      const todayEnd = `${today.toISOString().split('T')[0]}T23:59:59`;
+
+      // Fetch all successful donations
+      const { data: allDonations, error: allError } = await supabase
         .from("chiaa_gaming_donations")
-        .select("id, name, amount, message, created_at, payment_status, gif_url, voice_url, custom_sound_name, custom_sound_url, include_sound")
+        .select("amount, created_at")
+        .eq("payment_status", "success");
+
+      if (allError) throw allError;
+
+      // Fetch today's donations
+      const { data: todayDonations, error: todayError } = await supabase
+        .from("chiaa_gaming_donations")
+        .select("amount")
         .eq("payment_status", "success")
-        .order("created_at", { ascending: false });
+        .gte("created_at", todayStart)
+        .lte("created_at", todayEnd);
 
-      if (error) {
-        console.error("Error fetching donations:", error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to fetch donations",
-        });
-        return;
-      }
+      if (todayError) throw todayError;
 
-      setDonations(data || []);
-      setMonthlyTotal(calculateMonthlyTotal(data || []));
+      // Calculate statistics
+      const totalAmount = allDonations?.reduce((sum, donation) => sum + Number(donation.amount), 0) || 0;
+      const todayAmount = todayDonations?.reduce((sum, donation) => sum + Number(donation.amount), 0) || 0;
+      const totalCount = allDonations?.length || 0;
+      const todayCount = todayDonations?.length || 0;
+      const averageDonation = totalCount > 0 ? totalAmount / totalCount : 0;
+
+      setStats({
+        totalDonations: totalCount,
+        totalAmount,
+        todayDonations: todayCount,
+        todayAmount,
+        averageDonation,
+      });
+
+      console.log("Dashboard data loaded successfully");
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Error fetching dashboard data:", error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "An unexpected error occurred",
+        title: "Failed to load dashboard",
+        description: "Could not retrieve donation statistics",
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   const handleLogout = async () => {
-    try {
-      // Clear session storage with consistent key
-      sessionStorage.removeItem("chiaa_gamingAuth");
-      await signOut();
-      navigate("/chiaa_gaming/login");
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
+    await signOut();
+    navigate("/chiaa_gaming/login");
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleString("en-IN", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  const renderMediaBadges = (donation: Donation) => {
-    const badges = [];
-    
-    if (donation.gif_url) {
-      badges.push(
-        <Badge key="gif" variant="secondary" className="text-xs bg-purple-500/20 text-purple-300 border-purple-500/50">
-          <Image className="w-3 h-3 mr-1" />
-          GIF
-        </Badge>
-      );
-    }
-    
-    if (donation.voice_url) {
-      badges.push(
-        <Badge key="voice" variant="secondary" className="text-xs bg-blue-500/20 text-blue-300 border-blue-500/50">
-          <Mic className="w-3 h-3 mr-1" />
-          Voice
-        </Badge>
-      );
-    }
-    
-    if (donation.custom_sound_name || donation.custom_sound_url) {
-      badges.push(
-        <Badge key="sound" variant="secondary" className="text-xs bg-orange-500/20 text-orange-300 border-orange-500/50">
-          <Volume2 className="w-3 h-3 mr-1" />
-          Sound
-        </Badge>
-      );
-    }
-    
-    if (donation.message && donation.message.trim() !== '') {
-      badges.push(
-        <Badge key="message" variant="secondary" className="text-xs bg-green-500/20 text-green-300 border-green-500/50">
-          <MessageCircle className="w-3 h-3 mr-1" />
-          Message
-        </Badge>
-      );
-    }
-    
-    return badges;
-  };
-
-  if (loading) {
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-900 via-purple-900 to-black flex items-center justify-center">
-        <div className="text-lg text-pink-100">Loading...</div>
+        <div className="text-pink-100 text-center">
+          <Shield className="mx-auto h-12 w-12 mb-4" />
+          <h1 className="text-2xl font-bold mb-4">Authenticating...</h1>
+          <p>Please wait while we verify your secure credentials.</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-900 via-purple-900 to-black p-4">
-      <div className="container mx-auto max-w-6xl">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
+    <div className="min-h-screen bg-gradient-to-br from-pink-900 via-purple-900 to-black">
+      <div className="container mx-auto py-8 px-4">
+        <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-pink-100">Chiaa Gaming Dashboard</h1>
-            <p className="text-pink-300">Donation management and analytics</p>
+            <h1 className="text-3xl font-bold text-pink-100">Secure Gaming Dashboard</h1>
+            <div className="flex items-center mt-2 space-x-2">
+              <Badge variant="secondary" className="bg-green-500/20 text-green-300 border-green-500/50">
+                <Shield className="w-3 h-3 mr-1" />
+                Authenticated: {adminType}
+              </Badge>
+              <Badge variant="secondary" className="bg-blue-500/20 text-blue-300 border-blue-500/50">
+                <Activity className="w-3 h-3 mr-1" />
+                Secure Session
+              </Badge>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="outline" 
-              onClick={() => navigate("/chiaa_gaming/messages")}
-              className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20"
-            >
-              <MessageSquare className="w-4 h-4 mr-2" />
-              Messages
-            </Button>
-            <CSVExportDialog 
-              tableName="chiaa_gaming_donations" 
-              title="Export Donations to CSV" 
-            />
-            <Button 
-              variant="outline" 
-              onClick={handleLogout}
-              className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
-            </Button>
-          </div>
+          <Button 
+            variant="outline" 
+            onClick={handleLogout}
+            className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20"
+          >
+            Secure Logout
+          </Button>
         </div>
 
-        {/* Monthly Total Card */}
-        <Card className="mb-6 bg-black/50 border-pink-500/30">
-          <CardHeader>
-            <CardTitle className="text-pink-100">Monthly Total</CardTitle>
-            <CardDescription className="text-pink-300">Total donations received this month</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-pink-400">
-              {formatCurrency(monthlyTotal)}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Donations Table */}
-        <Card className="bg-black/50 border-pink-500/30">
-          <CardHeader>
-            <CardTitle className="text-pink-100">Recent Successful Payments</CardTitle>
-            <CardDescription className="text-pink-300">All successful donations with media attachments</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {donations.length === 0 ? (
-              <div className="text-center py-8 text-pink-300">
-                No successful payments found
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-black/50 border-pink-500/30">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-pink-200">Total Donations</CardTitle>
+              <Users className="h-4 w-4 text-pink-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-pink-100">
+                {isLoading ? "..." : stats.totalDonations.toLocaleString()}
               </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-pink-500/30">
-                    <TableHead className="text-pink-200">Name</TableHead>
-                    <TableHead className="text-pink-200">Amount</TableHead>
-                    <TableHead className="text-pink-200">Date & Time</TableHead>
-                    <TableHead className="text-pink-200">Media</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {donations.map((donation) => (
-                    <TableRow key={donation.id} className="border-pink-500/20 hover:bg-pink-500/10">
-                      <TableCell className="font-medium text-pink-100">{donation.name}</TableCell>
-                      <TableCell className="text-pink-400 font-semibold">
-                        {formatCurrency(Number(donation.amount))}
-                      </TableCell>
-                      <TableCell className="text-pink-200">{formatDate(donation.created_at)}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {renderMediaBadges(donation)}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-black/50 border-pink-500/30">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-pink-200">Total Amount</CardTitle>
+              <DollarSign className="h-4 w-4 text-pink-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-pink-100">
+                {isLoading ? "..." : `₹${stats.totalAmount.toLocaleString()}`}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-black/50 border-pink-500/30">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-pink-200">Today's Donations</CardTitle>
+              <Calendar className="h-4 w-4 text-pink-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-pink-100">
+                {isLoading ? "..." : stats.todayDonations.toLocaleString()}
+              </div>
+              <p className="text-xs text-pink-300 mt-1">
+                ₹{stats.todayAmount.toLocaleString()} today
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-black/50 border-pink-500/30">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-pink-200">Average Donation</CardTitle>
+              <TrendingUp className="h-4 w-4 text-pink-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-pink-100">
+                {isLoading ? "..." : `₹${Math.round(stats.averageDonation).toLocaleString()}`}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="bg-black/50 border-pink-500/30">
+            <CardHeader>
+              <CardTitle className="text-pink-100">Secure Donation Management</CardTitle>
+              <CardDescription className="text-pink-300">
+                Manage your donations with secure, audited access
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button 
+                onClick={() => navigate("/chiaa_gaming/donation-messages")}
+                className="w-full bg-pink-600 hover:bg-pink-700"
+              >
+                <MessageSquare className="mr-2 h-4 w-4" />
+                Secure Donation Messages
+              </Button>
+              <div className="text-xs text-pink-300/70 flex items-center">
+                <Shield className="w-3 h-3 mr-1" />
+                Protected by RLS policies and audit logging
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-black/50 border-pink-500/30">
+            <CardHeader>
+              <CardTitle className="text-pink-100">Security Features</CardTitle>
+              <CardDescription className="text-pink-300">
+                Enhanced security and monitoring
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="flex items-center text-sm text-pink-200">
+                <Shield className="w-4 h-4 mr-2 text-green-400" />
+                Row Level Security Enabled
+              </div>
+              <div className="flex items-center text-sm text-pink-200">
+                <Activity className="w-4 h-4 mr-2 text-blue-400" />
+                Audit Logging Active
+              </div>
+              <div className="flex items-center text-sm text-pink-200">
+                <Users className="w-4 h-4 mr-2 text-purple-400" />
+                Token-based OBS Access
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
-};
-
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleString("en-IN", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
-const renderMediaBadges = (donation: Donation) => {
-  const badges = [];
-  
-  if (donation.gif_url) {
-    badges.push(
-      <Badge key="gif" variant="secondary" className="text-xs bg-purple-500/20 text-purple-300 border-purple-500/50">
-        <Image className="w-3 h-3 mr-1" />
-        GIF
-      </Badge>
-    );
-  }
-  
-  if (donation.voice_url) {
-    badges.push(
-      <Badge key="voice" variant="secondary" className="text-xs bg-blue-500/20 text-blue-300 border-blue-500/50">
-        <Mic className="w-3 h-3 mr-1" />
-        Voice
-      </Badge>
-    );
-  }
-  
-  if (donation.custom_sound_name || donation.custom_sound_url) {
-    badges.push(
-      <Badge key="sound" variant="secondary" className="text-xs bg-orange-500/20 text-orange-300 border-orange-500/50">
-        <Volume2 className="w-3 h-3 mr-1" />
-        Sound
-      </Badge>
-    );
-  }
-  
-  if (donation.message && donation.message.trim() !== '') {
-    badges.push(
-      <Badge key="message" variant="secondary" className="text-xs bg-green-500/20 text-green-300 border-green-500/50">
-        <MessageCircle className="w-3 h-3 mr-1" />
-        Message
-      </Badge>
-    );
-  }
-  
-  return badges;
 };
 
 export default ChiaaGamingDashboard;

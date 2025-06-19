@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { authenticateSecurely } from "@/services/secureAuth";
 
 const ChiaaGamingLogin = () => {
   const [username, setUsername] = useState("chiaa_gaming");
@@ -18,30 +19,29 @@ const ChiaaGamingLogin = () => {
     setIsLoading(true);
 
     try {
-      console.log("Starting simple login process for chiaa_gaming");
+      console.log("Starting secure login process for chiaa_gaming");
       
-      // Simple password check - no database calls
-      const correctPassword = "Changeme02"; // This should match what's in your database
-      
-      if (password === correctPassword) {
-        // Store authentication in session storage with consistent key
-        sessionStorage.setItem("chiaa_gamingAuth", "true");
-        
-        console.log("Password verified - session set up successfully");
+      const result = await authenticateSecurely({
+        username,
+        password
+      });
+
+      if (result.success && result.isAdmin && result.adminType === 'chiaa_gaming') {
+        console.log("Secure authentication successful");
         
         toast({
           title: "Login successful",
-          description: "Welcome to Chiaa Gaming Dashboard",
+          description: "Welcome to your secure Chiaa Gaming Dashboard",
         });
         
-        // Navigate to dashboard immediately
+        // Navigate to dashboard
         navigate("/chiaa_gaming/dashboard");
       } else {
-        console.log("Password mismatch");
+        console.log("Authentication failed:", result.message);
         toast({
           variant: "destructive",
           title: "Login failed",
-          description: "Invalid password",
+          description: result.message,
         });
       }
     } catch (error) {
@@ -64,7 +64,7 @@ const ChiaaGamingLogin = () => {
             Chiaa Gaming Dashboard
           </CardTitle>
           <CardDescription className="text-center text-pink-300">
-            Enter your credentials to access the dashboard
+            Enter your credentials to access the secure dashboard
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -95,9 +95,12 @@ const ChiaaGamingLogin = () => {
               className="w-full bg-pink-600 hover:bg-pink-700 text-white"
               disabled={isLoading}
             >
-              {isLoading ? "Logging in..." : "Login"}
+              {isLoading ? "Logging in..." : "Secure Login"}
             </Button>
           </form>
+          <div className="mt-4 text-xs text-pink-300/70 text-center">
+            🔒 This login uses secure authentication with audit logging
+          </div>
         </CardContent>
       </Card>
     </div>
