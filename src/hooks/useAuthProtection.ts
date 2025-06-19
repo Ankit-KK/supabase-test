@@ -57,7 +57,7 @@ export const useAuthProtection = (options: AuthProtectionOptions | string) => {
     console.log("useAuthProtection: Authentication check passed");
   }, [authKey, redirectTo, requiredAdminType, navigate, toast]);
   
-  // Check session storage for authentication - using consistent key names
+  // Return current auth status
   const isAuthenticated = sessionStorage.getItem(`${authKey}Auth`) === 'true';
   const isAdmin = sessionStorage.getItem(`${authKey}AdminAuth`) === 'true';
   

@@ -24,7 +24,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  // Set up auth state listener first, then check for existing session
   useEffect(() => {
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -52,41 +51,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setIsLoading(false);
     });
 
-    // Check if admin is logged in via session storage - using consistent key names
+    // Check if admin is logged in via session storage - simplified approach
     const checkAdminStatus = () => {
       const adminTypes = ['ankit', 'chiaa_gaming', 'harish', 'mackle'];
+      let foundAdmin = false;
+      
       for (const type of adminTypes) {
-        if (sessionStorage.getItem(`${type}AdminAuth`) === 'true') {
+        if (sessionStorage.getItem(`${type}Auth`) === 'true') {
           setIsAdmin(true);
           setAdminType(type);
-          // Create a mock user for session-based auth
-          if (!user) {
-            setUser({ 
-              id: `session_${type}`,
-              email: `${type}@session.local`,
-              aud: 'authenticated',
-              role: 'authenticated',
-              email_confirmed_at: new Date().toISOString(),
-              phone_confirmed_at: null,
-              confirmation_sent_at: null,
-              recovery_sent_at: null,
-              email_change_sent_at: null,
-              new_email: null,
-              invited_at: null,
-              action_link: null,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-              app_metadata: {},
-              user_metadata: {},
-              identities: [],
-              factors: []
-            } as User);
-          }
-          return;
+          foundAdmin = true;
+          break;
         }
       }
-      // Only set to false if no Supabase session exists
-      if (!session) {
+      
+      if (!foundAdmin && !session) {
         setIsAdmin(false);
         setAdminType(null);
       }
@@ -99,7 +78,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       subscription.unsubscribe();
       window.removeEventListener('storage', checkAdminStatus);
     };
-  }, [session, user]);
+  }, [session]);
 
   const fetchAdminType = async (email: string | undefined) => {
     if (!email) return;
@@ -158,6 +137,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         sessionStorage.removeItem(`${type}Auth`);
         sessionStorage.removeItem(`${type}AdminAuth`);
       });
+      
+      // Reset state
+      setAdminType(null);
+      setIsAdmin(false);
       
       toast({
         title: "Logged out",

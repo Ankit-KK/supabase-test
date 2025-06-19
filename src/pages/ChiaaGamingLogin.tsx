@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { authenticateStreamer } from "@/services/streamerAuth";
 
 const ChiaaGamingLogin = () => {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("chiaa_gaming");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -21,32 +21,14 @@ const ChiaaGamingLogin = () => {
     try {
       console.log("Starting login process for chiaa_gaming");
       
-      // Check admin_users table directly for chiaa_gaming
-      const { data: adminUser, error: adminError } = await supabase
-        .from("admin_users")
-        .select("*")
-        .eq("admin_type", "chiaa_gaming")
-        .single();
-
-      if (adminError || !adminUser) {
-        console.error("Admin user not found:", adminError);
-        toast({
-          variant: "destructive",
-          title: "Login failed",
-          description: "Invalid credentials",
-        });
-        return;
-      }
-
-      console.log("Admin user found:", adminUser);
-
-      // Check password against password_hash
-      if (password === adminUser.password_hash) {
-        console.log("Password verified - setting up session");
-        
-        // Set session storage for authentication - using consistent key names
+      const result = await authenticateStreamer({ username, password });
+      
+      if (result.success) {
+        // Store authentication in session storage
         sessionStorage.setItem("chiaa_gamingAuth", "true");
-        sessionStorage.setItem("chiaa_gamingAdminAuth", "true");
+        if (result.isAdmin) {
+          sessionStorage.setItem("chiaa_gamingAdminAuth", "true");
+        }
         
         // Trigger storage event to update AuthContext
         window.dispatchEvent(new StorageEvent('storage', {
@@ -58,17 +40,17 @@ const ChiaaGamingLogin = () => {
         
         toast({
           title: "Login successful",
-          description: "Welcome to your dashboard!",
+          description: result.message,
         });
         
         // Navigate to dashboard
         navigate("/chiaa_gaming/dashboard");
       } else {
-        console.log("Password mismatch");
+        console.log("Login failed:", result.message);
         toast({
           variant: "destructive",
           title: "Login failed",
-          description: "Invalid credentials",
+          description: result.message,
         });
       }
     } catch (error) {
@@ -99,11 +81,12 @@ const ChiaaGamingLogin = () => {
             <div>
               <Input
                 type="text"
-                placeholder="Enter username or email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 className="bg-black/30 border-pink-500/50 text-pink-100 placeholder:text-pink-300/70"
                 required
+                disabled
               />
             </div>
             <div>
