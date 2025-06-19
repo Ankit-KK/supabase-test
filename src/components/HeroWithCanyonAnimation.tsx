@@ -1,7 +1,6 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, Mic, Gif, IndianRupee } from "lucide-react";
+import { ChevronRight, Mic, Gift, IndianRupee } from "lucide-react";
 import CanyonAnimatedText from "@/components/CanyonAnimatedText";
 import SignupDialog from "@/components/SignupDialog";
 
@@ -65,7 +64,7 @@ const HeroWithCanyonAnimation = () => {
               </div>
               <div className="flex flex-col items-center space-y-3 p-4 rounded-lg bg-secondary/20 border border-white/10">
                 <div className="flex items-center gap-2">
-                  <Gif className="text-hyperchat-purple h-5 w-5" />
+                  <Gift className="text-hyperchat-purple h-5 w-5" />
                   <div className="text-hyperchat-purple font-semibold">Custom GIFs</div>
                 </div>
                 <div className="text-muted-foreground text-center">Upload your own GIFs for personalized donation alerts</div>

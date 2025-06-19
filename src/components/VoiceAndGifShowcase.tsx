@@ -1,7 +1,6 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Mic, Gif, Heart, Zap, IndianRupee, Users } from "lucide-react";
+import { Mic, Gift, Heart, Zap, IndianRupee, Users } from "lucide-react";
 
 const VoiceAndGifShowcase = () => {
   return (
@@ -66,7 +65,7 @@ const VoiceAndGifShowcase = () => {
           <div className="space-y-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="bg-gradient-to-br from-hyperchat-pink to-hyperchat-orange p-3 rounded-full">
-                <Gif className="text-white h-6 w-6" />
+                <Gift className="text-white h-6 w-6" />
               </div>
               <h3 className="text-2xl font-bold">Custom GIF Uploads</h3>
             </div>
@@ -99,7 +98,7 @@ const VoiceAndGifShowcase = () => {
 
             <div className="bg-gradient-to-r from-hyperchat-pink/10 to-hyperchat-orange/10 p-4 rounded-lg border border-hyperchat-pink/20">
               <div className="flex items-center gap-2 mb-2">
-                <Gif className="h-4 w-4 text-hyperchat-pink" />
+                <Gift className="h-4 w-4 text-hyperchat-pink" />
                 <span className="font-semibold">Custom GIF Alert:</span>
               </div>
               <p className="text-sm">[Dancing celebration GIF] + "Thanks for the epic stream!"</p>

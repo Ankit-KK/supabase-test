@@ -1,7 +1,6 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Check, Mic, Gif, IndianRupee, Zap, Crown } from "lucide-react";
+import { Check, Mic, Gift, IndianRupee, Zap, Crown } from "lucide-react";
 import SignupDialog from "@/components/SignupDialog";
 
 interface PricingPlanProps {
@@ -165,7 +164,7 @@ const Pricing: React.FC = () => {
       name: "Custom GIF Add-On",
       description: "Add GIF uploads to existing plan",
       price: "250",
-      icon: <Gif className="text-white h-5 w-5" />,
+      icon: <Gift className="text-white h-5 w-5" />,
       gradient: "bg-gradient-to-br from-hyperchat-pink to-hyperchat-orange",
       features: [
         "Fan GIF uploads",
