@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,6 +36,7 @@ const ChiaaGamingDonationMessages = () => {
   const [goalTarget, setGoalTarget] = useState<number>(1000);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const channelRef = useRef<any>(null);
   
   // Use the auth protection hook to guard this route
   useAuthProtection({
@@ -84,42 +85,110 @@ const ChiaaGamingDonationMessages = () => {
 
   // Set up real-time subscription for new donations
   useEffect(() => {
-    const channel = supabase
-      .channel('chiaa-gaming-donations-dashboard')
-      .on(
-        'postgres_changes',
-        { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'chiaa_gaming_donations',
-          filter: 'payment_status=eq.success'
-        },
-        (payload) => {
-          const newDonation = payload.new as Donation;
-          console.log("New donation received in dashboard via realtime:", newDonation);
-          
-          // Check if donation is from today
-          const donationDate = new Date(newDonation.created_at).toISOString().split('T')[0];
-          const today = new Date().toISOString().split('T')[0];
-          
-          if (donationDate === today) {
-            setDonations(prev => [newDonation, ...prev]);
-            toast({
-              title: "New Donation Received",
-              description: `${newDonation.name} donated ₹${Number(newDonation.amount).toLocaleString()}`,
-            });
-          }
-        }
-      )
-      .subscribe();
-
-    console.log("Dashboard realtime subscription set up for payment_status=success");
-    
-    // Fetch donations once when component mounts
     fetchDonations();
     
+    // Set up real-time subscription with improved handling
+    const setupRealtimeSubscription = () => {
+      // Clean up existing channel first
+      if (channelRef.current) {
+        console.log('Cleaning up existing messages channel');
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+
+      // Create a unique channel name for messages
+      const channelName = `chiaa-gaming-messages-realtime-${Date.now()}`;
+      
+      channelRef.current = supabase
+        .channel(channelName)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'chiaa_gaming_donations',
+            filter: 'payment_status=eq.success'
+          },
+          (payload) => {
+            console.log('New donation received in messages via realtime:', payload);
+            const newDonation = payload.new as Donation;
+            
+            // Check if donation is from today
+            const donationDate = new Date(newDonation.created_at).toISOString().split('T')[0];
+            const today = new Date().toISOString().split('T')[0];
+            
+            if (donationDate === today) {
+              setDonations(prev => {
+                // Check if donation already exists to prevent duplicates
+                const exists = prev.some(d => d.id === newDonation.id);
+                if (exists) {
+                  console.log('Donation already exists, skipping duplicate');
+                  return prev;
+                }
+                console.log('Adding new donation to messages list');
+                return [newDonation, ...prev];
+              });
+              
+              toast({
+                title: "New Donation Received",
+                description: `${newDonation.name} donated ₹${Number(newDonation.amount).toLocaleString()}`,
+              });
+            }
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'chiaa_gaming_donations',
+            filter: 'payment_status=eq.success'
+          },
+          (payload) => {
+            console.log('Donation updated in messages via realtime:', payload);
+            const updatedDonation = payload.new as Donation;
+            
+            // Check if donation is from today
+            const donationDate = new Date(updatedDonation.created_at).toISOString().split('T')[0];
+            const today = new Date().toISOString().split('T')[0];
+            
+            if (donationDate === today) {
+              setDonations(prev => 
+                prev.map(donation => 
+                  donation.id === updatedDonation.id ? updatedDonation : donation
+                )
+              );
+            }
+          }
+        )
+        .subscribe((status) => {
+          console.log('Messages realtime subscription status:', status);
+          if (status === 'SUBSCRIBED') {
+            console.log('Successfully subscribed to chiaa_gaming_donations messages realtime updates');
+          } else if (status === 'CHANNEL_ERROR') {
+            console.error('Messages channel subscription error');
+            // Retry subscription after a delay
+            setTimeout(setupRealtimeSubscription, 2000);
+          } else if (status === 'TIMED_OUT') {
+            console.error('Messages channel subscription timed out');
+            // Retry subscription after a delay
+            setTimeout(setupRealtimeSubscription, 2000);
+          }
+        });
+
+      console.log('Real-time subscription set up for chiaa_gaming_donations messages');
+    };
+
+    // Setup subscription with a delay
+    const timer = setTimeout(setupRealtimeSubscription, 1000);
+
     return () => {
-      supabase.removeChannel(channel);
+      clearTimeout(timer);
+      if (channelRef.current) {
+        console.log('Messages component unmounting, cleaning up channel');
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, [toast]);
 
