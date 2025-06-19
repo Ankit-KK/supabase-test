@@ -219,7 +219,7 @@ const ChiaaGamingDashboard = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <Button 
-                onClick={() => navigate("/chiaa_gaming/donation-messages")}
+                onClick={() => navigate("/chiaa_gaming/messages")}
                 className="w-full bg-pink-600 hover:bg-pink-700"
               >
                 <MessageSquare className="mr-2 h-4 w-4" />
