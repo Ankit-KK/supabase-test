@@ -284,51 +284,74 @@ const ChiaaGamingDonationMessages = () => {
     }
   }, []);
 
-  // Generate or retrieve OBS links with secure tokens
-  const setupObsLinks = () => {
-    let storedMessagesLink = sessionStorage.getItem("chiaaGamingObsLink");
-    let storedGoalLink = sessionStorage.getItem("chiaaGamingGoalObsLink");
-    
-    // Validate existing links have secure tokens
-    if (storedMessagesLink) {
-      const url = new URL(storedMessagesLink);
-      const pathSegments = url.pathname.split('/');
-      const tokenSegment = pathSegments[pathSegments.length - 1];
-      if (!validateSecureId(tokenSegment)) {
-        storedMessagesLink = null; // Regenerate if token is not secure
+  // Load OBS links from localStorage on component mount and setup persistent links
+  useEffect(() => {
+    const loadOrCreateObsLinks = () => {
+      // Load existing links from localStorage
+      let storedMessagesLink = localStorage.getItem("chiaaGamingObsLink");
+      let storedGoalLink = localStorage.getItem("chiaaGamingGoalObsLink");
+      
+      // Validate existing links have secure tokens
+      if (storedMessagesLink) {
+        try {
+          const url = new URL(storedMessagesLink);
+          const pathSegments = url.pathname.split('/');
+          const tokenSegment = pathSegments[pathSegments.length - 1];
+          if (!validateSecureId(tokenSegment)) {
+            storedMessagesLink = null; // Regenerate if token is not secure
+          }
+        } catch (error) {
+          console.warn('Invalid stored messages link, will regenerate');
+          storedMessagesLink = null;
+        }
       }
-    }
-    
-    if (storedGoalLink) {
-      const url = new URL(storedGoalLink);
-      const pathSegments = url.pathname.split('/');
-      const tokenSegment = pathSegments[pathSegments.length - 1];
-      if (!validateSecureId(tokenSegment)) {
-        storedGoalLink = null; // Regenerate if token is not secure
+      
+      if (storedGoalLink) {
+        try {
+          const url = new URL(storedGoalLink);
+          const pathSegments = url.pathname.split('/');
+          const tokenSegment = pathSegments[pathSegments.length - 1];
+          if (!validateSecureId(tokenSegment)) {
+            storedGoalLink = null; // Regenerate if token is not secure
+          }
+        } catch (error) {
+          console.warn('Invalid stored goal link, will regenerate');
+          storedGoalLink = null;
+        }
       }
-    }
-    
-    if (!storedMessagesLink) {
-      const secureToken = generateObsToken();
-      storedMessagesLink = `${window.location.origin}/chiaa_gaming/obs/${secureToken}?showMessages=${showMessages}&showGoal=false`;
-      sessionStorage.setItem("chiaaGamingObsLink", storedMessagesLink);
-    }
-    
-    if (!storedGoalLink) {
-      const secureToken = generateObsToken();
-      storedGoalLink = `${window.location.origin}/chiaa_gaming/obs/${secureToken}?showMessages=false&showGoal=true&goalName=${encodeURIComponent(goalName)}&goalTarget=${goalTarget}`;
-      sessionStorage.setItem("chiaaGamingGoalObsLink", storedGoalLink);
-    }
-    
-    setObsLink(storedMessagesLink);
-    setGoalObsLink(storedGoalLink);
-  };
+      
+      // Generate new links if needed
+      if (!storedMessagesLink) {
+        const secureToken = generateObsToken();
+        storedMessagesLink = `${window.location.origin}/chiaa_gaming/obs/${secureToken}?showMessages=${showMessages}&showGoal=false`;
+        localStorage.setItem("chiaaGamingObsLink", storedMessagesLink);
+        console.log('Generated new persistent messages OBS link');
+      }
+      
+      if (!storedGoalLink) {
+        const secureToken = generateObsToken();
+        storedGoalLink = `${window.location.origin}/chiaa_gaming/obs/${secureToken}?showMessages=false&showGoal=true&goalName=${encodeURIComponent(goalName)}&goalTarget=${goalTarget}`;
+        localStorage.setItem("chiaaGamingGoalObsLink", storedGoalLink);
+        console.log('Generated new persistent goal OBS link');
+      }
+      
+      setObsLink(storedMessagesLink);
+      setGoalObsLink(storedGoalLink);
+      
+      console.log('OBS links loaded/created:', {
+        messagesLink: storedMessagesLink,
+        goalLink: storedGoalLink
+      });
+    };
+
+    loadOrCreateObsLinks();
+  }, [showMessages, goalName, goalTarget]);
 
   const regenerateMessagesLink = () => {
     const secureToken = generateObsToken();
     const newLink = `${window.location.origin}/chiaa_gaming/obs/${secureToken}?showMessages=${showMessages}&showGoal=false`;
     
-    sessionStorage.setItem("chiaaGamingObsLink", newLink);
+    localStorage.setItem("chiaaGamingObsLink", newLink);
     setObsLink(newLink);
     
     SecurityMonitor.logSecurityEvent({
@@ -339,7 +362,7 @@ const ChiaaGamingDonationMessages = () => {
     
     toast({
       title: "Messages Link Regenerated",
-      description: "Your new donation messages OBS link has been created",
+      description: "Your new donation messages OBS link has been created. Update your OBS source with the new link.",
     });
   };
 
@@ -347,7 +370,7 @@ const ChiaaGamingDonationMessages = () => {
     const secureToken = generateObsToken();
     const newLink = `${window.location.origin}/chiaa_gaming/obs/${secureToken}?showMessages=false&showGoal=true&goalName=${encodeURIComponent(goalName)}&goalTarget=${goalTarget}`;
     
-    sessionStorage.setItem("chiaaGamingGoalObsLink", newLink);
+    localStorage.setItem("chiaaGamingGoalObsLink", newLink);
     setGoalObsLink(newLink);
     
     SecurityMonitor.logSecurityEvent({
@@ -358,7 +381,7 @@ const ChiaaGamingDonationMessages = () => {
     
     toast({
       title: "Goal Link Regenerated",
-      description: "Your new goal OBS link has been created",
+      description: "Your new goal OBS link has been created. Update your OBS source with the new link.",
     });
   };
 
@@ -367,7 +390,7 @@ const ChiaaGamingDonationMessages = () => {
     const newValue = !showMessages;
     setShowMessages(newValue);
     localStorage.setItem("chiaaGamingShowMessages", newValue.toString());
-    updateMessagesLink();
+    updateMessagesLink(newValue);
     
     toast({
       title: newValue ? "Messages Enabled" : "Messages Disabled",
@@ -380,7 +403,7 @@ const ChiaaGamingDonationMessages = () => {
     const newValue = !showGoal;
     setShowGoal(newValue);
     localStorage.setItem("chiaaGamingShowGoal", newValue.toString());
-    updateGoalLink();
+    updateGoalLink(newValue);
     
     toast({
       title: newValue ? "Goal Enabled" : "Goal Disabled",
@@ -403,7 +426,7 @@ const ChiaaGamingDonationMessages = () => {
     
     setGoalName(sanitizedValue);
     localStorage.setItem("chiaaGamingGoalName", sanitizedValue);
-    updateGoalLink();
+    updateGoalLink(showGoal, sanitizedValue);
   };
 
   // Handle goal target change with validation
@@ -414,7 +437,7 @@ const ChiaaGamingDonationMessages = () => {
     if (newTarget > 0 && newTarget <= 1000000) {
       setGoalTarget(newTarget);
       localStorage.setItem("chiaaGamingGoalTarget", newTarget.toString());
-      updateGoalLink();
+      updateGoalLink(showGoal, goalName, newTarget);
     } else if (newTarget > 1000000) {
       SecurityMonitor.logSecurityEvent({
         type: SECURITY_EVENTS.SUSPICIOUS_REQUEST,
@@ -424,46 +447,32 @@ const ChiaaGamingDonationMessages = () => {
     }
   };
 
-  // Update messages link with current settings
-  const updateMessagesLink = () => {
+  // Update messages link with current settings (preserve existing token)
+  const updateMessagesLink = (newShowMessages = showMessages) => {
     if (!obsLink) return;
     
     try {
       const url = new URL(obsLink);
-      const pathSegments = url.pathname.split('/');
-      const token = pathSegments[pathSegments.length - 1];
-      
-      if (!validateSecureId(token)) {
-        regenerateMessagesLink();
-        return;
-      }
-      
-      const newLink = `${url.origin}${url.pathname}?showMessages=${showMessages}&showGoal=false`;
-      sessionStorage.setItem("chiaaGamingObsLink", newLink);
+      const newLink = `${url.origin}${url.pathname}?showMessages=${newShowMessages}&showGoal=false`;
+      localStorage.setItem("chiaaGamingObsLink", newLink);
       setObsLink(newLink);
+      console.log('Updated messages link with new parameters');
     } catch (error) {
       console.error('Error updating messages link:', error);
       regenerateMessagesLink();
     }
   };
 
-  //Update goal link with current settings
-  const updateGoalLink = () => {
+  // Update goal link with current settings (preserve existing token)
+  const updateGoalLink = (newShowGoal = showGoal, newGoalName = goalName, newGoalTarget = goalTarget) => {
     if (!goalObsLink) return;
     
     try {
       const url = new URL(goalObsLink);
-      const pathSegments = url.pathname.split('/');
-      const token = pathSegments[pathSegments.length - 1];
-      
-      if (!validateSecureId(token)) {
-        regenerateGoalLink();
-        return;
-      }
-      
-      const newLink = `${url.origin}${url.pathname}?showMessages=false&showGoal=true&goalName=${encodeURIComponent(goalName)}&goalTarget=${goalTarget}`;
-      sessionStorage.setItem("chiaaGamingGoalObsLink", newLink);
+      const newLink = `${url.origin}${url.pathname}?showMessages=false&showGoal=${newShowGoal}&goalName=${encodeURIComponent(newGoalName)}&goalTarget=${newGoalTarget}`;
+      localStorage.setItem("chiaaGamingGoalObsLink", newLink);
       setGoalObsLink(newLink);
+      console.log('Updated goal link with new parameters');
     } catch (error) {
       console.error('Error updating goal link:', error);
       regenerateGoalLink();
@@ -585,7 +594,7 @@ const ChiaaGamingDonationMessages = () => {
         <Card className="mb-8 bg-black/50 border-pink-500/30">
           <CardHeader>
             <CardTitle className="text-pink-100">OBS Configuration</CardTitle>
-            <CardDescription className="text-pink-300">Configure what appears in your OBS overlay</CardDescription>
+            <CardDescription className="text-pink-300">Configure what appears in your OBS overlay. Links persist across page navigation.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col space-y-6">
@@ -635,7 +644,7 @@ const ChiaaGamingDonationMessages = () => {
                   className="font-mono text-sm bg-black/30 border-pink-500/50 text-pink-100"
                 />
                 <p className="text-sm text-pink-300/70">
-                  This link will display donation messages. Each message shows for 12 seconds.
+                  This link will display donation messages. Each message shows for 12 seconds. This link persists across page navigation - only regenerate if needed.
                 </p>
               </div>
 
@@ -715,7 +724,7 @@ const ChiaaGamingDonationMessages = () => {
                       className="font-mono text-sm bg-black/30 border-pink-500/50 text-pink-100"
                     />
                     <p className="text-sm text-pink-300/70">
-                      This link will only display the donation goal with real-time progress.
+                      This link will only display the donation goal with real-time progress. This link persists across page navigation - only regenerate if needed.
                     </p>
                   </div>
                 </div>
