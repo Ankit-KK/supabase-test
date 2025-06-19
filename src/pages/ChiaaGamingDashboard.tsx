@@ -9,6 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, calculateMonthlyTotal } from "@/utils/dashboardUtils";
 import { LogOut, MessageSquare, Image, Mic, Volume2, MessageCircle } from "lucide-react";
 import CSVExportDialog from "@/components/CSVExportDialog";
+import { useAuthProtection } from "@/hooks/useAuthProtection";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Donation {
   id: string;
@@ -31,15 +33,16 @@ const ChiaaGamingDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const channelRef = useRef<any>(null);
+  const { signOut } = useAuth();
+
+  // Use the auth protection hook to guard this route
+  useAuthProtection({
+    redirectTo: "/chiaa_gaming/login",
+    authKey: "chiaaGamingAuth",
+    requiredAdminType: "chiaa_gaming"
+  });
 
   useEffect(() => {
-    // Check if user is authenticated
-    const isAuthenticated = sessionStorage.getItem("chiaaGamingAuth") === "true";
-    if (!isAuthenticated) {
-      navigate("/chiaa_gaming/login");
-      return;
-    }
-
     fetchDonations();
     
     // Set up real-time subscription
@@ -124,7 +127,7 @@ const ChiaaGamingDashboard = () => {
         channelRef.current = null;
       }
     };
-  }, [navigate, toast]);
+  }, [toast]);
 
   const fetchDonations = async () => {
     try {
@@ -158,14 +161,13 @@ const ChiaaGamingDashboard = () => {
     }
   };
 
-  const handleLogout = () => {
-    sessionStorage.removeItem("chiaaGamingAuth");
-    sessionStorage.removeItem("chiaaGamingAdminAuth");
-    navigate("/chiaa_gaming/login");
-    toast({
-      title: "Logged out",
-      description: "You have been logged out successfully",
-    });
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate("/chiaa_gaming/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
   };
 
   const formatDate = (dateString: string) => {

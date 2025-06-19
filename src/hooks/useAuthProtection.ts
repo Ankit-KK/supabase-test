@@ -2,11 +2,12 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { isStreamerAuthenticated } from "@/services/streamerAuth";
+import { useAuth } from "@/contexts/AuthContext";
 
 export interface AuthProtectionOptions {
   redirectTo: string;
   authKey: string;
+  requiredAdminType?: string;
 }
 
 /**
@@ -15,26 +16,42 @@ export interface AuthProtectionOptions {
 export const useAuthProtection = (options: AuthProtectionOptions | string) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, adminType, isLoading } = useAuth();
   
   // Handle both string and options object for backward compatibility
   const authKey = typeof options === 'string' ? options : options.authKey;
   const redirectTo = typeof options === 'string' 
     ? `/${options}/login` 
     : options.redirectTo;
+  const requiredAdminType = typeof options === 'object' ? options.requiredAdminType : null;
   
   useEffect(() => {
-    // Check if the user is authenticated via session storage
-    const isAuthenticated = isStreamerAuthenticated(authKey.replace('Auth', ''));
+    if (isLoading) return; // Wait for auth to load
     
-    if (!isAuthenticated) {
+    if (!user) {
       toast({
         variant: "destructive",
         title: "Access denied",
         description: "Please log in to view this page",
       });
       navigate(redirectTo);
+      return;
     }
-  }, [navigate, redirectTo, toast, authKey]);
+
+    if (requiredAdminType && adminType !== requiredAdminType && adminType !== 'admin') {
+      toast({
+        variant: "destructive",
+        title: "Access denied",
+        description: "You don't have permission to access this page",
+      });
+      navigate(redirectTo);
+      return;
+    }
+  }, [user, adminType, isLoading, navigate, redirectTo, toast, requiredAdminType]);
   
-  return { isAuthenticated: isStreamerAuthenticated(authKey.replace('Auth', '')) };
+  return { 
+    isAuthenticated: !!user && !isLoading,
+    adminType,
+    isLoading
+  };
 };

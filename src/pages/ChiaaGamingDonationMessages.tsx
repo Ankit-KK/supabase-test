@@ -41,7 +41,8 @@ const ChiaaGamingDonationMessages = () => {
   // Use the auth protection hook to guard this route
   useAuthProtection({
     redirectTo: "/chiaa_gaming/login",
-    authKey: "chiaaGamingAuth"
+    authKey: "chiaaGamingAuth",
+    requiredAdminType: "chiaa_gaming"
   });
 
   // Function to fetch donations data - only from today

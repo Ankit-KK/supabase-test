@@ -421,6 +421,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_streamer_data: {
+        Args: { streamer_type: string }
+        Returns: boolean
+      }
       check_username_exists: {
         Args:
           | { username: string }
@@ -440,6 +444,10 @@ export type Database = {
           unique_visitors: number
         }[]
       }
+      get_user_admin_type: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_user_profile: {
         Args: { user_id: string }
         Returns: {
@@ -455,6 +463,10 @@ export type Database = {
           total_visits: number
           unique_visitors: number
         }[]
+      }
+      is_admin_user: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
       update_user_profile: {
         Args: { user_id: string; new_username: string }

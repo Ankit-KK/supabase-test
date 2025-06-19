@@ -1,48 +1,37 @@
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { authenticateStreamer } from "@/services/streamerAuth";
+import { useAuth } from "@/contexts/AuthContext";
 
 const ChiaaGamingLogin = () => {
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signIn } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const result = await authenticateStreamer({
-        username: "chiaa_gaming",
-        password: password
+      await signIn(email, password);
+      navigate("/chiaa_gaming/dashboard");
+      toast({
+        title: "Login successful",
+        description: "Welcome to your dashboard!",
       });
-      
-      if (result.success) {
-        sessionStorage.setItem("chiaaGamingAuth", "true");
-        sessionStorage.setItem("chiaaGamingAdminAuth", "true");
-        navigate("/chiaa_gaming/dashboard");
-        toast({
-          title: "Login successful",
-          description: "Welcome to your dashboard!",
-        });
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Login failed",
-          description: result.message || "Invalid password. Please try again.",
-        });
-      }
     } catch (error) {
       console.error("Login error:", error);
       toast({
         variant: "destructive",
         title: "Login failed",
-        description: "An error occurred during login. Please try again.",
+        description: "Invalid email or password. Please try again.",
       });
     } finally {
       setIsLoading(false);
@@ -57,11 +46,21 @@ const ChiaaGamingLogin = () => {
             Chiaa Gaming Dashboard
           </CardTitle>
           <CardDescription className="text-center text-pink-300">
-            Enter your password to access the dashboard
+            Enter your credentials to access the dashboard
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <Input
+                type="email"
+                placeholder="Enter email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="bg-black/30 border-pink-500/50 text-pink-100 placeholder:text-pink-300/70"
+                required
+              />
+            </div>
             <div>
               <Input
                 type="password"
