@@ -22,27 +22,25 @@ export const useSecureAuth = () => {
   });
   const { toast } = useToast();
   const initializedRef = useRef(false);
-  const fetchingAdminTypeRef = useRef(false);
-  const lastFetchTimeRef = useRef(0);
+  const adminTypeCache = useRef<Record<string, string>>({});
 
-  const fetchAdminType = async (session: Session) => {
-    const now = Date.now();
-    // Prevent multiple calls within 1 second
-    if (fetchingAdminTypeRef.current || (now - lastFetchTimeRef.current) < 1000) {
-      return null;
+  const fetchAdminType = async (session: Session): Promise<string | null> => {
+    const email = session.user.email;
+    if (!email) return null;
+    
+    // Check cache first
+    if (adminTypeCache.current[email]) {
+      console.log("Using cached admin type for:", email);
+      return adminTypeCache.current[email];
     }
     
-    fetchingAdminTypeRef.current = true;
-    lastFetchTimeRef.current = now;
-    
     try {
-      console.log("Fetching admin type for user:", session.user.email);
+      console.log("Fetching admin type for user:", email);
       
-      // Use direct table query instead of RPC function
       const { data: adminData, error } = await supabase
         .from('admin_users')
         .select('admin_type')
-        .eq('user_email', session.user.email)
+        .eq('user_email', email)
         .single();
       
       if (error) {
@@ -50,13 +48,18 @@ export const useSecureAuth = () => {
         return null;
       }
       
-      console.log("Admin type fetched:", adminData?.admin_type);
-      return adminData?.admin_type || null;
+      const adminType = adminData?.admin_type || null;
+      console.log("Admin type fetched:", adminType);
+      
+      // Cache the result
+      if (adminType) {
+        adminTypeCache.current[email] = adminType;
+      }
+      
+      return adminType;
     } catch (error) {
       console.error('Exception fetching admin type:', error);
       return null;
-    } finally {
-      fetchingAdminTypeRef.current = false;
     }
   };
 
@@ -144,7 +147,7 @@ export const useSecureAuth = () => {
     return () => {
       subscription.unsubscribe();
       initializedRef.current = false;
-      fetchingAdminTypeRef.current = false;
+      adminTypeCache.current = {};
     };
   }, []);
 
@@ -157,7 +160,8 @@ export const useSecureAuth = () => {
       
       await supabase.auth.signOut();
       
-      // Clear any cached tokens
+      // Clear cache and tokens
+      adminTypeCache.current = {};
       sessionStorage.removeItem('chiaa_gaming_obs_token');
       sessionStorage.removeItem('ankit_obs_token');
       
