@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Check, Mic, Gift, IndianRupee, Zap, Crown } from "lucide-react";
@@ -13,6 +14,7 @@ interface PricingPlanProps {
   gradient?: string;
   icon: React.ReactNode;
   badge?: string;
+  isMonthly?: boolean;
 }
 
 const PricingPlan: React.FC<PricingPlanProps> = ({
@@ -25,6 +27,7 @@ const PricingPlan: React.FC<PricingPlanProps> = ({
   gradient,
   icon,
   badge,
+  isMonthly,
 }) => {
   const [showSignupDialog, setShowSignupDialog] = useState(false);
 
@@ -37,7 +40,7 @@ const PricingPlan: React.FC<PricingPlanProps> = ({
         <div className={`h-full rounded-2xl p-6 bg-secondary/80 backdrop-blur-sm flex flex-col ${popular ? 'border-0' : ''} relative`}>
           {popular && (
             <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-hero-gradient text-white text-xs font-bold py-2 px-4 rounded-full">
-              🔥 MOST POPULAR
+              🔥 BEST VALUE
             </div>
           )}
           {badge && (
@@ -68,7 +71,7 @@ const PricingPlan: React.FC<PricingPlanProps> = ({
                   {originalPrice}
                 </span>
               )}
-              <span className="text-muted-foreground text-sm">one-time</span>
+              <span className="text-muted-foreground text-sm">{isMonthly ? '/month' : 'one-time'}</span>
             </div>
           </div>
           
@@ -121,48 +124,25 @@ const Pricing: React.FC = () => {
         "Mobile responsive design",
       ],
     },
-    {
-      name: "Voice Bundle",
-      description: "Base plan + Voice message donations",
-      price: "749",
-      originalPrice: "899",
-      icon: <Mic className="text-white h-5 w-5" />,
-      gradient: "bg-gradient-to-br from-hyperchat-purple to-hyperchat-pink",
-      badge: "SAVE ₹150",
-      features: [
-        "Everything in Base Plan",
-        "Voice message recordings (15-60s)",
-        "Audio alerts on stream",
-        "Voice visualization effects",
-        "Fan voice gallery",
-        "Advanced audio controls",
-      ],
-    },
-    {
-      name: "Complete Bundle",
-      description: "Voice + Custom GIFs + All features",
-      price: "899",
-      originalPrice: "1099",
-      popular: true,
-      gradient: "bg-hero-gradient",
-      icon: <Crown className="text-white h-5 w-5" />,
-      badge: "SAVE ₹200",
-      features: [
-        "Everything in Voice Bundle",
-        "Custom GIF uploads by fans",
-        "12-second GIF display alerts",
-        "Unlimited GIF storage",
-        "Advanced customization",
-        "Priority support",
-        "Early access to new features",
-      ],
-    },
   ];
 
   const addOns = [
     {
-      name: "Custom GIF Add-On",
-      description: "Add GIF uploads to existing plan",
+      name: "Voice Message Feature",
+      description: "Add voice recording to donations",
+      price: "350",
+      icon: <Mic className="text-white h-5 w-5" />,
+      gradient: "bg-gradient-to-br from-hyperchat-purple to-hyperchat-pink",
+      features: [
+        "Voice message recordings (15-60s)",
+        "Audio alerts on stream",
+        "Voice visualization effects",
+        "Fan voice gallery",
+      ],
+    },
+    {
+      name: "Custom GIFs",
+      description: "Viewers upload custom GIFs with donations",
       price: "250",
       icon: <Gift className="text-white h-5 w-5" />,
       gradient: "bg-gradient-to-br from-hyperchat-pink to-hyperchat-orange",
@@ -179,6 +159,7 @@ const Pricing: React.FC = () => {
       price: "250",
       icon: <IndianRupee className="text-white h-5 w-5" />,
       gradient: "bg-gradient-to-br from-hyperchat-orange to-hyperchat-pink",
+      isMonthly: true,
       features: [
         "99.9% uptime guarantee",
         "SSL certificate included",
@@ -187,6 +168,25 @@ const Pricing: React.FC = () => {
       ],
     },
   ];
+
+  const bundleOffer = {
+    name: "Complete Bundle",
+    description: "Base Plan + Voice + Custom GIFs",
+    price: "899",
+    originalPrice: "999",
+    popular: true,
+    gradient: "bg-hero-gradient",
+    icon: <Crown className="text-white h-5 w-5" />,
+    badge: "SAVE ₹100",
+    features: [
+      "Everything in Base Plan",
+      "Voice message recordings",
+      "Custom GIF uploads by fans",
+      "Advanced customization",
+      "Priority support",
+      "Early access to new features",
+    ],
+  };
 
   return (
     <section id="pricing" className="py-16 md:py-24 bg-mesh-gradient">
@@ -203,28 +203,22 @@ const Pricing: React.FC = () => {
           </p>
         </div>
 
-        {/* Main Plans */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto mb-16">
-          {plans.map((plan, index) => (
-            <PricingPlan
-              key={index}
-              name={plan.name}
-              description={plan.description}
-              price={plan.price}
-              originalPrice={plan.originalPrice}
-              features={plan.features}
-              popular={plan.popular}
-              gradient={plan.gradient}
-              icon={plan.icon}
-              badge={plan.badge}
-            />
-          ))}
+        {/* Base Plan */}
+        <div className="max-w-md mx-auto mb-12">
+          <PricingPlan
+            name={plans[0].name}
+            description={plans[0].description}
+            price={plans[0].price}
+            features={plans[0].features}
+            gradient={plans[0].gradient}
+            icon={plans[0].icon}
+          />
         </div>
 
         {/* Add-Ons Section */}
-        <div className="max-w-4xl mx-auto">
-          <h3 className="text-2xl font-bold text-center mb-8">Optional Add-Ons</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+        <div className="max-w-6xl mx-auto mb-12">
+          <h3 className="text-2xl font-bold text-center mb-8">Add-On Features</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {addOns.map((addon, index) => (
               <PricingPlan
                 key={index}
@@ -234,9 +228,25 @@ const Pricing: React.FC = () => {
                 features={addon.features}
                 gradient={addon.gradient}
                 icon={addon.icon}
+                isMonthly={addon.isMonthly}
               />
             ))}
           </div>
+        </div>
+
+        {/* Bundle Offer */}
+        <div className="max-w-md mx-auto mb-12">
+          <PricingPlan
+            name={bundleOffer.name}
+            description={bundleOffer.description}
+            price={bundleOffer.price}
+            originalPrice={bundleOffer.originalPrice}
+            features={bundleOffer.features}
+            popular={bundleOffer.popular}
+            gradient={bundleOffer.gradient}
+            icon={bundleOffer.icon}
+            badge={bundleOffer.badge}
+          />
         </div>
 
         {/* UPI Payment Section */}
