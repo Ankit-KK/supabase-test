@@ -12,73 +12,106 @@ interface SecureAuthState {
   isLoading: boolean;
 }
 
-export const useSecureAuth = () => {
-  const [authState, setAuthState] = useState<SecureAuthState>({
-    user: null,
-    session: null,
-    adminType: null,
-    isAuthenticated: false,
-    isLoading: true,
-  });
-  const { toast } = useToast();
-  const initializedRef = useRef(false);
-  const adminTypeCache = useRef<Record<string, string>>({});
+// Global state to prevent multiple hook instances from conflicting
+let globalInitialized = false;
+let globalAuthState: SecureAuthState = {
+  user: null,
+  session: null,
+  adminType: null,
+  isAuthenticated: false,
+  isLoading: true,
+};
+let globalStateListeners: Array<(state: SecureAuthState) => void> = [];
+let adminTypeCache: Record<string, string> = {};
 
-  const fetchAdminType = async (session: Session): Promise<string | null> => {
-    const email = session.user.email;
-    if (!email) return null;
+export const useSecureAuth = () => {
+  const [authState, setAuthState] = useState<SecureAuthState>(globalAuthState);
+  const { toast } = useToast();
+  const instanceIdRef = useRef(Math.random().toString(36));
+
+  // Register this hook instance as a listener
+  useEffect(() => {
+    const instanceId = instanceIdRef.current;
+    console.log(`Registering auth hook instance: ${instanceId}`);
     
-    // Check cache first
-    if (adminTypeCache.current[email]) {
-      console.log("Using cached admin type for:", email);
-      return adminTypeCache.current[email];
+    const listener = (state: SecureAuthState) => {
+      setAuthState(state);
+    };
+    
+    globalStateListeners.push(listener);
+    
+    // If already initialized, sync state immediately
+    if (globalInitialized) {
+      setAuthState(globalAuthState);
     }
     
-    try {
-      console.log("Fetching admin type for user:", email);
+    return () => {
+      console.log(`Unregistering auth hook instance: ${instanceId}`);
+      globalStateListeners = globalStateListeners.filter(l => l !== listener);
+    };
+  }, []);
+
+  // Only initialize once globally
+  useEffect(() => {
+    if (globalInitialized) return;
+    
+    globalInitialized = true;
+    console.log("Initializing global secure auth state");
+
+    const updateGlobalState = (newState: Partial<SecureAuthState>) => {
+      globalAuthState = { ...globalAuthState, ...newState };
+      globalStateListeners.forEach(listener => listener(globalAuthState));
+    };
+
+    const fetchAdminType = async (session: Session): Promise<string | null> => {
+      const email = session.user.email;
+      if (!email) return null;
       
-      const { data: adminData, error } = await supabase
-        .from('admin_users')
-        .select('admin_type')
-        .eq('user_email', email)
-        .single();
+      // Check cache first
+      if (adminTypeCache[email]) {
+        console.log("Using cached admin type for:", email);
+        return adminTypeCache[email];
+      }
       
-      if (error) {
-        console.error('Error fetching admin type:', error);
+      try {
+        console.log("Fetching admin type for user:", email);
+        
+        const { data: adminData, error } = await supabase
+          .from('admin_users')
+          .select('admin_type')
+          .eq('user_email', email)
+          .single();
+        
+        if (error) {
+          console.error('Error fetching admin type:', error);
+          return null;
+        }
+        
+        const adminType = adminData?.admin_type || null;
+        console.log("Admin type fetched:", adminType);
+        
+        // Cache the result
+        if (adminType) {
+          adminTypeCache[email] = adminType;
+        }
+        
+        return adminType;
+      } catch (error) {
+        console.error('Exception fetching admin type:', error);
         return null;
       }
-      
-      const adminType = adminData?.admin_type || null;
-      console.log("Admin type fetched:", adminType);
-      
-      // Cache the result
-      if (adminType) {
-        adminTypeCache.current[email] = adminType;
-      }
-      
-      return adminType;
-    } catch (error) {
-      console.error('Exception fetching admin type:', error);
-      return null;
-    }
-  };
-
-  useEffect(() => {
-    if (initializedRef.current) return;
-    initializedRef.current = true;
-
-    console.log("Initializing secure auth hook");
+    };
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log("Auth state change:", event, session?.user?.email);
+        console.log("Global auth state change:", event, session?.user?.email);
         
         if (session?.user) {
           try {
             const adminType = await fetchAdminType(session);
             
-            setAuthState({
+            updateGlobalState({
               user: session.user,
               session,
               adminType: adminType || null,
@@ -97,7 +130,7 @@ export const useSecureAuth = () => {
             }
           } catch (error) {
             console.error('Auth state error:', error);
-            setAuthState({
+            updateGlobalState({
               user: null,
               session: null,
               adminType: null,
@@ -106,7 +139,7 @@ export const useSecureAuth = () => {
             });
           }
         } else {
-          setAuthState({
+          updateGlobalState({
             user: null,
             session: null,
             adminType: null,
@@ -126,7 +159,7 @@ export const useSecureAuth = () => {
         if (session?.user) {
           const adminType = await fetchAdminType(session);
           
-          setAuthState({
+          updateGlobalState({
             user: session.user,
             session,
             adminType: adminType || null,
@@ -134,21 +167,35 @@ export const useSecureAuth = () => {
             isLoading: false,
           });
         } else {
-          setAuthState(prev => ({ ...prev, isLoading: false }));
+          updateGlobalState({ isLoading: false });
         }
       } catch (error) {
         console.error('Session check error:', error);
-        setAuthState(prev => ({ ...prev, isLoading: false }));
+        updateGlobalState({ isLoading: false });
       }
     };
 
     checkSession();
 
-    return () => {
+    // Cleanup function
+    const cleanup = () => {
       subscription.unsubscribe();
-      initializedRef.current = false;
-      adminTypeCache.current = {};
+      globalInitialized = false;
+      adminTypeCache = {};
+      globalAuthState = {
+        user: null,
+        session: null,
+        adminType: null,
+        isAuthenticated: false,
+        isLoading: true,
+      };
+      globalStateListeners = [];
     };
+
+    // Store cleanup function globally
+    (window as any).__secureAuthCleanup = cleanup;
+    
+    return cleanup;
   }, []);
 
   const signOut = async () => {
@@ -161,7 +208,7 @@ export const useSecureAuth = () => {
       await supabase.auth.signOut();
       
       // Clear cache and tokens
-      adminTypeCache.current = {};
+      adminTypeCache = {};
       sessionStorage.removeItem('chiaa_gaming_obs_token');
       sessionStorage.removeItem('ankit_obs_token');
       
