@@ -6,6 +6,7 @@ export interface SecurityEvent {
   timestamp: Date;
   userAgent?: string;
   ip?: string;
+  metadata?: Record<string, any>;
 }
 
 export class SecurityMonitor {
