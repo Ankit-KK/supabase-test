@@ -75,6 +75,39 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          ip_address: string | null
+          record_id: string | null
+          table_name: string | null
+          user_agent: string | null
+          user_email: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          record_id?: string | null
+          table_name?: string | null
+          user_agent?: string | null
+          user_email?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          record_id?: string | null
+          table_name?: string | null
+          user_agent?: string | null
+          user_email?: string | null
+        }
+        Relationships: []
+      }
       chiaa_gaming_donations: {
         Row: {
           amount: number
@@ -224,6 +257,36 @@ export type Database = {
           name?: string
           order_id?: string | null
           payment_status?: string | null
+        }
+        Relationships: []
+      }
+      obs_access_tokens: {
+        Row: {
+          admin_type: string
+          created_at: string | null
+          expires_at: string
+          id: string
+          is_active: boolean | null
+          last_used_at: string | null
+          token: string
+        }
+        Insert: {
+          admin_type: string
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          is_active?: boolean | null
+          last_used_at?: string | null
+          token: string
+        }
+        Update: {
+          admin_type?: string
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          is_active?: boolean | null
+          last_used_at?: string | null
+          token?: string
         }
         Relationships: []
       }
@@ -421,6 +484,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_chiaa_gaming_data: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       can_access_streamer_data: {
         Args: { streamer_type: string }
         Returns: boolean
@@ -432,6 +499,14 @@ export type Database = {
         Returns: {
           username_exists: boolean
         }[]
+      }
+      cleanup_expired_tokens: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      create_obs_token: {
+        Args: { p_admin_type: string }
+        Returns: string
       }
       create_visits_table: {
         Args: Record<PropertyKey, never>
@@ -468,9 +543,23 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      log_access_attempt: {
+        Args: {
+          p_action: string
+          p_table_name?: string
+          p_record_id?: string
+          p_ip_address?: string
+          p_user_agent?: string
+        }
+        Returns: undefined
+      }
       update_user_profile: {
         Args: { user_id: string; new_username: string }
         Returns: undefined
+      }
+      validate_obs_token: {
+        Args: { p_token: string; p_admin_type: string }
+        Returns: boolean
       }
     }
     Enums: {
