@@ -2,11 +2,11 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { isStreamerAuthenticated } from "@/services/streamerAuth";
 
 export interface AuthProtectionOptions {
   redirectTo: string;
   authKey: string;
-  requiredAdminType?: string;
 }
 
 /**
@@ -23,33 +23,18 @@ export const useAuthProtection = (options: AuthProtectionOptions | string) => {
     : options.redirectTo;
   
   useEffect(() => {
-    console.log("useAuthProtection: Checking authentication for", authKey);
+    // Check if the user is authenticated via session storage
+    const isAuthenticated = isStreamerAuthenticated(authKey.replace('Auth', ''));
     
-    // Simple session storage check with consistent key naming
-    const isAuthenticated = sessionStorage.getItem(`${authKey}Auth`) === 'true';
-    
-    console.log("useAuthProtection: isAuthenticated =", isAuthenticated);
-
     if (!isAuthenticated) {
-      console.log("useAuthProtection: Not authenticated, redirecting to", redirectTo);
       toast({
         variant: "destructive",
         title: "Access denied",
         description: "Please log in to view this page",
       });
       navigate(redirectTo);
-      return;
     }
-    
-    console.log("useAuthProtection: Authentication check passed");
-  }, [authKey, redirectTo, navigate, toast]);
+  }, [navigate, redirectTo, toast, authKey]);
   
-  // Return current auth status
-  const isAuthenticated = sessionStorage.getItem(`${authKey}Auth`) === 'true';
-  
-  return { 
-    isAuthenticated,
-    adminType: isAuthenticated ? authKey : null,
-    isLoading: false
-  };
+  return { isAuthenticated: isStreamerAuthenticated(authKey.replace('Auth', '')) };
 };

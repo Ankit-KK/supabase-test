@@ -1,18 +1,14 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import AdminSetup from "@/components/AdminSetup";
+import { authenticateStreamer } from "@/services/streamerAuth";
 
 const ChiaaGamingLogin = () => {
-  const [username, setUsername] = useState("chiaa_gaming");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [showSetup, setShowSetup] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -21,82 +17,37 @@ const ChiaaGamingLogin = () => {
     setIsLoading(true);
 
     try {
-      console.log("Starting login process for chiaa_gaming");
-      
-      // Use Supabase Auth with the proper email format
-      const email = `${username}@hyperchat.local`;
-      
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
+      const result = await authenticateStreamer({
+        username: "chiaa_gaming",
+        password: password
       });
-
-      if (error) {
-        console.log("Login error:", error.message);
-        
-        // If user doesn't exist or credentials are invalid, show setup
-        if (error.message.includes('Invalid login credentials') || 
-            error.message.includes('Email not confirmed') ||
-            error.message.includes('User not found')) {
-          console.log("Showing setup due to login error");
-          toast({
-            title: "Account Setup Required",
-            description: "Please set up or update your admin account password",
-          });
-          setShowSetup(true);
-          setIsLoading(false);
-          return;
-        }
-        
-        throw error;
+      
+      if (result.success) {
+        sessionStorage.setItem("chiaaGamingAuth", "true");
+        sessionStorage.setItem("chiaaGamingAdminAuth", "true");
+        navigate("/chiaa_gaming/dashboard");
+        toast({
+          title: "Login successful",
+          description: "Welcome to your dashboard!",
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Login failed",
+          description: result.message || "Invalid password. Please try again.",
+        });
       }
-
-      if (data.user) {
-        console.log("Login successful for user:", data.user.email);
-        
-        // Verify admin status
-        const { data: adminType } = await supabase.rpc('get_user_admin_type');
-        console.log("Admin type verified:", adminType);
-        
-        if (adminType === 'chiaa_gaming') {
-          toast({
-            title: "Login successful",
-            description: "Welcome to your secure Chiaa Gaming Dashboard",
-          });
-          
-          navigate("/chiaa_gaming/dashboard");
-        } else {
-          console.error("Access denied - admin type mismatch:", adminType);
-          throw new Error("Access denied - not authorized for chiaa_gaming");
-        }
-      }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Login error:", error);
       toast({
         variant: "destructive",
         title: "Login failed",
-        description: error.message || "An unexpected error occurred. Please try again.",
+        description: "An error occurred during login. Please try again.",
       });
     } finally {
       setIsLoading(false);
     }
   };
-
-  const handleSetupComplete = () => {
-    setShowSetup(false);
-    toast({
-      title: "Setup complete",
-      description: "You can now log in with your new password",
-    });
-  };
-
-  if (showSetup) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-pink-900 via-purple-900 to-black flex items-center justify-center p-4">
-        <AdminSetup adminType="chiaa_gaming" onSetupComplete={handleSetupComplete} />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-900 via-purple-900 to-black flex items-center justify-center p-4">
@@ -106,22 +57,11 @@ const ChiaaGamingLogin = () => {
             Chiaa Gaming Dashboard
           </CardTitle>
           <CardDescription className="text-center text-pink-300">
-            Enter your credentials to access the secure dashboard
+            Enter your password to access the dashboard
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <Input
-                type="text"
-                placeholder="Username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="bg-black/30 border-pink-500/50 text-pink-100 placeholder:text-pink-300/70"
-                required
-                disabled
-              />
-            </div>
             <div>
               <Input
                 type="password"
@@ -137,15 +77,9 @@ const ChiaaGamingLogin = () => {
               className="w-full bg-pink-600 hover:bg-pink-700 text-white"
               disabled={isLoading}
             >
-              {isLoading ? "Logging in..." : "Secure Login"}
+              {isLoading ? "Logging in..." : "Login"}
             </Button>
           </form>
-          <div className="mt-4 text-xs text-pink-300/70 text-center">
-            🔒 This login uses secure Supabase authentication with audit logging
-          </div>
-          <div className="mt-2 text-xs text-pink-300/50 text-center">
-            First time logging in? You'll be guided through account setup.
-          </div>
         </CardContent>
       </Card>
     </div>
