@@ -52,7 +52,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setIsLoading(false);
     });
 
-    // Check if admin is logged in via session storage
+    // Check if admin is logged in via session storage - using consistent key names
     const checkAdminStatus = () => {
       const adminTypes = ['ankit', 'chiaa_gaming', 'harish', 'mackle'];
       for (const type of adminTypes) {
@@ -152,7 +152,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       await supabase.auth.signOut();
       
-      // Clear session storage
+      // Clear session storage - using consistent key names
       const adminTypes = ['ankit', 'chiaa_gaming', 'harish', 'mackle'];
       adminTypes.forEach(type => {
         sessionStorage.removeItem(`${type}Auth`);

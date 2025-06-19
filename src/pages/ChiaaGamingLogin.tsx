@@ -44,32 +44,10 @@ const ChiaaGamingLogin = () => {
       if (password === adminUser.password_hash) {
         console.log("Password verified - setting up session");
         
-        // Set session storage for authentication
+        // Set session storage for authentication - using consistent key names
         sessionStorage.setItem("chiaa_gamingAuth", "true");
         sessionStorage.setItem("chiaa_gamingAdminAuth", "true");
         
-        // Create a mock user session for RLS policies
-        const mockUser = {
-          id: `session_chiaa_gaming`,
-          email: adminUser.user_email,
-          aud: 'authenticated',
-          role: 'authenticated',
-          email_confirmed_at: new Date().toISOString(),
-          phone_confirmed_at: null,
-          confirmation_sent_at: null,
-          recovery_sent_at: null,
-          email_change_sent_at: null,
-          new_email: null,
-          invited_at: null,
-          action_link: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          app_metadata: {},
-          user_metadata: {},
-          identities: [],
-          factors: []
-        };
-
         // Trigger storage event to update AuthContext
         window.dispatchEvent(new StorageEvent('storage', {
           key: 'chiaa_gamingAuth',
