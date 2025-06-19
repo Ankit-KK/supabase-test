@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { authenticateStreamer } from "@/services/streamerAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 const ChiaaGamingLogin = () => {
   const [email, setEmail] = useState("");
@@ -19,32 +19,78 @@ const ChiaaGamingLogin = () => {
     setIsLoading(true);
 
     try {
-      // Extract username from email (before @) or use full email
-      const username = email.includes('@') ? email.split('@')[0] : email;
+      console.log("Starting login process for chiaa_gaming");
       
-      const result = await authenticateStreamer({
-        username: "chiaa_gaming", // Always use chiaa_gaming as the admin_type
-        password: password
-      });
-      
-      if (result.success) {
-        // Store authentication in session storage
-        sessionStorage.setItem("chiaa_gamingAuth", "true");
-        if (result.isAdmin) {
-          sessionStorage.setItem("chiaa_gamingAdminAuth", "true");
-        }
-        
-        toast({
-          title: "Login successful",
-          description: result.message,
-        });
-        
-        navigate("/chiaa_gaming/dashboard");
-      } else {
+      // Check admin_users table directly for chiaa_gaming
+      const { data: adminUser, error: adminError } = await supabase
+        .from("admin_users")
+        .select("*")
+        .eq("admin_type", "chiaa_gaming")
+        .single();
+
+      if (adminError || !adminUser) {
+        console.error("Admin user not found:", adminError);
         toast({
           variant: "destructive",
           title: "Login failed",
-          description: result.message,
+          description: "Invalid credentials",
+        });
+        return;
+      }
+
+      console.log("Admin user found:", adminUser);
+
+      // Check password against password_hash
+      if (password === adminUser.password_hash) {
+        console.log("Password verified - setting up session");
+        
+        // Set session storage for authentication
+        sessionStorage.setItem("chiaa_gamingAuth", "true");
+        sessionStorage.setItem("chiaa_gamingAdminAuth", "true");
+        
+        // Create a mock user session for RLS policies
+        const mockUser = {
+          id: `session_chiaa_gaming`,
+          email: adminUser.user_email,
+          aud: 'authenticated',
+          role: 'authenticated',
+          email_confirmed_at: new Date().toISOString(),
+          phone_confirmed_at: null,
+          confirmation_sent_at: null,
+          recovery_sent_at: null,
+          email_change_sent_at: null,
+          new_email: null,
+          invited_at: null,
+          action_link: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          app_metadata: {},
+          user_metadata: {},
+          identities: [],
+          factors: []
+        };
+
+        // Trigger storage event to update AuthContext
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'chiaa_gamingAuth',
+          newValue: 'true'
+        }));
+
+        console.log("Session set up successfully, navigating to dashboard");
+        
+        toast({
+          title: "Login successful",
+          description: "Welcome to your dashboard!",
+        });
+        
+        // Navigate to dashboard
+        navigate("/chiaa_gaming/dashboard");
+      } else {
+        console.log("Password mismatch");
+        toast({
+          variant: "destructive",
+          title: "Login failed",
+          description: "Invalid credentials",
         });
       }
     } catch (error) {

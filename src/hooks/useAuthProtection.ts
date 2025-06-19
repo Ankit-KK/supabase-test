@@ -23,12 +23,17 @@ export const useAuthProtection = (options: AuthProtectionOptions | string) => {
     : options.redirectTo;
   const requiredAdminType = typeof options === 'object' ? options.requiredAdminType : null;
   
-  // Check session storage for authentication
-  const isAuthenticated = sessionStorage.getItem(`${authKey}Auth`) === 'true';
-  const isAdmin = sessionStorage.getItem(`${authKey}AdminAuth`) === 'true';
-  
   useEffect(() => {
+    console.log("useAuthProtection: Checking authentication for", authKey);
+    
+    // Check session storage for authentication
+    const isAuthenticated = sessionStorage.getItem(`${authKey}Auth`) === 'true';
+    const isAdmin = sessionStorage.getItem(`${authKey}AdminAuth`) === 'true';
+    
+    console.log("useAuthProtection: isAuthenticated =", isAuthenticated, "isAdmin =", isAdmin);
+
     if (!isAuthenticated) {
+      console.log("useAuthProtection: Not authenticated, redirecting to", redirectTo);
       toast({
         variant: "destructive",
         title: "Access denied",
@@ -39,6 +44,7 @@ export const useAuthProtection = (options: AuthProtectionOptions | string) => {
     }
 
     if (requiredAdminType && !isAdmin) {
+      console.log("useAuthProtection: Admin access required but not granted");
       toast({
         variant: "destructive",
         title: "Access denied",
@@ -47,7 +53,13 @@ export const useAuthProtection = (options: AuthProtectionOptions | string) => {
       navigate(redirectTo);
       return;
     }
-  }, [isAuthenticated, isAdmin, navigate, redirectTo, toast, requiredAdminType]);
+    
+    console.log("useAuthProtection: Authentication check passed");
+  }, [authKey, redirectTo, requiredAdminType, navigate, toast]);
+  
+  // Check session storage for authentication
+  const isAuthenticated = sessionStorage.getItem(`${authKey}Auth`) === 'true';
+  const isAdmin = sessionStorage.getItem(`${authKey}AdminAuth`) === 'true';
   
   return { 
     isAuthenticated,
