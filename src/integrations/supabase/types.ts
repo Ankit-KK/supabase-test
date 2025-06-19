@@ -532,9 +532,7 @@ export type Database = {
         Args:
           | { username: string }
           | { username_to_check: string; exclude_user_id: string }
-        Returns: {
-          username_exists: boolean
-        }[]
+        Returns: boolean
       }
       cleanup_expired_tokens: {
         Args: Record<PropertyKey, never>
