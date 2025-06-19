@@ -54,14 +54,42 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // Check if admin is logged in via session storage
     const checkAdminStatus = () => {
-      const adminTypes = ['ankit', 'harish', 'mackle'];
+      const adminTypes = ['ankit', 'chiaa_gaming', 'harish', 'mackle'];
       for (const type of adminTypes) {
         if (sessionStorage.getItem(`${type}AdminAuth`) === 'true') {
           setIsAdmin(true);
+          setAdminType(type);
+          // Create a mock user for session-based auth
+          if (!user) {
+            setUser({ 
+              id: `session_${type}`,
+              email: `${type}@session.local`,
+              aud: 'authenticated',
+              role: 'authenticated',
+              email_confirmed_at: new Date().toISOString(),
+              phone_confirmed_at: null,
+              confirmation_sent_at: null,
+              recovery_sent_at: null,
+              email_change_sent_at: null,
+              new_email: null,
+              invited_at: null,
+              action_link: null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              app_metadata: {},
+              user_metadata: {},
+              identities: [],
+              factors: []
+            } as User);
+          }
           return;
         }
       }
-      setIsAdmin(false);
+      // Only set to false if no Supabase session exists
+      if (!session) {
+        setIsAdmin(false);
+        setAdminType(null);
+      }
     };
     
     checkAdminStatus();
@@ -71,7 +99,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       subscription.unsubscribe();
       window.removeEventListener('storage', checkAdminStatus);
     };
-  }, []);
+  }, [session, user]);
 
   const fetchAdminType = async (email: string | undefined) => {
     if (!email) return;
@@ -98,29 +126,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const signIn = async (email: string, password: string) => {
     try {
-      // Create the user first if it doesn't exist
-      const { data: userCheckData } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (!userCheckData.user) {
-        // User doesn't exist, try to create it
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-        });
-
-        if (signUpError) throw signUpError;
-        
-        // Try to sign in again after creating the user
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (error) throw error;
-      }
+      if (error) throw error;
       
       toast({
         title: "Login successful",
@@ -140,6 +151,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
+      
+      // Clear session storage
+      const adminTypes = ['ankit', 'chiaa_gaming', 'harish', 'mackle'];
+      adminTypes.forEach(type => {
+        sessionStorage.removeItem(`${type}Auth`);
+        sessionStorage.removeItem(`${type}AdminAuth`);
+      });
+      
       toast({
         title: "Logged out",
         description: "You have been logged out successfully.",

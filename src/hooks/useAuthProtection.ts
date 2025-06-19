@@ -2,7 +2,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
 
 export interface AuthProtectionOptions {
   redirectTo: string;
@@ -16,7 +15,6 @@ export interface AuthProtectionOptions {
 export const useAuthProtection = (options: AuthProtectionOptions | string) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, adminType, isLoading } = useAuth();
   
   // Handle both string and options object for backward compatibility
   const authKey = typeof options === 'string' ? options : options.authKey;
@@ -25,10 +23,12 @@ export const useAuthProtection = (options: AuthProtectionOptions | string) => {
     : options.redirectTo;
   const requiredAdminType = typeof options === 'object' ? options.requiredAdminType : null;
   
+  // Check session storage for authentication
+  const isAuthenticated = sessionStorage.getItem(`${authKey}Auth`) === 'true';
+  const isAdmin = sessionStorage.getItem(`${authKey}AdminAuth`) === 'true';
+  
   useEffect(() => {
-    if (isLoading) return; // Wait for auth to load
-    
-    if (!user) {
+    if (!isAuthenticated) {
       toast({
         variant: "destructive",
         title: "Access denied",
@@ -38,7 +38,7 @@ export const useAuthProtection = (options: AuthProtectionOptions | string) => {
       return;
     }
 
-    if (requiredAdminType && adminType !== requiredAdminType && adminType !== 'admin') {
+    if (requiredAdminType && !isAdmin) {
       toast({
         variant: "destructive",
         title: "Access denied",
@@ -47,11 +47,11 @@ export const useAuthProtection = (options: AuthProtectionOptions | string) => {
       navigate(redirectTo);
       return;
     }
-  }, [user, adminType, isLoading, navigate, redirectTo, toast, requiredAdminType]);
+  }, [isAuthenticated, isAdmin, navigate, redirectTo, toast, requiredAdminType]);
   
   return { 
-    isAuthenticated: !!user && !isLoading,
-    adminType,
-    isLoading
+    isAuthenticated,
+    adminType: isAuthenticated ? authKey : null,
+    isLoading: false
   };
 };
