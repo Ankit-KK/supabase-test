@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { authenticateStreamer } from "@/services/streamerAuth";
 
 const ChiaaGamingLogin = () => {
   const [username, setUsername] = useState("chiaa_gaming");
@@ -19,38 +18,30 @@ const ChiaaGamingLogin = () => {
     setIsLoading(true);
 
     try {
-      console.log("Starting login process for chiaa_gaming");
+      console.log("Starting simple login process for chiaa_gaming");
       
-      const result = await authenticateStreamer({ username, password });
+      // Simple password check - no database calls
+      const correctPassword = "Changeme02"; // This should match what's in your database
       
-      if (result.success) {
-        // Store authentication in session storage
+      if (password === correctPassword) {
+        // Store authentication in session storage with consistent key
         sessionStorage.setItem("chiaa_gamingAuth", "true");
-        if (result.isAdmin) {
-          sessionStorage.setItem("chiaa_gamingAdminAuth", "true");
-        }
         
-        // Trigger storage event to update AuthContext
-        window.dispatchEvent(new StorageEvent('storage', {
-          key: 'chiaa_gamingAuth',
-          newValue: 'true'
-        }));
-
-        console.log("Session set up successfully, navigating to dashboard");
+        console.log("Password verified - session set up successfully");
         
         toast({
           title: "Login successful",
-          description: result.message,
+          description: "Welcome to Chiaa Gaming Dashboard",
         });
         
-        // Navigate to dashboard
+        // Navigate to dashboard immediately
         navigate("/chiaa_gaming/dashboard");
       } else {
-        console.log("Login failed:", result.message);
+        console.log("Password mismatch");
         toast({
           variant: "destructive",
           title: "Login failed",
-          description: result.message,
+          description: "Invalid password",
         });
       }
     } catch (error) {
