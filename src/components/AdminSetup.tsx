@@ -41,15 +41,22 @@ const AdminSetup = ({ adminType, onSetupComplete }: AdminSetupProps) => {
     setIsLoading(true);
 
     try {
+      console.log(`Setting up admin account for: ${adminType}`);
+      
       const { data, error } = await supabase.functions.invoke('setup-admin-auth', {
         body: { adminType, password }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Setup function error:', error);
+        throw error;
+      }
+
+      console.log('Setup function response:', data);
 
       toast({
         title: "Setup successful",
-        description: `Admin account for ${adminType} has been created successfully`,
+        description: data.message || `Admin account for ${adminType} has been configured successfully`,
       });
 
       onSetupComplete();
@@ -58,7 +65,7 @@ const AdminSetup = ({ adminType, onSetupComplete }: AdminSetupProps) => {
       toast({
         variant: "destructive",
         title: "Setup failed",
-        description: error.message || "Failed to setup admin account",
+        description: error.message || "Failed to setup admin account. Please try again.",
       });
     } finally {
       setIsLoading(false);
@@ -72,7 +79,7 @@ const AdminSetup = ({ adminType, onSetupComplete }: AdminSetupProps) => {
           Setup Admin Account
         </CardTitle>
         <CardDescription className="text-center text-pink-300">
-          Create a secure password for {adminType} admin access
+          Create or update a secure password for {adminType} admin access
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -80,11 +87,12 @@ const AdminSetup = ({ adminType, onSetupComplete }: AdminSetupProps) => {
           <div>
             <Input
               type="password"
-              placeholder="Enter new password"
+              placeholder="Enter new password (min 8 characters)"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="bg-black/30 border-pink-500/50 text-pink-100 placeholder:text-pink-300/70"
               required
+              minLength={8}
             />
           </div>
           <div>
@@ -95,6 +103,7 @@ const AdminSetup = ({ adminType, onSetupComplete }: AdminSetupProps) => {
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="bg-black/30 border-pink-500/50 text-pink-100 placeholder:text-pink-300/70"
               required
+              minLength={8}
             />
           </div>
           <Button 
@@ -102,7 +111,7 @@ const AdminSetup = ({ adminType, onSetupComplete }: AdminSetupProps) => {
             className="w-full bg-pink-600 hover:bg-pink-700 text-white"
             disabled={isLoading}
           >
-            {isLoading ? "Setting up..." : "Create Admin Account"}
+            {isLoading ? "Setting up..." : "Create/Update Admin Account"}
           </Button>
         </form>
       </CardContent>

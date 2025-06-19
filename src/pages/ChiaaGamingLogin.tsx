@@ -34,11 +34,14 @@ const ChiaaGamingLogin = () => {
       if (error) {
         console.log("Login error:", error.message);
         
-        // If user doesn't exist, show setup
-        if (error.message.includes('Invalid login credentials') || error.message.includes('Email not confirmed')) {
+        // If user doesn't exist or credentials are invalid, show setup
+        if (error.message.includes('Invalid login credentials') || 
+            error.message.includes('Email not confirmed') ||
+            error.message.includes('User not found')) {
+          console.log("Showing setup due to login error");
           toast({
             title: "Account Setup Required",
-            description: "Please set up your admin account with a secure password",
+            description: "Please set up or update your admin account password",
           });
           setShowSetup(true);
           setIsLoading(false);
@@ -49,10 +52,11 @@ const ChiaaGamingLogin = () => {
       }
 
       if (data.user) {
-        console.log("Login successful");
+        console.log("Login successful for user:", data.user.email);
         
         // Verify admin status
         const { data: adminType } = await supabase.rpc('get_user_admin_type');
+        console.log("Admin type verified:", adminType);
         
         if (adminType === 'chiaa_gaming') {
           toast({
@@ -62,6 +66,7 @@ const ChiaaGamingLogin = () => {
           
           navigate("/chiaa_gaming/dashboard");
         } else {
+          console.error("Access denied - admin type mismatch:", adminType);
           throw new Error("Access denied - not authorized for chiaa_gaming");
         }
       }

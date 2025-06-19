@@ -23,6 +23,43 @@ serve(async (req) => {
     // Create the auth user with the proper email format
     const email = `${adminType}@hyperchat.local`
     
+    console.log(`Setting up admin auth for: ${email}`)
+    
+    // First check if user already exists
+    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
+    const existingUser = existingUsers.users?.find(user => user.email === email)
+    
+    if (existingUser) {
+      console.log(`User ${email} already exists. Updating password...`)
+      
+      // Update existing user's password
+      const { data: updatedUser, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+        existingUser.id,
+        {
+          password: password,
+          email_confirm: true
+        }
+      )
+      
+      if (updateError) {
+        console.error('Password update error:', updateError)
+        return new Response(
+          JSON.stringify({ error: updateError.message }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: `Admin password updated for ${adminType}`,
+          user_id: updatedUser.user?.id
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    
+    // Create new user if doesn't exist
     const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: email,
       password: password,
