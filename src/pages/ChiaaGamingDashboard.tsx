@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,11 +36,10 @@ const ChiaaGamingDashboard = () => {
   const channelRef = useRef<any>(null);
   const { signOut } = useAuth();
 
-  // Use the auth protection hook to guard this route
+  // Use the auth protection hook to guard this route with consistent key
   useAuthProtection({
     redirectTo: "/chiaa_gaming/login",
-    authKey: "chiaaGamingAuth",
-    requiredAdminType: "chiaa_gaming"
+    authKey: "chiaa_gaming"
   });
 
   useEffect(() => {
@@ -163,6 +163,8 @@ const ChiaaGamingDashboard = () => {
 
   const handleLogout = async () => {
     try {
+      // Clear session storage with consistent key
+      sessionStorage.removeItem("chiaa_gamingAuth");
       await signOut();
       navigate("/chiaa_gaming/login");
     } catch (error) {
@@ -321,6 +323,59 @@ const ChiaaGamingDashboard = () => {
       </div>
     </div>
   );
+};
+
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleString("en-IN", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const renderMediaBadges = (donation: Donation) => {
+  const badges = [];
+  
+  if (donation.gif_url) {
+    badges.push(
+      <Badge key="gif" variant="secondary" className="text-xs bg-purple-500/20 text-purple-300 border-purple-500/50">
+        <Image className="w-3 h-3 mr-1" />
+        GIF
+      </Badge>
+    );
+  }
+  
+  if (donation.voice_url) {
+    badges.push(
+      <Badge key="voice" variant="secondary" className="text-xs bg-blue-500/20 text-blue-300 border-blue-500/50">
+        <Mic className="w-3 h-3 mr-1" />
+        Voice
+      </Badge>
+    );
+  }
+  
+  if (donation.custom_sound_name || donation.custom_sound_url) {
+    badges.push(
+      <Badge key="sound" variant="secondary" className="text-xs bg-orange-500/20 text-orange-300 border-orange-500/50">
+        <Volume2 className="w-3 h-3 mr-1" />
+        Sound
+      </Badge>
+    );
+  }
+  
+  if (donation.message && donation.message.trim() !== '') {
+    badges.push(
+      <Badge key="message" variant="secondary" className="text-xs bg-green-500/20 text-green-300 border-green-500/50">
+        <MessageCircle className="w-3 h-3 mr-1" />
+        Message
+      </Badge>
+    );
+  }
+  
+  return badges;
 };
 
 export default ChiaaGamingDashboard;
