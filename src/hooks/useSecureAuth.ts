@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -21,15 +21,46 @@ export const useSecureAuth = () => {
     isLoading: true,
   });
   const { toast } = useToast();
+  const initializedRef = useRef(false);
+  const fetchingAdminTypeRef = useRef(false);
+
+  const fetchAdminType = async (session: Session) => {
+    if (fetchingAdminTypeRef.current) return null;
+    
+    fetchingAdminTypeRef.current = true;
+    try {
+      console.log("Fetching admin type for user:", session.user.email);
+      const { data: adminType, error } = await supabase.rpc('get_user_admin_type');
+      
+      if (error) {
+        console.error('Error fetching admin type:', error);
+        return null;
+      }
+      
+      console.log("Admin type fetched:", adminType);
+      return adminType;
+    } catch (error) {
+      console.error('Exception fetching admin type:', error);
+      return null;
+    } finally {
+      fetchingAdminTypeRef.current = false;
+    }
+  };
 
   useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
+    console.log("Initializing secure auth hook");
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log("Auth state change:", event, session?.user?.email);
+        
         if (session?.user) {
           try {
-            // Get admin type through secure function
-            const { data: adminType } = await supabase.rpc('get_user_admin_type');
+            const adminType = await fetchAdminType(session);
             
             setAuthState({
               user: session.user,
@@ -40,10 +71,14 @@ export const useSecureAuth = () => {
             });
 
             // Log authentication event
-            await supabase.rpc('log_access_attempt', {
-              p_action: `AUTH_STATE_CHANGE_${event}`,
-              p_table_name: 'admin_users'
-            });
+            try {
+              await supabase.rpc('log_access_attempt', {
+                p_action: `AUTH_STATE_CHANGE_${event}`,
+                p_table_name: 'admin_users'
+              });
+            } catch (logError) {
+              console.warn('Failed to log auth event:', logError);
+            }
           } catch (error) {
             console.error('Auth state error:', error);
             setAuthState({
@@ -66,13 +101,14 @@ export const useSecureAuth = () => {
       }
     );
 
-    // Check for existing session
+    // Check for existing session once
     const checkSession = async () => {
       try {
+        console.log("Checking existing session");
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user) {
-          const { data: adminType } = await supabase.rpc('get_user_admin_type');
+          const adminType = await fetchAdminType(session);
           
           setAuthState({
             user: session.user,
@@ -92,7 +128,11 @@ export const useSecureAuth = () => {
 
     checkSession();
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      initializedRef.current = false;
+      fetchingAdminTypeRef.current = false;
+    };
   }, []);
 
   const signOut = async () => {
