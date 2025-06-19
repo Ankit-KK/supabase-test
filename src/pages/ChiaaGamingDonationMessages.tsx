@@ -538,6 +538,34 @@ const ChiaaGamingDonationMessages = () => {
     return badges;
   };
 
+  const copyMessagesLink = () => {
+    navigator.clipboard.writeText(obsLink);
+    toast({
+      title: "Link Copied",
+      description: "Donation messages OBS link copied to clipboard",
+    });
+  };
+
+  const copyGoalLink = () => {
+    navigator.clipboard.writeText(goalObsLink);
+    toast({
+      title: "Link Copied",
+      description: "Goal OBS link copied to clipboard",
+    });
+  };
+
+  const openMessagesInNewTab = () => {
+    if (obsLink) {
+      window.open(obsLink, '_blank');
+    }
+  };
+
+  const openGoalInNewTab = () => {
+    if (goalObsLink) {
+      window.open(goalObsLink, '_blank');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-900 via-purple-900 to-black">
       <div className="container mx-auto py-8 px-4">

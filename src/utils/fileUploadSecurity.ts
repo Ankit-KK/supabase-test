@@ -6,7 +6,7 @@ export interface SecureFileValidation {
   sanitizedName?: string;
 }
 
-export const validateFileUpload = (file: File): SecureFileValidation => {
+export const validateFileUpload = async (file: File): Promise<SecureFileValidation> => {
   // Check file size (5MB limit)
   const maxSize = 5 * 1024 * 1024;
   if (file.size > maxSize) {
