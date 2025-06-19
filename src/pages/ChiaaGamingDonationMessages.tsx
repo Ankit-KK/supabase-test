@@ -10,6 +10,10 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthProtection } from "@/hooks/useAuthProtection";
 import { Link as LinkIcon, ExternalLink, Image, Mic, Volume2 } from "lucide-react";
+import { generateObsToken, validateSecureId } from "@/utils/secureIdGenerator";
+import { validateAndSanitizeInput, sanitizeUrl, escapeHtml } from "@/utils/xssProtection";
+import { CSRFProtection } from "@/utils/csrfProtection";
+import { SecurityMonitor, SECURITY_EVENTS } from "@/utils/securityMonitoring";
 
 interface Donation {
   id: string;
@@ -44,6 +48,11 @@ const ChiaaGamingDonationMessages = () => {
     authKey: "chiaaGamingAuth"
   });
 
+  // Initialize CSRF protection
+  useEffect(() => {
+    CSRFProtection.generateToken();
+  }, []);
+
   // Function to fetch donations data - only from today
   const fetchDonations = async () => {
     try {
@@ -65,14 +74,35 @@ const ChiaaGamingDonationMessages = () => {
       if (error) throw error;
       
       if (data && data.length > 0) {
-        setDonations(data);
-        console.log("Donation messages refreshed at:", new Date().toLocaleTimeString(), "count:", data.length);
+        // Sanitize donation data to prevent XSS
+        const sanitizedData = data.map(donation => ({
+          ...donation,
+          name: validateAndSanitizeInput(donation.name, 100),
+          message: validateAndSanitizeInput(donation.message, 500),
+          custom_sound_name: donation.custom_sound_name 
+            ? validateAndSanitizeInput(donation.custom_sound_name, 100)
+            : undefined,
+          gif_url: donation.gif_url ? sanitizeUrl(donation.gif_url) : undefined,
+          voice_url: donation.voice_url ? sanitizeUrl(donation.voice_url) : undefined,
+          custom_sound_url: donation.custom_sound_url 
+            ? sanitizeUrl(donation.custom_sound_url) 
+            : undefined,
+        }));
+        
+        setDonations(sanitizedData);
+        console.log("Donation messages refreshed at:", new Date().toLocaleTimeString(), "count:", sanitizedData.length);
       } else {
         console.log("No donation messages found during refresh");
         setDonations([]);
       }
     } catch (error) {
       console.error("Error fetching donations:", error);
+      SecurityMonitor.logSecurityEvent({
+        type: SECURITY_EVENTS.SUSPICIOUS_REQUEST,
+        severity: 'medium',
+        details: 'Failed to fetch donations: ' + (error instanceof Error ? error.message : 'Unknown error'),
+      });
+      
       toast({
         variant: "destructive",
         title: "Failed to load data",
@@ -96,8 +126,8 @@ const ChiaaGamingDonationMessages = () => {
         channelRef.current = null;
       }
 
-      // Create a unique channel name for messages
-      const channelName = `chiaa-gaming-messages-realtime-${Date.now()}`;
+      // Create a unique channel name for messages using secure ID
+      const channelName = `chiaa-gaming-messages-realtime-${generateObsToken()}`;
       
       channelRef.current = supabase
         .channel(channelName)
@@ -113,25 +143,40 @@ const ChiaaGamingDonationMessages = () => {
             console.log('New donation received in messages via realtime:', payload);
             const newDonation = payload.new as Donation;
             
+            // Sanitize the new donation data
+            const sanitizedDonation = {
+              ...newDonation,
+              name: validateAndSanitizeInput(newDonation.name, 100),
+              message: validateAndSanitizeInput(newDonation.message, 500),
+              custom_sound_name: newDonation.custom_sound_name 
+                ? validateAndSanitizeInput(newDonation.custom_sound_name, 100)
+                : undefined,
+              gif_url: newDonation.gif_url ? sanitizeUrl(newDonation.gif_url) : undefined,
+              voice_url: newDonation.voice_url ? sanitizeUrl(newDonation.voice_url) : undefined,
+              custom_sound_url: newDonation.custom_sound_url 
+                ? sanitizeUrl(newDonation.custom_sound_url) 
+                : undefined,
+            };
+            
             // Check if donation is from today
-            const donationDate = new Date(newDonation.created_at).toISOString().split('T')[0];
+            const donationDate = new Date(sanitizedDonation.created_at).toISOString().split('T')[0];
             const today = new Date().toISOString().split('T')[0];
             
             if (donationDate === today) {
               setDonations(prev => {
                 // Check if donation already exists to prevent duplicates
-                const exists = prev.some(d => d.id === newDonation.id);
+                const exists = prev.some(d => d.id === sanitizedDonation.id);
                 if (exists) {
                   console.log('Donation already exists, skipping duplicate');
                   return prev;
                 }
                 console.log('Adding new donation to messages list');
-                return [newDonation, ...prev];
+                return [sanitizedDonation, ...prev];
               });
               
               toast({
                 title: "New Donation Received",
-                description: `${newDonation.name} donated ₹${Number(newDonation.amount).toLocaleString()}`,
+                description: `${sanitizedDonation.name} donated ₹${Number(sanitizedDonation.amount).toLocaleString()}`,
               });
             }
           }
@@ -148,14 +193,29 @@ const ChiaaGamingDonationMessages = () => {
             console.log('Donation updated in messages via realtime:', payload);
             const updatedDonation = payload.new as Donation;
             
+            // Sanitize the updated donation data
+            const sanitizedDonation = {
+              ...updatedDonation,
+              name: validateAndSanitizeInput(updatedDonation.name, 100),
+              message: validateAndSanitizeInput(updatedDonation.message, 500),
+              custom_sound_name: updatedDonation.custom_sound_name 
+                ? validateAndSanitizeInput(updatedDonation.custom_sound_name, 100)
+                : undefined,
+              gif_url: updatedDonation.gif_url ? sanitizeUrl(updatedDonation.gif_url) : undefined,
+              voice_url: updatedDonation.voice_url ? sanitizeUrl(updatedDonation.voice_url) : undefined,
+              custom_sound_url: updatedDonation.custom_sound_url 
+                ? sanitizeUrl(updatedDonation.custom_sound_url) 
+                : undefined,
+            };
+            
             // Check if donation is from today
-            const donationDate = new Date(updatedDonation.created_at).toISOString().split('T')[0];
+            const donationDate = new Date(sanitizedDonation.created_at).toISOString().split('T')[0];
             const today = new Date().toISOString().split('T')[0];
             
             if (donationDate === today) {
               setDonations(prev => 
                 prev.map(donation => 
-                  donation.id === updatedDonation.id ? updatedDonation : donation
+                  donation.id === sanitizedDonation.id ? sanitizedDonation : donation
                 )
               );
             }
@@ -167,6 +227,11 @@ const ChiaaGamingDonationMessages = () => {
             console.log('Successfully subscribed to chiaa_gaming_donations messages realtime updates');
           } else if (status === 'CHANNEL_ERROR') {
             console.error('Messages channel subscription error');
+            SecurityMonitor.logSecurityEvent({
+              type: SECURITY_EVENTS.SUSPICIOUS_REQUEST,
+              severity: 'low',
+              details: 'Realtime channel subscription error',
+            });
             // Retry subscription after a delay
             setTimeout(setupRealtimeSubscription, 2000);
           } else if (status === 'TIMED_OUT') {
@@ -206,29 +271,52 @@ const ChiaaGamingDonationMessages = () => {
     
     const savedGoalName = localStorage.getItem("chiaaGamingGoalName");
     if (savedGoalName) {
-      setGoalName(savedGoalName);
+      // Sanitize saved goal name
+      setGoalName(validateAndSanitizeInput(savedGoalName, 100));
     }
     
     const savedGoalTarget = localStorage.getItem("chiaaGamingGoalTarget");
     if (savedGoalTarget) {
-      setGoalTarget(Number(savedGoalTarget));
+      const target = Number(savedGoalTarget);
+      if (target > 0 && target <= 1000000) { // Reasonable limit
+        setGoalTarget(target);
+      }
     }
   }, []);
 
-  // Generate or retrieve OBS links
+  // Generate or retrieve OBS links with secure tokens
   const setupObsLinks = () => {
     let storedMessagesLink = sessionStorage.getItem("chiaaGamingObsLink");
     let storedGoalLink = sessionStorage.getItem("chiaaGamingGoalObsLink");
     
+    // Validate existing links have secure tokens
+    if (storedMessagesLink) {
+      const url = new URL(storedMessagesLink);
+      const pathSegments = url.pathname.split('/');
+      const tokenSegment = pathSegments[pathSegments.length - 1];
+      if (!validateSecureId(tokenSegment)) {
+        storedMessagesLink = null; // Regenerate if token is not secure
+      }
+    }
+    
+    if (storedGoalLink) {
+      const url = new URL(storedGoalLink);
+      const pathSegments = url.pathname.split('/');
+      const tokenSegment = pathSegments[pathSegments.length - 1];
+      if (!validateSecureId(tokenSegment)) {
+        storedGoalLink = null; // Regenerate if token is not secure
+      }
+    }
+    
     if (!storedMessagesLink) {
-      const randomId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      storedMessagesLink = `${window.location.origin}/chiaa_gaming/obs/${randomId}?showMessages=${showMessages}&showGoal=false`;
+      const secureToken = generateObsToken();
+      storedMessagesLink = `${window.location.origin}/chiaa_gaming/obs/${secureToken}?showMessages=${showMessages}&showGoal=false`;
       sessionStorage.setItem("chiaaGamingObsLink", storedMessagesLink);
     }
     
     if (!storedGoalLink) {
-      const randomId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      storedGoalLink = `${window.location.origin}/chiaa_gaming/obs/${randomId}?showMessages=false&showGoal=true&goalName=${encodeURIComponent(goalName)}&goalTarget=${goalTarget}`;
+      const secureToken = generateObsToken();
+      storedGoalLink = `${window.location.origin}/chiaa_gaming/obs/${secureToken}?showMessages=false&showGoal=true&goalName=${encodeURIComponent(goalName)}&goalTarget=${goalTarget}`;
       sessionStorage.setItem("chiaaGamingGoalObsLink", storedGoalLink);
     }
     
@@ -237,11 +325,17 @@ const ChiaaGamingDonationMessages = () => {
   };
 
   const regenerateMessagesLink = () => {
-    const randomId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    const newLink = `${window.location.origin}/chiaa_gaming/obs/${randomId}?showMessages=${showMessages}&showGoal=false`;
+    const secureToken = generateObsToken();
+    const newLink = `${window.location.origin}/chiaa_gaming/obs/${secureToken}?showMessages=${showMessages}&showGoal=false`;
     
     sessionStorage.setItem("chiaaGamingObsLink", newLink);
     setObsLink(newLink);
+    
+    SecurityMonitor.logSecurityEvent({
+      type: 'obs_link_regenerated',
+      severity: 'low',
+      details: 'Messages OBS link regenerated',
+    });
     
     toast({
       title: "Messages Link Regenerated",
@@ -250,49 +344,23 @@ const ChiaaGamingDonationMessages = () => {
   };
 
   const regenerateGoalLink = () => {
-    const randomId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    const newLink = `${window.location.origin}/chiaa_gaming/obs/${randomId}?showMessages=false&showGoal=true&goalName=${encodeURIComponent(goalName)}&goalTarget=${goalTarget}`;
+    const secureToken = generateObsToken();
+    const newLink = `${window.location.origin}/chiaa_gaming/obs/${secureToken}?showMessages=false&showGoal=true&goalName=${encodeURIComponent(goalName)}&goalTarget=${goalTarget}`;
     
     sessionStorage.setItem("chiaaGamingGoalObsLink", newLink);
     setGoalObsLink(newLink);
+    
+    SecurityMonitor.logSecurityEvent({
+      type: 'obs_link_regenerated',
+      severity: 'low',
+      details: 'Goal OBS link regenerated',
+    });
     
     toast({
       title: "Goal Link Regenerated",
       description: "Your new goal OBS link has been created",
     });
   };
-
-  const copyMessagesLink = () => {
-    navigator.clipboard.writeText(obsLink);
-    toast({
-      title: "Link Copied",
-      description: "Donation messages OBS link copied to clipboard",
-    });
-  };
-
-  const copyGoalLink = () => {
-    navigator.clipboard.writeText(goalObsLink);
-    toast({
-      title: "Link Copied",
-      description: "Goal OBS link copied to clipboard",
-    });
-  };
-
-  const openMessagesInNewTab = () => {
-    if (obsLink) {
-      window.open(obsLink, '_blank');
-    }
-  };
-
-  const openGoalInNewTab = () => {
-    if (goalObsLink) {
-      window.open(goalObsLink, '_blank');
-    }
-  };
-
-  useEffect(() => {
-    setupObsLinks();
-  }, []);
 
   // Handle toggle of show messages preference
   const handleToggleMessages = () => {
@@ -320,38 +388,86 @@ const ChiaaGamingDonationMessages = () => {
     });
   };
 
-  // Handle goal name change
+  // Handle goal name change with validation
   const handleGoalNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newName = e.target.value;
-    setGoalName(newName);
-    localStorage.setItem("chiaaGamingGoalName", newName);
+    const rawValue = e.target.value;
+    const sanitizedValue = validateAndSanitizeInput(rawValue, 100);
+    
+    if (rawValue !== sanitizedValue) {
+      SecurityMonitor.logSecurityEvent({
+        type: SECURITY_EVENTS.XSS_ATTEMPT,
+        severity: 'medium',
+        details: 'Potentially malicious input detected in goal name',
+      });
+    }
+    
+    setGoalName(sanitizedValue);
+    localStorage.setItem("chiaaGamingGoalName", sanitizedValue);
     updateGoalLink();
   };
 
-  // Handle goal target change
+  // Handle goal target change with validation
   const handleGoalTargetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTarget = Number(e.target.value);
-    setGoalTarget(newTarget);
-    localStorage.setItem("chiaaGamingGoalTarget", newTarget.toString());
-    updateGoalLink();
+    
+    // Validate reasonable limits
+    if (newTarget > 0 && newTarget <= 1000000) {
+      setGoalTarget(newTarget);
+      localStorage.setItem("chiaaGamingGoalTarget", newTarget.toString());
+      updateGoalLink();
+    } else if (newTarget > 1000000) {
+      SecurityMonitor.logSecurityEvent({
+        type: SECURITY_EVENTS.SUSPICIOUS_REQUEST,
+        severity: 'low',
+        details: 'Unusually high goal target entered',
+      });
+    }
   };
 
   // Update messages link with current settings
   const updateMessagesLink = () => {
-    const hasParam = obsLink.includes("?");
-    const baseLink = hasParam ? obsLink.split("?")[0] : obsLink;
-    const newLink = `${baseLink}?showMessages=${showMessages}&showGoal=false`;
-    sessionStorage.setItem("chiaaGamingObsLink", newLink);
-    setObsLink(newLink);
+    if (!obsLink) return;
+    
+    try {
+      const url = new URL(obsLink);
+      const pathSegments = url.pathname.split('/');
+      const token = pathSegments[pathSegments.length - 1];
+      
+      if (!validateSecureId(token)) {
+        regenerateMessagesLink();
+        return;
+      }
+      
+      const newLink = `${url.origin}${url.pathname}?showMessages=${showMessages}&showGoal=false`;
+      sessionStorage.setItem("chiaaGamingObsLink", newLink);
+      setObsLink(newLink);
+    } catch (error) {
+      console.error('Error updating messages link:', error);
+      regenerateMessagesLink();
+    }
   };
 
-  // Update goal link with current settings
+  //Update goal link with current settings
   const updateGoalLink = () => {
-    const hasParam = goalObsLink.includes("?");
-    const baseLink = hasParam ? goalObsLink.split("?")[0] : goalObsLink;
-    const newLink = `${baseLink}?showMessages=false&showGoal=true&goalName=${encodeURIComponent(goalName)}&goalTarget=${goalTarget}`;
-    sessionStorage.setItem("chiaaGamingGoalObsLink", newLink);
-    setGoalObsLink(newLink);
+    if (!goalObsLink) return;
+    
+    try {
+      const url = new URL(goalObsLink);
+      const pathSegments = url.pathname.split('/');
+      const token = pathSegments[pathSegments.length - 1];
+      
+      if (!validateSecureId(token)) {
+        regenerateGoalLink();
+        return;
+      }
+      
+      const newLink = `${url.origin}${url.pathname}?showMessages=false&showGoal=true&goalName=${encodeURIComponent(goalName)}&goalTarget=${goalTarget}`;
+      sessionStorage.setItem("chiaaGamingGoalObsLink", newLink);
+      setGoalObsLink(newLink);
+    } catch (error) {
+      console.error('Error updating goal link:', error);
+      regenerateGoalLink();
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -366,6 +482,7 @@ const ChiaaGamingDonationMessages = () => {
 
   const renderPremiumFeatures = (donation: Donation) => {
     // Always show the user's message if it exists, regardless of premium features
+    // Message is already sanitized when data is fetched
     if (donation.message && donation.message.trim()) {
       return donation.message;
     }
@@ -528,6 +645,7 @@ const ChiaaGamingDonationMessages = () => {
                         onChange={handleGoalNameChange}
                         placeholder="Enter goal name"
                         className="mt-1 bg-black/30 border-pink-500/50 text-pink-100 placeholder:text-pink-300/70"
+                        maxLength={100}
                       />
                     </div>
                     <div>
@@ -540,6 +658,7 @@ const ChiaaGamingDonationMessages = () => {
                         placeholder="Enter target amount"
                         className="mt-1 bg-black/30 border-pink-500/50 text-pink-100 placeholder:text-pink-300/70"
                         min="1"
+                        max="1000000"
                       />
                     </div>
                   </div>
@@ -605,14 +724,14 @@ const ChiaaGamingDonationMessages = () => {
                     {donations.map((donation) => (
                       <TableRow key={donation.id} className="border-pink-500/20 hover:bg-pink-500/10">
                         <TableCell className="text-pink-100">{formatDate(donation.created_at)}</TableCell>
-                        <TableCell className="text-pink-100">{donation.name}</TableCell>
+                        <TableCell className="text-pink-100" dangerouslySetInnerHTML={{ __html: escapeHtml(donation.name) }} />
                         <TableCell className="text-pink-400 font-semibold">₹{Number(donation.amount).toLocaleString()}</TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1">
                             {renderMediaBadges(donation)}
                           </div>
                         </TableCell>
-                        <TableCell className="text-pink-100">{renderPremiumFeatures(donation)}</TableCell>
+                        <TableCell className="text-pink-100" dangerouslySetInnerHTML={{ __html: escapeHtml(renderPremiumFeatures(donation)) }} />
                       </TableRow>
                     ))}
                   </TableBody>
