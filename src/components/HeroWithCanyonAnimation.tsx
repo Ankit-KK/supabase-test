@@ -14,7 +14,7 @@ const HeroWithCanyonAnimation = () => {
           <div className="space-y-8 max-w-4xl">
             <div className="mb-4">
               <div className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 via-white to-green-500 text-black px-4 py-2 rounded-full font-bold text-sm mb-4">
-                🇮🇳 Made in India, for Indian Streamers
+                Made in India, for Indian Streamers
               </div>
             </div>
             
