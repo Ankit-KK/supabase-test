@@ -1,105 +1,190 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Check, WalletCards, BadgeIndianRupee, Wallet } from "lucide-react";
+import { Check, Mic, Gif, IndianRupee, Zap, Crown } from "lucide-react";
+import SignupDialog from "@/components/SignupDialog";
 
 interface PricingPlanProps {
   name: string;
   description: string;
   price: string;
+  originalPrice?: string;
   features: string[];
   popular?: boolean;
   gradient?: string;
+  icon: React.ReactNode;
+  badge?: string;
 }
 
 const PricingPlan: React.FC<PricingPlanProps> = ({
   name,
   description,
   price,
+  originalPrice,
   features,
   popular,
   gradient,
+  icon,
+  badge,
 }) => {
+  const [showSignupDialog, setShowSignupDialog] = useState(false);
+
   return (
-    <div className={`rounded-2xl ${popular ? 'relative border-0 p-[1px]' : 'border border-white/10'}`}>
-      {popular && (
-        <div className={`absolute inset-0 rounded-2xl ${gradient} opacity-70 blur-[2px]`} />
-      )}
-      <div className={`h-full rounded-2xl p-6 bg-secondary/80 backdrop-blur-sm flex flex-col ${popular ? 'border-0' : ''}`}>
+    <>
+      <div className={`rounded-2xl ${popular ? 'relative border-0 p-[1px] transform scale-105' : 'border border-white/10'}`}>
         {popular && (
-          <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-hero-gradient text-white text-xs font-medium py-1 px-3 rounded-full">
-            MOST POPULAR
-          </div>
+          <div className={`absolute inset-0 rounded-2xl ${gradient} opacity-70 blur-[2px]`} />
         )}
-        <div className="mb-6">
-          <h3 className={`text-xl font-bold ${popular ? 'text-hyperchat-pink' : ''}`}>{name}</h3>
-          <p className="text-sm text-muted-foreground mt-1">{description}</p>
+        <div className={`h-full rounded-2xl p-6 bg-secondary/80 backdrop-blur-sm flex flex-col ${popular ? 'border-0' : ''} relative`}>
+          {popular && (
+            <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-hero-gradient text-white text-xs font-bold py-2 px-4 rounded-full">
+              🔥 MOST POPULAR
+            </div>
+          )}
+          {badge && (
+            <div className="absolute -top-2 -right-2 bg-hyperchat-orange text-white text-xs font-bold py-1 px-3 rounded-full">
+              {badge}
+            </div>
+          )}
+          
+          <div className="mb-6">
+            <div className="flex items-center gap-3 mb-2">
+              <div className={`p-2 rounded-lg ${gradient || 'bg-hyperchat-purple'}`}>
+                {icon}
+              </div>
+              <h3 className={`text-xl font-bold ${popular ? 'text-hyperchat-pink' : ''}`}>{name}</h3>
+            </div>
+            <p className="text-sm text-muted-foreground">{description}</p>
+          </div>
+          
+          <div className="mb-4">
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-bold flex items-center">
+                <IndianRupee className="h-6 w-6" />
+                {price}
+              </span>
+              {originalPrice && (
+                <span className="text-lg text-muted-foreground line-through flex items-center">
+                  <IndianRupee className="h-4 w-4" />
+                  {originalPrice}
+                </span>
+              )}
+              <span className="text-muted-foreground text-sm">one-time</span>
+            </div>
+          </div>
+          
+          <ul className="space-y-3 mb-6 flex-1">
+            {features.map((feature, i) => (
+              <li key={i} className="flex items-start gap-2">
+                <Check size={18} className={`shrink-0 mt-0.5 ${popular ? 'text-hyperchat-pink' : 'text-hyperchat-purple'}`} />
+                <span className="text-sm text-muted-foreground">{feature}</span>
+              </li>
+            ))}
+          </ul>
+          
+          <Button
+            className={`w-full ${
+              popular
+                ? 'bg-hero-gradient hover:opacity-90 transition-opacity'
+                : 'bg-secondary hover:bg-secondary/80'
+            }`}
+            onClick={() => setShowSignupDialog(true)}
+          >
+            Get Started Now
+          </Button>
         </div>
-        <div className="mb-4">
-          <span className="text-3xl font-bold">{price}</span>
-          {price !== "Free" && <span className="text-muted-foreground ml-1">/month</span>}
-        </div>
-        <ul className="space-y-3 mb-6 flex-1">
-          {features.map((feature, i) => (
-            <li key={i} className="flex items-start gap-2">
-              <Check size={18} className={`shrink-0 mt-0.5 ${popular ? 'text-hyperchat-pink' : 'text-hyperchat-purple'}`} />
-              <span className="text-sm text-muted-foreground">{feature}</span>
-            </li>
-          ))}
-        </ul>
-        <Button
-          className={`w-full ${
-            popular
-              ? 'bg-hero-gradient hover:opacity-90 transition-opacity'
-              : 'bg-secondary hover:bg-secondary/80'
-          }`}
-        >
-          Get Started
-        </Button>
       </div>
-    </div>
+      
+      {showSignupDialog && (
+        <SignupDialog 
+          open={showSignupDialog} 
+          onOpenChange={setShowSignupDialog}
+        />
+      )}
+    </>
   );
 };
 
 const Pricing: React.FC = () => {
   const plans = [
     {
-      name: "Free",
-      description: "For casual viewers",
-      price: "Free",
+      name: "Base Plan",
+      description: "Essential streaming page with UPI donations",
+      price: "399",
+      icon: <Zap className="text-white h-5 w-5" />,
+      gradient: "bg-gradient-to-br from-hyperchat-blue to-hyperchat-purple",
       features: [
-        "Basic chat functionality",
-        "Limited customization options",
-        "Support your favorite streamers",
-        "Community badges",
+        "Custom streaming page",
+        "UPI donation integration",
+        "Basic chat highlighting",
+        "Donation alerts",
+        "Real-time notifications",
+        "Mobile responsive design",
       ],
     },
     {
-      name: "HyperFan",
-      description: "For dedicated fans",
-      price: "₹399",
+      name: "Voice Bundle",
+      description: "Base plan + Voice message donations",
+      price: "749",
+      originalPrice: "899",
+      icon: <Mic className="text-white h-5 w-5" />,
+      gradient: "bg-gradient-to-br from-hyperchat-purple to-hyperchat-pink",
+      badge: "SAVE ₹150",
+      features: [
+        "Everything in Base Plan",
+        "Voice message recordings (15-60s)",
+        "Audio alerts on stream",
+        "Voice visualization effects",
+        "Fan voice gallery",
+        "Advanced audio controls",
+      ],
+    },
+    {
+      name: "Complete Bundle",
+      description: "Voice + Custom GIFs + All features",
+      price: "899",
+      originalPrice: "1099",
       popular: true,
       gradient: "bg-hero-gradient",
+      icon: <Crown className="text-white h-5 w-5" />,
+      badge: "SAVE ₹200",
       features: [
-        "All Free features",
-        "Premium message highlighting",
-        "Full customization options",
-        "Message pinning for 30 seconds",
-        "Exclusive animated effects",
-        "Fan leaderboard participation",
+        "Everything in Voice Bundle",
+        "Custom GIF uploads by fans",
+        "12-second GIF display alerts",
+        "Unlimited GIF storage",
+        "Advanced customization",
+        "Priority support",
+        "Early access to new features",
+      ],
+    },
+  ];
+
+  const addOns = [
+    {
+      name: "Custom GIF Add-On",
+      description: "Add GIF uploads to existing plan",
+      price: "250",
+      icon: <Gif className="text-white h-5 w-5" />,
+      gradient: "bg-gradient-to-br from-hyperchat-pink to-hyperchat-orange",
+      features: [
+        "Fan GIF uploads",
+        "Live GIF alerts",
+        "GIF moderation tools",
+        "Custom display duration",
       ],
     },
     {
-      name: "SuperFan",
-      description: "For passionate supporters",
-      price: "₹799",
+      name: "Monthly Hosting",
+      description: "Professional hosting & maintenance",
+      price: "250",
+      icon: <IndianRupee className="text-white h-5 w-5" />,
+      gradient: "bg-gradient-to-br from-hyperchat-orange to-hyperchat-pink",
       features: [
-        "All HyperFan features",
-        "Extended message pinning (60 seconds)",
-        "Custom profile badges",
-        "Priority support",
-        "Early access to new features",
-        "Higher leaderboard multipliers",
+        "99.9% uptime guarantee",
+        "SSL certificate included",
+        "Daily backups",
+        "Technical support",
       ],
     },
   ];
@@ -108,33 +193,79 @@ const Pricing: React.FC = () => {
     <section id="pricing" className="py-16 md:py-24 bg-mesh-gradient">
       <div className="container px-4 md:px-6">
         <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 via-white to-green-500 text-black px-4 py-2 rounded-full font-bold text-sm mb-4">
+            🇮🇳 Made in India Pricing
+          </div>
           <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
-            Simple, Transparent UPI Pricing
+            Revolutionary Features, Affordable Prices
           </h2>
           <p className="mt-4 text-muted-foreground md:text-xl">
-            Choose the perfect plan to elevate your streaming experience with UPI payments.
+            One-time payments. No monthly subscriptions. Built for Indian creators.
           </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+
+        {/* Main Plans */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto mb-16">
           {plans.map((plan, index) => (
             <PricingPlan
               key={index}
               name={plan.name}
               description={plan.description}
               price={plan.price}
+              originalPrice={plan.originalPrice}
               features={plan.features}
               popular={plan.popular}
               gradient={plan.gradient}
+              icon={plan.icon}
+              badge={plan.badge}
             />
           ))}
         </div>
-        <div className="text-center mt-12">
-          <p className="text-muted-foreground mb-6">
-            Looking for custom solutions for your organization or event?
-          </p>
-          <Button variant="outline" className="flex items-center">
-            <BadgeIndianRupee className="mr-2" /> Contact Us for Enterprise Options
-          </Button>
+
+        {/* Add-Ons Section */}
+        <div className="max-w-4xl mx-auto">
+          <h3 className="text-2xl font-bold text-center mb-8">Optional Add-Ons</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+            {addOns.map((addon, index) => (
+              <PricingPlan
+                key={index}
+                name={addon.name}
+                description={addon.description}
+                price={addon.price}
+                features={addon.features}
+                gradient={addon.gradient}
+                icon={addon.icon}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* UPI Payment Section */}
+        <div className="text-center">
+          <div className="bg-secondary/50 rounded-2xl p-8 max-w-3xl mx-auto border border-white/10">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <IndianRupee className="h-8 w-8 text-hyperchat-pink" />
+              <h3 className="text-2xl font-bold">Powered by UPI</h3>
+            </div>
+            <p className="text-muted-foreground mb-6">
+              Fast, secure payments using India's most trusted payment system. 
+              Pay instantly with any UPI app like PhonePe, GPay, or Paytm.
+            </p>
+            <div className="flex flex-wrap justify-center gap-4 text-sm">
+              <div className="flex items-center gap-2 bg-white/5 px-3 py-2 rounded-full">
+                <Check className="h-4 w-4 text-green-500" />
+                <span>Instant Payments</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white/5 px-3 py-2 rounded-full">
+                <Check className="h-4 w-4 text-green-500" />
+                <span>Bank-Grade Security</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white/5 px-3 py-2 rounded-full">
+                <Check className="h-4 w-4 text-green-500" />
+                <span>Made for India</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
