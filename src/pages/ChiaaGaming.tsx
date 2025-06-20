@@ -44,7 +44,7 @@ const ChiaaGamingPage = () => {
     }
     
     // Clear Voice if amount < 150
-    if (selectedVoice && (isNaN(parsedAmount) || parsedAmount < 150)) {
+    if (selectedVoice && (isNaN(parsedAmount) || parsedAmount < 10)) {
       setSelectedVoice(null);
     }
     
