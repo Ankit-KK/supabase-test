@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -43,8 +42,8 @@ const PaymentStatus = () => {
   const redirectToChiaaGamingChannel = () => {
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     const channelUrl = isMobile 
-      ? "https://youtube.com/c/ChiaaGaming" // Mobile YouTube app URL
-      : "https://www.youtube.com/c/ChiaaGaming"; // Desktop URL
+      ? "https://youtube.com/@_chiaa_gaming" // Mobile YouTube app URL
+      : "https://www.youtube.com/@_chiaa_gaming"; // Desktop URL
     
     window.open(channelUrl, '_blank');
   };
