@@ -26,7 +26,7 @@ const ChiaaGamingPage = () => {
   useEffect(() => {
     const parsedAmount = parseFloat(amount);
     if (!isNaN(parsedAmount) && parsedAmount >= 30) {
-      setMaxMessageLength(100);
+      setMaxMessageLength(99); // Set to 99 to keep it below 100
     } else {
       setMaxMessageLength(50);
     }
@@ -425,7 +425,7 @@ const ChiaaGamingPage = () => {
                   {!selectedGif && !selectedVoice && !selectedCustomSoundUrl ? (
                     <>
                       {message.length}/{maxMessageLength} chars
-                      {isMessageEligible ? " (100 for ₹30+)" : " (50 for <₹30)"}
+                      {isMessageEligible ? " (99 for ₹30+)" : " (50 for <₹30)"}
                     </>
                   ) : (
                     <>
