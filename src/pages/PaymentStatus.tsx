@@ -43,22 +43,12 @@ const PaymentStatus = () => {
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     
     if (isMobile) {
-      // For mobile, try to open YouTube app first, then fallback to browser
-      const youtubeAppUrl = "youtube://channel/UC_chiaa_gaming"; // YouTube app URL scheme
-      const youtubeWebUrl = "https://m.youtube.com/@_chiaa_gaming"; // Mobile web URL
+      // For mobile, use window.open with YouTube app URL scheme
+      // This should prompt to open in YouTube app if available
+      const youtubeAppUrl = "https://youtube.com/channel/UC_chiaa_gaming";
       
-      // Create a hidden iframe to try opening the YouTube app
-      const iframe = document.createElement("iframe");
-      iframe.style.display = "none";
-      iframe.src = youtubeAppUrl;
-      document.body.appendChild(iframe);
-      
-      // Set a timeout to open web URL if app doesn't open
-      setTimeout(() => {
-        document.body.removeChild(iframe);
-        // Use window.location.href instead of window.open to replace current page
-        window.location.href = youtubeWebUrl;
-      }, 1000);
+      // Try to open in new window/tab which should trigger app selection on mobile
+      window.open(youtubeAppUrl, '_blank', 'noopener,noreferrer');
     } else {
       // For desktop, open in new tab
       window.open("https://www.youtube.com/@_chiaa_gaming", '_blank', 'noopener,noreferrer');
@@ -305,7 +295,7 @@ const PaymentStatus = () => {
                 </p>
                 <p className="text-xs text-pink-600">
                   {/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
-                    ? "Opening in YouTube app or new page..." 
+                    ? "Will open YouTube app if available..." 
                     : "Opening in new tab..."}
                 </p>
                 <Button 
@@ -372,7 +362,7 @@ const PaymentStatus = () => {
                 {redirectCountdown !== null && (
                   <p className="text-xs text-pink-600">
                     {/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
-                      ? "Opening in YouTube app or new page..." 
+                      ? "Will open YouTube app if available..." 
                       : "Opening in new tab..."}
                   </p>
                 )}
