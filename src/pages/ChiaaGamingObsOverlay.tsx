@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +34,34 @@ const processedDonationIds = new Set<string>();
 
 // 1-minute delay constant (60000 milliseconds)
 const ALERT_DELAY_MS = 60000;
+
+// Global audio context for managing audio permissions
+let globalAudioContext: AudioContext | null = null;
+let isAudioInitialized = false;
+
+// Initialize audio context - this will be called once user interacts with the page
+const initializeAudioContext = async (): Promise<boolean> => {
+  if (isAudioInitialized && globalAudioContext?.state === 'running') {
+    return true;
+  }
+
+  try {
+    if (!globalAudioContext) {
+      globalAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    
+    if (globalAudioContext.state === 'suspended') {
+      await globalAudioContext.resume();
+    }
+    
+    isAudioInitialized = true;
+    console.log('Audio context initialized successfully');
+    return true;
+  } catch (error) {
+    console.error('Failed to initialize audio context:', error);
+    return false;
+  }
+};
 
 // Global cleanup function to prevent memory leaks
 const cleanupGlobalState = () => {
@@ -75,6 +104,13 @@ const cleanupGlobalState = () => {
   
   // Clear processed IDs
   processedDonationIds.clear();
+  
+  // Clean up audio context
+  if (globalAudioContext) {
+    globalAudioContext.close();
+    globalAudioContext = null;
+    isAudioInitialized = false;
+  }
 };
 
 const ChiaaGamingObsOverlay = () => {
@@ -105,6 +141,30 @@ const ChiaaGamingObsOverlay = () => {
     componentId: componentId.current,
     alertDelay: `${ALERT_DELAY_MS / 1000} seconds`
   });
+
+  // Initialize audio context on component mount
+  useEffect(() => {
+    const handleUserInteraction = async () => {
+      await initializeAudioContext();
+      // Remove listeners after first successful initialization
+      if (isAudioInitialized) {
+        document.removeEventListener('click', handleUserInteraction);
+        document.removeEventListener('keydown', handleUserInteraction);
+        document.removeEventListener('touchstart', handleUserInteraction);
+      }
+    };
+
+    // Add event listeners for user interaction
+    document.addEventListener('click', handleUserInteraction);
+    document.addEventListener('keydown', handleUserInteraction);
+    document.addEventListener('touchstart', handleUserInteraction);
+
+    return () => {
+      document.removeEventListener('click', handleUserInteraction);
+      document.removeEventListener('keydown', handleUserInteraction);
+      document.removeEventListener('touchstart', handleUserInteraction);
+    };
+  }, []);
 
   // Clean up media after it's displayed with improved error handling
   const cleanupMedia = async (donationId: string, mediaUrl: string, mediaType: 'gif' | 'voice') => {
@@ -329,6 +389,25 @@ const ChiaaGamingObsOverlay = () => {
     // Show the custom sound alert
     setCurrentCustomSoundAlert(donation);
     
+    // Ensure audio context is ready before playing
+    const playAudio = async () => {
+      try {
+        if (!isAudioInitialized) {
+          await initializeAudioContext();
+        }
+        
+        await audioElement.play();
+      } catch (error) {
+        console.error(`[${componentId.current}] Failed to play custom sound:`, error);
+        setCurrentCustomSoundAlert(null);
+        isProcessingCustomSounds = false;
+        
+        setTimeout(() => {
+          processNextCustomSound();
+        }, 500);
+      }
+    };
+    
     audioElement.onended = () => {
       console.log(`[${componentId.current}] Custom sound ended, hiding alert`);
       setCurrentCustomSoundAlert(null);
@@ -340,7 +419,7 @@ const ChiaaGamingObsOverlay = () => {
     };
     
     audioElement.onerror = (e) => {
-      console.error(`[${componentId.current}] Failed to play custom sound:`, e);
+      console.error(`[${componentId.current}] Custom sound error:`, e);
       setCurrentCustomSoundAlert(null);
       isProcessingCustomSounds = false;
       
@@ -349,14 +428,7 @@ const ChiaaGamingObsOverlay = () => {
       }, 500);
     };
     
-    audioElement.play().catch(e => {
-      console.error(`[${componentId.current}] Audio play failed:`, e);
-      setCurrentCustomSoundAlert(null);
-      isProcessingCustomSounds = false;
-      setTimeout(() => {
-        processNextCustomSound();
-      }, 500);
-    });
+    playAudio();
   };
 
   // Process voice recording queue with delay check (lowest priority)
@@ -398,6 +470,25 @@ const ChiaaGamingObsOverlay = () => {
     // Show the voice recording alert
     setCurrentVoiceAlert(donation);
     
+    // Ensure audio context is ready before playing
+    const playVoiceAudio = async () => {
+      try {
+        if (!isAudioInitialized) {
+          await initializeAudioContext();
+        }
+        
+        await audioElement.play();
+      } catch (error) {
+        console.error(`[${componentId.current}] Failed to play voice recording:`, error);
+        setCurrentVoiceAlert(null);
+        isProcessingVoiceRecordings = false;
+        
+        setTimeout(() => {
+          processNextVoiceRecording();
+        }, 500);
+      }
+    };
+    
     audioElement.onended = () => {
       console.log(`[${componentId.current}] Voice recording ended, hiding alert`);
       setCurrentVoiceAlert(null);
@@ -414,7 +505,7 @@ const ChiaaGamingObsOverlay = () => {
     };
     
     audioElement.onerror = (e) => {
-      console.error(`[${componentId.current}] Failed to play voice recording:`, e);
+      console.error(`[${componentId.current}] Voice recording error:`, e);
       setCurrentVoiceAlert(null);
       isProcessingVoiceRecordings = false;
       
@@ -446,15 +537,7 @@ const ChiaaGamingObsOverlay = () => {
       if (originalOnEnded) originalOnEnded.call(audioElement);
     };
     
-    audioElement.play().catch(e => {
-      console.error(`[${componentId.current}] Voice audio play failed:`, e);
-      clearTimeout(fallbackTimeout);
-      setCurrentVoiceAlert(null);
-      isProcessingVoiceRecordings = false;
-      setTimeout(() => {
-        processNextVoiceRecording();
-      }, 500);
-    });
+    playVoiceAudio();
   };
 
   // Add donation to queues in priority order with 1-minute delay: messages first, then GIFs, then sounds
