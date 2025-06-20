@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,7 +24,7 @@ const AnkitObsOverlay = () => {
   const [animationPhase, setAnimationPhase] = useState<'enter' | 'show' | 'exit'>('enter');
   const [goalProgress, setGoalProgress] = useState<number>(0);
 
-  // Calculate goal progress from today's donations
+  // Calculate goal progress from today's successful donations only
   const fetchGoalProgress = async () => {
     try {
       const today = new Date();
@@ -35,7 +34,7 @@ const AnkitObsOverlay = () => {
       const { data, error } = await supabase
         .from("ankit_donations")
         .select("amount")
-        .eq("payment_status", "success")
+        .eq("payment_status", "success") // Only count successful payments
         .gte("created_at", todayStart)
         .lte("created_at", todayEnd);
 
@@ -43,6 +42,7 @@ const AnkitObsOverlay = () => {
       
       const total = data?.reduce((sum, donation) => sum + Number(donation.amount), 0) || 0;
       setGoalProgress(total);
+      console.log("Goal progress updated for successful donations only:", total);
     } catch (error) {
       console.error("Error fetching goal progress:", error);
     }
@@ -55,7 +55,7 @@ const AnkitObsOverlay = () => {
   }, [showGoal]);
 
   useEffect(() => {
-    // Set up real-time subscription for new donations
+    // Set up real-time subscription ONLY for successful donations
     const channel = supabase
       .channel(`ankit-obs-overlay-${obsId}`)
       .on(
@@ -64,19 +64,32 @@ const AnkitObsOverlay = () => {
           event: 'INSERT',
           schema: 'public',
           table: 'ankit_donations',
-          filter: 'payment_status=eq.success'
+          filter: 'payment_status=eq.success' // CRITICAL: Only listen for successful payments
         },
         (payload) => {
           const newDonation = payload.new as Donation;
-          console.log('New donation received in OBS overlay:', newDonation);
+          console.log('Successful donation received in OBS overlay:', {
+            id: newDonation.id,
+            name: newDonation.name,
+            amount: newDonation.amount,
+            payment_status: newDonation.payment_status
+          });
           
-          // Update goal progress
-          if (showGoal) {
-            setGoalProgress(prev => prev + Number(newDonation.amount));
+          // Double-check payment status (safety check)
+          if (newDonation.payment_status !== "success") {
+            console.log("Blocking non-successful donation from OBS processing:", newDonation.payment_status);
+            return;
           }
           
-          // Show donation alert if messages are enabled
+          // Update goal progress for successful payments only
+          if (showGoal) {
+            setGoalProgress(prev => prev + Number(newDonation.amount));
+            console.log("Updated goal progress for successful donation");
+          }
+          
+          // Show donation alert if messages are enabled - ONLY for successful payments
           if (showMessages) {
+            console.log("Showing donation alert for successful payment");
             setAnimationPhase('enter');
             setCurrentDonation(newDonation);
             setIsVisible(true);
@@ -98,7 +111,7 @@ const AnkitObsOverlay = () => {
       )
       .subscribe();
 
-    console.log('OBS overlay real-time subscription set up');
+    console.log('Ankit OBS overlay real-time subscription set up - SUCCESS PAYMENTS ONLY');
 
     return () => {
       supabase.removeChannel(channel);
@@ -151,7 +164,7 @@ const AnkitObsOverlay = () => {
         </div>
       )}
 
-      {/* Donation Alert */}
+      {/* Donation Alert - Only shows for successful donations */}
       {currentDonation && showMessages && (
         <div className="absolute top-4 right-4 w-96 max-w-md">
           <div 

@@ -135,6 +135,13 @@ serve(async (req) => {
     // All other cases remain as FAILURE
 
     console.log(`Final payment status determined: ${finalStatus}`);
+    
+    // Log critical decision: Only successful payments should trigger OBS alerts
+    if (finalStatus === "SUCCESS") {
+      console.log("SUCCESS payment verified - will trigger OBS alerts and database records");
+    } else {
+      console.log(`NON-SUCCESS payment (${finalStatus}) - NO OBS alerts or database records will be created`);
+    }
 
     // Prepare standardized response
     const responseData = {
@@ -143,10 +150,11 @@ serve(async (req) => {
       status: finalStatus,
       order_id: orderId,
       payment_verified: finalStatus === "SUCCESS",
-      verification_timestamp: new Date().toISOString()
+      verification_timestamp: new Date().toISOString(),
+      obs_alert_eligible: finalStatus === "SUCCESS" // Flag for OBS processing
     };
 
-    console.log("Returning payment verification result");
+    console.log("Returning payment verification result with OBS eligibility flag");
 
     // Return the standardized verification result
     return new Response(
