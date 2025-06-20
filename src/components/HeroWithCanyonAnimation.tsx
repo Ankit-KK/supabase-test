@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, Mic, Gift, IndianRupee } from "lucide-react";
@@ -19,7 +20,7 @@ const HeroWithCanyonAnimation = () => {
             </div>
             
             <CanyonAnimatedText
-              text="India's Own Streaming Innovation"
+              text="UPI Payment Platform for Creators"
               className="mb-4"
             />
             
