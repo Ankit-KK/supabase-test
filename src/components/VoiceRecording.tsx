@@ -1,4 +1,5 @@
 
+
 import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
@@ -16,7 +17,7 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
   onVoiceSelect, 
   selectedVoice, 
   disabled,
-  minAmount = 0,
+  minAmount = 150,
   currentAmount = 0
 }) => {
   const [isRecording, setIsRecording] = useState(false);
@@ -38,7 +39,7 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
     if (currentAmount >= 1000) return 60; // 60 seconds for ₹1000+
     if (currentAmount >= 300) return 30; // 30 seconds for ₹300-999
     if (currentAmount >= 150) return 15; // 15 seconds for ₹150-299
-    return 15; // 15 seconds for ₹1-149
+    return 15; // 15 seconds for ₹150+
   };
 
   const maxDuration = getMaxDuration();
@@ -310,3 +311,4 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
 };
 
 export default VoiceRecording;
+
