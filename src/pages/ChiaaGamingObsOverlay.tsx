@@ -593,7 +593,7 @@ const ChiaaGamingObsOverlay = () => {
     }
 
     // 4. Add voice recording to queue (INDEPENDENT OF showMessages - voice is audio only)
-    if (donation.voice_url && Number(donation.amount) >= 150) {
+    if (donation.voice_url && Number(donation.amount) >= 30) {
       console.log(`[${componentId.current}] Adding voice recording to delayed queue (${delayMinutes} min delay):`, donation.id);
       try {
         const audio = new Audio(donation.voice_url);
@@ -601,7 +601,8 @@ const ChiaaGamingObsOverlay = () => {
         audio.preload = 'auto';
         
         // Calculate duration based on amount - more generous durations
-        const duration = Number(donation.amount) < 300 ? 30000 : 60000; // 30s or 60s
+        const duration = Number(donation.amount) < 100 ? 20000 : 
+                        Number(donation.amount) < 300 ? 30000 : 60000; // 20s, 30s, or 60s
         
         globalVoiceQueue.push({ donation, audioElement: audio, duration, scheduledTime });
         
