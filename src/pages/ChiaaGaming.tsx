@@ -96,7 +96,7 @@ const ChiaaGamingPage = () => {
 
   const handleVoiceSelect = (file: File | null) => {
     const parsedAmount = parseFloat(amount);
-    if (file && (isNaN(parsedAmount) || parsedAmount < 150)) {
+    if (file && (isNaN(parsedAmount) || parsedAmount < 10)) {
       toast({
         title: "Premium feature", 
         description: "Voice messages require a donation of ₹150 or more",
