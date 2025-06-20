@@ -498,7 +498,7 @@ const ChiaaGamingObsOverlay = () => {
     }
 
     // 3. Add custom sound to queue (will be processed after GIFs)
-    if (donation.custom_sound_url && Number(donation.amount) >= 100) {
+    if (donation.custom_sound_url && Number(donation.amount) >= 50) {
       console.log(`[${componentId.current}] Adding custom sound to delayed queue (${delayMinutes} min delay):`, donation.id);
       try {
         const audio = new Audio(donation.custom_sound_url);
@@ -511,14 +511,23 @@ const ChiaaGamingObsOverlay = () => {
     }
 
     // 4. Add voice recording to queue (will be processed after custom sounds)
-    if (donation.voice_url && Number(donation.amount) >= 100) {
+    if (donation.voice_url && Number(donation.amount) >= 150) {
       console.log(`[${componentId.current}] Adding voice recording to delayed queue (${delayMinutes} min delay):`, donation.id);
       try {
         const audio = new Audio(donation.voice_url);
         audio.volume = 0.8;
         audio.preload = 'auto';
-        const duration = Number(donation.amount) < 150 ? 30000 : 60000; // 30s or 60s
+        
+        // Calculate duration based on amount - more generous durations
+        const duration = Number(donation.amount) < 300 ? 30000 : 60000; // 30s or 60s
+        
         globalVoiceQueue.push({ donation, audioElement: audio, duration, scheduledTime });
+        
+        console.log(`[${componentId.current}] Voice recording queued with duration:`, {
+          donationAmount: donation.amount,
+          calculatedDuration: duration / 1000 + 's',
+          voiceUrl: donation.voice_url.substring(0, 50) + '...'
+        });
       } catch (error) {
         console.error(`[${componentId.current}] Error creating voice audio element:`, error);
       }
@@ -594,7 +603,8 @@ const ChiaaGamingObsOverlay = () => {
               id: newDonation.id,
               name: newDonation.name,
               amount: newDonation.amount,
-              payment_status: newDonation.payment_status
+              payment_status: newDonation.payment_status,
+              hasVoice: !!newDonation.voice_url
             });
             
             // Double-check payment status (safety check)
@@ -656,11 +666,17 @@ const ChiaaGamingObsOverlay = () => {
         {showMessages && currentVoiceAlert && (
           <DraggableResizableBox className="animate-slide-in-right">
             <div className="bg-gradient-to-r from-blue-600/90 to-purple-600/90 backdrop-blur-sm rounded-lg p-4 shadow-2xl border border-blue-500/50 max-w-md">
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-3 mb-2">
                 <div className="w-3 h-3 bg-blue-400 rounded-full animate-pulse"></div>
                 <span className="text-blue-100 font-bold text-lg">{currentVoiceAlert.name}</span>
-                <span className="text-blue-300 font-semibold">played voice message</span>
+                <span className="text-blue-300 font-semibold">₹{Number(currentVoiceAlert.amount).toLocaleString()}</span>
               </div>
+              <div className="flex items-center space-x-2 mb-2">
+                <span className="text-blue-300 font-semibold">🎤 Voice Message Playing</span>
+              </div>
+              {currentVoiceAlert.message && (
+                <p className="text-blue-50 text-sm leading-relaxed italic">"{currentVoiceAlert.message}"</p>
+              )}
             </div>
           </DraggableResizableBox>
         )}

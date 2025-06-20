@@ -44,21 +44,51 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          sampleRate: 44100,
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
+      
+      // Use webm format with opus codec for better compatibility
+      const options = {
+        mimeType: 'audio/webm;codecs=opus'
+      };
+      
+      // Fallback to basic webm if opus not supported
+      if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+        options.mimeType = 'audio/webm';
+      }
+      
+      const mediaRecorder = new MediaRecorder(stream, options);
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
+
+      console.log('VOICE: Starting recording with format:', options.mimeType);
 
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           chunksRef.current.push(event.data);
+          console.log('VOICE: Audio chunk received:', event.data.size, 'bytes');
         }
       };
 
       mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
-        const file = new File([audioBlob], `voice-${Date.now()}.webm`, { type: 'audio/webm' });
+        console.log('VOICE: Recording stopped, processing audio data');
+        const audioBlob = new Blob(chunksRef.current, { type: options.mimeType });
+        const file = new File([audioBlob], `voice-${Date.now()}.webm`, { type: options.mimeType });
         const url = URL.createObjectURL(audioBlob);
+        
+        console.log('VOICE: Created voice file:', {
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          url: url.substring(0, 50) + '...'
+        });
         
         setAudioUrl(url);
         onVoiceSelect(file);
@@ -67,7 +97,7 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
         stream.getTracks().forEach(track => track.stop());
       };
 
-      mediaRecorder.start();
+      mediaRecorder.start(1000); // Collect data every second
       setIsRecording(true);
       setRecordingTime(0);
       
@@ -92,7 +122,7 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
         description: `Speak your message (max ${maxDuration} seconds)`,
       });
     } catch (error) {
-      console.error("Error starting recording:", error);
+      console.error("VOICE ERROR: Error starting recording:", error);
       toast({
         title: "Recording failed",
         description: "Could not access microphone. Please check permissions.",
@@ -103,6 +133,7 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
+      console.log('VOICE: Stopping recording...');
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       

@@ -41,17 +41,23 @@ export const uploadGif = async (file: File): Promise<string | null> => {
 
 export const uploadVoice = async (file: File): Promise<string | null> => {
   try {
-    const fileExt = 'webm';
+    const fileExt = file.name.split('.').pop() || 'webm';
     const fileName = `voice-${Date.now()}-${Math.floor(Math.random() * 10000)}.${fileExt}`;
     const filePath = fileName;
 
-    console.log("UPLOAD: Starting voice upload to storage:", { fileName, fileSize: file.size });
+    console.log("UPLOAD: Starting voice upload to storage:", { 
+      fileName, 
+      fileSize: file.size,
+      fileType: file.type,
+      originalName: file.name
+    });
 
     const { data, error } = await supabase.storage
       .from('donation-gifs')
       .upload(filePath, file, {
         cacheControl: '3600',
-        upsert: false
+        upsert: false,
+        contentType: file.type || 'audio/webm'
       });
 
     if (error) {
@@ -67,8 +73,30 @@ export const uploadVoice = async (file: File): Promise<string | null> => {
     console.log("UPLOAD SUCCESS: Voice uploaded successfully:", { 
       publicUrl,
       filePath,
-      fileName 
+      fileName,
+      fileType: file.type
     });
+    
+    // Store voice metadata in donation_gifs table for tracking
+    try {
+      const { error: dbError } = await supabase
+        .from('donation_gifs')
+        .insert({
+          gif_url: publicUrl,
+          file_name: fileName,
+          file_size: file.size,
+          file_type: 'voice',
+          status: 'uploaded'
+        });
+
+      if (dbError) {
+        console.error("UPLOAD: Error storing voice metadata:", dbError);
+      } else {
+        console.log("UPLOAD: Voice metadata stored successfully");
+      }
+    } catch (metaError) {
+      console.error("UPLOAD: Exception storing voice metadata:", metaError);
+    }
     
     return publicUrl;
   } catch (error) {
