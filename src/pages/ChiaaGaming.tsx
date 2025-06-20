@@ -25,29 +25,30 @@ const ChiaaGamingPage = () => {
   // Update max message length based on amount
   useEffect(() => {
     const parsedAmount = parseFloat(amount);
-    if (!isNaN(parsedAmount) && parsedAmount >= 100) {
+    if (!isNaN(parsedAmount) && parsedAmount >= 30) {
       setMaxMessageLength(100);
     } else {
       setMaxMessageLength(50);
     }
   }, [amount]);
 
-  // Clear premium features when amount drops below ₹100
+  // Clear premium features when amount drops below minimum thresholds
   useEffect(() => {
     const parsedAmount = parseFloat(amount);
-    if (isNaN(parsedAmount) || parsedAmount < 100) {
-      // Clear GIF if selected and amount < 100
-      if (selectedGif) {
-        setSelectedGif(null);
-      }
-      // Clear Voice if selected and amount < 100
-      if (selectedVoice) {
-        setSelectedVoice(null);
-      }
-      // Clear Custom Sound if selected and amount < 100
-      if (selectedCustomSoundUrl) {
-        setSelectedCustomSoundUrl(null);
-      }
+    
+    // Clear GIF if amount < 100
+    if (selectedGif && (isNaN(parsedAmount) || parsedAmount < 100)) {
+      setSelectedGif(null);
+    }
+    
+    // Clear Voice if amount < 150
+    if (selectedVoice && (isNaN(parsedAmount) || parsedAmount < 150)) {
+      setSelectedVoice(null);
+    }
+    
+    // Clear Custom Sound if amount < 50
+    if (selectedCustomSoundUrl && (isNaN(parsedAmount) || parsedAmount < 50)) {
+      setSelectedCustomSoundUrl(null);
     }
   }, [amount, selectedGif, selectedVoice, selectedCustomSoundUrl]);
 
@@ -63,7 +64,7 @@ const ChiaaGamingPage = () => {
     console.log("CHIAA GAMING: Custom sound selected:", {
       selectedCustomSoundUrl,
       amount: parseFloat(amount),
-      isEligible: parseFloat(amount) >= 100
+      isEligible: parseFloat(amount) >= 50
     });
   }, [selectedCustomSoundUrl, amount]);
 
@@ -92,10 +93,10 @@ const ChiaaGamingPage = () => {
 
   const handleVoiceSelect = (file: File | null) => {
     const parsedAmount = parseFloat(amount);
-    if (file && (isNaN(parsedAmount) || parsedAmount < 100)) {
+    if (file && (isNaN(parsedAmount) || parsedAmount < 150)) {
       toast({
         title: "Premium feature", 
-        description: "Voice messages require a donation of ₹100 or more",
+        description: "Voice messages require a donation of ₹150 or more",
         variant: "destructive",
       });
       return;
@@ -142,10 +143,10 @@ const ChiaaGamingPage = () => {
     }
 
     const parsedAmount = parseFloat(amount);
-    if (isNaN(parsedAmount) || parsedAmount < 1) {
+    if (isNaN(parsedAmount) || parsedAmount < 30) {
       toast({
         title: "Invalid amount",
-        description: "Please enter an amount greater than or equal to ₹1",
+        description: "Please enter an amount greater than or equal to ₹30",
         variant: "destructive",
       });
       return false;
@@ -302,7 +303,19 @@ const ChiaaGamingPage = () => {
   const isMessageDisabled = !!selectedGif || !!selectedVoice || !!selectedCustomSoundUrl || isLoading;
 
   // Check if premium features are eligible
-  const isPremiumEligible = parseFloat(amount) >= 100;
+  const isGifEligible = parseFloat(amount) >= 100;
+  const isVoiceEligible = parseFloat(amount) >= 150;
+  const isCustomSoundEligible = parseFloat(amount) >= 50;
+  const isMessageEligible = parseFloat(amount) >= 30;
+
+  // Get voice duration based on amount
+  const getVoiceDuration = () => {
+    const parsedAmount = parseFloat(amount);
+    if (parsedAmount >= 1000) return "60 seconds";
+    if (parsedAmount >= 250) return "25 seconds";
+    if (parsedAmount >= 150) return "15 seconds";
+    return "Not available";
+  };
 
   return (
     <div 
@@ -380,11 +393,11 @@ const ChiaaGamingPage = () => {
                   <Input 
                     id="amount"
                     type="number"
-                    min="1"
+                    min="30"
                     step="1"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    placeholder="Minimum ₹1"
+                    placeholder="Minimum ₹30"
                     disabled={isLoading}
                     className="bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 h-7 sm:h-8 text-xs"
                   />
@@ -392,7 +405,7 @@ const ChiaaGamingPage = () => {
               </div>
               
               <p className="text-xs text-white/80 text-center">
-                ₹1+ for messages • ₹100+ for GIF, Voice & Sound alerts
+                ₹30+ for messages • ₹50+ for sounds • ₹100+ for GIF • ₹150+ for voice ({getVoiceDuration()})
               </p>
               
               <div className="space-y-1">
@@ -412,7 +425,7 @@ const ChiaaGamingPage = () => {
                   {!selectedGif && !selectedVoice && !selectedCustomSoundUrl ? (
                     <>
                       {message.length}/{maxMessageLength} chars
-                      {isPremiumEligible ? " (100 for ₹100+)" : " (50 for <₹100)"}
+                      {isMessageEligible ? " (100 for ₹30+)" : " (50 for <₹30)"}
                     </>
                   ) : (
                     <>
@@ -430,7 +443,7 @@ const ChiaaGamingPage = () => {
                 <GifUpload
                   onGifSelect={handleGifSelect}
                   selectedGif={selectedGif}
-                  disabled={isLoading || !!selectedVoice || !!selectedCustomSoundUrl || !isPremiumEligible}
+                  disabled={isLoading || !!selectedVoice || !!selectedCustomSoundUrl || !isGifEligible}
                   minAmount={100}
                   currentAmount={parseFloat(amount) || 0}
                 />
@@ -438,8 +451,8 @@ const ChiaaGamingPage = () => {
                 <VoiceRecording
                   onVoiceSelect={handleVoiceSelect}
                   selectedVoice={selectedVoice}
-                  disabled={isLoading || !!selectedGif || !!selectedCustomSoundUrl || !isPremiumEligible}
-                  minAmount={100}
+                  disabled={isLoading || !!selectedGif || !!selectedCustomSoundUrl || !isVoiceEligible}
+                  minAmount={150}
                   currentAmount={parseFloat(amount) || 0}
                 />
               </div>
@@ -448,7 +461,7 @@ const ChiaaGamingPage = () => {
                 onSoundSelect={handleCustomSoundSelect}
                 selectedSoundUrl={selectedCustomSoundUrl}
                 disabled={isLoading || !!selectedGif || !!selectedVoice}
-                minAmount={100}
+                minAmount={50}
                 currentAmount={parseFloat(amount) || 0}
               />
               
