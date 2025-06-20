@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -25,7 +24,7 @@ const ChiaaGamingPage = () => {
   // Update max message length based on amount
   useEffect(() => {
     const parsedAmount = parseFloat(amount);
-    if (!isNaN(parsedAmount) && parsedAmount >= 30) {
+    if (!isNaN(parsedAmount) && parsedAmount >= 100) {
       setMaxMessageLength(99); // Set to 99 to keep it below 100
     } else {
       setMaxMessageLength(50);
@@ -425,7 +424,7 @@ const ChiaaGamingPage = () => {
                   {!selectedGif && !selectedVoice && !selectedCustomSoundUrl ? (
                     <>
                       {message.length}/{maxMessageLength} chars
-                      {isMessageEligible ? " (99 for ₹30+)" : " (50 for <₹30)"}
+                      {parseFloat(amount) >= 100 ? " (99 for ₹100+)" : " (50 for <₹100)"}
                     </>
                   ) : (
                     <>
