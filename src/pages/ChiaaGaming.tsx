@@ -337,13 +337,14 @@ const ChiaaGamingPage = () => {
   const isGifEligible = parseFloat(amount) >= 100;
   const isVoiceEligible = parseFloat(amount) >= 1;
   const isCustomSoundEligible = parseFloat(amount) >= 50;
-  const isMessageEligible = parseFloat(amount) >= 1;
+  const isMessageEligible = parseFloat(amount) >= 30;
 
   // Get voice duration based on amount
   const getVoiceDuration = () => {
     const parsedAmount = parseFloat(amount);
     if (parsedAmount >= 1000) return "60 seconds";
-    if (parsedAmount >= 250) return "25 seconds";
+    if (parsedAmount >= 300) return "30 seconds";
+    if (parsedAmount >= 150) return "15 seconds";
     if (parsedAmount >= 1) return "15 seconds";
     return "Not available";
   };
@@ -436,7 +437,7 @@ const ChiaaGamingPage = () => {
               </div>
               
               <p className="text-xs text-white/80 text-center">
-                ₹1+ for messages/voice ({getVoiceDuration()}) • ₹50+ for sounds • ₹100+ for GIF
+                ₹1+ for voice ({getVoiceDuration()}) • ₹30+ for messages • ₹50+ for sounds • ₹100+ for GIF
               </p>
               
               <div className="space-y-1">
@@ -453,7 +454,7 @@ const ChiaaGamingPage = () => {
                       ? 'border-red-500 focus:border-red-500' 
                       : 'border-pink-300 focus:border-pink-500'
                   }`}
-                  disabled={isMessageDisabled}
+                  disabled={isMessageDisabled || !isMessageEligible}
                   maxLength={maxMessageLength}
                 />
                 
@@ -468,10 +469,16 @@ const ChiaaGamingPage = () => {
                 <p className="text-xs text-white/80">
                   {!selectedGif && !selectedVoice && !selectedCustomSoundUrl ? (
                     <>
-                      {message.length}/{maxMessageLength} chars
-                      {parseFloat(amount) >= 100 ? " (99 for ₹100+)" : " (50 for <₹100)"}
-                      <br />
-                      <span className="text-yellow-300">⚠️ Links, URLs, and social media handles are not allowed</span>
+                      {isMessageEligible ? (
+                        <>
+                          {message.length}/{maxMessageLength} chars
+                          {parseFloat(amount) >= 100 ? " (99 for ₹100+)" : " (50 for <₹100)"}
+                          <br />
+                          <span className="text-yellow-300">⚠️ Links, URLs, and social media handles are not allowed</span>
+                        </>
+                      ) : (
+                        <span className="text-yellow-300">Messages require ₹30+ donation</span>
+                      )}
                     </>
                   ) : (
                     <>
