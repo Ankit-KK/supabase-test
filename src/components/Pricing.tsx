@@ -156,7 +156,7 @@ const Pricing: React.FC = () => {
     {
       name: "Monthly Hosting",
       description: "Professional hosting & maintenance",
-      price: "250",
+      price: "500",
       icon: <IndianRupee className="text-white h-5 w-5" />,
       gradient: "bg-gradient-to-br from-hyperchat-orange to-hyperchat-pink",
       isMonthly: true,
