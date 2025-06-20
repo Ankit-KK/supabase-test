@@ -1,19 +1,22 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { Heart, Gamepad2 } from "lucide-react";
+import { Heart, Gamepad2, AlertTriangle } from "lucide-react";
 import GifUpload from "@/components/GifUpload";
 import VoiceRecording from "@/components/VoiceRecording";
 import CustomSoundSelector from "@/components/CustomSoundSelector";
 import { uploadGif, uploadVoice } from "@/utils/mediaUpload";
+import { filterMessage, sanitizeMessage } from "@/utils/linkFilter";
 
 const ChiaaGamingPage = () => {
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [message, setMessage] = useState("");
+  const [messageError, setMessageError] = useState("");
   const [selectedGif, setSelectedGif] = useState<File | null>(null);
   const [selectedVoice, setSelectedVoice] = useState<File | null>(null);
   const [selectedCustomSoundUrl, setSelectedCustomSoundUrl] = useState<string | null>(null);
@@ -55,6 +58,7 @@ const ChiaaGamingPage = () => {
   useEffect(() => {
     if (selectedGif || selectedVoice || selectedCustomSoundUrl) {
       setMessage("");
+      setMessageError("");
     }
   }, [selectedGif, selectedVoice, selectedCustomSoundUrl]);
 
@@ -151,6 +155,20 @@ const ChiaaGamingPage = () => {
       return false;
     }
 
+    // Check if message contains links
+    if (message.trim() && !selectedGif && !selectedVoice && !selectedCustomSoundUrl) {
+      const messageValidation = filterMessage(message);
+      if (!messageValidation.isValid) {
+        setMessageError(messageValidation.reason || "Message contains invalid content");
+        toast({
+          title: "Invalid message",
+          description: messageValidation.reason,
+          variant: "destructive",
+        });
+        return false;
+      }
+    }
+
     // Only require message if no GIF, voice, or custom sound is selected
     if (!message.trim() && !selectedGif && !selectedVoice && !selectedCustomSoundUrl) {
       toast({
@@ -231,11 +249,14 @@ const ChiaaGamingPage = () => {
         }
       }
       
+      // Sanitize message before storing
+      const sanitizedMessage = sanitizeMessage(message.trim());
+      
       // Store donation data in session storage to access it during the payment flow
       const donationData = {
         name: name.trim(),
         amount: parseFloat(amount),
-        message: message.trim(),
+        message: sanitizedMessage,
         orderId,
         donationType: "chiaa_gaming",
         gifUrl,
@@ -275,10 +296,22 @@ const ChiaaGamingPage = () => {
   };
 
   const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    // Limit message to maxMessageLength characters
     const value = e.target.value;
+    
+    // Clear previous error
+    setMessageError("");
+    
+    // Limit message to maxMessageLength characters
     if (value.length <= maxMessageLength) {
       setMessage(value);
+      
+      // Validate message for links in real-time
+      if (value.trim()) {
+        const messageValidation = filterMessage(value);
+        if (!messageValidation.isValid) {
+          setMessageError(messageValidation.reason || "Message contains invalid content");
+        }
+      }
     }
   };
 
@@ -287,7 +320,7 @@ const ChiaaGamingPage = () => {
     if (selectedGif) return "Message disabled when GIF is uploaded";
     if (selectedVoice) return "Message disabled when voice is recorded";
     if (selectedCustomSoundUrl) return "Message disabled when custom sound is selected";
-    return "Send your sweet message to Chiaa!";
+    return "Send your sweet message to Chiaa! (No links allowed)";
   };
 
   // Get message label based on what's selected
@@ -295,7 +328,7 @@ const ChiaaGamingPage = () => {
     if (selectedGif) return "Sweet Message (Disabled - GIF uploaded)";
     if (selectedVoice) return "Sweet Message (Disabled - Voice recorded)";
     if (selectedCustomSoundUrl) return "Sweet Message (Disabled - Custom sound selected)";
-    return "Sweet Message";
+    return "Sweet Message (No Links Allowed)";
   };
 
   // Check if message input should be disabled (when GIF, voice, or custom sound is selected)
@@ -416,15 +449,30 @@ const ChiaaGamingPage = () => {
                   value={message}
                   onChange={handleMessageChange}
                   placeholder={getMessagePlaceholder()}
-                  className="h-10 sm:h-12 bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 resize-none text-xs"
+                  className={`h-10 sm:h-12 bg-white/95 text-gray-800 placeholder:text-gray-500 focus:ring-pink-500/50 resize-none text-xs ${
+                    messageError 
+                      ? 'border-red-500 focus:border-red-500' 
+                      : 'border-pink-300 focus:border-pink-500'
+                  }`}
                   disabled={isMessageDisabled}
                   maxLength={maxMessageLength}
                 />
+                
+                {/* Message validation error */}
+                {messageError && (
+                  <div className="flex items-center space-x-2 text-red-400 text-xs">
+                    <AlertTriangle className="w-3 h-3" />
+                    <span>{messageError}</span>
+                  </div>
+                )}
+                
                 <p className="text-xs text-white/80">
                   {!selectedGif && !selectedVoice && !selectedCustomSoundUrl ? (
                     <>
                       {message.length}/{maxMessageLength} chars
                       {parseFloat(amount) >= 100 ? " (99 for ₹100+)" : " (50 for <₹100)"}
+                      <br />
+                      <span className="text-yellow-300">⚠️ Links, URLs, and social media handles are not allowed</span>
                     </>
                   ) : (
                     <>
@@ -467,7 +515,7 @@ const ChiaaGamingPage = () => {
               <Button 
                 type="submit" 
                 className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white font-bold py-2 rounded-lg shadow-lg shadow-pink-500/25 transition-all duration-300 transform hover:scale-105 border border-pink-400/50 text-xs sm:text-sm mt-3"
-                disabled={isLoading}
+                disabled={isLoading || !!messageError}
               >
                 {isLoading ? (
                   <div className="flex items-center justify-center space-x-2">

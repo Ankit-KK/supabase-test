@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, calculateMonthlyTotal } from "@/utils/dashboardUtils";
-import { LogOut, MessageSquare, Image, Mic, Volume2, MessageCircle } from "lucide-react";
+import { LogOut, MessageSquare, Image, Mic, Volume2, MessageCircle, Clock } from "lucide-react";
 import CSVExportDialog from "@/components/CSVExportDialog";
 import SecureDataDisplay from "@/components/SecureDataDisplay";
 import { logSecurityEvent } from "@/utils/rateLimiting";
@@ -30,6 +30,7 @@ const ChiaaGamingDashboard = () => {
   const [donations, setDonations] = useState<Donation[]>([]);
   const [loading, setLoading] = useState(true);
   const [monthlyTotal, setMonthlyTotal] = useState(0);
+  const [realtimeAlert, setRealtimeAlert] = useState<Donation | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const channelRef = useRef<any>(null);
@@ -55,7 +56,7 @@ const ChiaaGamingDashboard = () => {
       }
 
       // Create a unique channel name
-      const channelName = `chiaa-gaming-donations-realtime-${Date.now()}`;
+      const channelName = `chiaa-gaming-donations-dashboard-realtime-${Date.now()}`;
       
       channelRef.current = supabase
         .channel(channelName)
@@ -68,8 +69,13 @@ const ChiaaGamingDashboard = () => {
             filter: 'payment_status=eq.success'
           },
           (payload) => {
-            console.log('New donation received via realtime:', payload);
+            console.log('New successful donation received in dashboard (REALTIME - NO DELAY):', payload);
             const newDonation = payload.new as Donation;
+            
+            // Show realtime alert for streamer (immediate, no delay)
+            setRealtimeAlert(newDonation);
+            setTimeout(() => setRealtimeAlert(null), 8000);
+            
             setDonations(prev => {
               // Check if donation already exists to prevent duplicates
               const exists = prev.some(d => d.id === newDonation.id);
@@ -81,8 +87,8 @@ const ChiaaGamingDashboard = () => {
             logSecurityEvent('NEW_DONATION_RECEIVED', `Amount: ${newDonation.amount}, Name: ${newDonation.name}`);
             
             toast({
-              title: "New Donation Received!",
-              description: `${newDonation.name} donated ₹${Number(newDonation.amount).toLocaleString()}`,
+              title: "🎉 New Donation Received!",
+              description: `${newDonation.name} donated ₹${Number(newDonation.amount).toLocaleString()} (OBS alert in 1 minute)`,
             });
           }
         )
@@ -105,15 +111,15 @@ const ChiaaGamingDashboard = () => {
           }
         )
         .subscribe((status) => {
-          console.log('Realtime subscription status:', status);
+          console.log('Dashboard realtime subscription status:', status);
           if (status === 'SUBSCRIBED') {
-            console.log('Successfully subscribed to chiaa_gaming_donations realtime updates');
+            console.log('Successfully subscribed to chiaa_gaming_donations dashboard realtime updates');
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
             logSecurityEvent('REALTIME_SUBSCRIPTION_ERROR', `Status: ${status}`);
           }
         });
 
-      console.log('Real-time subscription set up for chiaa_gaming_donations');
+      console.log('Dashboard real-time subscription set up for chiaa_gaming_donations (IMMEDIATE NOTIFICATIONS)');
     };
 
     // Setup subscription with a small delay
@@ -122,7 +128,7 @@ const ChiaaGamingDashboard = () => {
     return () => {
       clearTimeout(timer);
       if (channelRef.current) {
-        console.log('Component unmounting, cleaning up channel');
+        console.log('Dashboard component unmounting, cleaning up channel');
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
@@ -240,12 +246,36 @@ const ChiaaGamingDashboard = () => {
   return (
     <SecureDataDisplay requiredAuth={true}>
       <div className="min-h-screen bg-gradient-to-br from-pink-900 via-purple-900 to-black p-4">
+        {/* Realtime Alert for Streamer */}
+        {realtimeAlert && (
+          <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
+            <div className="bg-gradient-to-r from-green-600/95 to-emerald-600/95 backdrop-blur-sm rounded-xl p-4 shadow-2xl border border-green-500/50 max-w-sm">
+              <div className="flex items-center space-x-3 mb-2">
+                <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                <span className="text-green-100 font-bold text-lg">New Donation!</span>
+                <Clock className="w-4 h-4 text-green-300" />
+              </div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-green-100 font-semibold">{realtimeAlert.name}</span>
+                <span className="text-green-300 font-bold text-xl">₹{Number(realtimeAlert.amount).toLocaleString()}</span>
+              </div>
+              {realtimeAlert.message && (
+                <p className="text-green-50 text-sm italic mb-2">"{realtimeAlert.message}"</p>
+              )}
+              <div className="flex items-center space-x-1 text-xs text-green-200">
+                <Clock className="w-3 h-3" />
+                <span>OBS alert in 1 minute</span>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <div className="container mx-auto max-w-6xl">
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
             <div>
               <h1 className="text-3xl font-bold text-pink-100">Chiaa Gaming Dashboard</h1>
-              <p className="text-pink-300">Donation management and analytics</p>
+              <p className="text-pink-300">Real-time donation management (OBS alerts delayed by 1 minute)</p>
             </div>
             <div className="flex items-center gap-3">
               <Button 
@@ -284,11 +314,24 @@ const ChiaaGamingDashboard = () => {
             </CardContent>
           </Card>
 
+          {/* Info Card about OBS Delay */}
+          <Card className="mb-6 bg-blue-900/20 border-blue-500/30">
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-3">
+                <Clock className="w-5 h-5 text-blue-400" />
+                <div>
+                  <h3 className="text-blue-200 font-semibold">OBS Alert Delay</h3>
+                  <p className="text-blue-300 text-sm">Donations appear here instantly but are delayed by 1 minute in OBS to give you time to prepare</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Donations Table */}
           <Card className="bg-black/50 border-pink-500/30">
             <CardHeader>
               <CardTitle className="text-pink-100">Recent Successful Payments</CardTitle>
-              <CardDescription className="text-pink-300">All successful donations with media attachments</CardDescription>
+              <CardDescription className="text-pink-300">All successful donations with media attachments (real-time updates)</CardDescription>
             </CardHeader>
             <CardContent>
               {donations.length === 0 ? (

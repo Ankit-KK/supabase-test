@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,11 +16,11 @@ interface Donation {
   custom_sound_url?: string;
 }
 
-// Global queues for sequential processing with improved cleanup
-const globalMessageQueue: Donation[] = [];
-const globalGifQueue: { donation: Donation; duration: number }[] = [];
-const globalCustomSoundQueue: { donation: Donation; audioElement: HTMLAudioElement }[] = [];
-const globalVoiceQueue: { donation: Donation; audioElement: HTMLAudioElement; duration: number }[] = [];
+// Global queues for sequential processing with improved cleanup and 1-minute delay
+const globalMessageQueue: { donation: Donation; scheduledTime: number }[] = [];
+const globalGifQueue: { donation: Donation; duration: number; scheduledTime: number }[] = [];
+const globalCustomSoundQueue: { donation: Donation; audioElement: HTMLAudioElement; scheduledTime: number }[] = [];
+const globalVoiceQueue: { donation: Donation; audioElement: HTMLAudioElement; duration: number; scheduledTime: number }[] = [];
 
 // Global processing states
 let isProcessingMessages = false;
@@ -31,6 +30,9 @@ let isProcessingVoiceRecordings = false;
 
 let globalProcessingTimeout: NodeJS.Timeout | null = null;
 const processedDonationIds = new Set<string>();
+
+// 1-minute delay constant (60000 milliseconds)
+const ALERT_DELAY_MS = 60000;
 
 // Global cleanup function to prevent memory leaks
 const cleanupGlobalState = () => {
@@ -100,7 +102,8 @@ const ChiaaGamingObsOverlay = () => {
     showGoal,
     goalName,
     goalTarget,
-    componentId: componentId.current
+    componentId: componentId.current,
+    alertDelay: `${ALERT_DELAY_MS / 1000} seconds`
   });
 
   // Clean up media after it's displayed with improved error handling
@@ -169,11 +172,10 @@ const ChiaaGamingObsOverlay = () => {
     }
   };
 
-  // Process message queue (highest priority)
+  // Process message queue with delay check (highest priority)
   const processNextMessage = () => {
     if (globalMessageQueue.length === 0) {
       isProcessingMessages = false;
-      // Start GIF processing after messages are done
       processNextGif();
       return;
     }
@@ -182,26 +184,41 @@ const ChiaaGamingObsOverlay = () => {
       return;
     }
 
-    isProcessingMessages = true;
-    const nextDonation = globalMessageQueue.shift();
+    const now = Date.now();
+    const nextItem = globalMessageQueue[0];
     
-    if (!nextDonation) {
+    // Check if enough time has passed for the delay
+    if (now < nextItem.scheduledTime) {
+      const remainingDelay = nextItem.scheduledTime - now;
+      console.log(`[${componentId.current}] Message delayed for ${remainingDelay}ms more`);
+      globalProcessingTimeout = setTimeout(() => {
+        processNextMessage();
+      }, remainingDelay);
+      return;
+    }
+
+    isProcessingMessages = true;
+    const messageItem = globalMessageQueue.shift();
+    
+    if (!messageItem) {
       isProcessingMessages = false;
       processNextGif();
       return;
     }
 
-    console.log(`[${componentId.current}] Processing message from queue:`, nextDonation.id, nextDonation.name);
+    const { donation } = messageItem;
+    
+    console.log(`[${componentId.current}] Processing delayed message from queue:`, donation.id, donation.name);
     
     // Mark this donation as processed
-    processedDonationIds.add(nextDonation.id);
+    processedDonationIds.add(donation.id);
     
     // Show the donation on all component instances
-    setCurrentDonation(nextDonation);
+    setCurrentDonation(donation);
 
     // Auto-hide after 12 seconds
     const hideTimeout = setTimeout(() => {
-      console.log(`[${componentId.current}] Hiding message after 12 seconds:`, nextDonation.id);
+      console.log(`[${componentId.current}] Hiding message after 12 seconds:`, donation.id);
       
       setCurrentDonation(null);
       isProcessingMessages = false;
@@ -213,16 +230,28 @@ const ChiaaGamingObsOverlay = () => {
     }, 12000);
   };
 
-  // Process GIF queue (second priority)
+  // Process GIF queue with delay check (second priority)
   const processNextGif = () => {
     if (globalGifQueue.length === 0) {
       isProcessingGifs = false;
-      // Start sound processing after GIFs are done
       processNextCustomSound();
       return;
     }
 
     if (isProcessingGifs) {
+      return;
+    }
+
+    const now = Date.now();
+    const nextItem = globalGifQueue[0];
+    
+    // Check if enough time has passed for the delay
+    if (now < nextItem.scheduledTime) {
+      const remainingDelay = nextItem.scheduledTime - now;
+      console.log(`[${componentId.current}] GIF delayed for ${remainingDelay}ms more`);
+      globalProcessingTimeout = setTimeout(() => {
+        processNextGif();
+      }, remainingDelay);
       return;
     }
 
@@ -237,7 +266,7 @@ const ChiaaGamingObsOverlay = () => {
 
     const { donation, duration } = gifItem;
     
-    console.log(`[${componentId.current}] Showing GIF alert:`, donation.name, `Duration: ${duration}ms`);
+    console.log(`[${componentId.current}] Showing delayed GIF alert:`, donation.name, `Duration: ${duration}ms`);
     
     // Show the GIF alert
     setCurrentGifAlert(donation);
@@ -259,16 +288,28 @@ const ChiaaGamingObsOverlay = () => {
     }, duration);
   };
 
-  // Process custom sound queue (third priority)
+  // Process custom sound queue with delay check (third priority)
   const processNextCustomSound = () => {
     if (globalCustomSoundQueue.length === 0) {
       isProcessingCustomSounds = false;
-      // Start voice processing after custom sounds are done
       processNextVoiceRecording();
       return;
     }
 
     if (isProcessingCustomSounds) {
+      return;
+    }
+
+    const now = Date.now();
+    const nextItem = globalCustomSoundQueue[0];
+    
+    // Check if enough time has passed for the delay
+    if (now < nextItem.scheduledTime) {
+      const remainingDelay = nextItem.scheduledTime - now;
+      console.log(`[${componentId.current}] Custom sound delayed for ${remainingDelay}ms more`);
+      globalProcessingTimeout = setTimeout(() => {
+        processNextCustomSound();
+      }, remainingDelay);
       return;
     }
 
@@ -283,7 +324,7 @@ const ChiaaGamingObsOverlay = () => {
 
     const { donation, audioElement } = soundItem;
     
-    console.log(`[${componentId.current}] Playing custom sound and showing alert:`, donation.name);
+    console.log(`[${componentId.current}] Playing delayed custom sound and showing alert:`, donation.name);
     
     // Show the custom sound alert
     setCurrentCustomSoundAlert(donation);
@@ -293,7 +334,6 @@ const ChiaaGamingObsOverlay = () => {
       setCurrentCustomSoundAlert(null);
       isProcessingCustomSounds = false;
       
-      // Process next sound after a short delay
       setTimeout(() => {
         processNextCustomSound();
       }, 500);
@@ -304,7 +344,6 @@ const ChiaaGamingObsOverlay = () => {
       setCurrentCustomSoundAlert(null);
       isProcessingCustomSounds = false;
       
-      // Process next sound even on error
       setTimeout(() => {
         processNextCustomSound();
       }, 500);
@@ -320,7 +359,7 @@ const ChiaaGamingObsOverlay = () => {
     });
   };
 
-  // Process voice recording queue (lowest priority)
+  // Process voice recording queue with delay check (lowest priority)
   const processNextVoiceRecording = () => {
     if (globalVoiceQueue.length === 0) {
       isProcessingVoiceRecordings = false;
@@ -328,6 +367,19 @@ const ChiaaGamingObsOverlay = () => {
     }
 
     if (isProcessingVoiceRecordings) {
+      return;
+    }
+
+    const now = Date.now();
+    const nextItem = globalVoiceQueue[0];
+    
+    // Check if enough time has passed for the delay
+    if (now < nextItem.scheduledTime) {
+      const remainingDelay = nextItem.scheduledTime - now;
+      console.log(`[${componentId.current}] Voice recording delayed for ${remainingDelay}ms more`);
+      globalProcessingTimeout = setTimeout(() => {
+        processNextVoiceRecording();
+      }, remainingDelay);
       return;
     }
 
@@ -341,7 +393,7 @@ const ChiaaGamingObsOverlay = () => {
 
     const { donation, audioElement, duration } = voiceItem;
     
-    console.log(`[${componentId.current}] Playing voice recording and showing alert:`, donation.name, `Duration: ${duration}ms`);
+    console.log(`[${componentId.current}] Playing delayed voice recording and showing alert:`, donation.name, `Duration: ${duration}ms`);
     
     // Show the voice recording alert
     setCurrentVoiceAlert(donation);
@@ -356,7 +408,6 @@ const ChiaaGamingObsOverlay = () => {
         cleanupMedia(donation.id, donation.voice_url, 'voice');
       }
       
-      // Process next voice recording after a short delay
       setTimeout(() => {
         processNextVoiceRecording();
       }, 500);
@@ -367,7 +418,6 @@ const ChiaaGamingObsOverlay = () => {
       setCurrentVoiceAlert(null);
       isProcessingVoiceRecordings = false;
       
-      // Process next voice recording even on error
       setTimeout(() => {
         processNextVoiceRecording();
       }, 500);
@@ -407,8 +457,7 @@ const ChiaaGamingObsOverlay = () => {
     });
   };
 
-  // Add donation to queues in priority order: messages first, then GIFs, then sounds
-  // ONLY FOR SUCCESSFUL PAYMENTS
+  // Add donation to queues in priority order with 1-minute delay: messages first, then GIFs, then sounds
   const addDonationToQueues = (donation: Donation) => {
     // Skip processing if payment is not successful
     if (donation.payment_status !== "success") {
@@ -420,7 +469,10 @@ const ChiaaGamingObsOverlay = () => {
       return;
     }
 
-    console.log(`[${componentId.current}] Processing donation with sequential priority:`, {
+    const scheduledTime = Date.now() + ALERT_DELAY_MS;
+    const delayMinutes = ALERT_DELAY_MS / 60000;
+    
+    console.log(`[${componentId.current}] Processing donation with ${delayMinutes}-minute delay:`, {
       donationId: donation.id,
       name: donation.name,
       hasCustomSound: !!donation.custom_sound_url,
@@ -428,30 +480,31 @@ const ChiaaGamingObsOverlay = () => {
       hasGif: !!donation.gif_url,
       hasMessage: !!donation.message,
       amount: donation.amount,
-      paymentStatus: donation.payment_status
+      paymentStatus: donation.payment_status,
+      scheduledTime: new Date(scheduledTime).toLocaleTimeString()
     });
 
     // 1. ALWAYS add message to queue first if messages are enabled and has text message content
     if (showMessages && donation.message && donation.message.trim()) {
-      console.log(`[${componentId.current}] Adding message to donation queue for successful donation:`, donation.id);
-      globalMessageQueue.push(donation);
+      console.log(`[${componentId.current}] Adding message to delayed queue (${delayMinutes} min delay):`, donation.id);
+      globalMessageQueue.push({ donation, scheduledTime });
     }
 
     // 2. Add GIF to queue (will be processed after messages)
     if (donation.gif_url) {
-      console.log(`[${componentId.current}] Adding GIF to queue for successful donation:`, donation.id);
+      console.log(`[${componentId.current}] Adding GIF to delayed queue (${delayMinutes} min delay):`, donation.id);
       const duration = 12000; // 12 seconds for GIFs
-      globalGifQueue.push({ donation, duration });
+      globalGifQueue.push({ donation, duration, scheduledTime });
     }
 
     // 3. Add custom sound to queue (will be processed after GIFs)
     if (donation.custom_sound_url && Number(donation.amount) >= 100) {
-      console.log(`[${componentId.current}] Adding custom sound to queue for successful donation:`, donation.id);
+      console.log(`[${componentId.current}] Adding custom sound to delayed queue (${delayMinutes} min delay):`, donation.id);
       try {
         const audio = new Audio(donation.custom_sound_url);
         audio.volume = 0.7;
         audio.preload = 'auto';
-        globalCustomSoundQueue.push({ donation, audioElement: audio });
+        globalCustomSoundQueue.push({ donation, audioElement: audio, scheduledTime });
       } catch (error) {
         console.error(`[${componentId.current}] Error creating custom sound audio element:`, error);
       }
@@ -459,29 +512,30 @@ const ChiaaGamingObsOverlay = () => {
 
     // 4. Add voice recording to queue (will be processed after custom sounds)
     if (donation.voice_url && Number(donation.amount) >= 100) {
-      console.log(`[${componentId.current}] Adding voice recording to queue for successful donation:`, donation.id);
+      console.log(`[${componentId.current}] Adding voice recording to delayed queue (${delayMinutes} min delay):`, donation.id);
       try {
         const audio = new Audio(donation.voice_url);
         audio.volume = 0.8;
         audio.preload = 'auto';
         const duration = Number(donation.amount) < 150 ? 30000 : 60000; // 30s or 60s
-        globalVoiceQueue.push({ donation, audioElement: audio, duration });
+        globalVoiceQueue.push({ donation, audioElement: audio, duration, scheduledTime });
       } catch (error) {
         console.error(`[${componentId.current}] Error creating voice audio element:`, error);
       }
     }
     
-    console.log(`[${componentId.current}] Updated queue lengths for successful donation:`, {
+    console.log(`[${componentId.current}] Updated delayed queue lengths:`, {
       messages: globalMessageQueue.length,
       gifs: globalGifQueue.length,
       customSounds: globalCustomSoundQueue.length,
       voice: globalVoiceQueue.length,
-      total: globalMessageQueue.length + globalGifQueue.length + globalCustomSoundQueue.length + globalVoiceQueue.length
+      total: globalMessageQueue.length + globalGifQueue.length + globalCustomSoundQueue.length + globalVoiceQueue.length,
+      nextScheduledAlert: globalMessageQueue.length > 0 ? new Date(globalMessageQueue[0].scheduledTime).toLocaleTimeString() : 'None'
     });
 
     // Start processing if not already processing (messages have highest priority)
     if (!isProcessingMessages && !isProcessingGifs && !isProcessingCustomSounds && !isProcessingVoiceRecordings) {
-      console.log(`[${componentId.current}] Starting sequential queue processing for successful donation`);
+      console.log(`[${componentId.current}] Starting delayed sequential queue processing`);
       setTimeout(() => {
         processNextMessage();
       }, 100);
@@ -536,7 +590,7 @@ const ChiaaGamingObsOverlay = () => {
         (payload) => {
           try {
             const newDonation = payload.new as Donation;
-            console.log(`[${componentId.current}] Successful donation received in OBS overlay:`, {
+            console.log(`[${componentId.current}] Successful donation received in OBS overlay (will be delayed ${ALERT_DELAY_MS/60000} minutes):`, {
               id: newDonation.id,
               name: newDonation.name,
               amount: newDonation.amount,
@@ -553,7 +607,7 @@ const ChiaaGamingObsOverlay = () => {
             setTotalDonations(prev => prev + Number(newDonation.amount));
             console.log(`[${componentId.current}] Updated total donations for successful payment`);
             
-            // Add donation to sequential queues for processing (only successful payments will be processed)
+            // Add donation to sequential queues for processing with delay (only successful payments will be processed)
             addDonationToQueues(newDonation);
           } catch (error) {
             console.error(`[${componentId.current}] Error processing new donation:`, error);
@@ -562,7 +616,7 @@ const ChiaaGamingObsOverlay = () => {
       )
       .subscribe();
 
-    console.log(`[${componentId.current}] Real-time subscription set up for chiaa_gaming OBS overlay - SUCCESS PAYMENTS ONLY: ${obsId}`);
+    console.log(`[${componentId.current}] Real-time subscription set up for chiaa_gaming OBS overlay - SUCCESS PAYMENTS ONLY with ${ALERT_DELAY_MS/60000} minute delay: ${obsId}`);
 
     // Store cleanup function
     cleanupRef.current = () => {
@@ -643,17 +697,30 @@ const ChiaaGamingObsOverlay = () => {
           </DraggableResizableBox>
         )}
 
-        {/* Regular Donation Messages */}
+        {/* Regular Donation Messages with Enhanced Animation */}
         {showMessages && currentDonation && !shouldHideDonationBox && (
           <DraggableResizableBox className="animate-slide-in-right">
-            <div className="bg-gradient-to-r from-pink-600/90 to-purple-600/90 backdrop-blur-sm rounded-lg p-4 shadow-2xl border border-pink-500/50 max-w-md">
-              <div className="flex items-center space-x-3 mb-2">
+            <div className="relative overflow-hidden bg-gradient-to-r from-pink-600/90 to-purple-600/90 backdrop-blur-sm rounded-lg p-4 shadow-2xl border border-pink-500/50 max-w-md">
+              {/* Animated background elements */}
+              <div className="absolute inset-0 opacity-20">
+                <div className="absolute top-2 left-2 w-2 h-2 bg-pink-300 rounded-full animate-ping"></div>
+                <div className="absolute top-4 right-4 w-1 h-1 bg-purple-300 rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
+                <div className="absolute bottom-3 left-6 w-1.5 h-1.5 bg-pink-400 rounded-full animate-bounce" style={{animationDelay: '1s'}}></div>
+              </div>
+              
+              {/* Shimmer effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse"></div>
+              
+              <div className="relative z-10 flex items-center space-x-3 mb-2">
                 <div className="w-3 h-3 bg-pink-400 rounded-full animate-pulse"></div>
-                <span className="text-pink-100 font-bold text-lg">{currentDonation.name}</span>
-                <span className="text-pink-300 font-semibold">₹{Number(currentDonation.amount).toLocaleString()}</span>
+                <span className="text-pink-100 font-bold text-lg animate-pulse">{currentDonation.name}</span>
+                <span className="text-pink-300 font-semibold bg-pink-500/20 px-2 py-1 rounded-full animate-bounce">₹{Number(currentDonation.amount).toLocaleString()}</span>
               </div>
               {shouldShowTextMessage && (
-                <p className="text-pink-50 text-sm leading-relaxed">{currentDonation.message}</p>
+                <div className="relative">
+                  <p className="text-pink-50 text-sm leading-relaxed animate-fade-in">{currentDonation.message}</p>
+                  <div className="absolute -bottom-1 left-0 h-0.5 bg-gradient-to-r from-pink-400 to-purple-400 animate-pulse rounded-full" style={{width: '100%'}}></div>
+                </div>
               )}
             </div>
           </DraggableResizableBox>
@@ -666,7 +733,7 @@ const ChiaaGamingObsOverlay = () => {
               <img
                 src={currentGifAlert.gif_url}
                 alt="Donation GIF"
-                className="max-w-full max-h-64 rounded-lg"
+                className="max-w-full max-h-64 rounded-lg animate-scale-in"
                 style={{ objectFit: 'contain' }}
                 onLoad={() => {
                   console.log(`[${componentId.current}] GIF loaded successfully:`, currentGifAlert.gif_url);
@@ -693,7 +760,7 @@ const ChiaaGamingObsOverlay = () => {
               
               <div className="w-full bg-black/30 rounded-full h-6 mb-2 overflow-hidden">
                 <div 
-                  className="bg-gradient-to-r from-pink-400 to-purple-400 h-full rounded-full transition-all duration-1000 ease-out"
+                  className="bg-gradient-to-r from-pink-400 to-purple-400 h-full rounded-full transition-all duration-1000 ease-out animate-pulse"
                   style={{ width: `${progressPercentage}%` }}
                 />
               </div>
