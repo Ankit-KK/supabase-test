@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -567,7 +566,7 @@ const ChiaaGamingObsOverlay = () => {
       scheduledTime: new Date(scheduledTime).toLocaleTimeString()
     });
 
-    // 1. ALWAYS add message to queue first if messages are enabled and has text message content
+    // 1. Add message to queue first if messages are enabled and has text message content
     if (showMessages && donation.message && donation.message.trim()) {
       console.log(`[${componentId.current}] Adding message to delayed queue (${delayMinutes} min delay):`, donation.id);
       globalMessageQueue.push({ donation, scheduledTime });
@@ -593,7 +592,7 @@ const ChiaaGamingObsOverlay = () => {
       }
     }
 
-    // 4. Add voice recording to queue (will be processed after custom sounds)
+    // 4. Add voice recording to queue (INDEPENDENT OF showMessages - voice is audio only)
     if (donation.voice_url && Number(donation.amount) >= 150) {
       console.log(`[${componentId.current}] Adding voice recording to delayed queue (${delayMinutes} min delay):`, donation.id);
       try {
@@ -622,7 +621,10 @@ const ChiaaGamingObsOverlay = () => {
       customSounds: globalCustomSoundQueue.length,
       voice: globalVoiceQueue.length,
       total: globalMessageQueue.length + globalGifQueue.length + globalCustomSoundQueue.length + globalVoiceQueue.length,
-      nextScheduledAlert: globalMessageQueue.length > 0 ? new Date(globalMessageQueue[0].scheduledTime).toLocaleTimeString() : 'None'
+      nextScheduledAlert: globalMessageQueue.length > 0 ? new Date(globalMessageQueue[0].scheduledTime).toLocaleTimeString() : 
+                         globalGifQueue.length > 0 ? new Date(globalGifQueue[0].scheduledTime).toLocaleTimeString() :
+                         globalCustomSoundQueue.length > 0 ? new Date(globalCustomSoundQueue[0].scheduledTime).toLocaleTimeString() :
+                         globalVoiceQueue.length > 0 ? new Date(globalVoiceQueue[0].scheduledTime).toLocaleTimeString() : 'None'
     });
 
     // Start processing if not already processing (messages have highest priority)
@@ -745,8 +747,8 @@ const ChiaaGamingObsOverlay = () => {
   return (
     <ObsConfigProvider>
       <div className="w-screen h-screen bg-transparent overflow-hidden relative">
-        {/* Voice Recording Alert */}
-        {showMessages && currentVoiceAlert && (
+        {/* Voice Recording Alert - SHOWS REGARDLESS OF showMessages */}
+        {currentVoiceAlert && (
           <DraggableResizableBox className="animate-slide-in-right">
             <div className="bg-gradient-to-r from-blue-600/90 to-purple-600/90 backdrop-blur-sm rounded-lg p-4 shadow-2xl border border-blue-500/50 max-w-md">
               <div className="flex items-center space-x-3 mb-2">
@@ -764,8 +766,8 @@ const ChiaaGamingObsOverlay = () => {
           </DraggableResizableBox>
         )}
 
-        {/* Custom Sound Alert */}
-        {showMessages && currentCustomSoundAlert && (
+        {/* Custom Sound Alert - SHOWS REGARDLESS OF showMessages */}
+        {currentCustomSoundAlert && (
           <DraggableResizableBox className="animate-slide-in-right">
             <div className="bg-gradient-to-r from-orange-600/90 to-red-600/90 backdrop-blur-sm rounded-lg p-4 shadow-2xl border border-orange-500/50 max-w-md">
               <div className="flex items-center space-x-3 mb-2">
@@ -783,8 +785,8 @@ const ChiaaGamingObsOverlay = () => {
           </DraggableResizableBox>
         )}
 
-        {/* GIF Alert */}
-        {showMessages && currentGifAlert && (
+        {/* GIF Alert - SHOWS REGARDLESS OF showMessages */}
+        {currentGifAlert && (
           <DraggableResizableBox className="animate-slide-in-right">
             <div className="bg-gradient-to-r from-green-600/90 to-teal-600/90 backdrop-blur-sm rounded-lg p-4 shadow-2xl border border-green-500/50 max-w-md">
               <div className="flex items-center space-x-3">
@@ -796,7 +798,7 @@ const ChiaaGamingObsOverlay = () => {
           </DraggableResizableBox>
         )}
 
-        {/* Regular Donation Messages with Enhanced Animation */}
+        {/* Regular Donation Messages with Enhanced Animation - ONLY SHOWS IF showMessages IS TRUE */}
         {showMessages && currentDonation && !shouldHideDonationBox && (
           <DraggableResizableBox className="animate-slide-in-right">
             <div className="relative overflow-hidden bg-gradient-to-r from-pink-600/90 to-purple-600/90 backdrop-blur-sm rounded-lg p-4 shadow-2xl border border-pink-500/50 max-w-md">
@@ -825,7 +827,7 @@ const ChiaaGamingObsOverlay = () => {
           </DraggableResizableBox>
         )}
 
-        {/* Standalone GIF Display */}
+        {/* Standalone GIF Display - SHOWS REGARDLESS OF showMessages */}
         {currentGifAlert && currentGifAlert.gif_url && (
           <DraggableResizableBox className="animate-slide-in-right">
             <div className="flex justify-center">
