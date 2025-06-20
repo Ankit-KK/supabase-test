@@ -41,11 +41,28 @@ const PaymentStatus = () => {
 
   const redirectToChiaaGamingChannel = () => {
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const channelUrl = isMobile 
-      ? "https://youtube.com/@_chiaa_gaming" // Mobile YouTube app URL
-      : "https://www.youtube.com/@_chiaa_gaming"; // Desktop URL
     
-    window.open(channelUrl, '_blank');
+    if (isMobile) {
+      // For mobile, try to open YouTube app first, then fallback to browser
+      const youtubeAppUrl = "youtube://channel/UC_chiaa_gaming"; // YouTube app URL scheme
+      const youtubeWebUrl = "https://m.youtube.com/@_chiaa_gaming"; // Mobile web URL
+      
+      // Create a hidden iframe to try opening the YouTube app
+      const iframe = document.createElement("iframe");
+      iframe.style.display = "none";
+      iframe.src = youtubeAppUrl;
+      document.body.appendChild(iframe);
+      
+      // Set a timeout to open web URL if app doesn't open
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+        // Use window.location.href instead of window.open to replace current page
+        window.location.href = youtubeWebUrl;
+      }, 1000);
+    } else {
+      // For desktop, open in new tab
+      window.open("https://www.youtube.com/@_chiaa_gaming", '_blank', 'noopener,noreferrer');
+    }
   };
 
   const handleManualRedirect = () => {
@@ -286,6 +303,11 @@ const PaymentStatus = () => {
                 <p className="text-sm text-pink-700">
                   You will be redirected to Chiaa Gaming's YouTube channel in {redirectCountdown} seconds
                 </p>
+                <p className="text-xs text-pink-600">
+                  {/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+                    ? "Opening in YouTube app or new page..." 
+                    : "Opening in new tab..."}
+                </p>
                 <Button 
                   onClick={handleManualRedirect}
                   className="bg-pink-500 hover:bg-pink-600 text-white"
@@ -347,6 +369,13 @@ const PaymentStatus = () => {
                     ? `You will be redirected to Chiaa Gaming's YouTube channel in ${redirectCountdown} seconds`
                     : "Check out Chiaa Gaming's latest content while you're here!"}
                 </p>
+                {redirectCountdown !== null && (
+                  <p className="text-xs text-pink-600">
+                    {/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
+                      ? "Opening in YouTube app or new page..." 
+                      : "Opening in new tab..."}
+                  </p>
+                )}
                 <Button 
                   onClick={handleManualRedirect}
                   className="bg-pink-500 hover:bg-pink-600 text-white"
