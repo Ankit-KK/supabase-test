@@ -69,10 +69,16 @@ export const verifyPayment = async (orderId: string) => {
 
 /**
  * Creates a donation record in Supabase
- * Now creates records regardless of payment status for testing purposes
+ * Now only creates records for successful payments
  */
 export const createDonationRecord = async (donation: DonationRecord) => {
   try {
+    // Only process successful payments
+    if (donation.payment_status !== "success") {
+      console.log("Skipping donation record creation for non-successful payment:", donation.payment_status);
+      return false;
+    }
+
     let tableName;
     
     if (donation.donationType === "harish") {
@@ -97,11 +103,11 @@ export const createDonationRecord = async (donation: DonationRecord) => {
     
     // For chiaa_gaming donations, handle custom sound and other features
     if (donation.donationType === "chiaa_gaming") {
-      // FOR TESTING: Always set include_sound to true if custom sound is selected, regardless of payment status
+      // Only set include_sound to true if custom sound is selected for successful payments
       if (donation.customSoundUrl) {
         recordData.custom_sound_url = donation.customSoundUrl;
-        recordData.include_sound = true; // Always true for testing, even for failed payments
-        console.log("STORING CUSTOM SOUND URL FOR CHIAA GAMING (including failed payments for testing):", {
+        recordData.include_sound = true;
+        console.log("STORING CUSTOM SOUND URL FOR CHIAA GAMING (successful payment):", {
           customSoundUrl: donation.customSoundUrl,
           include_sound: true,
           orderId: donation.order_id,
@@ -129,7 +135,7 @@ export const createDonationRecord = async (donation: DonationRecord) => {
       }
     }
     
-    console.log(`Creating ${tableName} record with backend-verified status:`, recordData.payment_status);
+    console.log(`Creating ${tableName} record for successful payment:`, recordData.payment_status);
     
     const { data, error } = await supabase
       .from(tableName)
@@ -191,14 +197,7 @@ export const createDonationRecord = async (donation: DonationRecord) => {
       }
     }
 
-    // Clean up session storage only for successful payments
-    if (donation.payment_status === "success") {
-      sessionStorage.removeItem("donationData");
-      console.log("Cleaned up session storage for successful payment");
-    } else {
-      console.log("Keeping session storage for failed/pending payment - payment status:", donation.payment_status);
-    }
-
+    console.log("Successfully processed donation record for successful payment");
     return true;
   } catch (error) {
     console.error("Error in createDonationRecord:", error);

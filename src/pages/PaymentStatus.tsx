@@ -139,20 +139,17 @@ const PaymentStatus = () => {
         
         setStatus(componentStatus as "success" | "pending" | "failed");
         
-        // Create donation record in Supabase - ALWAYS create record regardless of payment status
-        if (!isRecordCreated) {
-          // Map backend status to database status
-          const dbPaymentStatus = backendStatus.toLowerCase();
-          
-          // Prepare donation record data
+        // Create donation record in Supabase - ONLY for successful payments
+        if (!isRecordCreated && backendStatus === "SUCCESS") {
+          // Prepare donation record data for successful payments only
           const recordData = {
             name: donationData.name,
             amount: donationData.amount,
             message: donationData.message,
             order_id: orderId,
-            payment_status: dbPaymentStatus,
+            payment_status: "success", // Only successful payments are recorded
             donationType: donationData.donationType || donationType,
-            // ALWAYS include media data for chiaa_gaming donations, regardless of payment status
+            // Include media data for successful donations
             gifUrl: donationData.gifUrl,
             gifFileName: donationData.gifFileName,
             gifFileSize: donationData.gifFileSize,
@@ -170,6 +167,12 @@ const PaymentStatus = () => {
           
           await createDonationRecord(recordData);
           setIsRecordCreated(true);
+          
+          // Clean up session storage for successful payments
+          sessionStorage.removeItem("donationData");
+          console.log("Successfully recorded donation and cleaned up session storage");
+        } else if (backendStatus !== "SUCCESS") {
+          console.log("Payment not successful - no donation record created. Status:", backendStatus);
         }
         
         setIsVerificationComplete(true);
