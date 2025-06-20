@@ -17,9 +17,9 @@ const PaymentStatus = () => {
   
   const location = useLocation();
 
-  // Chiaa Gaming YouTube channel redirect logic
+  // Chiaa Gaming YouTube channel redirect logic for both success and failed payments
   useEffect(() => {
-    if (status === "success" && donationType === "chiaa_gaming" && isVerificationComplete) {
+    if ((status === "success" || status === "failed") && donationType === "chiaa_gaming" && isVerificationComplete) {
       // Start 15-second countdown
       setRedirectCountdown(15);
       
@@ -331,15 +331,21 @@ const PaymentStatus = () => {
               We couldn't process your payment. Please try again or use a different payment method.
             </p>
             
-            {/* Chiaa Gaming channel redirect for failed payments too */}
+            {/* Chiaa Gaming channel redirect for failed payments with countdown */}
             {donationType === "chiaa_gaming" && (
               <div className="bg-pink-50 border border-pink-200 rounded-lg p-4 space-y-3 mt-4">
                 <div className="flex items-center justify-center space-x-2 text-pink-600">
                   <ExternalLink className="h-5 w-5" />
-                  <span className="font-medium">Visit Chiaa Gaming Channel</span>
+                  <span className="font-medium">
+                    {redirectCountdown !== null 
+                      ? "Redirecting to Chiaa Gaming Channel" 
+                      : "Visit Chiaa Gaming Channel"}
+                  </span>
                 </div>
                 <p className="text-sm text-pink-700">
-                  Check out Chiaa Gaming's latest content while you're here!
+                  {redirectCountdown !== null 
+                    ? `You will be redirected to Chiaa Gaming's YouTube channel in ${redirectCountdown} seconds`
+                    : "Check out Chiaa Gaming's latest content while you're here!"}
                 </p>
                 <Button 
                   onClick={handleManualRedirect}
@@ -347,7 +353,7 @@ const PaymentStatus = () => {
                   size="sm"
                 >
                   <ExternalLink className="mr-2 h-4 w-4" />
-                  Visit Channel
+                  Visit Channel Now
                 </Button>
               </div>
             )}
