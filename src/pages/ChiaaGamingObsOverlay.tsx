@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -521,7 +522,7 @@ const ChiaaGamingObsOverlay = () => {
 
     fetchTotalDonations();
 
-    // Set up real-time subscription for new donations
+    // Set up real-time subscription ONLY for successful donations
     const channel = supabase
       .channel(`chiaa-gaming-obs-${obsId}-${componentId.current}`)
       .on(
@@ -529,24 +530,28 @@ const ChiaaGamingObsOverlay = () => {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'chiaa_gaming_donations'
+          table: 'chiaa_gaming_donations',
+          filter: 'payment_status=eq.success' // CRITICAL: Only listen for successful payments
         },
         (payload) => {
           try {
             const newDonation = payload.new as Donation;
-            console.log(`[${componentId.current}] New donation received in OBS overlay:`, {
+            console.log(`[${componentId.current}] Successful donation received in OBS overlay:`, {
               id: newDonation.id,
               name: newDonation.name,
-              paymentStatus: newDonation.payment_status
+              amount: newDonation.amount,
+              payment_status: newDonation.payment_status
             });
             
-            // Update total for goal only if payment is successful
-            if (newDonation.payment_status === "success") {
-              setTotalDonations(prev => prev + Number(newDonation.amount));
-              console.log(`[${componentId.current}] Updated total donations for successful payment`);
-            } else {
-              console.log(`[${componentId.current}] Skipping total update for non-successful payment:`, newDonation.payment_status);
+            // Double-check payment status (safety check)
+            if (newDonation.payment_status !== "success") {
+              console.log(`[${componentId.current}] Blocking non-successful donation from OBS processing:`, newDonation.payment_status);
+              return;
             }
+            
+            // Update total for goal only if payment is successful
+            setTotalDonations(prev => prev + Number(newDonation.amount));
+            console.log(`[${componentId.current}] Updated total donations for successful payment`);
             
             // Add donation to sequential queues for processing (only successful payments will be processed)
             addDonationToQueues(newDonation);
@@ -557,7 +562,7 @@ const ChiaaGamingObsOverlay = () => {
       )
       .subscribe();
 
-    console.log(`[${componentId.current}] Real-time subscription set up for chiaa_gaming OBS overlay: ${obsId}`);
+    console.log(`[${componentId.current}] Real-time subscription set up for chiaa_gaming OBS overlay - SUCCESS PAYMENTS ONLY: ${obsId}`);
 
     // Store cleanup function
     cleanupRef.current = () => {
