@@ -4,7 +4,7 @@ import { useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import { verifyPayment, createDonationRecord } from "@/services/paymentService";
-import { CheckCircle, XCircle, AlertTriangle, Loader2, FileText } from "lucide-react";
+import { CheckCircle, XCircle, AlertTriangle, Loader2, FileText, ExternalLink } from "lucide-react";
 import { generateReceipt } from "@/utils/receiptGenerator";
 
 const PaymentStatus = () => {
@@ -14,8 +14,44 @@ const PaymentStatus = () => {
   const [donationType, setDonationType] = useState<"ankit" | "harish" | "mackle" | "rakazone" | "chiaa_gaming" | null>(null);
   const [isVerificationComplete, setIsVerificationComplete] = useState(false);
   const [donationData, setDonationData] = useState<any>(null);
+  const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
   
   const location = useLocation();
+
+  // Chiaa Gaming YouTube channel redirect logic
+  useEffect(() => {
+    if (status === "success" && donationType === "chiaa_gaming" && isVerificationComplete) {
+      // Start 60-second countdown
+      setRedirectCountdown(60);
+      
+      const countdownInterval = setInterval(() => {
+        setRedirectCountdown((prev) => {
+          if (prev === null || prev <= 1) {
+            clearInterval(countdownInterval);
+            // Redirect to YouTube channel
+            redirectToChiaaGamingChannel();
+            return null;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(countdownInterval);
+    }
+  }, [status, donationType, isVerificationComplete]);
+
+  const redirectToChiaaGamingChannel = () => {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const channelUrl = isMobile 
+      ? "https://youtube.com/c/ChiaaGaming" // Mobile YouTube app URL
+      : "https://www.youtube.com/c/ChiaaGaming"; // Desktop URL
+    
+    window.open(channelUrl, '_blank');
+  };
+
+  const handleManualRedirect = () => {
+    redirectToChiaaGamingChannel();
+  };
   
   useEffect(() => {
     const verifyAndRecordPayment = async () => {
@@ -240,6 +276,27 @@ const PaymentStatus = () => {
                 </p>
               </div>
             )}
+
+            {/* Chiaa Gaming specific redirect notification */}
+            {donationType === "chiaa_gaming" && redirectCountdown !== null && (
+              <div className="bg-pink-50 border border-pink-200 rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-center space-x-2 text-pink-600">
+                  <ExternalLink className="h-5 w-5" />
+                  <span className="font-medium">Redirecting to Chiaa Gaming Channel</span>
+                </div>
+                <p className="text-sm text-pink-700">
+                  You will be redirected to Chiaa Gaming's YouTube channel in {redirectCountdown} seconds
+                </p>
+                <Button 
+                  onClick={handleManualRedirect}
+                  className="bg-pink-500 hover:bg-pink-600 text-white"
+                  size="sm"
+                >
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  Visit Channel Now
+                </Button>
+              </div>
+            )}
             
             {/* Download Receipt Button */}
             <Button 
@@ -274,6 +331,27 @@ const PaymentStatus = () => {
             <p className="text-muted-foreground">
               We couldn't process your payment. Please try again or use a different payment method.
             </p>
+            
+            {/* Chiaa Gaming channel redirect for failed payments too */}
+            {donationType === "chiaa_gaming" && (
+              <div className="bg-pink-50 border border-pink-200 rounded-lg p-4 space-y-3 mt-4">
+                <div className="flex items-center justify-center space-x-2 text-pink-600">
+                  <ExternalLink className="h-5 w-5" />
+                  <span className="font-medium">Visit Chiaa Gaming Channel</span>
+                </div>
+                <p className="text-sm text-pink-700">
+                  Check out Chiaa Gaming's latest content while you're here!
+                </p>
+                <Button 
+                  onClick={handleManualRedirect}
+                  className="bg-pink-500 hover:bg-pink-600 text-white"
+                  size="sm"
+                >
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  Visit Channel
+                </Button>
+              </div>
+            )}
           </>
         )}
         
