@@ -20,8 +20,8 @@ const PaymentStatus = () => {
   // Chiaa Gaming YouTube channel redirect logic
   useEffect(() => {
     if (status === "success" && donationType === "chiaa_gaming" && isVerificationComplete) {
-      // Start 60-second countdown
-      setRedirectCountdown(60);
+      // Start 15-second countdown
+      setRedirectCountdown(15);
       
       const countdownInterval = setInterval(() => {
         setRedirectCountdown((prev) => {
