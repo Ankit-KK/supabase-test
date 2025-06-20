@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +10,7 @@ interface Donation {
   amount: number;
   message: string;
   created_at: string;
+  payment_status: string;
   gif_url?: string;
   voice_url?: string;
   custom_sound_url?: string;
@@ -407,7 +407,18 @@ const ChiaaGamingObsOverlay = () => {
   };
 
   // Add donation to queues in priority order: messages first, then GIFs, then sounds
+  // ONLY FOR SUCCESSFUL PAYMENTS
   const addDonationToQueues = (donation: Donation) => {
+    // Skip processing if payment is not successful
+    if (donation.payment_status !== "success") {
+      console.log(`[${componentId.current}] Skipping donation processing - payment not successful:`, {
+        donationId: donation.id,
+        name: donation.name,
+        paymentStatus: donation.payment_status
+      });
+      return;
+    }
+
     console.log(`[${componentId.current}] Processing donation with sequential priority:`, {
       donationId: donation.id,
       name: donation.name,
@@ -415,25 +426,26 @@ const ChiaaGamingObsOverlay = () => {
       hasVoice: !!donation.voice_url,
       hasGif: !!donation.gif_url,
       hasMessage: !!donation.message,
-      amount: donation.amount
+      amount: donation.amount,
+      paymentStatus: donation.payment_status
     });
 
     // 1. ALWAYS add message to queue first if messages are enabled and has text message content
     if (showMessages && donation.message && donation.message.trim()) {
-      console.log(`[${componentId.current}] Adding message to donation queue for donation:`, donation.id);
+      console.log(`[${componentId.current}] Adding message to donation queue for successful donation:`, donation.id);
       globalMessageQueue.push(donation);
     }
 
     // 2. Add GIF to queue (will be processed after messages)
     if (donation.gif_url) {
-      console.log(`[${componentId.current}] Adding GIF to queue for donation:`, donation.id);
+      console.log(`[${componentId.current}] Adding GIF to queue for successful donation:`, donation.id);
       const duration = 12000; // 12 seconds for GIFs
       globalGifQueue.push({ donation, duration });
     }
 
     // 3. Add custom sound to queue (will be processed after GIFs)
     if (donation.custom_sound_url && Number(donation.amount) >= 100) {
-      console.log(`[${componentId.current}] Adding custom sound to queue for donation:`, donation.id);
+      console.log(`[${componentId.current}] Adding custom sound to queue for successful donation:`, donation.id);
       try {
         const audio = new Audio(donation.custom_sound_url);
         audio.volume = 0.7;
@@ -446,7 +458,7 @@ const ChiaaGamingObsOverlay = () => {
 
     // 4. Add voice recording to queue (will be processed after custom sounds)
     if (donation.voice_url && Number(donation.amount) >= 100) {
-      console.log(`[${componentId.current}] Adding voice recording to queue for donation:`, donation.id);
+      console.log(`[${componentId.current}] Adding voice recording to queue for successful donation:`, donation.id);
       try {
         const audio = new Audio(donation.voice_url);
         audio.volume = 0.8;
@@ -458,7 +470,7 @@ const ChiaaGamingObsOverlay = () => {
       }
     }
     
-    console.log(`[${componentId.current}] Updated queue lengths:`, {
+    console.log(`[${componentId.current}] Updated queue lengths for successful donation:`, {
       messages: globalMessageQueue.length,
       gifs: globalGifQueue.length,
       customSounds: globalCustomSoundQueue.length,
@@ -468,7 +480,7 @@ const ChiaaGamingObsOverlay = () => {
 
     // Start processing if not already processing (messages have highest priority)
     if (!isProcessingMessages && !isProcessingGifs && !isProcessingCustomSounds && !isProcessingVoiceRecordings) {
-      console.log(`[${componentId.current}] Starting sequential queue processing`);
+      console.log(`[${componentId.current}] Starting sequential queue processing for successful donation`);
       setTimeout(() => {
         processNextMessage();
       }, 100);
@@ -479,7 +491,7 @@ const ChiaaGamingObsOverlay = () => {
   };
 
   useEffect(() => {
-    // Fetch today's total donations for goal progress
+    // Fetch today's total donations for goal progress - ONLY SUCCESSFUL PAYMENTS
     const fetchTotalDonations = async () => {
       try {
         const today = new Date();
@@ -489,7 +501,7 @@ const ChiaaGamingObsOverlay = () => {
         const { data, error } = await supabase
           .from("chiaa_gaming_donations")
           .select("amount")
-          .eq("payment_status", "success")
+          .eq("payment_status", "success") // Only count successful payments
           .gte("created_at", todayStart)
           .lte("created_at", todayEnd);
 
@@ -522,14 +534,21 @@ const ChiaaGamingObsOverlay = () => {
         (payload) => {
           try {
             const newDonation = payload.new as Donation;
-            console.log(`[${componentId.current}] New donation received in OBS overlay:`, newDonation.id, newDonation.name);
+            console.log(`[${componentId.current}] New donation received in OBS overlay:`, {
+              id: newDonation.id,
+              name: newDonation.name,
+              paymentStatus: newDonation.payment_status
+            });
             
             // Update total for goal only if payment is successful
-            if ((payload.new as any).payment_status === "success") {
+            if (newDonation.payment_status === "success") {
               setTotalDonations(prev => prev + Number(newDonation.amount));
+              console.log(`[${componentId.current}] Updated total donations for successful payment`);
+            } else {
+              console.log(`[${componentId.current}] Skipping total update for non-successful payment:`, newDonation.payment_status);
             }
             
-            // Add donation to sequential queues for processing
+            // Add donation to sequential queues for processing (only successful payments will be processed)
             addDonationToQueues(newDonation);
           } catch (error) {
             console.error(`[${componentId.current}] Error processing new donation:`, error);
