@@ -145,10 +145,10 @@ const ChiaaGamingPage = () => {
     }
 
     const parsedAmount = parseFloat(amount);
-    if (isNaN(parsedAmount) || parsedAmount < 1) {
+    if (isNaN(parsedAmount) || parsedAmount < 30) {
       toast({
         title: "Invalid amount",
-        description: "Please enter an amount greater than or equal to ₹1",
+        description: "Please enter an amount greater than or equal to ₹30",
         variant: "destructive",
       });
       return false;
@@ -424,11 +424,11 @@ const ChiaaGamingPage = () => {
                   <Input 
                     id="amount"
                     type="number"
-                    min="1"
+                    min="30"
                     step="1"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    placeholder="Minimum ₹1"
+                    placeholder="Minimum ₹30"
                     disabled={isLoading}
                     className="bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 h-7 sm:h-8 text-xs"
                   />
