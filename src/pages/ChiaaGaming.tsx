@@ -145,10 +145,10 @@ const ChiaaGamingPage = () => {
     }
 
     const parsedAmount = parseFloat(amount);
-    if (isNaN(parsedAmount) || parsedAmount < 30) {
+    if (isNaN(parsedAmount) || parsedAmount < 1) {
       toast({
         title: "Invalid amount",
-        description: "Please enter an amount greater than or equal to ₹30",
+        description: "Please enter an amount greater than or equal to ₹1",
         variant: "destructive",
       });
       return false;
@@ -337,7 +337,7 @@ const ChiaaGamingPage = () => {
   const isGifEligible = parseFloat(amount) >= 100;
   const isVoiceEligible = parseFloat(amount) >= 150;
   const isCustomSoundEligible = parseFloat(amount) >= 50;
-  const isMessageEligible = parseFloat(amount) >= 30;
+  const isMessageEligible = parseFloat(amount) >= 1;
 
   // Get voice duration based on amount
   const getVoiceDuration = () => {
@@ -424,11 +424,11 @@ const ChiaaGamingPage = () => {
                   <Input 
                     id="amount"
                     type="number"
-                    min="30"
+                    min="1"
                     step="1"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    placeholder="Minimum ₹30"
+                    placeholder="Minimum ₹1"
                     disabled={isLoading}
                     className="bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 h-7 sm:h-8 text-xs"
                   />
@@ -436,7 +436,7 @@ const ChiaaGamingPage = () => {
               </div>
               
               <p className="text-xs text-white/80 text-center">
-                ₹30+ for messages • ₹50+ for sounds • ₹100+ for GIF • ₹150+ for voice ({getVoiceDuration()})
+                ₹1+ for messages • ₹50+ for sounds • ₹100+ for GIF • ₹150+ for voice ({getVoiceDuration()})
               </p>
               
               <div className="space-y-1">
@@ -476,7 +476,7 @@ const ChiaaGamingPage = () => {
                           <span className="text-yellow-300">⚠️ Links, URLs, and social media handles are not allowed</span>
                         </>
                       ) : (
-                        <span className="text-yellow-300">Messages require ₹30+ donation</span>
+                        <span className="text-yellow-300">Messages require ₹1+ donation</span>
                       )}
                     </>
                   ) : (
