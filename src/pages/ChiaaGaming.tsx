@@ -337,7 +337,7 @@ const ChiaaGamingPage = () => {
   const isGifEligible = parseFloat(amount) >= 100;
   const isVoiceEligible = parseFloat(amount) >= 150;
   const isCustomSoundEligible = parseFloat(amount) >= 50;
-  const isMessageEligible = parseFloat(amount) >= 1;
+  const isMessageEligible = parseFloat(amount) >= 30;
 
   // Get voice duration based on amount
   const getVoiceDuration = () => {
@@ -436,7 +436,7 @@ const ChiaaGamingPage = () => {
               </div>
               
               <p className="text-xs text-white/80 text-center">
-                ₹1+ for messages • ₹50+ for sounds • ₹100+ for GIF • ₹150+ for voice ({getVoiceDuration()})
+                ₹30+ for messages • ₹50+ for sounds • ₹100+ for GIF • ₹150+ for voice ({getVoiceDuration()})
               </p>
               
               <div className="space-y-1">
@@ -476,7 +476,7 @@ const ChiaaGamingPage = () => {
                           <span className="text-yellow-300">⚠️ Links, URLs, and social media handles are not allowed</span>
                         </>
                       ) : (
-                        <span className="text-yellow-300">Messages require ₹1+ donation</span>
+                        <span className="text-yellow-300">Messages require ₹30+ donation</span>
                       )}
                     </>
                   ) : (

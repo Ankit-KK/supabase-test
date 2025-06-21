@@ -1,5 +1,3 @@
-
-
 import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
@@ -311,4 +309,3 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
 };
 
 export default VoiceRecording;
-
