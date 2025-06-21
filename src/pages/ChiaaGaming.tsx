@@ -42,8 +42,8 @@ const ChiaaGamingPage = () => {
       setSelectedGif(null);
     }
     
-    // Clear Voice if amount < 1
-    if (selectedVoice && (isNaN(parsedAmount) || parsedAmount < 1)) {
+    // Clear Voice if amount < 150
+    if (selectedVoice && (isNaN(parsedAmount) || parsedAmount < 150)) {
       setSelectedVoice(null);
     }
     
@@ -95,10 +95,10 @@ const ChiaaGamingPage = () => {
 
   const handleVoiceSelect = (file: File | null) => {
     const parsedAmount = parseFloat(amount);
-    if (file && (isNaN(parsedAmount) || parsedAmount < 1)) {
+    if (file && (isNaN(parsedAmount) || parsedAmount < 150)) {
       toast({
         title: "Premium feature", 
-        description: "Voice messages require a donation of ₹1 or more",
+        description: "Voice messages require a donation of ₹150 or more",
         variant: "destructive",
       });
       return;
@@ -145,10 +145,10 @@ const ChiaaGamingPage = () => {
     }
 
     const parsedAmount = parseFloat(amount);
-    if (isNaN(parsedAmount) || parsedAmount < 1) {
+    if (isNaN(parsedAmount) || parsedAmount < 30) {
       toast({
         title: "Invalid amount",
-        description: "Please enter an amount greater than or equal to ₹1",
+        description: "Please enter an amount greater than or equal to ₹30",
         variant: "destructive",
       });
       return false;
@@ -335,16 +335,16 @@ const ChiaaGamingPage = () => {
 
   // Check if premium features are eligible
   const isGifEligible = parseFloat(amount) >= 100;
-  const isVoiceEligible = parseFloat(amount) >= 1;
+  const isVoiceEligible = parseFloat(amount) >= 150;
   const isCustomSoundEligible = parseFloat(amount) >= 50;
-  const isMessageEligible = parseFloat(amount) >= 1;
+  const isMessageEligible = parseFloat(amount) >= 30;
 
   // Get voice duration based on amount
   const getVoiceDuration = () => {
     const parsedAmount = parseFloat(amount);
     if (parsedAmount >= 1000) return "60 seconds";
-    if (parsedAmount >= 250) return "25 seconds";
-    if (parsedAmount >= 1) return "15 seconds";
+    if (parsedAmount >= 300) return "30 seconds";
+    if (parsedAmount >= 150) return "15 seconds";
     return "Not available";
   };
 
@@ -424,11 +424,11 @@ const ChiaaGamingPage = () => {
                   <Input 
                     id="amount"
                     type="number"
-                    min="1"
+                    min="30"
                     step="1"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    placeholder="Minimum ₹1"
+                    placeholder="Minimum ₹30"
                     disabled={isLoading}
                     className="bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 h-7 sm:h-8 text-xs"
                   />
@@ -436,7 +436,7 @@ const ChiaaGamingPage = () => {
               </div>
               
               <p className="text-xs text-white/80 text-center">
-                ₹1+ for messages/voice ({getVoiceDuration()}) • ₹50+ for sounds • ₹100+ for GIF
+                ₹30+ for messages • ₹50+ for sounds • ₹100+ for GIF • ₹150+ for voice ({getVoiceDuration()})
               </p>
               
               <div className="space-y-1">
@@ -453,7 +453,7 @@ const ChiaaGamingPage = () => {
                       ? 'border-red-500 focus:border-red-500' 
                       : 'border-pink-300 focus:border-pink-500'
                   }`}
-                  disabled={isMessageDisabled}
+                  disabled={isMessageDisabled || !isMessageEligible}
                   maxLength={maxMessageLength}
                 />
                 
@@ -468,10 +468,16 @@ const ChiaaGamingPage = () => {
                 <p className="text-xs text-white/80">
                   {!selectedGif && !selectedVoice && !selectedCustomSoundUrl ? (
                     <>
-                      {message.length}/{maxMessageLength} chars
-                      {parseFloat(amount) >= 100 ? " (99 for ₹100+)" : " (50 for <₹100)"}
-                      <br />
-                      <span className="text-yellow-300">⚠️ Links, URLs, and social media handles are not allowed</span>
+                      {isMessageEligible ? (
+                        <>
+                          {message.length}/{maxMessageLength} chars
+                          {parseFloat(amount) >= 100 ? " (99 for ₹100+)" : " (50 for <₹100)"}
+                          <br />
+                          <span className="text-yellow-300">⚠️ Links, URLs, and social media handles are not allowed</span>
+                        </>
+                      ) : (
+                        <span className="text-yellow-300">Messages require ₹30+ donation</span>
+                      )}
                     </>
                   ) : (
                     <>
@@ -498,7 +504,7 @@ const ChiaaGamingPage = () => {
                   onVoiceSelect={handleVoiceSelect}
                   selectedVoice={selectedVoice}
                   disabled={isLoading || !!selectedGif || !!selectedCustomSoundUrl || !isVoiceEligible}
-                  minAmount={1}
+                  minAmount={150}
                   currentAmount={parseFloat(amount) || 0}
                 />
               </div>
