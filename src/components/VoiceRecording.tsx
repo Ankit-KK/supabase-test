@@ -1,5 +1,3 @@
-
-
 import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
@@ -17,7 +15,7 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
   onVoiceSelect, 
   selectedVoice, 
   disabled,
-  minAmount = 150,
+  minAmount = 0,
   currentAmount = 0
 }) => {
   const [isRecording, setIsRecording] = useState(false);
@@ -36,10 +34,9 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
 
   // Calculate max recording duration based on donation amount
   const getMaxDuration = (): number => {
-    if (currentAmount >= 1000) return 60; // 60 seconds for ₹1000+
-    if (currentAmount >= 300) return 30; // 30 seconds for ₹300-999
-    if (currentAmount >= 150) return 15; // 15 seconds for ₹150-299
-    return 15; // 15 seconds for ₹150+
+    if (currentAmount < 150) return 15; // 15 seconds for donations less than ₹150
+    if (currentAmount >= 150 && currentAmount < 300) return 30; // 30 seconds for ₹150-299
+    return 60; // 60 seconds for ₹300+
   };
 
   const maxDuration = getMaxDuration();
@@ -205,10 +202,9 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
   };
 
   const getDurationText = (): string => {
-    if (currentAmount >= 1000) return "60s max";
-    if (currentAmount >= 300) return "30s max";
-    if (currentAmount >= 150) return "15s max";
-    return "15s max";
+    if (currentAmount < 150) return "15s max";
+    if (currentAmount >= 150 && currentAmount < 300) return "30s max";
+    return "60s max";
   };
 
   return (
@@ -311,4 +307,3 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
 };
 
 export default VoiceRecording;
-
