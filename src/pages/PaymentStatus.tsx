@@ -40,19 +40,11 @@ const PaymentStatus = () => {
   }, [status, donationType, isVerificationComplete]);
 
   const redirectToChiaaGamingChannel = () => {
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    // Use the same working YouTube URL for both mobile and desktop
+    const youtubeUrl = "https://www.youtube.com/@_chiaa_gaming";
     
-    if (isMobile) {
-      // For mobile, use window.open with YouTube app URL scheme
-      // This should prompt to open in YouTube app if available
-      const youtubeAppUrl = "https://youtube.com/channel/UC_chiaa_gaming";
-      
-      // Try to open in new window/tab which should trigger app selection on mobile
-      window.open(youtubeAppUrl, '_blank', 'noopener,noreferrer');
-    } else {
-      // For desktop, open in new tab
-      window.open("https://www.youtube.com/@_chiaa_gaming", '_blank', 'noopener,noreferrer');
-    }
+    // Open in new tab/window for both mobile and desktop
+    window.open(youtubeUrl, '_blank', 'noopener,noreferrer');
   };
 
   const handleManualRedirect = () => {
@@ -297,9 +289,7 @@ const PaymentStatus = () => {
                   You will be redirected to Chiaa Gaming's YouTube channel in {redirectCountdown} seconds
                 </p>
                 <p className="text-xs text-pink-600">
-                  {/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
-                    ? "Will open YouTube app if available..." 
-                    : "Opening in new tab..."}
+                  Opening in new tab...
                 </p>
                 <Button 
                   onClick={handleManualRedirect}
@@ -364,9 +354,7 @@ const PaymentStatus = () => {
                 </p>
                 {redirectCountdown !== null && (
                   <p className="text-xs text-pink-600">
-                    {/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
-                      ? "Will open YouTube app if available..." 
-                      : "Opening in new tab..."}
+                    Opening in new tab...
                   </p>
                 )}
                 <Button 
