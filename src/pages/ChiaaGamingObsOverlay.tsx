@@ -231,7 +231,7 @@ const ChiaaGamingObsOverlay = () => {
     }
   };
 
-  // Process message queue with delay check (highest priority)
+  // Process message queue with delay check (highest priority) - ALWAYS PROCESS DONATION ALERTS
   const processNextMessage = () => {
     if (globalMessageQueue.length === 0) {
       isProcessingMessages = false;
@@ -249,7 +249,7 @@ const ChiaaGamingObsOverlay = () => {
     // Check if enough time has passed for the delay
     if (now < nextItem.scheduledTime) {
       const remainingDelay = nextItem.scheduledTime - now;
-      console.log(`[${componentId.current}] Message delayed for ${remainingDelay}ms more`);
+      console.log(`[${componentId.current}] Donation alert delayed for ${remainingDelay}ms more`);
       globalProcessingTimeout = setTimeout(() => {
         processNextMessage();
       }, remainingDelay);
@@ -267,22 +267,22 @@ const ChiaaGamingObsOverlay = () => {
 
     const { donation } = messageItem;
     
-    console.log(`[${componentId.current}] Processing delayed message from queue:`, donation.id, donation.name);
+    console.log(`[${componentId.current}] Processing delayed donation alert from queue:`, donation.id, donation.name);
     
     // Mark this donation as processed
     processedDonationIds.add(donation.id);
     
-    // Show the donation on all component instances
+    // Show the donation alert on all component instances - ALWAYS SHOW DONATION ALERTS
     setCurrentDonation(donation);
 
     // Auto-hide after 12 seconds
     const hideTimeout = setTimeout(() => {
-      console.log(`[${componentId.current}] Hiding message after 12 seconds:`, donation.id);
+      console.log(`[${componentId.current}] Hiding donation alert after 12 seconds:`, donation.id);
       
       setCurrentDonation(null);
       isProcessingMessages = false;
       
-      // Process next message after 3 seconds
+      // Process next donation alert after 3 seconds
       globalProcessingTimeout = setTimeout(() => {
         processNextMessage();
       }, 3000);
@@ -539,7 +539,7 @@ const ChiaaGamingObsOverlay = () => {
     playVoiceAudio();
   };
 
-  // Add donation to queues in priority order with 1-minute delay: messages first, then GIFs, then sounds
+  // Add donation to queues in priority order with 1-minute delay: donation alerts first, then GIFs, then sounds
   const addDonationToQueues = (donation: Donation) => {
     // Skip processing if payment is not successful
     if (donation.payment_status !== "success") {
@@ -566,13 +566,11 @@ const ChiaaGamingObsOverlay = () => {
       scheduledTime: new Date(scheduledTime).toLocaleTimeString()
     });
 
-    // 1. Add message to queue first if messages are enabled and has text message content
-    if (showMessages && donation.message && donation.message.trim()) {
-      console.log(`[${componentId.current}] Adding message to delayed queue (${delayMinutes} min delay):`, donation.id);
-      globalMessageQueue.push({ donation, scheduledTime });
-    }
+    // 1. ALWAYS add donation alert to queue - regardless of showMessages setting
+    console.log(`[${componentId.current}] Adding donation alert to delayed queue (${delayMinutes} min delay):`, donation.id);
+    globalMessageQueue.push({ donation, scheduledTime });
 
-    // 2. Add GIF to queue (will be processed after messages)
+    // 2. Add GIF to queue (will be processed after donation alerts)
     if (donation.gif_url) {
       console.log(`[${componentId.current}] Adding GIF to delayed queue (${delayMinutes} min delay):`, donation.id);
       const duration = 12000; // 12 seconds for GIFs
@@ -617,7 +615,7 @@ const ChiaaGamingObsOverlay = () => {
     }
     
     console.log(`[${componentId.current}] Updated delayed queue lengths:`, {
-      messages: globalMessageQueue.length,
+      donationAlerts: globalMessageQueue.length,
       gifs: globalGifQueue.length,
       customSounds: globalCustomSoundQueue.length,
       voice: globalVoiceQueue.length,
@@ -628,7 +626,7 @@ const ChiaaGamingObsOverlay = () => {
                          globalVoiceQueue.length > 0 ? new Date(globalVoiceQueue[0].scheduledTime).toLocaleTimeString() : 'None'
     });
 
-    // Start processing if not already processing (messages have highest priority)
+    // Start processing if not already processing (donation alerts have highest priority)
     if (!isProcessingMessages && !isProcessingGifs && !isProcessingCustomSounds && !isProcessingVoiceRecordings) {
       console.log(`[${componentId.current}] Starting delayed sequential queue processing`);
       setTimeout(() => {
@@ -742,8 +740,7 @@ const ChiaaGamingObsOverlay = () => {
   }, []);
 
   const progressPercentage = Math.min((totalDonations / goalTarget) * 100, 100);
-  const shouldHideDonationBox = currentDonation && (currentDonation.gif_url || currentDonation.voice_url);
-  const shouldShowTextMessage = currentDonation && currentDonation.message && !currentDonation.voice_url;
+  const shouldShowTextMessage = currentDonation && currentDonation.message && showMessages && !currentDonation.voice_url;
 
   return (
     <ObsConfigProvider>
@@ -760,7 +757,7 @@ const ChiaaGamingObsOverlay = () => {
               <div className="flex items-center space-x-2 mb-2">
                 <span className="text-blue-300 font-semibold">🎤 Voice Message Playing</span>
               </div>
-              {currentVoiceAlert.message && (
+              {currentVoiceAlert.message && showMessages && (
                 <p className="text-blue-50 text-sm leading-relaxed italic">"{currentVoiceAlert.message}"</p>
               )}
             </div>
@@ -779,7 +776,7 @@ const ChiaaGamingObsOverlay = () => {
               <div className="flex items-center space-x-2 mb-2">
                 <span className="text-orange-300 font-semibold">played custom sound</span>
               </div>
-              {currentCustomSoundAlert.message && (
+              {currentCustomSoundAlert.message && showMessages && (
                 <p className="text-orange-50 text-sm leading-relaxed">{currentCustomSoundAlert.message}</p>
               )}
             </div>
@@ -799,8 +796,8 @@ const ChiaaGamingObsOverlay = () => {
           </DraggableResizableBox>
         )}
 
-        {/* Regular Donation Messages with Enhanced Animation - ONLY SHOWS IF showMessages IS TRUE */}
-        {showMessages && currentDonation && !shouldHideDonationBox && (
+        {/* Donation Alert - ALWAYS SHOWS FOR SUCCESSFUL DONATIONS */}
+        {currentDonation && (
           <DraggableResizableBox className="animate-slide-in-right">
             <div className="relative overflow-hidden bg-gradient-to-r from-pink-600/90 to-purple-600/90 backdrop-blur-sm rounded-lg p-4 shadow-2xl border border-pink-500/50 max-w-md">
               {/* Animated background elements */}
