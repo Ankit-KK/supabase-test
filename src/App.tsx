@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,6 +18,7 @@ import NotFound from "./pages/NotFound";
 import PaymentCheckout from "./pages/PaymentCheckout";
 import PaymentStatus from "./pages/PaymentStatus";
 import DemoPaymentFlow from "./pages/DemoPaymentFlow";
+import ContractSigning from "./pages/ContractSigning";
 import Ankit from "./pages/Ankit";
 import AnkitLogin from "./pages/AnkitLogin";
 import AnkitDashboard from "./pages/AnkitDashboard";
@@ -60,6 +62,7 @@ const App = () => (
               <Route path="/payment-checkout" element={<PaymentCheckout />} />
               <Route path="/payment-status" element={<PaymentStatus />} />
               <Route path="/demo-payment" element={<DemoPaymentFlow />} />
+              <Route path="/contract-signing" element={<ContractSigning />} />
               
               {/* Ankit routes */}
               <Route path="/ankit" element={<Ankit />} />
