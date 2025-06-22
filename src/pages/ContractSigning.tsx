@@ -8,8 +8,9 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { FileText, PenTool, User, CheckCircle, Lock } from "lucide-react";
+import { FileText, PenTool, User, CheckCircle, Lock, Download } from "lucide-react";
 import { authenticateStreamer } from "@/services/streamerAuth";
+import jsPDF from "jspdf";
 
 const ContractSigning = () => {
   const [name, setName] = useState("");
@@ -19,6 +20,7 @@ const ContractSigning = () => {
   const [adminType, setAdminType] = useState<string | null>(null);
   const [hasExistingContract, setHasExistingContract] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [contractData, setContractData] = useState<any>(null);
   
   // Login form states
   const [loginUsername, setLoginUsername] = useState("");
@@ -60,6 +62,9 @@ const ContractSigning = () => {
       
       if (data) {
         setHasExistingContract(true);
+        setContractData(data);
+        setName(data.streamer_name);
+        setSignature(data.signature);
       }
     } catch (error) {
       console.error("Error checking existing contract:", error);
@@ -165,16 +170,8 @@ const ContractSigning = () => {
         description: "Your contract has been signed and saved.",
       });
 
-      // Redirect to appropriate dashboard
-      const dashboardRoutes: Record<string, string> = {
-        ankit: "/ankit/dashboard",
-        harish: "/harish/dashboard",
-        mackle: "/mackle/dashboard", 
-        rakazone: "/rakazone/dashboard",
-        chiaa_gaming: "/chiaa_gaming/dashboard"
-      };
-
-      navigate(dashboardRoutes[adminType!] || "/");
+      // Refresh contract data
+      checkExistingContract(adminType!);
 
     } catch (error: any) {
       console.error("Error signing contract:", error);
@@ -186,6 +183,86 @@ const ContractSigning = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const downloadContract = () => {
+    const doc = new jsPDF();
+    const currentDate = new Date().toLocaleDateString('en-IN', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+
+    // Set up the PDF styling
+    doc.setFontSize(16);
+    doc.text('HyperChat Service Agreement', 105, 20, { align: 'center' });
+    
+    doc.setFontSize(12);
+    let yPosition = 40;
+    
+    // Contract content
+    const contractText = [
+      'This Service Agreement ("Agreement") is entered into by and between:',
+      '',
+      'HyperChat Technologies Pvt. Ltd., a registered MSME under',
+      'Udyam Registration No. UP29D0047796, with its principal office at Ghaziabad,',
+      `and ${name},`,
+      'collectively referred to as the "Parties".',
+      '',
+      `Effective Date: ${currentDate}`,
+      '',
+      '1. Purpose',
+      'HyperChat provides a fan engagement and donation tool designed for live',
+      'streamers. This Agreement outlines the terms under which the Streamer',
+      'may access and use the HyperChat platform.',
+      '',
+      '2. Grant of Access',
+      'HyperChat grants the Streamer a non-exclusive, non-transferable license',
+      'to use its platform for the purpose of enhancing live streams and enabling',
+      'fan support through premium messages, real-time reactions, and related features.',
+      '',
+      '3. Streamer Responsibilities',
+      'The Streamer agrees to:',
+      '• Integrate HyperChat into their live streaming sessions',
+      '• Maintain an active and respectful community environment',
+      '• Not misuse the platform for offensive, illegal, or prohibited content',
+      '',
+      '4. Revenue Sharing',
+      'Revenue will be shared as follows:',
+      `• ${contractData?.streamer_cut || 95}% to the Streamer`,
+      `• ${contractData?.hyperchat_cut || 5}% to HyperChat (as platform/service fee)`,
+      '',
+      '5. Term & Termination',
+      'This Agreement continues until terminated by either party with 7 days written notice.',
+      '',
+      'IN WITNESS WHEREOF, the parties have executed this Agreement.',
+      '',
+      'HyperChat Technologies Pvt. Ltd.',
+      'By: Ankit Kumar',
+      'Title: Founder',
+      `Date: ${currentDate}`,
+      '',
+      `Streamer: ${name}`,
+      `Signature: ${signature.startsWith('data:') ? '[Digital Signature Applied]' : signature}`,
+      `Date: ${currentDate}`
+    ];
+
+    contractText.forEach((line) => {
+      if (yPosition > 270) {
+        doc.addPage();
+        yPosition = 20;
+      }
+      doc.text(line, 10, yPosition);
+      yPosition += 7;
+    });
+
+    // Save the PDF
+    doc.save(`HyperChat_Agreement_${adminType}_${currentDate.replace(/\//g, '-')}.pdf`);
+    
+    toast({
+      title: "Contract Downloaded",
+      description: "Your signed contract has been downloaded as PDF.",
+    });
   };
 
   // Login form for non-authenticated users
@@ -252,13 +329,20 @@ const ContractSigning = () => {
             </div>
             <CardTitle className="text-2xl text-green-600">Contract Already Signed</CardTitle>
           </CardHeader>
-          <CardContent className="text-center">
+          <CardContent className="text-center space-y-4">
             <p className="text-muted-foreground mb-6">
-              You have already signed the HyperChat Service Agreement.
+              You have already signed the HyperChat Service Agreement on{" "}
+              {contractData?.signed_at ? new Date(contractData.signed_at).toLocaleDateString('en-IN') : 'N/A'}.
             </p>
-            <Button onClick={() => navigate("/")}>
-              Return to Home
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button onClick={downloadContract}>
+                <Download className="mr-2 h-4 w-4" />
+                Download Contract PDF
+              </Button>
+              <Button variant="outline" onClick={() => navigate("/")}>
+                Return to Home
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
