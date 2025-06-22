@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +8,8 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { FileText, PenTool, User, CheckCircle } from "lucide-react";
+import { FileText, PenTool, User, CheckCircle, Lock } from "lucide-react";
+import { authenticateStreamer } from "@/services/streamerAuth";
 
 const ContractSigning = () => {
   const [name, setName] = useState("");
@@ -18,6 +18,13 @@ const ContractSigning = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [adminType, setAdminType] = useState<string | null>(null);
   const [hasExistingContract, setHasExistingContract] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  
+  // Login form states
+  const [loginUsername, setLoginUsername] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  
   const navigate = useNavigate();
 
   // Check if user is authenticated and get admin type
@@ -33,22 +40,15 @@ const ContractSigning = () => {
         }
       }
       
-      if (!foundAdminType) {
-        toast({
-          title: "Access Denied",
-          description: "Please login to access the contract signing page.",
-          variant: "destructive",
-        });
-        navigate("/");
-        return;
+      if (foundAdminType) {
+        setAdminType(foundAdminType);
+        setIsAuthenticated(true);
+        checkExistingContract(foundAdminType);
       }
-      
-      setAdminType(foundAdminType);
-      checkExistingContract(foundAdminType);
     };
 
     checkAuthStatus();
-  }, [navigate]);
+  }, []);
 
   const checkExistingContract = async (adminType: string) => {
     try {
@@ -63,6 +63,60 @@ const ContractSigning = () => {
       }
     } catch (error) {
       console.error("Error checking existing contract:", error);
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!loginUsername.trim() || !loginPassword.trim()) {
+      toast({
+        title: "Login Required",
+        description: "Please enter both username and password.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoggingIn(true);
+
+    try {
+      const result = await authenticateStreamer({
+        username: loginUsername.trim(),
+        password: loginPassword.trim(),
+      });
+
+      if (result.success && result.adminType) {
+        // Set session storage for authentication
+        sessionStorage.setItem(`${result.adminType}Auth`, "true");
+        if (result.isAdmin) {
+          sessionStorage.setItem(`${result.adminType}AdminAuth`, "true");
+        }
+
+        setAdminType(result.adminType);
+        setIsAuthenticated(true);
+        checkExistingContract(result.adminType);
+
+        toast({
+          title: "Login Successful",
+          description: "You can now sign the contract.",
+        });
+      } else {
+        toast({
+          title: "Login Failed",
+          description: result.message || "Invalid credentials.",
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      console.error("Login error:", error);
+      toast({
+        title: "Login Error",
+        description: "An error occurred during login. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -133,6 +187,60 @@ const ContractSigning = () => {
       setIsSubmitting(false);
     }
   };
+
+  // Login form for non-authenticated users
+  if (!isAuthenticated) {
+    return (
+      <div className="container mx-auto max-w-md py-10">
+        <Card>
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <Lock className="h-16 w-16 text-primary" />
+            </div>
+            <CardTitle className="text-2xl">Login to Sign Contract</CardTitle>
+            <p className="text-muted-foreground">
+              Please login with your admin credentials to access and sign the HyperChat Service Agreement.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  type="text"
+                  value={loginUsername}
+                  onChange={(e) => setLoginUsername(e.target.value)}
+                  placeholder="Enter your username"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  required
+                />
+              </div>
+
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={isLoggingIn}
+              >
+                {isLoggingIn ? "Logging in..." : "Login"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (hasExistingContract) {
     return (
