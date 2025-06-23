@@ -321,8 +321,6 @@ const ContractSigning = () => {
       `Date: ${currentDate}`,
       '',
       `Streamer: ${name}`,
-      `Signature: ${signature.startsWith('data:') ? '[Digital Signature Applied]' : signature}`,
-      `Date: ${currentDate}`
     ];
 
     contractText.forEach((line) => {
@@ -333,6 +331,35 @@ const ContractSigning = () => {
       doc.text(line, 10, yPosition);
       yPosition += 7;
     });
+
+    // Add signature section
+    if (yPosition > 250) {
+      doc.addPage();
+      yPosition = 20;
+    }
+
+    // Add signature
+    if (signature) {
+      if (signature.startsWith('data:')) {
+        // It's a drawn signature (base64 image)
+        try {
+          doc.text('Signature:', 10, yPosition);
+          yPosition += 10;
+          doc.addImage(signature, 'PNG', 10, yPosition, 60, 20);
+          yPosition += 25;
+        } catch (error) {
+          console.error('Error adding signature image:', error);
+          doc.text('Signature: [Digital Signature Applied]', 10, yPosition);
+          yPosition += 7;
+        }
+      } else {
+        // It's a typed name signature
+        doc.text(`Signature: ${signature}`, 10, yPosition);
+        yPosition += 7;
+      }
+    }
+
+    doc.text(`Date: ${currentDate}`, 10, yPosition);
 
     // Save the PDF
     doc.save(`HyperChat_Agreement_${adminType}_${currentDate.replace(/\//g, '-')}.pdf`);
