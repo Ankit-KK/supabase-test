@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { FileText, PenTool, User, CheckCircle, Lock, Download, RotateCcw, LogOut } from "lucide-react";
+import { FileText, PenTool, User, CheckCircle, Lock, Download, RotateCcw, LogOut, Percent } from "lucide-react";
 import { authenticateStreamer } from "@/services/streamerAuth";
 import jsPDF from "jspdf";
 
@@ -21,6 +21,10 @@ const ContractSigning = () => {
   const [hasExistingContract, setHasExistingContract] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [contractData, setContractData] = useState<any>(null);
+  
+  // Revenue share states
+  const [streamerCut, setStreamerCut] = useState(95);
+  const [hyperchatCut, setHyperchatCut] = useState(5);
   
   // Login form states
   const [loginUsername, setLoginUsername] = useState("");
@@ -70,10 +74,27 @@ const ContractSigning = () => {
         setContractData(data);
         setName(data.streamer_name);
         setSignature(data.signature);
+        setStreamerCut(data.streamer_cut || 95);
+        setHyperchatCut(data.hyperchat_cut || 5);
       }
     } catch (error) {
       console.error("Error checking existing contract:", error);
     }
+  };
+
+  // Handle revenue share adjustment
+  const handleStreamerCutChange = (value: string) => {
+    const newStreamerCut = Math.max(1, Math.min(99, parseInt(value) || 95));
+    const newHyperchatCut = 100 - newStreamerCut;
+    setStreamerCut(newStreamerCut);
+    setHyperchatCut(newHyperchatCut);
+  };
+
+  const handleHyperchatCutChange = (value: string) => {
+    const newHyperchatCut = Math.max(1, Math.min(99, parseInt(value) || 5));
+    const newStreamerCut = 100 - newHyperchatCut;
+    setHyperchatCut(newHyperchatCut);
+    setStreamerCut(newStreamerCut);
   };
 
   // Signature canvas functions
@@ -224,6 +245,16 @@ const ContractSigning = () => {
       return;
     }
 
+    // Validate revenue share totals 100%
+    if (streamerCut + hyperchatCut !== 100) {
+      toast({
+        title: "Invalid Revenue Share",
+        description: "Revenue shares must total 100%.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -235,8 +266,8 @@ const ContractSigning = () => {
           signature: signature.trim(),
           signed_at: new Date().toISOString(),
           agreed_to_terms: true,
-          streamer_cut: 95, // Default as per contract
-          hyperchat_cut: 5 // Default as per contract
+          streamer_cut: streamerCut,
+          hyperchat_cut: hyperchatCut
         });
 
       if (error) {
@@ -307,8 +338,8 @@ const ContractSigning = () => {
       '',
       '4. Revenue Sharing',
       'Revenue will be shared as follows:',
-      `• ${contractData?.streamer_cut || 95}% to the Streamer`,
-      `• ${contractData?.hyperchat_cut || 5}% to HyperChat (as platform/service fee)`,
+      `• ${contractData?.streamer_cut || streamerCut}% to the Streamer`,
+      `• ${contractData?.hyperchat_cut || hyperchatCut}% to HyperChat (as platform/service fee)`,
       '',
       '5. Term & Termination',
       'This Agreement continues until terminated by either party with 7 days written notice.',
@@ -639,6 +670,72 @@ const ContractSigning = () => {
         </CardContent>
       </Card>
 
+      {/* Revenue Share Configuration */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Percent className="h-5 w-5" />
+            Revenue Share Configuration
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="bg-blue-50 p-4 rounded-lg border">
+            <p className="text-sm text-blue-800 mb-4">
+              <strong>Customize your revenue split:</strong> Adjust the percentage share between you and HyperChat. 
+              The default is 95% for streamers and 5% for HyperChat platform fees.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="streamer-cut">Your Share (%)</Label>
+              <Input
+                id="streamer-cut"
+                type="number"
+                min="1"
+                max="99"
+                value={streamerCut}
+                onChange={(e) => handleStreamerCutChange(e.target.value)}
+                className="text-lg font-semibold"
+              />
+              <p className="text-sm text-muted-foreground">
+                You will receive {streamerCut}% of each donation
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="hyperchat-cut">HyperChat Platform Fee (%)</Label>
+              <Input
+                id="hyperchat-cut"
+                type="number"
+                min="1"
+                max="99"
+                value={hyperchatCut}
+                onChange={(e) => handleHyperchatCutChange(e.target.value)}
+                className="text-lg font-semibold"
+              />
+              <p className="text-sm text-muted-foreground">
+                HyperChat will receive {hyperchatCut}% for platform services
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-muted/50 p-4 rounded-lg">
+            <div className="flex justify-between items-center">
+              <span className="font-medium">Total Revenue Split:</span>
+              <span className={`font-bold text-lg ${streamerCut + hyperchatCut === 100 ? 'text-green-600' : 'text-red-600'}`}>
+                {streamerCut + hyperchatCut}%
+              </span>
+            </div>
+            {streamerCut + hyperchatCut !== 100 && (
+              <p className="text-sm text-red-600 mt-2">
+                ⚠️ Revenue shares must total exactly 100%
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Signing Form */}
       <Card>
         <CardHeader>
@@ -742,6 +839,7 @@ const ContractSigning = () => {
                     day: 'numeric' 
                   })}</p>
                   <p><strong>Account Type:</strong> {adminType?.replace('_', ' ').toUpperCase()}</p>
+                  <p><strong>Revenue Split:</strong> You: {streamerCut}% | HyperChat: {hyperchatCut}%</p>
                 </div>
               </div>
             </div>
@@ -749,7 +847,7 @@ const ContractSigning = () => {
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={isSubmitting}
+              disabled={isSubmitting || streamerCut + hyperchatCut !== 100}
             >
               {isSubmitting ? "Signing Contract..." : "Sign Agreement"}
             </Button>
