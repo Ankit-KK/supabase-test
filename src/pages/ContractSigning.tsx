@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { FileText, PenTool, User, CheckCircle, Lock, Download } from "lucide-react";
+import { FileText, PenTool, User, CheckCircle, Lock, Download, RotateCcw } from "lucide-react";
 import { authenticateStreamer } from "@/services/streamerAuth";
 import jsPDF from "jspdf";
 
@@ -26,6 +26,11 @@ const ContractSigning = () => {
   const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  
+  // Signature canvas states
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [hasSignature, setHasSignature] = useState(false);
   
   const navigate = useNavigate();
 
@@ -70,6 +75,79 @@ const ContractSigning = () => {
       console.error("Error checking existing contract:", error);
     }
   };
+
+  // Signature canvas functions
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (!canvasRef.current) return;
+    
+    setIsDrawing(true);
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const ctx = canvas.getContext('2d');
+    
+    if (ctx) {
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      
+      const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
+      const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+      
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+    }
+  };
+
+  const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isDrawing || !canvasRef.current) return;
+    
+    e.preventDefault();
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const ctx = canvas.getContext('2d');
+    
+    if (ctx) {
+      const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
+      const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+      
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      setHasSignature(true);
+    }
+  };
+
+  const stopDrawing = () => {
+    setIsDrawing(false);
+    if (canvasRef.current && hasSignature) {
+      const signatureData = canvasRef.current.toDataURL();
+      setSignature(signatureData);
+    }
+  };
+
+  const clearSignature = () => {
+    if (!canvasRef.current) return;
+    
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      setHasSignature(false);
+      setSignature("");
+    }
+  };
+
+  // Initialize canvas
+  useEffect(() => {
+    if (canvasRef.current && signatureType === 'signature') {
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+    }
+  }, [signatureType]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,7 +218,7 @@ const ContractSigning = () => {
     if (!signature.trim()) {
       toast({
         title: "Signature Required",
-        description: signatureType === "signature" ? "Please enter your signature." : "Please enter your name for signing.",
+        description: signatureType === "signature" ? "Please draw your signature." : "Please enter your name for signing.",
         variant: "destructive",
       });
       return;
@@ -481,7 +559,7 @@ const ContractSigning = () => {
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="signature" id="signature" />
-                  <Label htmlFor="signature">Digital Signature</Label>
+                  <Label htmlFor="signature">Draw Signature</Label>
                 </div>
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="name" id="name-sign" />
@@ -490,25 +568,57 @@ const ContractSigning = () => {
               </RadioGroup>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="signature-input">
-                {signatureType === "signature" ? "Digital Signature" : "Type Your Name"}
-              </Label>
-              <Input
-                id="signature-input"
-                type="text"
-                value={signature}
-                onChange={(e) => setSignature(e.target.value)}
-                placeholder={signatureType === "signature" ? "Enter your signature" : "Type your name to sign"}
-                required
-                className={signatureType === "signature" ? "font-cursive text-lg" : ""}
-              />
-              <p className="text-xs text-muted-foreground">
-                {signatureType === "signature" 
-                  ? "This will serve as your digital signature" 
-                  : "Your typed name will serve as your signature"}
-              </p>
-            </div>
+            {signatureType === "signature" ? (
+              <div className="space-y-4">
+                <Label>Draw Your Signature</Label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-white">
+                  <canvas
+                    ref={canvasRef}
+                    width={400}
+                    height={200}
+                    className="border border-gray-200 rounded cursor-crosshair w-full max-w-md mx-auto block"
+                    onMouseDown={startDrawing}
+                    onMouseMove={draw}
+                    onMouseUp={stopDrawing}
+                    onMouseLeave={stopDrawing}
+                    onTouchStart={startDrawing}
+                    onTouchMove={draw}
+                    onTouchEnd={stopDrawing}
+                    style={{ touchAction: 'none' }}
+                  />
+                  <div className="flex justify-center mt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={clearSignature}
+                      disabled={!hasSignature}
+                    >
+                      <RotateCcw className="mr-2 h-4 w-4" />
+                      Clear Signature
+                    </Button>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Draw your signature in the box above using your mouse or finger
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="signature-input">Type Your Name</Label>
+                <Input
+                  id="signature-input"
+                  type="text"
+                  value={signature}
+                  onChange={(e) => setSignature(e.target.value)}
+                  placeholder="Type your name to sign"
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  Your typed name will serve as your signature
+                </p>
+              </div>
+            )}
 
             <Separator />
 
