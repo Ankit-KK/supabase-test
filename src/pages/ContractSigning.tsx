@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { FileText, PenTool, User, CheckCircle, Lock, Download, RotateCcw } from "lucide-react";
+import { FileText, PenTool, User, CheckCircle, Lock, Download, RotateCcw, LogOut } from "lucide-react";
 import { authenticateStreamer } from "@/services/streamerAuth";
 import jsPDF from "jspdf";
 
@@ -370,6 +370,28 @@ const ContractSigning = () => {
     });
   };
 
+  const handleLogout = () => {
+    // Clear session storage
+    const adminTypes = ['ankit', 'harish', 'mackle', 'rakazone', 'chiaa_gaming'];
+    adminTypes.forEach(type => {
+      sessionStorage.removeItem(`${type}Auth`);
+      sessionStorage.removeItem(`${type}AdminAuth`);
+    });
+
+    // Reset states
+    setIsAuthenticated(false);
+    setAdminType(null);
+    setHasExistingContract(false);
+    setContractData(null);
+    setName("");
+    setSignature("");
+
+    toast({
+      title: "Logged Out",
+      description: "You have been logged out successfully.",
+    });
+  };
+
   // Login form for non-authenticated users
   if (!isAuthenticated) {
     return (
@@ -432,13 +454,68 @@ const ContractSigning = () => {
             <div className="flex justify-center mb-4">
               <CheckCircle className="h-16 w-16 text-green-500" />
             </div>
-            <CardTitle className="text-2xl text-green-600">Contract Already Signed</CardTitle>
+            <CardTitle className="text-2xl text-green-600">Contract Signed Successfully</CardTitle>
+            <div className="flex justify-end mt-4">
+              <Button variant="outline" size="sm" onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout
+              </Button>
+            </div>
           </CardHeader>
-          <CardContent className="text-center space-y-4">
-            <p className="text-muted-foreground mb-6">
-              You have already signed the HyperChat Service Agreement on{" "}
-              {contractData?.signed_at ? new Date(contractData.signed_at).toLocaleDateString('en-IN') : 'N/A'}.
-            </p>
+          <CardContent className="space-y-6">
+            <div className="text-center">
+              <p className="text-muted-foreground mb-6">
+                You have successfully signed the HyperChat Service Agreement on{" "}
+                {contractData?.signed_at ? new Date(contractData.signed_at).toLocaleDateString('en-IN') : 'N/A'}.
+              </p>
+            </div>
+
+            {/* Display Contract Details */}
+            <Card className="bg-muted/30">
+              <CardHeader>
+                <CardTitle className="text-lg">Contract Details</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Streamer Name</p>
+                    <p className="text-base">{contractData?.streamer_name}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Account Type</p>
+                    <p className="text-base">{adminType?.replace('_', ' ').toUpperCase()}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Revenue Share</p>
+                    <p className="text-base">{contractData?.streamer_cut}% Streamer / {contractData?.hyperchat_cut}% HyperChat</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Contract Status</p>
+                    <p className="text-base text-green-600 font-medium">Active</p>
+                  </div>
+                </div>
+                
+                {contractData?.signature && (
+                  <div className="pt-4">
+                    <p className="text-sm font-medium text-muted-foreground mb-2">Signature</p>
+                    {contractData.signature.startsWith('data:') ? (
+                      <div className="border rounded-lg p-4 bg-white inline-block">
+                        <img 
+                          src={contractData.signature} 
+                          alt="Digital Signature" 
+                          className="max-w-[200px] max-h-[80px]"
+                        />
+                      </div>
+                    ) : (
+                      <p className="text-base italic border rounded-lg p-3 bg-white inline-block">
+                        {contractData.signature}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button onClick={downloadContract}>
                 <Download className="mr-2 h-4 w-4" />
@@ -457,7 +534,13 @@ const ContractSigning = () => {
   return (
     <div className="container mx-auto max-w-4xl py-10 space-y-8">
       <div className="text-center">
-        <h1 className="text-3xl font-bold mb-2">HyperChat Service Agreement</h1>
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-3xl font-bold">HyperChat Service Agreement</h1>
+          <Button variant="outline" size="sm" onClick={handleLogout}>
+            <LogOut className="mr-2 h-4 w-4" />
+            Logout
+          </Button>
+        </div>
         <p className="text-muted-foreground">Please review and sign the service agreement below</p>
       </div>
 
