@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, calculateMonthlyTotal } from "@/utils/dashboardUtils";
-import { LogOut, MessageSquare, Image, Mic, Volume2, MessageCircle, Play, Pause } from "lucide-react";
+import { LogOut, MessageSquare, Image, Mic, Volume2, MessageCircle, Play, Pause, Clock } from "lucide-react";
 import CSVExportDialog from "@/components/CSVExportDialog";
 import SecureDataDisplay from "@/components/SecureDataDisplay";
 import { logSecurityEvent } from "@/utils/rateLimiting";
