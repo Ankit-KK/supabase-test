@@ -14,6 +14,7 @@ import { generateObsToken, validateSecureId } from "@/utils/secureIdGenerator";
 import { validateAndSanitizeInput, sanitizeUrl, escapeHtml } from "@/utils/xssProtection";
 import { CSRFProtection } from "@/utils/csrfProtection";
 import { SecurityMonitor, SECURITY_EVENTS } from "@/utils/securityMonitoring";
+import { useVoiceCleanup } from "@/hooks/useVoiceCleanup";
 
 interface Donation {
   id: string;
@@ -54,6 +55,9 @@ const ChiaaGamingDonationMessages = () => {
   useEffect(() => {
     CSRFProtection.generateToken();
   }, []);
+
+  // Use the voice cleanup hook
+  useVoiceCleanup();
 
   // Function to fetch donations data - only from today
   const fetchDonations = async () => {
@@ -632,11 +636,27 @@ const ChiaaGamingDonationMessages = () => {
 
       await audio.play();
       
-      SecurityMonitor.logSecurityEvent({
-        type: 'voice_message_replayed',
-        severity: 'low',
-        details: `Donation ID: ${donationId}`,
-      });
+      // Mark voice as played in dashboard with timestamp
+      try {
+        const { error: updateError } = await supabase
+          .from('donation_gifs')
+          .update({ 
+            last_played_at: new Date().toISOString(),
+            status: 'displayed'
+          })
+          .eq('donation_id', donationId)
+          .eq('file_type', 'voice');
+
+        if (updateError) {
+          console.error('Error updating voice play timestamp:', updateError);
+        } else {
+          console.log('Voice play timestamp updated for cleanup scheduling');
+        }
+      } catch (dbError) {
+        console.error('Database error updating voice play timestamp:', dbError);
+      }
+      
+      logSecurityEvent('VOICE_MESSAGE_REPLAYED', `Donation ID: ${donationId}`);
       
     } catch (error) {
       console.error("Error playing voice:", error);

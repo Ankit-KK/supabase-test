@@ -235,6 +235,26 @@ const ChiaaGamingDashboard = () => {
 
       await audio.play();
       
+      // Mark voice as played in dashboard with timestamp
+      try {
+        const { error: updateError } = await supabase
+          .from('donation_gifs')
+          .update({ 
+            last_played_at: new Date().toISOString(),
+            status: 'displayed'
+          })
+          .eq('donation_id', donationId)
+          .eq('file_type', 'voice');
+
+        if (updateError) {
+          console.error('Error updating voice play timestamp:', updateError);
+        } else {
+          console.log('Voice play timestamp updated for cleanup scheduling');
+        }
+      } catch (dbError) {
+        console.error('Database error updating voice play timestamp:', dbError);
+      }
+      
       logSecurityEvent('VOICE_MESSAGE_REPLAYED', `Donation ID: ${donationId}`);
       
     } catch (error) {
