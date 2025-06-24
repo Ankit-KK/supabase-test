@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthProtection } from "@/hooks/useAuthProtection";
-import { Link as LinkIcon, ExternalLink, Image, Mic, Volume2 } from "lucide-react";
+import { Link as LinkIcon, ExternalLink, Image, Mic, Volume2, Play, Pause } from "lucide-react";
 import { generateObsToken, validateSecureId } from "@/utils/secureIdGenerator";
 import { validateAndSanitizeInput, sanitizeUrl, escapeHtml } from "@/utils/xssProtection";
 import { CSRFProtection } from "@/utils/csrfProtection";
@@ -38,9 +38,11 @@ const ChiaaGamingDonationMessages = () => {
   const [showGoal, setShowGoal] = useState<boolean>(false);
   const [goalName, setGoalName] = useState<string>("Gaming Goal");
   const [goalTarget, setGoalTarget] = useState<number>(1000);
+  const [playingAudio, setPlayingAudio] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const channelRef = useRef<any>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   
   // Use the auth protection hook to guard this route
   useAuthProtection({
@@ -528,10 +530,25 @@ const ChiaaGamingDonationMessages = () => {
     
     if (donation.voice_url) {
       badges.push(
-        <Badge key="voice" variant="secondary" className="text-xs bg-blue-500/20 text-blue-300 border-blue-500/50">
-          <Mic className="w-3 h-3 mr-1" />
-          Voice
-        </Badge>
+        <div key="voice" className="flex items-center gap-1">
+          <Badge variant="secondary" className="text-xs bg-blue-500/20 text-blue-300 border-blue-500/50">
+            <Mic className="w-3 h-3 mr-1" />
+            Voice
+          </Badge>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-6 w-6 p-0 text-blue-300 hover:text-blue-100 hover:bg-blue-500/20"
+            onClick={() => handlePlayVoice(donation.voice_url!, donation.id)}
+            title={playingAudio === donation.id ? "Stop voice message" : "Play voice message"}
+          >
+            {playingAudio === donation.id ? (
+              <Pause className="w-3 h-3" />
+            ) : (
+              <Play className="w-3 h-3" />
+            )}
+          </Button>
+        </div>
       );
     }
     
@@ -574,6 +591,72 @@ const ChiaaGamingDonationMessages = () => {
       window.open(goalObsLink, '_blank');
     }
   };
+
+  // Handle playing voice messages
+  const handlePlayVoice = async (voiceUrl: string, donationId: string) => {
+    try {
+      if (playingAudio === donationId) {
+        // Stop current audio
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current = null;
+        }
+        setPlayingAudio(null);
+        return;
+      }
+
+      // Stop any currently playing audio
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+
+      // Create new audio element
+      const audio = new Audio(voiceUrl);
+      audioRef.current = audio;
+      setPlayingAudio(donationId);
+
+      audio.onended = () => {
+        setPlayingAudio(null);
+        audioRef.current = null;
+      };
+
+      audio.onerror = () => {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to play voice message",
+        });
+        setPlayingAudio(null);
+        audioRef.current = null;
+      };
+
+      await audio.play();
+      
+      SecurityMonitor.logSecurityEvent({
+        type: 'voice_message_replayed',
+        severity: 'low',
+        details: `Donation ID: ${donationId}`,
+      });
+      
+    } catch (error) {
+      console.error("Error playing voice:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to play voice message",
+      });
+      setPlayingAudio(null);
+    }
+  };
+
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-900 via-purple-900 to-black">
