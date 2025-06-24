@@ -104,3 +104,65 @@ export const uploadVoice = async (file: File): Promise<string | null> => {
     return null;
   }
 };
+
+// Add a function to clean up old voice recordings (can be called periodically)
+export const cleanupOldVoiceRecordings = async (daysOld: number = 7): Promise<void> => {
+  try {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - daysOld);
+    
+    console.log(`CLEANUP: Starting cleanup of voice recordings older than ${daysOld} days`);
+    
+    // Get old voice recordings that have been displayed
+    const { data: oldVoices, error: fetchError } = await supabase
+      .from('donation_gifs')
+      .select('*')
+      .eq('file_type', 'voice')
+      .eq('status', 'displayed')
+      .lt('displayed_at', cutoffDate.toISOString());
+
+    if (fetchError) {
+      console.error("CLEANUP ERROR: Error fetching old voice recordings:", fetchError);
+      return;
+    }
+
+    if (!oldVoices || oldVoices.length === 0) {
+      console.log("CLEANUP: No old voice recordings to clean up");
+      return;
+    }
+
+    console.log(`CLEANUP: Found ${oldVoices.length} old voice recordings to delete`);
+
+    // Delete files from storage
+    for (const voice of oldVoices) {
+      try {
+        if (voice.file_name) {
+          const { error: deleteError } = await supabase.storage
+            .from('donation-gifs')
+            .remove([voice.file_name]);
+
+          if (deleteError) {
+            console.error(`CLEANUP ERROR: Error deleting voice file ${voice.file_name}:`, deleteError);
+          } else {
+            console.log(`CLEANUP: Voice file deleted successfully: ${voice.file_name}`);
+            
+            // Mark as deleted in database
+            await supabase
+              .from('donation_gifs')
+              .update({ 
+                deleted_at: new Date().toISOString(),
+                status: 'deleted'
+              })
+              .eq('id', voice.id);
+          }
+        }
+      } catch (error) {
+        console.error(`CLEANUP ERROR: Exception cleaning up voice ${voice.file_name}:`, error);
+      }
+    }
+
+    console.log("CLEANUP: Voice recordings cleanup completed");
+  } catch (error) {
+    console.error("CLEANUP ERROR: Exception in cleanupOldVoiceRecordings:", error);
+  }
+};

@@ -188,42 +188,49 @@ const ChiaaGamingObsOverlay = () => {
         console.error(`Database error when marking ${mediaType} as displayed:`, dbError);
       }
 
-      // Extract filename safely
-      try {
-        const urlParts = mediaUrl.split('/');
-        const fileName = urlParts[urlParts.length - 1];
-        
-        if (fileName) {
-          const { error: deleteError } = await supabase.storage
-            .from('donation-gifs')
-            .remove([fileName]);
+      // Only delete GIFs immediately - keep voice recordings for replay
+      if (mediaType === 'gif') {
+        // Extract filename safely
+        try {
+          const urlParts = mediaUrl.split('/');
+          const fileName = urlParts[urlParts.length - 1];
+          
+          if (fileName) {
+            const { error: deleteError } = await supabase.storage
+              .from('donation-gifs')
+              .remove([fileName]);
 
-          if (deleteError) {
-            console.error(`Error deleting ${mediaType} file:`, deleteError);
-          } else {
-            console.log(`${mediaType} file deleted successfully:`, fileName);
-          }
-
-          // Mark as deleted
-          try {
-            const { error: markDeletedError } = await supabase
-              .from("donation_gifs")
-              .update({ 
-                deleted_at: new Date().toISOString(),
-                status: 'deleted'
-              })
-              .eq("donation_id", donationId)
-              .eq("file_type", mediaType);
-
-            if (markDeletedError) {
-              console.error(`Error marking ${mediaType} as deleted:`, markDeletedError);
+            if (deleteError) {
+              console.error(`Error deleting ${mediaType} file:`, deleteError);
+            } else {
+              console.log(`${mediaType} file deleted successfully:`, fileName);
             }
-          } catch (markError) {
-            console.error(`Error marking ${mediaType} as deleted:`, markError);
+
+            // Mark as deleted
+            try {
+              const { error: markDeletedError } = await supabase
+                .from("donation_gifs")
+                .update({ 
+                  deleted_at: new Date().toISOString(),
+                  status: 'deleted'
+                })
+                .eq("donation_id", donationId)
+                .eq("file_type", mediaType);
+
+              if (markDeletedError) {
+                console.error(`Error marking ${mediaType} as deleted:`, markDeletedError);
+              }
+            } catch (markError) {
+              console.error(`Error marking ${mediaType} as deleted:`, markError);
+            }
           }
+        } catch (fileError) {
+          console.error(`Error processing file deletion for ${mediaType}:`, fileError);
         }
-      } catch (fileError) {
-        console.error(`Error processing file deletion for ${mediaType}:`, fileError);
+      } else if (mediaType === 'voice') {
+        // For voice recordings, only mark as displayed but don't delete
+        // This allows users to replay them from dashboard/messages tab
+        console.log(`Voice recording marked as displayed but kept for replay: ${donationId}`);
       }
 
     } catch (error) {
@@ -493,7 +500,7 @@ const ChiaaGamingObsOverlay = () => {
       setCurrentVoiceAlert(null);
       isProcessingVoiceRecordings = false;
       
-      // Clean up voice recording after playback
+      // Mark voice recording as displayed but DON'T delete it for replay functionality
       if (donation.voice_url) {
         cleanupMedia(donation.id, donation.voice_url, 'voice');
       }
@@ -519,7 +526,7 @@ const ChiaaGamingObsOverlay = () => {
       setCurrentVoiceAlert(null);
       isProcessingVoiceRecordings = false;
       
-      // Clean up voice recording
+      // Mark voice recording as displayed but DON'T delete it for replay functionality
       if (donation.voice_url) {
         cleanupMedia(donation.id, donation.voice_url, 'voice');
       }
