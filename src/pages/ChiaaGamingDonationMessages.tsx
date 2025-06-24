@@ -1,20 +1,16 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { Label } from "@/components/ui/label";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuthProtection } from "@/hooks/useAuthProtection";
-import { Link as LinkIcon, ExternalLink, Image, Mic, Volume2, Play, Pause } from "lucide-react";
-import { generateObsToken, validateSecureId } from "@/utils/secureIdGenerator";
-import { validateAndSanitizeInput, sanitizeUrl, escapeHtml } from "@/utils/xssProtection";
-import { CSRFProtection } from "@/utils/csrfProtection";
-import { SecurityMonitor, SECURITY_EVENTS } from "@/utils/securityMonitoring";
-import { useVoiceCleanup } from "@/hooks/useVoiceCleanup";
+import { useToast } from "@/hooks/use-toast";
+import { formatCurrency, calculateMonthlyTotal } from "@/utils/dashboardUtils";
+import { LogOut, MessageSquare, Image, Mic, Volume2, MessageCircle, Play, Pause } from "lucide-react";
+import CSVExportDialog from "@/components/CSVExportDialog";
+import SecureDataDisplay from "@/components/SecureDataDisplay";
+import { logSecurityEvent } from "@/utils/rateLimiting";
 
 interface Donation {
   id: string;
@@ -32,108 +28,37 @@ interface Donation {
 
 const ChiaaGamingDonationMessages = () => {
   const [donations, setDonations] = useState<Donation[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [obsLink, setObsLink] = useState<string>("");
-  const [goalObsLink, setGoalObsLink] = useState<string>("");
-  const [showMessages, setShowMessages] = useState<boolean>(true);
-  const [showGoal, setShowGoal] = useState<boolean>(false);
-  const [goalName, setGoalName] = useState<string>("Gaming Goal");
-  const [goalTarget, setGoalTarget] = useState<number>(1000);
+  const [loading, setLoading] = useState(true);
+  const [monthlyTotal, setMonthlyTotal] = useState(0);
+  const [realtimeAlert, setRealtimeAlert] = useState<Donation | null>(null);
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const channelRef = useRef<any>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  
-  // Use the auth protection hook to guard this route
-  useAuthProtection({
-    redirectTo: "/chiaa_gaming/login",
-    authKey: "chiaaGamingAuth"
-  });
 
-  // Initialize CSRF protection
   useEffect(() => {
-    CSRFProtection.generateToken();
-  }, []);
-
-  // Use the voice cleanup hook
-  useVoiceCleanup();
-
-  // Function to fetch donations data - only from today
-  const fetchDonations = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Get today's date in ISO format for filtering
-      const today = new Date();
-      const todayStart = `${today.toISOString().split('T')[0]}T00:00:00`;
-      const todayEnd = `${today.toISOString().split('T')[0]}T23:59:59`;
-      
-      const { data, error } = await supabase
-        .from("chiaa_gaming_donations")
-        .select("*")
-        .eq("payment_status", "success")
-        .gte("created_at", todayStart)
-        .lte("created_at", todayEnd)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      
-      if (data && data.length > 0) {
-        // Sanitize donation data to prevent XSS
-        const sanitizedData = data.map(donation => ({
-          ...donation,
-          name: validateAndSanitizeInput(donation.name, 100),
-          message: validateAndSanitizeInput(donation.message, 500),
-          custom_sound_name: donation.custom_sound_name 
-            ? validateAndSanitizeInput(donation.custom_sound_name, 100)
-            : undefined,
-          gif_url: donation.gif_url ? sanitizeUrl(donation.gif_url) : undefined,
-          voice_url: donation.voice_url ? sanitizeUrl(donation.voice_url) : undefined,
-          custom_sound_url: donation.custom_sound_url 
-            ? sanitizeUrl(donation.custom_sound_url) 
-            : undefined,
-        }));
-        
-        setDonations(sanitizedData);
-        console.log("Donation messages refreshed at:", new Date().toLocaleTimeString(), "count:", sanitizedData.length);
-      } else {
-        console.log("No donation messages found during refresh");
-        setDonations([]);
-      }
-    } catch (error) {
-      console.error("Error fetching donations:", error);
-      SecurityMonitor.logSecurityEvent({
-        type: SECURITY_EVENTS.SUSPICIOUS_REQUEST,
-        severity: 'medium',
-        details: 'Failed to fetch donations: ' + (error instanceof Error ? error.message : 'Unknown error'),
-      });
-      
-      toast({
-        variant: "destructive",
-        title: "Failed to load data",
-        description: "Could not retrieve donation messages",
-      });
-    } finally {
-      setIsLoading(false);
+    // Check if user is authenticated
+    const isAuthenticated = sessionStorage.getItem("chiaaGamingAuth") === "true";
+    if (!isAuthenticated) {
+      logSecurityEvent('UNAUTHORIZED_DASHBOARD_ACCESS', 'chiaa_gaming_dashboard');
+      navigate("/chiaa_gaming/login");
+      return;
     }
-  };
 
-  // Set up real-time subscription for new donations
-  useEffect(() => {
     fetchDonations();
     
-    // Set up real-time subscription with improved handling
+    // Set up real-time subscription
     const setupRealtimeSubscription = () => {
       // Clean up existing channel first
       if (channelRef.current) {
-        console.log('Cleaning up existing messages channel');
+        console.log('Cleaning up existing channel');
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
 
-      // Create a unique channel name for messages using secure ID
-      const channelName = `chiaa-gaming-messages-realtime-${generateObsToken()}`;
+      // Create a unique channel name
+      const channelName = `chiaa-gaming-donations-messages-realtime-${Date.now()}`;
       
       channelRef.current = supabase
         .channel(channelName)
@@ -146,45 +71,27 @@ const ChiaaGamingDonationMessages = () => {
             filter: 'payment_status=eq.success'
           },
           (payload) => {
-            console.log('New donation received in messages via realtime:', payload);
+            console.log('New successful donation received in messages (REALTIME - NO DELAY):', payload);
             const newDonation = payload.new as Donation;
             
-            // Sanitize the new donation data
-            const sanitizedDonation = {
-              ...newDonation,
-              name: validateAndSanitizeInput(newDonation.name, 100),
-              message: validateAndSanitizeInput(newDonation.message, 500),
-              custom_sound_name: newDonation.custom_sound_name 
-                ? validateAndSanitizeInput(newDonation.custom_sound_name, 100)
-                : undefined,
-              gif_url: newDonation.gif_url ? sanitizeUrl(newDonation.gif_url) : undefined,
-              voice_url: newDonation.voice_url ? sanitizeUrl(newDonation.voice_url) : undefined,
-              custom_sound_url: newDonation.custom_sound_url 
-                ? sanitizeUrl(newDonation.custom_sound_url) 
-                : undefined,
-            };
+            // Show realtime alert for streamer (immediate, no delay)
+            setRealtimeAlert(newDonation);
+            setTimeout(() => setRealtimeAlert(null), 8000);
             
-            // Check if donation is from today
-            const donationDate = new Date(sanitizedDonation.created_at).toISOString().split('T')[0];
-            const today = new Date().toISOString().split('T')[0];
+            setDonations(prev => {
+              // Check if donation already exists to prevent duplicates
+              const exists = prev.some(d => d.id === newDonation.id);
+              if (exists) return prev;
+              return [newDonation, ...prev];
+            });
+            setMonthlyTotal(prev => prev + Number(newDonation.amount));
             
-            if (donationDate === today) {
-              setDonations(prev => {
-                // Check if donation already exists to prevent duplicates
-                const exists = prev.some(d => d.id === sanitizedDonation.id);
-                if (exists) {
-                  console.log('Donation already exists, skipping duplicate');
-                  return prev;
-                }
-                console.log('Adding new donation to messages list');
-                return [sanitizedDonation, ...prev];
-              });
-              
-              toast({
-                title: "New Donation Received",
-                description: `${sanitizedDonation.name} donated ₹${Number(sanitizedDonation.amount).toLocaleString()}`,
-              });
-            }
+            logSecurityEvent('NEW_DONATION_RECEIVED', `Amount: ${newDonation.amount}, Name: ${newDonation.name}`);
+            
+            toast({
+              title: "🎉 New Donation Received!",
+              description: `${newDonation.name} donated ₹${Number(newDonation.amount).toLocaleString()} (OBS alert in 1 minute)`,
+            });
           }
         )
         .on(
@@ -196,62 +103,29 @@ const ChiaaGamingDonationMessages = () => {
             filter: 'payment_status=eq.success'
           },
           (payload) => {
-            console.log('Donation updated in messages via realtime:', payload);
+            console.log('Donation updated via realtime:', payload);
             const updatedDonation = payload.new as Donation;
-            
-            // Sanitize the updated donation data
-            const sanitizedDonation = {
-              ...updatedDonation,
-              name: validateAndSanitizeInput(updatedDonation.name, 100),
-              message: validateAndSanitizeInput(updatedDonation.message, 500),
-              custom_sound_name: updatedDonation.custom_sound_name 
-                ? validateAndSanitizeInput(updatedDonation.custom_sound_name, 100)
-                : undefined,
-              gif_url: updatedDonation.gif_url ? sanitizeUrl(updatedDonation.gif_url) : undefined,
-              voice_url: updatedDonation.voice_url ? sanitizeUrl(updatedDonation.voice_url) : undefined,
-              custom_sound_url: updatedDonation.custom_sound_url 
-                ? sanitizeUrl(updatedDonation.custom_sound_url) 
-                : undefined,
-            };
-            
-            // Check if donation is from today
-            const donationDate = new Date(sanitizedDonation.created_at).toISOString().split('T')[0];
-            const today = new Date().toISOString().split('T')[0];
-            
-            if (donationDate === today) {
-              setDonations(prev => 
-                prev.map(donation => 
-                  donation.id === sanitizedDonation.id ? sanitizedDonation : donation
-                )
-              );
-            }
+            setDonations(prev => 
+              prev.map(donation => 
+                donation.id === updatedDonation.id ? updatedDonation : donation
+              )
+            );
           }
         )
         .subscribe((status) => {
           console.log('Messages realtime subscription status:', status);
           if (status === 'SUBSCRIBED') {
             console.log('Successfully subscribed to chiaa_gaming_donations messages realtime updates');
-          } else if (status === 'CHANNEL_ERROR') {
-            console.error('Messages channel subscription error');
-            SecurityMonitor.logSecurityEvent({
-              type: SECURITY_EVENTS.SUSPICIOUS_REQUEST,
-              severity: 'low',
-              details: 'Realtime channel subscription error',
-            });
-            // Retry subscription after a delay
-            setTimeout(setupRealtimeSubscription, 2000);
-          } else if (status === 'TIMED_OUT') {
-            console.error('Messages channel subscription timed out');
-            // Retry subscription after a delay
-            setTimeout(setupRealtimeSubscription, 2000);
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            logSecurityEvent('REALTIME_SUBSCRIPTION_ERROR', `Status: ${status}`);
           }
         });
 
-      console.log('Real-time subscription set up for chiaa_gaming_donations messages');
+      console.log('Messages real-time subscription set up for chiaa_gaming_donations (IMMEDIATE NOTIFICATIONS)');
     };
 
-    // Setup subscription with a delay
-    const timer = setTimeout(setupRealtimeSubscription, 1000);
+    // Setup subscription with a small delay
+    const timer = setTimeout(setupRealtimeSubscription, 500);
 
     return () => {
       clearTimeout(timer);
@@ -261,263 +135,136 @@ const ChiaaGamingDonationMessages = () => {
         channelRef.current = null;
       }
     };
-  }, [toast]);
+  }, [navigate, toast]);
 
-  // Load preferences from localStorage on component mount
-  useEffect(() => {
-    const savedPref = localStorage.getItem("chiaaGamingShowMessages");
-    if (savedPref !== null) {
-      setShowMessages(savedPref === "true");
-    }
-    
-    const savedGoalPref = localStorage.getItem("chiaaGamingShowGoal");
-    if (savedGoalPref !== null) {
-      setShowGoal(savedGoalPref === "true");
-    }
-    
-    const savedGoalName = localStorage.getItem("chiaaGamingGoalName");
-    if (savedGoalName) {
-      // Sanitize saved goal name
-      setGoalName(validateAndSanitizeInput(savedGoalName, 100));
-    }
-    
-    const savedGoalTarget = localStorage.getItem("chiaaGamingGoalTarget");
-    if (savedGoalTarget) {
-      const target = Number(savedGoalTarget);
-      if (target > 0 && target <= 1000000) { // Reasonable limit
-        setGoalTarget(target);
-      }
-    }
-  }, []);
-
-  // Load OBS links from localStorage on component mount and setup persistent links
-  useEffect(() => {
-    const loadOrCreateObsLinks = () => {
-      // Load existing links from localStorage
-      let storedMessagesLink = localStorage.getItem("chiaaGamingObsLink");
-      let storedGoalLink = localStorage.getItem("chiaaGamingGoalObsLink");
-      
-      // Validate existing links have secure tokens
-      if (storedMessagesLink) {
-        try {
-          const url = new URL(storedMessagesLink);
-          const pathSegments = url.pathname.split('/');
-          const tokenSegment = pathSegments[pathSegments.length - 1];
-          if (!validateSecureId(tokenSegment)) {
-            storedMessagesLink = null; // Regenerate if token is not secure
-          }
-        } catch (error) {
-          console.warn('Invalid stored messages link, will regenerate');
-          storedMessagesLink = null;
-        }
-      }
-      
-      if (storedGoalLink) {
-        try {
-          const url = new URL(storedGoalLink);
-          const pathSegments = url.pathname.split('/');
-          const tokenSegment = pathSegments[pathSegments.length - 1];
-          if (!validateSecureId(tokenSegment)) {
-            storedGoalLink = null; // Regenerate if token is not secure
-          }
-        } catch (error) {
-          console.warn('Invalid stored goal link, will regenerate');
-          storedGoalLink = null;
-        }
-      }
-      
-      // Generate new links if needed
-      if (!storedMessagesLink) {
-        const secureToken = generateObsToken();
-        storedMessagesLink = `${window.location.origin}/chiaa_gaming/obs/${secureToken}?showMessages=${showMessages}&showGoal=false`;
-        localStorage.setItem("chiaaGamingObsLink", storedMessagesLink);
-        console.log('Generated new persistent messages OBS link');
-      }
-      
-      if (!storedGoalLink) {
-        const secureToken = generateObsToken();
-        storedGoalLink = `${window.location.origin}/chiaa_gaming/obs/${secureToken}?showMessages=false&showGoal=true&goalName=${encodeURIComponent(goalName)}&goalTarget=${goalTarget}`;
-        localStorage.setItem("chiaaGamingGoalObsLink", storedGoalLink);
-        console.log('Generated new persistent goal OBS link');
-      }
-      
-      setObsLink(storedMessagesLink);
-      setGoalObsLink(storedGoalLink);
-      
-      console.log('OBS links loaded/created:', {
-        messagesLink: storedMessagesLink,
-        goalLink: storedGoalLink
-      });
-    };
-
-    loadOrCreateObsLinks();
-  }, [showMessages, goalName, goalTarget]);
-
-  const regenerateMessagesLink = () => {
-    const secureToken = generateObsToken();
-    const newLink = `${window.location.origin}/chiaa_gaming/obs/${secureToken}?showMessages=${showMessages}&showGoal=false`;
-    
-    localStorage.setItem("chiaaGamingObsLink", newLink);
-    setObsLink(newLink);
-    
-    SecurityMonitor.logSecurityEvent({
-      type: 'obs_link_regenerated',
-      severity: 'low',
-      details: 'Messages OBS link regenerated',
-    });
-    
-    toast({
-      title: "Messages Link Regenerated",
-      description: "Your new donation messages OBS link has been created. Update your OBS source with the new link.",
-    });
-  };
-
-  const regenerateGoalLink = () => {
-    const secureToken = generateObsToken();
-    const newLink = `${window.location.origin}/chiaa_gaming/obs/${secureToken}?showMessages=false&showGoal=true&goalName=${encodeURIComponent(goalName)}&goalTarget=${goalTarget}`;
-    
-    localStorage.setItem("chiaaGamingGoalObsLink", newLink);
-    setGoalObsLink(newLink);
-    
-    SecurityMonitor.logSecurityEvent({
-      type: 'obs_link_regenerated',
-      severity: 'low',
-      details: 'Goal OBS link regenerated',
-    });
-    
-    toast({
-      title: "Goal Link Regenerated",
-      description: "Your new goal OBS link has been created. Update your OBS source with the new link.",
-    });
-  };
-
-  // Handle toggle of show messages preference
-  const handleToggleMessages = () => {
-    const newValue = !showMessages;
-    setShowMessages(newValue);
-    localStorage.setItem("chiaaGamingShowMessages", newValue.toString());
-    updateMessagesLink(newValue);
-    
-    toast({
-      title: newValue ? "Messages Enabled" : "Messages Disabled",
-      description: newValue ? "Messages will now be shown in OBS" : "Messages will be hidden in OBS",
-    });
-  };
-
-  // Handle toggle of show goal preference
-  const handleToggleGoal = () => {
-    const newValue = !showGoal;
-    setShowGoal(newValue);
-    localStorage.setItem("chiaaGamingShowGoal", newValue.toString());
-    updateGoalLink(newValue);
-    
-    toast({
-      title: newValue ? "Goal Enabled" : "Goal Disabled",
-      description: newValue ? "Goal will now be shown in OBS" : "Goal will be hidden in OBS",
-    });
-  };
-
-  // Handle goal name change with validation
-  const handleGoalNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawValue = e.target.value;
-    const sanitizedValue = validateAndSanitizeInput(rawValue, 100);
-    
-    if (rawValue !== sanitizedValue) {
-      SecurityMonitor.logSecurityEvent({
-        type: SECURITY_EVENTS.XSS_ATTEMPT,
-        severity: 'medium',
-        details: 'Potentially malicious input detected in goal name',
-      });
-    }
-    
-    setGoalName(sanitizedValue);
-    localStorage.setItem("chiaaGamingGoalName", sanitizedValue);
-    updateGoalLink(showGoal, sanitizedValue);
-  };
-
-  // Handle goal target change with validation
-  const handleGoalTargetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newTarget = Number(e.target.value);
-    
-    // Validate reasonable limits
-    if (newTarget > 0 && newTarget <= 1000000) {
-      setGoalTarget(newTarget);
-      localStorage.setItem("chiaaGamingGoalTarget", newTarget.toString());
-      updateGoalLink(showGoal, goalName, newTarget);
-    } else if (newTarget > 1000000) {
-      SecurityMonitor.logSecurityEvent({
-        type: SECURITY_EVENTS.SUSPICIOUS_REQUEST,
-        severity: 'low',
-        details: 'Unusually high goal target entered',
-      });
-    }
-  };
-
-  // Update messages link with current settings (preserve existing token)
-  const updateMessagesLink = (newShowMessages = showMessages) => {
-    if (!obsLink) return;
-    
+  const fetchDonations = async () => {
     try {
-      const url = new URL(obsLink);
-      const newLink = `${url.origin}${url.pathname}?showMessages=${newShowMessages}&showGoal=false`;
-      localStorage.setItem("chiaaGamingObsLink", newLink);
-      setObsLink(newLink);
-      console.log('Updated messages link with new parameters');
+      logSecurityEvent('DASHBOARD_DATA_FETCH', 'chiaa_gaming_donations');
+      
+      const { data, error } = await supabase
+        .from("chiaa_gaming_donations")
+        .select("id, name, amount, message, created_at, payment_status, gif_url, voice_url, custom_sound_name, custom_sound_url, include_sound")
+        .eq("payment_status", "success")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching donations:", error);
+        logSecurityEvent('DATA_FETCH_ERROR', `chiaa_gaming_donations: ${error.message}`);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to fetch donations",
+        });
+        return;
+      }
+
+      setDonations(data || []);
+      setMonthlyTotal(calculateMonthlyTotal(data || []));
     } catch (error) {
-      console.error('Error updating messages link:', error);
-      regenerateMessagesLink();
+      console.error("Error:", error);
+      logSecurityEvent('DASHBOARD_ERROR', error instanceof Error ? error.message : 'Unknown error');
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "An unexpected error occurred",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Update goal link with current settings (preserve existing token)
-  const updateGoalLink = (newShowGoal = showGoal, newGoalName = goalName, newGoalTarget = goalTarget) => {
-    if (!goalObsLink) return;
-    
-    try {
-      const url = new URL(goalObsLink);
-      const newLink = `${url.origin}${url.pathname}?showMessages=false&showGoal=${newShowGoal}&goalName=${encodeURIComponent(newGoalName)}&goalTarget=${newGoalTarget}`;
-      localStorage.setItem("chiaaGamingGoalObsLink", newLink);
-      setGoalObsLink(newLink);
-      console.log('Updated goal link with new parameters');
-    } catch (error) {
-      console.error('Error updating goal link:', error);
-      regenerateGoalLink();
-    }
+  const handleLogout = () => {
+    logSecurityEvent('USER_LOGOUT', 'chiaa_gaming_dashboard');
+    sessionStorage.removeItem("chiaaGamingAuth");
+    sessionStorage.removeItem("chiaaGamingAdminAuth");
+    navigate("/chiaa_gaming/login");
+    toast({
+      title: "Logged out",
+      description: "You have been logged out successfully",
+    });
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    const date = new Date(dateString);
+    return date.toLocaleString("en-IN", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
-  const renderPremiumFeatures = (donation: Donation) => {
-    // Always show the user's message if it exists, regardless of premium features
-    // Message is already sanitized when data is fetched
-    if (donation.message && donation.message.trim()) {
-      return donation.message;
+  const handlePlayVoice = async (voiceUrl: string, donationId: string) => {
+    try {
+      if (playingAudio === donationId) {
+        // Stop current audio
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current = null;
+        }
+        setPlayingAudio(null);
+        return;
+      }
+
+      // Stop any currently playing audio
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+
+      // Create new audio element
+      const audio = new Audio(voiceUrl);
+      audioRef.current = audio;
+      setPlayingAudio(donationId);
+
+      audio.onended = () => {
+        setPlayingAudio(null);
+        audioRef.current = null;
+      };
+
+      audio.onerror = () => {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to play voice message",
+        });
+        setPlayingAudio(null);
+        audioRef.current = null;
+      };
+
+      await audio.play();
+      
+      // Mark voice as played in messages page with timestamp
+      try {
+        const { error: updateError } = await supabase
+          .from('donation_gifs')
+          .update({ 
+            last_played_at: new Date().toISOString(),
+            status: 'displayed'
+          })
+          .eq('donation_id', donationId)
+          .eq('file_type', 'voice');
+
+        if (updateError) {
+          console.error('Error updating voice play timestamp:', updateError);
+        } else {
+          console.log('Voice play timestamp updated for cleanup scheduling');
+        }
+      } catch (dbError) {
+        console.error('Database error updating voice play timestamp:', dbError);
+      }
+      
+      logSecurityEvent('VOICE_MESSAGE_REPLAYED', `Donation ID: ${donationId}`);
+      
+    } catch (error) {
+      console.error("Error playing voice:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to play voice message",
+      });
+      setPlayingAudio(null);
     }
-    
-    // If no message but has premium features, show what premium features were used
-    const features = [];
-    
-    if (donation.gif_url) {
-      features.push("GIF shared");
-    }
-    
-    if (donation.voice_url) {
-      features.push("Voice message");
-    }
-    
-    if (donation.custom_sound_name || donation.custom_sound_url) {
-      features.push(`Custom sound: ${donation.custom_sound_name || 'Audio'}`);
-    }
-    
-    return features.length > 0 ? features.join(", ") : "No message";
   };
 
   const renderMediaBadges = (donation: Donation) => {
@@ -565,108 +312,16 @@ const ChiaaGamingDonationMessages = () => {
       );
     }
     
+    if (donation.message && donation.message.trim() !== '') {
+      badges.push(
+        <Badge key="message" variant="secondary" className="text-xs bg-green-500/20 text-green-300 border-green-500/50">
+          <MessageCircle className="w-3 h-3 mr-1" />
+          Message
+        </Badge>
+      );
+    }
+    
     return badges;
-  };
-
-  const copyMessagesLink = () => {
-    navigator.clipboard.writeText(obsLink);
-    toast({
-      title: "Link Copied",
-      description: "Donation messages OBS link copied to clipboard",
-    });
-  };
-
-  const copyGoalLink = () => {
-    navigator.clipboard.writeText(goalObsLink);
-    toast({
-      title: "Link Copied",
-      description: "Goal OBS link copied to clipboard",
-    });
-  };
-
-  const openMessagesInNewTab = () => {
-    if (obsLink) {
-      window.open(obsLink, '_blank');
-    }
-  };
-
-  const openGoalInNewTab = () => {
-    if (goalObsLink) {
-      window.open(goalObsLink, '_blank');
-    }
-  };
-
-  // Handle playing voice messages
-  const handlePlayVoice = async (voiceUrl: string, donationId: string) => {
-    try {
-      if (playingAudio === donationId) {
-        // Stop current audio
-        if (audioRef.current) {
-          audioRef.current.pause();
-          audioRef.current = null;
-        }
-        setPlayingAudio(null);
-        return;
-      }
-
-      // Stop any currently playing audio
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-
-      // Create new audio element
-      const audio = new Audio(voiceUrl);
-      audioRef.current = audio;
-      setPlayingAudio(donationId);
-
-      audio.onended = () => {
-        setPlayingAudio(null);
-        audioRef.current = null;
-      };
-
-      audio.onerror = () => {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to play voice message",
-        });
-        setPlayingAudio(null);
-        audioRef.current = null;
-      };
-
-      await audio.play();
-      
-      // Mark voice as played in dashboard with timestamp
-      try {
-        const { error: updateError } = await supabase
-          .from('donation_gifs')
-          .update({ 
-            last_played_at: new Date().toISOString(),
-            status: 'displayed'
-          })
-          .eq('donation_id', donationId)
-          .eq('file_type', 'voice');
-
-        if (updateError) {
-          console.error('Error updating voice play timestamp:', updateError);
-        } else {
-          console.log('Voice play timestamp updated for cleanup scheduling');
-        }
-      } catch (dbError) {
-        console.error('Database error updating voice play timestamp:', dbError);
-      }
-      
-      logSecurityEvent('VOICE_MESSAGE_REPLAYED', `Donation ID: ${donationId}`);
-      
-    } catch (error) {
-      console.error("Error playing voice:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to play voice message",
-      });
-      setPlayingAudio(null);
-    }
   };
 
   // Cleanup audio on unmount
@@ -678,210 +333,142 @@ const ChiaaGamingDonationMessages = () => {
     };
   }, []);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-900 via-purple-900 to-black flex items-center justify-center">
+        <div className="text-lg text-pink-100">Loading...</div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-900 via-purple-900 to-black">
-      <div className="container mx-auto py-8 px-4">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-pink-100">Donation Messages</h1>
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="outline" 
-              onClick={() => navigate("/chiaa_gaming/dashboard")}
-              className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20"
-            >
-              Back to Dashboard
-            </Button>
-          </div>
-        </div>
-
-        <Card className="mb-8 bg-black/50 border-pink-500/30">
-          <CardHeader>
-            <CardTitle className="text-pink-100">OBS Configuration</CardTitle>
-            <CardDescription className="text-pink-300">Configure what appears in your OBS overlay. Links persist across page navigation.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col space-y-6">
-              {/* Messages Toggle */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div className="checkbox-wrapper-10">
-                    <input 
-                      checked={showMessages} 
-                      type="checkbox" 
-                      id="show-messages" 
-                      className="tgl tgl-flip"
-                      onChange={handleToggleMessages}
-                    />
-                    <label 
-                      htmlFor="show-messages" 
-                      data-tg-on="On" 
-                      data-tg-off="Off" 
-                      className="tgl-btn"
-                    ></label>
-                  </div>
-                  <Label htmlFor="show-messages" className="text-pink-200">Show donation messages in OBS</Label>
-                </div>
+    <SecureDataDisplay requiredAuth={true}>
+      <div className="min-h-screen bg-gradient-to-br from-pink-900 via-purple-900 to-black p-4">
+        {/* Realtime Alert for Streamer */}
+        {realtimeAlert && (
+          <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
+            <div className="bg-gradient-to-r from-green-600/95 to-emerald-600/95 backdrop-blur-sm rounded-xl p-4 shadow-2xl border border-green-500/50 max-w-sm">
+              <div className="flex items-center space-x-3 mb-2">
+                <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                <span className="text-green-100 font-bold text-lg">New Donation!</span>
+                <Clock className="w-4 h-4 text-green-300" />
               </div>
-
-              {/* Messages OBS Link Section */}
-              <div className="space-y-4 p-4 bg-pink-500/10 rounded-lg border border-pink-500/30">
-                <div className="flex items-center justify-between">
-                  <Label className="text-pink-200 text-lg font-medium">Donation Messages OBS</Label>
-                  <div className="flex items-center space-x-2">
-                    <Button variant="outline" onClick={copyMessagesLink} className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20">
-                      <LinkIcon className="mr-2 h-4 w-4" />
-                      Copy
-                    </Button>
-                    <Button variant="outline" onClick={regenerateMessagesLink} className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20">
-                      Generate New
-                    </Button>
-                    <Button variant="outline" onClick={openMessagesInNewTab} className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20">
-                      <ExternalLink className="mr-2 h-4 w-4" />
-                      Open
-                    </Button>
-                  </div>
-                </div>
-                <Input 
-                  value={obsLink} 
-                  readOnly 
-                  className="font-mono text-sm bg-black/30 border-pink-500/50 text-pink-100"
-                />
-                <p className="text-sm text-pink-300/70">
-                  This link will display donation messages. Each message shows for 12 seconds. This link persists across page navigation - only regenerate if needed.
-                </p>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-green-100 font-semibold">{realtimeAlert.name}</span>
+                <span className="text-green-300 font-bold text-xl">₹{Number(realtimeAlert.amount).toLocaleString()}</span>
               </div>
-
-              {/* Goal Toggle */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div className="checkbox-wrapper-10">
-                    <input 
-                      checked={showGoal} 
-                      type="checkbox" 
-                      id="show-goal" 
-                      className="tgl tgl-flip"
-                      onChange={handleToggleGoal}
-                    />
-                    <label 
-                      htmlFor="show-goal" 
-                      data-tg-on="On" 
-                      data-tg-off="Off" 
-                      className="tgl-btn"
-                    ></label>
-                  </div>
-                  <Label htmlFor="show-goal" className="text-pink-200">Show donation goal in OBS</Label>
-                </div>
-              </div>
-
-              {/* Goal Configuration */}
-              {showGoal && (
-                <div className="space-y-4 p-4 bg-pink-500/10 rounded-lg border border-pink-500/30">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="goal-name" className="text-pink-200">Goal Name</Label>
-                      <Input
-                        id="goal-name"
-                        value={goalName}
-                        onChange={handleGoalNameChange}
-                        placeholder="Enter goal name"
-                        className="mt-1 bg-black/30 border-pink-500/50 text-pink-100 placeholder:text-pink-300/70"
-                        maxLength={100}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="goal-target" className="text-pink-200">Target Amount (₹)</Label>
-                      <Input
-                        id="goal-target"
-                        type="number"
-                        value={goalTarget}
-                        onChange={handleGoalTargetChange}
-                        placeholder="Enter target amount"
-                        className="mt-1 bg-black/30 border-pink-500/50 text-pink-100 placeholder:text-pink-300/70"
-                        min="1"
-                        max="1000000"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Goal OBS Link Section */}
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-pink-200 text-lg font-medium">Goal OBS</Label>
-                      <div className="flex items-center space-x-2">
-                        <Button variant="outline" onClick={copyGoalLink} className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20">
-                          <LinkIcon className="mr-2 h-4 w-4" />
-                          Copy
-                        </Button>
-                        <Button variant="outline" onClick={regenerateGoalLink} className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20">
-                          Generate New
-                        </Button>
-                        <Button variant="outline" onClick={openGoalInNewTab} className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20">
-                          <ExternalLink className="mr-2 h-4 w-4" />
-                          Open
-                        </Button>
-                      </div>
-                    </div>
-                    <Input 
-                      value={goalObsLink} 
-                      readOnly 
-                      className="font-mono text-sm bg-black/30 border-pink-500/50 text-pink-100"
-                    />
-                    <p className="text-sm text-pink-300/70">
-                      This link will only display the donation goal with real-time progress. This link persists across page navigation - only regenerate if needed.
-                    </p>
-                  </div>
-                </div>
+              {realtimeAlert.message && (
+                <p className="text-green-50 text-sm italic mb-2">"{realtimeAlert.message}"</p>
               )}
+              <div className="flex items-center space-x-1 text-xs text-green-200">
+                <Clock className="w-3 h-3" />
+                <span>OBS alert in 1 minute</span>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        )}
+        
+        <div className="container mx-auto max-w-6xl">
+          {/* Header */}
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h1 className="text-3xl font-bold text-pink-100">Chiaa Gaming Messages</h1>
+              <p className="text-pink-300">Real-time donation management (OBS alerts delayed by 1 minute)</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="outline" 
+                onClick={() => navigate("/chiaa_gaming/dashboard")}
+                className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20"
+              >
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Dashboard
+              </Button>
+              <CSVExportDialog 
+                tableName="chiaa_gaming_donations" 
+                title="Export Donations to CSV" 
+              />
+              <Button 
+                variant="outline" 
+                onClick={handleLogout}
+                className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Logout
+              </Button>
+            </div>
+          </div>
 
-        <Card className="bg-black/50 border-pink-500/30">
-          <CardHeader>
-            <CardTitle className="text-pink-100">Recent Donation Messages</CardTitle>
-            <CardDescription className="text-pink-300">
-              Messages are updated in real-time (Today's donations only)
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <p className="text-center py-4 text-pink-200">Loading donation messages...</p>
-            ) : donations.length === 0 ? (
-              <p className="text-center py-4 text-pink-300">No donation messages found</p>
-            ) : (
-              <div className="rounded-md border border-pink-500/30">
+          {/* Monthly Total Card */}
+          <Card className="mb-6 bg-black/50 border-pink-500/30">
+            <CardHeader>
+              <CardTitle className="text-pink-100">Monthly Total</CardTitle>
+              <CardDescription className="text-pink-300">Total donations received this month</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-pink-400">
+                {formatCurrency(monthlyTotal)}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Info Card about OBS Delay */}
+          <Card className="mb-6 bg-blue-900/20 border-blue-500/30">
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-3">
+                <Clock className="w-5 h-5 text-blue-400" />
+                <div>
+                  <h3 className="text-blue-200 font-semibold">OBS Alert Delay</h3>
+                  <p className="text-blue-300 text-sm">Donations appear here instantly but are delayed by 1 minute in OBS to give you time to prepare</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Donations Table */}
+          <Card className="bg-black/50 border-pink-500/30">
+            <CardHeader>
+              <CardTitle className="text-pink-100">Recent Successful Payments</CardTitle>
+              <CardDescription className="text-pink-300">All successful donations with media attachments (real-time updates)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {donations.length === 0 ? (
+                <div className="text-center py-8 text-pink-300">
+                  No successful payments found
+                </div>
+              ) : (
                 <Table>
                   <TableHeader>
                     <TableRow className="border-pink-500/30">
-                      <TableHead className="text-pink-200">Date</TableHead>
                       <TableHead className="text-pink-200">Name</TableHead>
                       <TableHead className="text-pink-200">Amount</TableHead>
+                      <TableHead className="text-pink-200">Date & Time</TableHead>
                       <TableHead className="text-pink-200">Media</TableHead>
-                      <TableHead className="w-[40%] text-pink-200">Message/Features</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {donations.map((donation) => (
                       <TableRow key={donation.id} className="border-pink-500/20 hover:bg-pink-500/10">
-                        <TableCell className="text-pink-100">{formatDate(donation.created_at)}</TableCell>
-                        <TableCell className="text-pink-100" dangerouslySetInnerHTML={{ __html: escapeHtml(donation.name) }} />
-                        <TableCell className="text-pink-400 font-semibold">₹{Number(donation.amount).toLocaleString()}</TableCell>
+                        <TableCell className="font-medium text-pink-100">{donation.name}</TableCell>
+                        <TableCell className="text-pink-400 font-semibold">
+                          {formatCurrency(Number(donation.amount))}
+                        </TableCell>
+                        <TableCell className="text-pink-200">{formatDate(donation.created_at)}</TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1">
                             {renderMediaBadges(donation)}
                           </div>
                         </TableCell>
-                        <TableCell className="text-pink-100" dangerouslySetInnerHTML={{ __html: escapeHtml(renderPremiumFeatures(donation)) }} />
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
+    </SecureDataDisplay>
   );
 };
 

@@ -19,7 +19,7 @@ export const useVoiceCleanup = () => {
           .eq('file_type', 'voice')
           .or(
             `and(status.eq.displayed,last_played_at.lt.${fiveMinutesAgo.toISOString()}),` +
-            `and(status.eq.uploaded,created_at.lt.${oneHourAgo.toISOString()})`
+            `and(status.eq.uploaded,uploaded_at.lt.${oneHourAgo.toISOString()})`
           );
 
         if (fetchError) {

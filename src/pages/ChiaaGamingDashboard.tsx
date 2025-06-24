@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +11,7 @@ import { LogOut, MessageSquare, Image, Mic, Volume2, MessageCircle, Clock, Play,
 import CSVExportDialog from "@/components/CSVExportDialog";
 import SecureDataDisplay from "@/components/SecureDataDisplay";
 import { logSecurityEvent } from "@/utils/rateLimiting";
+import { useVoiceCleanup } from "@/hooks/useVoiceCleanup";
 
 interface Donation {
   id: string;
@@ -37,6 +37,9 @@ const ChiaaGamingDashboard = () => {
   const { toast } = useToast();
   const channelRef = useRef<any>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Add voice cleanup hook
+  useVoiceCleanup();
 
   useEffect(() => {
     // Check if user is authenticated

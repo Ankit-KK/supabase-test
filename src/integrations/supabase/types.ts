@@ -193,6 +193,7 @@ export type Database = {
           file_type: string | null
           gif_url: string
           id: string
+          last_played_at: string | null
           status: string | null
           uploaded_at: string | null
         }
@@ -205,6 +206,7 @@ export type Database = {
           file_type?: string | null
           gif_url: string
           id?: string
+          last_played_at?: string | null
           status?: string | null
           uploaded_at?: string | null
         }
@@ -217,6 +219,7 @@ export type Database = {
           file_type?: string | null
           gif_url?: string
           id?: string
+          last_played_at?: string | null
           status?: string | null
           uploaded_at?: string | null
         }
