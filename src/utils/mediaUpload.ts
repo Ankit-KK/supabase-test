@@ -39,7 +39,7 @@ export const uploadGif = async (file: File): Promise<string | null> => {
   }
 };
 
-export const uploadVoice = async (file: File): Promise<string | null> => {
+export const uploadVoice = async (file: File, donationId?: string): Promise<string | null> => {
   try {
     const fileExt = file.name.split('.').pop() || 'webm';
     const fileName = `voice-${Date.now()}-${Math.floor(Math.random() * 10000)}.${fileExt}`;
@@ -49,7 +49,8 @@ export const uploadVoice = async (file: File): Promise<string | null> => {
       fileName, 
       fileSize: file.size,
       fileType: file.type,
-      originalName: file.name
+      originalName: file.name,
+      donationId
     });
 
     const { data, error } = await supabase.storage
@@ -82,6 +83,7 @@ export const uploadVoice = async (file: File): Promise<string | null> => {
       const { error: dbError } = await supabase
         .from('donation_gifs')
         .insert({
+          donation_id: donationId,
           gif_url: publicUrl,
           file_name: fileName,
           file_size: file.size,
@@ -92,7 +94,7 @@ export const uploadVoice = async (file: File): Promise<string | null> => {
       if (dbError) {
         console.error("UPLOAD: Error storing voice metadata:", dbError);
       } else {
-        console.log("UPLOAD: Voice metadata stored successfully");
+        console.log("UPLOAD: Voice metadata stored successfully with donation_id:", donationId);
       }
     } catch (metaError) {
       console.error("UPLOAD: Exception storing voice metadata:", metaError);

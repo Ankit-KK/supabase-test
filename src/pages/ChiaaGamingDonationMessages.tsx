@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, calculateMonthlyTotal } from "@/utils/dashboardUtils";
-import { LogOut, MessageSquare, Image, Mic, Volume2, MessageCircle, Play, Pause, Clock } from "lucide-react";
+import { LogOut, MessageSquare, Image, Mic, Volume2, MessageCircle, Play, Pause, Clock, AlertCircle } from "lucide-react";
 import CSVExportDialog from "@/components/CSVExportDialog";
 import SecureDataDisplay from "@/components/SecureDataDisplay";
 import { logSecurityEvent } from "@/utils/rateLimiting";
@@ -32,6 +32,7 @@ const ChiaaGamingDonationMessages = () => {
   const [monthlyTotal, setMonthlyTotal] = useState(0);
   const [realtimeAlert, setRealtimeAlert] = useState<Donation | null>(null);
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
+  const [brokenVoiceUrls, setBrokenVoiceUrls] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
   const { toast } = useToast();
   const channelRef = useRef<any>(null);
@@ -197,6 +198,16 @@ const ChiaaGamingDonationMessages = () => {
 
   const handlePlayVoice = async (voiceUrl: string, donationId: string) => {
     try {
+      // Check if voice URL is already known to be broken
+      if (brokenVoiceUrls.has(voiceUrl)) {
+        toast({
+          variant: "destructive",
+          title: "Voice Message Expired",
+          description: "This voice message has been automatically deleted and is no longer available.",
+        });
+        return;
+      }
+
       if (playingAudio === donationId) {
         // Stop current audio
         if (audioRef.current) {
@@ -222,11 +233,15 @@ const ChiaaGamingDonationMessages = () => {
         audioRef.current = null;
       };
 
-      audio.onerror = () => {
+      audio.onerror = (error) => {
+        console.error("Error playing audio:", error);
+        // Mark this URL as broken
+        setBrokenVoiceUrls(prev => new Set([...prev, voiceUrl]));
+        
         toast({
           variant: "destructive",
-          title: "Error",
-          description: "Failed to play voice message",
+          title: "Voice Message Expired",
+          description: "This voice message has been automatically deleted and is no longer available.",
         });
         setPlayingAudio(null);
         audioRef.current = null;
@@ -258,10 +273,13 @@ const ChiaaGamingDonationMessages = () => {
       
     } catch (error) {
       console.error("Error playing voice:", error);
+      // Mark this URL as broken
+      setBrokenVoiceUrls(prev => new Set([...prev, voiceUrl]));
+      
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to play voice message",
+        title: "Voice Message Expired",
+        description: "This voice message has been automatically deleted and is no longer available.",
       });
       setPlayingAudio(null);
     }
@@ -280,25 +298,37 @@ const ChiaaGamingDonationMessages = () => {
     }
     
     if (donation.voice_url) {
+      const isVoiceBroken = brokenVoiceUrls.has(donation.voice_url);
+      
       badges.push(
         <div key="voice" className="flex items-center gap-1">
-          <Badge variant="secondary" className="text-xs bg-blue-500/20 text-blue-300 border-blue-500/50">
-            <Mic className="w-3 h-3 mr-1" />
-            Voice
-          </Badge>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-6 w-6 p-0 text-blue-300 hover:text-blue-100 hover:bg-blue-500/20"
-            onClick={() => handlePlayVoice(donation.voice_url!, donation.id)}
-            title={playingAudio === donation.id ? "Stop voice message" : "Play voice message"}
-          >
-            {playingAudio === donation.id ? (
-              <Pause className="w-3 h-3" />
+          <Badge variant="secondary" className={`text-xs ${
+            isVoiceBroken 
+              ? 'bg-red-500/20 text-red-300 border-red-500/50' 
+              : 'bg-blue-500/20 text-blue-300 border-blue-500/50'
+          }`}>
+            {isVoiceBroken ? (
+              <AlertCircle className="w-3 h-3 mr-1" />
             ) : (
-              <Play className="w-3 h-3" />
+              <Mic className="w-3 h-3 mr-1" />
             )}
-          </Button>
+            {isVoiceBroken ? 'Voice (Expired)' : 'Voice'}
+          </Badge>
+          {!isVoiceBroken && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 w-6 p-0 text-blue-300 hover:text-blue-100 hover:bg-blue-500/20"
+              onClick={() => handlePlayVoice(donation.voice_url!, donation.id)}
+              title={playingAudio === donation.id ? "Stop voice message" : "Play voice message"}
+            >
+              {playingAudio === donation.id ? (
+                <Pause className="w-3 h-3" />
+              ) : (
+                <Play className="w-3 h-3" />
+              )}
+            </Button>
+          )}
         </div>
       );
     }

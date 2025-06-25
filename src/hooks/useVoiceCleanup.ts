@@ -48,7 +48,7 @@ export const useVoiceCleanup = () => {
               } else {
                 console.log(`VOICE_CLEANUP: Voice file deleted successfully: ${voice.file_name}`);
                 
-                // Mark as deleted in database
+                // Mark as deleted in donation_gifs table
                 await supabase
                   .from('donation_gifs')
                   .update({ 
@@ -56,6 +56,24 @@ export const useVoiceCleanup = () => {
                     status: 'deleted'
                   })
                   .eq('id', voice.id);
+
+                // Clear voice_url from chiaa_gaming_donations table if donation_id exists
+                if (voice.donation_id) {
+                  const { error: updateDonationError } = await supabase
+                    .from('chiaa_gaming_donations')
+                    .update({ 
+                      voice_url: null,
+                      voice_file_name: null,
+                      voice_file_size: null
+                    })
+                    .eq('id', voice.donation_id);
+
+                  if (updateDonationError) {
+                    console.error(`VOICE_CLEANUP ERROR: Error clearing voice_url for donation ${voice.donation_id}:`, updateDonationError);
+                  } else {
+                    console.log(`VOICE_CLEANUP: Cleared voice_url for donation ${voice.donation_id}`);
+                  }
+                }
               }
             }
           } catch (error) {
