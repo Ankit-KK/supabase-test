@@ -1,14 +1,41 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
-type DonationRecord = {
+export interface PaymentVerificationResult {
+  order: any;
+  payments: any[];
+  status: string;
+  order_id: string;
+  payment_verified: boolean;
+}
+
+export const verifyPayment = async (orderId: string): Promise<PaymentVerificationResult | null> => {
+  try {
+    const { data, error } = await supabase.functions.invoke('verify-payment', {
+      body: { orderId }
+    });
+
+    if (error) {
+      console.error('Payment verification error:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Payment verification failed:', error);
+    return null;
+  }
+};
+
+export interface DonationRecordData {
   name: string;
   amount: number;
   message: string;
   order_id: string;
   payment_status: string;
-  donationType: "ankit" | "harish" | "mackle" | "rakazone" | "chiaa_gaming";
-  include_sound?: boolean;
+  donationType: string;
+  selectedEmoji?: string;
+  // Media fields for other streamers
   gifUrl?: string;
   gifFileName?: string;
   gifFileSize?: number;
@@ -16,191 +43,78 @@ type DonationRecord = {
   voiceFileName?: string;
   voiceFileSize?: number;
   customSoundUrl?: string;
-};
+  include_sound?: boolean;
+}
 
-/**
- * Creates a payment order via Supabase Edge Function
- */
-export const createPaymentOrder = async (orderId: string, amount: number, name: string, donationType: string = "ankit") => {
+export const createDonationRecord = async (data: DonationRecordData) => {
   try {
-    console.log("Creating payment order with:", { orderId, amount, name, donationType });
-    
-    const { data, error } = await supabase.functions.invoke("create-payment-order", {
-      body: { orderId, amount, name, donationType },
-    });
-
-    if (error) {
-      console.error("Error creating payment order:", error);
-      throw new Error(error.message || "Failed to create payment order");
-    }
-
-    console.log("Payment order created successfully:", data);
-    return data;
-  } catch (error) {
-    console.error("Error in createPaymentOrder:", error);
-    throw error;
-  }
-};
-
-/**
- * Verifies payment status via enhanced Supabase Edge Function
- * Now returns backend-determined status with standardized format
- */
-export const verifyPayment = async (orderId: string) => {
-  try {
-    console.log("Verifying payment for order:", orderId);
-    
-    const { data, error } = await supabase.functions.invoke("verify-payment", {
-      body: { orderId },
-    });
-
-    if (error) {
-      console.error("Error verifying payment:", error);
-      throw new Error(error.message || "Failed to verify payment");
-    }
-
-    console.log("Payment verification result:", data);
-    return data;
-  } catch (error) {
-    console.error("Error in verifyPayment:", error);
-    throw error;
-  }
-};
-
-/**
- * Creates a donation record in Supabase
- * Now only creates records for successful payments
- */
-export const createDonationRecord = async (donation: DonationRecord) => {
-  try {
-    // Only process successful payments
-    if (donation.payment_status !== "success") {
-      console.log("Skipping donation record creation for non-successful payment:", donation.payment_status);
-      return false;
-    }
-
-    let tableName;
-    
-    if (donation.donationType === "harish") {
-      tableName = "harish_donations";
-    } else if (donation.donationType === "mackle") {
-      tableName = "mackle_donations";
-    } else if (donation.donationType === "rakazone") {
-      tableName = "rakazone_donations";
-    } else if (donation.donationType === "chiaa_gaming") {
-      tableName = "chiaa_gaming_donations";
-    } else {
-      tableName = "ankit_donations";
-    }
-    
-    const recordData: any = {
-      name: donation.name,
-      amount: donation.amount,
-      message: donation.message,
-      order_id: donation.order_id,
-      payment_status: donation.payment_status
-    };
-    
-    // For chiaa_gaming donations, handle custom sound and other features
-    if (donation.donationType === "chiaa_gaming") {
-      // Only set include_sound to true if custom sound is selected for successful payments
-      if (donation.customSoundUrl) {
-        recordData.custom_sound_url = donation.customSoundUrl;
-        recordData.include_sound = true;
-        console.log("STORING CUSTOM SOUND URL FOR CHIAA GAMING (successful payment):", {
-          customSoundUrl: donation.customSoundUrl,
-          include_sound: true,
-          orderId: donation.order_id,
-          paymentStatus: donation.payment_status
-        });
-      } else {
-        recordData.include_sound = false;
-      }
-
-      // Add gif_url for chiaa_gaming donations if provided
-      if (donation.gifUrl) {
-        recordData.gif_url = donation.gifUrl;
-      }
-
-      // Add voice_url for chiaa_gaming donations if provided
-      if (donation.voiceUrl) {
-        recordData.voice_url = donation.voiceUrl;
-        recordData.voice_file_name = donation.voiceFileName;
-        recordData.voice_file_size = donation.voiceFileSize;
-      }
-    } else {
-      // For other donation types (mackle/rakazone), only add include_sound if explicitly provided
-      if (donation.include_sound !== undefined) {
-        recordData.include_sound = donation.include_sound;
-      }
-    }
-    
-    console.log(`Creating ${tableName} record for successful payment:`, recordData.payment_status);
-    
-    const { data, error } = await supabase
-      .from(tableName)
-      .insert(recordData)
-      .select()
-      .single();
-
-    if (error) {
-      console.error(`Error creating donation record in ${tableName}:`, error);
-      throw new Error(error.message || `Failed to create donation record in ${tableName}`);
-    }
-
-    // Combined null check and type validation
-    if (!data || typeof data !== 'object' || typeof (data as any).id !== 'string') {
-      console.error("Invalid or missing donation record:", data);
-      throw new Error("Failed to create donation record - invalid response");
-    }
-
-    // Now TypeScript knows data is not null and has the required structure
-    const validatedData = data as { id: string; gif_url?: string; voice_url?: string; custom_sound_url?: string; include_sound?: boolean; [key: string]: any };
-    
-    console.log(`Successfully created donation record in ${tableName}:`, validatedData);
-
-    // Create donation_gifs record if GIF was uploaded for chiaa_gaming
-    if (donation.donationType === "chiaa_gaming" && donation.gifUrl && donation.gifFileName && donation.gifFileSize) {
-      const { error: gifRecordError } = await supabase
-        .from('donation_gifs')
+    // Route to the correct table based on donation type
+    if (data.donationType === 'ankit') {
+      // Store in ankit_donations table
+      const { error } = await supabase
+        .from('ankit_donations')
         .insert({
-          donation_id: validatedData.id,
-          gif_url: donation.gifUrl,
-          file_name: donation.gifFileName,
-          file_size: donation.gifFileSize,
-          file_type: 'gif',
-          status: 'uploaded'
+          name: data.name,
+          amount: data.amount,
+          message: data.message,
+          order_id: data.order_id,
+          payment_status: data.payment_status,
+          selected_emoji: data.selectedEmoji
         });
 
-      if (gifRecordError) {
-        console.error("Error creating GIF record:", gifRecordError);
-        // Don't throw error here - donation was successful, GIF record is secondary
+      if (error) {
+        console.error('Error inserting Ankit donation:', error);
+        throw error;
       }
-    }
 
-    // Create donation_gifs record if Voice was uploaded for chiaa_gaming
-    if (donation.donationType === "chiaa_gaming" && donation.voiceUrl && donation.voiceFileName && donation.voiceFileSize) {
-      const { error: voiceRecordError } = await supabase
-        .from('donation_gifs')
+      console.log('Successfully inserted Ankit donation into ankit_donations table');
+    } else if (data.donationType === 'chiaa_gaming') {
+      // Store in chiaa_gaming_donations table
+      const { error } = await supabase
+        .from('chiaa_gaming_donations')
         .insert({
-          donation_id: validatedData.id,
-          gif_url: donation.voiceUrl, // Using gif_url column for voice URL as well
-          file_name: donation.voiceFileName,
-          file_size: donation.voiceFileSize,
-          file_type: 'voice',
-          status: 'uploaded'
+          name: data.name,
+          amount: data.amount,
+          message: data.message,
+          order_id: data.order_id,
+          payment_status: data.payment_status,
+          gif_url: data.gifUrl,
+          gif_file_name: data.gifFileName,
+          gif_file_size: data.gifFileSize,
+          voice_url: data.voiceUrl,
+          voice_file_name: data.voiceFileName,
+          voice_file_size: data.voiceFileSize,
+          custom_sound_url: data.customSoundUrl,
+          include_sound: data.include_sound || false
         });
 
-      if (voiceRecordError) {
-        console.error("Error creating voice record:", voiceRecordError);
-        // Don't throw error here - donation was successful, voice record is secondary
+      if (error) {
+        console.error('Error inserting Chiaa Gaming donation:', error);
+        throw error;
       }
-    }
 
-    console.log("Successfully processed donation record for successful payment");
-    return true;
+      console.log('Successfully inserted Chiaa Gaming donation');
+    } else {
+      // For other streamers, store in generic donations table
+      const { error } = await supabase
+        .from('donations')
+        .insert({
+          name: data.name,
+          amount: data.amount,
+          message: data.message,
+          order_id: data.order_id,
+          payment_status: data.payment_status
+        });
+
+      if (error) {
+        console.error('Error inserting generic donation:', error);
+        throw error;
+      }
+
+      console.log('Successfully inserted generic donation');
+    }
   } catch (error) {
-    console.error("Error in createDonationRecord:", error);
+    console.error('Failed to create donation record:', error);
     throw error;
   }
 };
