@@ -16,12 +16,15 @@ interface Donation {
 interface FloatingEmoji {
   id: string;
   emoji: string;
-  x: number;
-  y: number;
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
   rotation: number;
   scale: number;
   duration: number;
   delay: number;
+  corner: 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right';
 }
 
 const AnkitObsOverlay = () => {
@@ -48,7 +51,7 @@ const AnkitObsOverlay = () => {
       const { data, error } = await supabase
         .from("ankit_donations")
         .select("amount")
-        .eq("payment_status", "success") // Only count successful payments for goal
+        .eq("payment_status", "success")
         .gte("created_at", todayStart)
         .lte("created_at", todayEnd);
 
@@ -62,20 +65,56 @@ const AnkitObsOverlay = () => {
     }
   };
 
-  // Create floating emojis across the screen
+  // Create floating emojis from screen corners
   const createFloatingEmojis = (emoji: string, count: number = 15) => {
     const newEmojis: FloatingEmoji[] = [];
+    const corners: ('bottom-left' | 'bottom-right' | 'top-left' | 'top-right')[] = 
+      ['bottom-left', 'bottom-right', 'top-left', 'top-right'];
     
     for (let i = 0; i < count; i++) {
+      const corner = corners[Math.floor(Math.random() * corners.length)];
+      let startX, startY, endX, endY;
+      
+      // Define start and end positions based on corner
+      switch (corner) {
+        case 'bottom-left':
+          startX = -5; // Start slightly off-screen
+          startY = 105; // Start below screen
+          endX = 20 + Math.random() * 30; // End somewhere in left-center area
+          endY = -10; // End above screen
+          break;
+        case 'bottom-right':
+          startX = 105; // Start off right edge
+          startY = 105; // Start below screen
+          endX = 50 + Math.random() * 30; // End somewhere in right-center area
+          endY = -10; // End above screen
+          break;
+        case 'top-left':
+          startX = -5; // Start off left edge
+          startY = -5; // Start above screen
+          endX = 20 + Math.random() * 30; // End somewhere in left-center area
+          endY = 110; // End below screen
+          break;
+        case 'top-right':
+          startX = 105; // Start off right edge
+          startY = -5; // Start above screen
+          endX = 50 + Math.random() * 30; // End somewhere in right-center area
+          endY = 110; // End below screen
+          break;
+      }
+
       newEmojis.push({
         id: `emoji-${Date.now()}-${i}`,
         emoji,
-        x: Math.random() * 100, // Random X position (0-100%)
-        y: Math.random() * 100, // Random Y position (0-100%)
-        rotation: Math.random() * 360, // Random initial rotation
-        scale: 0.8 + Math.random() * 0.8, // Random scale (0.8-1.6)
-        duration: 3 + Math.random() * 4, // Random duration (3-7s)
-        delay: Math.random() * 2, // Random delay (0-2s)
+        startX,
+        startY,
+        endX,
+        endY,
+        rotation: Math.random() * 720, // More rotation
+        scale: 0.8 + Math.random() * 1.2, // Random scale (0.8-2.0)
+        duration: 4 + Math.random() * 3, // Longer duration (4-7s)
+        delay: Math.random() * 1.5, // Random delay (0-1.5s)
+        corner,
       });
     }
     
@@ -86,7 +125,7 @@ const AnkitObsOverlay = () => {
       setFloatingEmojis(prev => 
         prev.filter(e => !newEmojis.some(ne => ne.id === e.id))
       );
-    }, 8000);
+    }, 8500);
   };
 
   useEffect(() => {
@@ -105,7 +144,6 @@ const AnkitObsOverlay = () => {
           event: 'INSERT',
           schema: 'public',
           table: 'ankit_donations'
-          // Removed payment status filter to show all donations
         },
         (payload) => {
           const newDonation = payload.new as Donation;
@@ -125,7 +163,7 @@ const AnkitObsOverlay = () => {
           
           // Create floating emojis celebration
           if (newDonation.selected_emoji) {
-            const emojiCount = newDonation.payment_status === 'success' ? 20 : 10;
+            const emojiCount = newDonation.payment_status === 'success' ? 25 : 12;
             createFloatingEmojis(newDonation.selected_emoji, emojiCount);
           }
           
@@ -206,35 +244,38 @@ const AnkitObsOverlay = () => {
       className="fixed inset-0 pointer-events-none overflow-hidden"
       style={{ background: 'transparent' }}
     >
-      {/* Floating Emojis Layer - Full Screen */}
+      {/* Floating Emojis Layer - Animated from corners */}
       <div className="absolute inset-0 z-10">
         {floatingEmojis.map((floatingEmoji) => (
           <div
             key={floatingEmoji.id}
             className="absolute pointer-events-none select-none"
             style={{
-              left: `${floatingEmoji.x}%`,
-              top: `${floatingEmoji.y}%`,
-              transform: `translate(-50%, -50%) scale(${floatingEmoji.scale}) rotate(${floatingEmoji.rotation}deg)`,
-              fontSize: '4rem',
-              animationDelay: `${floatingEmoji.delay}s`,
-              animationDuration: `${floatingEmoji.duration}s`,
+              left: `${floatingEmoji.startX}%`,
+              top: `${floatingEmoji.startY}%`,
+              transform: `translate(-50%, -50%) scale(${floatingEmoji.scale})`,
+              fontSize: '3.5rem',
               zIndex: 50,
+              animation: `
+                emojiTravel ${floatingEmoji.duration}s ease-out forwards,
+                spin ${floatingEmoji.duration * 1.5}s linear infinite,
+                pulse ${floatingEmoji.duration * 0.5}s ease-in-out infinite alternate
+              `,
+              animationDelay: `${floatingEmoji.delay}s`,
+              '--start-x': `${floatingEmoji.startX}%`,
+              '--start-y': `${floatingEmoji.startY}%`,
+              '--end-x': `${floatingEmoji.endX}%`,
+              '--end-y': `${floatingEmoji.endY}%`,
+              '--rotation': `${floatingEmoji.rotation}deg`,
+            } as React.CSSProperties & {
+              '--start-x': string;
+              '--start-y': string;
+              '--end-x': string;
+              '--end-y': string;
+              '--rotation': string;
             }}
           >
-            <div
-              className="animate-float opacity-90"
-              style={{
-                animation: `
-                  float ${floatingEmoji.duration}s ease-in-out infinite,
-                  fadeInOut ${floatingEmoji.duration}s ease-in-out forwards,
-                  spin ${floatingEmoji.duration * 2}s linear infinite
-                `,
-                animationDelay: `${floatingEmoji.delay}s`,
-              }}
-            >
-              {floatingEmoji.emoji}
-            </div>
+            {floatingEmoji.emoji}
           </div>
         ))}
       </div>
