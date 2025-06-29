@@ -36,7 +36,7 @@ const AnkitObsOverlay = () => {
       const { data, error } = await supabase
         .from("ankit_donations")
         .select("amount")
-        .eq("payment_status", "success") // Only count successful payments
+        .eq("payment_status", "success") // Only count successful payments for goal
         .gte("created_at", todayStart)
         .lte("created_at", todayEnd);
 
@@ -57,7 +57,7 @@ const AnkitObsOverlay = () => {
   }, [showGoal]);
 
   useEffect(() => {
-    // Set up real-time subscription ONLY for successful donations
+    // Set up real-time subscription for ALL donations (both successful and failed)
     const channel = supabase
       .channel(`ankit-obs-overlay-${obsId}`)
       .on(
@@ -65,12 +65,12 @@ const AnkitObsOverlay = () => {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'ankit_donations',
-          filter: 'payment_status=eq.success' // CRITICAL: Only listen for successful payments
+          table: 'ankit_donations'
+          // Removed payment status filter to show all donations
         },
         (payload) => {
           const newDonation = payload.new as Donation;
-          console.log('Successful donation received in OBS overlay:', {
+          console.log('New donation received in OBS overlay (all statuses):', {
             id: newDonation.id,
             name: newDonation.name,
             amount: newDonation.amount,
@@ -78,21 +78,15 @@ const AnkitObsOverlay = () => {
             selected_emoji: newDonation.selected_emoji
           });
           
-          // Double-check payment status (safety check)
-          if (newDonation.payment_status !== "success") {
-            console.log("Blocking non-successful donation from OBS processing:", newDonation.payment_status);
-            return;
-          }
-          
-          // Update goal progress for successful payments only
-          if (showGoal) {
+          // Update goal progress only for successful payments
+          if (showGoal && newDonation.payment_status === "success") {
             setGoalProgress(prev => prev + Number(newDonation.amount));
             console.log("Updated goal progress for successful donation");
           }
           
-          // Show donation alert if messages are enabled - ONLY for successful payments
+          // Show donation alert for ALL donations (success and failed) if messages are enabled
           if (showMessages) {
-            console.log("Showing donation alert for successful payment");
+            console.log(`Showing donation alert for ${newDonation.payment_status} payment`);
             setAnimationPhase('enter');
             setCurrentDonation(newDonation);
             setIsVisible(true);
@@ -114,7 +108,7 @@ const AnkitObsOverlay = () => {
       )
       .subscribe();
 
-    console.log('Ankit OBS overlay real-time subscription set up - SUCCESS PAYMENTS ONLY');
+    console.log('Ankit OBS overlay real-time subscription set up - ALL PAYMENT STATUSES');
 
     return () => {
       supabase.removeChannel(channel);
@@ -131,6 +125,32 @@ const AnkitObsOverlay = () => {
         return 'opacity-0 scale-75 -translate-y-8 rotate-3';
       default:
         return 'opacity-100 scale-100 translate-x-0 rotate-0';
+    }
+  };
+
+  const getBorderColor = (status: string) => {
+    switch (status) {
+      case 'success':
+        return 'from-green-500 via-emerald-500 to-teal-500';
+      case 'failed':
+        return 'from-red-500 via-rose-500 to-pink-500';
+      case 'pending':
+        return 'from-yellow-500 via-amber-500 to-orange-500';
+      default:
+        return 'from-purple-600 via-pink-600 to-orange-500';
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'success':
+        return 'New Donation!';
+      case 'failed':
+        return 'Payment Failed!';
+      case 'pending':
+        return 'Payment Pending!';
+      default:
+        return 'New Donation!';
     }
   };
 
@@ -167,7 +187,7 @@ const AnkitObsOverlay = () => {
         </div>
       )}
 
-      {/* Donation Alert - Only shows for successful donations */}
+      {/* Donation Alert - Now shows for all payment statuses */}
       {currentDonation && showMessages && (
         <div className="absolute top-4 right-4 w-96 max-w-md">
           <div 
@@ -177,8 +197,8 @@ const AnkitObsOverlay = () => {
               ${getAnimationClasses()}
             `}
           >
-            {/* Animated background gradient */}
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 animate-gradient-x"></div>
+            {/* Dynamic background gradient based on payment status */}
+            <div className={`absolute inset-0 bg-gradient-to-br ${getBorderColor(currentDonation.payment_status)} animate-gradient-x`}></div>
             
             {/* Shimmer effect */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
@@ -188,7 +208,7 @@ const AnkitObsOverlay = () => {
               {/* Header with bouncing emoji and celebration */}
               <div className="flex items-center justify-between mb-4">
                 <h3 className={`text-2xl font-bold transition-all duration-500 ${animationPhase === 'show' ? 'animate-pulse-glow' : ''}`}>
-                  New Donation!
+                  {getStatusText(currentDonation.payment_status)}
                 </h3>
                 <div className="flex items-center space-x-2">
                   {currentDonation.selected_emoji && (
@@ -197,7 +217,7 @@ const AnkitObsOverlay = () => {
                     </div>
                   )}
                   <div className={`text-4xl transition-all duration-700 ${animationPhase === 'show' ? 'animate-bounce' : ''}`} style={{ animationDelay: '0.2s' }}>
-                    🎉
+                    {currentDonation.payment_status === 'success' ? '🎉' : currentDonation.payment_status === 'failed' ? '😔' : '⏳'}
                   </div>
                 </div>
               </div>
@@ -206,7 +226,9 @@ const AnkitObsOverlay = () => {
               <div className="space-y-3">
                 <div className={`flex justify-between items-center transition-all duration-500 delay-200 ${animationPhase === 'enter' ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
                   <span className="text-lg font-semibold">{currentDonation.name}</span>
-                  <span className={`text-3xl font-bold text-yellow-300 transition-all duration-300 ${animationPhase === 'show' ? 'animate-pulse scale-110' : ''}`}>
+                  <span className={`text-3xl font-bold transition-all duration-300 ${
+                    currentDonation.payment_status === 'success' ? 'text-yellow-300' : 'text-gray-300'
+                  } ${animationPhase === 'show' ? 'animate-pulse scale-110' : ''}`}>
                     ₹{Number(currentDonation.amount).toLocaleString()}
                   </span>
                 </div>
@@ -218,10 +240,15 @@ const AnkitObsOverlay = () => {
                 )}
               </div>
               
-              {/* Thank you message with floating animation */}
+              {/* Status-specific thank you message */}
               <div className={`mt-4 text-center transition-all duration-500 delay-600 ${animationPhase === 'enter' ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
                 <div className={`inline-block bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 text-sm border border-white/30 ${animationPhase === 'show' ? 'animate-float' : ''}`}>
-                  Thank you for your support! ❤️
+                  {currentDonation.payment_status === 'success' 
+                    ? 'Thank you for your support! ❤️'
+                    : currentDonation.payment_status === 'failed'
+                      ? 'Thanks for trying! Please retry if needed 💙'
+                      : 'Processing your payment... ⏳'
+                  }
                 </div>
               </div>
             </div>
@@ -233,7 +260,11 @@ const AnkitObsOverlay = () => {
             {/* Progress bar animation */}
             <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
               <div 
-                className="h-full bg-gradient-to-r from-yellow-400 to-orange-400 transition-all duration-[12000ms] ease-linear"
+                className={`h-full transition-all duration-[12000ms] ease-linear ${
+                  currentDonation.payment_status === 'success' 
+                    ? 'bg-gradient-to-r from-yellow-400 to-orange-400'
+                    : 'bg-gradient-to-r from-gray-400 to-gray-600'
+                }`}
                 style={{ 
                   width: animationPhase === 'show' ? '0%' : '100%',
                   transform: animationPhase === 'exit' ? 'scaleX(0)' : 'scaleX(1)',
