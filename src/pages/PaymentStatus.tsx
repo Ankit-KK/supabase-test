@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -131,24 +132,26 @@ const PaymentStatus = () => {
         
         setStatus(componentStatus as "success" | "pending" | "failed");
         
-        // Create donation record in Supabase - ONLY for successful payments
-        if (!isRecordCreated && backendStatus === "SUCCESS") {
-          // Prepare donation record data for successful payments only
+        // Create donation record in Supabase for both successful and failed payments
+        if (!isRecordCreated) {
+          // Prepare donation record data - now including failed payments
           const recordData = {
             name: donationData.name,
             amount: donationData.amount,
             message: donationData.message,
             order_id: orderId,
-            payment_status: "success", // Only successful payments are recorded
+            payment_status: backendStatus === "SUCCESS" ? "success" : "failed",
             donationType: donationData.donationType || donationType,
-            // Include media data for successful donations
+            // Include media data for all donations (success and failed)
             gifUrl: donationData.gifUrl,
             gifFileName: donationData.gifFileName,
             gifFileSize: donationData.gifFileSize,
             voiceUrl: donationData.voiceUrl,
             voiceFileName: donationData.voiceFileName,
             voiceFileSize: donationData.voiceFileSize,
-            customSoundUrl: donationData.customSoundUrl
+            customSoundUrl: donationData.customSoundUrl,
+            // Include selected emoji for both successful and failed payments
+            selectedEmoji: donationData.selectedEmoji
           };
           
           // Add include_sound field if it exists in the donation data
@@ -160,11 +163,9 @@ const PaymentStatus = () => {
           await createDonationRecord(recordData);
           setIsRecordCreated(true);
           
-          // Clean up session storage for successful payments
+          // Clean up session storage for all payment statuses
           sessionStorage.removeItem("donationData");
-          console.log("Successfully recorded donation and cleaned up session storage");
-        } else if (backendStatus !== "SUCCESS") {
-          console.log("Payment not successful - no donation record created. Status:", backendStatus);
+          console.log("Successfully recorded donation (including failed payments) and cleaned up session storage");
         }
         
         setIsVerificationComplete(true);
@@ -275,6 +276,9 @@ const PaymentStatus = () => {
                           ? "Chiaa Gaming"
                           : "Ankit"}
                 </p>
+                {donationData?.selectedEmoji && (
+                  <p><span className="font-medium">Celebration:</span> <span className="text-2xl">{donationData.selectedEmoji}</span></p>
+                )}
               </div>
             )}
 
@@ -323,6 +327,11 @@ const PaymentStatus = () => {
             <p className="text-muted-foreground">
               Your payment is being processed. We'll update you once it's complete.
             </p>
+            {donationData?.selectedEmoji && (
+              <div className="text-left bg-gray-50 rounded p-4 text-sm">
+                <p><span className="font-medium">Your celebration emoji:</span> <span className="text-2xl">{donationData.selectedEmoji}</span></p>
+              </div>
+            )}
           </>
         )}
         
@@ -335,6 +344,13 @@ const PaymentStatus = () => {
             <p className="text-muted-foreground">
               We couldn't process your payment. Please try again or use a different payment method.
             </p>
+            
+            {donationData?.selectedEmoji && (
+              <div className="text-left bg-gray-50 rounded p-4 text-sm">
+                <p><span className="font-medium">Your selected celebration emoji:</span> <span className="text-2xl">{donationData.selectedEmoji}</span></p>
+                <p className="text-xs text-muted-foreground mt-1">Your emoji selection has been saved for when you retry the payment.</p>
+              </div>
+            )}
             
             {/* Chiaa Gaming channel redirect for failed payments with countdown */}
             {donationType === "chiaa_gaming" && (

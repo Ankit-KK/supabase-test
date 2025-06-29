@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,8 +56,7 @@ const AnkitDashboard = () => {
           {
             event: 'INSERT',
             schema: 'public',
-            table: 'ankit_donations',
-            filter: 'payment_status=eq.success'
+            table: 'ankit_donations'
           },
           (payload) => {
             console.log('New donation received via realtime:', payload);
@@ -67,11 +67,15 @@ const AnkitDashboard = () => {
               if (exists) return prev;
               return [newDonation, ...prev];
             });
-            setMonthlyTotal(prev => prev + Number(newDonation.amount));
+            
+            // Only update monthly total for successful payments
+            if (newDonation.payment_status === 'success') {
+              setMonthlyTotal(prev => prev + Number(newDonation.amount));
+            }
             
             toast({
-              title: "New Donation Received!",
-              description: `${newDonation.name} donated ₹${Number(newDonation.amount).toLocaleString()}`,
+              title: `${newDonation.payment_status === 'success' ? 'New Donation Received!' : 'Payment Status Updated'}`,
+              description: `${newDonation.name} - ₹${Number(newDonation.amount).toLocaleString()} (${newDonation.payment_status})`,
             });
           }
         )
@@ -80,8 +84,7 @@ const AnkitDashboard = () => {
           {
             event: 'UPDATE',
             schema: 'public',
-            table: 'ankit_donations',
-            filter: 'payment_status=eq.success'
+            table: 'ankit_donations'
           },
           (payload) => {
             console.log('Donation updated via realtime:', payload);
@@ -125,7 +128,6 @@ const AnkitDashboard = () => {
       const { data, error } = await supabase
         .from("ankit_donations")
         .select("id, name, amount, created_at, payment_status, selected_emoji")
-        .eq("payment_status", "success")
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -139,7 +141,9 @@ const AnkitDashboard = () => {
       }
 
       setDonations(data || []);
-      setMonthlyTotal(calculateMonthlyTotal(data || []));
+      // Only calculate monthly total from successful payments
+      const successfulDonations = (data || []).filter(d => d.payment_status === 'success');
+      setMonthlyTotal(calculateMonthlyTotal(successfulDonations));
     } catch (error) {
       console.error("Error:", error);
       toast({
@@ -171,6 +175,19 @@ const AnkitDashboard = () => {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'success':
+        return <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Success</span>;
+      case 'failed':
+        return <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">Failed</span>;
+      case 'pending':
+        return <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">Pending</span>;
+      default:
+        return <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">{status}</span>;
+    }
   };
 
   if (loading) {
@@ -212,8 +229,8 @@ const AnkitDashboard = () => {
         {/* Monthly Total Card */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Monthly Total</CardTitle>
-            <CardDescription>Total donations received this month</CardDescription>
+            <CardTitle>Monthly Total (Successful Payments)</CardTitle>
+            <CardDescription>Total successful donations received this month</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-green-600">
@@ -225,13 +242,13 @@ const AnkitDashboard = () => {
         {/* Donations Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Recent Successful Payments</CardTitle>
-            <CardDescription>All successful donations with celebration emojis</CardDescription>
+            <CardTitle>All Donations</CardTitle>
+            <CardDescription>All donation attempts with celebration emojis and payment status</CardDescription>
           </CardHeader>
           <CardContent>
             {donations.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                No successful payments found
+                No donations found
               </div>
             ) : (
               <Table>
@@ -239,6 +256,7 @@ const AnkitDashboard = () => {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Amount</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Celebration</TableHead>
                     <TableHead>Date & Time</TableHead>
                   </TableRow>
@@ -247,8 +265,11 @@ const AnkitDashboard = () => {
                   {donations.map((donation) => (
                     <TableRow key={donation.id}>
                       <TableCell className="font-medium">{donation.name}</TableCell>
-                      <TableCell className="text-green-600 font-semibold">
+                      <TableCell className={`font-semibold ${donation.payment_status === 'success' ? 'text-green-600' : 'text-gray-600'}`}>
                         {formatCurrency(Number(donation.amount))}
+                      </TableCell>
+                      <TableCell>
+                        {getStatusBadge(donation.payment_status)}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
