@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface PaymentVerificationResult {
@@ -24,6 +23,32 @@ export const verifyPayment = async (orderId: string): Promise<PaymentVerificatio
   } catch (error) {
     console.error('Payment verification failed:', error);
     return null;
+  }
+};
+
+export const createPaymentOrder = async (orderId: string, amount: number, name: string, donationType: string) => {
+  try {
+    console.log('Creating payment order via Supabase edge function:', { orderId, amount, name, donationType });
+    
+    const { data, error } = await supabase.functions.invoke('create-payment-order', {
+      body: { 
+        orderId, 
+        amount, 
+        name, 
+        donationType 
+      }
+    });
+
+    if (error) {
+      console.error('Payment order creation error:', error);
+      throw error;
+    }
+
+    console.log('Payment order created successfully:', data);
+    return data;
+  } catch (error) {
+    console.error('Failed to create payment order:', error);
+    throw error;
   }
 };
 
