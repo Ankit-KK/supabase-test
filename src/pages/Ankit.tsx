@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,11 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { Gamepad2, Zap, Trophy } from "lucide-react";
+import EmojiSelector from "@/components/EmojiSelector";
 
 const AnkitPage = () => {
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [message, setMessage] = useState("");
+  const [selectedEmoji, setSelectedEmoji] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [maxMessageLength, setMaxMessageLength] = useState(50);
   const navigate = useNavigate();
@@ -54,6 +55,15 @@ const AnkitPage = () => {
       return false;
     }
 
+    if (!selectedEmoji) {
+      toast({
+        title: "Emoji required",
+        description: "Please select a celebration emoji",
+        variant: "destructive",
+      });
+      return false;
+    }
+
     return true;
   };
 
@@ -77,6 +87,7 @@ const AnkitPage = () => {
         name: name.trim(),
         amount: parseFloat(amount),
         message: message.trim(),
+        selectedEmoji,
         orderId,
         donationType: "ankit",
       };
@@ -201,6 +212,15 @@ const AnkitPage = () => {
                     " (100 chars for ₹100+ donations)" : 
                     " (50 chars for donations below ₹100)"}
                 </p>
+              </div>
+              
+              {/* Emoji Selection */}
+              <div className="space-y-2">
+                <EmojiSelector
+                  selectedEmoji={selectedEmoji}
+                  onEmojiSelect={setSelectedEmoji}
+                  disabled={isLoading}
+                />
               </div>
               
               <Button 

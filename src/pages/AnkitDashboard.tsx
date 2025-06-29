@@ -15,6 +15,7 @@ interface Donation {
   amount: number;
   created_at: string;
   payment_status: string;
+  selected_emoji?: string;
 }
 
 const AnkitDashboard = () => {
@@ -123,7 +124,7 @@ const AnkitDashboard = () => {
     try {
       const { data, error } = await supabase
         .from("ankit_donations")
-        .select("id, name, amount, created_at, payment_status")
+        .select("id, name, amount, created_at, payment_status, selected_emoji")
         .eq("payment_status", "success")
         .order("created_at", { ascending: false });
 
@@ -225,7 +226,7 @@ const AnkitDashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle>Recent Successful Payments</CardTitle>
-            <CardDescription>All successful donations</CardDescription>
+            <CardDescription>All successful donations with celebration emojis</CardDescription>
           </CardHeader>
           <CardContent>
             {donations.length === 0 ? (
@@ -238,6 +239,7 @@ const AnkitDashboard = () => {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Amount</TableHead>
+                    <TableHead>Celebration</TableHead>
                     <TableHead>Date & Time</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -247,6 +249,15 @@ const AnkitDashboard = () => {
                       <TableCell className="font-medium">{donation.name}</TableCell>
                       <TableCell className="text-green-600 font-semibold">
                         {formatCurrency(Number(donation.amount))}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          {donation.selected_emoji && (
+                            <span className="text-2xl" title="Celebration emoji">
+                              {donation.selected_emoji}
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>{formatDate(donation.created_at)}</TableCell>
                     </TableRow>

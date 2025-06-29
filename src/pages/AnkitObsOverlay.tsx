@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +10,7 @@ interface Donation {
   message: string;
   created_at: string;
   payment_status: string;
+  selected_emoji?: string;
 }
 
 const AnkitObsOverlay = () => {
@@ -72,7 +74,8 @@ const AnkitObsOverlay = () => {
             id: newDonation.id,
             name: newDonation.name,
             amount: newDonation.amount,
-            payment_status: newDonation.payment_status
+            payment_status: newDonation.payment_status,
+            selected_emoji: newDonation.selected_emoji
           });
           
           // Double-check payment status (safety check)
@@ -182,13 +185,20 @@ const AnkitObsOverlay = () => {
             
             {/* Content */}
             <div className="relative p-6 text-white">
-              {/* Header with bouncing emoji */}
+              {/* Header with bouncing emoji and celebration */}
               <div className="flex items-center justify-between mb-4">
                 <h3 className={`text-2xl font-bold transition-all duration-500 ${animationPhase === 'show' ? 'animate-pulse-glow' : ''}`}>
                   New Donation!
                 </h3>
-                <div className={`text-4xl transition-all duration-700 ${animationPhase === 'show' ? 'animate-bounce' : ''}`}>
-                  🎉
+                <div className="flex items-center space-x-2">
+                  {currentDonation.selected_emoji && (
+                    <div className={`text-5xl transition-all duration-700 ${animationPhase === 'show' ? 'animate-bounce' : ''}`}>
+                      {currentDonation.selected_emoji}
+                    </div>
+                  )}
+                  <div className={`text-4xl transition-all duration-700 ${animationPhase === 'show' ? 'animate-bounce' : ''}`} style={{ animationDelay: '0.2s' }}>
+                    🎉
+                  </div>
                 </div>
               </div>
               

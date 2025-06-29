@@ -52,6 +52,7 @@ export type Database = {
           name: string
           order_id: string
           payment_status: string
+          selected_emoji: string | null
         }
         Insert: {
           amount: number
@@ -62,6 +63,7 @@ export type Database = {
           name: string
           order_id: string
           payment_status?: string
+          selected_emoji?: string | null
         }
         Update: {
           amount?: number
@@ -72,6 +74,7 @@ export type Database = {
           name?: string
           order_id?: string
           payment_status?: string
+          selected_emoji?: string | null
         }
         Relationships: []
       }
