@@ -13,6 +13,17 @@ interface Donation {
   selected_emoji?: string;
 }
 
+interface FloatingEmoji {
+  id: string;
+  emoji: string;
+  x: number;
+  y: number;
+  rotation: number;
+  scale: number;
+  duration: number;
+  delay: number;
+}
+
 const AnkitObsOverlay = () => {
   const { obsId } = useParams();
   const [searchParams] = useSearchParams();
@@ -25,6 +36,7 @@ const AnkitObsOverlay = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [animationPhase, setAnimationPhase] = useState<'enter' | 'show' | 'exit'>('enter');
   const [goalProgress, setGoalProgress] = useState<number>(0);
+  const [floatingEmojis, setFloatingEmojis] = useState<FloatingEmoji[]>([]);
 
   // Calculate goal progress from today's successful donations only
   const fetchGoalProgress = async () => {
@@ -48,6 +60,33 @@ const AnkitObsOverlay = () => {
     } catch (error) {
       console.error("Error fetching goal progress:", error);
     }
+  };
+
+  // Create floating emojis across the screen
+  const createFloatingEmojis = (emoji: string, count: number = 15) => {
+    const newEmojis: FloatingEmoji[] = [];
+    
+    for (let i = 0; i < count; i++) {
+      newEmojis.push({
+        id: `emoji-${Date.now()}-${i}`,
+        emoji,
+        x: Math.random() * 100, // Random X position (0-100%)
+        y: Math.random() * 100, // Random Y position (0-100%)
+        rotation: Math.random() * 360, // Random initial rotation
+        scale: 0.8 + Math.random() * 0.8, // Random scale (0.8-1.6)
+        duration: 3 + Math.random() * 4, // Random duration (3-7s)
+        delay: Math.random() * 2, // Random delay (0-2s)
+      });
+    }
+    
+    setFloatingEmojis(prev => [...prev, ...newEmojis]);
+    
+    // Clean up emojis after max duration + delay
+    setTimeout(() => {
+      setFloatingEmojis(prev => 
+        prev.filter(e => !newEmojis.some(ne => ne.id === e.id))
+      );
+    }, 8000);
   };
 
   useEffect(() => {
@@ -82,6 +121,12 @@ const AnkitObsOverlay = () => {
           if (showGoal && newDonation.payment_status === "success") {
             setGoalProgress(prev => prev + Number(newDonation.amount));
             console.log("Updated goal progress for successful donation");
+          }
+          
+          // Create floating emojis celebration
+          if (newDonation.selected_emoji) {
+            const emojiCount = newDonation.payment_status === 'success' ? 20 : 10;
+            createFloatingEmojis(newDonation.selected_emoji, emojiCount);
           }
           
           // Show donation alert for ALL donations (success and failed) if messages are enabled
@@ -158,12 +203,45 @@ const AnkitObsOverlay = () => {
 
   return (
     <div 
-      className="fixed inset-0 pointer-events-none"
+      className="fixed inset-0 pointer-events-none overflow-hidden"
       style={{ background: 'transparent' }}
     >
+      {/* Floating Emojis Layer - Full Screen */}
+      <div className="absolute inset-0 z-10">
+        {floatingEmojis.map((floatingEmoji) => (
+          <div
+            key={floatingEmoji.id}
+            className="absolute pointer-events-none select-none"
+            style={{
+              left: `${floatingEmoji.x}%`,
+              top: `${floatingEmoji.y}%`,
+              transform: `translate(-50%, -50%) scale(${floatingEmoji.scale}) rotate(${floatingEmoji.rotation}deg)`,
+              fontSize: '4rem',
+              animationDelay: `${floatingEmoji.delay}s`,
+              animationDuration: `${floatingEmoji.duration}s`,
+              zIndex: 50,
+            }}
+          >
+            <div
+              className="animate-float opacity-90"
+              style={{
+                animation: `
+                  float ${floatingEmoji.duration}s ease-in-out infinite,
+                  fadeInOut ${floatingEmoji.duration}s ease-in-out forwards,
+                  spin ${floatingEmoji.duration * 2}s linear infinite
+                `,
+                animationDelay: `${floatingEmoji.delay}s`,
+              }}
+            >
+              {floatingEmoji.emoji}
+            </div>
+          </div>
+        ))}
+      </div>
+
       {/* Goal Display */}
       {showGoal && (
-        <div className="absolute top-4 left-4 w-80">
+        <div className="absolute top-4 left-4 w-80 z-20">
           <div className="bg-gradient-to-r from-purple-600/90 to-pink-600/90 backdrop-blur-sm rounded-xl p-4 border border-white/20 shadow-2xl">
             <div className="text-white">
               <h3 className="text-lg font-bold mb-2">{goalName}</h3>
@@ -189,7 +267,7 @@ const AnkitObsOverlay = () => {
 
       {/* Donation Alert - Now shows for all payment statuses */}
       {currentDonation && showMessages && (
-        <div className="absolute top-4 right-4 w-96 max-w-md">
+        <div className="absolute top-4 right-4 w-96 max-w-md z-20">
           <div 
             className={`
               relative overflow-hidden rounded-2xl shadow-2xl
