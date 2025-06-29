@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,7 +23,7 @@ interface FloatingEmoji {
   scale: number;
   duration: number;
   delay: number;
-  corner: 'bottom-left' | 'bottom-right' | 'top-left' | 'top-right';
+  animationType: 'bounce' | 'spin' | 'drift' | 'zigzag' | 'spiral';
 }
 
 const AnkitObsOverlay = () => {
@@ -65,56 +64,58 @@ const AnkitObsOverlay = () => {
     }
   };
 
-  // Create floating emojis from screen corners
-  const createFloatingEmojis = (emoji: string, count: number = 15) => {
+  // Create completely random floating emojis
+  const createFloatingEmojis = (emoji: string, count: number = 20) => {
     const newEmojis: FloatingEmoji[] = [];
-    const corners: ('bottom-left' | 'bottom-right' | 'top-left' | 'top-right')[] = 
-      ['bottom-left', 'bottom-right', 'top-left', 'top-right'];
+    const animationTypes: ('bounce' | 'spin' | 'drift' | 'zigzag' | 'spiral')[] = 
+      ['bounce', 'spin', 'drift', 'zigzag', 'spiral'];
     
     for (let i = 0; i < count; i++) {
-      const corner = corners[Math.floor(Math.random() * corners.length)];
+      // Completely random corner selection
+      const corner = Math.floor(Math.random() * 4);
       let startX, startY, endX, endY;
       
-      // Define start and end positions based on corner
+      // Random positions with more variation
       switch (corner) {
-        case 'bottom-left':
-          startX = -5; // Start slightly off-screen
-          startY = 105; // Start below screen
-          endX = 20 + Math.random() * 30; // End somewhere in left-center area
-          endY = -10; // End above screen
+        case 0: // Bottom-left area
+          startX = -10 + Math.random() * 15; // -10% to 5%
+          startY = 95 + Math.random() * 15; // 95% to 110%
+          endX = Math.random() * 40; // 0% to 40%
+          endY = -20 + Math.random() * 25; // -20% to 5%
           break;
-        case 'bottom-right':
-          startX = 105; // Start off right edge
-          startY = 105; // Start below screen
-          endX = 50 + Math.random() * 30; // End somewhere in right-center area
-          endY = -10; // End above screen
+        case 1: // Bottom-right area
+          startX = 95 + Math.random() * 15; // 95% to 110%
+          startY = 95 + Math.random() * 15; // 95% to 110%
+          endX = 60 + Math.random() * 40; // 60% to 100%
+          endY = -20 + Math.random() * 25; // -20% to 5%
           break;
-        case 'top-left':
-          startX = -5; // Start off left edge
-          startY = -5; // Start above screen
-          endX = 20 + Math.random() * 30; // End somewhere in left-center area
-          endY = 110; // End below screen
+        case 2: // Top-left area
+          startX = -10 + Math.random() * 15; // -10% to 5%
+          startY = -10 + Math.random() * 15; // -10% to 5%
+          endX = Math.random() * 40; // 0% to 40%
+          endY = 95 + Math.random() * 25; // 95% to 120%
           break;
-        case 'top-right':
-          startX = 105; // Start off right edge
-          startY = -5; // Start above screen
-          endX = 50 + Math.random() * 30; // End somewhere in right-center area
-          endY = 110; // End below screen
+        case 3: // Top-right area
+        default:
+          startX = 95 + Math.random() * 15; // 95% to 110%
+          startY = -10 + Math.random() * 15; // -10% to 5%
+          endX = 60 + Math.random() * 40; // 60% to 100%
+          endY = 95 + Math.random() * 25; // 95% to 120%
           break;
       }
 
       newEmojis.push({
-        id: `emoji-${Date.now()}-${i}`,
+        id: `emoji-${Date.now()}-${i}-${Math.random()}`,
         emoji,
         startX,
         startY,
         endX,
         endY,
-        rotation: Math.random() * 720, // More rotation
-        scale: 0.8 + Math.random() * 1.2, // Random scale (0.8-2.0)
-        duration: 4 + Math.random() * 3, // Longer duration (4-7s)
-        delay: Math.random() * 1.5, // Random delay (0-1.5s)
-        corner,
+        rotation: Math.random() * 1440, // 0 to 4 full rotations
+        scale: 0.5 + Math.random() * 2, // 0.5x to 2.5x scale
+        duration: 3 + Math.random() * 5, // 3-8 seconds
+        delay: Math.random() * 2, // 0-2 seconds delay
+        animationType: animationTypes[Math.floor(Math.random() * animationTypes.length)],
       });
     }
     
@@ -125,7 +126,7 @@ const AnkitObsOverlay = () => {
       setFloatingEmojis(prev => 
         prev.filter(e => !newEmojis.some(ne => ne.id === e.id))
       );
-    }, 8500);
+    }, 10000);
   };
 
   useEffect(() => {
@@ -161,9 +162,11 @@ const AnkitObsOverlay = () => {
             console.log("Updated goal progress for successful donation");
           }
           
-          // Create floating emojis celebration
+          // Create floating emojis celebration with random count
           if (newDonation.selected_emoji) {
-            const emojiCount = newDonation.payment_status === 'success' ? 25 : 12;
+            const baseCount = 20;
+            const randomVariation = Math.floor(Math.random() * 10) - 5; // -5 to +5
+            const emojiCount = Math.max(15, baseCount + randomVariation);
             createFloatingEmojis(newDonation.selected_emoji, emojiCount);
           }
           
@@ -197,6 +200,108 @@ const AnkitObsOverlay = () => {
       supabase.removeChannel(channel);
     };
   }, [obsId, showMessages, showGoal]);
+
+  // Get random animation keyframes based on type
+  const getRandomAnimationKeyframes = (emoji: FloatingEmoji) => {
+    const baseTransform = `translate(-50%, -50%)`;
+    
+    switch (emoji.animationType) {
+      case 'zigzag':
+        return `
+          0% { 
+            left: ${emoji.startX}%; 
+            top: ${emoji.startY}%; 
+            transform: ${baseTransform} scale(0.3) rotate(0deg);
+            opacity: 0;
+          }
+          10% { 
+            opacity: 1;
+            transform: ${baseTransform} scale(${emoji.scale}) rotate(45deg);
+          }
+          25% { 
+            left: ${emoji.startX + (emoji.endX - emoji.startX) * 0.3}%; 
+            top: ${emoji.startY + (emoji.endY - emoji.startY) * 0.2}%; 
+            transform: ${baseTransform} scale(${emoji.scale * 1.2}) rotate(90deg);
+          }
+          50% { 
+            left: ${emoji.endX * 0.7}%; 
+            top: ${emoji.startY + (emoji.endY - emoji.startY) * 0.6}%; 
+            transform: ${baseTransform} scale(${emoji.scale}) rotate(180deg);
+          }
+          75% { 
+            left: ${emoji.endX * 0.9}%; 
+            top: ${emoji.startY + (emoji.endY - emoji.startY) * 0.8}%; 
+            transform: ${baseTransform} scale(${emoji.scale * 0.8}) rotate(270deg);
+          }
+          100% { 
+            left: ${emoji.endX}%; 
+            top: ${emoji.endY}%; 
+            transform: ${baseTransform} scale(0.2) rotate(${emoji.rotation}deg);
+            opacity: 0;
+          }
+        `;
+      case 'spiral':
+        return `
+          0% { 
+            left: ${emoji.startX}%; 
+            top: ${emoji.startY}%; 
+            transform: ${baseTransform} scale(0.3) rotate(0deg);
+            opacity: 0;
+          }
+          10% { 
+            opacity: 1;
+            transform: ${baseTransform} scale(${emoji.scale}) rotate(180deg);
+          }
+          25% { 
+            left: ${emoji.startX + Math.sin(Math.PI * 0.5) * 20}%; 
+            top: ${emoji.startY + (emoji.endY - emoji.startY) * 0.25}%; 
+            transform: ${baseTransform} scale(${emoji.scale}) rotate(360deg);
+          }
+          50% { 
+            left: ${emoji.startX + Math.sin(Math.PI) * 15}%; 
+            top: ${emoji.startY + (emoji.endY - emoji.startY) * 0.5}%; 
+            transform: ${baseTransform} scale(${emoji.scale * 1.3}) rotate(540deg);
+          }
+          75% { 
+            left: ${emoji.startX + Math.sin(Math.PI * 1.5) * 10}%; 
+            top: ${emoji.startY + (emoji.endY - emoji.startY) * 0.75}%; 
+            transform: ${baseTransform} scale(${emoji.scale}) rotate(720deg);
+          }
+          100% { 
+            left: ${emoji.endX}%; 
+            top: ${emoji.endY}%; 
+            transform: ${baseTransform} scale(0.2) rotate(${emoji.rotation}deg);
+            opacity: 0;
+          }
+        `;
+      default:
+        return `
+          0% { 
+            left: ${emoji.startX}%; 
+            top: ${emoji.startY}%; 
+            transform: ${baseTransform} scale(0.3) rotate(0deg);
+            opacity: 0;
+          }
+          10% { 
+            opacity: 1;
+            transform: ${baseTransform} scale(${emoji.scale}) rotate(${emoji.rotation * 0.2}deg);
+          }
+          50% { 
+            transform: ${baseTransform} scale(${emoji.scale * 1.1}) rotate(${emoji.rotation * 0.6}deg);
+          }
+          90% { 
+            opacity: 0.8;
+            transform: ${baseTransform} scale(${emoji.scale * 0.7}) rotate(${emoji.rotation * 0.9}deg);
+          }
+          100% { 
+            left: ${emoji.endX}%; 
+            top: ${emoji.endY}%; 
+            transform: ${baseTransform} scale(0.2) rotate(${emoji.rotation}deg);
+            opacity: 0;
+          }
+        `;
+    }
+  };
 
   const getAnimationClasses = () => {
     switch (animationPhase) {
@@ -244,35 +349,32 @@ const AnkitObsOverlay = () => {
       className="fixed inset-0 pointer-events-none overflow-hidden"
       style={{ background: 'transparent' }}
     >
-      {/* Floating Emojis Layer - Animated from corners */}
+      {/* Dynamic Styles for Random Animations */}
+      <style>
+        {floatingEmojis.map((emoji) => `
+          @keyframes randomMove-${emoji.id} {
+            ${getRandomAnimationKeyframes(emoji)}
+          }
+          .emoji-${emoji.id} {
+            animation: randomMove-${emoji.id} ${emoji.duration}s ease-out forwards;
+            animation-delay: ${emoji.delay}s;
+          }
+        `).join('\n')}
+      </style>
+
+      {/* Floating Emojis Layer - Completely Random */}
       <div className="absolute inset-0 z-10">
         {floatingEmojis.map((floatingEmoji) => (
           <div
             key={floatingEmoji.id}
-            className="absolute pointer-events-none select-none"
+            className={`absolute pointer-events-none select-none emoji-${floatingEmoji.id}`}
             style={{
               left: `${floatingEmoji.startX}%`,
               top: `${floatingEmoji.startY}%`,
-              transform: `translate(-50%, -50%) scale(${floatingEmoji.scale})`,
-              fontSize: '3.5rem',
+              transform: `translate(-50%, -50%)`,
+              fontSize: `${2 + Math.random() * 2}rem`, // Random size 2-4rem
               zIndex: 50,
-              animation: `
-                emojiTravel ${floatingEmoji.duration}s ease-out forwards,
-                spin ${floatingEmoji.duration * 1.5}s linear infinite,
-                pulse ${floatingEmoji.duration * 0.5}s ease-in-out infinite alternate
-              `,
-              animationDelay: `${floatingEmoji.delay}s`,
-              '--start-x': `${floatingEmoji.startX}%`,
-              '--start-y': `${floatingEmoji.startY}%`,
-              '--end-x': `${floatingEmoji.endX}%`,
-              '--end-y': `${floatingEmoji.endY}%`,
-              '--rotation': `${floatingEmoji.rotation}deg`,
-            } as React.CSSProperties & {
-              '--start-x': string;
-              '--start-y': string;
-              '--end-x': string;
-              '--end-y': string;
-              '--rotation': string;
+              filter: `hue-rotate(${Math.random() * 360}deg) brightness(${0.8 + Math.random() * 0.4})`,
             }}
           >
             {floatingEmoji.emoji}
