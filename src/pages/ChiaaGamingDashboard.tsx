@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +9,6 @@ import { formatCurrency, calculateMonthlyTotal } from "@/utils/dashboardUtils";
 import { LogOut, MessageSquare, Clock, BarChart3, Settings } from "lucide-react";
 import CSVExportDialog from "@/components/CSVExportDialog";
 import SecureDataDisplay from "@/components/SecureDataDisplay";
-import ObsSettings from "@/components/ObsSettings";
 import DashboardAnalytics from "@/components/DashboardAnalytics";
 import { logSecurityEvent } from "@/utils/rateLimiting";
 import { useVoiceCleanup } from "@/hooks/useVoiceCleanup";
@@ -32,12 +32,107 @@ const ChiaaGamingDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [monthlyTotal, setMonthlyTotal] = useState(0);
   const [realtimeAlert, setRealtimeAlert] = useState<Donation | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<string>('DISCONNECTED');
   const navigate = useNavigate();
   const { toast } = useToast();
   const channelRef = useRef<any>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Add voice cleanup hook
   useVoiceCleanup();
+
+  const setupRealtimeSubscription = () => {
+    // Clean up existing channel first
+    if (channelRef.current) {
+      console.log('Cleaning up existing channel');
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
+    // Clear any existing reconnect timeout
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+
+    // Create a unique channel name with timestamp
+    const channelName = `chiaa-gaming-donations-dashboard-${Date.now()}`;
+    
+    console.log('Setting up realtime subscription:', channelName);
+    
+    channelRef.current = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'chiaa_gaming_donations',
+          filter: 'payment_status=eq.success'
+        },
+        (payload) => {
+          console.log('New successful donation received in dashboard:', payload);
+          const newDonation = payload.new as Donation;
+          
+          // Show realtime alert for streamer (immediate, no delay)
+          setRealtimeAlert(newDonation);
+          setTimeout(() => setRealtimeAlert(null), 8000);
+          
+          setDonations(prev => {
+            // Check if donation already exists to prevent duplicates
+            const exists = prev.some(d => d.id === newDonation.id);
+            if (exists) return prev;
+            return [newDonation, ...prev];
+          });
+          setMonthlyTotal(prev => prev + Number(newDonation.amount));
+          
+          logSecurityEvent('NEW_DONATION_RECEIVED', `Amount: ${newDonation.amount}, Name: ${newDonation.name}`);
+          
+          toast({
+            title: "🎉 New Donation Received!",
+            description: `${newDonation.name} donated ₹${Number(newDonation.amount).toLocaleString()} (OBS alert in 1 minute)`,
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'chiaa_gaming_donations',
+          filter: 'payment_status=eq.success'
+        },
+        (payload) => {
+          console.log('Donation updated via realtime:', payload);
+          const updatedDonation = payload.new as Donation;
+          setDonations(prev => 
+            prev.map(donation => 
+              donation.id === updatedDonation.id ? updatedDonation : donation
+            )
+          );
+        }
+      )
+      .subscribe((status) => {
+        console.log('Dashboard realtime subscription status:', status);
+        setConnectionStatus(status);
+        
+        if (status === 'SUBSCRIBED') {
+          console.log('Successfully subscribed to chiaa_gaming_donations dashboard realtime updates');
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          logSecurityEvent('REALTIME_SUBSCRIPTION_ERROR', `Status: ${status}`);
+          
+          // Attempt to reconnect after a delay
+          if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+            console.log('Connection lost, attempting to reconnect in 5 seconds...');
+            reconnectTimeoutRef.current = setTimeout(() => {
+              setupRealtimeSubscription();
+            }, 5000);
+          }
+        }
+      });
+
+    console.log('Dashboard real-time subscription set up for chiaa_gaming_donations');
+  };
 
   useEffect(() => {
     // Check if user is authenticated
@@ -50,87 +145,14 @@ const ChiaaGamingDashboard = () => {
 
     fetchDonations();
     
-    // Set up real-time subscription
-    const setupRealtimeSubscription = () => {
-      // Clean up existing channel first
-      if (channelRef.current) {
-        console.log('Cleaning up existing channel');
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
-
-      // Create a unique channel name
-      const channelName = `chiaa-gaming-donations-dashboard-realtime-${Date.now()}`;
-      
-      channelRef.current = supabase
-        .channel(channelName)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'chiaa_gaming_donations',
-            filter: 'payment_status=eq.success'
-          },
-          (payload) => {
-            console.log('New successful donation received in dashboard (REALTIME - NO DELAY):', payload);
-            const newDonation = payload.new as Donation;
-            
-            // Show realtime alert for streamer (immediate, no delay)
-            setRealtimeAlert(newDonation);
-            setTimeout(() => setRealtimeAlert(null), 8000);
-            
-            setDonations(prev => {
-              // Check if donation already exists to prevent duplicates
-              const exists = prev.some(d => d.id === newDonation.id);
-              if (exists) return prev;
-              return [newDonation, ...prev];
-            });
-            setMonthlyTotal(prev => prev + Number(newDonation.amount));
-            
-            logSecurityEvent('NEW_DONATION_RECEIVED', `Amount: ${newDonation.amount}, Name: ${newDonation.name}`);
-            
-            toast({
-              title: "🎉 New Donation Received!",
-              description: `${newDonation.name} donated ₹${Number(newDonation.amount).toLocaleString()} (OBS alert in 1 minute)`,
-            });
-          }
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'chiaa_gaming_donations',
-            filter: 'payment_status=eq.success'
-          },
-          (payload) => {
-            console.log('Donation updated via realtime:', payload);
-            const updatedDonation = payload.new as Donation;
-            setDonations(prev => 
-              prev.map(donation => 
-                donation.id === updatedDonation.id ? updatedDonation : donation
-              )
-            );
-          }
-        )
-        .subscribe((status) => {
-          console.log('Dashboard realtime subscription status:', status);
-          if (status === 'SUBSCRIBED') {
-            console.log('Successfully subscribed to chiaa_gaming_donations dashboard realtime updates');
-          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-            logSecurityEvent('REALTIME_SUBSCRIPTION_ERROR', `Status: ${status}`);
-          }
-        });
-
-      console.log('Dashboard real-time subscription set up for chiaa_gaming_donations (IMMEDIATE NOTIFICATIONS)');
-    };
-
     // Setup subscription with a small delay
-    const timer = setTimeout(setupRealtimeSubscription, 500);
+    const timer = setTimeout(setupRealtimeSubscription, 1000);
 
     return () => {
       clearTimeout(timer);
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
       if (channelRef.current) {
         console.log('Dashboard component unmounting, cleaning up channel');
         supabase.removeChannel(channelRef.current);
@@ -229,7 +251,20 @@ const ChiaaGamingDashboard = () => {
                 <BarChart3 className="w-8 h-8" />
                 Chiaa Gaming Dashboard
               </h1>
-              <p className="text-pink-300">Analytics and overview</p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-pink-300">Analytics and overview</p>
+                <div className={`px-2 py-1 rounded-full text-xs ${
+                  connectionStatus === 'SUBSCRIBED' 
+                    ? 'bg-green-500/20 text-green-300' 
+                    : connectionStatus === 'CLOSED' || connectionStatus === 'CHANNEL_ERROR'
+                    ? 'bg-red-500/20 text-red-300'
+                    : 'bg-yellow-500/20 text-yellow-300'
+                }`}>
+                  {connectionStatus === 'SUBSCRIBED' ? '🟢 Live' : 
+                   connectionStatus === 'CLOSED' ? '🔴 Reconnecting...' : 
+                   `⚡ ${connectionStatus}`}
+                </div>
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <Button 
