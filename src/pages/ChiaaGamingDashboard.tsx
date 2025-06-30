@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, calculateMonthlyTotal } from "@/utils/dashboardUtils";
-import { LogOut, MessageSquare, Clock, BarChart3 } from "lucide-react";
+import { LogOut, MessageSquare, Clock, BarChart3, Settings } from "lucide-react";
 import CSVExportDialog from "@/components/CSVExportDialog";
 import SecureDataDisplay from "@/components/SecureDataDisplay";
 import ObsSettings from "@/components/ObsSettings";
@@ -229,7 +229,7 @@ const ChiaaGamingDashboard = () => {
                 <BarChart3 className="w-8 h-8" />
                 Chiaa Gaming Dashboard
               </h1>
-              <p className="text-pink-300">Analytics and OBS overlay management</p>
+              <p className="text-pink-300">Analytics and overview</p>
             </div>
             <div className="flex items-center gap-3">
               <Button 
@@ -239,6 +239,14 @@ const ChiaaGamingDashboard = () => {
               >
                 <MessageSquare className="w-4 h-4 mr-2" />
                 Messages
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => navigate("/chiaa_gaming/obs-settings")}
+                className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20"
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                OBS Settings
               </Button>
               <CSVExportDialog 
                 tableName="chiaa_gaming_donations" 
@@ -258,11 +266,6 @@ const ChiaaGamingDashboard = () => {
           {/* Analytics Cards */}
           <div className="mb-6">
             <DashboardAnalytics donations={donations} monthlyTotal={monthlyTotal} />
-          </div>
-
-          {/* OBS Settings */}
-          <div className="mb-6">
-            <ObsSettings />
           </div>
 
           {/* Info Card about OBS Delay */}
