@@ -1,15 +1,15 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, calculateMonthlyTotal } from "@/utils/dashboardUtils";
-import { LogOut, MessageSquare, Image, Mic, Volume2, MessageCircle, Clock, Play, Pause } from "lucide-react";
+import { LogOut, MessageSquare, Clock, BarChart3 } from "lucide-react";
 import CSVExportDialog from "@/components/CSVExportDialog";
 import SecureDataDisplay from "@/components/SecureDataDisplay";
+import ObsSettings from "@/components/ObsSettings";
+import DashboardAnalytics from "@/components/DashboardAnalytics";
 import { logSecurityEvent } from "@/utils/rateLimiting";
 import { useVoiceCleanup } from "@/hooks/useVoiceCleanup";
 
@@ -32,11 +32,9 @@ const ChiaaGamingDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [monthlyTotal, setMonthlyTotal] = useState(0);
   const [realtimeAlert, setRealtimeAlert] = useState<Donation | null>(null);
-  const [playingAudio, setPlayingAudio] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const channelRef = useRef<any>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Add voice cleanup hook
   useVoiceCleanup();
@@ -188,155 +186,6 @@ const ChiaaGamingDashboard = () => {
     });
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleString("en-IN", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  const handlePlayVoice = async (voiceUrl: string, donationId: string) => {
-    try {
-      if (playingAudio === donationId) {
-        // Stop current audio
-        if (audioRef.current) {
-          audioRef.current.pause();
-          audioRef.current = null;
-        }
-        setPlayingAudio(null);
-        return;
-      }
-
-      // Stop any currently playing audio
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-
-      // Create new audio element
-      const audio = new Audio(voiceUrl);
-      audioRef.current = audio;
-      setPlayingAudio(donationId);
-
-      audio.onended = () => {
-        setPlayingAudio(null);
-        audioRef.current = null;
-      };
-
-      audio.onerror = () => {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to play voice message",
-        });
-        setPlayingAudio(null);
-        audioRef.current = null;
-      };
-
-      await audio.play();
-      
-      // Mark voice as played in dashboard with timestamp
-      try {
-        const { error: updateError } = await supabase
-          .from('donation_gifs')
-          .update({ 
-            last_played_at: new Date().toISOString(),
-            status: 'displayed'
-          })
-          .eq('donation_id', donationId)
-          .eq('file_type', 'voice');
-
-        if (updateError) {
-          console.error('Error updating voice play timestamp:', updateError);
-        } else {
-          console.log('Voice play timestamp updated for cleanup scheduling');
-        }
-      } catch (dbError) {
-        console.error('Database error updating voice play timestamp:', dbError);
-      }
-      
-      logSecurityEvent('VOICE_MESSAGE_REPLAYED', `Donation ID: ${donationId}`);
-      
-    } catch (error) {
-      console.error("Error playing voice:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to play voice message",
-      });
-      setPlayingAudio(null);
-    }
-  };
-
-  const renderMediaBadges = (donation: Donation) => {
-    const badges = [];
-    
-    if (donation.gif_url) {
-      badges.push(
-        <Badge key="gif" variant="secondary" className="text-xs bg-purple-500/20 text-purple-300 border-purple-500/50">
-          <Image className="w-3 h-3 mr-1" />
-          GIF
-        </Badge>
-      );
-    }
-    
-    if (donation.voice_url) {
-      badges.push(
-        <div key="voice" className="flex items-center gap-1">
-          <Badge variant="secondary" className="text-xs bg-blue-500/20 text-blue-300 border-blue-500/50">
-            <Mic className="w-3 h-3 mr-1" />
-            Voice
-          </Badge>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-6 w-6 p-0 text-blue-300 hover:text-blue-100 hover:bg-blue-500/20"
-            onClick={() => handlePlayVoice(donation.voice_url!, donation.id)}
-            title={playingAudio === donation.id ? "Stop voice message" : "Play voice message"}
-          >
-            {playingAudio === donation.id ? (
-              <Pause className="w-3 h-3" />
-            ) : (
-              <Play className="w-3 h-3" />
-            )}
-          </Button>
-        </div>
-      );
-    }
-    
-    if (donation.custom_sound_name || donation.custom_sound_url) {
-      badges.push(
-        <Badge key="sound" variant="secondary" className="text-xs bg-orange-500/20 text-orange-300 border-orange-500/50">
-          <Volume2 className="w-3 h-3 mr-1" />
-          Sound
-        </Badge>
-      );
-    }
-    
-    if (donation.message && donation.message.trim() !== '') {
-      badges.push(
-        <Badge key="message" variant="secondary" className="text-xs bg-green-500/20 text-green-300 border-green-500/50">
-          <MessageCircle className="w-3 h-3 mr-1" />
-          Message
-        </Badge>
-      );
-    }
-    
-    return badges;
-  };
-
-  // Cleanup audio on unmount
-  useEffect(() => {
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
-    };
-  }, []);
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-900 via-purple-900 to-black flex items-center justify-center">
@@ -376,8 +225,11 @@ const ChiaaGamingDashboard = () => {
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-pink-100">Chiaa Gaming Dashboard</h1>
-              <p className="text-pink-300">Real-time donation management (OBS alerts delayed by 1 minute)</p>
+              <h1 className="text-3xl font-bold text-pink-100 flex items-center gap-2">
+                <BarChart3 className="w-8 h-8" />
+                Chiaa Gaming Dashboard
+              </h1>
+              <p className="text-pink-300">Analytics and OBS overlay management</p>
             </div>
             <div className="flex items-center gap-3">
               <Button 
@@ -403,18 +255,15 @@ const ChiaaGamingDashboard = () => {
             </div>
           </div>
 
-          {/* Monthly Total Card */}
-          <Card className="mb-6 bg-black/50 border-pink-500/30">
-            <CardHeader>
-              <CardTitle className="text-pink-100">Monthly Total</CardTitle>
-              <CardDescription className="text-pink-300">Total donations received this month</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-pink-400">
-                {formatCurrency(monthlyTotal)}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Analytics Cards */}
+          <div className="mb-6">
+            <DashboardAnalytics donations={donations} monthlyTotal={monthlyTotal} />
+          </div>
+
+          {/* OBS Settings */}
+          <div className="mb-6">
+            <ObsSettings />
+          </div>
 
           {/* Info Card about OBS Delay */}
           <Card className="mb-6 bg-blue-900/20 border-blue-500/30">
@@ -429,44 +278,41 @@ const ChiaaGamingDashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Donations Table */}
+          {/* Recent Donations Summary */}
           <Card className="bg-black/50 border-pink-500/30">
             <CardHeader>
-              <CardTitle className="text-pink-100">Recent Successful Payments</CardTitle>
-              <CardDescription className="text-pink-300">All successful donations with media attachments (real-time updates)</CardDescription>
+              <CardTitle className="text-pink-100">Recent Donations Summary</CardTitle>
+              <CardDescription className="text-pink-300">
+                Latest 5 successful donations - <Button 
+                  variant="link" 
+                  onClick={() => navigate("/chiaa_gaming/messages")}
+                  className="text-pink-400 hover:text-pink-300 p-0 h-auto"
+                >
+                  View all messages →
+                </Button>
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {donations.length === 0 ? (
                 <div className="text-center py-8 text-pink-300">
-                  No successful payments found
+                  No donations found
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-pink-500/30">
-                      <TableHead className="text-pink-200">Name</TableHead>
-                      <TableHead className="text-pink-200">Amount</TableHead>
-                      <TableHead className="text-pink-200">Date & Time</TableHead>
-                      <TableHead className="text-pink-200">Media</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {donations.map((donation) => (
-                      <TableRow key={donation.id} className="border-pink-500/20 hover:bg-pink-500/10">
-                        <TableCell className="font-medium text-pink-100">{donation.name}</TableCell>
-                        <TableCell className="text-pink-400 font-semibold">
-                          {formatCurrency(Number(donation.amount))}
-                        </TableCell>
-                        <TableCell className="text-pink-200">{formatDate(donation.created_at)}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {renderMediaBadges(donation)}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <div className="space-y-3">
+                  {donations.slice(0, 5).map((donation) => (
+                    <div key={donation.id} className="flex items-center justify-between p-3 bg-pink-500/10 rounded-lg border border-pink-500/20">
+                      <div>
+                        <div className="font-medium text-pink-100">{donation.name}</div>
+                        <div className="text-sm text-pink-300">
+                          {new Date(donation.created_at).toLocaleString("en-IN")}
+                        </div>
+                      </div>
+                      <div className="text-pink-400 font-semibold">
+                        {formatCurrency(Number(donation.amount))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </CardContent>
           </Card>

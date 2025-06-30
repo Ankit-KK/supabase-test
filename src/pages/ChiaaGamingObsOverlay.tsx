@@ -1,8 +1,7 @@
-import React, { useEffect, useState, useRef } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+
+import React, { useEffect, useState } from "react";
+import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ObsConfigProvider } from "@/contexts/ObsConfigContext";
-import DraggableResizableBox from "@/components/DraggableResizableBox";
 
 interface Donation {
   id: string;
@@ -13,872 +12,276 @@ interface Donation {
   payment_status: string;
   gif_url?: string;
   voice_url?: string;
+  custom_sound_name?: string;
   custom_sound_url?: string;
 }
-
-// Global queues for sequential processing with improved cleanup and 1-minute delay
-const globalMessageQueue: { donation: Donation; scheduledTime: number }[] = [];
-const globalGifQueue: { donation: Donation; duration: number; scheduledTime: number }[] = [];
-const globalCustomSoundQueue: { donation: Donation; audioElement: HTMLAudioElement; scheduledTime: number }[] = [];
-const globalVoiceQueue: { donation: Donation; audioElement: HTMLAudioElement; duration: number; scheduledTime: number }[] = [];
-
-// Global processing states
-let isProcessingMessages = false;
-let isProcessingGifs = false;
-let isProcessingCustomSounds = false;
-let isProcessingVoiceRecordings = false;
-
-let globalProcessingTimeout: NodeJS.Timeout | null = null;
-const processedDonationIds = new Set<string>();
-
-// 1-minute delay constant (60000 milliseconds)
-const ALERT_DELAY_MS = 60000;
-
-// Global audio context for managing audio permissions
-let globalAudioContext: AudioContext | null = null;
-let isAudioInitialized = false;
-
-// Initialize audio context - this will be called once user interacts with the page
-const initializeAudioContext = async (): Promise<boolean> => {
-  if (isAudioInitialized && globalAudioContext?.state === 'running') {
-    return true;
-  }
-
-  try {
-    if (!globalAudioContext) {
-      globalAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-    }
-    
-    if (globalAudioContext.state === 'suspended') {
-      await globalAudioContext.resume();
-    }
-    
-    isAudioInitialized = true;
-    console.log('Audio context initialized successfully');
-    return true;
-  } catch (error) {
-    console.error('Failed to initialize audio context:', error);
-    return false;
-  }
-};
-
-// Global cleanup function to prevent memory leaks
-const cleanupGlobalState = () => {
-  // Clear all queues
-  globalMessageQueue.length = 0;
-  globalGifQueue.length = 0;
-  
-  // Clean up audio elements
-  globalCustomSoundQueue.forEach(item => {
-    try {
-      item.audioElement.pause();
-      item.audioElement.src = '';
-    } catch (error) {
-      console.warn('Error cleaning up custom sound audio element:', error);
-    }
-  });
-  globalCustomSoundQueue.length = 0;
-  
-  globalVoiceQueue.forEach(item => {
-    try {
-      item.audioElement.pause();
-      item.audioElement.src = '';
-    } catch (error) {
-      console.warn('Error cleaning up voice audio element:', error);
-    }
-  });
-  globalVoiceQueue.length = 0;
-  
-  // Reset processing states
-  isProcessingMessages = false;
-  isProcessingGifs = false;
-  isProcessingCustomSounds = false;
-  isProcessingVoiceRecordings = false;
-  
-  // Clear timeout
-  if (globalProcessingTimeout) {
-    clearTimeout(globalProcessingTimeout);
-    globalProcessingTimeout = null;
-  }
-  
-  // Clear processed IDs
-  processedDonationIds.clear();
-  
-  // Clean up audio context
-  if (globalAudioContext) {
-    globalAudioContext.close();
-    globalAudioContext = null;
-    isAudioInitialized = false;
-  }
-};
 
 const ChiaaGamingObsOverlay = () => {
   const { obsId } = useParams();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const showMessages = searchParams.get('showMessages') !== 'false';
+  const showGoal = searchParams.get('showGoal') === 'true';
+  const goalName = searchParams.get('goalName') || 'Support Goal';
+  const goalTarget = Number(searchParams.get('goalTarget')) || 500;
+  
   const [currentDonation, setCurrentDonation] = useState<Donation | null>(null);
-  const [currentCustomSoundAlert, setCurrentCustomSoundAlert] = useState<Donation | null>(null);
-  const [currentVoiceAlert, setCurrentVoiceAlert] = useState<Donation | null>(null);
-  const [currentGifAlert, setCurrentGifAlert] = useState<Donation | null>(null);
-  const [totalDonations, setTotalDonations] = useState(0);
-  
-  // Use ref to track component instance
-  const componentId = useRef(Math.random().toString(36).substring(2, 9));
-  const cleanupRef = useRef<(() => void) | null>(null);
-  
-  // Parse URL parameters
-  const showMessages = searchParams.get("showMessages") === "true";
-  const showGoal = searchParams.get("showGoal") === "true";
-  const goalName = searchParams.get("goalName") || "Gaming Goal";
-  const goalTarget = parseInt(searchParams.get("goalTarget") || "1000");
+  const [isVisible, setIsVisible] = useState(false);
+  const [animationPhase, setAnimationPhase] = useState<'enter' | 'show' | 'exit'>('enter');
+  const [goalProgress, setGoalProgress] = useState<number>(0);
+  const [tokenValid, setTokenValid] = useState<boolean | null>(null);
 
-  console.log("OBS Overlay loaded with params:", {
-    obsId,
-    showMessages,
-    showGoal,
-    goalName,
-    goalTarget,
-    componentId: componentId.current,
-    alertDelay: `${ALERT_DELAY_MS / 1000} seconds`
-  });
-
-  // Initialize audio context on component mount
+  // Validate OBS token
   useEffect(() => {
-    const handleUserInteraction = async () => {
-      await initializeAudioContext();
-      // Remove listeners after first successful initialization
-      if (isAudioInitialized) {
-        document.removeEventListener('click', handleUserInteraction);
-        document.removeEventListener('keydown', handleUserInteraction);
-        document.removeEventListener('touchstart', handleUserInteraction);
+    const validateToken = async () => {
+      if (!obsId) {
+        setTokenValid(false);
+        return;
       }
-    };
 
-    // Add event listeners for user interaction
-    document.addEventListener('click', handleUserInteraction);
-    document.addEventListener('keydown', handleUserInteraction);
-    document.addEventListener('touchstart', handleUserInteraction);
-
-    return () => {
-      document.removeEventListener('click', handleUserInteraction);
-      document.removeEventListener('keydown', handleUserInteraction);
-      document.removeEventListener('touchstart', handleUserInteraction);
-    };
-  }, []);
-
-  // Clean up media after it's displayed with improved error handling
-  const cleanupMedia = async (donationId: string, mediaUrl: string, mediaType: 'gif' | 'voice') => {
-    try {
-      console.log(`Cleaning up ${mediaType} for donation:`, donationId);
-      
-      // Mark as displayed with error handling
       try {
-        const { error: updateError } = await supabase
-          .from("donation_gifs")
-          .update({ 
-            displayed_at: new Date().toISOString(),
-            status: 'displayed'
-          })
-          .eq("donation_id", donationId)
-          .eq("file_type", mediaType);
-
-        if (updateError) {
-          console.error(`Error marking ${mediaType} as displayed:`, updateError);
-        }
-      } catch (dbError) {
-        console.error(`Database error when marking ${mediaType} as displayed:`, dbError);
-      }
-
-      // Only delete GIFs immediately - keep voice recordings for replay
-      if (mediaType === 'gif') {
-        // Extract filename safely
-        try {
-          const urlParts = mediaUrl.split('/');
-          const fileName = urlParts[urlParts.length - 1];
-          
-          if (fileName) {
-            const { error: deleteError } = await supabase.storage
-              .from('donation-gifs')
-              .remove([fileName]);
-
-            if (deleteError) {
-              console.error(`Error deleting ${mediaType} file:`, deleteError);
-            } else {
-              console.log(`${mediaType} file deleted successfully:`, fileName);
-            }
-
-            // Mark as deleted
-            try {
-              const { error: markDeletedError } = await supabase
-                .from("donation_gifs")
-                .update({ 
-                  deleted_at: new Date().toISOString(),
-                  status: 'deleted'
-                })
-                .eq("donation_id", donationId)
-                .eq("file_type", mediaType);
-
-              if (markDeletedError) {
-                console.error(`Error marking ${mediaType} as deleted:`, markDeletedError);
-              }
-            } catch (markError) {
-              console.error(`Error marking ${mediaType} as deleted:`, markError);
-            }
-          }
-        } catch (fileError) {
-          console.error(`Error processing file deletion for ${mediaType}:`, fileError);
-        }
-      } else if (mediaType === 'voice') {
-        // For voice recordings, only mark as displayed but don't delete
-        // This allows users to replay them from dashboard/messages tab
-        console.log(`Voice recording marked as displayed but kept for replay: ${donationId}`);
-      }
-
-    } catch (error) {
-      console.error(`Error in cleanup${mediaType}:`, error);
-    }
-  };
-
-  // Process message queue with delay check (highest priority) - ALWAYS PROCESS DONATION ALERTS
-  const processNextMessage = () => {
-    if (globalMessageQueue.length === 0) {
-      isProcessingMessages = false;
-      processNextGif();
-      return;
-    }
-
-    if (isProcessingMessages) {
-      return;
-    }
-
-    const now = Date.now();
-    const nextItem = globalMessageQueue[0];
-    
-    // Check if enough time has passed for the delay
-    if (now < nextItem.scheduledTime) {
-      const remainingDelay = nextItem.scheduledTime - now;
-      console.log(`[${componentId.current}] Donation alert delayed for ${remainingDelay}ms more`);
-      globalProcessingTimeout = setTimeout(() => {
-        processNextMessage();
-      }, remainingDelay);
-      return;
-    }
-
-    isProcessingMessages = true;
-    const messageItem = globalMessageQueue.shift();
-    
-    if (!messageItem) {
-      isProcessingMessages = false;
-      processNextGif();
-      return;
-    }
-
-    const { donation } = messageItem;
-    
-    console.log(`[${componentId.current}] Processing delayed donation alert from queue:`, donation.id, donation.name);
-    
-    // Mark this donation as processed
-    processedDonationIds.add(donation.id);
-    
-    // Show the donation alert on all component instances - ALWAYS SHOW DONATION ALERTS
-    setCurrentDonation(donation);
-
-    // Auto-hide after 12 seconds
-    const hideTimeout = setTimeout(() => {
-      console.log(`[${componentId.current}] Hiding donation alert after 12 seconds:`, donation.id);
-      
-      setCurrentDonation(null);
-      isProcessingMessages = false;
-      
-      // Process next donation alert after 3 seconds
-      globalProcessingTimeout = setTimeout(() => {
-        processNextMessage();
-      }, 3000);
-    }, 12000);
-  };
-
-  // Process GIF queue with delay check (second priority)
-  const processNextGif = () => {
-    if (globalGifQueue.length === 0) {
-      isProcessingGifs = false;
-      processNextCustomSound();
-      return;
-    }
-
-    if (isProcessingGifs) {
-      return;
-    }
-
-    const now = Date.now();
-    const nextItem = globalGifQueue[0];
-    
-    // Check if enough time has passed for the delay
-    if (now < nextItem.scheduledTime) {
-      const remainingDelay = nextItem.scheduledTime - now;
-      console.log(`[${componentId.current}] GIF delayed for ${remainingDelay}ms more`);
-      globalProcessingTimeout = setTimeout(() => {
-        processNextGif();
-      }, remainingDelay);
-      return;
-    }
-
-    isProcessingGifs = true;
-    const gifItem = globalGifQueue.shift();
-    
-    if (!gifItem) {
-      isProcessingGifs = false;
-      processNextCustomSound();
-      return;
-    }
-
-    const { donation, duration } = gifItem;
-    
-    console.log(`[${componentId.current}] Showing delayed GIF alert:`, donation.name, `Duration: ${duration}ms`);
-    
-    // Show the GIF alert
-    setCurrentGifAlert(donation);
-    
-    // Set a timeout for the GIF duration
-    const gifTimeout = setTimeout(() => {
-      console.log(`[${componentId.current}] GIF timeout reached, hiding alert`);
-      setCurrentGifAlert(null);
-      isProcessingGifs = false;
-      
-      // Clean up the GIF after display
-      if (donation.gif_url) {
-        cleanupMedia(donation.id, donation.gif_url, 'gif');
-      }
-      
-      setTimeout(() => {
-        processNextGif();
-      }, 500);
-    }, duration);
-  };
-
-  // Process custom sound queue with delay check (third priority)
-  const processNextCustomSound = () => {
-    if (globalCustomSoundQueue.length === 0) {
-      isProcessingCustomSounds = false;
-      processNextVoiceRecording();
-      return;
-    }
-
-    if (isProcessingCustomSounds) {
-      return;
-    }
-
-    const now = Date.now();
-    const nextItem = globalCustomSoundQueue[0];
-    
-    // Check if enough time has passed for the delay
-    if (now < nextItem.scheduledTime) {
-      const remainingDelay = nextItem.scheduledTime - now;
-      console.log(`[${componentId.current}] Custom sound delayed for ${remainingDelay}ms more`);
-      globalProcessingTimeout = setTimeout(() => {
-        processNextCustomSound();
-      }, remainingDelay);
-      return;
-    }
-
-    isProcessingCustomSounds = true;
-    const soundItem = globalCustomSoundQueue.shift();
-    
-    if (!soundItem) {
-      isProcessingCustomSounds = false;
-      processNextVoiceRecording();
-      return;
-    }
-
-    const { donation, audioElement } = soundItem;
-    
-    console.log(`[${componentId.current}] Playing delayed custom sound and showing alert:`, donation.name);
-    
-    // Show the custom sound alert
-    setCurrentCustomSoundAlert(donation);
-    
-    // Ensure audio context is ready before playing
-    const playAudio = async () => {
-      try {
-        if (!isAudioInitialized) {
-          await initializeAudioContext();
-        }
-        
-        await audioElement.play();
-      } catch (error) {
-        console.error(`[${componentId.current}] Failed to play custom sound:`, error);
-        setCurrentCustomSoundAlert(null);
-        isProcessingCustomSounds = false;
-        
-        setTimeout(() => {
-          processNextCustomSound();
-        }, 500);
-      }
-    };
-    
-    audioElement.onended = () => {
-      console.log(`[${componentId.current}] Custom sound ended, hiding alert`);
-      setCurrentCustomSoundAlert(null);
-      isProcessingCustomSounds = false;
-      
-      setTimeout(() => {
-        processNextCustomSound();
-      }, 500);
-    };
-    
-    audioElement.onerror = (e) => {
-      console.error(`[${componentId.current}] Custom sound error:`, e);
-      setCurrentCustomSoundAlert(null);
-      isProcessingCustomSounds = false;
-      
-      setTimeout(() => {
-        processNextCustomSound();
-      }, 500);
-    };
-    
-    playAudio();
-  };
-
-  // Process voice recording queue with delay check (lowest priority)
-  const processNextVoiceRecording = () => {
-    if (globalVoiceQueue.length === 0) {
-      isProcessingVoiceRecordings = false;
-      return;
-    }
-
-    if (isProcessingVoiceRecordings) {
-      return;
-    }
-
-    const now = Date.now();
-    const nextItem = globalVoiceQueue[0];
-    
-    // Check if enough time has passed for the delay
-    if (now < nextItem.scheduledTime) {
-      const remainingDelay = nextItem.scheduledTime - now;
-      console.log(`[${componentId.current}] Voice recording delayed for ${remainingDelay}ms more`);
-      globalProcessingTimeout = setTimeout(() => {
-        processNextVoiceRecording();
-      }, remainingDelay);
-      return;
-    }
-
-    isProcessingVoiceRecordings = true;
-    const voiceItem = globalVoiceQueue.shift();
-    
-    if (!voiceItem) {
-      isProcessingVoiceRecordings = false;
-      return;
-    }
-
-    const { donation, audioElement, duration } = voiceItem;
-    
-    console.log(`[${componentId.current}] Playing delayed voice recording and showing alert:`, donation.name, `Duration: ${duration}ms`);
-    
-    // Show the voice recording alert
-    setCurrentVoiceAlert(donation);
-    
-    // Ensure audio context is ready before playing
-    const playVoiceAudio = async () => {
-      try {
-        if (!isAudioInitialized) {
-          await initializeAudioContext();
-        }
-        
-        await audioElement.play();
-      } catch (error) {
-        console.error(`[${componentId.current}] Failed to play voice recording:`, error);
-        setCurrentVoiceAlert(null);
-        isProcessingVoiceRecordings = false;
-        
-        setTimeout(() => {
-          processNextVoiceRecording();
-        }, 500);
-      }
-    };
-    
-    audioElement.onended = () => {
-      console.log(`[${componentId.current}] Voice recording ended, hiding alert`);
-      setCurrentVoiceAlert(null);
-      isProcessingVoiceRecordings = false;
-      
-      // Mark voice recording as displayed but DON'T delete it for replay functionality
-      if (donation.voice_url) {
-        cleanupMedia(donation.id, donation.voice_url, 'voice');
-      }
-      
-      setTimeout(() => {
-        processNextVoiceRecording();
-      }, 500);
-    };
-    
-    audioElement.onerror = (e) => {
-      console.error(`[${componentId.current}] Voice recording error:`, e);
-      setCurrentVoiceAlert(null);
-      isProcessingVoiceRecordings = false;
-      
-      setTimeout(() => {
-        processNextVoiceRecording();
-      }, 500);
-    };
-    
-    // Set a timeout based on the calculated duration as fallback
-    const fallbackTimeout = setTimeout(() => {
-      console.log(`[${componentId.current}] Voice recording timeout reached, hiding alert`);
-      setCurrentVoiceAlert(null);
-      isProcessingVoiceRecordings = false;
-      
-      // Mark voice recording as displayed but DON'T delete it for replay functionality
-      if (donation.voice_url) {
-        cleanupMedia(donation.id, donation.voice_url, 'voice');
-      }
-      
-      setTimeout(() => {
-        processNextVoiceRecording();
-      }, 500);
-    }, duration);
-    
-    // Clear fallback timeout if audio ends normally
-    const originalOnEnded = audioElement.onended;
-    audioElement.onended = () => {
-      clearTimeout(fallbackTimeout);
-      if (originalOnEnded) originalOnEnded.call(audioElement);
-    };
-    
-    playVoiceAudio();
-  };
-
-  // Add donation to queues in priority order with 1-minute delay: donation alerts first, then GIFs, then sounds
-  const addDonationToQueues = (donation: Donation) => {
-    // Skip processing if payment is not successful
-    if (donation.payment_status !== "success") {
-      console.log(`[${componentId.current}] Skipping donation processing - payment not successful:`, {
-        donationId: donation.id,
-        name: donation.name,
-        paymentStatus: donation.payment_status
-      });
-      return;
-    }
-
-    const scheduledTime = Date.now() + ALERT_DELAY_MS;
-    const delayMinutes = ALERT_DELAY_MS / 60000;
-    
-    console.log(`[${componentId.current}] Processing donation with ${delayMinutes}-minute delay:`, {
-      donationId: donation.id,
-      name: donation.name,
-      hasCustomSound: !!donation.custom_sound_url,
-      hasVoice: !!donation.voice_url,
-      hasGif: !!donation.gif_url,
-      hasMessage: !!donation.message,
-      amount: donation.amount,
-      paymentStatus: donation.payment_status,
-      scheduledTime: new Date(scheduledTime).toLocaleTimeString()
-    });
-
-    // 1. ALWAYS add donation alert to queue - regardless of showMessages setting
-    console.log(`[${componentId.current}] Adding donation alert to delayed queue (${delayMinutes} min delay):`, donation.id);
-    globalMessageQueue.push({ donation, scheduledTime });
-
-    // 2. Add GIF to queue (will be processed after donation alerts)
-    if (donation.gif_url) {
-      console.log(`[${componentId.current}] Adding GIF to delayed queue (${delayMinutes} min delay):`, donation.id);
-      const duration = 12000; // 12 seconds for GIFs
-      globalGifQueue.push({ donation, duration, scheduledTime });
-    }
-
-    // 3. Add custom sound to queue (will be processed after GIFs)
-    if (donation.custom_sound_url && Number(donation.amount) >= 50) {
-      console.log(`[${componentId.current}] Adding custom sound to delayed queue (${delayMinutes} min delay):`, donation.id);
-      try {
-        const audio = new Audio(donation.custom_sound_url);
-        audio.volume = 0.7;
-        audio.preload = 'auto';
-        globalCustomSoundQueue.push({ donation, audioElement: audio, scheduledTime });
-      } catch (error) {
-        console.error(`[${componentId.current}] Error creating custom sound audio element:`, error);
-      }
-    }
-
-    // 4. Add voice recording to queue (INDEPENDENT OF showMessages - voice is audio only)
-    if (donation.voice_url && Number(donation.amount) >= 150) {
-      console.log(`[${componentId.current}] Adding voice recording to delayed queue (${delayMinutes} min delay):`, donation.id);
-      try {
-        const audio = new Audio(donation.voice_url);
-        audio.volume = 0.8;
-        audio.preload = 'auto';
-        
-        // Calculate duration based on amount - updated thresholds
-        const duration = Number(donation.amount) < 300 ? 15000 : 
-                        Number(donation.amount) < 1000 ? 30000 : 60000; // 15s, 30s, or 60s
-        
-        globalVoiceQueue.push({ donation, audioElement: audio, duration, scheduledTime });
-        
-        console.log(`[${componentId.current}] Voice recording queued with duration:`, {
-          donationAmount: donation.amount,
-          calculatedDuration: duration / 1000 + 's',
-          voiceUrl: donation.voice_url.substring(0, 50) + '...'
+        const { data, error } = await supabase.rpc('validate_obs_token', {
+          p_token: obsId,
+          p_admin_type: 'chiaa_gaming'
         });
-      } catch (error) {
-        console.error(`[${componentId.current}] Error creating voice audio element:`, error);
-      }
-    }
-    
-    console.log(`[${componentId.current}] Updated delayed queue lengths:`, {
-      donationAlerts: globalMessageQueue.length,
-      gifs: globalGifQueue.length,
-      customSounds: globalCustomSoundQueue.length,
-      voice: globalVoiceQueue.length,
-      total: globalMessageQueue.length + globalGifQueue.length + globalCustomSoundQueue.length + globalVoiceQueue.length,
-      nextScheduledAlert: globalMessageQueue.length > 0 ? new Date(globalMessageQueue[0].scheduledTime).toLocaleTimeString() : 
-                         globalGifQueue.length > 0 ? new Date(globalGifQueue[0].scheduledTime).toLocaleTimeString() :
-                         globalCustomSoundQueue.length > 0 ? new Date(globalCustomSoundQueue[0].scheduledTime).toLocaleTimeString() :
-                         globalVoiceQueue.length > 0 ? new Date(globalVoiceQueue[0].scheduledTime).toLocaleTimeString() : 'None'
-    });
 
-    // Start processing if not already processing (donation alerts have highest priority)
-    if (!isProcessingMessages && !isProcessingGifs && !isProcessingCustomSounds && !isProcessingVoiceRecordings) {
-      console.log(`[${componentId.current}] Starting delayed sequential queue processing`);
-      setTimeout(() => {
-        processNextMessage();
-      }, 100);
-    }
-
-    // Mark as processed to avoid duplicate processing
-    processedDonationIds.add(donation.id);
-  };
-
-  useEffect(() => {
-    // Fetch today's total donations for goal progress - ONLY SUCCESSFUL PAYMENTS
-    const fetchTotalDonations = async () => {
-      try {
-        const today = new Date();
-        const todayStart = `${today.toISOString().split('T')[0]}T00:00:00`;
-        const todayEnd = `${today.toISOString().split('T')[0]}T23:59:59`;
-        
-        const { data, error } = await supabase
-          .from("chiaa_gaming_donations")
-          .select("amount")
-          .eq("payment_status", "success") // Only count successful payments
-          .gte("created_at", todayStart)
-          .lte("created_at", todayEnd);
-
-        if (error) {
-          console.error('Error fetching total donations:', error);
+        if (error || !data) {
+          console.error("Invalid OBS token:", error);
+          setTokenValid(false);
           return;
         }
 
-        if (data) {
-          const total = data.reduce((sum, donation) => sum + Number(donation.amount), 0);
-          setTotalDonations(total);
-        }
+        setTokenValid(true);
       } catch (error) {
-        console.error('Exception when fetching total donations:', error);
+        console.error("Error validating token:", error);
+        setTokenValid(false);
       }
     };
 
-    fetchTotalDonations();
+    validateToken();
+  }, [obsId]);
 
-    // Set up real-time subscription ONLY for successful donations
+  // Calculate goal progress from today's successful donations only
+  const fetchGoalProgress = async () => {
+    try {
+      const today = new Date();
+      const todayStart = `${today.toISOString().split('T')[0]}T00:00:00`;
+      const todayEnd = `${today.toISOString().split('T')[0]}T23:59:59`;
+      
+      const { data, error } = await supabase
+        .from("chiaa_gaming_donations")
+        .select("amount")
+        .eq("payment_status", "success")
+        .gte("created_at", todayStart)
+        .lte("created_at", todayEnd);
+
+      if (error) throw error;
+      
+      const total = data?.reduce((sum, donation) => sum + Number(donation.amount), 0) || 0;
+      setGoalProgress(total);
+      console.log("Goal progress updated for successful donations only:", total);
+    } catch (error) {
+      console.error("Error fetching goal progress:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (!tokenValid) return;
+
+    if (showGoal) {
+      fetchGoalProgress();
+    }
+  }, [showGoal, tokenValid]);
+
+  useEffect(() => {
+    if (!tokenValid) return;
+
+    // Set up real-time subscription with 1 minute delay for OBS alerts
     const channel = supabase
-      .channel(`chiaa-gaming-obs-${obsId}-${componentId.current}`)
+      .channel(`chiaa-gaming-obs-overlay-${obsId}`)
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
           table: 'chiaa_gaming_donations',
-          filter: 'payment_status=eq.success' // CRITICAL: Only listen for successful payments
+          filter: 'payment_status=eq.success'
         },
         (payload) => {
-          try {
-            const newDonation = payload.new as Donation;
-            console.log(`[${componentId.current}] Successful donation received in OBS overlay (will be delayed ${ALERT_DELAY_MS/60000} minutes):`, {
-              id: newDonation.id,
-              name: newDonation.name,
-              amount: newDonation.amount,
-              payment_status: newDonation.payment_status,
-              hasVoice: !!newDonation.voice_url
-            });
-            
-            // Double-check payment status (safety check)
-            if (newDonation.payment_status !== "success") {
-              console.log(`[${componentId.current}] Blocking non-successful donation from OBS processing:`, newDonation.payment_status);
-              return;
-            }
-            
-            // Update total for goal only if payment is successful
-            setTotalDonations(prev => prev + Number(newDonation.amount));
-            console.log(`[${componentId.current}] Updated total donations for successful payment`);
-            
-            // Add donation to sequential queues for processing with delay (only successful payments will be processed)
-            addDonationToQueues(newDonation);
-          } catch (error) {
-            console.error(`[${componentId.current}] Error processing new donation:`, error);
+          const newDonation = payload.new as Donation;
+          console.log('New successful donation received in OBS overlay with 1 minute delay:', newDonation);
+          
+          // Update goal progress for successful payments
+          if (showGoal) {
+            setGoalProgress(prev => prev + Number(newDonation.amount));
+          }
+          
+          // Show donation alert with 1 minute delay if messages are enabled
+          if (showMessages) {
+            setTimeout(() => {
+              console.log('Showing delayed donation alert in OBS overlay');
+              setAnimationPhase('enter');
+              setCurrentDonation(newDonation);
+              setIsVisible(true);
+              
+              setTimeout(() => setAnimationPhase('show'), 500);
+              
+              setTimeout(() => {
+                setAnimationPhase('exit');
+                setTimeout(() => {
+                  setIsVisible(false);
+                  setTimeout(() => {
+                    setCurrentDonation(null);
+                    setAnimationPhase('enter');
+                  }, 1000);
+                }, 500);
+              }, 12000);
+            }, 60000); // 1 minute delay
           }
         }
       )
       .subscribe();
 
-    console.log(`[${componentId.current}] Real-time subscription set up for chiaa_gaming OBS overlay - SUCCESS PAYMENTS ONLY with ${ALERT_DELAY_MS/60000} minute delay: ${obsId}`);
+    console.log('Chiaa Gaming OBS overlay real-time subscription set up with 1 minute delay');
 
-    // Store cleanup function
-    cleanupRef.current = () => {
-      console.log(`[${componentId.current}] Component cleanup initiated`);
+    return () => {
       supabase.removeChannel(channel);
-      
-      // Clear timeouts
-      if (globalProcessingTimeout) {
-        clearTimeout(globalProcessingTimeout);
-        globalProcessingTimeout = null;
-      }
     };
+  }, [obsId, showMessages, showGoal, tokenValid]);
 
-    return () => {
-      if (cleanupRef.current) {
-        cleanupRef.current();
-      }
-    };
-  }, [obsId, showMessages]);
+  // Show loading or error state
+  if (tokenValid === null) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-black/90">
+        <div className="text-white text-xl">Validating access...</div>
+      </div>
+    );
+  }
 
-  // Cleanup on component unmount
-  useEffect(() => {
-    return () => {
-      console.log(`[${componentId.current}] Component unmounting, performing cleanup`);
-      cleanupGlobalState();
-    };
-  }, []);
+  if (tokenValid === false) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-black/90">
+        <div className="text-red-400 text-xl">Invalid or expired OBS token</div>
+      </div>
+    );
+  }
 
-  const progressPercentage = Math.min((totalDonations / goalTarget) * 100, 100);
-  const shouldShowTextMessage = currentDonation && currentDonation.message && showMessages && !currentDonation.voice_url;
+  const getAnimationClasses = () => {
+    switch (animationPhase) {
+      case 'enter':
+        return 'opacity-0 scale-0 translate-x-full rotate-12';
+      case 'show':
+        return 'opacity-100 scale-100 translate-x-0 rotate-0';
+      case 'exit':
+        return 'opacity-0 scale-75 -translate-y-8 rotate-3';
+      default:
+        return 'opacity-100 scale-100 translate-x-0 rotate-0';
+    }
+  };
+
+  const goalPercentage = Math.min((goalProgress / goalTarget) * 100, 100);
 
   return (
-    <ObsConfigProvider>
-      <div className="w-screen h-screen bg-transparent overflow-hidden relative">
-        {/* Voice Recording Alert - SHOWS REGARDLESS OF showMessages */}
-        {currentVoiceAlert && (
-          <DraggableResizableBox className="animate-slide-in-right">
-            <div className="bg-gradient-to-r from-blue-600/90 to-purple-600/90 backdrop-blur-sm rounded-lg p-4 shadow-2xl border border-blue-500/50 max-w-md">
-              <div className="flex items-center space-x-3 mb-2">
-                <div className="w-3 h-3 bg-blue-400 rounded-full animate-pulse"></div>
-                <span className="text-blue-100 font-bold text-lg">{currentVoiceAlert.name}</span>
-                <span className="text-blue-300 font-semibold">₹{Number(currentVoiceAlert.amount).toLocaleString()}</span>
-              </div>
-              <div className="flex items-center space-x-2 mb-2">
-                <span className="text-blue-300 font-semibold">🎤 Voice Message Playing</span>
-              </div>
-              {currentVoiceAlert.message && showMessages && (
-                <p className="text-blue-50 text-sm leading-relaxed italic">"{currentVoiceAlert.message}"</p>
-              )}
-            </div>
-          </DraggableResizableBox>
-        )}
-
-        {/* Custom Sound Alert - SHOWS REGARDLESS OF showMessages */}
-        {currentCustomSoundAlert && (
-          <DraggableResizableBox className="animate-slide-in-right">
-            <div className="bg-gradient-to-r from-orange-600/90 to-red-600/90 backdrop-blur-sm rounded-lg p-4 shadow-2xl border border-orange-500/50 max-w-md">
-              <div className="flex items-center space-x-3 mb-2">
-                <div className="w-3 h-3 bg-orange-400 rounded-full animate-pulse"></div>
-                <span className="text-orange-100 font-bold text-lg">{currentCustomSoundAlert.name}</span>
-                <span className="text-orange-300 font-semibold">₹{Number(currentCustomSoundAlert.amount).toLocaleString()}</span>
-              </div>
-              <div className="flex items-center space-x-2 mb-2">
-                <span className="text-orange-300 font-semibold">played custom sound</span>
-              </div>
-              {currentCustomSoundAlert.message && showMessages && (
-                <p className="text-orange-50 text-sm leading-relaxed">{currentCustomSoundAlert.message}</p>
-              )}
-            </div>
-          </DraggableResizableBox>
-        )}
-
-        {/* GIF Alert - SHOWS REGARDLESS OF showMessages */}
-        {currentGifAlert && (
-          <DraggableResizableBox className="animate-slide-in-right">
-            <div className="bg-gradient-to-r from-green-600/90 to-teal-600/90 backdrop-blur-sm rounded-lg p-4 shadow-2xl border border-green-500/50 max-w-md">
-              <div className="flex items-center space-x-3">
-                <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-green-100 font-bold text-lg">{currentGifAlert.name}</span>
-                <span className="text-green-300 font-semibold">shared a GIF</span>
-              </div>
-            </div>
-          </DraggableResizableBox>
-        )}
-
-        {/* Donation Alert - ALWAYS SHOWS FOR SUCCESSFUL DONATIONS */}
-        {currentDonation && (
-          <DraggableResizableBox className="animate-slide-in-right">
-            <div className="relative overflow-hidden bg-gradient-to-r from-pink-600/90 to-purple-600/90 backdrop-blur-sm rounded-lg p-4 shadow-2xl border border-pink-500/50 max-w-md">
-              {/* Animated background elements */}
-              <div className="absolute inset-0 opacity-20">
-                <div className="absolute top-2 left-2 w-2 h-2 bg-pink-300 rounded-full animate-ping"></div>
-                <div className="absolute top-4 right-4 w-1 h-1 bg-purple-300 rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
-                <div className="absolute bottom-3 left-6 w-1.5 h-1.5 bg-pink-400 rounded-full animate-bounce" style={{animationDelay: '1s'}}></div>
-              </div>
-              
-              {/* Shimmer effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse"></div>
-              
-              <div className="relative z-10 flex items-center space-x-3 mb-2">
-                <div className="w-3 h-3 bg-pink-400 rounded-full animate-pulse"></div>
-                <span className="text-pink-100 font-bold text-lg animate-pulse">{currentDonation.name}</span>
-                <span className="text-pink-300 font-semibold bg-pink-500/20 px-2 py-1 rounded-full animate-bounce">₹{Number(currentDonation.amount).toLocaleString()}</span>
-              </div>
-              {shouldShowTextMessage && (
-                <div className="relative">
-                  <p className="text-pink-50 text-sm leading-relaxed animate-fade-in">{currentDonation.message}</p>
-                  <div className="absolute -bottom-1 left-0 h-0.5 bg-gradient-to-r from-pink-400 to-purple-400 animate-pulse rounded-full" style={{width: '100%'}}></div>
+    <div 
+      className="fixed inset-0 pointer-events-none overflow-hidden"
+      style={{ background: 'transparent' }}
+    >
+      {/* Goal Display */}
+      {showGoal && (
+        <div className="absolute top-4 left-4 w-80 z-20">
+          <div className="bg-gradient-to-r from-purple-600/90 to-pink-600/90 backdrop-blur-sm rounded-xl p-4 border border-white/20 shadow-2xl">
+            <div className="text-white">
+              <h3 className="text-lg font-bold mb-2">{goalName}</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>₹{goalProgress.toLocaleString()}</span>
+                  <span>₹{goalTarget.toLocaleString()}</span>
                 </div>
-              )}
+                <div className="w-full bg-black/30 rounded-full h-3 overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-green-400 to-blue-500 transition-all duration-1000 ease-out"
+                    style={{ width: `${goalPercentage}%` }}
+                  />
+                </div>
+                <div className="text-center text-sm font-semibold">
+                  {goalPercentage.toFixed(1)}% Complete
+                </div>
+              </div>
             </div>
-          </DraggableResizableBox>
-        )}
+          </div>
+        </div>
+      )}
 
-        {/* Standalone GIF Display - SHOWS REGARDLESS OF showMessages */}
-        {currentGifAlert && currentGifAlert.gif_url && (
-          <DraggableResizableBox className="animate-slide-in-right">
-            <div className="flex justify-center">
-              <img
-                src={currentGifAlert.gif_url}
-                alt="Donation GIF"
-                className="max-w-full max-h-64 rounded-lg animate-scale-in"
-                style={{ objectFit: 'contain' }}
-                onLoad={() => {
-                  console.log(`[${componentId.current}] GIF loaded successfully:`, currentGifAlert.gif_url);
-                }}
-                onError={(e) => {
-                  console.error(`[${componentId.current}] Failed to load GIF:`, currentGifAlert.gif_url);
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-            </div>
-          </DraggableResizableBox>
-        )}
-
-        {/* Goal Progress */}
-        {showGoal && (
-          <DraggableResizableBox className="animate-fade-in">
-            <div className="bg-gradient-to-r from-pink-600/90 to-purple-600/90 backdrop-blur-sm rounded-lg p-6 shadow-2xl border border-pink-500/50 min-w-[300px]">
-              <div className="text-center mb-4">
-                <h3 className="text-pink-100 font-bold text-xl mb-2">{goalName}</h3>
-                <div className="text-pink-200 text-lg">
-                  ₹{totalDonations.toLocaleString()} / ₹{goalTarget.toLocaleString()}
+      {/* Donation Alert */}
+      {currentDonation && showMessages && (
+        <div className="absolute top-4 right-4 w-96 max-w-md z-20">
+          <div 
+            className={`
+              relative overflow-hidden rounded-2xl shadow-2xl
+              transition-all duration-700 ease-out
+              ${getAnimationClasses()}
+            `}
+          >
+            {/* Background gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 animate-gradient-x"></div>
+            
+            {/* Shimmer effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
+            
+            {/* Content */}
+            <div className="relative p-6 text-white">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-4">
+                <h3 className={`text-2xl font-bold transition-all duration-500 ${animationPhase === 'show' ? 'animate-pulse-glow' : ''}`}>
+                  New Donation!
+                </h3>
+                <div className={`text-4xl transition-all duration-700 ${animationPhase === 'show' ? 'animate-bounce' : ''}`}>
+                  🎉
                 </div>
               </div>
               
-              <div className="w-full bg-black/30 rounded-full h-6 mb-2 overflow-hidden">
-                <div 
-                  className="bg-gradient-to-r from-pink-400 to-purple-400 h-full rounded-full transition-all duration-1000 ease-out animate-pulse"
-                  style={{ width: `${progressPercentage}%` }}
-                />
+              {/* Donation details */}
+              <div className="space-y-3">
+                <div className={`flex justify-between items-center transition-all duration-500 delay-200 ${animationPhase === 'enter' ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
+                  <span className="text-lg font-semibold">{currentDonation.name}</span>
+                  <span className={`text-3xl font-bold text-yellow-300 transition-all duration-300 ${animationPhase === 'show' ? 'animate-pulse scale-110' : ''}`}>
+                    ₹{Number(currentDonation.amount).toLocaleString()}
+                  </span>
+                </div>
+                
+                {currentDonation.message && (
+                  <div className={`bg-black/30 backdrop-blur-sm rounded-lg p-3 border border-white/20 transition-all duration-500 delay-400 ${animationPhase === 'enter' ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
+                    <p className="text-sm italic">"{currentDonation.message}"</p>
+                  </div>
+                )}
               </div>
               
-              <div className="text-center text-pink-200 text-sm">
-                {progressPercentage.toFixed(1)}% Complete
+              {/* Thank you message */}
+              <div className={`mt-4 text-center transition-all duration-500 delay-600 ${animationPhase === 'enter' ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
+                <div className={`inline-block bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 text-sm border border-white/30 ${animationPhase === 'show' ? 'animate-float' : ''}`}>
+                  Thank you for your support! ❤️
+                </div>
               </div>
             </div>
-          </DraggableResizableBox>
-        )}
-      </div>
-    </ObsConfigProvider>
+            
+            {/* Decorative elements */}
+            <div className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-400 rounded-full animate-ping"></div>
+            <div className="absolute -bottom-1 -left-1 w-4 h-4 bg-pink-400 rounded-full animate-pulse"></div>
+            
+            {/* Progress bar animation */}
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
+              <div 
+                className="h-full bg-gradient-to-r from-yellow-400 to-orange-400 transition-all duration-[12000ms] ease-linear"
+                style={{ 
+                  width: animationPhase === 'show' ? '0%' : '100%',
+                  transform: animationPhase === 'exit' ? 'scaleX(0)' : 'scaleX(1)',
+                }}
+              ></div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
