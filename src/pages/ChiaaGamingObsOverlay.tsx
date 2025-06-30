@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -319,13 +318,6 @@ const ChiaaGamingObsOverlay = () => {
               ></div>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Audio status indicator when audio is disabled */}
-      {!showAudio && (
-        <div className="absolute bottom-4 right-4 bg-orange-600/80 text-white px-3 py-1 rounded-full text-xs">
-          Audio: External Player
         </div>
       )}
     </div>
