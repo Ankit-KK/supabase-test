@@ -1,8 +1,8 @@
-
 import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Volume2, VolumeX } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
 
 interface Donation {
   id: string;
@@ -22,7 +22,15 @@ const ChiaaGamingAudioPlayer = () => {
   const [isAudioActive, setIsAudioActive] = useState(false);
   const [currentAudio, setCurrentAudio] = useState<string | null>(null);
   const [audioQueue, setAudioQueue] = useState<string[]>([]);
+  const [volume, setVolume] = useState<number[]>([70]); // Default volume at 70%
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Update audio volume when slider changes
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume[0] / 100;
+    }
+  }, [volume]);
 
   // Validate OBS token
   useEffect(() => {
@@ -175,7 +183,7 @@ const ChiaaGamingAudioPlayer = () => {
       />
       
       {/* Status indicator */}
-      <div className="text-center text-white">
+      <div className="text-center text-white max-w-md w-full px-6">
         <div className="mb-4">
           {isAudioActive ? (
             <Volume2 className="w-12 h-12 mx-auto text-green-400 animate-pulse" />
@@ -188,23 +196,44 @@ const ChiaaGamingAudioPlayer = () => {
           Chiaa Gaming Audio Player
         </div>
         
-        <div className="text-sm text-gray-300 mb-2">
+        <div className="text-sm text-gray-300 mb-4">
           {isAudioActive ? "Playing audio..." : "Ready for audio"}
         </div>
         
+        {/* Volume Control */}
+        <div className="mb-4 bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+          <div className="flex items-center gap-3 mb-2">
+            <VolumeX className="w-4 h-4 text-gray-400" />
+            <div className="flex-1">
+              <Slider
+                value={volume}
+                onValueChange={setVolume}
+                max={100}
+                min={0}
+                step={5}
+                className="w-full"
+              />
+            </div>
+            <Volume2 className="w-4 h-4 text-gray-400" />
+          </div>
+          <div className="text-xs text-gray-400 text-center">
+            Volume: {volume[0]}%
+          </div>
+        </div>
+        
         {audioQueue.length > 0 && (
-          <div className="text-xs text-yellow-400">
+          <div className="text-xs text-yellow-400 mb-2">
             {audioQueue.length} audio(s) in queue
           </div>
         )}
         
         {currentAudio && (
-          <div className="text-xs text-green-400 mt-2">
+          <div className="text-xs text-green-400 mb-4">
             Playing: {currentAudio.substring(currentAudio.lastIndexOf('/') + 1, currentAudio.lastIndexOf('?') || currentAudio.length)}
           </div>
         )}
         
-        <div className="text-xs text-gray-400 mt-4">
+        <div className="text-xs text-gray-400">
           Keep this tab open in background for reliable audio playback
         </div>
       </div>
