@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -29,6 +30,7 @@ import ChiaaGamingDashboard from "./pages/ChiaaGamingDashboard";
 import ChiaaGamingDonationMessages from "./pages/ChiaaGamingDonationMessages";
 import ChiaaGamingObsSettings from "./pages/ChiaaGamingObsSettings";
 import ChiaaGamingObsOverlay from "./pages/ChiaaGamingObsOverlay";
+import ChiaaGamingAudioPlayer from "./pages/ChiaaGamingAudioPlayer";
 
 // Blog posts
 import EarnMoneyStreamingIndia from "./pages/blog/EarnMoneyStreamingIndia";
@@ -78,6 +80,7 @@ const App = () => (
               <Route path="/chiaa_gaming/messages" element={<ChiaaGamingDonationMessages />} />
               <Route path="/chiaa_gaming/obs-settings" element={<ChiaaGamingObsSettings />} />
               <Route path="/chiaa_gaming/obs/:obsId" element={<ChiaaGamingObsOverlay />} />
+              <Route path="/chiaa_gaming/audio-player/:obsId" element={<ChiaaGamingAudioPlayer />} />
               
               {/* Blog posts */}
               <Route path="/blog/earn-money-streaming-india" element={<EarnMoneyStreamingIndia />} />

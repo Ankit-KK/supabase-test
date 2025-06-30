@@ -22,6 +22,7 @@ const ChiaaGamingObsOverlay = () => {
   const navigate = useNavigate();
   const showMessages = searchParams.get('showMessages') !== 'false';
   const showGoal = searchParams.get('showGoal') === 'true';
+  const showAudio = searchParams.get('showAudio') !== 'false'; // New parameter
   const goalName = searchParams.get('goalName') || 'Support Goal';
   const goalTarget = Number(searchParams.get('goalTarget')) || 500;
   
@@ -93,6 +94,34 @@ const ChiaaGamingObsOverlay = () => {
     }
   }, [showGoal, tokenValid]);
 
+  // Play audio if enabled and audio URLs exist
+  const playDonationAudio = (donation: Donation) => {
+    if (!showAudio) {
+      console.log('Audio disabled in OBS overlay, skipping audio playback');
+      return;
+    }
+
+    // Play voice message if available
+    if (donation.voice_url) {
+      const audio = new Audio(donation.voice_url);
+      audio.volume = 0.7;
+      audio.play().catch(error => {
+        console.error('Error playing voice message:', error);
+      });
+    }
+
+    // Play custom sound if available
+    if (donation.custom_sound_url) {
+      setTimeout(() => {
+        const audio = new Audio(donation.custom_sound_url);
+        audio.volume = 0.8;
+        audio.play().catch(error => {
+          console.error('Error playing custom sound:', error);
+        });
+      }, donation.voice_url ? 3000 : 0); // Wait 3 seconds if voice was played first
+    }
+  };
+
   useEffect(() => {
     if (!tokenValid) return;
 
@@ -124,6 +153,9 @@ const ChiaaGamingObsOverlay = () => {
               setCurrentDonation(newDonation);
               setIsVisible(true);
               
+              // Play audio if enabled
+              playDonationAudio(newDonation);
+              
               setTimeout(() => setAnimationPhase('show'), 500);
               
               setTimeout(() => {
@@ -147,7 +179,7 @@ const ChiaaGamingObsOverlay = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [obsId, showMessages, showGoal, tokenValid]);
+  }, [obsId, showMessages, showGoal, showAudio, tokenValid]);
 
   // Show loading or error state
   if (tokenValid === null) {
@@ -254,6 +286,14 @@ const ChiaaGamingObsOverlay = () => {
                     <p className="text-sm italic">"{currentDonation.message}"</p>
                   </div>
                 )}
+
+                {/* Audio indicators */}
+                {(currentDonation.voice_url || currentDonation.custom_sound_url) && showAudio && (
+                  <div className={`flex items-center gap-2 text-xs text-blue-200 transition-all duration-500 delay-500 ${animationPhase === 'enter' ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
+                    {currentDonation.voice_url && <span>🎤 Voice Message</span>}
+                    {currentDonation.custom_sound_url && <span>🔊 Custom Sound</span>}
+                  </div>
+                )}
               </div>
               
               {/* Thank you message */}
@@ -279,6 +319,13 @@ const ChiaaGamingObsOverlay = () => {
               ></div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Audio status indicator when audio is disabled */}
+      {!showAudio && (
+        <div className="absolute bottom-4 right-4 bg-orange-600/80 text-white px-3 py-1 rounded-full text-xs">
+          Audio: External Player
         </div>
       )}
     </div>
