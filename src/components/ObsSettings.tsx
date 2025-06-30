@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Copy, Eye, Settings, ExternalLink } from "lucide-react";
-import { generateObsToken } from "@/utils/secureIdGenerator";
+import { generateSecureId } from "@/utils/secureIdGenerator";
 
 const ObsSettings = () => {
   const [obsToken, setObsToken] = useState<string>("");
@@ -23,22 +23,37 @@ const ObsSettings = () => {
   const generateToken = async () => {
     setIsGenerating(true);
     try {
-      // Call Supabase function to create OBS token
-      const { data, error } = await supabase.rpc('create_obs_token', {
-        p_admin_type: 'chiaa_gaming'
-      });
+      // Generate token client-side using our secure ID generator
+      const newToken = generateSecureId(48); // 384 bits of entropy
+      
+      // Store token in database manually
+      const { error } = await supabase
+        .from('obs_access_tokens')
+        .insert({
+          token: newToken,
+          admin_type: 'chiaa_gaming',
+          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours from now
+          is_active: true
+        });
 
       if (error) {
-        console.error("Error generating OBS token:", error);
+        console.error("Error storing OBS token:", error);
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Failed to generate OBS token. Please try again.",
+          description: "Failed to store OBS token. Please try again.",
         });
         return;
       }
 
-      setObsToken(data);
+      // Invalidate old tokens
+      await supabase
+        .from('obs_access_tokens')
+        .update({ is_active: false })
+        .neq('token', newToken)
+        .eq('admin_type', 'chiaa_gaming');
+
+      setObsToken(newToken);
       toast({
         title: "OBS Token Generated",
         description: "Your secure OBS token has been created successfully.",
