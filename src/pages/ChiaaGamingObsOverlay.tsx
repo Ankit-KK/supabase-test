@@ -21,7 +21,7 @@ const ChiaaGamingObsOverlay = () => {
   const navigate = useNavigate();
   const showMessages = searchParams.get('showMessages') !== 'false';
   const showGoal = searchParams.get('showGoal') === 'true';
-  const showAudio = searchParams.get('showAudio') !== 'false'; // New parameter
+  const showAudio = searchParams.get('showAudio') === 'true'; // Changed: Only play audio when explicitly enabled
   const goalName = searchParams.get('goalName') || 'Support Goal';
   const goalTarget = Number(searchParams.get('goalTarget')) || 500;
   
@@ -96,7 +96,7 @@ const ChiaaGamingObsOverlay = () => {
   // Play audio if enabled and audio URLs exist
   const playDonationAudio = (donation: Donation) => {
     if (!showAudio) {
-      console.log('Audio disabled in OBS overlay, skipping audio playback');
+      console.log('Audio disabled in OBS overlay, audio will play in external audio player');
       return;
     }
 
@@ -152,8 +152,10 @@ const ChiaaGamingObsOverlay = () => {
               setCurrentDonation(newDonation);
               setIsVisible(true);
               
-              // Play audio if enabled
-              playDonationAudio(newDonation);
+              // Play audio only if enabled in this overlay
+              if (showAudio) {
+                playDonationAudio(newDonation);
+              }
               
               setTimeout(() => setAnimationPhase('show'), 500);
               
@@ -286,11 +288,15 @@ const ChiaaGamingObsOverlay = () => {
                   </div>
                 )}
 
-                {/* Audio indicators */}
-                {(currentDonation.voice_url || currentDonation.custom_sound_url) && showAudio && (
+                {/* Audio indicators - only show when audio is enabled */}
+                {(currentDonation.voice_url || currentDonation.custom_sound_url) && (
                   <div className={`flex items-center gap-2 text-xs text-blue-200 transition-all duration-500 delay-500 ${animationPhase === 'enter' ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
-                    {currentDonation.voice_url && <span>🎤 Voice Message</span>}
-                    {currentDonation.custom_sound_url && <span>🔊 Custom Sound</span>}
+                    {currentDonation.voice_url && (
+                      <span>{showAudio ? '🎤 Voice Message' : '🔇 Voice (External Player)'}</span>
+                    )}
+                    {currentDonation.custom_sound_url && (
+                      <span>{showAudio ? '🔊 Custom Sound' : '🔇 Sound (External Player)'}</span>
+                    )}
                   </div>
                 )}
               </div>
