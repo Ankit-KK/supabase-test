@@ -60,7 +60,7 @@ export const streamerConfigs: Record<string, StreamerConfig> = {
     displayName: "Harish",
     tableName: "harish_donations",
     authKey: "harishAuth",
-    minAmount: 50,
+    minAmount: 1,
     theme: {
       primaryColor: "blue-600",
       secondaryColor: "blue-800",
@@ -84,7 +84,7 @@ export const streamerConfigs: Record<string, StreamerConfig> = {
     displayName: "Mackle",
     tableName: "mackle_donations",
     authKey: "mackleAuth",
-    minAmount: 50,
+    minAmount: 1,
     theme: {
       primaryColor: "green-600",
       secondaryColor: "green-800",
@@ -109,7 +109,7 @@ export const streamerConfigs: Record<string, StreamerConfig> = {
     displayName: "Rakazone",
     tableName: "rakazone_donations",
     authKey: "rakazoneAuth",
-    minAmount: 50,
+    minAmount: 1,
     theme: {
       primaryColor: "red-600",
       secondaryColor: "red-800",
@@ -136,7 +136,7 @@ export const streamerConfigs: Record<string, StreamerConfig> = {
     displayName: "Chiaa Gaming",
     tableName: "chiaa_gaming_donations",
     authKey: "chiaa_gamingAuth",
-    minAmount: 50,
+    minAmount: 1,
     theme: {
       primaryColor: "pink-600",
       secondaryColor: "purple-700",
