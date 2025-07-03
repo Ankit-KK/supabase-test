@@ -104,8 +104,6 @@ export const createDonationRecord = async (data: DonationRecordData) => {
           order_id: data.order_id,
           payment_status: data.payment_status,
           gif_url: data.gifUrl,
-          gif_file_name: data.gifFileName,
-          gif_file_size: data.gifFileSize,
           voice_url: data.voiceUrl,
           voice_file_name: data.voiceFileName,
           voice_file_size: data.voiceFileSize,
