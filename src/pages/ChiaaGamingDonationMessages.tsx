@@ -472,25 +472,31 @@ const ChiaaGamingDonationMessages = () => {
                     <TableRow className="border-pink-500/30">
                       <TableHead className="text-pink-200">Name</TableHead>
                       <TableHead className="text-pink-200">Amount</TableHead>
+                      <TableHead className="text-pink-200">Message</TableHead>
                       <TableHead className="text-pink-200">Date & Time</TableHead>
                       <TableHead className="text-pink-200">Media</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {donations.map((donation) => (
-                      <TableRow key={donation.id} className="border-pink-500/20 hover:bg-pink-500/10">
-                        <TableCell className="font-medium text-pink-100">{donation.name}</TableCell>
-                        <TableCell className="text-pink-400 font-semibold">
-                          {formatCurrency(Number(donation.amount))}
-                        </TableCell>
-                        <TableCell className="text-pink-200">{formatDate(donation.created_at)}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {renderMediaBadges(donation)}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                     {donations.map((donation) => (
+                       <TableRow key={donation.id} className="border-pink-500/20 hover:bg-pink-500/10">
+                         <TableCell className="font-medium text-pink-100">{donation.name}</TableCell>
+                         <TableCell className="text-pink-400 font-semibold">
+                           {formatCurrency(Number(donation.amount))}
+                         </TableCell>
+                         <TableCell className="text-pink-200 max-w-xs">
+                           <div className="truncate" title={donation.message}>
+                             {donation.message || <span className="text-pink-400 italic">No message</span>}
+                           </div>
+                         </TableCell>
+                         <TableCell className="text-pink-200">{formatDate(donation.created_at)}</TableCell>
+                         <TableCell>
+                           <div className="flex flex-wrap gap-1">
+                             {renderMediaBadges(donation)}
+                           </div>
+                         </TableCell>
+                       </TableRow>
+                     ))}
                   </TableBody>
                 </Table>
               )}
