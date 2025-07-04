@@ -112,21 +112,23 @@ const CustomSoundSelector: React.FC<CustomSoundSelectorProps> = ({
         variant="outline"
         onClick={() => setIsExpanded(!isExpanded)}
         disabled={!isEligible}
-        className={`w-full h-6 text-xs justify-between bg-white/95 border-pink-300 text-gray-800 hover:bg-white hover:border-pink-400 ${
-          !isEligible ? 'opacity-50 cursor-not-allowed' : ''
+        className={`w-full h-8 text-xs justify-between bg-gradient-to-r from-pink-100 to-purple-100 border-pink-400 text-pink-700 hover:from-pink-200 hover:to-purple-200 hover:border-pink-500 transition-all duration-200 ${
+          !isEligible ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-md'
         }`}
       >
         <div className="flex items-center">
-          <Volume2 className="w-3 h-3 mr-1" />
-          <span>
-            {selectedSoundUrl === null 
-              ? "No sound selected" 
-              : sounds.find(s => s.file_url === selectedSoundUrl)?.name || "Custom sound selected"
+          <Volume2 className="w-4 h-4 mr-2" />
+          <span className="font-medium">
+            {isExpanded 
+              ? "Hide Custom Sound Alerts"
+              : selectedSoundUrl === null 
+                ? "Click here for Custom Sound Alerts" 
+                : `Selected: ${sounds.find(s => s.file_url === selectedSoundUrl)?.name}`
             }
           </span>
-          {!isEligible && <span className="ml-1">(₹{minAmount}+)</span>}
+          {!isEligible && <span className="ml-1 text-red-600">(₹{minAmount}+ required)</span>}
         </div>
-        {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+        {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
       </Button>
 
       {/* Collapsible content */}
