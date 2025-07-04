@@ -484,8 +484,8 @@ const ChiaaGamingDonationMessages = () => {
                          <TableCell className="text-pink-400 font-semibold">
                            {formatCurrency(Number(donation.amount))}
                          </TableCell>
-                         <TableCell className="text-pink-200 max-w-xs">
-                           <div className="truncate" title={donation.message}>
+                         <TableCell className="text-pink-200 max-w-md">
+                           <div className="whitespace-pre-wrap break-words">
                              {donation.message || <span className="text-pink-400 italic">No message</span>}
                            </div>
                          </TableCell>
