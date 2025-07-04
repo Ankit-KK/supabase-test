@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Volume2, VolumeX, Play, Pause } from "lucide-react";
+import { Volume2, VolumeX, Play, Pause, ChevronDown, ChevronRight } from "lucide-react";
 
 interface CustomSound {
   id: string;
@@ -26,6 +26,7 @@ const CustomSoundSelector: React.FC<CustomSoundSelectorProps> = ({
 }) => {
   const [previewAudio, setPreviewAudio] = useState<HTMLAudioElement | null>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const sounds: CustomSound[] = [
     {
@@ -105,47 +106,69 @@ const CustomSoundSelector: React.FC<CustomSoundSelectorProps> = ({
         Custom Sound Alert (₹{minAmount}+) {!isEligible && `- Need ₹${minAmount - currentAmount} more`}
       </label>
       
-      <div className="space-y-1">
-        {/* No Sound Option */}
-        <Button
-          type="button"
-          variant={selectedSoundUrl === null ? "default" : "outline"}
-          onClick={handleNoSoundSelect}
-          className={`w-full h-6 text-xs justify-start ${
-            selectedSoundUrl === null 
-              ? "bg-pink-500 text-white border-pink-400 hover:bg-pink-600" 
-              : "bg-white/95 border-pink-300 text-gray-800 hover:bg-white hover:border-pink-400"
-          }`}
-        >
-          <VolumeX className="w-3 h-3 mr-1" />
-          No sound alert
-        </Button>
+      {/* Main toggle button */}
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => setIsExpanded(!isExpanded)}
+        disabled={!isEligible}
+        className={`w-full h-6 text-xs justify-between bg-white/95 border-pink-300 text-gray-800 hover:bg-white hover:border-pink-400 ${
+          !isEligible ? 'opacity-50 cursor-not-allowed' : ''
+        }`}
+      >
+        <div className="flex items-center">
+          <Volume2 className="w-3 h-3 mr-1" />
+          <span>
+            {selectedSoundUrl === null 
+              ? "No sound selected" 
+              : sounds.find(s => s.file_url === selectedSoundUrl)?.name || "Custom sound selected"
+            }
+          </span>
+          {!isEligible && <span className="ml-1">(₹{minAmount}+)</span>}
+        </div>
+        {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+      </Button>
 
-        {/* Sound Options */}
-        <div className="grid grid-cols-2 gap-1">
-          {sounds.map((sound) => {
-            const isSelected = selectedSoundUrl === sound.file_url;
-            const isPlaying = playingId === sound.id;
-            
-            return (
-              <div key={sound.id} className="space-y-1">
-                <Button
-                  type="button"
-                  variant={isSelected ? "default" : "outline"}
-                  onClick={() => handleSoundSelect(sound)}
-                  disabled={isDisabled}
-                  className={`w-full h-6 text-xs justify-start ${
-                    isSelected 
-                      ? "bg-pink-500 text-white border-pink-400 hover:bg-pink-600" 
-                      : "bg-white/95 border-pink-300 text-gray-800 hover:bg-white hover:border-pink-400"
-                  } ${!isEligible ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  <Volume2 className="w-3 h-3 mr-1" />
-                  {sound.name}
-                  {!isEligible && <span className="ml-1">(₹{minAmount}+)</span>}
-                </Button>
-                
-                {isEligible && (
+      {/* Collapsible content */}
+      {isExpanded && (
+        <div className="space-y-1 mt-2 p-2 bg-black/20 rounded border border-pink-300/30">
+          {/* No Sound Option */}
+          <Button
+            type="button"
+            variant={selectedSoundUrl === null ? "default" : "outline"}
+            onClick={handleNoSoundSelect}
+            className={`w-full h-6 text-xs justify-start ${
+              selectedSoundUrl === null 
+                ? "bg-pink-500 text-white border-pink-400 hover:bg-pink-600" 
+                : "bg-white/95 border-pink-300 text-gray-800 hover:bg-white hover:border-pink-400"
+            }`}
+          >
+            <VolumeX className="w-3 h-3 mr-1" />
+            No sound alert
+          </Button>
+
+          {/* Sound Options */}
+          <div className="grid grid-cols-2 gap-1">
+            {sounds.map((sound) => {
+              const isSelected = selectedSoundUrl === sound.file_url;
+              const isPlaying = playingId === sound.id;
+              
+              return (
+                <div key={sound.id} className="space-y-1">
+                  <Button
+                    type="button"
+                    variant={isSelected ? "default" : "outline"}
+                    onClick={() => handleSoundSelect(sound)}
+                    className={`w-full h-6 text-xs justify-start ${
+                      isSelected 
+                        ? "bg-pink-500 text-white border-pink-400 hover:bg-pink-600" 
+                        : "bg-white/95 border-pink-300 text-gray-800 hover:bg-white hover:border-pink-400"
+                    }`}
+                  >
+                    <Volume2 className="w-3 h-3 mr-1" />
+                    {sound.name}
+                  </Button>
+                  
                   <Button
                     type="button"
                     variant="ghost"
@@ -165,19 +188,22 @@ const CustomSoundSelector: React.FC<CustomSoundSelectorProps> = ({
                       </>
                     )}
                   </Button>
-                )}
-              </div>
-            );
-          })}
-        </div>
+                </div>
+              );
+            })}
+          </div>
 
+          <p className="text-xs text-white/80 text-center mt-2">
+            Custom sound alerts play during donation messages on stream
+          </p>
+        </div>
+      )}
+      
+      {!isExpanded && !isEligible && (
         <p className="text-xs text-white/80 text-center">
-          {isEligible 
-            ? "Custom sound alerts play during donation messages on stream"
-            : `Donate ₹${minAmount}+ to unlock custom sound alerts`
-          }
+          Donate ₹{minAmount}+ to unlock custom sound alerts
         </p>
-      </div>
+      )}
     </div>
   );
 };
