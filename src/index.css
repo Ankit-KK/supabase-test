@@ -348,6 +348,70 @@
   }
 }
 
+/* Donation Alert Card Styling */
+.donation-alert-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #07182E;
+}
+
+.donation-alert-card::before {
+  content: '';
+  position: absolute;
+  width: 100px;
+  background-image: linear-gradient(180deg, rgb(0, 183, 255), rgb(255, 48, 255));
+  height: 130%;
+  animation: rotBGimg 3s linear infinite;
+  transition: all 0.2s linear;
+}
+
+@keyframes rotBGimg {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.donation-alert-card::after {
+  content: '';
+  position: absolute;
+  background: #07182E;
+  inset: 5px;
+  border-radius: 15px;
+}
+
+.donation-alert-content {
+  position: relative;
+  z-index: 1;
+  color: white;
+  text-align: center;
+  padding: 1rem;
+}
+
+/* Gif outline effect */
+.gif-glow-outline {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.gif-glow-outline::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  background-image: linear-gradient(180deg, rgb(0, 183, 255), rgb(255, 48, 255));
+  border-radius: 15px;
+  animation: rotBGimg 3s linear infinite;
+  z-index: -1;
+}
+
 @keyframes spin {
   from {
     transform: rotate(0deg);

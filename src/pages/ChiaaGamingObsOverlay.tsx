@@ -247,81 +247,69 @@ const ChiaaGamingObsOverlay = () => {
 
       {/* Donation Alert */}
       {currentDonation && showMessages && (
-        <div className="absolute top-4 right-4 w-96 max-w-md z-20">
+        <div className="absolute top-4 right-4 w-80 max-w-sm z-20">
           <div 
             className={`
-              relative overflow-hidden rounded-2xl shadow-2xl
+              donation-alert-card w-full h-auto min-h-[200px]
               transition-all duration-700 ease-out
               ${getAnimationClasses()}
             `}
           >
-            {/* Background gradient */}
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 animate-gradient-x"></div>
-            
-            {/* Shimmer effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
-            
-            {/* Content */}
-            <div className="relative p-6 text-white">
+            <div className="donation-alert-content w-full">
               {/* Header */}
-              <div className="flex items-center justify-between mb-4">
-                <h3 className={`text-2xl font-bold transition-all duration-500 ${animationPhase === 'show' ? 'animate-pulse-glow' : ''}`}>
-                  New Donation!
-                </h3>
-                <div className={`text-4xl transition-all duration-700 ${animationPhase === 'show' ? 'animate-bounce' : ''}`}>
-                  🎉
-                </div>
+              <div className="flex items-center justify-center mb-3">
+                <h3 className="text-lg font-bold">New Donation! 🎉</h3>
               </div>
               
               {/* Donation details */}
-              <div className="space-y-3">
-                <div className={`flex justify-between items-center transition-all duration-500 delay-200 ${animationPhase === 'enter' ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
-                  <span className="text-lg font-semibold">{currentDonation.name}</span>
-                  <span className={`text-3xl font-bold text-yellow-300 transition-all duration-300 ${animationPhase === 'show' ? 'animate-pulse scale-110' : ''}`}>
+              <div className="space-y-2">
+                <div className="text-center">
+                  <div className="text-xl font-bold text-cyan-300">
                     ₹{Number(currentDonation.amount).toLocaleString()}
-                  </span>
+                  </div>
+                  <div className="text-sm font-medium">
+                    from {currentDonation.name}
+                  </div>
                 </div>
                 
                 {currentDonation.message && (
-                  <div className={`bg-black/30 backdrop-blur-sm rounded-lg p-3 border border-white/20 transition-all duration-500 delay-400 ${animationPhase === 'enter' ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
-                    <p className="text-sm italic">"{currentDonation.message}"</p>
+                  <div className="bg-black/20 rounded-lg p-2 mt-3">
+                    <p className="text-xs italic text-center">"{currentDonation.message}"</p>
                   </div>
                 )}
 
-                {/* Audio indicators - only show when audio is enabled */}
+                {/* GIF display with glow outline */}
+                {currentDonation.gif_url && (
+                  <div className="flex justify-center mt-3">
+                    <div className="gif-glow-outline">
+                      <img 
+                        src={currentDonation.gif_url} 
+                        alt="Donation GIF" 
+                        className="w-16 h-16 object-cover rounded-lg"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Audio indicators */}
                 {(currentDonation.voice_url || currentDonation.custom_sound_url) && (
-                  <div className={`flex items-center gap-2 text-xs text-blue-200 transition-all duration-500 delay-500 ${animationPhase === 'enter' ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
+                  <div className="flex justify-center gap-2 text-xs text-cyan-200 mt-2">
                     {currentDonation.voice_url && (
-                      <span>{showAudio ? '🎤 Voice Message' : '🔇 Voice (External Player)'}</span>
+                      <span>{showAudio ? '🎤' : '🔇'}</span>
                     )}
                     {currentDonation.custom_sound_url && (
-                      <span>{showAudio ? '🔊 Custom Sound' : '🔇 Sound (External Player)'}</span>
+                      <span>{showAudio ? '🔊' : '🔇'}</span>
                     )}
                   </div>
                 )}
               </div>
               
               {/* Thank you message */}
-              <div className={`mt-4 text-center transition-all duration-500 delay-600 ${animationPhase === 'enter' ? 'opacity-0 translate-y-4' : 'opacity-100 translate-y-0'}`}>
-                <div className={`inline-block bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 text-sm border border-white/30 ${animationPhase === 'show' ? 'animate-float' : ''}`}>
-                  Thank you for your support! ❤️
+              <div className="text-center mt-3">
+                <div className="text-xs text-cyan-100">
+                  Thank you! ❤️
                 </div>
               </div>
-            </div>
-            
-            {/* Decorative elements */}
-            <div className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-400 rounded-full animate-ping"></div>
-            <div className="absolute -bottom-1 -left-1 w-4 h-4 bg-pink-400 rounded-full animate-pulse"></div>
-            
-            {/* Progress bar animation */}
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
-              <div 
-                className="h-full bg-gradient-to-r from-yellow-400 to-orange-400 transition-all duration-[12000ms] ease-linear"
-                style={{ 
-                  width: animationPhase === 'show' ? '0%' : '100%',
-                  transform: animationPhase === 'exit' ? 'scaleX(0)' : 'scaleX(1)',
-                }}
-              ></div>
             </div>
           </div>
         </div>
