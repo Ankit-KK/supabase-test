@@ -168,44 +168,50 @@ const ChiaaGamingObsOverlay = () => {
         },
         (payload) => {
           const newDonation = payload.new as Donation;
-          console.log('New successful donation received in OBS overlay with 1 minute delay:', newDonation);
+          console.log('New successful donation received in OBS overlay:', newDonation);
+          console.log('OBS Environment check:', {
+            userAgent: navigator.userAgent,
+            isOBS: navigator.userAgent.includes('OBS'),
+            showMessages,
+            showGoal,
+            showAudio
+          });
           
           // Update goal progress for successful payments
           if (showGoal) {
             setGoalProgress(prev => prev + Number(newDonation.amount));
           }
           
-          // Show donation alert with 1 minute delay if messages are enabled
+          // Show donation alert immediately if messages are enabled
           if (showMessages) {
+            console.log('Showing donation alert in OBS overlay');
+            setAnimationPhase('enter');
+            setCurrentDonation(newDonation);
+            setIsVisible(true);
+            
+            // Play audio only if enabled in this overlay
+            if (showAudio) {
+              playDonationAudio(newDonation);
+            }
+            
+            // Trigger HyperEmotes if enabled
+            if (newDonation.hyperemotes_enabled) {
+              console.log('Triggering HyperEmotes for amount:', newDonation.amount);
+              triggerHyperEmotes(Number(newDonation.amount));
+            }
+            
+            setTimeout(() => setAnimationPhase('show'), 500);
+            
             setTimeout(() => {
-              console.log('Showing delayed donation alert in OBS overlay');
-              setAnimationPhase('enter');
-              setCurrentDonation(newDonation);
-              setIsVisible(true);
-              
-              // Play audio only if enabled in this overlay
-              if (showAudio) {
-                playDonationAudio(newDonation);
-              }
-              
-              // Trigger HyperEmotes if enabled
-              if (newDonation.hyperemotes_enabled) {
-                triggerHyperEmotes(Number(newDonation.amount));
-              }
-              
-              setTimeout(() => setAnimationPhase('show'), 500);
-              
+              setAnimationPhase('exit');
               setTimeout(() => {
-                setAnimationPhase('exit');
+                setIsVisible(false);
                 setTimeout(() => {
-                  setIsVisible(false);
-                  setTimeout(() => {
-                    setCurrentDonation(null);
-                    setAnimationPhase('enter');
-                  }, 1000);
-                }, 500);
-              }, 12000);
-            }, 0); // Show immediately
+                  setCurrentDonation(null);
+                  setAnimationPhase('enter');
+                }, 1000);
+              }, 500);
+            }, 12000);
           }
         }
       )
@@ -221,16 +227,16 @@ const ChiaaGamingObsOverlay = () => {
   // Show loading or error state
   if (tokenValid === null) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-black/90">
-        <div className="text-white text-xl">Validating access...</div>
+      <div className="fixed inset-0 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.9)' }}>
+        <div style={{ color: 'white', fontSize: '20px' }}>Validating access...</div>
       </div>
     );
   }
 
   if (tokenValid === false) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-black/90">
-        <div className="text-red-400 text-xl">Invalid or expired OBS token</div>
+      <div className="fixed inset-0 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.9)' }}>
+        <div style={{ color: '#ff6b6b', fontSize: '20px' }}>Invalid or expired OBS token</div>
       </div>
     );
   }
@@ -278,44 +284,58 @@ const ChiaaGamingObsOverlay = () => {
             }
           }
           .donation-alert-card {
-            background: linear-gradient(135deg, rgba(139, 69, 19, 0.9), rgba(255, 140, 0, 0.8));
-            border: 2px solid rgba(255, 215, 0, 0.6);
+            background: #8B4513;
+            background: -webkit-linear-gradient(135deg, rgba(139, 69, 19, 0.95), rgba(255, 140, 0, 0.9));
+            background: linear-gradient(135deg, rgba(139, 69, 19, 0.95), rgba(255, 140, 0, 0.9));
+            border: 3px solid #FFD700;
             border-radius: 16px;
             padding: 20px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
           }
           .donation-alert-content {
-            color: white;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+            color: #FFFFFF;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
           }
           .gif-glow-outline {
-            border: 3px solid rgba(255, 215, 0, 0.8);
+            border: 3px solid #FFD700;
             border-radius: 12px;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
           }
         `}
       </style>
       {/* Goal Display */}
       {showGoal && (
-        <div className="absolute top-4 left-4 w-80 z-20">
-          <div className="bg-gradient-to-r from-purple-600/90 to-pink-600/90 backdrop-blur-sm rounded-xl p-4 border border-white/20 shadow-2xl">
-            <div className="text-white">
-              <h3 className="text-lg font-bold mb-2">{goalName}</h3>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>₹{goalProgress.toLocaleString()}</span>
-                  <span>₹{goalTarget.toLocaleString()}</span>
-                </div>
-                <div className="w-full bg-black/30 rounded-full h-3 overflow-hidden">
-                  <div 
-                    className="h-full bg-gradient-to-r from-green-400 to-blue-500 transition-all duration-1000 ease-out"
-                    style={{ width: `${goalPercentage}%` }}
-                  />
-                </div>
-                <div className="text-center text-sm font-semibold">
-                  {goalPercentage.toFixed(1)}% Complete
-                </div>
+        <div style={{ position: 'absolute', top: '16px', left: '16px', width: '320px', zIndex: 20 }}>
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.9), rgba(236, 72, 153, 0.9))',
+            borderRadius: '16px',
+            padding: '16px',
+            border: '2px solid rgba(255, 255, 255, 0.2)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
+          }}>
+            <div style={{ color: 'white' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '8px' }}>{goalName}</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', marginBottom: '8px' }}>
+                <span>₹{goalProgress.toLocaleString()}</span>
+                <span>₹{goalTarget.toLocaleString()}</span>
+              </div>
+              <div style={{
+                width: '100%',
+                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                borderRadius: '50px',
+                height: '12px',
+                overflow: 'hidden',
+                marginBottom: '8px'
+              }}>
+                <div style={{
+                  height: '100%',
+                  background: 'linear-gradient(90deg, #4ade80, #3b82f6)',
+                  width: `${goalPercentage}%`,
+                  transition: 'width 1000ms ease-out'
+                }} />
+              </div>
+              <div style={{ textAlign: 'center', fontSize: '14px', fontWeight: 'bold' }}>
+                {goalPercentage.toFixed(1)}% Complete
               </div>
             </div>
           </div>
