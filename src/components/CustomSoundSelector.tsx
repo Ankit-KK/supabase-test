@@ -15,6 +15,7 @@ interface CustomSoundSelectorProps {
   disabled?: boolean;
   minAmount?: number;
   currentAmount?: number;
+  onExpandChange?: (isExpanded: boolean) => void;
 }
 
 const CustomSoundSelector: React.FC<CustomSoundSelectorProps> = ({
@@ -22,7 +23,8 @@ const CustomSoundSelector: React.FC<CustomSoundSelectorProps> = ({
   selectedSoundUrl,
   disabled,
   minAmount = 100,
-  currentAmount = 0
+  currentAmount = 0,
+  onExpandChange
 }) => {
   const [previewAudio, setPreviewAudio] = useState<HTMLAudioElement | null>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
@@ -110,7 +112,11 @@ const CustomSoundSelector: React.FC<CustomSoundSelectorProps> = ({
       <Button
         type="button"
         variant="outline"
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={() => {
+          const newExpanded = !isExpanded;
+          setIsExpanded(newExpanded);
+          onExpandChange?.(newExpanded);
+        }}
         disabled={!isEligible}
         className={`w-full h-8 text-xs justify-between bg-gradient-to-r from-pink-100 to-purple-100 border-pink-400 text-pink-700 hover:from-pink-200 hover:to-purple-200 hover:border-pink-500 transition-all duration-200 ${
           !isEligible ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-md'
