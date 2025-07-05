@@ -33,7 +33,7 @@ const ObsSettings = () => {
         .insert({
           token: newToken,
           admin_type: 'chiaa_gaming',
-          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours from now
+          expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 year from now
           is_active: true
         });
 
@@ -279,9 +279,9 @@ const ObsSettings = () => {
 
             <div className="flex items-center gap-2 text-xs text-pink-300">
               <Badge variant="secondary" className="bg-green-500/20 text-green-300 border-green-500/50">
-                Secure
+                Permanent
               </Badge>
-              <span>Token expires in 24 hours</span>
+              <span>Token is permanent - generate new one only if needed</span>
             </div>
           </div>
         )}
