@@ -62,13 +62,13 @@ const ChiaaGamingPage = () => {
     }
   }, [amount, selectedGif, selectedVoice, selectedCustomSoundUrl, hyperEmotesEnabled]);
 
-  // Clear message when GIF, voice, custom sound, or hyperEmotes is selected
+  // Clear message when GIF or voice is selected (allow messages with custom sound and hyperEmotes)
   useEffect(() => {
-    if (selectedGif || selectedVoice || selectedCustomSoundUrl || hyperEmotesEnabled) {
+    if (selectedGif || selectedVoice) {
       setMessage("");
       setMessageError("");
     }
-  }, [selectedGif, selectedVoice, selectedCustomSoundUrl, hyperEmotesEnabled]);
+  }, [selectedGif, selectedVoice]);
 
   // Debug logging for custom sound selection
   useEffect(() => {
@@ -138,16 +138,13 @@ const ChiaaGamingPage = () => {
       amount: parseFloat(amount)
     });
     setSelectedCustomSoundUrl(soundUrl);
-    // Clear GIF and voice if custom sound is selected
+    // Clear GIF and voice if custom sound is selected (allow hyperEmotes with custom sound)
     if (soundUrl) {
       if (selectedGif) {
         setSelectedGif(null);
       }
       if (selectedVoice) {
         setSelectedVoice(null);
-      }
-      if (hyperEmotesEnabled) {
-        setHyperEmotesEnabled(false);
       }
     }
   };
@@ -164,16 +161,13 @@ const ChiaaGamingPage = () => {
     }
     
     setHyperEmotesEnabled(enabled);
-    // Clear other premium features if hyperEmotes is enabled
+    // Clear GIF and voice if hyperEmotes is enabled (allow custom sound with hyperEmotes)
     if (enabled) {
       if (selectedGif) {
         setSelectedGif(null);
       }
       if (selectedVoice) {
         setSelectedVoice(null);
-      }
-      if (selectedCustomSoundUrl) {
-        setSelectedCustomSoundUrl(null);
       }
     }
   };
@@ -198,8 +192,8 @@ const ChiaaGamingPage = () => {
       return false;
     }
 
-    // Check if message contains links
-    if (message.trim() && !selectedGif && !selectedVoice && !selectedCustomSoundUrl && !hyperEmotesEnabled) {
+    // Check if message contains links (validate message when it's enabled and present)
+    if (message.trim() && !selectedGif && !selectedVoice) {
       const messageValidation = filterMessage(message);
       if (!messageValidation.isValid) {
         setMessageError(messageValidation.reason || "Message contains invalid content");
@@ -212,7 +206,7 @@ const ChiaaGamingPage = () => {
       }
     }
 
-    // Only require message if no GIF, voice, custom sound, or hyperEmotes is selected
+    // Require at least one: message, GIF, voice, custom sound, or hyperEmotes
     if (!message.trim() && !selectedGif && !selectedVoice && !selectedCustomSoundUrl && !hyperEmotesEnabled) {
       toast({
         title: "Message, GIF, Voice, Sound, or HyperEmotes required",
@@ -363,8 +357,6 @@ const ChiaaGamingPage = () => {
   const getMessagePlaceholder = () => {
     if (selectedGif) return "Message disabled when GIF is uploaded";
     if (selectedVoice) return "Message disabled when voice is recorded";
-    if (selectedCustomSoundUrl) return "Message disabled when custom sound is selected";
-    if (hyperEmotesEnabled) return "Message disabled when HyperEmotes is enabled";
     return "Send your sweet message to Chiaa! (No links allowed)";
   };
 
@@ -372,13 +364,11 @@ const ChiaaGamingPage = () => {
   const getMessageLabel = () => {
     if (selectedGif) return "Sweet Message (Disabled - GIF uploaded)";
     if (selectedVoice) return "Sweet Message (Disabled - Voice recorded)";
-    if (selectedCustomSoundUrl) return "Sweet Message (Disabled - Custom sound selected)";
-    if (hyperEmotesEnabled) return "Sweet Message (Disabled - HyperEmotes enabled)";
     return "Sweet Message (No Links Allowed)";
   };
 
-  // Check if message input should be disabled (when GIF, voice, custom sound, or hyperEmotes is selected)
-  const isMessageDisabled = !!selectedGif || !!selectedVoice || !!selectedCustomSoundUrl || !!hyperEmotesEnabled || isLoading;
+  // Check if message input should be disabled (only when GIF or voice is selected)
+  const isMessageDisabled = !!selectedGif || !!selectedVoice || isLoading;
 
   // Check if premium features are eligible
   const isGifEligible = parseFloat(amount) >= 1;
@@ -517,7 +507,7 @@ const ChiaaGamingPage = () => {
                     )}
                     
                      <p className="text-xs text-white/80">
-                       {!selectedGif && !selectedVoice && !selectedCustomSoundUrl && !hyperEmotesEnabled ? (
+                       {!selectedGif && !selectedVoice ? (
                         <>
                           {isMessageEligible ? (
                             <>
@@ -534,9 +524,7 @@ const ChiaaGamingPage = () => {
                         <>
                            Message disabled when {
                              selectedGif ? "GIF uploaded" : 
-                             selectedVoice ? "voice recorded" :
-                             selectedCustomSoundUrl ? "custom sound selected" :
-                             "HyperEmotes enabled"
+                             "voice recorded"
                            }
                         </>
                       )}
@@ -566,7 +554,7 @@ const ChiaaGamingPage = () => {
               <CustomSoundSelector
                 onSoundSelect={handleCustomSoundSelect}
                 selectedSoundUrl={selectedCustomSoundUrl}
-                disabled={isLoading || !!selectedGif || !!selectedVoice || !!hyperEmotesEnabled}
+                disabled={isLoading || !!selectedGif || !!selectedVoice}
                 minAmount={1}
                 currentAmount={parseFloat(amount) || 0}
                 onExpandChange={setIsCustomSoundExpanded}
@@ -577,7 +565,7 @@ const ChiaaGamingPage = () => {
                 <HyperEmotesSelector
                   onHyperEmotesSelect={handleHyperEmotesSelect}
                   hyperEmotesEnabled={hyperEmotesEnabled}
-                  disabled={isLoading || !!selectedGif || !!selectedVoice || !!selectedCustomSoundUrl}
+                  disabled={isLoading || !!selectedGif || !!selectedVoice}
                   minAmount={50}
                   currentAmount={parseFloat(amount) || 0}
                   onExpandChange={setIsHyperEmotesExpanded}
