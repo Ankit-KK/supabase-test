@@ -118,6 +118,7 @@ export type Database = {
           custom_sound_name: string | null
           custom_sound_url: string | null
           gif_url: string | null
+          hyperemotes_enabled: boolean | null
           id: string
           include_sound: boolean | null
           message: string
@@ -134,6 +135,7 @@ export type Database = {
           custom_sound_name?: string | null
           custom_sound_url?: string | null
           gif_url?: string | null
+          hyperemotes_enabled?: boolean | null
           id?: string
           include_sound?: boolean | null
           message?: string
@@ -150,6 +152,7 @@ export type Database = {
           custom_sound_name?: string | null
           custom_sound_url?: string | null
           gif_url?: string | null
+          hyperemotes_enabled?: boolean | null
           id?: string
           include_sound?: boolean | null
           message?: string

@@ -68,6 +68,7 @@ export interface DonationRecordData {
   voiceFileName?: string;
   voiceFileSize?: number;
   customSoundUrl?: string;
+  hyperEmotesEnabled?: boolean;
   include_sound?: boolean;
 }
 
@@ -108,6 +109,7 @@ export const createDonationRecord = async (data: DonationRecordData) => {
           voice_file_name: data.voiceFileName,
           voice_file_size: data.voiceFileSize,
           custom_sound_url: data.customSoundUrl,
+          hyperemotes_enabled: data.hyperEmotesEnabled || false,
           include_sound: data.include_sound || false
         });
 

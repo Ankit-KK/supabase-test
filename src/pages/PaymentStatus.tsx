@@ -150,6 +150,7 @@ const PaymentStatus = () => {
             voiceFileName: donationData.voiceFileName,
             voiceFileSize: donationData.voiceFileSize,
             customSoundUrl: donationData.customSoundUrl,
+            hyperEmotesEnabled: donationData.hyperEmotesEnabled,
             // Include selected emoji for both successful and failed payments
             selectedEmoji: donationData.selectedEmoji
           };
