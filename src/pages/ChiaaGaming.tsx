@@ -499,7 +499,7 @@ const ChiaaGamingPage = () => {
                 </div>
               </div>
 
-              {/* Other form elements - message always visible, other elements hidden when custom sound is expanded */}
+              {/* Other form elements - message always visible, GIF/Voice hidden when custom sound or HyperEmotes is expanded */}
               <p className="text-xs text-white/80 text-center">
                 ₹1+ for messages • ₹1+ for sounds • ₹1+ for GIF • ₹1+ for voice ({getVoiceDuration()}) • ₹50+ for HyperEmotes
               </p>
@@ -557,7 +557,7 @@ const ChiaaGamingPage = () => {
                 </p>
               </div>
 
-              {!isCustomSoundExpanded && (
+              {!isCustomSoundExpanded && !isHyperEmotesExpanded && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                   <GifUpload
                     onGifSelect={handleGifSelect}
