@@ -23,6 +23,7 @@ const ChiaaGamingAudioPlayer = () => {
   const [currentAudio, setCurrentAudio] = useState<string | null>(null);
   const [audioQueue, setAudioQueue] = useState<string[]>([]);
   const [volume, setVolume] = useState<number[]>([70]); // Default volume at 70%
+  const [audioEnabled, setAudioEnabled] = useState(false); // User interaction required
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Update audio volume when slider changes
@@ -62,9 +63,21 @@ const ChiaaGamingAudioPlayer = () => {
     validateToken();
   }, [obsId]);
 
+  // Enable audio with user interaction
+  const enableAudio = () => {
+    setAudioEnabled(true);
+    // Play a silent audio to unlock the audio context
+    if (audioRef.current) {
+      audioRef.current.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+Vxg';
+      audioRef.current.play().catch(() => {
+        console.log('Silent audio failed, but that\'s expected');
+      });
+    }
+  };
+
   // Play audio from queue
   const playNextAudio = () => {
-    if (audioQueue.length > 0 && !isAudioActive) {
+    if (audioQueue.length > 0 && !isAudioActive && audioEnabled) {
       const nextAudio = audioQueue[0];
       setAudioQueue(prev => prev.slice(1));
       setCurrentAudio(nextAudio);
@@ -197,8 +210,18 @@ const ChiaaGamingAudioPlayer = () => {
         </div>
         
         <div className="text-sm text-gray-300 mb-4">
-          {isAudioActive ? "Playing audio..." : "Ready for audio"}
+          {isAudioActive ? "Playing audio..." : audioEnabled ? "Ready for audio" : "Click to enable audio"}
         </div>
+
+        {/* Enable Audio Button */}
+        {!audioEnabled && (
+          <button
+            onClick={enableAudio}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold mb-4 transition-colors"
+          >
+            Enable Audio Playback
+          </button>
+        )}
         
         {/* Volume Control */}
         <div className="mb-4 bg-gray-800/50 rounded-lg p-4 border border-gray-700">
