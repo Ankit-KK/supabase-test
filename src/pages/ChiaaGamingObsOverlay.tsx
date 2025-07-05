@@ -38,7 +38,7 @@ const ChiaaGamingObsOverlay = () => {
     const container = document.getElementById('emote-container');
     if (!container) return;
 
-    const count = 80; // Set to maximum for testing
+    const count = Math.min(80, Math.floor(amount / 8)); // More emojis for better effect
     const animationPatterns = ['floatUp', 'fireworks', 'spiral', 'bounce', 'burst'];
     
     // Determine emoji size based on donation amount
