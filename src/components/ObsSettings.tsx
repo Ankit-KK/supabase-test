@@ -21,6 +21,30 @@ const ObsSettings = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
+  // Fetch existing token on component mount
+  useEffect(() => {
+    const fetchExistingToken = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('obs_access_tokens')
+          .select('token')
+          .eq('admin_type', 'chiaa_gaming')
+          .eq('is_active', true)
+          .gte('expires_at', new Date().toISOString())
+          .single();
+
+        if (data && !error) {
+          setObsToken(data.token);
+        }
+      } catch (error) {
+        // No existing token, which is fine
+        console.log("No existing active token found");
+      }
+    };
+
+    fetchExistingToken();
+  }, []);
+
   const generateToken = async () => {
     setIsGenerating(true);
     try {
