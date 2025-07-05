@@ -23,7 +23,8 @@ const ChiaaGamingAudioPlayer = () => {
   const [currentAudio, setCurrentAudio] = useState<string | null>(null);
   const [audioQueue, setAudioQueue] = useState<string[]>([]);
   const [volume, setVolume] = useState<number[]>([70]); // Default volume at 70%
-  const [audioEnabled, setAudioEnabled] = useState(false); // User interaction required
+  const [audioEnabled, setAudioEnabled] = useState(true); // Auto-enable audio
+  const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Update audio volume when slider changes
@@ -63,20 +64,43 @@ const ChiaaGamingAudioPlayer = () => {
     validateToken();
   }, [obsId]);
 
-  // Enable audio with user interaction
-  const enableAudio = () => {
-    setAudioEnabled(true);
-    // Play a silent audio to unlock the audio context
-    if (audioRef.current) {
-      audioRef.current.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+Vxg';
-      audioRef.current.play().catch(() => {
-        console.log('Silent audio failed, but that\'s expected');
-      });
-    }
-  };
+  // Initialize audio context and prepare for autoplay
+  useEffect(() => {
+    const initAudio = async () => {
+      try {
+        // Create audio context to bypass autoplay restrictions
+        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        setAudioContext(ctx);
+        
+        // Resume audio context if needed
+        if (ctx.state === 'suspended') {
+          await ctx.resume();
+        }
+        
+        // Initialize audio element with muted autoplay
+        if (audioRef.current) {
+          audioRef.current.muted = true;
+          audioRef.current.volume = volume[0] / 100;
+          // Try to play a silent audio to unlock the context
+          try {
+            await audioRef.current.play();
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+            audioRef.current.muted = false;
+          } catch (error) {
+            console.log('Initial audio unlock attempt failed, will try on first audio');
+          }
+        }
+      } catch (error) {
+        console.log('Audio context initialization failed:', error);
+      }
+    };
+
+    initAudio();
+  }, []);
 
   // Play audio from queue
-  const playNextAudio = () => {
+  const playNextAudio = async () => {
     if (audioQueue.length > 0 && !isAudioActive && audioEnabled) {
       const nextAudio = audioQueue[0];
       setAudioQueue(prev => prev.slice(1));
@@ -84,14 +108,24 @@ const ChiaaGamingAudioPlayer = () => {
       setIsAudioActive(true);
 
       if (audioRef.current) {
-        audioRef.current.src = nextAudio;
-        audioRef.current.play().catch(error => {
+        try {
+          // Resume audio context if suspended
+          if (audioContext && audioContext.state === 'suspended') {
+            await audioContext.resume();
+          }
+          
+          audioRef.current.src = nextAudio;
+          audioRef.current.muted = false;
+          audioRef.current.volume = volume[0] / 100;
+          
+          await audioRef.current.play();
+        } catch (error) {
           console.error("Error playing audio:", error);
           setIsAudioActive(false);
           setCurrentAudio(null);
           // Try next audio in queue
           setTimeout(playNextAudio, 500);
-        });
+        }
       }
     }
   };
@@ -193,6 +227,8 @@ const ChiaaGamingAudioPlayer = () => {
         onEnded={handleAudioEnd}
         onError={handleAudioEnd}
         className="hidden"
+        preload="auto"
+        playsInline
       />
       
       {/* Status indicator */}
@@ -210,18 +246,8 @@ const ChiaaGamingAudioPlayer = () => {
         </div>
         
         <div className="text-sm text-gray-300 mb-4">
-          {isAudioActive ? "Playing audio..." : audioEnabled ? "Ready for audio" : "Click to enable audio"}
+          {isAudioActive ? "Playing audio..." : "Ready for audio"}
         </div>
-
-        {/* Enable Audio Button */}
-        {!audioEnabled && (
-          <button
-            onClick={enableAudio}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold mb-4 transition-colors"
-          >
-            Enable Audio Playback
-          </button>
-        )}
         
         {/* Volume Control */}
         <div className="mb-4 bg-gray-800/50 rounded-lg p-4 border border-gray-700">
