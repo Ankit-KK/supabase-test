@@ -284,22 +284,35 @@ const ChiaaGamingObsOverlay = () => {
             }
           }
           .donation-alert-card {
-            background: #8B4513;
-            background: -webkit-linear-gradient(135deg, rgba(139, 69, 19, 0.95), rgba(255, 140, 0, 0.9));
-            background: linear-gradient(135deg, rgba(139, 69, 19, 0.95), rgba(255, 140, 0, 0.9));
-            border: 3px solid #FFD700;
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 12px;
+            padding: 12px;
+            max-width: 280px;
           }
           .donation-alert-content {
             color: #FFFFFF;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
           }
           .gif-glow-outline {
-            border: 3px solid #FFD700;
-            border-radius: 12px;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57) border-box;
+            background-clip: padding-box, border-box;
+            animation: gradient-border 3s ease infinite;
+          }
+          @keyframes gradient-border {
+            0%, 100% { 
+              background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57) border-box;
+            }
+            25% { 
+              background: linear-gradient(45deg, #4ecdc4, #45b7d1, #96ceb4, #feca57, #ff6b6b) border-box;
+            }
+            50% { 
+              background: linear-gradient(45deg, #45b7d1, #96ceb4, #feca57, #ff6b6b, #4ecdc4) border-box;
+            }
+            75% { 
+              background: linear-gradient(45deg, #96ceb4, #feca57, #ff6b6b, #4ecdc4, #45b7d1) border-box;
+            }
           }
         `}
       </style>
@@ -344,73 +357,93 @@ const ChiaaGamingObsOverlay = () => {
 
       {/* Donation Alert */}
       {currentDonation && showMessages && (
-        <div className="absolute top-4 right-4 w-80 max-w-sm z-20">
+        <div style={{ position: 'absolute', top: '16px', right: '16px', zIndex: 20 }}>
           <div 
-            className={`
-              donation-alert-card w-full h-auto min-h-[200px]
-              transition-all duration-700 ease-out
-              ${getAnimationClasses()}
-            `}
+            className={`donation-alert-card transition-all duration-700 ease-out ${getAnimationClasses()}`}
           >
-            <div className="donation-alert-content w-full">
+            <div className="donation-alert-content">
               {/* Header */}
-              <div className="flex items-center justify-center mb-3">
-                <h3 className="text-lg font-bold">New Donation! 🎉</h3>
+              <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+                <h3 style={{ fontSize: '14px', fontWeight: 'bold', margin: 0 }}>New Donation! 🎉</h3>
               </div>
               
               {/* Donation details */}
-              <div className="space-y-2">
-                <div className="text-center">
-                  <div className="text-xl font-bold text-cyan-300">
-                    ₹{Number(currentDonation.amount).toLocaleString()}
-                  </div>
-                  <div className="text-sm font-medium">
-                    from {currentDonation.name}
-                  </div>
+              <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#00bcd4' }}>
+                  ₹{Number(currentDonation.amount).toLocaleString()}
                 </div>
-                
-                {currentDonation.message && (
-                  <div className="bg-black/20 rounded-lg p-2 mt-3">
-                    <p className="text-xs italic text-center">"{currentDonation.message}"</p>
-                  </div>
-                )}
-
-                {/* GIF display with glow outline */}
-                {currentDonation.gif_url && (
-                  <div className="flex justify-center mt-3">
-                    <div className="gif-glow-outline">
-                      <img 
-                        src={currentDonation.gif_url} 
-                        alt="Donation GIF" 
-                        className="w-32 h-32 object-cover rounded-lg"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Audio indicators */}
-                {(currentDonation.voice_url || currentDonation.custom_sound_url) && (
-                  <div className="flex justify-center gap-2 text-xs text-cyan-200 mt-2">
-                    {currentDonation.voice_url && (
-                      <span>{showAudio ? '🎤' : '🔇'}</span>
-                    )}
-                    {currentDonation.custom_sound_url && (
-                      <span>{showAudio ? '🔊' : '🔇'}</span>
-                    )}
-                  </div>
-                )}
-
-                {/* HyperEmotes indicator */}
-                {currentDonation.hyperemotes_enabled && (
-                  <div className="flex justify-center text-xs text-purple-200 mt-2">
-                    <span className="animate-pulse">✨ HyperEmotes Active! ✨</span>
-                  </div>
-                )}
+                <div style={{ fontSize: '12px' }}>
+                  from {currentDonation.name}
+                </div>
               </div>
               
+              {currentDonation.message && (
+                <div style={{ 
+                  backgroundColor: 'rgba(0, 0, 0, 0.3)', 
+                  borderRadius: '6px', 
+                  padding: '6px', 
+                  marginBottom: '8px' 
+                }}>
+                  <p style={{ fontSize: '10px', fontStyle: 'italic', textAlign: 'center', margin: 0 }}>
+                    "{currentDonation.message}"
+                  </p>
+                </div>
+              )}
+
+              {/* GIF display with gradient border */}
+              {currentDonation.gif_url && (
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
+                  <div className="gif-glow-outline">
+                    <img 
+                      src={currentDonation.gif_url} 
+                      alt="Donation GIF" 
+                      style={{ 
+                        width: '100px', 
+                        height: '100px', 
+                        objectFit: 'cover', 
+                        borderRadius: '6px',
+                        display: 'block'
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Audio indicators */}
+              {(currentDonation.voice_url || currentDonation.custom_sound_url) && (
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  gap: '8px', 
+                  fontSize: '10px', 
+                  color: '#00bcd4',
+                  marginBottom: '8px'
+                }}>
+                  {currentDonation.voice_url && (
+                    <span>{showAudio ? '🎤' : '🔇'}</span>
+                  )}
+                  {currentDonation.custom_sound_url && (
+                    <span>{showAudio ? '🔊' : '🔇'}</span>
+                  )}
+                </div>
+              )}
+
+              {/* HyperEmotes indicator */}
+              {currentDonation.hyperemotes_enabled && (
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  fontSize: '10px', 
+                  color: '#bb86fc',
+                  marginBottom: '8px'
+                }}>
+                  <span className="animate-pulse">✨ HyperEmotes Active! ✨</span>
+                </div>
+              )}
+              
               {/* Thank you message */}
-              <div className="text-center mt-3">
-                <div className="text-xs text-cyan-100">
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '10px', color: '#e0f7fa' }}>
                   Thank you! ❤️
                 </div>
               </div>
