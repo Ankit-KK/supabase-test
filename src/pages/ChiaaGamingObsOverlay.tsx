@@ -32,33 +32,107 @@ const ChiaaGamingObsOverlay = () => {
   const [goalProgress, setGoalProgress] = useState<number>(0);
   const [tokenValid, setTokenValid] = useState<boolean | null>(null);
 
-  // Trigger HyperEmotes effect
+  // Enhanced HyperEmotes effect with multiple patterns and effects
   const triggerHyperEmotes = (amount: number) => {
-    const emojis = ['🚀', '✨', '🌟', '👏', '😍'];
+    const emojis = ['🚀', '✨', '🌟', '👏', '😍', '🎉', '💫', '⭐', '🔥', '💎'];
     const container = document.getElementById('emote-container');
     if (!container) return;
 
-    const count = Math.min(50, Math.floor(amount / 10)); // 1 emoji per ₹10, capped at 50
+    const count = Math.min(80, Math.floor(amount / 8)); // More emojis for better effect
+    const animationPatterns = ['floatUp', 'fireworks', 'spiral', 'bounce', 'burst'];
+    
+    // Determine emoji size based on donation amount
+    const getEmojiSize = (amount: number) => {
+      if (amount >= 500) return Math.random() * 30 + 50; // 50-80px for high amounts
+      if (amount >= 200) return Math.random() * 20 + 40; // 40-60px for medium amounts
+      if (amount >= 100) return Math.random() * 15 + 30; // 30-45px for low-medium amounts
+      return Math.random() * 10 + 25; // 25-35px for low amounts
+    };
 
-    for (let i = 0; i < count; i++) {
-      const emoji = document.createElement('div');
-      emoji.className = 'emote';
-      emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-
-      emoji.style.position = 'absolute';
-      emoji.style.fontSize = '40px';
-      emoji.style.left = Math.random() * window.innerWidth + 'px';
-      emoji.style.top = (Math.random() * window.innerHeight * 0.5 + window.innerHeight * 0.4) + 'px';
-      emoji.style.animation = 'floatUp 3s ease-out forwards';
-      emoji.style.pointerEvents = 'none';
-
-      container.appendChild(emoji);
-
+    // Create emojis in waves for staggered timing
+    const wavesCount = Math.ceil(count / 15); // Max 15 emojis per wave
+    
+    for (let wave = 0; wave < wavesCount; wave++) {
+      const waveDelay = wave * 200; // 200ms between waves
+      const emojisInWave = Math.min(15, count - (wave * 15));
+      
       setTimeout(() => {
-        if (emoji && emoji.parentNode) {
-          emoji.remove();
+        for (let i = 0; i < emojisInWave; i++) {
+          const emoji = document.createElement('div');
+          const selectedEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+          const pattern = animationPatterns[Math.floor(Math.random() * animationPatterns.length)];
+          const size = getEmojiSize(amount);
+          const animationDuration = 3 + Math.random() * 2; // 3-5 seconds
+          
+          emoji.className = `emote emote-${pattern}`;
+          emoji.textContent = selectedEmoji;
+          
+          // Base styles
+          emoji.style.position = 'absolute';
+          emoji.style.fontSize = `${size}px`;
+          emoji.style.pointerEvents = 'none';
+          emoji.style.zIndex = '1000';
+          
+          // Color variations and glowing effects
+          const hue = Math.random() * 360;
+          const saturation = 70 + Math.random() * 30; // 70-100%
+          const lightness = 50 + Math.random() * 30; // 50-80%
+          emoji.style.filter = `
+            hue-rotate(${hue}deg) 
+            saturate(${saturation}%) 
+            brightness(${lightness}%) 
+            drop-shadow(0 0 ${size/4}px hsl(${hue}, ${saturation}%, ${lightness}%))
+          `;
+          
+          // Set starting position and animation based on pattern
+          switch (pattern) {
+            case 'fireworks':
+              // Start from center and explode outward
+              emoji.style.left = '50%';
+              emoji.style.top = '50%';
+              emoji.style.animation = `fireworksExplode ${animationDuration}s ease-out forwards`;
+              emoji.style.setProperty('--end-x', `${Math.random() * 100}%`);
+              emoji.style.setProperty('--end-y', `${Math.random() * 100}%`);
+              break;
+              
+            case 'spiral':
+              // Spiral motion from random edge
+              emoji.style.left = Math.random() * 100 + '%';
+              emoji.style.top = '100%';
+              emoji.style.animation = `spiralUp ${animationDuration}s ease-in-out forwards`;
+              break;
+              
+            case 'bounce':
+              // Bouncing side to side while going up
+              emoji.style.left = Math.random() * 100 + '%';
+              emoji.style.top = '100%';
+              emoji.style.animation = `bounceUp ${animationDuration}s ease-in-out forwards`;
+              break;
+              
+            case 'burst':
+              // Quick burst from random positions
+              emoji.style.left = Math.random() * 100 + '%';
+              emoji.style.top = Math.random() * 100 + '%';
+              emoji.style.animation = `burstOut ${animationDuration * 0.8}s ease-out forwards`;
+              break;
+              
+            default: // floatUp
+              emoji.style.left = Math.random() * 100 + '%';
+              emoji.style.top = '110%';
+              emoji.style.animation = `floatUp ${animationDuration}s ease-out forwards`;
+              break;
+          }
+          
+          container.appendChild(emoji);
+          
+          // Clean up after animation
+          setTimeout(() => {
+            if (emoji && emoji.parentNode) {
+              emoji.remove();
+            }
+          }, animationDuration * 1000 + 500);
         }
-      }, 3000);
+      }, waveDelay);
     }
   };
 
@@ -283,6 +357,77 @@ const ChiaaGamingObsOverlay = () => {
               opacity: 0;
             }
           }
+          
+          @keyframes fireworksExplode {
+            0% {
+              transform: translate(-50%, -50%) scale(0.3);
+              opacity: 0;
+            }
+            10% {
+              opacity: 1;
+              transform: translate(-50%, -50%) scale(1);
+            }
+            100% {
+              left: var(--end-x);
+              top: var(--end-y);
+              transform: translate(-50%, -50%) scale(0.2);
+              opacity: 0;
+            }
+          }
+          
+          @keyframes spiralUp {
+            0% {
+              transform: translate(-50%, -50%) rotate(0deg) translateX(0px) rotate(0deg);
+              opacity: 0;
+            }
+            10% {
+              opacity: 1;
+            }
+            100% {
+              transform: translate(-50%, -50%) rotate(720deg) translateX(100px) rotate(-720deg);
+              top: -10%;
+              opacity: 0;
+            }
+          }
+          
+          @keyframes bounceUp {
+            0% {
+              transform: translateX(0) translateY(0);
+              opacity: 0;
+            }
+            5% {
+              opacity: 1;
+            }
+            25% {
+              transform: translateX(50px) translateY(-150px);
+            }
+            50% {
+              transform: translateX(-30px) translateY(-300px);
+            }
+            75% {
+              transform: translateX(40px) translateY(-450px);
+            }
+            100% {
+              transform: translateX(0) translateY(-600px);
+              opacity: 0;
+            }
+          }
+          
+          @keyframes burstOut {
+            0% {
+              transform: scale(0) rotate(0deg);
+              opacity: 0;
+            }
+            20% {
+              opacity: 1;
+              transform: scale(1.5) rotate(180deg);
+            }
+            100% {
+              transform: scale(0.3) rotate(360deg);
+              opacity: 0;
+            }
+          }
+          
           .donation-alert-card {
             background: rgba(0, 0, 0, 0.8);
             border-radius: 12px;
