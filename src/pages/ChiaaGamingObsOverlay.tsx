@@ -285,7 +285,7 @@ const ChiaaGamingObsOverlay = () => {
                       <img 
                         src={currentDonation.gif_url} 
                         alt="Donation GIF" 
-                        className="w-16 h-16 object-cover rounded-lg"
+                        className="w-32 h-32 object-cover rounded-lg"
                       />
                     </div>
                   </div>
