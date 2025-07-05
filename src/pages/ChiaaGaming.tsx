@@ -8,6 +8,7 @@ import { Heart, Gamepad2, AlertTriangle } from "lucide-react";
 import GifUpload from "@/components/GifUpload";
 import VoiceRecording from "@/components/VoiceRecording";
 import CustomSoundSelector from "@/components/CustomSoundSelector";
+import HyperEmotesSelector from "@/components/HyperEmotesSelector";
 import { uploadGif, uploadVoice } from "@/utils/mediaUpload";
 import { filterMessage, sanitizeMessage } from "@/utils/linkFilter";
 
@@ -19,9 +20,11 @@ const ChiaaGamingPage = () => {
   const [selectedGif, setSelectedGif] = useState<File | null>(null);
   const [selectedVoice, setSelectedVoice] = useState<File | null>(null);
   const [selectedCustomSoundUrl, setSelectedCustomSoundUrl] = useState<string | null>(null);
+  const [hyperEmotesEnabled, setHyperEmotesEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [maxMessageLength, setMaxMessageLength] = useState(50);
   const [isCustomSoundExpanded, setIsCustomSoundExpanded] = useState(false);
+  const [isHyperEmotesExpanded, setIsHyperEmotesExpanded] = useState(false);
   const navigate = useNavigate();
 
   // Update max message length based on amount
@@ -52,15 +55,20 @@ const ChiaaGamingPage = () => {
     if (selectedCustomSoundUrl && (isNaN(parsedAmount) || parsedAmount < 1)) {
       setSelectedCustomSoundUrl(null);
     }
-  }, [amount, selectedGif, selectedVoice, selectedCustomSoundUrl]);
+    
+    // Clear HyperEmotes if amount < 50
+    if (hyperEmotesEnabled && (isNaN(parsedAmount) || parsedAmount < 50)) {
+      setHyperEmotesEnabled(false);
+    }
+  }, [amount, selectedGif, selectedVoice, selectedCustomSoundUrl, hyperEmotesEnabled]);
 
-  // Clear message when GIF, voice, or custom sound is selected
+  // Clear message when GIF, voice, custom sound, or hyperEmotes is selected
   useEffect(() => {
-    if (selectedGif || selectedVoice || selectedCustomSoundUrl) {
+    if (selectedGif || selectedVoice || selectedCustomSoundUrl || hyperEmotesEnabled) {
       setMessage("");
       setMessageError("");
     }
-  }, [selectedGif, selectedVoice, selectedCustomSoundUrl]);
+  }, [selectedGif, selectedVoice, selectedCustomSoundUrl, hyperEmotesEnabled]);
 
   // Debug logging for custom sound selection
   useEffect(() => {
@@ -91,6 +99,9 @@ const ChiaaGamingPage = () => {
       if (selectedCustomSoundUrl) {
         setSelectedCustomSoundUrl(null);
       }
+      if (hyperEmotesEnabled) {
+        setHyperEmotesEnabled(false);
+      }
     }
   };
 
@@ -106,13 +117,16 @@ const ChiaaGamingPage = () => {
     }
     
     setSelectedVoice(file);
-    // Clear GIF and custom sound if voice is selected
+    // Clear GIF, custom sound, and hyperEmotes if voice is selected
     if (file) {
       if (selectedGif) {
         setSelectedGif(null);
       }
       if (selectedCustomSoundUrl) {
         setSelectedCustomSoundUrl(null);
+      }
+      if (hyperEmotesEnabled) {
+        setHyperEmotesEnabled(false);
       }
     }
   };
@@ -131,6 +145,35 @@ const ChiaaGamingPage = () => {
       }
       if (selectedVoice) {
         setSelectedVoice(null);
+      }
+      if (hyperEmotesEnabled) {
+        setHyperEmotesEnabled(false);
+      }
+    }
+  };
+
+  const handleHyperEmotesSelect = (enabled: boolean) => {
+    const parsedAmount = parseFloat(amount);
+    if (enabled && (isNaN(parsedAmount) || parsedAmount < 50)) {
+      toast({
+        title: "Premium feature",
+        description: "HyperEmotes require a donation of ₹50 or more",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setHyperEmotesEnabled(enabled);
+    // Clear other premium features if hyperEmotes is enabled
+    if (enabled) {
+      if (selectedGif) {
+        setSelectedGif(null);
+      }
+      if (selectedVoice) {
+        setSelectedVoice(null);
+      }
+      if (selectedCustomSoundUrl) {
+        setSelectedCustomSoundUrl(null);
       }
     }
   };
@@ -156,7 +199,7 @@ const ChiaaGamingPage = () => {
     }
 
     // Check if message contains links
-    if (message.trim() && !selectedGif && !selectedVoice && !selectedCustomSoundUrl) {
+    if (message.trim() && !selectedGif && !selectedVoice && !selectedCustomSoundUrl && !hyperEmotesEnabled) {
       const messageValidation = filterMessage(message);
       if (!messageValidation.isValid) {
         setMessageError(messageValidation.reason || "Message contains invalid content");
@@ -169,11 +212,11 @@ const ChiaaGamingPage = () => {
       }
     }
 
-    // Only require message if no GIF, voice, or custom sound is selected
-    if (!message.trim() && !selectedGif && !selectedVoice && !selectedCustomSoundUrl) {
+    // Only require message if no GIF, voice, custom sound, or hyperEmotes is selected
+    if (!message.trim() && !selectedGif && !selectedVoice && !selectedCustomSoundUrl && !hyperEmotesEnabled) {
       toast({
-        title: "Message, GIF, Voice, or Sound required",
-        description: "Please enter a message, upload a GIF, record a voice message, or select a custom sound",
+        title: "Message, GIF, Voice, Sound, or HyperEmotes required",
+        description: "Please enter a message, upload a GIF, record a voice message, select a custom sound, or enable HyperEmotes",
         variant: "destructive",
       });
       return false;
@@ -266,6 +309,7 @@ const ChiaaGamingPage = () => {
         voiceFileName: selectedVoice?.name || null,
         voiceFileSize: selectedVoice?.size || null,
         customSoundUrl: selectedCustomSoundUrl, // Store the URL instead of ID
+        hyperEmotesEnabled,
       };
       
       console.log("DONATION: Storing donation data in session storage:", {
@@ -320,6 +364,7 @@ const ChiaaGamingPage = () => {
     if (selectedGif) return "Message disabled when GIF is uploaded";
     if (selectedVoice) return "Message disabled when voice is recorded";
     if (selectedCustomSoundUrl) return "Message disabled when custom sound is selected";
+    if (hyperEmotesEnabled) return "Message disabled when HyperEmotes is enabled";
     return "Send your sweet message to Chiaa! (No links allowed)";
   };
 
@@ -328,11 +373,12 @@ const ChiaaGamingPage = () => {
     if (selectedGif) return "Sweet Message (Disabled - GIF uploaded)";
     if (selectedVoice) return "Sweet Message (Disabled - Voice recorded)";
     if (selectedCustomSoundUrl) return "Sweet Message (Disabled - Custom sound selected)";
+    if (hyperEmotesEnabled) return "Sweet Message (Disabled - HyperEmotes enabled)";
     return "Sweet Message (No Links Allowed)";
   };
 
-  // Check if message input should be disabled (when GIF, voice, or custom sound is selected)
-  const isMessageDisabled = !!selectedGif || !!selectedVoice || !!selectedCustomSoundUrl || isLoading;
+  // Check if message input should be disabled (when GIF, voice, custom sound, or hyperEmotes is selected)
+  const isMessageDisabled = !!selectedGif || !!selectedVoice || !!selectedCustomSoundUrl || !!hyperEmotesEnabled || isLoading;
 
   // Check if premium features are eligible
   const isGifEligible = parseFloat(amount) >= 1;
@@ -441,7 +487,7 @@ const ChiaaGamingPage = () => {
               {!isCustomSoundExpanded && (
                 <>
                   <p className="text-xs text-white/80 text-center">
-                    ₹1+ for messages • ₹1+ for sounds • ₹1+ for GIF • ₹1+ for voice ({getVoiceDuration()})
+                    ₹1+ for messages • ₹1+ for sounds • ₹1+ for GIF • ₹1+ for voice ({getVoiceDuration()}) • ₹50+ for HyperEmotes
                   </p>
                   
                   <div className="space-y-1">
@@ -470,8 +516,8 @@ const ChiaaGamingPage = () => {
                       </div>
                     )}
                     
-                    <p className="text-xs text-white/80">
-                      {!selectedGif && !selectedVoice && !selectedCustomSoundUrl ? (
+                     <p className="text-xs text-white/80">
+                       {!selectedGif && !selectedVoice && !selectedCustomSoundUrl && !hyperEmotesEnabled ? (
                         <>
                           {isMessageEligible ? (
                             <>
@@ -486,11 +532,12 @@ const ChiaaGamingPage = () => {
                         </>
                       ) : (
                         <>
-                          Message disabled when {
-                            selectedGif ? "GIF uploaded" : 
-                            selectedVoice ? "voice recorded" : 
-                            "custom sound selected"
-                          }
+                           Message disabled when {
+                             selectedGif ? "GIF uploaded" : 
+                             selectedVoice ? "voice recorded" :
+                             selectedCustomSoundUrl ? "custom sound selected" :
+                             "HyperEmotes enabled"
+                           }
                         </>
                       )}
                     </p>
@@ -500,7 +547,7 @@ const ChiaaGamingPage = () => {
                     <GifUpload
                       onGifSelect={handleGifSelect}
                       selectedGif={selectedGif}
-                      disabled={isLoading || !!selectedVoice || !!selectedCustomSoundUrl || !isGifEligible}
+                      disabled={isLoading || !!selectedVoice || !!selectedCustomSoundUrl || !!hyperEmotesEnabled || !isGifEligible}
                       minAmount={1}
                       currentAmount={parseFloat(amount) || 0}
                     />
@@ -508,7 +555,7 @@ const ChiaaGamingPage = () => {
                     <VoiceRecording
                       onVoiceSelect={handleVoiceSelect}
                       selectedVoice={selectedVoice}
-                      disabled={isLoading || !!selectedGif || !!selectedCustomSoundUrl || !isVoiceEligible}
+                      disabled={isLoading || !!selectedGif || !!selectedCustomSoundUrl || !!hyperEmotesEnabled || !isVoiceEligible}
                       minAmount={1}
                       currentAmount={parseFloat(amount) || 0}
                     />
@@ -519,13 +566,25 @@ const ChiaaGamingPage = () => {
               <CustomSoundSelector
                 onSoundSelect={handleCustomSoundSelect}
                 selectedSoundUrl={selectedCustomSoundUrl}
-                disabled={isLoading || !!selectedGif || !!selectedVoice}
+                disabled={isLoading || !!selectedGif || !!selectedVoice || !!hyperEmotesEnabled}
                 minAmount={1}
                 currentAmount={parseFloat(amount) || 0}
                 onExpandChange={setIsCustomSoundExpanded}
-              />
-              
+               />
+
+              {/* HyperEmotes Selector - hidden when custom sound is expanded */}
               {!isCustomSoundExpanded && (
+                <HyperEmotesSelector
+                  onHyperEmotesSelect={handleHyperEmotesSelect}
+                  hyperEmotesEnabled={hyperEmotesEnabled}
+                  disabled={isLoading || !!selectedGif || !!selectedVoice || !!selectedCustomSoundUrl}
+                  minAmount={50}
+                  currentAmount={parseFloat(amount) || 0}
+                  onExpandChange={setIsHyperEmotesExpanded}
+                />
+              )}
+               
+              {!isCustomSoundExpanded && !isHyperEmotesExpanded && (
                 <Button 
                   type="submit" 
                   className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white font-bold py-2 rounded-lg shadow-lg shadow-pink-500/25 transition-all duration-300 transform hover:scale-105 border border-pink-400/50 text-xs sm:text-sm mt-3"

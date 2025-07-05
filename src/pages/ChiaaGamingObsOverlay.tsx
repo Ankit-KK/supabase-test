@@ -13,6 +13,7 @@ interface Donation {
   voice_url?: string;
   custom_sound_name?: string;
   custom_sound_url?: string;
+  hyperemotes_enabled?: boolean;
 }
 
 const ChiaaGamingObsOverlay = () => {
@@ -30,6 +31,36 @@ const ChiaaGamingObsOverlay = () => {
   const [animationPhase, setAnimationPhase] = useState<'enter' | 'show' | 'exit'>('enter');
   const [goalProgress, setGoalProgress] = useState<number>(0);
   const [tokenValid, setTokenValid] = useState<boolean | null>(null);
+
+  // Trigger HyperEmotes effect
+  const triggerHyperEmotes = (amount: number) => {
+    const emojis = ['🚀', '✨', '🌟', '👏', '😍'];
+    const container = document.getElementById('emote-container');
+    if (!container) return;
+
+    const count = Math.min(50, Math.floor(amount / 10)); // 1 emoji per ₹10, capped at 50
+
+    for (let i = 0; i < count; i++) {
+      const emoji = document.createElement('div');
+      emoji.className = 'emote';
+      emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+
+      emoji.style.position = 'absolute';
+      emoji.style.fontSize = '40px';
+      emoji.style.left = Math.random() * window.innerWidth + 'px';
+      emoji.style.top = (Math.random() * window.innerHeight * 0.5 + window.innerHeight * 0.4) + 'px';
+      emoji.style.animation = 'floatUp 3s ease-out forwards';
+      emoji.style.pointerEvents = 'none';
+
+      container.appendChild(emoji);
+
+      setTimeout(() => {
+        if (emoji && emoji.parentNode) {
+          emoji.remove();
+        }
+      }, 3000);
+    }
+  };
 
   // Validate OBS token
   useEffect(() => {
@@ -157,6 +188,11 @@ const ChiaaGamingObsOverlay = () => {
                 playDonationAudio(newDonation);
               }
               
+              // Trigger HyperEmotes if enabled
+              if (newDonation.hyperemotes_enabled) {
+                triggerHyperEmotes(Number(newDonation.amount));
+              }
+              
               setTimeout(() => setAnimationPhase('show'), 500);
               
               setTimeout(() => {
@@ -219,6 +255,30 @@ const ChiaaGamingObsOverlay = () => {
       className="fixed inset-0 pointer-events-none overflow-hidden"
       style={{ background: 'transparent' }}
     >
+      {/* HyperEmotes Container */}
+      <div 
+        id="emote-container" 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          zIndex: 1000
+        }}
+      />
+      
+      {/* CSS for HyperEmotes Animation */}
+      <style>
+        {`
+          @keyframes floatUp {
+            0% {
+              transform: translateY(0);
+              opacity: 1;
+            }
+            100% {
+              transform: translateY(-600px);
+              opacity: 0;
+            }
+          }
+        `}
+      </style>
       {/* Goal Display */}
       {showGoal && (
         <div className="absolute top-4 left-4 w-80 z-20">
@@ -300,6 +360,13 @@ const ChiaaGamingObsOverlay = () => {
                     {currentDonation.custom_sound_url && (
                       <span>{showAudio ? '🔊' : '🔇'}</span>
                     )}
+                  </div>
+                )}
+
+                {/* HyperEmotes indicator */}
+                {currentDonation.hyperemotes_enabled && (
+                  <div className="flex justify-center text-xs text-purple-200 mt-2">
+                    <span className="animate-pulse">✨ HyperEmotes Active! ✨</span>
                   </div>
                 )}
               </div>
