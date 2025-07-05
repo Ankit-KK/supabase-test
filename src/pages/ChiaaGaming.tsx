@@ -475,83 +475,81 @@ const ChiaaGamingPage = () => {
                 </div>
               </div>
 
-              {/* Other form elements - hidden when custom sound is expanded */}
-              {!isCustomSoundExpanded && (
-                <>
-                  <p className="text-xs text-white/80 text-center">
-                    ₹1+ for messages • ₹1+ for sounds • ₹1+ for GIF • ₹1+ for voice ({getVoiceDuration()}) • ₹50+ for HyperEmotes
-                  </p>
-                  
-                  <div className="space-y-1">
-                    <label htmlFor="message" className="block text-xs font-medium text-white">
-                      {getMessageLabel()}
-                    </label>
-                    <Textarea 
-                      id="message"
-                      value={message}
-                      onChange={handleMessageChange}
-                      placeholder={getMessagePlaceholder()}
-                      className={`h-10 sm:h-12 bg-white/95 text-gray-800 placeholder:text-gray-500 focus:ring-pink-500/50 resize-none text-xs ${
-                        messageError 
-                          ? 'border-red-500 focus:border-red-500' 
-                          : 'border-pink-300 focus:border-pink-500'
-                      }`}
-                      disabled={isMessageDisabled || !isMessageEligible}
-                      maxLength={maxMessageLength}
-                    />
-                    
-                    {/* Message validation error */}
-                    {messageError && (
-                      <div className="flex items-center space-x-2 text-red-400 text-xs">
-                        <AlertTriangle className="w-3 h-3" />
-                        <span>{messageError}</span>
-                      </div>
-                    )}
-                    
-                     <p className="text-xs text-white/80">
-                       {!selectedGif && !selectedVoice ? (
+              {/* Other form elements - message always visible, other elements hidden when custom sound is expanded */}
+              <p className="text-xs text-white/80 text-center">
+                ₹1+ for messages • ₹1+ for sounds • ₹1+ for GIF • ₹1+ for voice ({getVoiceDuration()}) • ₹50+ for HyperEmotes
+              </p>
+              
+              <div className="space-y-1">
+                <label htmlFor="message" className="block text-xs font-medium text-white">
+                  {getMessageLabel()}
+                </label>
+                <Textarea 
+                  id="message"
+                  value={message}
+                  onChange={handleMessageChange}
+                  placeholder={getMessagePlaceholder()}
+                  className={`h-10 sm:h-12 bg-white/95 text-gray-800 placeholder:text-gray-500 focus:ring-pink-500/50 resize-none text-xs ${
+                    messageError 
+                      ? 'border-red-500 focus:border-red-500' 
+                      : 'border-pink-300 focus:border-pink-500'
+                  }`}
+                  disabled={isMessageDisabled || !isMessageEligible}
+                  maxLength={maxMessageLength}
+                />
+                
+                {/* Message validation error */}
+                {messageError && (
+                  <div className="flex items-center space-x-2 text-red-400 text-xs">
+                    <AlertTriangle className="w-3 h-3" />
+                    <span>{messageError}</span>
+                  </div>
+                )}
+                
+                 <p className="text-xs text-white/80">
+                   {!selectedGif && !selectedVoice ? (
+                    <>
+                      {isMessageEligible ? (
                         <>
-                          {isMessageEligible ? (
-                            <>
-                              {message.length}/{maxMessageLength} chars
-                              {selectedCustomSoundUrl ? " (20 for custom sound)" : 
-                               parseFloat(amount) >= 1 ? " (99 for ₹1+)" : " (50 for <₹1)"}
-                              <br />
-                              <span className="text-yellow-300">⚠️ Links, URLs, and social media handles are not allowed</span>
-                            </>
-                          ) : (
-                            <span className="text-yellow-300">Messages require ₹1+ donation</span>
-                          )}
+                          {message.length}/{maxMessageLength} chars
+                          {selectedCustomSoundUrl ? " (20 for custom sound)" : 
+                           parseFloat(amount) >= 1 ? " (99 for ₹1+)" : " (50 for <₹1)"}
+                          <br />
+                          <span className="text-yellow-300">⚠️ Links, URLs, and social media handles are not allowed</span>
                         </>
                       ) : (
-                        <>
-                           Message disabled when {
-                             selectedGif ? "GIF uploaded" : 
-                             "voice recorded"
-                           }
-                        </>
+                        <span className="text-yellow-300">Messages require ₹1+ donation</span>
                       )}
-                    </p>
-                  </div>
+                    </>
+                  ) : (
+                    <>
+                       Message disabled when {
+                         selectedGif ? "GIF uploaded" : 
+                         "voice recorded"
+                       }
+                    </>
+                  )}
+                </p>
+              </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-                    <GifUpload
-                      onGifSelect={handleGifSelect}
-                      selectedGif={selectedGif}
-                      disabled={isLoading || !!selectedVoice || !!selectedCustomSoundUrl || !!hyperEmotesEnabled || !isGifEligible}
-                      minAmount={1}
-                      currentAmount={parseFloat(amount) || 0}
-                    />
+              {!isCustomSoundExpanded && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                  <GifUpload
+                    onGifSelect={handleGifSelect}
+                    selectedGif={selectedGif}
+                    disabled={isLoading || !!selectedVoice || !!selectedCustomSoundUrl || !!hyperEmotesEnabled || !isGifEligible}
+                    minAmount={1}
+                    currentAmount={parseFloat(amount) || 0}
+                  />
 
-                    <VoiceRecording
-                      onVoiceSelect={handleVoiceSelect}
-                      selectedVoice={selectedVoice}
-                      disabled={isLoading || !!selectedGif || !!selectedCustomSoundUrl || !!hyperEmotesEnabled || !isVoiceEligible}
-                      minAmount={1}
-                      currentAmount={parseFloat(amount) || 0}
-                    />
-                  </div>
-                </>
+                  <VoiceRecording
+                    onVoiceSelect={handleVoiceSelect}
+                    selectedVoice={selectedVoice}
+                    disabled={isLoading || !!selectedGif || !!selectedCustomSoundUrl || !!hyperEmotesEnabled || !isVoiceEligible}
+                    minAmount={1}
+                    currentAmount={parseFloat(amount) || 0}
+                  />
+                </div>
               )}
 
               <CustomSoundSelector
