@@ -140,13 +140,16 @@ const ChiaaGamingPage = () => {
       amount: parseFloat(amount)
     });
     setSelectedCustomSoundUrl(soundUrl);
-    // Clear GIF and voice if custom sound is selected (allow hyperEmotes with custom sound)
+    // Clear GIF, voice, and HyperEmotes if custom sound is selected (mutually exclusive)
     if (soundUrl) {
       if (selectedGif) {
         setSelectedGif(null);
       }
       if (selectedVoice) {
         setSelectedVoice(null);
+      }
+      if (hyperEmotesEnabled) {
+        setHyperEmotesEnabled(false);
       }
     }
   };
@@ -163,7 +166,7 @@ const ChiaaGamingPage = () => {
     }
     
     setHyperEmotesEnabled(enabled);
-    // Clear GIF and voice if hyperEmotes is enabled (allow custom sound with hyperEmotes)
+    // Clear GIF, voice, and custom sound if hyperEmotes is enabled (mutually exclusive)
     if (enabled) {
       if (selectedGif) {
         setSelectedGif(null);
@@ -171,6 +174,27 @@ const ChiaaGamingPage = () => {
       if (selectedVoice) {
         setSelectedVoice(null);
       }
+      if (selectedCustomSoundUrl) {
+        setSelectedCustomSoundUrl(null);
+      }
+    }
+  };
+
+  // Handle custom sound expand/collapse
+  const handleCustomSoundExpandChange = (expanded: boolean) => {
+    setIsCustomSoundExpanded(expanded);
+    // If collapsing and custom sound was selected, deselect it
+    if (!expanded && selectedCustomSoundUrl) {
+      setSelectedCustomSoundUrl(null);
+    }
+  };
+
+  // Handle HyperEmotes expand/collapse
+  const handleHyperEmotesExpandChange = (expanded: boolean) => {
+    setIsHyperEmotesExpanded(expanded);
+    // If collapsing and HyperEmotes was enabled, disable it
+    if (!expanded && hyperEmotesEnabled) {
+      setHyperEmotesEnabled(false);
     }
   };
 
@@ -558,7 +582,7 @@ const ChiaaGamingPage = () => {
                 disabled={isLoading || !!selectedGif || !!selectedVoice}
                 minAmount={1}
                 currentAmount={parseFloat(amount) || 0}
-                onExpandChange={setIsCustomSoundExpanded}
+                onExpandChange={handleCustomSoundExpandChange}
                />
 
               {/* HyperEmotes Selector - hidden when custom sound is expanded */}
@@ -569,10 +593,33 @@ const ChiaaGamingPage = () => {
                   disabled={isLoading || !!selectedGif || !!selectedVoice}
                   minAmount={50}
                   currentAmount={parseFloat(amount) || 0}
-                  onExpandChange={setIsHyperEmotesExpanded}
+                  onExpandChange={handleHyperEmotesExpandChange}
                 />
               )}
+
+              {/* Payment button - show when custom sound is expanded and selected, or when HyperEmotes is expanded and enabled */}
+              {((isCustomSoundExpanded && selectedCustomSoundUrl) || (isHyperEmotesExpanded && hyperEmotesEnabled)) && (
+                <Button 
+                  type="submit" 
+                  className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white font-bold py-2 rounded-lg shadow-lg shadow-pink-500/25 transition-all duration-300 transform hover:scale-105 border border-pink-400/50 text-xs sm:text-sm mt-3"
+                  disabled={isLoading || !!messageError}
+                >
+                  {isLoading ? (
+                    <div className="flex items-center justify-center space-x-2">
+                      <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
+                      <span className="text-xs">Processing...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center space-x-2">
+                      <Heart className="h-3 w-3" />
+                      <span className="text-xs sm:text-sm">Send Love & Support</span>
+                      <Heart className="h-3 w-3" />
+                    </div>
+                  )}
+                </Button>
+              )}
                
+              {/* Default payment button - show when neither section is expanded */}
               {!isCustomSoundExpanded && !isHyperEmotesExpanded && (
                 <Button 
                   type="submit" 
