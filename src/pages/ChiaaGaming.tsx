@@ -403,41 +403,43 @@ const ChiaaGamingPage = () => {
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-xl"></div>
             
             <form onSubmit={handleSubmit} className="relative z-10 space-y-2 sm:space-y-3">
+              {/* Name and Amount fields - always visible */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                <div className="space-y-1">
+                  <label htmlFor="name" className="block text-xs font-medium text-white">
+                    Your Name
+                  </label>
+                  <Input 
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Enter your name"
+                    disabled={isLoading}
+                    className="bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 h-7 sm:h-8 text-xs"
+                  />
+                </div>
+                
+                <div className="space-y-1">
+                  <label htmlFor="amount" className="block text-xs font-medium text-white">
+                    Donation Amount (₹)
+                  </label>
+                  <Input 
+                    id="amount"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    placeholder="Minimum ₹1"
+                    disabled={isLoading}
+                    className="bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 h-7 sm:h-8 text-xs"
+                  />
+                </div>
+              </div>
+
+              {/* Other form elements - hidden when custom sound is expanded */}
               {!isCustomSoundExpanded && (
                 <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-                    <div className="space-y-1">
-                      <label htmlFor="name" className="block text-xs font-medium text-white">
-                        Your Name
-                      </label>
-                      <Input 
-                        id="name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Enter your name"
-                        disabled={isLoading}
-                        className="bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 h-7 sm:h-8 text-xs"
-                      />
-                    </div>
-                    
-                    <div className="space-y-1">
-                      <label htmlFor="amount" className="block text-xs font-medium text-white">
-                        Donation Amount (₹)
-                      </label>
-                      <Input 
-                        id="amount"
-                        type="number"
-                        min="1"
-                        step="1"
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        placeholder="Minimum ₹1"
-                        disabled={isLoading}
-                        className="bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 h-7 sm:h-8 text-xs"
-                      />
-                    </div>
-                  </div>
-                  
                   <p className="text-xs text-white/80 text-center">
                     ₹1+ for messages • ₹1+ for sounds • ₹1+ for GIF • ₹1+ for voice ({getVoiceDuration()})
                   </p>
