@@ -144,19 +144,30 @@ const ObsSettings = () => {
         <div className="space-y-3">
           <Label className="text-pink-200">OBS Access Token</Label>
           {obsToken ? (
-            <div className="flex items-center gap-2">
-              <Input 
-                value={obsToken} 
-                readOnly 
-                className="bg-black/30 border-pink-500/50 text-pink-100 font-mono text-sm"
-              />
-              <Button
-                size="sm"
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Input 
+                  value={obsToken} 
+                  readOnly 
+                  className="bg-black/30 border-pink-500/50 text-pink-100 font-mono text-sm"
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => copyToClipboard(obsToken)}
+                  className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20"
+                >
+                  <Copy className="w-4 h-4" />
+                </Button>
+              </div>
+              <Button 
+                onClick={generateToken} 
+                disabled={isGenerating}
                 variant="outline"
-                onClick={() => copyToClipboard(obsToken)}
-                className="border-pink-500/50 text-pink-100 hover:bg-pink-500/20"
+                size="sm"
+                className="border-orange-500/50 text-orange-100 hover:bg-orange-500/20"
               >
-                <Copy className="w-4 h-4" />
+                {isGenerating ? "Regenerating..." : "Regenerate New Token"}
               </Button>
             </div>
           ) : (
