@@ -205,7 +205,7 @@ const ChiaaGamingObsOverlay = () => {
                   }, 1000);
                 }, 500);
               }, 12000);
-            }, 60000); // 1 minute delay
+            }, 0); // Show immediately
           }
         }
       )
@@ -264,7 +264,7 @@ const ChiaaGamingObsOverlay = () => {
         }}
       />
       
-      {/* CSS for HyperEmotes Animation */}
+      {/* CSS for HyperEmotes Animation and Alert Styling */}
       <style>
         {`
           @keyframes floatUp {
@@ -276,6 +276,23 @@ const ChiaaGamingObsOverlay = () => {
               transform: translateY(-600px);
               opacity: 0;
             }
+          }
+          .donation-alert-card {
+            background: linear-gradient(135deg, rgba(139, 69, 19, 0.9), rgba(255, 140, 0, 0.8));
+            border: 2px solid rgba(255, 215, 0, 0.6);
+            border-radius: 16px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+          }
+          .donation-alert-content {
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+          }
+          .gif-glow-outline {
+            border: 3px solid rgba(255, 215, 0, 0.8);
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
           }
         `}
       </style>
