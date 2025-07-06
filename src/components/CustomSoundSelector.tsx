@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Volume2, VolumeX, Play, Pause, ChevronDown, ChevronRight } from "lucide-react";

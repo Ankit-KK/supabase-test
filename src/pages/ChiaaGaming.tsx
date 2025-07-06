@@ -32,10 +32,12 @@ const ChiaaGamingPage = () => {
     const parsedAmount = parseFloat(amount);
     if (selectedCustomSoundUrl || hyperEmotesEnabled) {
       setMaxMessageLength(20); // Limit to 20 chars when custom sound or HyperEmotes is selected
-    } else if (!isNaN(parsedAmount) && parsedAmount >= 1) {
-      setMaxMessageLength(99); // Set to 99 to keep it below 100
+    } else if (!isNaN(parsedAmount) && parsedAmount >= 200) {
+      setMaxMessageLength(150); // 150 chars for ₹200+
+    } else if (!isNaN(parsedAmount) && parsedAmount >= 50) {
+      setMaxMessageLength(100); // 100 chars for ₹50-199
     } else {
-      setMaxMessageLength(50);
+      setMaxMessageLength(50); // 50 chars for under ₹50
     }
   }, [amount, selectedCustomSoundUrl, hyperEmotesEnabled]);
 
@@ -533,9 +535,10 @@ const ChiaaGamingPage = () => {
                       {isMessageEligible ? (
                         <>
                           {message.length}/{maxMessageLength} chars
-                          {selectedCustomSoundUrl ? " (20 for custom sound)" : 
-                           hyperEmotesEnabled ? " (20 for HyperEmotes)" :
-                           parseFloat(amount) >= 30 ? " (99 for ₹30+)" : " (50 for <₹30)"}
+                           {selectedCustomSoundUrl ? " (20 for custom sound)" : 
+                            hyperEmotesEnabled ? " (20 for HyperEmotes)" :
+                            parseFloat(amount) >= 200 ? " (150 for ₹200+)" : 
+                            parseFloat(amount) >= 50 ? " (100 for ₹50-199)" : " (50 for <₹50)"}
                           <br />
                           <span className="text-yellow-300">⚠️ Links, URLs, and social media handles are not allowed</span>
                         </>
