@@ -36,8 +36,8 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
   const getMaxDuration = (): number => {
     if (currentAmount >= 1000) return 60; // 60 seconds for ₹1000+
     if (currentAmount >= 300) return 30; // 30 seconds for ₹300-999
-    if (currentAmount >= 150) return 15; // 15 seconds for ₹150-299
-    return 15; // 15 seconds for ₹150+
+    if (currentAmount >= 200) return 15; // 15 seconds for ₹200-299
+    return 15; // 15 seconds for ₹200+
   };
 
   const maxDuration = getMaxDuration();
@@ -205,15 +205,12 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
   const getDurationText = (): string => {
     if (currentAmount >= 1000) return "60s max";
     if (currentAmount >= 300) return "30s max";
-    if (currentAmount >= 150) return "15s max";
+    if (currentAmount >= 200) return "15s max";
     return "15s max";
   };
 
   return (
     <div className="space-y-1">
-      <label className="block text-xs font-medium text-white">
-        Voice Message
-      </label>
       
       {!selectedVoice ? (
         <div className="space-y-1">
@@ -297,13 +294,6 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
           </div>
         </div>
       )}
-      
-      <p className="text-xs text-white/80">
-        {isEligible 
-          ? `Voice plays as audio alert on stream (${getDurationText()})`
-          : "Higher donation required for voice messages"
-        }
-      </p>
     </div>
   );
 };

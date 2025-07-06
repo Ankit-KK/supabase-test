@@ -96,9 +96,6 @@ const GifUpload: React.FC<GifUploadProps> = ({
 
   return (
     <div className="space-y-1">
-      <label className="block text-xs font-medium text-white">
-        Upload GIF Alert
-      </label>
       
       {!selectedGif ? (
         <div className="relative">
@@ -173,13 +170,6 @@ const GifUpload: React.FC<GifUploadProps> = ({
           </div>
         </div>
       )}
-      
-      <p className="text-xs text-white/80">
-        {isEligible 
-          ? "GIF displays on stream for 12 seconds"
-          : "Higher donation required for GIF alerts"
-        }
-      </p>
     </div>
   );
 };
