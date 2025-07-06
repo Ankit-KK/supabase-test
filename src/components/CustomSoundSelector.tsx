@@ -103,9 +103,6 @@ const CustomSoundSelector: React.FC<CustomSoundSelectorProps> = ({
 
   return (
     <div className="space-y-1">
-      <label className="block text-xs font-medium text-white">
-        Custom Sound Alert
-      </label>
       
       {/* Main toggle button */}
       <Button
@@ -204,12 +201,6 @@ const CustomSoundSelector: React.FC<CustomSoundSelectorProps> = ({
             Custom sound alerts play during donation messages on stream
           </p>
         </div>
-      )}
-      
-      {!isExpanded && !isEligible && (
-        <p className="text-xs text-white/80 text-center">
-          Higher donation required for custom sound alerts (₹{minAmount}+)
-        </p>
       )}
     </div>
   );
