@@ -72,23 +72,72 @@ const ChiaaGamingAudioPlayer = () => {
         const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
         setAudioContext(ctx);
         
+        // Create a silent audio buffer to unlock audio context
+        const buffer = ctx.createBuffer(1, 1, 22050);
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(ctx.destination);
+        
+        // Try to start the source to unlock audio
+        try {
+          source.start(0);
+          console.log('Audio context unlocked with silent buffer');
+        } catch (error) {
+          console.log('Silent buffer unlock failed, will try with audio element');
+        }
+        
         // Resume audio context if needed
         if (ctx.state === 'suspended') {
           await ctx.resume();
         }
         
-        // Initialize audio element with muted autoplay
+        // Initialize audio element
         if (audioRef.current) {
-          audioRef.current.muted = true;
           audioRef.current.volume = volume[0] / 100;
-          // Try to play a silent audio to unlock the context
+          
+          // Create a data URL for a silent audio file
+          const silentAudio = "data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LDciMFAA==";
+          
+          audioRef.current.src = silentAudio;
+          audioRef.current.loop = false;
+          audioRef.current.muted = true;
+          
+          // Try to play silent audio to unlock
           try {
-            await audioRef.current.play();
-            audioRef.current.pause();
-            audioRef.current.currentTime = 0;
-            audioRef.current.muted = false;
+            const playPromise = audioRef.current.play();
+            if (playPromise !== undefined) {
+              await playPromise;
+              audioRef.current.pause();
+              audioRef.current.currentTime = 0;
+              audioRef.current.muted = false;
+              audioRef.current.src = "";
+              console.log('Audio element unlocked successfully');
+            }
           } catch (error) {
-            console.log('Initial audio unlock attempt failed, will try on first audio');
+            console.log('Audio element unlock failed:', error);
+            // Set up click listener as fallback
+            const unlockAudio = async () => {
+              try {
+                audioRef.current!.muted = false;
+                const playPromise = audioRef.current!.play();
+                if (playPromise !== undefined) {
+                  await playPromise;
+                  audioRef.current!.pause();
+                  audioRef.current!.currentTime = 0;
+                  audioRef.current!.src = "";
+                  console.log('Audio unlocked via user interaction');
+                }
+                document.removeEventListener('click', unlockAudio);
+                document.removeEventListener('keydown', unlockAudio);
+                document.removeEventListener('touchstart', unlockAudio);
+              } catch (e) {
+                console.log('User interaction unlock failed:', e);
+              }
+            };
+            
+            document.addEventListener('click', unlockAudio, { once: true });
+            document.addEventListener('keydown', unlockAudio, { once: true });
+            document.addEventListener('touchstart', unlockAudio, { once: true });
           }
         }
       } catch (error) {
