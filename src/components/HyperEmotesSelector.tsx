@@ -93,7 +93,7 @@ const HyperEmotesSelector: React.FC<HyperEmotesSelectorProps> = ({
       </Button>
 
       {isExpanded && (
-        <div className="bg-white/90 rounded-lg p-4 border border-purple-200 space-y-3">
+        <div className="bg-white/95 rounded-lg p-4 border border-purple-300 space-y-3 shadow-lg">
           <div className="text-center">
             <h3 className="font-bold text-purple-700 text-sm mb-2">✨ HyperEmotes ✨</h3>
             <p className="text-xs text-gray-600 mb-3">
