@@ -69,10 +69,10 @@ const HyperEmotesSelector: React.FC<HyperEmotesSelectorProps> = ({
         onClick={handleToggleExpanded}
         className={`w-full h-auto p-3 text-left justify-between ${
           !isEligible 
-            ? 'opacity-50 cursor-not-allowed border-gray-400 text-gray-400' 
+            ? 'opacity-50 cursor-not-allowed border-gray-400 text-gray-400 bg-white/70' 
             : hyperEmotesEnabled
             ? 'border-purple-400 bg-purple-50 text-purple-700'
-            : 'border-pink-300 text-gray-700 hover:border-pink-400'
+            : 'border-pink-300 text-gray-700 hover:border-pink-400 bg-white/90'
         }`}
         disabled={disabled}
       >
