@@ -429,15 +429,41 @@ const ChiaaGamingDonationMessages = () => {
             </div>
           </div>
 
-          {/* Monthly Total Card */}
+          {/* GIF Preview Section */}
           <Card className="mb-6 bg-black/50 border-pink-500/30">
             <CardHeader>
-              <CardTitle className="text-pink-100">Monthly Total</CardTitle>
-              <CardDescription className="text-pink-300">Total donations received this month</CardDescription>
+              <CardTitle className="text-pink-100">GIF Preview</CardTitle>
+              <CardDescription className="text-pink-300">Preview GIFs before they appear in OBS alerts</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-pink-400">
-                {formatCurrency(monthlyTotal)}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-96 overflow-y-auto">
+                {donations
+                  .filter(donation => donation.gif_url)
+                  .slice(0, 12)
+                  .map((donation) => (
+                    <div key={donation.id} className="relative group">
+                      <div className="aspect-square rounded-lg overflow-hidden bg-pink-900/20 border border-pink-500/30">
+                        <img
+                          src={donation.gif_url}
+                          alt={`GIF from ${donation.name}`}
+                          className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-110"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                          }}
+                        />
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 rounded-b-lg">
+                        <p className="text-pink-100 text-xs font-medium truncate">{donation.name}</p>
+                        <p className="text-pink-300 text-xs">₹{donation.amount}</p>
+                      </div>
+                    </div>
+                  ))}
+                {donations.filter(donation => donation.gif_url).length === 0 && (
+                  <div className="col-span-full text-center py-8 text-pink-300">
+                    No GIFs to preview yet
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
