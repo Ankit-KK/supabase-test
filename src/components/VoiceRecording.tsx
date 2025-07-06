@@ -212,7 +212,7 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
   return (
     <div className="space-y-1">
       <label className="block text-xs font-medium text-white">
-        Voice Message (₹{minAmount}+) {!isEligible && `- Need ₹${minAmount - currentAmount} more`}
+        Voice Message
       </label>
       
       {!selectedVoice ? (
@@ -227,7 +227,7 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
             >
               <Mic className="w-3 h-3 mr-1" />
               {!isEligible 
-                ? `Donate ₹${minAmount}+ to unlock`
+                ? "Unlock with higher donation"
                 : `Start Recording (${getDurationText()})`
               }
             </Button>
@@ -301,7 +301,7 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
       <p className="text-xs text-white/80">
         {isEligible 
           ? `Voice plays as audio alert on stream (${getDurationText()})`
-          : `Donate ₹${minAmount}+ to unlock voice messages`
+          : "Higher donation required for voice messages"
         }
       </p>
     </div>

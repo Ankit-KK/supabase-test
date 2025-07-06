@@ -97,7 +97,7 @@ const GifUpload: React.FC<GifUploadProps> = ({
   return (
     <div className="space-y-1">
       <label className="block text-xs font-medium text-white">
-        Upload GIF Alert (₹{minAmount}+) {!isEligible && `- Need ₹${minAmount - currentAmount} more`}
+        Upload GIF Alert
       </label>
       
       {!selectedGif ? (
@@ -119,7 +119,7 @@ const GifUpload: React.FC<GifUploadProps> = ({
           >
             <Upload className="w-3 h-3 mr-1" />
             {!isEligible 
-              ? `Donate ₹${minAmount}+ to unlock`
+              ? "Unlock with higher donation"
               : "Choose GIF (Max 5MB)"
             }
           </Button>
@@ -177,7 +177,7 @@ const GifUpload: React.FC<GifUploadProps> = ({
       <p className="text-xs text-white/80">
         {isEligible 
           ? "GIF displays on stream for 12 seconds"
-          : `Donate ₹${minAmount}+ to unlock GIF alerts`
+          : "Higher donation required for GIF alerts"
         }
       </p>
     </div>
