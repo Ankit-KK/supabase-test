@@ -71,13 +71,13 @@ const HyperEmotesSelector: React.FC<HyperEmotesSelectorProps> = ({
           !isEligible 
             ? 'opacity-50 cursor-not-allowed border-gray-400 text-gray-400 bg-white/70' 
             : hyperEmotesEnabled
-            ? 'border-2 border-purple-500 bg-gradient-to-r from-purple-200 to-pink-200 text-purple-800 shadow-md'
-            : 'border-2 border-purple-400 text-purple-700 hover:border-purple-500 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100'
+            ? 'border-2 border-purple-500 bg-gradient-to-r from-purple-200 to-pink-200 text-purple-900 shadow-md'
+            : 'border-2 border-purple-400 text-purple-900 hover:border-purple-500 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100'
         }`}
         disabled={disabled}
       >
         <div className="flex items-center space-x-2">
-          <Sparkles className={`h-4 w-4 ${hyperEmotesEnabled ? 'text-purple-600' : 'text-purple-500'}`} />
+          <Sparkles className={`h-4 w-4 ${hyperEmotesEnabled ? 'text-purple-700' : 'text-purple-600'}`} />
           <div>
             <div className="font-medium text-xs">
               HyperEmotes {!isEligible && `(₹${minAmount}+ required)`}
@@ -95,15 +95,15 @@ const HyperEmotesSelector: React.FC<HyperEmotesSelectorProps> = ({
       {isExpanded && (
         <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-4 border-2 border-purple-300 space-y-3 shadow-lg">
           <div className="text-center">
-            <h3 className="font-bold text-purple-700 text-sm mb-2">✨ HyperEmotes ✨</h3>
-            <p className="text-xs text-purple-600 mb-3">
+            <h3 className="font-bold text-purple-900 text-sm mb-2">✨ HyperEmotes ✨</h3>
+            <p className="text-xs text-purple-800 mb-3">
               Trigger an epic emoji rain effect during your donation!
             </p>
             
             <div className="text-2xl mb-2">🚀 ✨ 🌟 👏 😍</div>
             
             {isEligible && (
-              <p className="text-xs text-purple-700 font-medium mb-3 bg-purple-100 rounded p-2">
+              <p className="text-xs text-purple-900 font-medium mb-3 bg-purple-100 rounded p-2">
                 Your ₹{currentAmount} donation will trigger {emoteCount} emojis!
               </p>
             )}
@@ -116,7 +116,7 @@ const HyperEmotesSelector: React.FC<HyperEmotesSelectorProps> = ({
               className={`px-4 py-2 text-xs font-medium rounded-lg transition-all ${
                 hyperEmotesEnabled
                   ? 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white'
-                  : 'bg-gradient-to-r from-purple-200 to-pink-200 hover:from-purple-300 hover:to-pink-300 text-purple-700 hover:text-purple-800'
+                  : 'bg-gradient-to-r from-purple-200 to-pink-200 hover:from-purple-300 hover:to-pink-300 text-purple-900 hover:text-purple-900'
               }`}
               disabled={!isEligible}
             >
@@ -135,7 +135,7 @@ const HyperEmotesSelector: React.FC<HyperEmotesSelectorProps> = ({
           </div>
 
           {!isEligible && (
-            <div className="text-center text-xs text-red-600 bg-red-100 rounded p-2 border border-red-300">
+            <div className="text-center text-xs text-red-800 bg-red-100 rounded p-2 border border-red-300">
               💡 Tip: Donate ₹{minAmount}+ to unlock HyperEmotes!
             </div>
           )}
