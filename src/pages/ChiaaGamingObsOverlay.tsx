@@ -249,12 +249,11 @@ const ChiaaGamingObsOverlay = () => {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'chiaa_gaming_donations',
-          filter: 'payment_status=eq.success'
+          table: 'chiaa_gaming_donations'
         },
         (payload) => {
           const newDonation = payload.new as Donation;
-          console.log('New successful donation received in OBS overlay:', newDonation);
+          console.log('New donation received in OBS overlay with 1 minute delay:', newDonation);
           console.log('OBS Environment check:', {
             userAgent: navigator.userAgent,
             isOBS: navigator.userAgent.includes('OBS'),
@@ -263,42 +262,45 @@ const ChiaaGamingObsOverlay = () => {
             showAudio
           });
           
-          // Update goal progress for successful payments
-          if (showGoal) {
-            setGoalProgress(prev => prev + Number(newDonation.amount));
-          }
-          
-          // Show donation alert immediately if messages are enabled
-          if (showMessages) {
-            console.log('Showing donation alert in OBS overlay');
-            setAnimationPhase('enter');
-            setCurrentDonation(newDonation);
-            setIsVisible(true);
-            
-            // Play audio only if enabled in this overlay
-            if (showAudio) {
-              playDonationAudio(newDonation);
+          // Add 1 minute delay before showing OBS alert
+          setTimeout(() => {
+            // Update goal progress for successful payments only
+            if (showGoal && newDonation.payment_status === 'success') {
+              setGoalProgress(prev => prev + Number(newDonation.amount));
             }
             
-            // Trigger HyperEmotes if enabled
-            if (newDonation.hyperemotes_enabled) {
-              console.log('Triggering HyperEmotes for amount:', newDonation.amount);
-              triggerHyperEmotes(Number(newDonation.amount));
-            }
-            
-            setTimeout(() => setAnimationPhase('show'), 500);
-            
-            setTimeout(() => {
-              setAnimationPhase('exit');
+            // Show donation alert after 1 minute delay if messages are enabled
+            if (showMessages) {
+              console.log('Showing donation alert in OBS overlay after 1 minute delay');
+              setAnimationPhase('enter');
+              setCurrentDonation(newDonation);
+              setIsVisible(true);
+              
+              // Play audio only if enabled in this overlay
+              if (showAudio) {
+                playDonationAudio(newDonation);
+              }
+              
+              // Trigger HyperEmotes if enabled
+              if (newDonation.hyperemotes_enabled) {
+                console.log('Triggering HyperEmotes for amount:', newDonation.amount);
+                triggerHyperEmotes(Number(newDonation.amount));
+              }
+              
+              setTimeout(() => setAnimationPhase('show'), 500);
+              
               setTimeout(() => {
-                setIsVisible(false);
+                setAnimationPhase('exit');
                 setTimeout(() => {
-                  setCurrentDonation(null);
-                  setAnimationPhase('enter');
-                }, 1000);
-              }, 500);
-            }, 12000);
-          }
+                  setIsVisible(false);
+                  setTimeout(() => {
+                    setCurrentDonation(null);
+                    setAnimationPhase('enter');
+                  }, 1000);
+                }, 500);
+              }, 12000);
+            }
+          }, 60000); // 1 minute delay (60000ms)
         }
       )
       .subscribe();

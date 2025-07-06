@@ -105,7 +105,7 @@ const AnkitObsOverlay = () => {
   }, [showGoal]);
 
   useEffect(() => {
-    // Set up real-time subscription for ALL donations (both successful and failed)
+    // Set up real-time subscription for ALL donations (both successful and failed) with 1 minute delay for OBS
     const channel = supabase
       .channel(`ankit-obs-overlay-${obsId}`)
       .on(
@@ -117,7 +117,7 @@ const AnkitObsOverlay = () => {
         },
         (payload) => {
           const newDonation = payload.new as Donation;
-          console.log('New donation received in OBS overlay (all statuses):', {
+          console.log('New donation received in OBS overlay with 1 minute delay (all statuses):', {
             id: newDonation.id,
             name: newDonation.name,
             amount: newDonation.amount,
@@ -125,45 +125,48 @@ const AnkitObsOverlay = () => {
             selected_emoji: newDonation.selected_emoji
           });
           
-          // Update goal progress only for successful payments
-          if (showGoal && newDonation.payment_status === "success") {
-            setGoalProgress(prev => prev + Number(newDonation.amount));
-            console.log("Updated goal progress for successful donation");
-          }
-          
-          // Create floating emojis celebration with random count
-          if (newDonation.selected_emoji) {
-            const baseCount = 20;
-            const randomVariation = Math.floor(Math.random() * 10) - 5; // -5 to +5
-            const emojiCount = Math.max(15, baseCount + randomVariation);
-            createFloatingEmojis(newDonation.selected_emoji, emojiCount);
-          }
-          
-          // Show donation alert for ALL donations (success and failed) if messages are enabled
-          if (showMessages) {
-            console.log(`Showing donation alert for ${newDonation.payment_status} payment`);
-            setAnimationPhase('enter');
-            setCurrentDonation(newDonation);
-            setIsVisible(true);
+          // Add 1 minute delay before showing OBS alert
+          setTimeout(() => {
+            // Update goal progress only for successful payments
+            if (showGoal && newDonation.payment_status === "success") {
+              setGoalProgress(prev => prev + Number(newDonation.amount));
+              console.log("Updated goal progress for successful donation");
+            }
             
-            setTimeout(() => setAnimationPhase('show'), 500);
+            // Create floating emojis celebration with random count
+            if (newDonation.selected_emoji) {
+              const baseCount = 20;
+              const randomVariation = Math.floor(Math.random() * 10) - 5; // -5 to +5
+              const emojiCount = Math.max(15, baseCount + randomVariation);
+              createFloatingEmojis(newDonation.selected_emoji, emojiCount);
+            }
             
-            setTimeout(() => {
-              setAnimationPhase('exit');
+            // Show donation alert for ALL donations (success and failed) if messages are enabled
+            if (showMessages) {
+              console.log(`Showing donation alert for ${newDonation.payment_status} payment after 1 minute delay`);
+              setAnimationPhase('enter');
+              setCurrentDonation(newDonation);
+              setIsVisible(true);
+              
+              setTimeout(() => setAnimationPhase('show'), 500);
+              
               setTimeout(() => {
-                setIsVisible(false);
+                setAnimationPhase('exit');
                 setTimeout(() => {
-                  setCurrentDonation(null);
-                  setAnimationPhase('enter');
-                }, 1000);
-              }, 500);
-            }, 12000);
-          }
+                  setIsVisible(false);
+                  setTimeout(() => {
+                    setCurrentDonation(null);
+                    setAnimationPhase('enter');
+                  }, 1000);
+                }, 500);
+              }, 12000);
+            }
+          }, 60000); // 1 minute delay (60000ms)
         }
       )
       .subscribe();
 
-    console.log('Ankit OBS overlay real-time subscription set up - ALL PAYMENT STATUSES');
+    console.log('Ankit OBS overlay real-time subscription set up with 1 minute delay - ALL PAYMENT STATUSES');
 
     return () => {
       supabase.removeChannel(channel);
