@@ -442,9 +442,9 @@ const ChiaaGamingObsOverlay = () => {
           
           .donation-alert-card {
             background: rgba(0, 0, 0, 0.8);
-            border-radius: 12px;
-            padding: 12px;
-            max-width: 280px;
+            border-radius: 16px;
+            padding: 20px;
+            max-width: 400px;
           }
           .donation-alert-content {
             color: #FFFFFF;
@@ -475,7 +475,7 @@ const ChiaaGamingObsOverlay = () => {
       </style>
       {/* Goal Display */}
       {showGoal && (
-        <div style={{ position: 'absolute', top: '16px', left: '16px', width: '320px', zIndex: 20 }}>
+        <div style={{ position: 'absolute', top: '32px', left: '32px', width: '480px', zIndex: 20 }}>
           <div style={{
             background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.9), rgba(236, 72, 153, 0.9))',
             borderRadius: '16px',
@@ -484,11 +484,11 @@ const ChiaaGamingObsOverlay = () => {
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
           }}>
             <div style={{ color: 'white' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '8px' }}>{goalName}</h3>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', marginBottom: '8px' }}>
-                <span>₹{goalProgress.toLocaleString()}</span>
-                <span>₹{goalTarget.toLocaleString()}</span>
-              </div>
+               <h3 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '8px' }}>{goalName}</h3>
+               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '18px', marginBottom: '8px' }}>
+                 <span>₹{goalProgress.toLocaleString()}</span>
+                 <span>₹{goalTarget.toLocaleString()}</span>
+               </div>
               <div style={{
                 width: '100%',
                 backgroundColor: 'rgba(0, 0, 0, 0.3)',
@@ -514,25 +514,25 @@ const ChiaaGamingObsOverlay = () => {
 
       {/* Donation Alert */}
       {currentDonation && showMessages && (
-        <div style={{ position: 'absolute', top: '16px', right: '16px', zIndex: 20 }}>
+        <div style={{ position: 'absolute', top: '32px', right: '32px', zIndex: 20 }}>
           <div 
             className={`donation-alert-card transition-all duration-700 ease-out ${getAnimationClasses()}`}
           >
             <div className="donation-alert-content">
-              {/* Header */}
-              <div style={{ textAlign: 'center', marginBottom: '8px' }}>
-                <h3 style={{ fontSize: '14px', fontWeight: 'bold', margin: 0 }}>New Donation! 🎉</h3>
-              </div>
-              
-              {/* Donation details */}
-              <div style={{ textAlign: 'center', marginBottom: '8px' }}>
-                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#00bcd4' }}>
-                  ₹{Number(currentDonation.amount).toLocaleString()}
-                </div>
-                <div style={{ fontSize: '12px' }}>
-                  from {currentDonation.name}
-                </div>
-              </div>
+               {/* Header */}
+               <div style={{ textAlign: 'center', marginBottom: '12px' }}>
+                 <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>New Donation! 🎉</h3>
+               </div>
+               
+               {/* Donation details */}
+               <div style={{ textAlign: 'center', marginBottom: '12px' }}>
+                 <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#00bcd4' }}>
+                   ₹{Number(currentDonation.amount).toLocaleString()}
+                 </div>
+                 <div style={{ fontSize: '16px' }}>
+                   from {currentDonation.name}
+                 </div>
+               </div>
               
               {currentDonation.message && (
                 <div style={{ 
@@ -541,7 +541,7 @@ const ChiaaGamingObsOverlay = () => {
                   padding: '6px', 
                   marginBottom: '8px' 
                 }}>
-                  <p style={{ fontSize: '10px', fontStyle: 'italic', textAlign: 'center', margin: 0 }}>
+                  <p style={{ fontSize: '14px', fontStyle: 'italic', textAlign: 'center', margin: 0 }}>
                     "{currentDonation.message}"
                   </p>
                 </div>
