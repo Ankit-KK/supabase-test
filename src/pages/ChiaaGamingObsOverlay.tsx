@@ -57,10 +57,10 @@ const ChiaaGamingObsOverlay = () => {
     
     // Determine emoji size based on donation amount
     const getEmojiSize = (amount: number) => {
-      if (amount >= 500) return Math.random() * 30 + 50; // 50-80px for high amounts
-      if (amount >= 200) return Math.random() * 20 + 40; // 40-60px for medium amounts
-      if (amount >= 100) return Math.random() * 15 + 30; // 30-45px for low-medium amounts
-      return Math.random() * 10 + 25; // 25-35px for low amounts
+      if (amount >= 500) return Math.random() * 40 + 70; // 70-110px for high amounts
+      if (amount >= 200) return Math.random() * 30 + 60; // 60-90px for medium amounts
+      if (amount >= 100) return Math.random() * 25 + 50; // 50-75px for low-medium amounts
+      return Math.random() * 20 + 40; // 40-60px for low amounts
     };
 
     // Create emojis in waves for staggered timing
