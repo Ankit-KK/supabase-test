@@ -500,9 +500,6 @@ const ChiaaGamingPage = () => {
               </div>
 
               {/* Other form elements - message always visible, GIF/Voice hidden when custom sound or HyperEmotes is expanded */}
-              <p className="text-xs text-white/80 text-center">
-                Donate ₹30+ to unlock messages • ₹50+ custom sounds • ₹100+ GIF alerts • ₹200+ voice messages • ₹50+ HyperEmotes
-              </p>
               
               <div className="space-y-1">
                 <label htmlFor="message" className="block text-xs font-medium text-white">
