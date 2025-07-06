@@ -94,19 +94,28 @@ const HyperEmotesSelector: React.FC<HyperEmotesSelectorProps> = ({
 
       {isExpanded && (
         <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-4 border-2 border-purple-300 space-y-3 shadow-lg">
-          <div className="text-center">
-            <h3 className="font-bold text-purple-900 text-sm mb-2">✨ HyperEmotes ✨</h3>
-            <p className="text-xs text-purple-800 mb-3">
-              Trigger an epic emoji rain effect during your donation!
-            </p>
-            
-            <div className="text-2xl mb-2">🚀 ✨ 🌟 👏 😍</div>
-            
-            {isEligible && (
-              <p className="text-xs text-purple-900 font-medium mb-3 bg-purple-100 rounded p-2">
-                Your ₹{currentAmount} donation will trigger {emoteCount} emojis!
+            <div className="text-center">
+              <h3 className="font-bold text-purple-900 text-sm mb-2">✨ HyperEmotes ✨</h3>
+              <p className="text-xs text-purple-800 mb-3">
+                Trigger an epic emoji rain effect during your donation!
               </p>
-            )}
+              
+              <div className="flex flex-wrap justify-center gap-1 mb-2">
+                <img src="https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/emojis1-Photoroom.png" alt="Custom emote" className="w-6 h-6 object-contain" />
+                <img src="https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom.png" alt="Custom emote" className="w-6 h-6 object-contain" />
+                <img src="https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(9).png" alt="Custom emote" className="w-6 h-6 object-contain" />
+                <img src="https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(5).png" alt="Custom emote" className="w-6 h-6 object-contain" />
+                <img src="https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(4).png" alt="Custom emote" className="w-6 h-6 object-contain" />
+                <img src="https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(10).png" alt="Custom emote" className="w-6 h-6 object-contain" />
+                <img src="https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(3).png" alt="Custom emote" className="w-6 h-6 object-contain" />
+                <img src="https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(2).png" alt="Custom emote" className="w-6 h-6 object-contain" />
+              </div>
+              
+              {isEligible && (
+                <p className="text-xs text-purple-900 font-medium mb-3 bg-purple-100 rounded p-2">
+                  Your ₹{currentAmount} donation will trigger {emoteCount} emojis!
+                </p>
+              )}
           </div>
 
           <div className="flex justify-center space-x-2">
