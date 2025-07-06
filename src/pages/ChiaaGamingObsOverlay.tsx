@@ -34,7 +34,21 @@ const ChiaaGamingObsOverlay = () => {
 
   // Enhanced HyperEmotes effect with multiple patterns and effects
   const triggerHyperEmotes = (amount: number) => {
-    const emojis = ['🚀', '✨', '🌟', '👏', '😍', '🎉', '💫', '⭐', '🔥', '💎'];
+    // Custom emotes from chiaa-emotes bucket
+    const emoteUrls = [
+      'https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/emojis1-Photoroom.png',
+      'https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom.png',
+      'https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(9).png',
+      'https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(5).png',
+      'https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(4).png',
+      'https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(10).png',
+      'https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(3).png',
+      'https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(2).png',
+      'https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(8).png',
+      'https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(6).png',
+      'https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(1).png',
+      'https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(7).png'
+    ];
     const container = document.getElementById('emote-container');
     if (!container) return;
 
@@ -58,77 +72,75 @@ const ChiaaGamingObsOverlay = () => {
       
       setTimeout(() => {
         for (let i = 0; i < emojisInWave; i++) {
-          const emoji = document.createElement('div');
-          const selectedEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+          const emote = document.createElement('img');
+          const selectedEmoteUrl = emoteUrls[Math.floor(Math.random() * emoteUrls.length)];
           const pattern = animationPatterns[Math.floor(Math.random() * animationPatterns.length)];
           const size = getEmojiSize(amount);
           const animationDuration = 3 + Math.random() * 2; // 3-5 seconds
           
-          emoji.className = `emote emote-${pattern}`;
-          emoji.textContent = selectedEmoji;
+          emote.className = `emote emote-${pattern}`;
+          emote.src = selectedEmoteUrl;
+          emote.alt = 'Custom emote';
           
           // Base styles
-          emoji.style.position = 'absolute';
-          emoji.style.fontSize = `${size}px`;
-          emoji.style.pointerEvents = 'none';
-          emoji.style.zIndex = '1000';
+          emote.style.position = 'absolute';
+          emote.style.width = `${size}px`;
+          emote.style.height = `${size}px`;
+          emote.style.objectFit = 'contain';
+          emote.style.pointerEvents = 'none';
+          emote.style.zIndex = '1000';
           
-          // Color variations and glowing effects
-          const hue = Math.random() * 360;
-          const saturation = 70 + Math.random() * 30; // 70-100%
-          const lightness = 50 + Math.random() * 30; // 50-80%
-          emoji.style.filter = `
-            hue-rotate(${hue}deg) 
-            saturate(${saturation}%) 
-            brightness(${lightness}%) 
-            drop-shadow(0 0 ${size/4}px hsl(${hue}, ${saturation}%, ${lightness}%))
+          // Glow effects for custom emotes
+          emote.style.filter = `
+            drop-shadow(0 0 ${size/6}px rgba(255, 255, 255, 0.8))
+            drop-shadow(0 0 ${size/3}px rgba(147, 51, 234, 0.6))
           `;
           
           // Set starting position and animation based on pattern
           switch (pattern) {
             case 'fireworks':
               // Start from center and explode outward
-              emoji.style.left = '50%';
-              emoji.style.top = '50%';
-              emoji.style.animation = `fireworksExplode ${animationDuration}s ease-out forwards`;
-              emoji.style.setProperty('--end-x', `${Math.random() * 100}%`);
-              emoji.style.setProperty('--end-y', `${Math.random() * 100}%`);
+              emote.style.left = '50%';
+              emote.style.top = '50%';
+              emote.style.animation = `fireworksExplode ${animationDuration}s ease-out forwards`;
+              emote.style.setProperty('--end-x', `${Math.random() * 100}%`);
+              emote.style.setProperty('--end-y', `${Math.random() * 100}%`);
               break;
               
             case 'spiral':
               // Spiral motion from random edge
-              emoji.style.left = Math.random() * 100 + '%';
-              emoji.style.top = '100%';
-              emoji.style.animation = `spiralUp ${animationDuration}s ease-in-out forwards`;
+              emote.style.left = Math.random() * 100 + '%';
+              emote.style.top = '100%';
+              emote.style.animation = `spiralUp ${animationDuration}s ease-in-out forwards`;
               break;
               
             case 'bounce':
               // Bouncing side to side while going up
-              emoji.style.left = Math.random() * 100 + '%';
-              emoji.style.top = '100%';
-              emoji.style.animation = `bounceUp ${animationDuration}s ease-in-out forwards`;
+              emote.style.left = Math.random() * 100 + '%';
+              emote.style.top = '100%';
+              emote.style.animation = `bounceUp ${animationDuration}s ease-in-out forwards`;
               break;
               
             case 'burst':
               // Quick burst from random positions
-              emoji.style.left = Math.random() * 100 + '%';
-              emoji.style.top = Math.random() * 100 + '%';
-              emoji.style.animation = `burstOut ${animationDuration * 0.8}s ease-out forwards`;
+              emote.style.left = Math.random() * 100 + '%';
+              emote.style.top = Math.random() * 100 + '%';
+              emote.style.animation = `burstOut ${animationDuration * 0.8}s ease-out forwards`;
               break;
               
             default: // floatUp
-              emoji.style.left = Math.random() * 100 + '%';
-              emoji.style.top = '110%';
-              emoji.style.animation = `floatUp ${animationDuration}s ease-out forwards`;
+              emote.style.left = Math.random() * 100 + '%';
+              emote.style.top = '110%';
+              emote.style.animation = `floatUp ${animationDuration}s ease-out forwards`;
               break;
           }
           
-          container.appendChild(emoji);
+          container.appendChild(emote);
           
           // Clean up after animation
           setTimeout(() => {
-            if (emoji && emoji.parentNode) {
-              emoji.remove();
+            if (emote && emote.parentNode) {
+              emote.remove();
             }
           }, animationDuration * 1000 + 500);
         }
