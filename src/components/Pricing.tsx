@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Check, Mic, Gift, IndianRupee, Zap, Crown } from "lucide-react";
+import { Check, Mic, Gift, IndianRupee, Zap, Crown, Sparkles } from "lucide-react";
 import SignupDialog from "@/components/SignupDialog";
 
 interface PricingPlanProps {
@@ -154,6 +154,19 @@ const Pricing: React.FC = () => {
       ],
     },
     {
+      name: "HyperEmotes",
+      description: "Epic emoji rain effects for premium donations",
+      price: "500",
+      icon: <Sparkles className="text-white h-5 w-5" />,
+      gradient: "bg-gradient-to-br from-hyperchat-purple to-hyperchat-blue",
+      features: [
+        "Up to 50 animated emojis",
+        "Cascading rain effects",
+        "Premium donation tier (₹50+)",
+        "Customizable emoji sets",
+      ],
+    },
+    {
       name: "Monthly Hosting",
       description: "Professional hosting & maintenance",
       price: "699",
@@ -171,7 +184,7 @@ const Pricing: React.FC = () => {
 
   const bundleOffer = {
     name: "Complete Bundle",
-    description: "Base Plan + Voice + Custom GIFs",
+    description: "Base Plan + Voice + GIFs + HyperEmotes",
     price: "1599",
     originalPrice: "1999",
     popular: true,
@@ -182,6 +195,7 @@ const Pricing: React.FC = () => {
       "Everything in Base Plan",
       "Voice message recordings",
       "Custom GIF uploads by fans",
+      "HyperEmotes emoji rain effects",
       "Advanced customization",
       "Priority support",
       "Early access to new features",
@@ -218,7 +232,7 @@ const Pricing: React.FC = () => {
         {/* Add-Ons Section */}
         <div className="max-w-6xl mx-auto mb-12">
           <h3 className="text-2xl font-bold text-center mb-8">Add-On Features</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {addOns.map((addon, index) => (
               <PricingPlan
                 key={index}
