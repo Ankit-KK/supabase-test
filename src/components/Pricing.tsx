@@ -87,7 +87,7 @@ const PricingPlan: React.FC<PricingPlanProps> = ({
           <Button
             className={`w-full ${
               popular
-                ? 'bg-hero-gradient hover:opacity-10 transition-opacity'
+                ? 'bg-hero-gradient hover:opacity-90 transition-opacity'
                 : 'bg-secondary hover:bg-secondary/80'
             }`}
             onClick={() => setShowSignupDialog(true)}
