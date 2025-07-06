@@ -116,7 +116,7 @@ const GifUpload: React.FC<GifUploadProps> = ({
           >
             <Upload className="w-3 h-3 mr-1" />
             {!isEligible 
-              ? "Unlock with higher donation"
+              ? `Unlock with higher donation (₹${minAmount}+)`
               : "Choose GIF (Max 5MB)"
             }
           </Button>

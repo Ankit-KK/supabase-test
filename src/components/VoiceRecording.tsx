@@ -224,7 +224,7 @@ const VoiceRecording: React.FC<VoiceRecordingProps> = ({
             >
               <Mic className="w-3 h-3 mr-1" />
               {!isEligible 
-                ? "Unlock with higher donation"
+                ? `Unlock with higher donation (₹${minAmount}+)`
                 : `Start Recording (${getDurationText()})`
               }
             </Button>
