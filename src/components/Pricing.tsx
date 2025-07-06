@@ -130,7 +130,7 @@ const Pricing: React.FC = () => {
     {
       name: "Voice Message Feature",
       description: "Add voice recording to donations",
-      price: "350",
+      price: "500",
       icon: <Mic className="text-white h-5 w-5" />,
       gradient: "bg-gradient-to-br from-hyperchat-purple to-hyperchat-pink",
       features: [
@@ -143,7 +143,7 @@ const Pricing: React.FC = () => {
     {
       name: "Custom GIFs",
       description: "Viewers upload custom GIFs with donations",
-      price: "250",
+      price: "500",
       icon: <Gift className="text-white h-5 w-5" />,
       gradient: "bg-gradient-to-br from-hyperchat-pink to-hyperchat-orange",
       features: [
@@ -156,7 +156,7 @@ const Pricing: React.FC = () => {
     {
       name: "Monthly Hosting",
       description: "Professional hosting & maintenance",
-      price: "500",
+      price: "699",
       icon: <IndianRupee className="text-white h-5 w-5" />,
       gradient: "bg-gradient-to-br from-hyperchat-orange to-hyperchat-pink",
       isMonthly: true,
@@ -172,12 +172,12 @@ const Pricing: React.FC = () => {
   const bundleOffer = {
     name: "Complete Bundle",
     description: "Base Plan + Voice + Custom GIFs",
-    price: "899",
-    originalPrice: "999",
+    price: "1599",
+    originalPrice: "1999",
     popular: true,
     gradient: "bg-hero-gradient",
     icon: <Crown className="text-white h-5 w-5" />,
-    badge: "SAVE ₹100",
+    badge: "SAVE ₹400",
     features: [
       "Everything in Base Plan",
       "Voice message recordings",
