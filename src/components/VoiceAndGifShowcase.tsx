@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Mic, Gift, Heart, Zap, IndianRupee, Users } from "lucide-react";
+import { Mic, Gift, Heart, Zap, IndianRupee, Users, Sparkles } from "lucide-react";
 
 const VoiceAndGifShowcase = () => {
   return (
@@ -8,14 +8,14 @@ const VoiceAndGifShowcase = () => {
       <div className="container px-4 md:px-6">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl mb-4">
-            World's First Voice + GIF Donation Platform
+            World's First Voice + GIF + HyperEmotes Platform
           </h2>
           <p className="mt-4 text-muted-foreground md:text-xl max-w-3xl mx-auto">
             Not available on any global platform. This is pure Indian innovation bringing real emotions to streaming.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start max-w-7xl mx-auto">
           {/* Voice Messages Section */}
           <div className="space-y-6">
             <div className="flex items-center gap-3 mb-4">
@@ -105,17 +105,62 @@ const VoiceAndGifShowcase = () => {
               <p className="text-xs text-muted-foreground mt-1">12 seconds display • ₹500 donation</p>
             </div>
           </div>
+
+          {/* HyperEmotes Section */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="bg-gradient-to-br from-hyperchat-purple to-hyperchat-blue p-3 rounded-full">
+                <Sparkles className="text-white h-6 w-6" />
+              </div>
+              <h3 className="text-2xl font-bold">HyperEmotes Emoji Rain</h3>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <Sparkles className="text-hyperchat-purple h-5 w-5 mt-1" />
+                <div>
+                  <h4 className="font-semibold text-lg">Epic Visual Effects</h4>
+                  <p className="text-muted-foreground">Transform donations into spectacular emoji rain with up to 50 animated emojis cascading across the screen.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3">
+                <IndianRupee className="text-hyperchat-pink h-5 w-5 mt-1" />
+                <div>
+                  <h4 className="font-semibold text-lg">Premium Tier Feature</h4>
+                  <p className="text-muted-foreground">Available for donations ₹50 and above. Higher amounts trigger more emojis for maximum impact.</p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3">
+                <Heart className="text-hyperchat-orange h-5 w-5 mt-1" />
+                <div>
+                  <h4 className="font-semibold text-lg">Viewer Engagement</h4>
+                  <p className="text-muted-foreground">Create memorable moments that keep your audience engaged and encourage higher donations.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-r from-hyperchat-purple/10 to-hyperchat-blue/10 p-4 rounded-lg border border-hyperchat-purple/20">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="h-4 w-4 text-hyperchat-purple" />
+                <span className="font-semibold">HyperEmotes Alert:</span>
+              </div>
+              <p className="text-sm">50 emoji rain effect + "Thanks for the amazing stream!" 🎉✨🔥</p>
+              <p className="text-xs text-muted-foreground mt-1">5 seconds cascade • ₹200 donation</p>
+            </div>
+          </div>
         </div>
 
-        <div className="text-center mt-12">
+        <div className="text-center mt-16">
           <div className="inline-flex items-center gap-2 bg-hero-gradient text-white px-6 py-3 rounded-full font-bold text-lg mb-6">
-            🚀 World's First Voice + GIF Platform
+            🚀 World's First Voice + GIF + HyperEmotes Platform
           </div>
           <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
             These features don't exist anywhere else in the world. This is Indian innovation at its finest.
           </p>
           <Button size="lg" className="bg-hero-gradient hover:opacity-90 transition-opacity">
-            Experience Voice & GIFs Now
+            Experience All Premium Features Now
           </Button>
         </div>
       </div>

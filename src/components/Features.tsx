@@ -1,6 +1,6 @@
 
 import React from "react";
-import { MessageSquare, Palette, Users, Award, Heart, Star, CreditCard, Zap } from "lucide-react";
+import { MessageSquare, Palette, Users, Award, Heart, Star, CreditCard, Zap, Sparkles } from "lucide-react";
 
 interface FeatureProps {
   icon: React.ReactNode;
@@ -58,6 +58,12 @@ const Features: React.FC = () => {
       title: "Indian Streaming Monetization",
       description: "Built specifically for Indian creators with UPI integration, local payment methods, and cultural understanding.",
       gradient: "bg-gradient-to-br from-hyperchat-purple to-hyperchat-pink",
+    },
+    {
+      icon: <Sparkles className="text-white" size={24} />,
+      title: "HyperEmotes Emoji Rain",
+      description: "Premium donations trigger spectacular emoji rain effects with up to 50 animated emojis cascading across the screen.",
+      gradient: "bg-gradient-to-br from-hyperchat-pink to-hyperchat-orange",
     },
   ];
 
