@@ -229,7 +229,7 @@ const ChiaaGamingObsOverlay = () => {
     }
 
     // Always play voicy_alert for every alert
-    const voicyAlertUrl = "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/custom-sounds/voicy_alert";
+    const voicyAlertUrl = "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/custom-sounds/voicy_alert.mp3";
     const voicyAlert = new Audio(voicyAlertUrl);
     voicyAlert.volume = 0.8;
     voicyAlert.play().catch(error => {
