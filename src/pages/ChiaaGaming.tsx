@@ -45,23 +45,23 @@ const ChiaaGamingPage = () => {
   useEffect(() => {
     const parsedAmount = parseFloat(amount);
     
-  // Clear GIF if amount < 50
-  if (selectedGif && (isNaN(parsedAmount) || parsedAmount < 50)) {
+  // Clear GIF if amount < 100
+  if (selectedGif && (isNaN(parsedAmount) || parsedAmount < 100)) {
     setSelectedGif(null);
   }
   
-  // Clear Voice if amount < 100
-  if (selectedVoice && (isNaN(parsedAmount) || parsedAmount < 100)) {
+  // Clear Voice if amount < 200
+  if (selectedVoice && (isNaN(parsedAmount) || parsedAmount < 200)) {
     setSelectedVoice(null);
   }
   
-  // Clear Custom Sound if amount < 100
-  if (selectedCustomSoundUrl && (isNaN(parsedAmount) || parsedAmount < 100)) {
+  // Clear Custom Sound if amount < 50
+  if (selectedCustomSoundUrl && (isNaN(parsedAmount) || parsedAmount < 50)) {
     setSelectedCustomSoundUrl(null);
   }
   
-  // Clear HyperEmotes if amount < 200
-  if (hyperEmotesEnabled && (isNaN(parsedAmount) || parsedAmount < 200)) {
+  // Clear HyperEmotes if amount < 50
+  if (hyperEmotesEnabled && (isNaN(parsedAmount) || parsedAmount < 50)) {
     setHyperEmotesEnabled(false);
   }
   }, [amount, selectedGif, selectedVoice, selectedCustomSoundUrl, hyperEmotesEnabled]);
@@ -85,10 +85,10 @@ const ChiaaGamingPage = () => {
 
   const handleGifSelect = (file: File | null) => {
     const parsedAmount = parseFloat(amount);
-    if (file && (isNaN(parsedAmount) || parsedAmount < 50)) {
+    if (file && (isNaN(parsedAmount) || parsedAmount < 100)) {
       toast({
         title: "Premium feature",
-        description: "GIF uploads require a donation of ₹50 or more",
+        description: "GIF uploads require a donation of ₹100 or more",
         variant: "destructive",
       });
       return;
@@ -111,10 +111,10 @@ const ChiaaGamingPage = () => {
 
   const handleVoiceSelect = (file: File | null) => {
     const parsedAmount = parseFloat(amount);
-    if (file && (isNaN(parsedAmount) || parsedAmount < 100)) {
+    if (file && (isNaN(parsedAmount) || parsedAmount < 200)) {
       toast({
         title: "Premium feature", 
-        description: "Voice messages require a donation of ₹100 or more",
+        description: "Voice messages require a donation of ₹200 or more",
         variant: "destructive",
       });
       return;
@@ -158,10 +158,10 @@ const ChiaaGamingPage = () => {
 
   const handleHyperEmotesSelect = (enabled: boolean) => {
     const parsedAmount = parseFloat(amount);
-    if (enabled && (isNaN(parsedAmount) || parsedAmount < 200)) {
+    if (enabled && (isNaN(parsedAmount) || parsedAmount < 50)) {
       toast({
         title: "Premium feature",
-        description: "HyperEmotes require a donation of ₹200 or more",
+        description: "HyperEmotes require a donation of ₹50 or more",
         variant: "destructive",
       });
       return;
@@ -399,16 +399,15 @@ const ChiaaGamingPage = () => {
   const isMessageDisabled = !!selectedGif || !!selectedVoice || isLoading;
 
   // Check if premium features are eligible
-  const isGifEligible = parseFloat(amount) >= 50;
-  const isVoiceEligible = parseFloat(amount) >= 100;
-  const isCustomSoundEligible = parseFloat(amount) >= 100;
+  const isGifEligible = parseFloat(amount) >= 100;
+  const isVoiceEligible = parseFloat(amount) >= 200;
+  const isCustomSoundEligible = parseFloat(amount) >= 50;
   const isMessageEligible = parseFloat(amount) >= 30;
 
   // Get voice duration based on amount
   const getVoiceDuration = () => {
     const parsedAmount = parseFloat(amount);
-    if (parsedAmount >= 1000) return "60 seconds";
-    if (parsedAmount >= 300) return "30 seconds";
+    if (parsedAmount >= 500) return "30 seconds";
     if (parsedAmount >= 200) return "15 seconds";
     return "Not available";
   };
@@ -563,7 +562,7 @@ const ChiaaGamingPage = () => {
                     onGifSelect={handleGifSelect}
                     selectedGif={selectedGif}
                     disabled={isLoading || !!selectedVoice || !!selectedCustomSoundUrl || !!hyperEmotesEnabled || !isGifEligible}
-                    minAmount={50}
+                    minAmount={100}
                     currentAmount={parseFloat(amount) || 0}
                   />
 
@@ -571,7 +570,7 @@ const ChiaaGamingPage = () => {
                     onVoiceSelect={handleVoiceSelect}
                     selectedVoice={selectedVoice}
                     disabled={isLoading || !!selectedGif || !!selectedCustomSoundUrl || !!hyperEmotesEnabled || !isVoiceEligible}
-                    minAmount={100}
+                    minAmount={200}
                     currentAmount={parseFloat(amount) || 0}
                   />
                 </div>
@@ -581,7 +580,7 @@ const ChiaaGamingPage = () => {
                 onSoundSelect={handleCustomSoundSelect}
                 selectedSoundUrl={selectedCustomSoundUrl}
                 disabled={isLoading || !!selectedGif || !!selectedVoice}
-                minAmount={100}
+                minAmount={50}
                 currentAmount={parseFloat(amount) || 0}
                 onExpandChange={handleCustomSoundExpandChange}
                />
@@ -592,7 +591,7 @@ const ChiaaGamingPage = () => {
                   onHyperEmotesSelect={handleHyperEmotesSelect}
                   hyperEmotesEnabled={hyperEmotesEnabled}
                   disabled={isLoading || !!selectedGif || !!selectedVoice}
-                  minAmount={200}
+                  minAmount={50}
                   currentAmount={parseFloat(amount) || 0}
                   onExpandChange={handleHyperEmotesExpandChange}
                 />
