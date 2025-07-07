@@ -254,10 +254,14 @@ const ChiaaGamingObsOverlay = () => {
 
     let channel: any = null;
     let reconnectTimeout: NodeJS.Timeout | null = null;
+    let currentReconnectAttempts = 0;
     const maxReconnectAttempts = 5;
+    let isCleaningUp = false;
 
     const setupSubscription = () => {
-      console.log(`Setting up real-time subscription (attempt ${reconnectAttempts + 1})`);
+      if (isCleaningUp) return;
+      
+      console.log(`Setting up real-time subscription (attempt ${currentReconnectAttempts + 1})`);
       
       // Clean up existing channel
       if (channel) {
@@ -275,13 +279,18 @@ const ChiaaGamingObsOverlay = () => {
             table: 'chiaa_gaming_donations'
           },
           (payload) => {
+            if (isCleaningUp) return;
+            
             const newDonation = payload.new as Donation;
             console.log('New donation received in OBS overlay with 1 minute delay:', newDonation);
             setIsConnected(true);
+            currentReconnectAttempts = 0;
             setReconnectAttempts(0);
             
             // Add 1 minute delay before showing OBS alert
             setTimeout(() => {
+              if (isCleaningUp) return;
+              
               // Update goal progress for successful payments only
               if (showGoal && newDonation.payment_status === 'success') {
                 setGoalProgress(prev => prev + Number(newDonation.amount));
@@ -322,24 +331,31 @@ const ChiaaGamingObsOverlay = () => {
           }
         )
         .subscribe((status) => {
+          if (isCleaningUp) return;
+          
           console.log('Subscription status:', status);
           
           if (status === 'SUBSCRIBED') {
             setIsConnected(true);
+            currentReconnectAttempts = 0;
             setReconnectAttempts(0);
             console.log('Successfully connected to real-time updates');
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
             setIsConnected(false);
             console.log('Connection lost, attempting to reconnect...');
             
-            if (reconnectAttempts < maxReconnectAttempts) {
-              const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000); // Exponential backoff, max 30s
+            if (currentReconnectAttempts < maxReconnectAttempts && !isCleaningUp) {
+              const delay = Math.min(1000 * Math.pow(2, currentReconnectAttempts), 30000); // Exponential backoff, max 30s
+              currentReconnectAttempts++;
+              setReconnectAttempts(currentReconnectAttempts);
+              
               reconnectTimeout = setTimeout(() => {
-                setReconnectAttempts(prev => prev + 1);
-                setupSubscription();
+                if (!isCleaningUp) {
+                  setupSubscription();
+                }
               }, delay);
             } else {
-              console.error('Max reconnection attempts reached');
+              console.error('Max reconnection attempts reached or component unmounted');
             }
           }
         });
@@ -350,6 +366,7 @@ const ChiaaGamingObsOverlay = () => {
 
     // Cleanup function
     return () => {
+      isCleaningUp = true;
       if (reconnectTimeout) {
         clearTimeout(reconnectTimeout);
       }
@@ -357,7 +374,7 @@ const ChiaaGamingObsOverlay = () => {
         supabase.removeChannel(channel);
       }
     };
-  }, [obsId, showMessages, showGoal, showAudio, tokenValid, reconnectAttempts]);
+  }, [obsId, showMessages, showGoal, showAudio, tokenValid]);
 
   // Show loading or error state
   if (tokenValid === null) {
