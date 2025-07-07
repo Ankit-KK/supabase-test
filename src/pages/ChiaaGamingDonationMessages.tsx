@@ -169,6 +169,26 @@ const ChiaaGamingDonationMessages = () => {
 
       setDonations(data || []);
       setMonthlyTotal(calculateMonthlyTotal(data || []));
+      
+      // Set auto-hide timers for existing GIFs based on their age
+      (data || []).forEach(donation => {
+        if (donation.gif_url && donation.id) {
+          const donationTime = new Date(donation.created_at).getTime();
+          const currentTime = Date.now();
+          const timePassed = currentTime - donationTime;
+          
+          if (timePassed < 15000) {
+            // If less than 15 seconds have passed, set timer for remaining time
+            const remainingTime = 15000 - timePassed;
+            setTimeout(() => {
+              setHiddenGifs(prev => new Set([...prev, donation.id]));
+            }, remainingTime);
+          } else {
+            // If more than 15 seconds have passed, hide immediately
+            setHiddenGifs(prev => new Set([...prev, donation.id]));
+          }
+        }
+      });
     } catch (error) {
       console.error("Error:", error);
       logSecurityEvent('DASHBOARD_ERROR', error instanceof Error ? error.message : 'Unknown error');
