@@ -215,22 +215,22 @@ const ChiaaGamingAudioPlayer = () => {
           const hasVoice = newDonation.voice_url;
           const hasCustomSound = newDonation.custom_sound_url;
           
-          // Always queue voicy_alert first for every successful donation
+          // Queue audio based on donation content
           setTimeout(() => {
             console.log('Playing delayed audio for donation:', newDonation.id);
             
-            // Always play voicy_alert first
-            const voicyAlertUrl = "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/custom-sounds/Voicy_Alert.mp3";
-            queueAudio(voicyAlertUrl);
+            // If custom sound is selected, play it instead of voicy_alert
+            if (hasCustomSound && newDonation.custom_sound_url) {
+              queueAudio(newDonation.custom_sound_url);
+            } else {
+              // Only play voicy_alert if no custom sound was selected
+              const voicyAlertUrl = "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/custom-sounds/Voicy_Alert.mp3";
+              queueAudio(voicyAlertUrl);
+            }
             
             // Then queue voice message if available
             if (hasVoice && newDonation.voice_url) {
               queueAudio(newDonation.voice_url);
-            }
-            
-            // Finally queue custom sound if available
-            if (hasCustomSound && newDonation.custom_sound_url) {
-              queueAudio(newDonation.custom_sound_url);
             }
           }, 60000); // 1 minute delay
         }
