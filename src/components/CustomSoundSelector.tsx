@@ -31,11 +31,6 @@ const CustomSoundSelector: React.FC<CustomSoundSelectorProps> = ({
 
   const sounds: CustomSound[] = [
     {
-      id: "voicy_alert",
-      name: "Voicy Alert",
-      file_url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/custom-sounds/Voicy_Alert.mp3"
-    },
-    {
       id: "knock_left",
       name: "Knock left",
       file_url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/custom-sounds/knock-left-ear-made-with-Voicemod.mp3"
