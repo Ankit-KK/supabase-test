@@ -14,6 +14,8 @@ interface Donation {
   custom_sound_name?: string;
   custom_sound_url?: string;
   hyperemotes_enabled?: boolean;
+  include_sound?: boolean;
+  review_status?: string;
 }
 
 const ChiaaGamingObsOverlay = () => {
@@ -288,18 +290,31 @@ const ChiaaGamingObsOverlay = () => {
           {
             event: 'INSERT',
             schema: 'public',
-            table: 'chiaa_gaming_donations'
+            table: 'chiaa_gaming_donations',
+            filter: 'payment_status=eq.success'
           },
           (payload) => {
             if (isCleaningUp) return;
             
             const newDonation = payload.new as Donation;
-            console.log('New donation received in OBS overlay with 1 minute delay:', newDonation);
+            console.log('New donation received in OBS overlay:', newDonation);
             setIsConnected(true);
             currentReconnectAttempts = 0;
             setReconnectAttempts(0);
             
-            // Add 1 minute delay before showing OBS alert
+            // Check if donation should be shown (auto-approved or manually approved)
+            const isAutoApproved = newDonation.custom_sound_url || newDonation.include_sound || newDonation.hyperemotes_enabled;
+            const isManuallyApproved = newDonation.review_status === 'approved';
+            
+            if (!isAutoApproved && !isManuallyApproved) {
+              console.log('Donation not approved for OBS display yet');
+              return;
+            }
+            
+            // Auto-approved donations show instantly, others show with 1 minute delay
+            const delay = isAutoApproved ? 0 : 60000;
+            console.log(`Showing donation alert in ${delay}ms`);
+            
             setTimeout(() => {
               if (isCleaningUp) return;
               
@@ -308,7 +323,7 @@ const ChiaaGamingObsOverlay = () => {
                 setGoalProgress(prev => prev + Number(newDonation.amount));
               }
               
-              // Show donation alert after 1 minute delay if messages are enabled
+              // Show donation alert if messages are enabled
               if (showMessages) {
                 console.log('Showing donation alert in OBS overlay after 1 minute delay');
                 setAnimationPhase('enter');
@@ -340,6 +355,63 @@ const ChiaaGamingObsOverlay = () => {
                 }, 12000);
               }
             }, 60000); // 1 minute delay (60000ms)
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'chiaa_gaming_donations',
+            filter: 'review_status=eq.approved'
+          },
+          (payload) => {
+            if (isCleaningUp) return;
+            
+            const updatedDonation = payload.new as Donation;
+            console.log('Donation approved for OBS display:', updatedDonation);
+            
+            // Show approved donation with 1 minute delay
+            setTimeout(() => {
+              if (isCleaningUp) return;
+              
+              // Update goal progress
+              if (showGoal && updatedDonation.payment_status === 'success') {
+                setGoalProgress(prev => prev + Number(updatedDonation.amount));
+              }
+              
+              // Show donation alert if messages are enabled
+              if (showMessages) {
+                console.log('Showing approved donation alert in OBS overlay');
+                setAnimationPhase('enter');
+                setCurrentDonation(updatedDonation);
+                setIsVisible(true);
+                
+                // Play audio only if enabled in this overlay
+                if (showAudio) {
+                  playDonationAudio(updatedDonation);
+                }
+                
+                // Trigger HyperEmotes if enabled
+                if (updatedDonation.hyperemotes_enabled) {
+                  console.log('Triggering HyperEmotes for approved donation:', updatedDonation.amount);
+                  triggerHyperEmotes(Number(updatedDonation.amount));
+                }
+                
+                setTimeout(() => setAnimationPhase('show'), 500);
+                
+                setTimeout(() => {
+                  setAnimationPhase('exit');
+                  setTimeout(() => {
+                    setIsVisible(false);
+                    setTimeout(() => {
+                      setCurrentDonation(null);
+                      setAnimationPhase('enter');
+                    }, 1000);
+                  }, 500);
+                }, 12000);
+              }
+            }, 60000); // 1 minute delay for approved donations
           }
         )
         .subscribe((status) => {

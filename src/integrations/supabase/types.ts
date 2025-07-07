@@ -130,6 +130,9 @@ export type Database = {
           name: string
           order_id: string
           payment_status: string
+          review_status: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           voice_file_name: string | null
           voice_file_size: number | null
           voice_url: string | null
@@ -147,6 +150,9 @@ export type Database = {
           name: string
           order_id: string
           payment_status?: string
+          review_status?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           voice_file_name?: string | null
           voice_file_size?: number | null
           voice_url?: string | null
@@ -164,6 +170,9 @@ export type Database = {
           name?: string
           order_id?: string
           payment_status?: string
+          review_status?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           voice_file_name?: string | null
           voice_file_size?: number | null
           voice_url?: string | null

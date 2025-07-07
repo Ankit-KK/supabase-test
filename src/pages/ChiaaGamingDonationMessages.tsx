@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, calculateMonthlyTotal } from "@/utils/dashboardUtils";
-import { LogOut, MessageSquare, Image, Mic, Volume2, MessageCircle, Play, Pause, Clock, AlertCircle } from "lucide-react";
+import { LogOut, MessageSquare, Image, Mic, Volume2, MessageCircle, Play, Pause, Clock, AlertCircle, Check, X, Eye } from "lucide-react";
 import CSVExportDialog from "@/components/CSVExportDialog";
 import SecureDataDisplay from "@/components/SecureDataDisplay";
 import { logSecurityEvent } from "@/utils/rateLimiting";
@@ -24,6 +24,10 @@ interface Donation {
   custom_sound_name?: string;
   custom_sound_url?: string;
   include_sound?: boolean;
+  hyperemotes_enabled?: boolean;
+  review_status?: string;
+  reviewed_at?: string;
+  reviewed_by?: string;
 }
 
 const ChiaaGamingDonationMessages = () => {
@@ -34,6 +38,7 @@ const ChiaaGamingDonationMessages = () => {
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
   const [brokenVoiceUrls, setBrokenVoiceUrls] = useState<Set<string>>(new Set());
   const [hiddenGifs, setHiddenGifs] = useState<Set<string>>(new Set());
+  const [playingDonation, setPlayingDonation] = useState<Donation | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const channelRef = useRef<any>(null);
@@ -152,7 +157,7 @@ const ChiaaGamingDonationMessages = () => {
       
       const { data, error } = await supabase
         .from("chiaa_gaming_donations")
-        .select("id, name, amount, message, created_at, payment_status, gif_url, voice_url, custom_sound_name, custom_sound_url, include_sound")
+        .select("id, name, amount, message, created_at, payment_status, gif_url, voice_url, custom_sound_name, custom_sound_url, include_sound, hyperemotes_enabled, review_status, reviewed_at, reviewed_by")
         .eq("payment_status", "success")
         .order("created_at", { ascending: false });
 
@@ -222,6 +227,81 @@ const ChiaaGamingDonationMessages = () => {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const handleReviewDonation = async (donationId: string, action: 'approve' | 'reject') => {
+    try {
+      const { error } = await supabase
+        .from('chiaa_gaming_donations')
+        .update({
+          review_status: action === 'approve' ? 'approved' : 'rejected',
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: 'admin'
+        })
+        .eq('id', donationId);
+
+      if (error) {
+        console.error('Error updating review status:', error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to update review status",
+        });
+        return;
+      }
+
+      // Update local state
+      setDonations(prev => 
+        prev.map(donation => 
+          donation.id === donationId 
+            ? { 
+                ...donation, 
+                review_status: action === 'approve' ? 'approved' : 'rejected',
+                reviewed_at: new Date().toISOString(),
+                reviewed_by: 'admin'
+              }
+            : donation
+        )
+      );
+
+      toast({
+        title: action === 'approve' ? "Donation Approved" : "Donation Rejected",
+        description: `The donation has been ${action}d and will ${action === 'approve' ? 'appear in OBS' : 'not appear in OBS'}.`,
+      });
+
+      logSecurityEvent('DONATION_REVIEWED', `${donationId}: ${action}`);
+    } catch (error) {
+      console.error('Error reviewing donation:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "An error occurred while reviewing the donation",
+      });
+    }
+  };
+
+  const handlePlayDonation = (donation: Donation) => {
+    if (playingDonation?.id === donation.id) {
+      setPlayingDonation(null);
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      setPlayingAudio(null);
+    } else {
+      setPlayingDonation(donation);
+      if (donation.voice_url) {
+        handlePlayVoice(donation.voice_url, donation.id);
+      }
+    }
+  };
+
+  const isAutoApproved = (donation: Donation) => {
+    return donation.custom_sound_url || donation.include_sound || donation.hyperemotes_enabled;
+  };
+
+  const needsReview = (donation: Donation) => {
+    return !isAutoApproved(donation) && (!donation.review_status || donation.review_status === 'pending');
   };
 
   const handlePlayVoice = async (voiceUrl: string, donationId: string) => {
@@ -457,42 +537,82 @@ const ChiaaGamingDonationMessages = () => {
             </div>
           </div>
 
-          {/* GIF Preview Section */}
+          {/* Donation Playback Section */}
           <Card className="mb-6 bg-black/50 border-pink-500/30">
             <CardHeader>
-              <CardTitle className="text-pink-100">GIF Preview</CardTitle>
-              <CardDescription className="text-pink-300">Preview GIFs before they appear in OBS alerts</CardDescription>
+              <CardTitle className="text-pink-100">Donation Playback</CardTitle>
+              <CardDescription className="text-pink-300">Preview and review donations before they appear in OBS</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-96 overflow-y-auto">
-                {donations
-                  .filter(donation => donation.gif_url && !hiddenGifs.has(donation.id))
-                  .slice(0, 12)
-                  .map((donation) => (
-                    <div key={donation.id} className="relative group">
-                      <div className="aspect-square rounded-lg overflow-hidden bg-pink-900/20 border border-pink-500/30">
-                        <img
-                          src={donation.gif_url}
-                          alt={`GIF from ${donation.name}`}
-                          className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-110"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                          }}
-                        />
-                      </div>
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 rounded-b-lg">
-                        <p className="text-pink-100 text-xs font-medium truncate">{donation.name}</p>
-                        <p className="text-pink-300 text-xs">₹{donation.amount}</p>
-                      </div>
+              {playingDonation ? (
+                <div className="bg-pink-900/20 border border-pink-500/30 rounded-lg p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-pink-100 font-semibold text-lg">{playingDonation.name}</h3>
+                      <p className="text-pink-300">₹{Number(playingDonation.amount).toLocaleString()}</p>
                     </div>
-                  ))}
-                {donations.filter(donation => donation.gif_url).length === 0 && (
-                  <div className="col-span-full text-center py-8 text-pink-300">
-                    No GIFs to preview yet
+                    <Button
+                      variant="ghost"
+                      onClick={() => setPlayingDonation(null)}
+                      className="text-pink-300 hover:text-pink-100"
+                    >
+                      <X className="w-5 h-5" />
+                    </Button>
                   </div>
-                )}
-              </div>
+                  
+                  {playingDonation.gif_url && (
+                    <div className="mb-4">
+                      <img
+                        src={playingDonation.gif_url}
+                        alt={`GIF from ${playingDonation.name}`}
+                        className="max-w-sm max-h-64 rounded-lg mx-auto block"
+                      />
+                    </div>
+                  )}
+                  
+                  {playingDonation.message && (
+                    <div className="mb-4 p-3 bg-pink-800/20 rounded-lg">
+                      <p className="text-pink-100">{playingDonation.message}</p>
+                    </div>
+                  )}
+                  
+                  {playingDonation.voice_url && (
+                    <div className="flex items-center gap-2 mb-4">
+                      <Button
+                        variant="outline"
+                        onClick={() => handlePlayVoice(playingDonation.voice_url!, playingDonation.id)}
+                        className="border-blue-500/50 text-blue-300 hover:bg-blue-500/20"
+                      >
+                        {playingAudio === playingDonation.id ? <Pause className="w-4 h-4 mr-2" /> : <Play className="w-4 h-4 mr-2" />}
+                        {playingAudio === playingDonation.id ? 'Stop Voice' : 'Play Voice'}
+                      </Button>
+                    </div>
+                  )}
+                  
+                  {needsReview(playingDonation) && (
+                    <div className="flex gap-3">
+                      <Button
+                        onClick={() => handleReviewDonation(playingDonation.id, 'approve')}
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                      >
+                        <Check className="w-4 h-4 mr-2" />
+                        Approve for OBS
+                      </Button>
+                      <Button
+                        onClick={() => handleReviewDonation(playingDonation.id, 'reject')}
+                        variant="destructive"
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        Reject
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-pink-300">
+                  Select a donation from the table below to preview it here
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -522,15 +642,17 @@ const ChiaaGamingDonationMessages = () => {
                 </div>
               ) : (
                 <Table>
-                  <TableHeader>
-                    <TableRow className="border-pink-500/30">
-                      <TableHead className="text-pink-200">Name</TableHead>
-                      <TableHead className="text-pink-200">Amount</TableHead>
-                      <TableHead className="text-pink-200">Message</TableHead>
-                      <TableHead className="text-pink-200">Date & Time</TableHead>
-                      <TableHead className="text-pink-200">Media</TableHead>
-                    </TableRow>
-                  </TableHeader>
+                   <TableHeader>
+                     <TableRow className="border-pink-500/30">
+                       <TableHead className="text-pink-200">Name</TableHead>
+                       <TableHead className="text-pink-200">Amount</TableHead>
+                       <TableHead className="text-pink-200">Message</TableHead>
+                       <TableHead className="text-pink-200">Date & Time</TableHead>
+                       <TableHead className="text-pink-200">Media</TableHead>
+                       <TableHead className="text-pink-200">Status</TableHead>
+                       <TableHead className="text-pink-200">Actions</TableHead>
+                     </TableRow>
+                   </TableHeader>
                   <TableBody>
                      {donations.map((donation) => (
                        <TableRow key={donation.id} className="border-pink-500/20 hover:bg-pink-500/10">
@@ -540,13 +662,75 @@ const ChiaaGamingDonationMessages = () => {
                          </TableCell>
                          <TableCell className="text-pink-200 max-w-md">
                            <div className="whitespace-pre-wrap break-words">
-                             {donation.message || <span className="text-pink-400 italic">No message</span>}
+                             {isAutoApproved(donation) && (donation.custom_sound_url || donation.include_sound || donation.hyperemotes_enabled) ? (
+                               <span className="text-yellow-400 italic">Auto-approved (no message)</span>
+                             ) : (
+                               donation.message || <span className="text-pink-400 italic">No message</span>
+                             )}
                            </div>
                          </TableCell>
                          <TableCell className="text-pink-200">{formatDate(donation.created_at)}</TableCell>
                          <TableCell>
                            <div className="flex flex-wrap gap-1">
                              {renderMediaBadges(donation)}
+                           </div>
+                         </TableCell>
+                         <TableCell>
+                           <div className="flex items-center gap-1">
+                             {isAutoApproved(donation) ? (
+                               <Badge variant="secondary" className="text-xs bg-green-500/20 text-green-300 border-green-500/50">
+                                 Auto-Approved
+                               </Badge>
+                             ) : (
+                               <Badge 
+                                 variant="secondary" 
+                                 className={`text-xs ${
+                                   donation.review_status === 'approved' 
+                                     ? 'bg-green-500/20 text-green-300 border-green-500/50'
+                                     : donation.review_status === 'rejected'
+                                     ? 'bg-red-500/20 text-red-300 border-red-500/50'
+                                     : 'bg-yellow-500/20 text-yellow-300 border-yellow-500/50'
+                                 }`}
+                               >
+                                 {donation.review_status === 'approved' ? 'Approved' : 
+                                  donation.review_status === 'rejected' ? 'Rejected' : 'Pending'}
+                               </Badge>
+                             )}
+                           </div>
+                         </TableCell>
+                         <TableCell>
+                           <div className="flex items-center gap-1">
+                             <Button
+                               size="sm"
+                               variant="outline"
+                               onClick={() => handlePlayDonation(donation)}
+                               className="h-7 px-2 text-xs border-pink-500/50 text-pink-300 hover:bg-pink-500/20"
+                               title="Preview donation"
+                             >
+                               <Eye className="w-3 h-3 mr-1" />
+                               Preview
+                             </Button>
+                             
+                             {needsReview(donation) && (
+                               <>
+                                 <Button
+                                   size="sm"
+                                   onClick={() => handleReviewDonation(donation.id, 'approve')}
+                                   className="h-7 px-2 text-xs bg-green-600 hover:bg-green-700 text-white"
+                                   title="Approve for OBS"
+                                 >
+                                   <Check className="w-3 h-3" />
+                                 </Button>
+                                 <Button
+                                   size="sm"
+                                   onClick={() => handleReviewDonation(donation.id, 'reject')}
+                                   className="h-7 px-2 text-xs bg-red-600 hover:bg-red-700 text-white"
+                                   title="Reject donation"
+                                 >
+                                   <X className="w-3 h-3" />
+                                 </Button>
+                               </>
+                             )}
                            </div>
                          </TableCell>
                        </TableRow>

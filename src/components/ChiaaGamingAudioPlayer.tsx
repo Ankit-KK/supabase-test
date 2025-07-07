@@ -205,7 +205,7 @@ const ChiaaGamingAudioPlayer = () => {
           event: 'INSERT',
           schema: 'public',
           table: 'chiaa_gaming_donations',
-          filter: 'payment_status=eq.success'
+          filter: 'payment_status=eq.success AND (review_status=eq.approved OR custom_sound_url IS NOT NULL OR include_sound=eq.true OR hyperemotes_enabled=eq.true)'
         },
         (payload) => {
           const newDonation = payload.new as Donation;
