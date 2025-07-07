@@ -33,7 +33,7 @@ const CustomSoundSelector: React.FC<CustomSoundSelectorProps> = ({
     {
       id: "voicy_alert",
       name: "Voicy Alert",
-      file_url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/custom-sounds/voicy_alert.mp3"
+      file_url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/custom-sounds/Voicy_Alert.mp3"
     },
     {
       id: "knock_left",

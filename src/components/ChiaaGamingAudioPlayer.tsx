@@ -220,7 +220,7 @@ const ChiaaGamingAudioPlayer = () => {
             console.log('Playing delayed audio for donation:', newDonation.id);
             
             // Always play voicy_alert first
-            const voicyAlertUrl = "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/custom-sounds/voicy_alert.mp3";
+            const voicyAlertUrl = "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/custom-sounds/Voicy_Alert.mp3";
             queueAudio(voicyAlertUrl);
             
             // Then queue voice message if available
