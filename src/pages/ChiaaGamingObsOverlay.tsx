@@ -631,16 +631,24 @@ const ChiaaGamingObsOverlay = () => {
           >
             <div className="donation-alert-content">
                {/* Header */}
-               <div style={{ textAlign: 'center', marginBottom: '12px' }}>
-                 <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>New Donation! 🎉</h3>
+               <div style={{ textAlign: 'center', marginBottom: currentDonation.gif_url ? '8px' : '12px' }}>
+                 <h3 style={{ 
+                   fontSize: currentDonation.gif_url ? '16px' : '20px', 
+                   fontWeight: 'bold', 
+                   margin: 0 
+                 }}>New Donation! 🎉</h3>
                </div>
                
                {/* Donation details */}
-               <div style={{ textAlign: 'center', marginBottom: '12px' }}>
-                 <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#00bcd4' }}>
+               <div style={{ textAlign: 'center', marginBottom: currentDonation.gif_url ? '8px' : '12px' }}>
+                 <div style={{ 
+                   fontSize: currentDonation.gif_url ? '18px' : '24px', 
+                   fontWeight: 'bold', 
+                   color: '#00bcd4' 
+                 }}>
                    ₹{Number(currentDonation.amount).toLocaleString()}
                  </div>
-                 <div style={{ fontSize: '16px' }}>
+                 <div style={{ fontSize: currentDonation.gif_url ? '12px' : '16px' }}>
                    from {currentDonation.name}
                  </div>
                </div>
@@ -649,16 +657,21 @@ const ChiaaGamingObsOverlay = () => {
                 <div style={{ 
                   backgroundColor: 'rgba(0, 0, 0, 0.3)', 
                   borderRadius: '6px', 
-                  padding: '6px', 
-                  marginBottom: '8px' 
+                  padding: currentDonation.gif_url ? '4px' : '6px', 
+                  marginBottom: currentDonation.gif_url ? '6px' : '8px' 
                 }}>
-                  <p style={{ fontSize: '14px', fontStyle: 'italic', textAlign: 'center', margin: 0 }}>
+                  <p style={{ 
+                    fontSize: currentDonation.gif_url ? '11px' : '14px', 
+                    fontStyle: 'italic', 
+                    textAlign: 'center', 
+                    margin: 0 
+                  }}>
                     "{currentDonation.message}"
                   </p>
                 </div>
               )}
 
-              {/* GIF display with gradient border */}
+              {/* GIF display with gradient border - Much bigger for GIF donations */}
               {currentDonation.gif_url && (
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
                   <div className="gif-glow-outline">
@@ -666,10 +679,10 @@ const ChiaaGamingObsOverlay = () => {
                       src={currentDonation.gif_url} 
                       alt="Donation GIF" 
                       style={{ 
-                        width: '100px', 
-                        height: '100px', 
+                        width: '180px', 
+                        height: '180px', 
                         objectFit: 'cover', 
-                        borderRadius: '6px',
+                        borderRadius: '8px',
                         display: 'block'
                       }}
                     />

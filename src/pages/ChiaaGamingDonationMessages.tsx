@@ -33,6 +33,7 @@ const ChiaaGamingDonationMessages = () => {
   const [realtimeAlert, setRealtimeAlert] = useState<Donation | null>(null);
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
   const [brokenVoiceUrls, setBrokenVoiceUrls] = useState<Set<string>>(new Set());
+  const [hiddenGifs, setHiddenGifs] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
   const { toast } = useToast();
   const channelRef = useRef<any>(null);
@@ -86,6 +87,13 @@ const ChiaaGamingDonationMessages = () => {
               return [newDonation, ...prev];
             });
             setMonthlyTotal(prev => prev + Number(newDonation.amount));
+            
+            // If new donation has a GIF, set it to auto-hide after 15 seconds
+            if (newDonation.gif_url && newDonation.id) {
+              setTimeout(() => {
+                setHiddenGifs(prev => new Set([...prev, newDonation.id]));
+              }, 15000); // 15 seconds
+            }
             
             logSecurityEvent('NEW_DONATION_RECEIVED', `Amount: ${newDonation.amount}, Name: ${newDonation.name}`);
             
@@ -438,7 +446,7 @@ const ChiaaGamingDonationMessages = () => {
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-96 overflow-y-auto">
                 {donations
-                  .filter(donation => donation.gif_url)
+                  .filter(donation => donation.gif_url && !hiddenGifs.has(donation.id))
                   .slice(0, 12)
                   .map((donation) => (
                     <div key={donation.id} className="relative group">
