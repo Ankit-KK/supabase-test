@@ -228,24 +228,35 @@ const ChiaaGamingObsOverlay = () => {
       return;
     }
 
-    // Play voice message if available
+    // Always play voicy_alert for every alert
+    const voicyAlertUrl = "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/custom-sounds/voicy_alert";
+    const voicyAlert = new Audio(voicyAlertUrl);
+    voicyAlert.volume = 0.8;
+    voicyAlert.play().catch(error => {
+      console.error('Error playing voicy_alert:', error);
+    });
+
+    // Play voice message if available (after voicy_alert)
     if (donation.voice_url) {
-      const audio = new Audio(donation.voice_url);
-      audio.volume = 0.7;
-      audio.play().catch(error => {
-        console.error('Error playing voice message:', error);
-      });
+      setTimeout(() => {
+        const audio = new Audio(donation.voice_url);
+        audio.volume = 0.7;
+        audio.play().catch(error => {
+          console.error('Error playing voice message:', error);
+        });
+      }, 1000); // Wait 1 second after voicy_alert
     }
 
-    // Play custom sound if available
+    // Play custom sound if available (after voice or voicy_alert)
     if (donation.custom_sound_url) {
+      const delay = donation.voice_url ? 4000 : 1000; // 4 seconds if voice, 1 second if no voice
       setTimeout(() => {
         const audio = new Audio(donation.custom_sound_url);
         audio.volume = 0.8;
         audio.play().catch(error => {
           console.error('Error playing custom sound:', error);
         });
-      }, donation.voice_url ? 3000 : 0); // Wait 3 seconds if voice was played first
+      }, delay);
     }
   };
 
