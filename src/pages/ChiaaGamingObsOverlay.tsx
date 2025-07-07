@@ -254,8 +254,9 @@ const ChiaaGamingObsOverlay = () => {
 
     let channel: any = null;
     let reconnectTimeout: NodeJS.Timeout | null = null;
+    let heartbeatInterval: NodeJS.Timeout | null = null;
     let currentReconnectAttempts = 0;
-    const maxReconnectAttempts = 5;
+    const maxReconnectAttempts = 3;
     let isCleaningUp = false;
 
     const setupSubscription = () => {
@@ -263,9 +264,12 @@ const ChiaaGamingObsOverlay = () => {
       
       console.log(`Setting up real-time subscription (attempt ${currentReconnectAttempts + 1})`);
       
-      // Clean up existing channel
+      // Clean up existing channel and heartbeat
       if (channel) {
         supabase.removeChannel(channel);
+      }
+      if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
       }
 
       // Set up real-time subscription with 1 minute delay for OBS alerts
@@ -340,14 +344,36 @@ const ChiaaGamingObsOverlay = () => {
             currentReconnectAttempts = 0;
             setReconnectAttempts(0);
             console.log('Successfully connected to real-time updates');
+            
+            // Set up heartbeat to keep connection alive
+            heartbeatInterval = setInterval(() => {
+              if (channel && !isCleaningUp) {
+                try {
+                  channel.send({
+                    type: 'heartbeat'
+                  });
+                } catch (error) {
+                  console.log('Heartbeat failed, connection may be lost');
+                }
+              }
+            }, 30000); // Send heartbeat every 30 seconds
+            
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
             setIsConnected(false);
             console.log('Connection lost, attempting to reconnect...');
             
+            // Clear heartbeat on disconnect
+            if (heartbeatInterval) {
+              clearInterval(heartbeatInterval);
+              heartbeatInterval = null;
+            }
+            
             if (currentReconnectAttempts < maxReconnectAttempts && !isCleaningUp) {
-              const delay = Math.min(1000 * Math.pow(2, currentReconnectAttempts), 30000); // Exponential backoff, max 30s
+              const delay = Math.min(5000 * Math.pow(2, currentReconnectAttempts), 30000); // Start with 5s, max 30s
               currentReconnectAttempts++;
               setReconnectAttempts(currentReconnectAttempts);
+              
+              console.log(`Reconnecting in ${delay}ms (attempt ${currentReconnectAttempts}/${maxReconnectAttempts})`);
               
               reconnectTimeout = setTimeout(() => {
                 if (!isCleaningUp) {
@@ -355,20 +381,31 @@ const ChiaaGamingObsOverlay = () => {
                 }
               }, delay);
             } else {
-              console.error('Max reconnection attempts reached or component unmounted');
+              console.error('Max reconnection attempts reached. Please refresh the page.');
+              setIsConnected(false);
             }
           }
         });
     };
 
-    // Initial setup
-    setupSubscription();
+    // Initial setup with delay to avoid immediate connection issues
+    const initialTimeout = setTimeout(() => {
+      if (!isCleaningUp) {
+        setupSubscription();
+      }
+    }, 1000);
 
     // Cleanup function
     return () => {
       isCleaningUp = true;
+      if (initialTimeout) {
+        clearTimeout(initialTimeout);
+      }
       if (reconnectTimeout) {
         clearTimeout(reconnectTimeout);
+      }
+      if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
       }
       if (channel) {
         supabase.removeChannel(channel);
