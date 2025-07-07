@@ -31,6 +31,8 @@ const ChiaaGamingObsOverlay = () => {
   const [animationPhase, setAnimationPhase] = useState<'enter' | 'show' | 'exit'>('enter');
   const [goalProgress, setGoalProgress] = useState<number>(0);
   const [tokenValid, setTokenValid] = useState<boolean | null>(null);
+  const [reconnectAttempts, setReconnectAttempts] = useState(0);
+  const [isConnected, setIsConnected] = useState(false);
 
   // Enhanced HyperEmotes effect with multiple patterns and effects
   const triggerHyperEmotes = (amount: number) => {
@@ -148,7 +150,7 @@ const ChiaaGamingObsOverlay = () => {
     }
   };
 
-  // Validate OBS token
+  // Validate OBS token periodically
   useEffect(() => {
     const validateToken = async () => {
       if (!obsId) {
@@ -165,17 +167,26 @@ const ChiaaGamingObsOverlay = () => {
         if (error || !data) {
           console.error("Invalid OBS token:", error);
           setTokenValid(false);
+          setIsConnected(false);
           return;
         }
 
         setTokenValid(true);
+        console.log('Token validated successfully');
       } catch (error) {
         console.error("Error validating token:", error);
         setTokenValid(false);
+        setIsConnected(false);
       }
     };
 
+    // Initial validation
     validateToken();
+    
+    // Periodic validation every 5 minutes
+    const validationInterval = setInterval(validateToken, 5 * 60 * 1000);
+    
+    return () => clearInterval(validationInterval);
   }, [obsId]);
 
   // Calculate goal progress from today's successful donations only
@@ -241,76 +252,112 @@ const ChiaaGamingObsOverlay = () => {
   useEffect(() => {
     if (!tokenValid) return;
 
-    // Set up real-time subscription with 1 minute delay for OBS alerts
-    const channel = supabase
-      .channel(`chiaa-gaming-obs-overlay-${obsId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'chiaa_gaming_donations'
-        },
-        (payload) => {
-          const newDonation = payload.new as Donation;
-          console.log('New donation received in OBS overlay with 1 minute delay:', newDonation);
-          console.log('OBS Environment check:', {
-            userAgent: navigator.userAgent,
-            isOBS: navigator.userAgent.includes('OBS'),
-            showMessages,
-            showGoal,
-            showAudio
-          });
-          
-          // Add 1 minute delay before showing OBS alert
-          setTimeout(() => {
-            // Update goal progress for successful payments only
-            if (showGoal && newDonation.payment_status === 'success') {
-              setGoalProgress(prev => prev + Number(newDonation.amount));
-            }
+    let channel: any = null;
+    let reconnectTimeout: NodeJS.Timeout | null = null;
+    const maxReconnectAttempts = 5;
+
+    const setupSubscription = () => {
+      console.log(`Setting up real-time subscription (attempt ${reconnectAttempts + 1})`);
+      
+      // Clean up existing channel
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+
+      // Set up real-time subscription with 1 minute delay for OBS alerts
+      channel = supabase
+        .channel(`chiaa-gaming-obs-overlay-${obsId}-${Date.now()}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'chiaa_gaming_donations'
+          },
+          (payload) => {
+            const newDonation = payload.new as Donation;
+            console.log('New donation received in OBS overlay with 1 minute delay:', newDonation);
+            setIsConnected(true);
+            setReconnectAttempts(0);
             
-            // Show donation alert after 1 minute delay if messages are enabled
-            if (showMessages) {
-              console.log('Showing donation alert in OBS overlay after 1 minute delay');
-              setAnimationPhase('enter');
-              setCurrentDonation(newDonation);
-              setIsVisible(true);
-              
-              // Play audio only if enabled in this overlay
-              if (showAudio) {
-                playDonationAudio(newDonation);
+            // Add 1 minute delay before showing OBS alert
+            setTimeout(() => {
+              // Update goal progress for successful payments only
+              if (showGoal && newDonation.payment_status === 'success') {
+                setGoalProgress(prev => prev + Number(newDonation.amount));
               }
               
-              // Trigger HyperEmotes if enabled
-              if (newDonation.hyperemotes_enabled) {
-                console.log('Triggering HyperEmotes for amount:', newDonation.amount);
-                triggerHyperEmotes(Number(newDonation.amount));
-              }
-              
-              setTimeout(() => setAnimationPhase('show'), 500);
-              
-              setTimeout(() => {
-                setAnimationPhase('exit');
+              // Show donation alert after 1 minute delay if messages are enabled
+              if (showMessages) {
+                console.log('Showing donation alert in OBS overlay after 1 minute delay');
+                setAnimationPhase('enter');
+                setCurrentDonation(newDonation);
+                setIsVisible(true);
+                
+                // Play audio only if enabled in this overlay
+                if (showAudio) {
+                  playDonationAudio(newDonation);
+                }
+                
+                // Trigger HyperEmotes if enabled
+                if (newDonation.hyperemotes_enabled) {
+                  console.log('Triggering HyperEmotes for amount:', newDonation.amount);
+                  triggerHyperEmotes(Number(newDonation.amount));
+                }
+                
+                setTimeout(() => setAnimationPhase('show'), 500);
+                
                 setTimeout(() => {
-                  setIsVisible(false);
+                  setAnimationPhase('exit');
                   setTimeout(() => {
-                    setCurrentDonation(null);
-                    setAnimationPhase('enter');
-                  }, 1000);
-                }, 500);
-              }, 12000);
+                    setIsVisible(false);
+                    setTimeout(() => {
+                      setCurrentDonation(null);
+                      setAnimationPhase('enter');
+                    }, 1000);
+                  }, 500);
+                }, 12000);
+              }
+            }, 60000); // 1 minute delay (60000ms)
+          }
+        )
+        .subscribe((status) => {
+          console.log('Subscription status:', status);
+          
+          if (status === 'SUBSCRIBED') {
+            setIsConnected(true);
+            setReconnectAttempts(0);
+            console.log('Successfully connected to real-time updates');
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+            setIsConnected(false);
+            console.log('Connection lost, attempting to reconnect...');
+            
+            if (reconnectAttempts < maxReconnectAttempts) {
+              const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000); // Exponential backoff, max 30s
+              reconnectTimeout = setTimeout(() => {
+                setReconnectAttempts(prev => prev + 1);
+                setupSubscription();
+              }, delay);
+            } else {
+              console.error('Max reconnection attempts reached');
             }
-          }, 60000); // 1 minute delay (60000ms)
-        }
-      )
-      .subscribe();
-
-    console.log('Chiaa Gaming OBS overlay real-time subscription set up with 1 minute delay');
-
-    return () => {
-      supabase.removeChannel(channel);
+          }
+        });
     };
-  }, [obsId, showMessages, showGoal, showAudio, tokenValid]);
+
+    // Initial setup
+    setupSubscription();
+
+    // Cleanup function
+    return () => {
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
+  }, [obsId, showMessages, showGoal, showAudio, tokenValid, reconnectAttempts]);
 
   // Show loading or error state
   if (tokenValid === null) {

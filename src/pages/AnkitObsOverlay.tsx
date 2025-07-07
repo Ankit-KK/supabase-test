@@ -37,6 +37,9 @@ const AnkitObsOverlay = () => {
   const [animationPhase, setAnimationPhase] = useState<'enter' | 'show' | 'exit'>('enter');
   const [goalProgress, setGoalProgress] = useState<number>(0);
   const [floatingEmojis, setFloatingEmojis] = useState<FloatingEmoji[]>([]);
+  const [reconnectAttempts, setReconnectAttempts] = useState(0);
+  const [isConnected, setIsConnected] = useState(false);
+  const [tokenValid, setTokenValid] = useState<boolean | null>(null);
 
   // Calculate goal progress from today's successful donations only
   const fetchGoalProgress = async () => {
@@ -98,80 +101,164 @@ const AnkitObsOverlay = () => {
     }, 10000);
   };
 
+  // Validate OBS token periodically
   useEffect(() => {
-    if (showGoal) {
+    const validateToken = async () => {
+      if (!obsId) {
+        setTokenValid(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase.rpc('validate_obs_token', {
+          p_token: obsId,
+          p_admin_type: 'ankit'
+        });
+
+        if (error || !data) {
+          console.error("Invalid OBS token:", error);
+          setTokenValid(false);
+          setIsConnected(false);
+          return;
+        }
+
+        setTokenValid(true);
+        console.log('Token validated successfully');
+      } catch (error) {
+        console.error("Error validating token:", error);
+        setTokenValid(false);
+        setIsConnected(false);
+      }
+    };
+
+    // Initial validation
+    validateToken();
+    
+    // Periodic validation every 5 minutes
+    const validationInterval = setInterval(validateToken, 5 * 60 * 1000);
+    
+    return () => clearInterval(validationInterval);
+  }, [obsId]);
+
+  useEffect(() => {
+    if (showGoal && tokenValid) {
       fetchGoalProgress();
     }
-  }, [showGoal]);
+  }, [showGoal, tokenValid]);
 
   useEffect(() => {
-    // Set up real-time subscription for ALL donations (both successful and failed) with 1 minute delay for OBS
-    const channel = supabase
-      .channel(`ankit-obs-overlay-${obsId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'ankit_donations'
-        },
-        (payload) => {
-          const newDonation = payload.new as Donation;
-          console.log('New donation received in OBS overlay with 1 minute delay (all statuses):', {
-            id: newDonation.id,
-            name: newDonation.name,
-            amount: newDonation.amount,
-            payment_status: newDonation.payment_status,
-            selected_emoji: newDonation.selected_emoji
-          });
-          
-          // Add 1 minute delay before showing OBS alert
-          setTimeout(() => {
-            // Update goal progress only for successful payments
-            if (showGoal && newDonation.payment_status === "success") {
-              setGoalProgress(prev => prev + Number(newDonation.amount));
-              console.log("Updated goal progress for successful donation");
-            }
+    if (!tokenValid) return;
+
+    let channel: any = null;
+    let reconnectTimeout: NodeJS.Timeout | null = null;
+    const maxReconnectAttempts = 5;
+
+    const setupSubscription = () => {
+      console.log(`Setting up real-time subscription (attempt ${reconnectAttempts + 1})`);
+      
+      // Clean up existing channel
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+
+      // Set up real-time subscription for ALL donations with 1 minute delay for OBS
+      channel = supabase
+        .channel(`ankit-obs-overlay-${obsId}-${Date.now()}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'ankit_donations'
+          },
+          (payload) => {
+            const newDonation = payload.new as Donation;
+            console.log('New donation received in OBS overlay with 1 minute delay (all statuses):', {
+              id: newDonation.id,
+              name: newDonation.name,
+              amount: newDonation.amount,
+              payment_status: newDonation.payment_status,
+              selected_emoji: newDonation.selected_emoji
+            });
+            setIsConnected(true);
+            setReconnectAttempts(0);
             
-            // Create floating emojis celebration with random count
-            if (newDonation.selected_emoji) {
-              const baseCount = 20;
-              const randomVariation = Math.floor(Math.random() * 10) - 5; // -5 to +5
-              const emojiCount = Math.max(15, baseCount + randomVariation);
-              createFloatingEmojis(newDonation.selected_emoji, emojiCount);
-            }
-            
-            // Show donation alert for ALL donations (success and failed) if messages are enabled
-            if (showMessages) {
-              console.log(`Showing donation alert for ${newDonation.payment_status} payment after 1 minute delay`);
-              setAnimationPhase('enter');
-              setCurrentDonation(newDonation);
-              setIsVisible(true);
+            // Add 1 minute delay before showing OBS alert
+            setTimeout(() => {
+              // Update goal progress only for successful payments
+              if (showGoal && newDonation.payment_status === "success") {
+                setGoalProgress(prev => prev + Number(newDonation.amount));
+                console.log("Updated goal progress for successful donation");
+              }
               
-              setTimeout(() => setAnimationPhase('show'), 500);
+              // Create floating emojis celebration with random count
+              if (newDonation.selected_emoji) {
+                const baseCount = 20;
+                const randomVariation = Math.floor(Math.random() * 10) - 5; // -5 to +5
+                const emojiCount = Math.max(15, baseCount + randomVariation);
+                createFloatingEmojis(newDonation.selected_emoji, emojiCount);
+              }
               
-              setTimeout(() => {
-                setAnimationPhase('exit');
+              // Show donation alert for ALL donations (success and failed) if messages are enabled
+              if (showMessages) {
+                console.log(`Showing donation alert for ${newDonation.payment_status} payment after 1 minute delay`);
+                setAnimationPhase('enter');
+                setCurrentDonation(newDonation);
+                setIsVisible(true);
+                
+                setTimeout(() => setAnimationPhase('show'), 500);
+                
                 setTimeout(() => {
-                  setIsVisible(false);
+                  setAnimationPhase('exit');
                   setTimeout(() => {
-                    setCurrentDonation(null);
-                    setAnimationPhase('enter');
-                  }, 1000);
-                }, 500);
-              }, 12000);
+                    setIsVisible(false);
+                    setTimeout(() => {
+                      setCurrentDonation(null);
+                      setAnimationPhase('enter');
+                    }, 1000);
+                  }, 500);
+                }, 12000);
+              }
+            }, 60000); // 1 minute delay (60000ms)
+          }
+        )
+        .subscribe((status) => {
+          console.log('Subscription status:', status);
+          
+          if (status === 'SUBSCRIBED') {
+            setIsConnected(true);
+            setReconnectAttempts(0);
+            console.log('Successfully connected to real-time updates');
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+            setIsConnected(false);
+            console.log('Connection lost, attempting to reconnect...');
+            
+            if (reconnectAttempts < maxReconnectAttempts) {
+              const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000); // Exponential backoff, max 30s
+              reconnectTimeout = setTimeout(() => {
+                setReconnectAttempts(prev => prev + 1);
+                setupSubscription();
+              }, delay);
+            } else {
+              console.error('Max reconnection attempts reached');
             }
-          }, 60000); // 1 minute delay (60000ms)
-        }
-      )
-      .subscribe();
-
-    console.log('Ankit OBS overlay real-time subscription set up with 1 minute delay - ALL PAYMENT STATUSES');
-
-    return () => {
-      supabase.removeChannel(channel);
+          }
+        });
     };
-  }, [obsId, showMessages, showGoal]);
+
+    // Initial setup
+    setupSubscription();
+
+    // Cleanup function
+    return () => {
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
+  }, [obsId, showMessages, showGoal, tokenValid, reconnectAttempts]);
 
   // Get travel animation keyframes - bottom to top movement
   const getTravelAnimationKeyframes = (emoji: FloatingEmoji) => {
@@ -391,6 +478,23 @@ const AnkitObsOverlay = () => {
   };
 
   const goalPercentage = Math.min((goalProgress / goalTarget) * 100, 100);
+
+  // Show loading or error state for token validation
+  if (tokenValid === null) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.9)' }}>
+        <div style={{ color: 'white', fontSize: '20px' }}>Validating access...</div>
+      </div>
+    );
+  }
+
+  if (tokenValid === false) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center" style={{ backgroundColor: 'rgba(0,0,0,0.9)' }}>
+        <div style={{ color: '#ff6b6b', fontSize: '20px' }}>Invalid or expired OBS token</div>
+      </div>
+    );
+  }
 
   return (
     <div 
