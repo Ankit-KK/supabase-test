@@ -24,12 +24,28 @@ const ChiaaGamingLogin = () => {
       
       if (result.success) {
         sessionStorage.setItem("chiaaGamingAuth", "true");
-        sessionStorage.setItem("chiaaGamingAdminAuth", "true");
-        navigate("/chiaa_gaming/dashboard");
-        toast({
-          title: "Login successful",
-          description: "Welcome to your dashboard!",
-        });
+        
+        if (result.isAdmin) {
+          sessionStorage.setItem("chiaaGamingAdminAuth", "true");
+          navigate("/chiaa_gaming/dashboard");
+          toast({
+            title: "Login successful",
+            description: "Welcome to your admin dashboard!",
+          });
+        } else if (result.isMod) {
+          sessionStorage.setItem("chiaaGamingModAuth", "true");
+          navigate("/chiaa_gaming/messages");
+          toast({
+            title: "Moderator login successful",
+            description: "Welcome to the moderation panel!",
+          });
+        } else {
+          navigate("/chiaa_gaming/dashboard");
+          toast({
+            title: "Login successful",
+            description: "Welcome to your dashboard!",
+          });
+        }
       } else {
         toast({
           variant: "destructive",

@@ -7,6 +7,7 @@ import { ArrowLeft, Settings } from "lucide-react";
 import ObsSettings from "@/components/ObsSettings";
 import SecureDataDisplay from "@/components/SecureDataDisplay";
 import { logSecurityEvent } from "@/utils/rateLimiting";
+import { isModAuthenticated } from "@/services/streamerAuth";
 
 const ChiaaGamingObsSettings = () => {
   const navigate = useNavigate();
@@ -20,7 +21,19 @@ const ChiaaGamingObsSettings = () => {
       navigate("/chiaa_gaming/login");
       return;
     }
-  }, [navigate]);
+
+    // Check if user is a moderator - redirect to messages page (mods can't access OBS settings)
+    if (isModAuthenticated("chiaaGaming")) {
+      logSecurityEvent('MOD_OBS_SETTINGS_BLOCKED', 'chiaa_gaming_messages');
+      toast({
+        variant: "destructive",
+        title: "Access Denied",
+        description: "Moderators cannot access OBS settings. Redirecting to messages...",
+      });
+      navigate("/chiaa_gaming/messages");
+      return;
+    }
+  }, [navigate, toast]);
 
   const handleBackToDashboard = () => {
     navigate("/chiaa_gaming/dashboard");

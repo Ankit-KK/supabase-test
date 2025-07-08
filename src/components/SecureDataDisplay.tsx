@@ -40,7 +40,8 @@ const SecureDataDisplay: React.FC<SecureDataDisplayProps> = ({
           // Check session storage as fallback for existing login system
           const hasValidSession = 
             sessionStorage.getItem("chiaaGamingAuth") === "true" ||
-            sessionStorage.getItem("ankitAuth") === "true";
+            sessionStorage.getItem("ankitAuth") === "true" ||
+            sessionStorage.getItem("chiaaGamingModAuth") === "true";
           
           setIsAuthorized(hasValidSession);
           
