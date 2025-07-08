@@ -148,13 +148,15 @@ const ChiaaGamingAudioPlayer = () => {
     initAudio();
   }, []);
 
-  // Play audio from queue
+  // Play audio from queue with improved queue management
   const playNextAudio = async () => {
     if (audioQueue.length > 0 && !isAudioActive && audioEnabled) {
       const nextAudio = audioQueue[0];
       setAudioQueue(prev => prev.slice(1));
       setCurrentAudio(nextAudio);
       setIsAudioActive(true);
+
+      console.log(`Playing audio from queue: ${audioQueue.length} remaining`);
 
       if (audioRef.current) {
         try {
@@ -172,8 +174,8 @@ const ChiaaGamingAudioPlayer = () => {
           console.error("Error playing audio:", error);
           setIsAudioActive(false);
           setCurrentAudio(null);
-          // Try next audio in queue
-          setTimeout(playNextAudio, 500);
+          // Try next audio in queue after a short delay
+          setTimeout(playNextAudio, 1000);
         }
       }
     }
