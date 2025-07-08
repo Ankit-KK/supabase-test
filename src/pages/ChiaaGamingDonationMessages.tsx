@@ -231,34 +231,40 @@ const ChiaaGamingDonationMessages = () => {
 
   const handleReviewDonation = async (donationId: string, action: 'approve' | 'reject') => {
     try {
-      const { error } = await supabase
-        .from('chiaa_gaming_donations')
-        .update({
-          review_status: action === 'approve' ? 'approved' : 'rejected',
-          reviewed_at: new Date().toISOString(),
-          reviewed_by: 'admin'
+      // Use edge function for approval to bypass RLS
+      const response = await fetch('https://vsevsjvtrshgeiudrnth.supabase.co/functions/v1/approve-donation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          donationId,
+          action,
+          adminType: 'chiaa_gaming'
         })
-        .eq('id', donationId);
+      });
 
-      if (error) {
-        console.error('Error updating review status:', error);
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error('Error updating review status:', result.error);
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Failed to update review status",
+          description: result.error || "Failed to update review status",
         });
         return;
       }
 
-      // Update local state
+      // Update local state with the returned data
       setDonations(prev => 
         prev.map(donation => 
           donation.id === donationId 
             ? { 
                 ...donation, 
-                review_status: action === 'approve' ? 'approved' : 'rejected',
-                reviewed_at: new Date().toISOString(),
-                reviewed_by: 'admin'
+                review_status: result.donation.review_status,
+                reviewed_at: result.donation.reviewed_at,
+                reviewed_by: result.donation.reviewed_by
               }
             : donation
         )
@@ -266,7 +272,7 @@ const ChiaaGamingDonationMessages = () => {
 
       toast({
         title: action === 'approve' ? "Donation Approved" : "Donation Rejected",
-        description: `The donation has been ${action}d and will ${action === 'approve' ? 'appear in OBS' : 'not appear in OBS'}.`,
+        description: `The donation has been ${action}d and will ${action === 'approve' ? 'appear in OBS immediately' : 'not appear in OBS'}.`,
       });
 
       logSecurityEvent('DONATION_REVIEWED', `${donationId}: ${action}`);
