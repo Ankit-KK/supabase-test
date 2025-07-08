@@ -1,1 +1,4 @@
 project_id = "vsevsjvtrshgeiudrnth"
+
+[functions.approve-donation]
+verify_jwt = false
