@@ -22,7 +22,6 @@ export type Database = {
           id: string
           is_online: boolean | null
           last_active: string | null
-          mod_password: string | null
           password_hash: string
           user_email: string
         }
@@ -33,7 +32,6 @@ export type Database = {
           id?: string
           is_online?: boolean | null
           last_active?: string | null
-          mod_password?: string | null
           password_hash?: string
           user_email: string
         }
@@ -44,7 +42,6 @@ export type Database = {
           id?: string
           is_online?: boolean | null
           last_active?: string | null
-          mod_password?: string | null
           password_hash?: string
           user_email?: string
         }

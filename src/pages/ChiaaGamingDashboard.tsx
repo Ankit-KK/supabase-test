@@ -12,7 +12,6 @@ import SecureDataDisplay from "@/components/SecureDataDisplay";
 import DashboardAnalytics from "@/components/DashboardAnalytics";
 import { logSecurityEvent } from "@/utils/rateLimiting";
 import { useVoiceCleanup } from "@/hooks/useVoiceCleanup";
-import { isModAuthenticated } from "@/services/streamerAuth";
 
 interface Donation {
   id: string;
@@ -144,13 +143,6 @@ const ChiaaGamingDashboard = () => {
       return;
     }
 
-    // Check if user is a moderator - redirect to messages page
-    if (isModAuthenticated("chiaaGaming")) {
-      logSecurityEvent('MOD_DASHBOARD_REDIRECT', 'chiaa_gaming_messages');
-      navigate("/chiaa_gaming/messages");
-      return;
-    }
-
     fetchDonations();
     
     // Setup subscription with a small delay
@@ -209,7 +201,6 @@ const ChiaaGamingDashboard = () => {
     logSecurityEvent('USER_LOGOUT', 'chiaa_gaming_dashboard');
     sessionStorage.removeItem("chiaaGamingAuth");
     sessionStorage.removeItem("chiaaGamingAdminAuth");
-    sessionStorage.removeItem("chiaaGamingModAuth");
     navigate("/chiaa_gaming/login");
     toast({
       title: "Logged out",

@@ -12,7 +12,6 @@ export interface StreamerAuthResponse {
   message: string;
   adminType?: string;
   isAdmin?: boolean;
-  isMod?: boolean;
 }
 
 // Authenticate streamer using admin_users table
@@ -64,19 +63,6 @@ export const authenticateStreamer = async (
         message: "Authentication successful with admin privileges",
         adminType: credentials.username,
         isAdmin: true,
-        isMod: false,
-      };
-    }
-
-    // Check if using mod password - grants moderator access only
-    if (adminUser.mod_password && credentials.password === adminUser.mod_password) {
-      console.log("Mod password used - granting moderator access");
-      return {
-        success: true,
-        message: "Authentication successful with moderator privileges",
-        adminType: credentials.username,
-        isAdmin: false,
-        isMod: true,
       };
     }
 
@@ -95,8 +81,7 @@ export const authenticateStreamer = async (
           success: true,
           message: "Authentication successful",
           adminType: adminUser.admin_type,
-          isAdmin: false,
-          isMod: false,
+          isAdmin: false  // Explicitly set isAdmin to false for regular logins
         };
       } else {
         console.log("Password mismatch");
@@ -133,16 +118,10 @@ export const isAdminAuthenticated = (adminType: string): boolean => {
   return sessionStorage.getItem(`${adminType}AdminAuth`) === "true";
 };
 
-// Check if the user is authenticated with moderator privileges
-export const isModAuthenticated = (adminType: string): boolean => {
-  return sessionStorage.getItem(`${adminType}ModAuth`) === "true";
-};
-
 // Log out the streamer
 export const logoutStreamer = (adminType: string): void => {
   sessionStorage.removeItem(`${adminType}Auth`);
   sessionStorage.removeItem(`${adminType}AdminAuth`);
-  sessionStorage.removeItem(`${adminType}ModAuth`);
 };
 
 // Hash a password
