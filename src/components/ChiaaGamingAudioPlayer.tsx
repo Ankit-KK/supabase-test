@@ -14,6 +14,9 @@ interface Donation {
   voice_url?: string;
   custom_sound_name?: string;
   custom_sound_url?: string;
+  include_sound?: boolean;
+  hyperemotes_enabled?: boolean;
+  review_status?: string;
 }
 
 const ChiaaGamingAudioPlayer = () => {
@@ -198,46 +201,50 @@ const ChiaaGamingAudioPlayer = () => {
   useEffect(() => {
     if (!tokenValid) return;
 
-    // Set up real-time subscription for audio donations with 1 minute delay
+    // Set up real-time subscription for approved donations
     const channel = supabase
       .channel(`chiaa-gaming-audio-player-${obsId}`)
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: 'UPDATE',
           schema: 'public',
           table: 'chiaa_gaming_donations',
-          filter: 'payment_status=eq.success AND (review_status=eq.approved OR custom_sound_url IS NOT NULL OR include_sound=eq.true OR hyperemotes_enabled=eq.true)'
+          filter: 'review_status=eq.approved'
         },
         (payload) => {
-          const newDonation = payload.new as Donation;
-          console.log('New successful donation received in audio player with 1 minute delay:', newDonation);
+          const updatedDonation = payload.new as Donation;
+          console.log('Donation approved - adding to audio queue:', updatedDonation);
           
-          // Check if donation has audio content
-          const hasVoice = newDonation.voice_url;
-          const hasCustomSound = newDonation.custom_sound_url;
+          // Check if donation has audio content and queue it
+          const hasVoice = updatedDonation.voice_url;
+          const hasCustomSound = updatedDonation.custom_sound_url;
           
-          // Queue audio based on donation content
-          console.log('Playing audio for donation:', newDonation.id);
+          console.log('Processing approved donation for audio:', {
+            id: updatedDonation.id,
+            hasVoice,
+            hasCustomSound,
+            includeSound: updatedDonation.include_sound
+          });
           
           // If custom sound is selected, play it instead of voicy_alert
-          if (hasCustomSound && newDonation.custom_sound_url) {
-            queueAudio(newDonation.custom_sound_url);
-          } else {
-            // Only play voicy_alert if no custom sound was selected
+          if (hasCustomSound && updatedDonation.custom_sound_url) {
+            queueAudio(updatedDonation.custom_sound_url);
+          } else if (updatedDonation.include_sound) {
+            // Only play voicy_alert if include_sound is true and no custom sound
             const voicyAlertUrl = "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/custom-sounds/Voicy_Alert.mp3";
             queueAudio(voicyAlertUrl);
           }
           
           // Then queue voice message if available
-          if (hasVoice && newDonation.voice_url) {
-            queueAudio(newDonation.voice_url);
+          if (hasVoice && updatedDonation.voice_url) {
+            queueAudio(updatedDonation.voice_url);
           }
         }
       )
       .subscribe();
 
-    console.log('Chiaa Gaming audio player real-time subscription set up with 1 minute delay');
+    console.log('Chiaa Gaming audio player real-time subscription set up for approved donations');
 
     return () => {
       supabase.removeChannel(channel);
