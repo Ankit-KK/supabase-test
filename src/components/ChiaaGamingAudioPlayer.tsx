@@ -192,10 +192,17 @@ const ChiaaGamingAudioPlayer = () => {
     setTimeout(playNextAudio, 1000);
   };
 
-  // Add audio to queue
-  const queueAudio = (audioUrl: string) => {
-    console.log('Queueing audio:', audioUrl);
-    setAudioQueue(prev => [...prev, audioUrl]);
+  // Add audio to queue with donation info for better tracking
+  const queueAudio = (audioUrl: string, donationId?: string) => {
+    console.log('Queueing audio:', audioUrl, donationId ? `for donation ${donationId}` : '');
+    setAudioQueue(prev => {
+      // Prevent duplicate audio URLs from the same donation
+      if (donationId && prev.includes(audioUrl)) {
+        console.log('Audio already queued, skipping duplicate');
+        return prev;
+      }
+      return [...prev, audioUrl];
+    });
   };
 
   useEffect(() => {
@@ -229,16 +236,16 @@ const ChiaaGamingAudioPlayer = () => {
           
           // If custom sound is selected, play it instead of voicy_alert
           if (hasCustomSound && updatedDonation.custom_sound_url) {
-            queueAudio(updatedDonation.custom_sound_url);
+            queueAudio(updatedDonation.custom_sound_url, updatedDonation.id);
           } else if (updatedDonation.include_sound) {
             // Only play voicy_alert if include_sound is true and no custom sound
             const voicyAlertUrl = "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/custom-sounds/Voicy_Alert.mp3";
-            queueAudio(voicyAlertUrl);
+            queueAudio(voicyAlertUrl, updatedDonation.id);
           }
           
           // Then queue voice message if available
           if (hasVoice && updatedDonation.voice_url) {
-            queueAudio(updatedDonation.voice_url);
+            queueAudio(updatedDonation.voice_url, updatedDonation.id);
           }
         }
       )
