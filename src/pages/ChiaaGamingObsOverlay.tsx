@@ -311,7 +311,7 @@ const ChiaaGamingObsOverlay = () => {
               return;
             }
             
-            // Auto-approved donations show instantly, others show with 1 minute delay
+            // Auto-approved donations show instantly, others show with 1 minute delay  
             const delay = isAutoApproved ? 0 : 60000;
             console.log(`Showing donation alert in ${delay}ms`);
             
@@ -325,7 +325,7 @@ const ChiaaGamingObsOverlay = () => {
               
               // Show donation alert if messages are enabled
               if (showMessages) {
-                console.log('Showing donation alert in OBS overlay after 1 minute delay');
+                console.log('Showing donation alert in OBS overlay');
                 setAnimationPhase('enter');
                 setCurrentDonation(newDonation);
                 setIsVisible(true);
@@ -354,7 +354,7 @@ const ChiaaGamingObsOverlay = () => {
                   }, 500);
                 }, 12000);
               }
-            }, 60000); // 1 minute delay (60000ms)
+            }, delay); // Use the calculated delay
           }
         )
         .on(
@@ -371,47 +371,45 @@ const ChiaaGamingObsOverlay = () => {
             const updatedDonation = payload.new as Donation;
             console.log('Donation approved for OBS display:', updatedDonation);
             
-            // Show approved donation with 1 minute delay
-            setTimeout(() => {
-              if (isCleaningUp) return;
+            // Show approved donation immediately (no delay)
+            if (isCleaningUp) return;
+            
+            // Update goal progress
+            if (showGoal && updatedDonation.payment_status === 'success') {
+              setGoalProgress(prev => prev + Number(updatedDonation.amount));
+            }
+            
+            // Show donation alert if messages are enabled
+            if (showMessages) {
+              console.log('Showing approved donation alert in OBS overlay immediately');
+              setAnimationPhase('enter');
+              setCurrentDonation(updatedDonation);
+              setIsVisible(true);
               
-              // Update goal progress
-              if (showGoal && updatedDonation.payment_status === 'success') {
-                setGoalProgress(prev => prev + Number(updatedDonation.amount));
+              // Play audio only if enabled in this overlay
+              if (showAudio) {
+                playDonationAudio(updatedDonation);
               }
               
-              // Show donation alert if messages are enabled
-              if (showMessages) {
-                console.log('Showing approved donation alert in OBS overlay');
-                setAnimationPhase('enter');
-                setCurrentDonation(updatedDonation);
-                setIsVisible(true);
-                
-                // Play audio only if enabled in this overlay
-                if (showAudio) {
-                  playDonationAudio(updatedDonation);
-                }
-                
-                // Trigger HyperEmotes if enabled
-                if (updatedDonation.hyperemotes_enabled) {
-                  console.log('Triggering HyperEmotes for approved donation:', updatedDonation.amount);
-                  triggerHyperEmotes(Number(updatedDonation.amount));
-                }
-                
-                setTimeout(() => setAnimationPhase('show'), 500);
-                
+              // Trigger HyperEmotes if enabled
+              if (updatedDonation.hyperemotes_enabled) {
+                console.log('Triggering HyperEmotes for approved donation:', updatedDonation.amount);
+                triggerHyperEmotes(Number(updatedDonation.amount));
+              }
+              
+              setTimeout(() => setAnimationPhase('show'), 500);
+              
+              setTimeout(() => {
+                setAnimationPhase('exit');
                 setTimeout(() => {
-                  setAnimationPhase('exit');
+                  setIsVisible(false);
                   setTimeout(() => {
-                    setIsVisible(false);
-                    setTimeout(() => {
-                      setCurrentDonation(null);
-                      setAnimationPhase('enter');
-                    }, 1000);
-                  }, 500);
-                }, 12000);
-              }
-            }, 60000); // 1 minute delay for approved donations
+                    setCurrentDonation(null);
+                    setAnimationPhase('enter');
+                  }, 1000);
+                }, 500);
+              }, 12000);
+            }
           }
         )
         .subscribe((status) => {
