@@ -35,6 +35,10 @@ const ChiaaGamingObsOverlay = () => {
   const [tokenValid, setTokenValid] = useState<boolean | null>(null);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
+  
+  // Queue system for managing multiple donations
+  const [donationQueue, setDonationQueue] = useState<Donation[]>([]);
+  const [isDisplaying, setIsDisplaying] = useState(false);
 
   // Enhanced HyperEmotes effect with multiple patterns and effects
   const triggerHyperEmotes = (amount: number) => {
@@ -259,6 +263,87 @@ const ChiaaGamingObsOverlay = () => {
     }
   };
 
+  // Queue management functions
+  const addToQueue = (donation: Donation) => {
+    setDonationQueue(prev => {
+      // Check if donation is already in queue to prevent duplicates
+      const exists = prev.some(d => d.id === donation.id);
+      if (exists) {
+        console.log('Donation already in queue, skipping:', donation.id);
+        return prev;
+      }
+      console.log('Adding donation to queue:', donation.id, 'Queue length will be:', prev.length + 1);
+      return [...prev, donation];
+    });
+  };
+
+  const processNextInQueue = () => {
+    if (donationQueue.length === 0 || isDisplaying) {
+      return;
+    }
+
+    const nextDonation = donationQueue[0];
+    console.log('Processing next donation from queue:', nextDonation.id);
+    
+    // Remove from queue and start displaying
+    setDonationQueue(prev => prev.slice(1));
+    setIsDisplaying(true);
+    
+    // Update goal progress
+    if (showGoal && nextDonation.payment_status === 'success') {
+      setGoalProgress(prev => prev + Number(nextDonation.amount));
+    }
+    
+    // Show donation alert if messages are enabled
+    if (showMessages) {
+      console.log('Displaying queued donation alert in OBS overlay');
+      setAnimationPhase('enter');
+      setCurrentDonation(nextDonation);
+      setIsVisible(true);
+      
+      // Play audio only if enabled in this overlay
+      if (showAudio) {
+        playDonationAudio(nextDonation);
+      }
+      
+      // Trigger HyperEmotes if enabled
+      if (nextDonation.hyperemotes_enabled) {
+        console.log('Triggering HyperEmotes for queued donation:', nextDonation.amount);
+        triggerHyperEmotes(Number(nextDonation.amount));
+      }
+      
+      setTimeout(() => setAnimationPhase('show'), 500);
+      
+      // Hide donation after 12 seconds and mark as not displaying
+      setTimeout(() => {
+        setAnimationPhase('exit');
+        setTimeout(() => {
+          setIsVisible(false);
+          setTimeout(() => {
+            setCurrentDonation(null);
+            setAnimationPhase('enter');
+            setIsDisplaying(false); // Mark as done displaying
+          }, 1000);
+        }, 500);
+      }, 12000);
+    } else {
+      // If messages are disabled, just mark as done
+      setIsDisplaying(false);
+    }
+  };
+
+  // Process queue when donations are added or when current display finishes
+  useEffect(() => {
+    if (!isDisplaying && donationQueue.length > 0) {
+      // Add a small delay to prevent rapid-fire displays
+      const timer = setTimeout(() => {
+        processNextInQueue();
+      }, 1500); // 1.5 second gap between donations
+      
+      return () => clearTimeout(timer);
+    }
+  }, [donationQueue, isDisplaying, showMessages, showGoal, showAudio]);
+
   useEffect(() => {
     if (!tokenValid) return;
 
@@ -371,45 +456,8 @@ const ChiaaGamingObsOverlay = () => {
             const updatedDonation = payload.new as Donation;
             console.log('Donation approved for OBS display:', updatedDonation);
             
-            // Show approved donation immediately (no delay)
-            if (isCleaningUp) return;
-            
-            // Update goal progress
-            if (showGoal && updatedDonation.payment_status === 'success') {
-              setGoalProgress(prev => prev + Number(updatedDonation.amount));
-            }
-            
-            // Show donation alert if messages are enabled
-            if (showMessages) {
-              console.log('Showing approved donation alert in OBS overlay immediately');
-              setAnimationPhase('enter');
-              setCurrentDonation(updatedDonation);
-              setIsVisible(true);
-              
-              // Play audio only if enabled in this overlay
-              if (showAudio) {
-                playDonationAudio(updatedDonation);
-              }
-              
-              // Trigger HyperEmotes if enabled
-              if (updatedDonation.hyperemotes_enabled) {
-                console.log('Triggering HyperEmotes for approved donation:', updatedDonation.amount);
-                triggerHyperEmotes(Number(updatedDonation.amount));
-              }
-              
-              setTimeout(() => setAnimationPhase('show'), 500);
-              
-              setTimeout(() => {
-                setAnimationPhase('exit');
-                setTimeout(() => {
-                  setIsVisible(false);
-                  setTimeout(() => {
-                    setCurrentDonation(null);
-                    setAnimationPhase('enter');
-                  }, 1000);
-                }, 500);
-              }, 12000);
-            }
+            // Add approved donation to queue instead of showing immediately
+            addToQueue(updatedDonation);
           }
         )
         .subscribe((status) => {
