@@ -231,11 +231,16 @@ const ChiaaGamingDonationMessages = () => {
 
   const handleReviewDonation = async (donationId: string, action: 'approve' | 'reject') => {
     try {
+      // Get the current session for authorization
+      const { data: { session } } = await supabase.auth.getSession();
+      
       // Use edge function for approval to bypass RLS
       const response = await fetch('https://vsevsjvtrshgeiudrnth.supabase.co/functions/v1/approve-donation', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzZXZzanZ0cnNoZ2VpdWRybnRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI1ODE1ODEsImV4cCI6MjA1ODE1NzU4MX0.uLkTc3a0kdMNfgIg2qYKnnaLjbvtXGKPOoWbqntibmw'
         },
         body: JSON.stringify({
           donationId,
