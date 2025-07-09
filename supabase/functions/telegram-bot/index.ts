@@ -301,7 +301,7 @@ serve(async (req) => {
 
     if (req.method === 'POST') {
       // Handle webhook from Telegram
-      if (url.pathname === '/webhook') {
+      if (url.pathname.includes('/webhook')) {
         const update: TelegramUpdate = await req.json();
         console.log('Received Telegram update:', JSON.stringify(update, null, 2));
         
@@ -310,7 +310,7 @@ serve(async (req) => {
       }
 
       // Handle notification from Supabase (new donation)
-      if (url.pathname === '/notify') {
+      if (url.pathname.includes('/notify')) {
         const { donation, streamer_id } = await req.json();
         console.log('Received notification for donation:', donation.id);
         
