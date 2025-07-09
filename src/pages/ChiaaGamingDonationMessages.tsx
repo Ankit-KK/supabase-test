@@ -49,14 +49,21 @@ const ChiaaGamingDonationMessages = () => {
   // Initialize audio context on user interaction
   const enableAudio = async () => {
     try {
+      console.log('Enabling audio notifications...');
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       audioContextRef.current = audioContext;
       
       if (audioContext.state === 'suspended') {
+        console.log('Resuming suspended audio context...');
         await audioContext.resume();
       }
       
       setAudioEnabled(true);
+      console.log('Audio enabled successfully:', {
+        state: audioContext.state,
+        sampleRate: audioContext.sampleRate
+      });
+      
       toast({
         title: "Audio enabled",
         description: "You'll now hear notifications for new donations",
@@ -110,9 +117,26 @@ const ChiaaGamingDonationMessages = () => {
             
             // Play audio notification for new donation
             const playNotificationSound = async () => {
-              if (!audioEnabled || !audioContextRef.current) {
-                console.log('Audio not enabled or no audio context available');
+              console.log('Attempting to play notification sound:', {
+                audioEnabled,
+                hasAudioContext: !!audioContextRef.current,
+                audioContextState: audioContextRef.current?.state
+              });
+              
+              if (!audioEnabled) {
+                console.log('Audio not enabled - user needs to click Enable Audio Alerts button');
                 return;
+              }
+              
+              if (!audioContextRef.current) {
+                console.log('No audio context available - trying to create one');
+                try {
+                  const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+                  audioContextRef.current = audioContext;
+                } catch (error) {
+                  console.error('Failed to create audio context:', error);
+                  return;
+                }
               }
               
               try {
@@ -120,9 +144,11 @@ const ChiaaGamingDonationMessages = () => {
                 
                 // Resume AudioContext if it's suspended
                 if (audioContext.state === 'suspended') {
+                  console.log('Resuming suspended audio context...');
                   await audioContext.resume();
                 }
                 
+                console.log('Playing audio notification - first beep');
                 const oscillator = audioContext.createOscillator();
                 const gainNode = audioContext.createGain();
                 
@@ -140,6 +166,7 @@ const ChiaaGamingDonationMessages = () => {
                 
                 // Play a second beep for emphasis
                 setTimeout(() => {
+                  console.log('Playing audio notification - second beep');
                   const oscillator2 = audioContext.createOscillator();
                   const gainNode2 = audioContext.createGain();
                   
