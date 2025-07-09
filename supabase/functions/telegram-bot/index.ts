@@ -320,12 +320,12 @@ serve(async (req) => {
     }
 
     if (req.method === 'GET') {
-      if (url.pathname === '/health') {
+      if (url.pathname.includes('/health')) {
         return new Response('Bot is running', { headers: corsHeaders });
       }
 
       // Set up webhook
-      if (url.pathname === '/setup') {
+      if (url.pathname.includes('/setup')) {
         const webhookUrl = `${supabaseUrl.replace('/v1', '')}/functions/v1/telegram-bot/webhook`;
         const response = await fetch(`https://api.telegram.org/bot${botToken}/setWebhook`, {
           method: 'POST',
