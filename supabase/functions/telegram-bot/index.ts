@@ -327,6 +327,13 @@ serve(async (req) => {
       // Set up webhook
       if (url.pathname.includes('/setup')) {
         const webhookUrl = `${supabaseUrl.replace('/v1', '')}/functions/v1/telegram-bot/webhook`;
+        console.log('Setting up webhook with URL:', webhookUrl);
+        
+        // First, get current webhook info
+        const infoResponse = await fetch(`https://api.telegram.org/bot${botToken}/getWebhookInfo`);
+        const infoResult = await infoResponse.json();
+        console.log('Current webhook info:', infoResult);
+        
         const response = await fetch(`https://api.telegram.org/bot${botToken}/setWebhook`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
