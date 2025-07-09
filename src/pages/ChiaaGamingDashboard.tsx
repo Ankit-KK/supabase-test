@@ -10,6 +10,7 @@ import { LogOut, MessageSquare, Clock, BarChart3, Settings } from "lucide-react"
 import CSVExportDialog from "@/components/CSVExportDialog";
 import SecureDataDisplay from "@/components/SecureDataDisplay";
 import DashboardAnalytics from "@/components/DashboardAnalytics";
+import TelegramModerators from "@/components/TelegramModerators";
 import { logSecurityEvent } from "@/utils/rateLimiting";
 import { useVoiceCleanup } from "@/hooks/useVoiceCleanup";
 
@@ -315,6 +316,11 @@ const ChiaaGamingDashboard = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Telegram Moderators Management */}
+          <div className="mb-6">
+            <TelegramModerators />
+          </div>
 
           {/* Recent Donations Summary */}
           <Card className="bg-black/50 border-pink-500/30">
