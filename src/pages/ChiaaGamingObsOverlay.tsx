@@ -301,8 +301,8 @@ const ChiaaGamingObsOverlay = () => {
       setCurrentDonation(nextDonation);
       setIsVisible(true);
       
-      // Play audio only if enabled in this overlay
-      if (showAudio) {
+      // Play audio only if enabled in this overlay and only for new donations (not approved ones)
+      if (showAudio && nextDonation.review_status !== 'approved') {
         playDonationAudio(nextDonation);
       }
       
@@ -415,8 +415,8 @@ const ChiaaGamingObsOverlay = () => {
                 setCurrentDonation(newDonation);
                 setIsVisible(true);
                 
-                // Play audio only if enabled in this overlay
-                if (showAudio) {
+                // Play audio only if enabled in this overlay and only for new donations (not approved ones)
+                if (showAudio && newDonation.review_status !== 'approved') {
                   playDonationAudio(newDonation);
                 }
                 
