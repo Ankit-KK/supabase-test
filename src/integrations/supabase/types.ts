@@ -286,6 +286,39 @@ export type Database = {
         }
         Relationships: []
       }
+      moderators: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          permissions: string[] | null
+          streamer_id: string
+          telegram_id: number
+          telegram_username: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          permissions?: string[] | null
+          streamer_id: string
+          telegram_id: number
+          telegram_username?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          permissions?: string[] | null
+          streamer_id?: string
+          telegram_id?: number
+          telegram_username?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       obs_access_tokens: {
         Row: {
           admin_type: string
@@ -601,6 +634,10 @@ export type Database = {
       }
       is_admin_user: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_moderator: {
+        Args: { p_telegram_id: number; p_streamer_id: string }
         Returns: boolean
       }
       log_access_attempt: {
