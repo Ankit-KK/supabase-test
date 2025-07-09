@@ -95,6 +95,10 @@ export const createDonationRecord = async (data: DonationRecordData) => {
 
       console.log('Successfully inserted Ankit donation into ankit_donations table');
     } else if (data.donationType === 'chiaa_gaming') {
+      // Determine if donation needs approval
+      const needsApproval = data.gifUrl || data.voiceUrl;
+      const reviewStatus = needsApproval ? 'pending' : 'approved';
+      
       // Store in chiaa_gaming_donations table
       const { data: insertedDonation, error } = await supabase
         .from('chiaa_gaming_donations')
@@ -111,7 +115,7 @@ export const createDonationRecord = async (data: DonationRecordData) => {
           custom_sound_url: data.customSoundUrl,
           hyperemotes_enabled: data.hyperEmotesEnabled || false,
           include_sound: data.include_sound || false,
-          review_status: 'pending' // Set to pending for moderation
+          review_status: reviewStatus
         })
         .select()
         .single();
@@ -123,10 +127,10 @@ export const createDonationRecord = async (data: DonationRecordData) => {
 
       console.log('Successfully inserted Chiaa Gaming donation');
 
-      // Trigger Telegram notification for successful payments
-      if (data.payment_status === 'success' && insertedDonation) {
+      // Trigger Telegram notification only for donations that need approval
+      if (data.payment_status === 'success' && insertedDonation && needsApproval) {
         try {
-          console.log('Triggering Telegram notification for successful payment:', insertedDonation.id);
+          console.log('Triggering Telegram notification for donation needing approval:', insertedDonation.id);
           
           const { error: notificationError } = await supabase.functions.invoke('donation-notification', {
             body: {

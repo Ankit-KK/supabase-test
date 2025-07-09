@@ -164,14 +164,8 @@ class TelegramBot {
     
     const featuresText = features.length > 0 ? `\n<b>Features:</b> ${features.join(' • ')}` : '';
     
-    // Create media preview section
+    // Create media preview section - simplified since we send actual media
     let mediaInfo = '';
-    if (donation.gif_url) {
-      mediaInfo += `\n🎬 <b>GIF:</b> <a href="${donation.gif_url}">View GIF</a>`;
-    }
-    if (donation.voice_url) {
-      mediaInfo += `\n🎤 <b>Voice:</b> <a href="${donation.voice_url}">Listen to Voice</a>`;
-    }
     if (donation.custom_sound_name) {
       mediaInfo += `\n🔊 <b>Sound:</b> ${donation.custom_sound_name}`;
     }
