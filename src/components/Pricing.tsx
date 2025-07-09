@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Check, Mic, Gift, IndianRupee, Zap, Crown, Sparkles } from "lucide-react";
+import { Check, Mic, Gift, IndianRupee, Zap, Crown, Sparkles, Shield } from "lucide-react";
 import SignupDialog from "@/components/SignupDialog";
 
 interface PricingPlanProps {
@@ -167,6 +167,19 @@ const Pricing: React.FC = () => {
       ],
     },
     {
+      name: "Moderation Tool",
+      description: "Advanced content moderation & approval system",
+      price: "499",
+      icon: <Shield className="text-white h-5 w-5" />,
+      gradient: "bg-gradient-to-br from-hyperchat-blue to-hyperchat-purple",
+      features: [
+        "Telegram bot notifications",
+        "Content approval/rejection",
+        "Multi-moderator support",
+        "Real-time moderation alerts",
+      ],
+    },
+    {
       name: "Monthly Hosting",
       description: "Professional hosting & maintenance",
       price: "699",
@@ -183,19 +196,20 @@ const Pricing: React.FC = () => {
 
   const bundleOffer = {
     name: "Complete Bundle",
-    description: "Base Plan + Voice + GIFs + HyperEmotes",
-    price: "1299",
-    originalPrice: "1500",
+    description: "Base Plan + Voice + GIFs + HyperEmotes + Moderation",
+    price: "2299",
+    originalPrice: "2500",
     popular: true,
     gradient: "bg-hero-gradient",
     icon: <Crown className="text-white h-5 w-5" />,
-    badge: "SAVE ₹200",
+    badge: "SAVE ₹201",
     features: [
       "Everything in Base Plan",
       "Voice message recordings",
       "Custom GIF uploads by fans",
       "HyperEmotes emoji rain effects",
-      "Advanced customization",
+      "Advanced moderation tools",
+      "Telegram bot notifications",
       "Priority support",
       "Early access to new features",
     ],
