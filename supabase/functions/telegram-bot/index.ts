@@ -319,8 +319,27 @@ serve(async (req) => {
       }
     }
 
-    if (req.method === 'GET' && url.pathname === '/health') {
-      return new Response('Bot is running', { headers: corsHeaders });
+    if (req.method === 'GET') {
+      if (url.pathname === '/health') {
+        return new Response('Bot is running', { headers: corsHeaders });
+      }
+
+      // Set up webhook
+      if (url.pathname === '/setup') {
+        const webhookUrl = `${supabaseUrl.replace('/v1', '')}/functions/v1/telegram-bot/webhook`;
+        const response = await fetch(`https://api.telegram.org/bot${botToken}/setWebhook`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: webhookUrl })
+        });
+        
+        const result = await response.json();
+        console.log('Webhook setup result:', result);
+        
+        return new Response(JSON.stringify(result), { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        });
+      }
     }
 
     return new Response('Not found', { status: 404, headers: corsHeaders });
