@@ -19,7 +19,7 @@ const AnkitPage = () => {
   // Update max message length based on amount
   useEffect(() => {
     const parsedAmount = parseFloat(amount);
-    if (!isNaN(parsedAmount) && parsedAmount >= 1) {
+     if (!isNaN(parsedAmount) && parsedAmount >= 1) {
       setMaxMessageLength(100);
     } else {
       setMaxMessageLength(50);
@@ -208,7 +208,7 @@ const AnkitPage = () => {
                 />
                 <p className="text-xs text-purple-300">
                   {message.length}/{maxMessageLength} characters
-                  {parseFloat(amount) >= 1 ? 
+                   {parseFloat(amount) >= 1 ? 
                     " (100 chars for ₹1+ donations)" : 
                     " (50 chars for donations below ₹1)"}
                 </p>

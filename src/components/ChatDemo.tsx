@@ -16,7 +16,7 @@ const ChatDemo: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState<DemoFlowStep>(DemoFlowStep.DonationForm);
   const [name, setName] = useState("Demo User");
-  const [amount, setAmount] = useState("50");
+  const [amount, setAmount] = useState("1");
   const [message, setMessage] = useState("Great stream! Keep up the good work!");
   const [isLoading, setIsLoading] = useState(false);
   const [maxMessageLength, setMaxMessageLength] = useState(50);
@@ -97,7 +97,7 @@ const ChatDemo: React.FC = () => {
                   disabled={isLoading}
                   className="bg-gray-900 border-gray-700"
                 />
-                <p className="text-xs text-gray-400">Minimum donation amount is ₹50</p>
+                <p className="text-xs text-gray-400">Minimum donation amount is ₹1</p>
               </div>
               
               <div className="space-y-2">

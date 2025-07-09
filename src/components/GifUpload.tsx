@@ -16,7 +16,7 @@ const GifUpload: React.FC<GifUploadProps> = ({
   onGifSelect, 
   selectedGif, 
   disabled,
-  minAmount = 0,
+  minAmount = 1,
   currentAmount = 0
 }) => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);

@@ -11,8 +11,6 @@ import CSVExportDialog from "@/components/CSVExportDialog";
 import SecureDataDisplay from "@/components/SecureDataDisplay";
 import DashboardAnalytics from "@/components/DashboardAnalytics";
 import TelegramModerators from "@/components/TelegramModerators";
-import TelegramBotTesting from "@/components/TelegramBotTesting";
-import TelegramWebhookSetup from "@/components/TelegramWebhookSetup";
 import { logSecurityEvent } from "@/utils/rateLimiting";
 import { useVoiceCleanup } from "@/hooks/useVoiceCleanup";
 
@@ -324,15 +322,6 @@ const ChiaaGamingDashboard = () => {
             <TelegramModerators />
           </div>
 
-          {/* Telegram Bot Testing */}
-          <div className="mb-6">
-            <TelegramBotTesting />
-          </div>
-
-          {/* Telegram Webhook Setup */}
-          <div className="mb-6">
-            <TelegramWebhookSetup />
-          </div>
 
           {/* Recent Donations Summary */}
           <Card className="bg-black/50 border-pink-500/30">

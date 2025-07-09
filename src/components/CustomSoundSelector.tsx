@@ -21,7 +21,7 @@ const CustomSoundSelector: React.FC<CustomSoundSelectorProps> = ({
   onSoundSelect,
   selectedSoundUrl,
   disabled,
-  minAmount = 100,
+  minAmount = 1,
   currentAmount = 0,
   onExpandChange
 }) => {
