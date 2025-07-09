@@ -102,6 +102,32 @@ class TelegramBot {
     return response.json();
   }
 
+  async sendAnimation(chatId: number, animationUrl: string, caption?: string) {
+    const response = await fetch(`${this.apiUrl}/sendAnimation`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        animation: animationUrl,
+        caption: caption || ''
+      })
+    });
+    return response.json();
+  }
+
+  async sendVoice(chatId: number, voiceUrl: string, caption?: string) {
+    const response = await fetch(`${this.apiUrl}/sendVoice`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        voice: voiceUrl,
+        caption: caption || ''
+      })
+    });
+    return response.json();
+  }
+
   async getModerators(streamerId: string) {
     const { data, error } = await this.supabase
       .from('moderators')
@@ -132,13 +158,34 @@ class TelegramBot {
 
   formatDonationMessage(donation: Donation): string {
     const features = [];
-    if (donation.gif_url) features.push('GIF: Yes');
-    if (donation.voice_url) features.push('Voice: Yes');
-    if (donation.include_sound || donation.custom_sound_name) features.push('Sound: Yes');
+    if (donation.gif_url) features.push('🎬 GIF');
+    if (donation.voice_url) features.push('🎤 Voice Message');
+    if (donation.include_sound || donation.custom_sound_name) features.push('🔊 Custom Sound');
     
-    const featuresText = features.length > 0 ? `\n${features.join(' | ')}` : '';
+    const featuresText = features.length > 0 ? `\n<b>Features:</b> ${features.join(' • ')}` : '';
     
-    return `💸 <b>New donation from ${donation.name}</b>: '${donation.message}' ₹${donation.amount}${featuresText}\n\nOrder ID: #${donation.order_id}`;
+    // Create media preview section
+    let mediaInfo = '';
+    if (donation.gif_url) {
+      mediaInfo += `\n🎬 <b>GIF:</b> <a href="${donation.gif_url}">View GIF</a>`;
+    }
+    if (donation.voice_url) {
+      mediaInfo += `\n🎤 <b>Voice:</b> <a href="${donation.voice_url}">Listen to Voice</a>`;
+    }
+    if (donation.custom_sound_name) {
+      mediaInfo += `\n🔊 <b>Sound:</b> ${donation.custom_sound_name}`;
+    }
+    
+    return `🚨 <b>NEW DONATION PENDING REVIEW</b> 🚨
+    
+👤 <b>Donor:</b> ${donation.name}
+💰 <b>Amount:</b> ₹${donation.amount}
+💬 <b>Message:</b> "${donation.message}"
+🆔 <b>Order ID:</b> #${donation.order_id}${featuresText}${mediaInfo}
+
+⏰ <b>Received:</b> ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
+
+<b>Please review and approve/reject this donation.</b>`;
   }
 
   async notifyModerators(donation: Donation, streamerId: string) {
@@ -155,7 +202,26 @@ class TelegramBot {
 
     for (const moderator of moderators) {
       try {
+        // Send the main message first
         await this.sendMessage(moderator.telegram_id, message, inlineKeyboard);
+        
+        // Send media content if available
+        if (donation.gif_url) {
+          try {
+            await this.sendAnimation(moderator.telegram_id, donation.gif_url, `GIF for Order #${donation.order_id}`);
+          } catch (gifError) {
+            console.log(`Could not send GIF to moderator ${moderator.telegram_id}, sending link instead`);
+          }
+        }
+        
+        if (donation.voice_url) {
+          try {
+            await this.sendVoice(moderator.telegram_id, donation.voice_url, `Voice message for Order #${donation.order_id}`);
+          } catch (voiceError) {
+            console.log(`Could not send voice to moderator ${moderator.telegram_id}, link already provided in message`);
+          }
+        }
+        
         console.log(`Notification sent to moderator ${moderator.telegram_id}`);
       } catch (error) {
         console.error(`Failed to send notification to moderator ${moderator.telegram_id}:`, error);

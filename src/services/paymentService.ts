@@ -96,7 +96,7 @@ export const createDonationRecord = async (data: DonationRecordData) => {
       console.log('Successfully inserted Ankit donation into ankit_donations table');
     } else if (data.donationType === 'chiaa_gaming') {
       // Store in chiaa_gaming_donations table
-      const { error } = await supabase
+      const { data: insertedDonation, error } = await supabase
         .from('chiaa_gaming_donations')
         .insert({
           name: data.name,
@@ -110,8 +110,11 @@ export const createDonationRecord = async (data: DonationRecordData) => {
           voice_file_size: data.voiceFileSize,
           custom_sound_url: data.customSoundUrl,
           hyperemotes_enabled: data.hyperEmotesEnabled || false,
-          include_sound: data.include_sound || false
-        });
+          include_sound: data.include_sound || false,
+          review_status: 'pending' // Set to pending for moderation
+        })
+        .select()
+        .single();
 
       if (error) {
         console.error('Error inserting Chiaa Gaming donation:', error);
@@ -119,6 +122,31 @@ export const createDonationRecord = async (data: DonationRecordData) => {
       }
 
       console.log('Successfully inserted Chiaa Gaming donation');
+
+      // Trigger Telegram notification for successful payments
+      if (data.payment_status === 'success' && insertedDonation) {
+        try {
+          console.log('Triggering Telegram notification for successful payment:', insertedDonation.id);
+          
+          const { error: notificationError } = await supabase.functions.invoke('donation-notification', {
+            body: {
+              type: 'INSERT',
+              table: 'chiaa_gaming_donations',
+              record: insertedDonation
+            }
+          });
+
+          if (notificationError) {
+            console.error('Failed to send Telegram notification:', notificationError);
+            // Don't throw error - payment was successful, notification failure shouldn't block the flow
+          } else {
+            console.log('Telegram notification sent successfully');
+          }
+        } catch (notificationError) {
+          console.error('Error sending Telegram notification:', notificationError);
+          // Don't throw error - payment was successful, notification failure shouldn't block the flow
+        }
+      }
     } else {
       // For other streamers, store in generic donations table
       const { error } = await supabase

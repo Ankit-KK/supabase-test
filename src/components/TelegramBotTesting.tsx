@@ -119,7 +119,10 @@ const TelegramBotTesting = () => {
         body: {
           type: 'INSERT',
           table: 'chiaa_gaming_donations',
-          record: donation
+          record: {
+            ...donation,
+            custom_sound_name: donation.custom_sound_name || null // Ensure this field is included
+          }
         }
       });
 
