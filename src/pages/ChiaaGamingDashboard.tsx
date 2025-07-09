@@ -69,11 +69,30 @@ const ChiaaGamingDashboard = () => {
           event: 'INSERT',
           schema: 'public',
           table: 'chiaa_gaming_donations',
-          filter: 'payment_status=eq.success'
+          filter: 'payment_status=eq.success AND review_status=eq.pending'
         },
         (payload) => {
           console.log('New successful donation received in dashboard:', payload);
           const newDonation = payload.new as Donation;
+          
+          // Play audio notification for new donation
+          try {
+            const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = 800; // High pitch notification
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+          } catch (e) {
+            console.log('Audio notification failed:', e);
+          }
           
           // Show realtime alert for streamer (immediate, no delay)
           setRealtimeAlert(newDonation);
@@ -91,7 +110,7 @@ const ChiaaGamingDashboard = () => {
           
           toast({
             title: "🎉 New Donation Received!",
-            description: `${newDonation.name} donated ₹${Number(newDonation.amount).toLocaleString()} (OBS alert in 1 minute)`,
+            description: `${newDonation.name} donated ₹${Number(newDonation.amount).toLocaleString()} - Needs approval!`,
           });
         }
       )
@@ -168,7 +187,7 @@ const ChiaaGamingDashboard = () => {
       
       const { data, error } = await supabase
         .from("chiaa_gaming_donations")
-        .select("id, name, amount, message, created_at, payment_status, gif_url, voice_url, custom_sound_name, custom_sound_url, include_sound")
+        .select("id, name, amount, message, created_at, payment_status, gif_url, voice_url, custom_sound_name, custom_sound_url, include_sound, review_status")
         .eq("payment_status", "success")
         .order("created_at", { ascending: false });
 
@@ -238,7 +257,7 @@ const ChiaaGamingDashboard = () => {
               )}
               <div className="flex items-center space-x-1 text-xs text-green-200">
                 <Clock className="w-3 h-3" />
-                <span>OBS alert in 1 minute</span>
+                <span>Pending approval</span>
               </div>
             </div>
           </div>
@@ -311,7 +330,7 @@ const ChiaaGamingDashboard = () => {
                 <Clock className="w-5 h-5 text-blue-400" />
                 <div>
                   <h3 className="text-blue-200 font-semibold">OBS Alert Delay</h3>
-                  <p className="text-blue-300 text-sm">Donations appear here instantly but are delayed by 1 minute in OBS to give you time to prepare</p>
+                  <p className="text-blue-300 text-sm">All donations now require approval before appearing in OBS. Check your Telegram for moderation alerts.</p>
                 </div>
               </div>
             </CardContent>
