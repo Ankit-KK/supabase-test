@@ -39,10 +39,37 @@ const ChiaaGamingDonationMessages = () => {
   const [brokenVoiceUrls, setBrokenVoiceUrls] = useState<Set<string>>(new Set());
   const [hiddenGifs, setHiddenGifs] = useState<Set<string>>(new Set());
   const [playingDonation, setPlayingDonation] = useState<Donation | null>(null);
+  const [audioEnabled, setAudioEnabled] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const channelRef = useRef<any>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+
+  // Initialize audio context on user interaction
+  const enableAudio = async () => {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      audioContextRef.current = audioContext;
+      
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
+      
+      setAudioEnabled(true);
+      toast({
+        title: "Audio enabled",
+        description: "You'll now hear notifications for new donations",
+      });
+    } catch (error) {
+      console.error('Failed to enable audio:', error);
+      toast({
+        title: "Audio failed",
+        description: "Could not enable audio notifications",
+        variant: "destructive",
+      });
+    }
+  };
 
   useEffect(() => {
     // Check if user is authenticated
@@ -81,6 +108,61 @@ const ChiaaGamingDonationMessages = () => {
             console.log('New successful donation received in messages (REALTIME - NO DELAY):', payload);
             const newDonation = payload.new as Donation;
             
+            // Play audio notification for new donation
+            const playNotificationSound = async () => {
+              if (!audioEnabled || !audioContextRef.current) {
+                console.log('Audio not enabled or no audio context available');
+                return;
+              }
+              
+              try {
+                const audioContext = audioContextRef.current;
+                
+                // Resume AudioContext if it's suspended
+                if (audioContext.state === 'suspended') {
+                  await audioContext.resume();
+                }
+                
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                // Create a pleasant notification sound
+                oscillator.frequency.value = 800; // High pitch
+                oscillator.type = 'sine';
+                gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.4);
+                
+                // Play a second beep for emphasis
+                setTimeout(() => {
+                  const oscillator2 = audioContext.createOscillator();
+                  const gainNode2 = audioContext.createGain();
+                  
+                  oscillator2.connect(gainNode2);
+                  gainNode2.connect(audioContext.destination);
+                  
+                  oscillator2.frequency.value = 1000; 
+                  oscillator2.type = 'sine';
+                  gainNode2.gain.setValueAtTime(0.4, audioContext.currentTime);
+                  gainNode2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
+                  
+                  oscillator2.start(audioContext.currentTime);
+                  oscillator2.stop(audioContext.currentTime + 0.4);
+                }, 500);
+                
+                console.log('Audio notification played successfully in Messages tab');
+              } catch (error) {
+                console.error('Audio notification failed in Messages tab:', error);
+              }
+            };
+            
+            playNotificationSound();
+            
             // Show realtime alert for streamer (immediate, no delay)
             setRealtimeAlert(newDonation);
             setTimeout(() => setRealtimeAlert(null), 8000);
@@ -104,7 +186,7 @@ const ChiaaGamingDonationMessages = () => {
             
             toast({
               title: "🎉 New Donation Received!",
-              description: `${newDonation.name} donated ₹${Number(newDonation.amount).toLocaleString()} (OBS alert in 1 minute)`,
+              description: `${newDonation.name} donated ₹${Number(newDonation.amount).toLocaleString()} - Needs approval!`,
             });
           }
         )
@@ -533,6 +615,15 @@ const ChiaaGamingDonationMessages = () => {
                 <MessageSquare className="w-4 h-4 mr-2" />
                 Dashboard
               </Button>
+              {!audioEnabled && (
+                <Button 
+                  variant="outline" 
+                  onClick={enableAudio}
+                  className="border-green-500/50 text-green-100 hover:bg-green-500/20"
+                >
+                  🔊 Enable Audio Alerts
+                </Button>
+              )}
               <CSVExportDialog 
                 tableName="chiaa_gaming_donations" 
                 title="Export Donations to CSV" 
