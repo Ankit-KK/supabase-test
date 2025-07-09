@@ -59,6 +59,9 @@ const ChiaaGamingDonationMessages = () => {
       }
       
       setAudioEnabled(true);
+      // Store in localStorage to share between pages
+      localStorage.setItem('chiaa_gaming_audio_enabled', 'true');
+      
       console.log('Audio enabled successfully:', {
         state: audioContext.state,
         sampleRate: audioContext.sampleRate
@@ -77,6 +80,24 @@ const ChiaaGamingDonationMessages = () => {
       });
     }
   };
+
+  // Check localStorage on component mount
+  useEffect(() => {
+    const audioEnabledFromStorage = localStorage.getItem('chiaa_gaming_audio_enabled') === 'true';
+    if (audioEnabledFromStorage) {
+      setAudioEnabled(true);
+      // Also create audio context if it doesn't exist
+      if (!audioContextRef.current) {
+        try {
+          const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+          audioContextRef.current = audioContext;
+          console.log('Audio context restored from localStorage');
+        } catch (error) {
+          console.error('Failed to restore audio context:', error);
+        }
+      }
+    }
+  }, []);
 
   useEffect(() => {
     // Check if user is authenticated
