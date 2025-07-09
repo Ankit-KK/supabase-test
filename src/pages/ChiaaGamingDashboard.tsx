@@ -44,51 +44,46 @@ const ChiaaGamingDashboard = () => {
   // Add voice cleanup hook
   useVoiceCleanup();
 
-  // Initialize audio context on user interaction
-  const enableAudio = async () => {
+  const playNotificationSound = async () => {
     try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      audioContextRef.current = audioContext;
+      // Try to create audio context if it doesn't exist
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+
+      const audioContext = audioContextRef.current;
       
       if (audioContext.state === 'suspended') {
         await audioContext.resume();
       }
+
+      // Try to play the custom sound first
+      const audio = new Audio('https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/custom-sounds//Voicy_Alert.mp3');
+      audio.volume = 0.7;
       
-      setAudioEnabled(true);
-      // Store in localStorage to share between pages
-      localStorage.setItem('chiaa_gaming_audio_enabled', 'true');
-      
-      toast({
-        title: "Audio enabled",
-        description: "You'll now hear notifications for new donations",
-      });
+      try {
+        await audio.play();
+        console.log('Custom notification sound played successfully');
+      } catch (audioError) {
+        // Fallback to beep sound
+        console.log('Custom sound failed, using fallback beep:', audioError);
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.3);
+      }
     } catch (error) {
-      console.error('Failed to enable audio:', error);
-      toast({
-        title: "Audio failed",
-        description: "Could not enable audio notifications",
-        variant: "destructive",
-      });
+      console.error('Failed to play notification sound:', error);
     }
   };
-
-  // Check localStorage on component mount
-  useEffect(() => {
-    const audioEnabledFromStorage = localStorage.getItem('chiaa_gaming_audio_enabled') === 'true';
-    if (audioEnabledFromStorage) {
-      setAudioEnabled(true);
-      // Also create audio context if it doesn't exist
-      if (!audioContextRef.current) {
-        try {
-          const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-          audioContextRef.current = audioContext;
-          console.log('Audio context restored from localStorage');
-        } catch (error) {
-          console.error('Failed to restore audio context:', error);
-        }
-      }
-    }
-  }, []);
 
   const setupRealtimeSubscription = () => {
     // Clean up existing channel first
@@ -124,75 +119,6 @@ const ChiaaGamingDashboard = () => {
           const newDonation = payload.new as Donation;
           
           // Play audio notification for new donation
-          const playNotificationSound = async () => {
-            if (!audioEnabled) {
-              console.log('Audio not enabled - user needs to click Enable Audio Alerts button');
-              return;
-            }
-            
-            try {
-              // Play the custom notification sound
-              const audio = new Audio('https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/custom-sounds//Voicy_Alert.mp3');
-              audio.volume = 0.7; // Set volume to 70%
-              
-              audio.onloadeddata = () => {
-                console.log('Audio file loaded successfully');
-              };
-              
-              audio.onerror = (error) => {
-                console.error('Failed to load notification sound:', error);
-                // Fallback to beep sound if file fails to load
-                playFallbackBeep();
-              };
-              
-              await audio.play();
-              console.log('Custom notification sound played successfully');
-            } catch (error) {
-              console.error('Failed to play custom notification sound:', error);
-              // Fallback to beep sound
-              playFallbackBeep();
-            }
-          };
-
-          // Fallback beep function
-          const playFallbackBeep = async () => {
-            if (!audioContextRef.current) {
-              try {
-                const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-                audioContextRef.current = audioContext;
-              } catch (error) {
-                console.error('Failed to create audio context:', error);
-                return;
-              }
-            }
-            
-            try {
-              const audioContext = audioContextRef.current;
-              
-              if (audioContext.state === 'suspended') {
-                await audioContext.resume();
-              }
-              
-              const oscillator = audioContext.createOscillator();
-              const gainNode = audioContext.createGain();
-              
-              oscillator.connect(gainNode);
-              gainNode.connect(audioContext.destination);
-              
-              oscillator.frequency.value = 800;
-              oscillator.type = 'sine';
-              gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
-              gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
-              
-              oscillator.start(audioContext.currentTime);
-              oscillator.stop(audioContext.currentTime + 0.4);
-              
-              console.log('Fallback beep played successfully');
-            } catch (error) {
-              console.error('Fallback beep also failed:', error);
-            }
-          };
-          
           playNotificationSound();
           
           // Show realtime alert for streamer (immediate, no delay)
@@ -404,15 +330,6 @@ const ChiaaGamingDashboard = () => {
                 <Settings className="w-4 h-4 mr-2" />
                 OBS Settings
               </Button>
-              {!audioEnabled && (
-                <Button 
-                  variant="outline" 
-                  onClick={enableAudio}
-                  className="border-green-500/50 text-green-100 hover:bg-green-500/20"
-                >
-                  🔊 Enable Audio Alerts
-                </Button>
-              )}
               <CSVExportDialog 
                 tableName="chiaa_gaming_donations" 
                 title="Export Donations to CSV" 
