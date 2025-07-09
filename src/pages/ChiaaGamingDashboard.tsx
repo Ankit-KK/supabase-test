@@ -104,15 +104,50 @@ const ChiaaGamingDashboard = () => {
           
           // Play audio notification for new donation
           const playNotificationSound = async () => {
-            if (!audioEnabled || !audioContextRef.current) {
-              console.log('Audio not enabled or no audio context available');
+            if (!audioEnabled) {
+              console.log('Audio not enabled - user needs to click Enable Audio Alerts button');
               return;
+            }
+            
+            try {
+              // Play the custom notification sound
+              const audio = new Audio('https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/custom-sounds//Voicy_Alert.mp3');
+              audio.volume = 0.7; // Set volume to 70%
+              
+              audio.onloadeddata = () => {
+                console.log('Audio file loaded successfully');
+              };
+              
+              audio.onerror = (error) => {
+                console.error('Failed to load notification sound:', error);
+                // Fallback to beep sound if file fails to load
+                playFallbackBeep();
+              };
+              
+              await audio.play();
+              console.log('Custom notification sound played successfully');
+            } catch (error) {
+              console.error('Failed to play custom notification sound:', error);
+              // Fallback to beep sound
+              playFallbackBeep();
+            }
+          };
+
+          // Fallback beep function
+          const playFallbackBeep = async () => {
+            if (!audioContextRef.current) {
+              try {
+                const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+                audioContextRef.current = audioContext;
+              } catch (error) {
+                console.error('Failed to create audio context:', error);
+                return;
+              }
             }
             
             try {
               const audioContext = audioContextRef.current;
               
-              // Resume AudioContext if it's suspended
               if (audioContext.state === 'suspended') {
                 await audioContext.resume();
               }
@@ -123,8 +158,7 @@ const ChiaaGamingDashboard = () => {
               oscillator.connect(gainNode);
               gainNode.connect(audioContext.destination);
               
-              // Create a pleasant notification sound
-              oscillator.frequency.value = 800; // High pitch
+              oscillator.frequency.value = 800;
               oscillator.type = 'sine';
               gainNode.gain.setValueAtTime(0.4, audioContext.currentTime);
               gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
@@ -132,26 +166,9 @@ const ChiaaGamingDashboard = () => {
               oscillator.start(audioContext.currentTime);
               oscillator.stop(audioContext.currentTime + 0.4);
               
-              // Play a second beep for emphasis
-              setTimeout(() => {
-                const oscillator2 = audioContext.createOscillator();
-                const gainNode2 = audioContext.createGain();
-                
-                oscillator2.connect(gainNode2);
-                gainNode2.connect(audioContext.destination);
-                
-                oscillator2.frequency.value = 1000; 
-                oscillator2.type = 'sine';
-                gainNode2.gain.setValueAtTime(0.4, audioContext.currentTime);
-                gainNode2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
-                
-                oscillator2.start(audioContext.currentTime);
-                oscillator2.stop(audioContext.currentTime + 0.4);
-              }, 500);
-              
-              console.log('Audio notification played successfully');
+              console.log('Fallback beep played successfully');
             } catch (error) {
-              console.error('Audio notification failed:', error);
+              console.error('Fallback beep also failed:', error);
             }
           };
           
