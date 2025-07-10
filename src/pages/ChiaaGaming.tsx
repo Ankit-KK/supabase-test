@@ -7,8 +7,6 @@ import { toast } from "@/hooks/use-toast";
 import { Heart, Gamepad2, AlertTriangle } from "lucide-react";
 import GifUpload from "@/components/GifUpload";
 import VoiceRecording from "@/components/VoiceRecording";
-import CustomSoundSelector from "@/components/CustomSoundSelector";
-import HyperEmotesSelector from "@/components/HyperEmotesSelector";
 import { uploadGif, uploadVoice } from "@/utils/mediaUpload";
 import { filterMessage, sanitizeMessage } from "@/utils/linkFilter";
 
@@ -19,69 +17,44 @@ const ChiaaGamingPage = () => {
   const [messageError, setMessageError] = useState("");
   const [selectedGif, setSelectedGif] = useState<File | null>(null);
   const [selectedVoice, setSelectedVoice] = useState<File | null>(null);
-  const [selectedCustomSoundUrl, setSelectedCustomSoundUrl] = useState<string | null>(null);
-  const [hyperEmotesEnabled, setHyperEmotesEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [maxMessageLength, setMaxMessageLength] = useState(50);
-  const [isCustomSoundExpanded, setIsCustomSoundExpanded] = useState(false);
-  const [isHyperEmotesExpanded, setIsHyperEmotesExpanded] = useState(false);
   const navigate = useNavigate();
 
-  // Update max message length based on amount, custom sound selection, and hyperEmotes
+  // Update max message length based on amount (custom sound and hyperEmotes disabled)
   useEffect(() => {
     const parsedAmount = parseFloat(amount);
-    if (selectedCustomSoundUrl || hyperEmotesEnabled) {
-      setMaxMessageLength(20); // Limit to 20 chars when custom sound or HyperEmotes is selected
-    } else if (!isNaN(parsedAmount) && parsedAmount >= 30) {
+    if (!isNaN(parsedAmount) && parsedAmount >= 30) {
       setMaxMessageLength(150); // 150 chars for ₹30+
     } else if (!isNaN(parsedAmount) && parsedAmount >= 30) {
       setMaxMessageLength(100); // 100 chars for ₹30+
     } else {
       setMaxMessageLength(50); // 50 chars for under ₹30
     }
-  }, [amount, selectedCustomSoundUrl, hyperEmotesEnabled]);
+  }, [amount]);
 
   // Clear premium features when amount drops below minimum thresholds
   useEffect(() => {
     const parsedAmount = parseFloat(amount);
     
-  // Clear GIF if amount < 100
-  if (selectedGif && (isNaN(parsedAmount) || parsedAmount < 100)) {
-    setSelectedGif(null);
-  }
-  
-  // Clear Voice if amount < 200
-  if (selectedVoice && (isNaN(parsedAmount) || parsedAmount < 200)) {
-    setSelectedVoice(null);
-  }
-  
-  // Clear Custom Sound if amount < 50
-  if (selectedCustomSoundUrl && (isNaN(parsedAmount) || parsedAmount < 50)) {
-    setSelectedCustomSoundUrl(null);
-  }
-  
-  // Clear HyperEmotes if amount < 50
-  if (hyperEmotesEnabled && (isNaN(parsedAmount) || parsedAmount < 50)) {
-    setHyperEmotesEnabled(false);
-  }
-  }, [amount, selectedGif, selectedVoice, selectedCustomSoundUrl, hyperEmotesEnabled]);
+    // Clear GIF if amount < 100
+    if (selectedGif && (isNaN(parsedAmount) || parsedAmount < 100)) {
+      setSelectedGif(null);
+    }
+    
+    // Clear Voice if amount < 200
+    if (selectedVoice && (isNaN(parsedAmount) || parsedAmount < 200)) {
+      setSelectedVoice(null);
+    }
+  }, [amount, selectedGif, selectedVoice]);
 
-  // Clear message when GIF or voice is selected (allow messages with custom sound and hyperEmotes)
+  // Clear message when GIF or voice is selected
   useEffect(() => {
     if (selectedGif || selectedVoice) {
       setMessage("");
       setMessageError("");
     }
   }, [selectedGif, selectedVoice]);
-
-  // Debug logging for custom sound selection
-  useEffect(() => {
-    console.log("CHIAA GAMING: Custom sound selected:", {
-      selectedCustomSoundUrl,
-      amount: parseFloat(amount),
-      isEligible: parseFloat(amount) >= 50
-    });
-  }, [selectedCustomSoundUrl, amount]);
 
   const handleGifSelect = (file: File | null) => {
     const parsedAmount = parseFloat(amount);
@@ -95,17 +68,9 @@ const ChiaaGamingPage = () => {
     }
     
     setSelectedGif(file);
-    // Clear voice and custom sound if GIF is selected
-    if (file) {
-      if (selectedVoice) {
-        setSelectedVoice(null);
-      }
-      if (selectedCustomSoundUrl) {
-        setSelectedCustomSoundUrl(null);
-      }
-      if (hyperEmotesEnabled) {
-        setHyperEmotesEnabled(false);
-      }
+    // Clear voice if GIF is selected
+    if (file && selectedVoice) {
+      setSelectedVoice(null);
     }
   };
 
@@ -121,82 +86,9 @@ const ChiaaGamingPage = () => {
     }
     
     setSelectedVoice(file);
-    // Clear GIF, custom sound, and hyperEmotes if voice is selected
-    if (file) {
-      if (selectedGif) {
-        setSelectedGif(null);
-      }
-      if (selectedCustomSoundUrl) {
-        setSelectedCustomSoundUrl(null);
-      }
-      if (hyperEmotesEnabled) {
-        setHyperEmotesEnabled(false);
-      }
-    }
-  };
-
-  const handleCustomSoundSelect = (soundUrl: string | null) => {
-    console.log("CHIAA GAMING: Custom sound selection changed:", {
-      newSoundUrl: soundUrl,
-      previousSoundUrl: selectedCustomSoundUrl,
-      amount: parseFloat(amount)
-    });
-    setSelectedCustomSoundUrl(soundUrl);
-    // Clear GIF, voice, and HyperEmotes if custom sound is selected (mutually exclusive)
-    if (soundUrl) {
-      if (selectedGif) {
-        setSelectedGif(null);
-      }
-      if (selectedVoice) {
-        setSelectedVoice(null);
-      }
-      if (hyperEmotesEnabled) {
-        setHyperEmotesEnabled(false);
-      }
-    }
-  };
-
-  const handleHyperEmotesSelect = (enabled: boolean) => {
-    const parsedAmount = parseFloat(amount);
-    if (enabled && (isNaN(parsedAmount) || parsedAmount < 50)) {
-      toast({
-        title: "Premium feature",
-        description: "HyperEmotes require a donation of ₹50 or more",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setHyperEmotesEnabled(enabled);
-    // Clear GIF, voice, and custom sound if hyperEmotes is enabled (mutually exclusive)
-    if (enabled) {
-      if (selectedGif) {
-        setSelectedGif(null);
-      }
-      if (selectedVoice) {
-        setSelectedVoice(null);
-      }
-      if (selectedCustomSoundUrl) {
-        setSelectedCustomSoundUrl(null);
-      }
-    }
-  };
-
-  // Handle custom sound expand/collapse
-  const handleCustomSoundExpandChange = (expanded: boolean) => {
-    setIsCustomSoundExpanded(expanded);
-    // If collapsing and custom sound was selected, deselect it
-    if (!expanded && selectedCustomSoundUrl) {
-      setSelectedCustomSoundUrl(null);
-    }
-  };
-
-  // Handle HyperEmotes expand/collapse
-  const handleHyperEmotesExpandChange = (expanded: boolean) => {
-    setIsHyperEmotesExpanded(expanded);
-    // If collapsing and HyperEmotes was enabled, disable it
-    if (!expanded && hyperEmotesEnabled) {
-      setHyperEmotesEnabled(false);
+    // Clear GIF if voice is selected
+    if (file && selectedGif) {
+      setSelectedGif(null);
     }
   };
 
@@ -234,11 +126,11 @@ const ChiaaGamingPage = () => {
       }
     }
 
-    // Require at least one: message, GIF, voice, custom sound, or hyperEmotes
-    if (!message.trim() && !selectedGif && !selectedVoice && !selectedCustomSoundUrl && !hyperEmotesEnabled) {
+    // Require at least one: message, GIF, or voice (custom sound and hyperEmotes disabled)
+    if (!message.trim() && !selectedGif && !selectedVoice) {
       toast({
-        title: "Message, GIF, Voice, Sound, or HyperEmotes required",
-        description: "Please enter a message, upload a GIF, record a voice message, select a custom sound, or enable HyperEmotes",
+        title: "Message, GIF, or Voice required",
+        description: "Please enter a message, upload a GIF, or record a voice message",
         variant: "destructive",
       });
       return false;
@@ -261,11 +153,6 @@ const ChiaaGamingPage = () => {
       const orderId = `chiaa_gaming_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
       
       console.log("DONATION: Creating Chiaa Gaming donation with order ID:", orderId);
-      console.log("DONATION: Custom sound data being processed:", {
-        selectedCustomSoundUrl,
-        amount: parseFloat(amount),
-        isEligibleForCustomSound: parseFloat(amount) >= 50
-      });
       
       let gifUrl = null;
       let voiceUrl = null;
@@ -330,16 +217,14 @@ const ChiaaGamingPage = () => {
         voiceUrl,
         voiceFileName: selectedVoice?.name || null,
         voiceFileSize: selectedVoice?.size || null,
-        customSoundUrl: selectedCustomSoundUrl, // Store the URL instead of ID
-        hyperEmotesEnabled,
+        customSoundUrl: null, // Disabled feature
+        hyperEmotesEnabled: false, // Disabled feature
       };
       
       console.log("DONATION: Storing donation data in session storage:", {
         ...donationData,
         hasGif: !!gifUrl,
         hasVoice: !!voiceUrl,
-        hasCustomSound: !!selectedCustomSoundUrl,
-        customSoundUrlValue: selectedCustomSoundUrl,
         gifUrlPreview: gifUrl ? gifUrl.substring(0, 50) + "..." : null,
         voiceUrlPreview: voiceUrl ? voiceUrl.substring(0, 50) + "..." : null
       });
@@ -401,7 +286,6 @@ const ChiaaGamingPage = () => {
   // Check if premium features are eligible
   const isGifEligible = parseFloat(amount) >= 100;
   const isVoiceEligible = parseFloat(amount) >= 200;
-  const isCustomSoundEligible = parseFloat(amount) >= 50;
   const isMessageEligible = parseFloat(amount) >= 30;
 
   // Get voice duration based on amount
@@ -478,8 +362,8 @@ const ChiaaGamingPage = () => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Enter your name"
+                    className="bg-white/95 text-gray-800 placeholder:text-gray-500 border-pink-300 focus:border-pink-500 focus:ring-pink-500/50 text-xs"
                     disabled={isLoading}
-                    className="bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 h-7 sm:h-8 text-xs"
                   />
                 </div>
                 
@@ -490,19 +374,17 @@ const ChiaaGamingPage = () => {
                   <Input 
                     id="amount"
                     type="number"
-                    min="30"
-                    step="1"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    placeholder="Minimum ₹30"
+                    placeholder="Enter amount (min ₹30)"
+                    className="bg-white/95 text-gray-800 placeholder:text-gray-500 border-pink-300 focus:border-pink-500 focus:ring-pink-500/50 text-xs"
                     disabled={isLoading}
-                    className="bg-white/95 border-pink-300 text-gray-800 placeholder:text-gray-500 focus:border-pink-500 focus:ring-pink-500/50 h-7 sm:h-8 text-xs"
+                    min="30"
                   />
                 </div>
               </div>
 
-              {/* Other form elements - message always visible, GIF/Voice hidden when custom sound or HyperEmotes is expanded */}
-              
+              {/* Message field */}
               <div className="space-y-1">
                 <label htmlFor="message" className="block text-xs font-medium text-white">
                   {getMessageLabel()}
@@ -529,16 +411,13 @@ const ChiaaGamingPage = () => {
                   </div>
                 )}
                 
-                 <p className="text-xs text-white/80">
-                   {!selectedGif && !selectedVoice ? (
+                <p className="text-xs text-white/80">
+                  {!selectedGif && !selectedVoice ? (
                     <>
                       {isMessageEligible ? (
                         <>
                           {message.length}/{maxMessageLength} chars
-                           {selectedCustomSoundUrl ? " (20 for custom sound)" : 
-                            hyperEmotesEnabled ? " (20 for HyperEmotes)" :
-                             parseFloat(amount) >= 30 ? " (150 for ₹30+)" : 
-                             parseFloat(amount) >= 30 ? " (100 for ₹30+)" : " (50 for <₹30)"}
+                          {parseFloat(amount) >= 30 ? " (150 for ₹30+)" : " (50 for <₹30)"}
                           <br />
                           <span className="text-yellow-300">⚠️ Links, URLs, and social media handles are not allowed</span>
                         </>
@@ -548,99 +427,59 @@ const ChiaaGamingPage = () => {
                     </>
                   ) : (
                     <>
-                       Message disabled when {
-                         selectedGif ? "GIF uploaded" : 
-                         "voice recorded"
-                       }
+                      Message disabled when {
+                        selectedGif ? "GIF uploaded" : 
+                        "voice recorded"
+                      }
                     </>
                   )}
                 </p>
               </div>
 
-              {!isCustomSoundExpanded && !isHyperEmotesExpanded && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-                  <GifUpload
-                    onGifSelect={handleGifSelect}
-                    selectedGif={selectedGif}
-                    disabled={isLoading || !!selectedVoice || !!selectedCustomSoundUrl || !!hyperEmotesEnabled || !isGifEligible}
-                     minAmount={100}
-                     currentAmount={parseFloat(amount) || 0}
-                  />
-
-                  <VoiceRecording
-                    onVoiceSelect={handleVoiceSelect}
-                    selectedVoice={selectedVoice}
-                    disabled={isLoading || !!selectedGif || !!selectedCustomSoundUrl || !!hyperEmotesEnabled || !isVoiceEligible}
-                     minAmount={200}
-                     currentAmount={parseFloat(amount) || 0}
-                  />
-                </div>
-              )}
-
-              <CustomSoundSelector
-                onSoundSelect={handleCustomSoundSelect}
-                selectedSoundUrl={selectedCustomSoundUrl}
-                disabled={isLoading || !!selectedGif || !!selectedVoice}
-                 minAmount={50}
-                 currentAmount={parseFloat(amount) || 0}
-                onExpandChange={handleCustomSoundExpandChange}
-               />
-
-              {/* HyperEmotes Selector - hidden when custom sound is expanded */}
-              {!isCustomSoundExpanded && (
-                <HyperEmotesSelector
-                  onHyperEmotesSelect={handleHyperEmotesSelect}
-                  hyperEmotesEnabled={hyperEmotesEnabled}
-                  disabled={isLoading || !!selectedGif || !!selectedVoice}
-                   minAmount={50}
-                   currentAmount={parseFloat(amount) || 0}
-                  onExpandChange={handleHyperEmotesExpandChange}
+              {/* GIF and Voice upload - always visible */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                <GifUpload
+                  onGifSelect={handleGifSelect}
+                  selectedGif={selectedGif}
+                  disabled={isLoading || !!selectedVoice || !isGifEligible}
+                  minAmount={100}
+                  currentAmount={parseFloat(amount) || 0}
                 />
-              )}
 
-              {/* Payment button - show when custom sound is expanded and selected, or when HyperEmotes is expanded and enabled */}
-              {((isCustomSoundExpanded && selectedCustomSoundUrl) || (isHyperEmotesExpanded && hyperEmotesEnabled)) && (
-                <Button 
-                  type="submit" 
-                  className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white font-bold py-2 rounded-lg shadow-lg shadow-pink-500/25 transition-all duration-300 transform hover:scale-105 border border-pink-400/50 text-xs sm:text-sm mt-3"
-                  disabled={isLoading || !!messageError}
-                >
-                  {isLoading ? (
-                    <div className="flex items-center justify-center space-x-2">
-                      <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
-                      <span className="text-xs">Processing...</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center space-x-2">
-                      <Heart className="h-3 w-3" />
-                      <span className="text-xs sm:text-sm">Send Love & Support</span>
-                      <Heart className="h-3 w-3" />
-                    </div>
-                  )}
-                </Button>
-              )}
-               
-              {/* Default payment button - show when neither section is expanded */}
-              {!isCustomSoundExpanded && !isHyperEmotesExpanded && (
-                <Button 
-                  type="submit" 
-                  className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white font-bold py-2 rounded-lg shadow-lg shadow-pink-500/25 transition-all duration-300 transform hover:scale-105 border border-pink-400/50 text-xs sm:text-sm mt-3"
-                  disabled={isLoading || !!messageError}
-                >
-                  {isLoading ? (
-                    <div className="flex items-center justify-center space-x-2">
-                      <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
-                      <span className="text-xs">Processing...</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center space-x-2">
-                      <Heart className="h-3 w-3" />
-                      <span className="text-xs sm:text-sm">Send Love & Support</span>
-                      <Heart className="h-3 w-3" />
-                    </div>
-                  )}
-                </Button>
-              )}
+                <VoiceRecording
+                  onVoiceSelect={handleVoiceSelect}
+                  selectedVoice={selectedVoice}
+                  disabled={isLoading || !!selectedGif || !isVoiceEligible}
+                  minAmount={200}
+                  currentAmount={parseFloat(amount) || 0}
+                />
+              </div>
+
+              {/* Custom Sound Selector - DISABLED */}
+              {/* Custom sound alerts feature disabled */}
+
+              {/* HyperEmotes Selector - DISABLED */}
+              {/* HyperEmotes feature disabled */}
+
+              {/* Payment button */}
+              <Button 
+                type="submit" 
+                className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700 text-white font-bold py-2 rounded-lg shadow-lg shadow-pink-500/25 transition-all duration-300 transform hover:scale-105 border border-pink-400/50 text-xs sm:text-sm mt-3"
+                disabled={isLoading || !!messageError}
+              >
+                {isLoading ? (
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
+                    <span className="text-xs">Processing...</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center space-x-2">
+                    <Heart className="h-3 w-3" />
+                    <span className="text-xs sm:text-sm">Send Love & Support</span>
+                    <Heart className="h-3 w-3" />
+                  </div>
+                )}
+              </Button>
             </form>
           </div>
         </div>
