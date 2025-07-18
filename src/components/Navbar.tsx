@@ -26,11 +26,11 @@ const Navbar: React.FC = () => {
           <a href="#services" className="text-sm hover:text-hyperchat-purple transition-colors">
             For Creators
           </a>
-          <Link to="/contact" className="text-sm hover:text-hyperchat-purple transition-colors">
-            Content Monetization
+          <Link to="/feature-showcase" className="text-sm hover:text-hyperchat-purple transition-colors">
+            Features
           </Link>
-          <Link to="/privacy-policy" className="text-sm hover:text-hyperchat-purple transition-colors">
-            Privacy
+          <Link to="/contact" className="text-sm hover:text-hyperchat-purple transition-colors">
+            Contact
           </Link>
         </div>
         <div className="flex items-center space-x-4">

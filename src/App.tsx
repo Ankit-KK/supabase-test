@@ -19,6 +19,7 @@ import PaymentCheckout from "./pages/PaymentCheckout";
 import PaymentStatus from "./pages/PaymentStatus";
 import DemoPaymentFlow from "./pages/DemoPaymentFlow";
 import ContractSigning from "./pages/ContractSigning";
+import FeatureShowcase from "./pages/FeatureShowcase";
 import Ankit from "./pages/Ankit";
 import AnkitLogin from "./pages/AnkitLogin";
 import AnkitDashboard from "./pages/AnkitDashboard";
@@ -60,6 +61,7 @@ const App = () => (
               <Route path="/blog" element={<Blog />} />
               <Route path="/sitemap" element={<Sitemap />} />
               <Route path="/sitemap.xml" element={<SitemapXml />} />
+              <Route path="/feature-showcase" element={<FeatureShowcase />} />
               <Route path="/payment/:streamerId" element={<PaymentCheckout />} />
               <Route path="/payment-checkout" element={<PaymentCheckout />} />
               <Route path="/payment-status" element={<PaymentStatus />} />
