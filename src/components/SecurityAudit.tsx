@@ -5,10 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Shield, AlertTriangle, Info, RefreshCw } from "lucide-react";
-import { SecurityMonitor, SecurityEvent, SECURITY_EVENTS } from "@/utils/securityMonitoring";
+import { SecurityMonitor, SecurityEvent, SECURITY_EVENTS, EnhancedSecurityMonitor } from "@/utils/securityMonitoring";
+import { AccessControlManager } from '@/utils/accessControl';
 
 const SecurityAudit: React.FC = () => {
   const [events, setEvents] = useState<SecurityEvent[]>([]);
+  const [alerts, setAlerts] = useState<any[]>([]);
+  const [adminLogs, setAdminLogs] = useState<any[]>([]);
   const [stats, setStats] = useState({
     total: 0,
     critical: 0,
@@ -21,6 +24,14 @@ const SecurityAudit: React.FC = () => {
     const recentEvents = SecurityMonitor.getRecentEvents();
     setEvents(recentEvents);
     
+    // Load security alerts
+    const securityAlerts = EnhancedSecurityMonitor.getAlerts();
+    setAlerts(securityAlerts);
+    
+    // Load admin action logs
+    const adminActionLogs = AccessControlManager.getAdminActionLogs();
+    setAdminLogs(adminActionLogs.slice(-10)); // Latest 10 actions
+    
     const eventStats = recentEvents.reduce(
       (acc, event) => {
         acc.total++;
@@ -31,6 +42,9 @@ const SecurityAudit: React.FC = () => {
     );
     
     setStats(eventStats);
+    
+    // Check thresholds for real-time alerting
+    EnhancedSecurityMonitor.checkThresholds();
   };
 
   useEffect(() => {
@@ -161,6 +175,51 @@ const SecurityAudit: React.FC = () => {
               </Button>
             </div>
           </div>
+
+          {/* Security Alerts Section */}
+          {alerts.length > 0 && (
+            <div className="mb-6">
+              <h4 className="text-md font-semibold text-red-200 mb-3">Active Security Alerts</h4>
+              <div className="space-y-2">
+                {alerts.map((alert, index) => (
+                  <Alert key={index} className="border-red-500/50 bg-red-500/10">
+                    <AlertTriangle className="h-4 w-4 text-red-400" />
+                    <AlertDescription className="text-red-300">
+                      <strong>{alert.level}:</strong> {alert.message}
+                      <div className="text-xs text-red-400 mt-1">
+                        {new Date(alert.timestamp).toLocaleString()}
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Admin Actions Section */}
+          {adminLogs.length > 0 && (
+            <div className="mb-6">
+              <h4 className="text-md font-semibold text-blue-200 mb-3">Recent Admin Actions</h4>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {adminLogs.map((log, index) => (
+                  <div 
+                    key={index}
+                    className="flex items-center justify-between p-3 rounded-lg bg-blue-900/20 border border-blue-700/50"
+                  >
+                    <div>
+                      <div className="text-blue-100 font-medium">{log.action}</div>
+                      <div className="text-xs text-blue-300">
+                        {log.adminType} • {log.details}
+                      </div>
+                    </div>
+                    <div className="text-xs text-blue-400">
+                      {new Date(log.timestamp).toLocaleTimeString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {events.length === 0 ? (
             <Alert className="border-green-500/50 bg-green-500/10">

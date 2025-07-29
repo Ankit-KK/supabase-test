@@ -68,4 +68,60 @@ export const SECURITY_EVENTS = {
   RATE_LIMIT_EXCEEDED: 'rate_limit_exceeded',
   SUSPICIOUS_REQUEST: 'suspicious_request',
   UNAUTHORIZED_ACCESS: 'unauthorized_access',
+  API_KEY_ROTATION: 'api_key_rotation',
+  LARGE_REQUEST: 'large_request',
+  SQL_INJECTION_ATTEMPT: 'sql_injection_attempt',
+  SESSION_ANOMALY: 'session_anomaly',
+  MULTIPLE_LOGIN_ATTEMPTS: 'multiple_login_attempts',
+  ADMIN_ACTION: 'admin_action',
 } as const;
+
+// Enhanced monitoring with real-time alerts
+export class EnhancedSecurityMonitor extends SecurityMonitor {
+  private static alertThresholds = {
+    critical: 1,
+    high: 3,
+    medium: 10,
+    low: 50
+  };
+
+  static checkThresholds(): void {
+    const recentEvents = this.getRecentEvents();
+    const last10Minutes = Date.now() - (10 * 60 * 1000);
+    
+    const recentCritical = recentEvents.filter(
+      e => e.timestamp.getTime() > last10Minutes && e.severity === 'critical'
+    ).length;
+    
+    const recentHigh = recentEvents.filter(
+      e => e.timestamp.getTime() > last10Minutes && e.severity === 'high'
+    ).length;
+
+    if (recentCritical >= this.alertThresholds.critical) {
+      this.triggerAlert('CRITICAL', `${recentCritical} critical security events in last 10 minutes`);
+    } else if (recentHigh >= this.alertThresholds.high) {
+      this.triggerAlert('HIGH', `${recentHigh} high severity security events in last 10 minutes`);
+    }
+  }
+
+  private static triggerAlert(level: string, message: string): void {
+    console.error(`[SECURITY ALERT - ${level}] ${message}`);
+    
+    // Store alert for display
+    const alerts = JSON.parse(localStorage.getItem('security_alerts') || '[]');
+    alerts.push({
+      level,
+      message,
+      timestamp: new Date().toISOString()
+    });
+    localStorage.setItem('security_alerts', JSON.stringify(alerts.slice(-10)));
+  }
+
+  static getAlerts(): Array<{level: string, message: string, timestamp: string}> {
+    return JSON.parse(localStorage.getItem('security_alerts') || '[]');
+  }
+
+  static clearAlerts(): void {
+    localStorage.removeItem('security_alerts');
+  }
+}

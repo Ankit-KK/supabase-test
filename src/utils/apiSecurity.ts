@@ -6,6 +6,9 @@ export const createSecureHeaders = (): Record<string, string> => {
     'X-Content-Type-Options': 'nosniff',
     'X-Frame-Options': 'DENY',
     'X-XSS-Protection': '1; mode=block',
+    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Permissions-Policy': 'geolocation=(), microphone=(), camera=()',
   };
   
   // Add CSRF token if available
@@ -13,6 +16,9 @@ export const createSecureHeaders = (): Record<string, string> => {
   if (csrfToken) {
     headers['X-CSRF-Token'] = csrfToken;
   }
+  
+  // Add request ID for tracking
+  headers['X-Request-ID'] = crypto.randomUUID();
   
   return headers;
 };
@@ -50,4 +56,51 @@ export const sanitizeApiError = (error: any): string => {
   }
   
   return 'An unexpected error occurred';
+};
+
+// API key monitoring and rotation detection
+export const monitorApiKeyUsage = (endpoint: string, responseTime: number, statusCode: number): void => {
+  const usage = {
+    endpoint,
+    responseTime,
+    statusCode,
+    timestamp: Date.now(),
+    userAgent: navigator.userAgent.substring(0, 100)
+  };
+  
+  // Store recent API usage for monitoring
+  const recentUsage = JSON.parse(localStorage.getItem('api_usage') || '[]');
+  recentUsage.push(usage);
+  
+  // Keep only last 50 requests
+  const filtered = recentUsage.slice(-50);
+  localStorage.setItem('api_usage', JSON.stringify(filtered));
+  
+  // Alert on suspicious patterns
+  if (responseTime > 5000 || statusCode >= 500) {
+    console.warn('API performance issue detected:', usage);
+  }
+};
+
+// Request size validation
+export const validateRequestSize = (data: any): boolean => {
+  const maxSize = 1024 * 1024; // 1MB
+  const serialized = JSON.stringify(data);
+  
+  if (serialized.length > maxSize) {
+    console.warn('Request size exceeds limit:', serialized.length);
+    return false;
+  }
+  
+  return true;
+};
+
+// Rate limiting enhancement with exponential backoff
+export const calculateBackoffDelay = (attempt: number): number => {
+  const baseDelay = 1000; // 1 second
+  const maxDelay = 30000; // 30 seconds
+  const delay = Math.min(baseDelay * Math.pow(2, attempt), maxDelay);
+  
+  // Add jitter to prevent thundering herd
+  return delay + Math.random() * 1000;
 };
