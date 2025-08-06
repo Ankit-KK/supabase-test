@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { createPaymentOrder } from "@/services/paymentService";
+import { createPaymentOrder, storeDonationDataImmediately } from "@/services/paymentService";
 
 const PaymentCheckout = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -95,6 +95,29 @@ const PaymentCheckout = () => {
       
       if (!orderResponse || !orderResponse.payment_session_id) {
         throw new Error("Failed to create payment order - no payment session ID received");
+      }
+
+      // For Chiaa Gaming donations, store data immediately in database
+      if (paymentData.donationType === 'chiaa_gaming') {
+        try {
+          console.log("Storing Chiaa Gaming donation data immediately in database");
+          const donationDataStr = sessionStorage.getItem("donationData");
+          if (donationDataStr) {
+            const fullDonationData = JSON.parse(donationDataStr);
+            
+            await storeDonationDataImmediately({
+              ...fullDonationData,
+              cashfreeOrderData: orderResponse,
+              paymentSessionId: orderResponse.payment_session_id
+            });
+            
+            console.log("Successfully stored donation data in database immediately");
+          }
+        } catch (dbError) {
+          console.error("Failed to store donation data immediately:", dbError);
+          // Don't throw error - payment should continue even if immediate storage fails
+          // The background verification system will handle it
+        }
       }
 
       // Check if Cashfree SDK is loaded

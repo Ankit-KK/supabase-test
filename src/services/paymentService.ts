@@ -72,6 +72,56 @@ export interface DonationRecordData {
   include_sound?: boolean;
 }
 
+// Enhanced function to store donation data immediately after order creation
+export const storeDonationDataImmediately = async (data: DonationRecordData & { 
+  cashfreeOrderData?: any, 
+  paymentSessionId?: string 
+}) => {
+  try {
+    if (data.donationType === 'chiaa_gaming') {
+      // Store all donation data immediately in pending state with verification tracking
+      const { data: insertedDonation, error } = await supabase
+        .from('chiaa_gaming_donations')
+        .insert({
+          name: data.name,
+          amount: data.amount,
+          message: data.message,
+          order_id: data.order_id,
+          payment_status: 'pending', // Always start as pending
+          gif_url: data.gifUrl,
+          voice_url: data.voiceUrl,
+          voice_file_name: data.voiceFileName,
+          voice_file_size: data.voiceFileSize,
+          custom_sound_url: data.customSoundUrl,
+          hyperemotes_enabled: data.hyperEmotesEnabled || false,
+          include_sound: data.include_sound || false,
+          review_status: 'pending',
+          // New verification tracking fields
+          verification_attempts: 0,
+          payment_session_id: data.paymentSessionId,
+          cashfree_order_data: data.cashfreeOrderData,
+          auto_verification_enabled: true
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error storing Chiaa Gaming donation data:', error);
+        throw error;
+      }
+
+      console.log('Successfully stored Chiaa Gaming donation data immediately:', insertedDonation.id);
+      return insertedDonation;
+    }
+
+    // For other donation types, use existing logic
+    return null;
+  } catch (error) {
+    console.error('Failed to store donation data immediately:', error);
+    throw error;
+  }
+};
+
 export const createDonationRecord = async (data: DonationRecordData) => {
   try {
     // Route to the correct table based on donation type
@@ -95,48 +145,73 @@ export const createDonationRecord = async (data: DonationRecordData) => {
 
       console.log('Successfully inserted Ankit donation into ankit_donations table');
     } else if (data.donationType === 'chiaa_gaming') {
-      // All donations need approval now
-      const needsApproval = true;
-      const reviewStatus = 'pending';
-      
-      // Store in chiaa_gaming_donations table
-      const { data: insertedDonation, error } = await supabase
+      // For Chiaa Gaming, update existing record instead of creating new one
+      const { data: existingDonation, error: fetchError } = await supabase
         .from('chiaa_gaming_donations')
-        .insert({
-          name: data.name,
-          amount: data.amount,
-          message: data.message,
-          order_id: data.order_id,
+        .select('*')
+        .eq('order_id', data.order_id)
+        .single();
+
+      if (fetchError || !existingDonation) {
+        console.error('No existing donation found for order_id:', data.order_id);
+        // Fallback: create new record if not found
+        const { data: insertedDonation, error } = await supabase
+          .from('chiaa_gaming_donations')
+          .insert({
+            name: data.name,
+            amount: data.amount,
+            message: data.message,
+            order_id: data.order_id,
+            payment_status: data.payment_status,
+            gif_url: data.gifUrl,
+            voice_url: data.voiceUrl,
+            voice_file_name: data.voiceFileName,
+            voice_file_size: data.voiceFileSize,
+            custom_sound_url: data.customSoundUrl,
+            hyperemotes_enabled: data.hyperEmotesEnabled || false,
+            include_sound: data.include_sound || false,
+            review_status: 'pending'
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error inserting Chiaa Gaming donation:', error);
+          throw error;
+        }
+
+        console.log('Successfully inserted new Chiaa Gaming donation');
+        return insertedDonation;
+      }
+
+      // Update existing record with final payment status
+      const { data: updatedDonation, error: updateError } = await supabase
+        .from('chiaa_gaming_donations')
+        .update({
           payment_status: data.payment_status,
-          gif_url: data.gifUrl,
-          voice_url: data.voiceUrl,
-          voice_file_name: data.voiceFileName,
-          voice_file_size: data.voiceFileSize,
-          custom_sound_url: data.customSoundUrl,
-          hyperemotes_enabled: data.hyperEmotesEnabled || false,
-          include_sound: data.include_sound || false,
-          review_status: reviewStatus
+          last_verification_at: new Date().toISOString()
         })
+        .eq('id', existingDonation.id)
         .select()
         .single();
 
-      if (error) {
-        console.error('Error inserting Chiaa Gaming donation:', error);
-        throw error;
+      if (updateError) {
+        console.error('Error updating Chiaa Gaming donation:', updateError);
+        throw updateError;
       }
 
-      console.log('Successfully inserted Chiaa Gaming donation');
+      console.log('Successfully updated Chiaa Gaming donation payment status');
 
-      // Trigger Telegram notification for all successful donations
-      if (data.payment_status === 'success' && insertedDonation) {
+      // Trigger Telegram notification for successful payments
+      if (data.payment_status === 'success' && updatedDonation) {
         try {
-          console.log('Triggering Telegram notification for donation needing approval:', insertedDonation.id);
+          console.log('Triggering Telegram notification for verified donation:', updatedDonation.id);
           
           const { error: notificationError } = await supabase.functions.invoke('donation-notification', {
             body: {
-              type: 'INSERT',
+              type: 'UPDATE',
               table: 'chiaa_gaming_donations',
-              record: insertedDonation
+              record: updatedDonation
             }
           });
 
@@ -151,6 +226,8 @@ export const createDonationRecord = async (data: DonationRecordData) => {
           // Don't throw error - payment was successful, notification failure shouldn't block the flow
         }
       }
+
+      return updatedDonation;
     } else {
       // For other streamers, store in generic donations table
       const { error } = await supabase

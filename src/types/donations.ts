@@ -26,6 +26,12 @@ export interface DonationRow {
   voice_url?: string; // Optional for chiaa_gaming
   voice_file_name?: string; // Optional for chiaa_gaming
   voice_file_size?: number; // Optional for chiaa_gaming
+  // New verification tracking fields
+  verification_attempts?: number;
+  last_verification_at?: string;
+  payment_session_id?: string;
+  cashfree_order_data?: any;
+  auto_verification_enabled?: boolean;
 }
 
 // Type for GIF and Voice tracking

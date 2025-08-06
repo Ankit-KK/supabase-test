@@ -204,7 +204,7 @@ const ChiaaGamingPage = () => {
       // Sanitize message before storing
       const sanitizedMessage = sanitizeMessage(message.trim());
       
-      // Store donation data in session storage to access it during the payment flow
+      // Store donation data in session storage for backward compatibility
       const donationData = {
         name: name.trim(),
         amount: parseFloat(amount),
@@ -221,7 +221,7 @@ const ChiaaGamingPage = () => {
         hyperEmotesEnabled: false, // Disabled feature
       };
       
-      console.log("DONATION: Storing donation data in session storage:", {
+      console.log("DONATION: Storing donation data in session storage for backward compatibility:", {
         ...donationData,
         hasGif: !!gifUrl,
         hasVoice: !!voiceUrl,
@@ -230,7 +230,7 @@ const ChiaaGamingPage = () => {
       });
       
       sessionStorage.setItem("donationData", JSON.stringify(donationData));
-      console.log("DONATION: Successfully stored Chiaa Gaming donation data in session storage");
+      console.log("DONATION: Successfully stored Chiaa Gaming donation data in session storage for backward compatibility");
       
       // Navigate to payment checkout
       navigate("/payment-checkout");
