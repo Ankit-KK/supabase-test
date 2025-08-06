@@ -122,6 +122,8 @@ export type Database = {
       chiaa_gaming_donations: {
         Row: {
           amount: number
+          auto_verification_enabled: boolean | null
+          cashfree_order_data: Json | null
           created_at: string | null
           custom_sound_name: string | null
           custom_sound_url: string | null
@@ -129,19 +131,24 @@ export type Database = {
           hyperemotes_enabled: boolean | null
           id: string
           include_sound: boolean | null
+          last_verification_at: string | null
           message: string
           name: string
           order_id: string
+          payment_session_id: string | null
           payment_status: string
           review_status: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          verification_attempts: number | null
           voice_file_name: string | null
           voice_file_size: number | null
           voice_url: string | null
         }
         Insert: {
           amount: number
+          auto_verification_enabled?: boolean | null
+          cashfree_order_data?: Json | null
           created_at?: string | null
           custom_sound_name?: string | null
           custom_sound_url?: string | null
@@ -149,19 +156,24 @@ export type Database = {
           hyperemotes_enabled?: boolean | null
           id?: string
           include_sound?: boolean | null
+          last_verification_at?: string | null
           message?: string
           name: string
           order_id: string
+          payment_session_id?: string | null
           payment_status?: string
           review_status?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          verification_attempts?: number | null
           voice_file_name?: string | null
           voice_file_size?: number | null
           voice_url?: string | null
         }
         Update: {
           amount?: number
+          auto_verification_enabled?: boolean | null
+          cashfree_order_data?: Json | null
           created_at?: string | null
           custom_sound_name?: string | null
           custom_sound_url?: string | null
@@ -169,13 +181,16 @@ export type Database = {
           hyperemotes_enabled?: boolean | null
           id?: string
           include_sound?: boolean | null
+          last_verification_at?: string | null
           message?: string
           name?: string
           order_id?: string
+          payment_session_id?: string | null
           payment_status?: string
           review_status?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          verification_attempts?: number | null
           voice_file_name?: string | null
           voice_file_size?: number | null
           voice_url?: string | null
