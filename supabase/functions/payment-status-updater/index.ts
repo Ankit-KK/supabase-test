@@ -97,9 +97,8 @@ serve(async (req) => {
           cashfree_order_data: verificationResult
         };
 
-        // If payment became successful, trigger notification
-        const shouldNotify = verificationResult.status === 'SUCCESS' && 
-                           donation.payment_status !== 'success';
+        // Trigger notification for any status change
+        const shouldNotify = updateData.payment_status !== donation.payment_status;
 
         const { error: updateError } = await supabase
           .from('chiaa_gaming_donations')
@@ -114,21 +113,22 @@ serve(async (req) => {
 
         console.log(`Updated donation ${donation.id} - status: ${updateData.payment_status}`);
 
-        // Send Telegram notification for newly successful payments
+        // Send Telegram notification for any payment status change
         if (shouldNotify) {
           try {
             const { error: notificationError } = await supabase.functions.invoke('donation-notification', {
               body: {
                 type: 'UPDATE',
                 table: 'chiaa_gaming_donations',
-                record: { ...donation, ...updateData }
+                record: { ...donation, ...updateData },
+                status_change: `${donation.payment_status} -> ${updateData.payment_status}`
               }
             });
 
             if (notificationError) {
               console.error('Failed to send notification:', notificationError);
             } else {
-              console.log('Notification sent for newly verified donation');
+              console.log(`Notification sent for payment status change: ${donation.payment_status} -> ${updateData.payment_status}`);
             }
           } catch (notificationError) {
             console.error('Error sending notification:', notificationError);

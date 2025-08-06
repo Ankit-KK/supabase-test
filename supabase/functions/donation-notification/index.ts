@@ -27,9 +27,11 @@ serve(async (req) => {
       
       console.log('Received database event:', { type, table, record });
 
-      // Only process new donations that need review
-      if (table === 'chiaa_gaming_donations' && type === 'INSERT' && record.review_status === 'pending') {
-        console.log('Processing new pending donation:', record.id);
+      // Process new donations or payment status updates that need review
+      if (table === 'chiaa_gaming_donations' && 
+          ((type === 'INSERT' && record.review_status === 'pending') ||
+           (type === 'UPDATE' && record.review_status === 'pending'))) {
+        console.log(`Processing ${type === 'INSERT' ? 'new' : 'updated'} pending donation:`, record.id, record.payment_status);
 
         // Call Telegram bot to notify moderators
         const telegramBotUrl = `${supabaseUrl.replace('/v1', '')}/functions/v1/telegram-bot/notify`;

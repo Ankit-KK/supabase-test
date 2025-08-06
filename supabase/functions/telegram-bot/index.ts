@@ -49,6 +49,7 @@ interface Donation {
   custom_sound_name?: string;
   include_sound?: boolean;
   order_id: string;
+  payment_status?: string;
 }
 
 class TelegramBot {
@@ -169,13 +170,19 @@ class TelegramBot {
     if (donation.custom_sound_name) {
       mediaInfo += `\n🔊 <b>Sound:</b> ${donation.custom_sound_name}`;
     }
+
+    // Add payment status indicator
+    const paymentStatusEmoji = donation.payment_status === 'success' ? '✅' : 
+                              donation.payment_status === 'failed' ? '❌' : 
+                              donation.payment_status === 'pending' ? '⏳' : '❓';
+    const paymentStatusText = `\n💳 <b>Payment Status:</b> ${paymentStatusEmoji} ${donation.payment_status?.toUpperCase() || 'UNKNOWN'}`;
     
-    return `🚨 <b>NEW DONATION PENDING REVIEW</b> 🚨
+    return `🚨 <b>DONATION PENDING REVIEW</b> 🚨
     
 👤 <b>Donor:</b> ${donation.name}
 💰 <b>Amount:</b> ₹${donation.amount}
 💬 <b>Message:</b> "${donation.message}"
-🆔 <b>Order ID:</b> #${donation.order_id}${featuresText}${mediaInfo}
+🆔 <b>Order ID:</b> #${donation.order_id}${paymentStatusText}${featuresText}${mediaInfo}
 
 ⏰ <b>Received:</b> ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
 

@@ -112,7 +112,7 @@ const ChiaaGamingDashboard = () => {
           event: 'INSERT',
           schema: 'public',
           table: 'chiaa_gaming_donations',
-          filter: 'payment_status=eq.success AND review_status=eq.pending'
+          filter: 'review_status=eq.pending'
         },
         (payload) => {
           console.log('New successful donation received in dashboard:', payload);
@@ -147,7 +147,7 @@ const ChiaaGamingDashboard = () => {
           event: 'UPDATE',
           schema: 'public',
           table: 'chiaa_gaming_donations',
-          filter: 'payment_status=eq.success'
+          filter: 'review_status=neq.pending'
         },
         (payload) => {
           console.log('Donation updated via realtime:', payload);
@@ -215,7 +215,7 @@ const ChiaaGamingDashboard = () => {
       const { data, error } = await supabase
         .from("chiaa_gaming_donations")
         .select("id, name, amount, message, created_at, payment_status, gif_url, voice_url, custom_sound_name, custom_sound_url, include_sound, review_status")
-        .eq("payment_status", "success")
+        .in("payment_status", ["success", "failed", "pending"])
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -392,10 +392,26 @@ const ChiaaGamingDashboard = () => {
                 <div className="space-y-3">
                   {donations.slice(0, 5).map((donation) => (
                     <div key={donation.id} className="flex items-center justify-between p-3 bg-pink-500/10 rounded-lg border border-pink-500/20">
-                      <div>
-                        <div className="font-medium text-pink-100">{donation.name}</div>
-                        <div className="text-sm text-pink-300">
-                          {new Date(donation.created_at).toLocaleString("en-IN")}
+                      <div className="flex items-center gap-3">
+                        <div>
+                          <div className="font-medium text-pink-100 flex items-center gap-2">
+                            {donation.name}
+                            {/* Payment Status Badge */}
+                            <span className={`text-xs px-2 py-1 rounded-full ${
+                              donation.payment_status === 'success' ? 'bg-green-500/20 text-green-300' :
+                              donation.payment_status === 'failed' ? 'bg-red-500/20 text-red-300' :
+                              donation.payment_status === 'pending' ? 'bg-yellow-500/20 text-yellow-300' :
+                              'bg-gray-500/20 text-gray-300'
+                            }`}>
+                              {donation.payment_status === 'success' ? '✅ Paid' :
+                               donation.payment_status === 'failed' ? '❌ Failed' :
+                               donation.payment_status === 'pending' ? '⏳ Pending' :
+                               '❓ Unknown'}
+                            </span>
+                          </div>
+                          <div className="text-sm text-pink-300">
+                            {new Date(donation.created_at).toLocaleString("en-IN")}
+                          </div>
                         </div>
                       </div>
                       <div className="text-pink-400 font-semibold">

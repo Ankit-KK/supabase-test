@@ -118,7 +118,7 @@ const ChiaaGamingDonationMessages = () => {
             event: 'INSERT',
             schema: 'public',
             table: 'chiaa_gaming_donations',
-            filter: 'payment_status=eq.success'
+            filter: 'review_status=eq.pending'
           },
           (payload) => {
             console.log('New successful donation received in messages (REALTIME - NO DELAY):', payload);
@@ -160,7 +160,7 @@ const ChiaaGamingDonationMessages = () => {
             event: 'UPDATE',
             schema: 'public',
             table: 'chiaa_gaming_donations',
-            filter: 'payment_status=eq.success'
+            filter: 'review_status=neq.pending'
           },
           (payload) => {
             console.log('Donation updated via realtime:', payload);
@@ -204,7 +204,7 @@ const ChiaaGamingDonationMessages = () => {
       const { data, error } = await supabase
         .from("chiaa_gaming_donations")
         .select("id, name, amount, message, created_at, payment_status, gif_url, voice_url, custom_sound_name, custom_sound_url, include_sound, hyperemotes_enabled, review_status, reviewed_at, reviewed_by")
-        .eq("payment_status", "success")
+        .in("payment_status", ["success", "failed", "pending"])
         .order("created_at", { ascending: false });
 
       if (error) {
