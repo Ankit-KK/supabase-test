@@ -184,13 +184,20 @@ export const createDonationRecord = async (data: DonationRecordData) => {
         return insertedDonation;
       }
 
-      // Update existing record with final payment status
+      // Update existing record with final payment status and set review_status for failed payments
+      const updateData: any = {
+        payment_status: data.payment_status,
+        last_verification_at: new Date().toISOString()
+      };
+
+      // Set review_status to pending for failed payments that need approval
+      if (data.payment_status === 'failure') {
+        updateData.review_status = 'pending';
+      }
+
       const { data: updatedDonation, error: updateError } = await supabase
         .from('chiaa_gaming_donations')
-        .update({
-          payment_status: data.payment_status,
-          last_verification_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', existingDonation.id)
         .select()
         .single();
@@ -202,8 +209,8 @@ export const createDonationRecord = async (data: DonationRecordData) => {
 
       console.log('Successfully updated Chiaa Gaming donation payment status');
 
-      // Trigger Telegram notification for successful payments
-      if (data.payment_status === 'success' && updatedDonation) {
+      // Trigger Telegram notification for successful payments OR failed payments that need review
+      if ((data.payment_status === 'success' || data.payment_status === 'failure') && updatedDonation) {
         try {
           console.log('Triggering Telegram notification for verified donation:', updatedDonation.id);
           
