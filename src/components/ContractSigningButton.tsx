@@ -41,12 +41,9 @@ const ContractSigningButton: React.FC<ContractSigningButtonProps> = ({
           setIsSigned(true);
         } else if (error && error.code !== 'PGRST116') {
           // PGRST116 is the "not found" error, which is expected if not signed
-          console.error("Error checking contract status:", error);
-          toast({
-            title: "Error checking contract status",
-            description: "Please try again later",
-            variant: "destructive",
-          });
+          console.warn("Contract status not accessible or not found:", error);
+          // Treat as unsigned when we don't have permission to read
+          setIsSigned(false);
         }
       } catch (error) {
         console.error("Error checking contract:", error);
