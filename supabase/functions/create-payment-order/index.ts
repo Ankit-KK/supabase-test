@@ -44,8 +44,9 @@ serve(async (req) => {
       throw new Error('Payment gateway not configured');
     }
 
-    // Generate secure order ID with correct format
-    const orderId = `chiaa_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    // Generate unique order ID in format: chiaa_{16-digit random number}
+    const randomNum = Math.floor(Math.random() * 1e16).toString().padStart(16, '0');
+    const orderId = `chiaa_${randomNum}`;
     
     // Generate secure phone number (Indian format starting with 9)
     const phoneNumber = `9${Math.floor(Math.random() * 1000000000).toString().padStart(9, '0')}`;
@@ -72,7 +73,7 @@ serve(async (req) => {
     console.log('Headers will be:', {
       'x-client-id': clientId ? 'Present' : 'Missing',
       'x-client-secret': clientSecret ? 'Present' : 'Missing',
-      'x-api-version': '2023-08-01'
+      'x-api-version': '2025-01-01'
     });
 
     console.log('Creating Cashfree order:', {
@@ -89,7 +90,7 @@ serve(async (req) => {
         'x-client-secret': clientSecret,
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'x-api-version': '2023-08-01'
+        'x-api-version': '2025-01-01'
       },
       body: JSON.stringify(orderData)
     });

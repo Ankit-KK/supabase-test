@@ -36,7 +36,7 @@ serve(async (req) => {
         'x-client-id': clientId,
         'x-client-secret': clientSecret,
         'Accept': 'application/json',
-        'x-api-version': '2023-08-01'
+        'x-api-version': '2025-01-01'
       }
     });
 
@@ -60,7 +60,7 @@ serve(async (req) => {
         'x-client-id': clientId,
         'x-client-secret': clientSecret,
         'Accept': 'application/json',
-        'x-api-version': '2023-08-01'
+        'x-api-version': '2025-01-01'
       }
     });
 
