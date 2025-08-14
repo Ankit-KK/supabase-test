@@ -72,7 +72,7 @@ serve(async (req) => {
     console.log('Headers will be:', {
       'x-client-id': clientId ? 'Present' : 'Missing',
       'x-client-secret': clientSecret ? 'Present' : 'Missing',
-      'x-api-version': '2025-01-01'
+      'x-api-version': '2023-08-01'
     });
 
     console.log('Creating Cashfree order:', {
@@ -89,7 +89,7 @@ serve(async (req) => {
         'x-client-secret': clientSecret,
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'x-api-version': '2025-01-01'
+        'x-api-version': '2023-08-01'
       },
       body: JSON.stringify(orderData)
     });
