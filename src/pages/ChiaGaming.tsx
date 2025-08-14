@@ -126,7 +126,7 @@ const ChiaGaming = () => {
         console.log("Payment completed:", result.paymentDetails);
         toast({
           title: "🎮 Payment Successful!",
-          description: `Thank you ${sanitized.name} for your ₹${amount} donation!`,
+          description: `Thank you ${sanitized.name} for your ₹${amount} donation! Order ID: ${data.cf_order_id || data.order_id}`,
         });
         
         // Reset form
@@ -137,6 +137,10 @@ const ChiaGaming = () => {
         });
       } else if (result.redirect) {
         console.log("Payment will be redirected");
+        toast({
+          title: "Payment Redirected",
+          description: "You will be redirected to complete the payment.",
+        });
       }
 
     } catch (error) {

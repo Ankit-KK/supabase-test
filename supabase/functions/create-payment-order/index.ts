@@ -47,10 +47,10 @@ serve(async (req) => {
     // Generate secure order ID
     const orderId = `CHIA_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     
-    // Generate secure phone number (Indian format)
+    // Generate secure phone number (Indian format starting with 9)
     const phoneNumber = `9${Math.floor(Math.random() * 1000000000).toString().padStart(9, '0')}`;
 
-    // Create order with Cashfree
+    // Create order data matching Cashfree format
     const orderData = {
       order_amount: amount,
       order_currency: "INR",
@@ -67,7 +67,12 @@ serve(async (req) => {
       order_note: message || ""
     };
 
-    console.log('Creating order with data:', orderData);
+    console.log('Creating Cashfree order:', {
+      orderId,
+      amount,
+      customerName: name,
+      message: message || 'No message'
+    });
 
     const response = await fetch(`${apiUrl}/pg/orders`, {
       method: 'POST',
@@ -83,17 +88,39 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Cashfree API error:', errorText);
-      throw new Error(`Payment gateway error: ${response.status}`);
+      console.error('Cashfree API error:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText
+      });
+      throw new Error(`Payment gateway error: ${response.status} - ${errorText}`);
     }
 
     const result = await response.json();
-    console.log('Order creation response:', result);
+    console.log('Cashfree order created successfully:', {
+      orderId: result.order_id,
+      cfOrderId: result.cf_order_id,
+      orderStatus: result.order_status,
+      paymentSessionId: result.payment_session_id ? 'Present' : 'Missing'
+    });
+
+    // Validate response has required fields
+    if (!result.payment_session_id) {
+      console.error('Missing payment_session_id in response:', result);
+      throw new Error('Invalid response from payment gateway');
+    }
 
     return new Response(JSON.stringify({
       success: true,
       payment_session_id: result.payment_session_id,
-      order_id: orderId
+      order_id: result.order_id,
+      cf_order_id: result.cf_order_id,
+      order_status: result.order_status,
+      order_amount: result.order_amount,
+      customer_details: {
+        name: name,
+        phone: result.customer_details?.customer_phone
+      }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
