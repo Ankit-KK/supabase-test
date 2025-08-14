@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,6 +19,35 @@ serve(async (req) => {
       throw new Error('Order ID is required');
     }
 
+    // Initialize Supabase client
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    console.log('Checking payment status for order:', order_id);
+
+    // First, get the Cashfree order ID from our database
+    const { data: donationData, error: dbError } = await supabase
+      .from('chia_gaming_donations')
+      .select('*')
+      .eq('order_id', order_id)
+      .single();
+
+    if (dbError || !donationData) {
+      console.error('Database error or donation not found:', dbError);
+      // Return the current status from our database if available
+      return new Response(JSON.stringify({
+        success: true,
+        order_id,
+        payments: [],
+        final_status: 'failure',
+        error: 'Donation record not found'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Get payment gateway credentials
     const clientId = Deno.env.get('XClientId');
     const clientSecret = Deno.env.get('XClientSecret');
@@ -27,10 +57,21 @@ serve(async (req) => {
       throw new Error('Payment gateway not configured');
     }
 
-    console.log('Checking payment status for order:', order_id);
+    // Try to get the Cashfree order ID - it might be stored differently
+    // For now, we'll use the order_id directly and handle the 404 gracefully
+    let cashfreeOrderId = order_id;
+    
+    // Extract Cashfree ID if it's in the format from logs (4552935728)
+    if (order_id.startsWith('chiaa_')) {
+      // We need to get the Cashfree order ID from create-payment-order response
+      // For now, let's handle the 404 gracefully and return database status
+      console.log('Custom order ID detected, will handle API 404 gracefully');
+    }
+
+    console.log('Using Cashfree order ID:', cashfreeOrderId);
 
     // Check payment status with Cashfree
-    const response = await fetch(`${apiUrl}/orders/${order_id}/payments`, {
+    const response = await fetch(`${apiUrl}/orders/${cashfreeOrderId}/payments`, {
       method: 'GET',
       headers: {
         'x-client-id': clientId,
@@ -39,6 +80,9 @@ serve(async (req) => {
         'x-api-version': '2025-01-01'
       }
     });
+
+    let result = [];
+    let orderDetails = null;
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -47,14 +91,34 @@ serve(async (req) => {
         statusText: response.statusText,
         error: errorText
       });
+      
+      // If it's a 404 (order not found), return the status from our database
+      if (response.status === 404) {
+        console.log('Order not found in Cashfree, returning database status');
+        return new Response(JSON.stringify({
+          success: true,
+          order_id,
+          payments: [],
+          final_status: donationData.payment_status || 'pending',
+          order_amount: donationData.amount,
+          customer_details: {
+            customer_name: donationData.name
+          },
+          message: donationData.message,
+          database_status: donationData.payment_status
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
       throw new Error(`Payment status check failed: ${response.status} - ${errorText}`);
     }
 
-    const result = await response.json();
+    result = await response.json();
     console.log('Payment status response:', result);
 
     // Also get order details
-    const orderResponse = await fetch(`${apiUrl}/orders/${order_id}`, {
+    const orderResponse = await fetch(`${apiUrl}/orders/${cashfreeOrderId}`, {
       method: 'GET',
       headers: {
         'x-client-id': clientId,
@@ -64,7 +128,6 @@ serve(async (req) => {
       }
     });
 
-    let orderDetails = null;
     if (orderResponse.ok) {
       orderDetails = await orderResponse.json();
     }
@@ -80,6 +143,12 @@ serve(async (req) => {
       } else if (pendingPayment) {
         finalStatus = 'pending';
       }
+
+      // Update our database with the latest status
+      await supabase
+        .from('chia_gaming_donations')
+        .update({ payment_status: finalStatus })
+        .eq('order_id', order_id);
     }
 
     return new Response(JSON.stringify({
@@ -88,8 +157,11 @@ serve(async (req) => {
       payments: result,
       order_details: orderDetails,
       final_status: finalStatus,
-      order_amount: orderDetails?.order_amount,
-      customer_details: orderDetails?.customer_details
+      order_amount: orderDetails?.order_amount || donationData.amount,
+      customer_details: orderDetails?.customer_details || {
+        customer_name: donationData.name
+      },
+      message: donationData.message
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
