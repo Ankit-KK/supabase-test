@@ -113,6 +113,24 @@ const ChiaGaming = () => {
         throw new Error(data?.error || 'Failed to create payment order');
       }
 
+      const orderId = data.cf_order_id || data.order_id;
+
+      // Insert donation record into database
+      const { error: dbError } = await supabase
+        .from('chia_gaming_donations')
+        .insert({
+          order_id: orderId,
+          name: sanitized.name,
+          amount: amount,
+          message: sanitized.message,
+          payment_status: 'pending'
+        });
+
+      if (dbError) {
+        console.error('Error saving donation:', dbError);
+        // Continue with payment even if DB insert fails
+      }
+
       // Initialize Cashfree checkout
       const checkoutOptions = {
         paymentSessionId: data.payment_session_id,
@@ -121,23 +139,28 @@ const ChiaGaming = () => {
 
       const result = await cashfree.checkout(checkoutOptions);
       
-      // Always redirect to status page with order ID
-      const orderId = data.cf_order_id || data.order_id;
+      // Update payment status and redirect based on result
+      const updatePaymentStatus = async (status: string) => {
+        await supabase
+          .from('chia_gaming_donations')
+          .update({ payment_status: status })
+          .eq('order_id', orderId);
+      };
       
       if (result.error) {
         console.log("Payment cancelled or error:", result.error);
-        // Redirect to status page for cancelled/failed payment
+        await updatePaymentStatus('cancelled');
         navigate(`/status?order_id=${orderId}&status=cancelled`);
       } else if (result.paymentDetails) {
         console.log("Payment completed:", result.paymentDetails);
-        // Redirect to status page for successful payment
+        await updatePaymentStatus('success');
         navigate(`/status?order_id=${orderId}&status=success`);
       } else if (result.redirect) {
         console.log("Payment will be redirected");
-        // Redirect to status page for pending payment
+        await updatePaymentStatus('pending');
         navigate(`/status?order_id=${orderId}&status=pending`);
       } else {
-        // Fallback redirect
+        await updatePaymentStatus('unknown');
         navigate(`/status?order_id=${orderId}&status=unknown`);
       }
 
@@ -146,6 +169,11 @@ const ChiaGaming = () => {
       // Redirect to status page even on error, if we have an order ID
       const orderId = data?.cf_order_id || data?.order_id;
       if (orderId) {
+        // Update payment status to failed in database
+        await supabase
+          .from('chia_gaming_donations')
+          .update({ payment_status: 'failed' })
+          .eq('order_id', orderId);
         navigate(`/status?order_id=${orderId}&status=error`);
       } else {
         toast({
