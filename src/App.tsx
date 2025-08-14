@@ -15,6 +15,7 @@ import SitemapXml from "./pages/SitemapXml";
 import NotFound from "./pages/NotFound";
 import FeatureShowcase from "./pages/FeatureShowcase";
 import ChiaGaming from "./pages/ChiaGaming";
+import Status from "./pages/Status";
 import UpiSecurityBestPractices from "./pages/blog/UpiSecurityBestPractices";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
           <Route path="/sitemap.xml" element={<SitemapXml />} />
           <Route path="/feature-showcase" element={<FeatureShowcase />} />
           <Route path="/chia_gaming" element={<ChiaGaming />} />
+          <Route path="/status" element={<Status />} />
           
           {/* Blog posts */}
           <Route path="/blog/upi-security-best-practices" element={<UpiSecurityBestPractices />} />

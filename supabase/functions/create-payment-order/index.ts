@@ -44,8 +44,8 @@ serve(async (req) => {
       throw new Error('Payment gateway not configured');
     }
 
-    // Generate secure order ID
-    const orderId = `CHIA_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    // Generate secure order ID with correct format
+    const orderId = `chiaa_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     
     // Generate secure phone number (Indian format starting with 9)
     const phoneNumber = `9${Math.floor(Math.random() * 1000000000).toString().padStart(9, '0')}`;
@@ -61,8 +61,8 @@ serve(async (req) => {
         customer_phone: phoneNumber
       },
       order_meta: {
-        return_url: `${req.headers.get("origin")}/chia_gaming?status=success&order_id=${orderId}`,
-        notify_url: `${req.headers.get("origin")}/chia_gaming?status=success&order_id=${orderId}`
+        return_url: `${req.headers.get("origin")}/status?order_id=${orderId}`,
+        notify_url: `${req.headers.get("origin")}/status?order_id=${orderId}`
       },
       order_note: message || ""
     };
@@ -72,7 +72,7 @@ serve(async (req) => {
     console.log('Headers will be:', {
       'x-client-id': clientId ? 'Present' : 'Missing',
       'x-client-secret': clientSecret ? 'Present' : 'Missing',
-      'x-api-version': '2023-08-01'
+      'x-api-version': '2025-01-01'
     });
 
     console.log('Creating Cashfree order:', {
@@ -89,7 +89,7 @@ serve(async (req) => {
         'x-client-secret': clientSecret,
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'x-api-version': '2023-08-01'
+        'x-api-version': '2025-01-01'
       },
       body: JSON.stringify(orderData)
     });
