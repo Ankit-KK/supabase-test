@@ -30,7 +30,7 @@ serve(async (req) => {
     console.log('Checking payment status for order:', order_id);
 
     // Check payment status with Cashfree
-    const response = await fetch(`${apiUrl}/pg/orders/${order_id}/payments`, {
+    const response = await fetch(`${apiUrl}/orders/${order_id}/payments`, {
       method: 'GET',
       headers: {
         'x-client-id': clientId,
@@ -54,7 +54,7 @@ serve(async (req) => {
     console.log('Payment status response:', result);
 
     // Also get order details
-    const orderResponse = await fetch(`${apiUrl}/pg/orders/${order_id}`, {
+    const orderResponse = await fetch(`${apiUrl}/orders/${order_id}`, {
       method: 'GET',
       headers: {
         'x-client-id': clientId,

@@ -83,7 +83,7 @@ serve(async (req) => {
       message: message || 'No message'
     });
 
-    const response = await fetch(`${apiUrl}/pg/orders`, {
+    const response = await fetch(`${apiUrl}/orders`, {
       method: 'POST',
       headers: {
         'x-client-id': clientId,
