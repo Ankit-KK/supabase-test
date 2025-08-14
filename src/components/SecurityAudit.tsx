@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Shield, AlertTriangle, Info, RefreshCw } from "lucide-react";
 import { SecurityMonitor, SecurityEvent, SECURITY_EVENTS, EnhancedSecurityMonitor } from "@/utils/securityMonitoring";
-import { AccessControlManager } from '@/utils/accessControl';
 
 const SecurityAudit: React.FC = () => {
   const [events, setEvents] = useState<SecurityEvent[]>([]);
@@ -29,8 +28,7 @@ const SecurityAudit: React.FC = () => {
     setAlerts(securityAlerts);
     
     // Load admin action logs
-    const adminActionLogs = AccessControlManager.getAdminActionLogs();
-    setAdminLogs(adminActionLogs.slice(-10)); // Latest 10 actions
+    setAdminLogs([]); // No admin logs without access control
     
     const eventStats = recentEvents.reduce(
       (acc, event) => {

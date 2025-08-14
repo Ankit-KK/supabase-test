@@ -10,7 +10,6 @@ const Sitemap = () => {
     { path: "/", title: "Home", description: "Main landing page with features and services" },
     { path: "/contact", title: "Contact", description: "Get in touch with our team" },
     { path: "/blog", title: "Blog", description: "Latest articles and insights" },
-    { path: "/demo-payment", title: "Demo Payment", description: "Try our payment system" },
   ];
 
   const legalPages = [
@@ -19,19 +18,8 @@ const Sitemap = () => {
     { path: "/shipping", title: "Shipping", description: "Shipping information and policies" },
   ];
 
-  const creatorPages = [
-    { path: "/ankit", title: "Ankit", description: "Support Ankit with donations" },
-    { path: "/chiaa_gaming", title: "Chiaa Gaming", description: "Support Chiaa Gaming with donations" },
-  ];
-
   const blogPosts = [
-    { path: "/blog/earn-money-streaming-india", title: "Earn Money Streaming in India", description: "Complete guide to monetizing your streaming content" },
-    { path: "/blog/best-upi-tipping-platforms", title: "Best UPI Tipping Platforms", description: "Top platforms for UPI-based tipping in India" },
-    { path: "/blog/complete-guide-monetize-content-india", title: "Complete Guide to Monetize Content in India", description: "Comprehensive monetization strategies for Indian creators" },
-    { path: "/blog/fan-engagement-tools-2025", title: "Fan Engagement Tools 2025", description: "Latest tools and strategies for fan engagement" },
-    { path: "/blog/streamer-donation-app-strategy", title: "Streamer Donation App Strategy", description: "Strategic approach to donation apps for streamers" },
     { path: "/blog/upi-security-best-practices", title: "UPI Security Best Practices", description: "Essential security practices for UPI transactions" },
-    { path: "/blog/virtual-gifts-maximize-revenue", title: "Virtual Gifts Maximize Revenue", description: "How to use virtual gifts to boost your revenue" },
   ];
 
   return (
@@ -42,7 +30,7 @@ const Sitemap = () => {
             Site Map
           </h1>
           <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-            Explore all pages and content available on HyperChat. Find exactly what you're looking for.
+            Explore all pages and content available on our website. Find exactly what you're looking for.
           </p>
         </div>
 
@@ -74,32 +62,6 @@ const Sitemap = () => {
             </CardContent>
           </Card>
 
-          {/* Creator Pages */}
-          <Card className="shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-xl">
-                <Users className="h-5 w-5" />
-                Creator Pages
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-2 gap-4">
-                {creatorPages.map((page) => (
-                  <Link
-                    key={page.path}
-                    to={page.path}
-                    className="block p-4 border rounded-lg hover:border-pink-300 hover:shadow-md transition-all duration-200 group"
-                  >
-                    <h3 className="font-semibold text-pink-700 group-hover:text-pink-800 mb-1">
-                      {page.title}
-                    </h3>
-                    <p className="text-gray-600 text-sm">{page.description}</p>
-                    <ExternalLink className="h-4 w-4 text-gray-400 mt-2 group-hover:text-pink-600" />
-                  </Link>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Blog Posts */}
           <Card className="shadow-lg">
