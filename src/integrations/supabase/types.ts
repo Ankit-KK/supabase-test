@@ -14,42 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      admin_users: {
-        Row: {
-          admin_pass: number
-          admin_type: string
-          created_at: string | null
-          id: string
-          is_online: boolean | null
-          last_active: string | null
-          mod_password: string | null
-          password_hash: string
-          user_email: string
-        }
-        Insert: {
-          admin_pass?: number
-          admin_type: string
-          created_at?: string | null
-          id?: string
-          is_online?: boolean | null
-          last_active?: string | null
-          mod_password?: string | null
-          password_hash?: string
-          user_email: string
-        }
-        Update: {
-          admin_pass?: number
-          admin_type?: string
-          created_at?: string | null
-          id?: string
-          is_online?: boolean | null
-          last_active?: string | null
-          mod_password?: string | null
-          password_hash?: string
-          user_email?: string
-        }
-        Relationships: []
-      }
       audit_logs: {
         Row: {
           action: string
@@ -80,165 +44,6 @@ export type Database = {
           table_name?: string | null
           user_agent?: string | null
           user_email?: string | null
-        }
-        Relationships: []
-      }
-      custom_sound_alerts: {
-        Row: {
-          created_at: string | null
-          file_path: string | null
-          file_url: string
-          id: string
-          name: string
-        }
-        Insert: {
-          created_at?: string | null
-          file_path?: string | null
-          file_url: string
-          id: string
-          name: string
-        }
-        Update: {
-          created_at?: string | null
-          file_path?: string | null
-          file_url?: string
-          id?: string
-          name?: string
-        }
-        Relationships: []
-      }
-      donation_gifs: {
-        Row: {
-          deleted_at: string | null
-          displayed_at: string | null
-          donation_id: string | null
-          file_name: string
-          file_size: number
-          file_type: string | null
-          gif_url: string
-          id: string
-          last_played_at: string | null
-          status: string | null
-          uploaded_at: string | null
-        }
-        Insert: {
-          deleted_at?: string | null
-          displayed_at?: string | null
-          donation_id?: string | null
-          file_name: string
-          file_size: number
-          file_type?: string | null
-          gif_url: string
-          id?: string
-          last_played_at?: string | null
-          status?: string | null
-          uploaded_at?: string | null
-        }
-        Update: {
-          deleted_at?: string | null
-          displayed_at?: string | null
-          donation_id?: string | null
-          file_name?: string
-          file_size?: number
-          file_type?: string | null
-          gif_url?: string
-          id?: string
-          last_played_at?: string | null
-          status?: string | null
-          uploaded_at?: string | null
-        }
-        Relationships: []
-      }
-      donations: {
-        Row: {
-          amount: number
-          created_at: string | null
-          id: string
-          message: string
-          name: string
-          order_id: string | null
-          payment_status: string | null
-        }
-        Insert: {
-          amount: number
-          created_at?: string | null
-          id?: string
-          message: string
-          name: string
-          order_id?: string | null
-          payment_status?: string | null
-        }
-        Update: {
-          amount?: number
-          created_at?: string | null
-          id?: string
-          message?: string
-          name?: string
-          order_id?: string | null
-          payment_status?: string | null
-        }
-        Relationships: []
-      }
-      moderators: {
-        Row: {
-          created_at: string
-          id: string
-          is_active: boolean
-          permissions: string[] | null
-          streamer_id: string
-          telegram_id: number
-          telegram_username: string | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          permissions?: string[] | null
-          streamer_id: string
-          telegram_id: number
-          telegram_username?: string | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          is_active?: boolean
-          permissions?: string[] | null
-          streamer_id?: string
-          telegram_id?: number
-          telegram_username?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      obs_access_tokens: {
-        Row: {
-          admin_type: string
-          created_at: string | null
-          expires_at: string
-          id: string
-          is_active: boolean | null
-          last_used_at: string | null
-          token: string
-        }
-        Insert: {
-          admin_type: string
-          created_at?: string | null
-          expires_at: string
-          id?: string
-          is_active?: boolean | null
-          last_used_at?: string | null
-          token: string
-        }
-        Update: {
-          admin_type?: string
-          created_at?: string | null
-          expires_at?: string
-          id?: string
-          is_active?: boolean | null
-          last_used_at?: string | null
-          token?: string
         }
         Relationships: []
       }
@@ -359,39 +164,6 @@ export type Database = {
         }
         Relationships: []
       }
-      streamer_contracts: {
-        Row: {
-          agreed_to_terms: boolean
-          hyperchat_cut: number | null
-          id: string
-          signature: string
-          signed_at: string | null
-          streamer_cut: number | null
-          streamer_name: string
-          streamer_type: string
-        }
-        Insert: {
-          agreed_to_terms?: boolean
-          hyperchat_cut?: number | null
-          id?: string
-          signature: string
-          signed_at?: string | null
-          streamer_cut?: number | null
-          streamer_name: string
-          streamer_type: string
-        }
-        Update: {
-          agreed_to_terms?: boolean
-          hyperchat_cut?: number | null
-          id?: string
-          signature?: string
-          signed_at?: string | null
-          streamer_cut?: number | null
-          streamer_name?: string
-          streamer_type?: string
-        }
-        Relationships: []
-      }
       user_queries: {
         Row: {
           created_at: string
@@ -463,10 +235,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      can_access_streamer_data: {
-        Args: { streamer_type: string }
-        Returns: boolean
-      }
       check_rate_limit: {
         Args: {
           p_endpoint: string
@@ -482,14 +250,6 @@ export type Database = {
           | { username: string }
         Returns: boolean
       }
-      cleanup_expired_tokens: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      create_obs_token: {
-        Args: { p_admin_type: string }
-        Returns: string
-      }
       create_visits_table: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -500,10 +260,6 @@ export type Database = {
           total_visits: number
           unique_visitors: number
         }[]
-      }
-      get_user_admin_type: {
-        Args: Record<PropertyKey, never>
-        Returns: string
       }
       get_user_profile: {
         Args: { user_id: string }
@@ -520,14 +276,6 @@ export type Database = {
           total_visits: number
           unique_visitors: number
         }[]
-      }
-      is_admin_user: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_moderator: {
-        Args: { p_streamer_id: string; p_telegram_id: number }
-        Returns: boolean
       }
       log_access_attempt: {
         Args: {
@@ -547,21 +295,9 @@ export type Database = {
         }
         Returns: undefined
       }
-      sanitize_text_input: {
-        Args: { input_text: string }
-        Returns: string
-      }
       update_user_profile: {
         Args: { new_username: string; user_id: string }
         Returns: undefined
-      }
-      validate_donation_input: {
-        Args: { p_amount: number; p_message: string; p_name: string }
-        Returns: boolean
-      }
-      validate_obs_token: {
-        Args: { p_admin_type: string; p_token: string }
-        Returns: boolean
       }
     }
     Enums: {
