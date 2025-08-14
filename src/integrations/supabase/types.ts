@@ -47,6 +47,39 @@ export type Database = {
         }
         Relationships: []
       }
+      chia_gaming_donations: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          message: string | null
+          name: string
+          order_id: string | null
+          payment_status: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          message?: string | null
+          name: string
+          order_id?: string | null
+          payment_status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          message?: string | null
+          name?: string
+          order_id?: string | null
+          payment_status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       page_visits: {
         Row: {
           id: string
