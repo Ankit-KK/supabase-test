@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useInputValidation } from "@/hooks/useInputValidation";
 import { toast } from "@/hooks/use-toast";
 import { Gamepad2, Heart, Sparkles } from "lucide-react";
+import { load } from '@cashfreepayments/cashfree-js';
+import { supabase } from "@/integrations/supabase/client";
 
 const ChiaGaming = () => {
   const [formData, setFormData] = useState({
@@ -14,7 +16,23 @@ const ChiaGaming = () => {
     message: ''
   });
   const [isProcessing, setIsProcessing] = useState(false);
+  const [cashfree, setCashfree] = useState<any>(null);
   const { errors, validateDonation, sanitizeInputs, clearErrors } = useInputValidation();
+
+  // Initialize Cashfree SDK
+  useEffect(() => {
+    const initializeSDK = async () => {
+      try {
+        const cf = await load({
+          mode: "production"
+        });
+        setCashfree(cf);
+      } catch (error) {
+        console.error('Failed to initialize Cashfree SDK:', error);
+      }
+    };
+    initializeSDK();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -45,26 +63,60 @@ const ChiaGaming = () => {
       // Sanitize inputs
       const sanitized = sanitizeInputs(formData.name, formData.message);
 
-      // Placeholder for payment processing
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API call
+      if (!cashfree) {
+        throw new Error('Payment system not initialized');
+      }
 
-      toast({
-        title: "🎮 Donation Successful!",
-        description: `Thank you ${sanitized.name} for your ₹${amount} donation!`,
+      // Create order via Supabase edge function
+      const { data, error } = await supabase.functions.invoke('create-payment-order', {
+        body: {
+          name: sanitized.name,
+          amount: amount,
+          message: sanitized.message
+        }
       });
 
-      // Reset form
-      setFormData({
-        name: '',
-        amount: '',
-        message: ''
-      });
+      if (error || !data?.success) {
+        throw new Error(data?.error || 'Failed to create payment order');
+      }
+
+      // Initialize Cashfree checkout
+      const checkoutOptions = {
+        paymentSessionId: data.payment_session_id,
+        redirectTarget: "_modal",
+      };
+
+      const result = await cashfree.checkout(checkoutOptions);
+      
+      if (result.error) {
+        console.log("Payment cancelled or error:", result.error);
+        toast({
+          title: "Payment Cancelled",
+          description: "Payment was cancelled or encountered an error.",
+          variant: "destructive",
+        });
+      } else if (result.paymentDetails) {
+        console.log("Payment completed:", result.paymentDetails);
+        toast({
+          title: "🎮 Payment Successful!",
+          description: `Thank you ${sanitized.name} for your ₹${amount} donation!`,
+        });
+        
+        // Reset form
+        setFormData({
+          name: '',
+          amount: '',
+          message: ''
+        });
+      } else if (result.redirect) {
+        console.log("Payment will be redirected");
+      }
 
     } catch (error) {
       console.error('Payment error:', error);
       toast({
         title: "Payment Failed",
-        description: "Something went wrong. Please try again.",
+        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
         variant: "destructive",
       });
     } finally {
