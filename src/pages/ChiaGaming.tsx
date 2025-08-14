@@ -17,20 +17,42 @@ const ChiaGaming = () => {
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [cashfree, setCashfree] = useState<any>(null);
+  const [sdkLoading, setSdkLoading] = useState(true);
+  const [sdkError, setSdkError] = useState<string | null>(null);
   const { errors, validateDonation, sanitizeInputs, clearErrors } = useInputValidation();
 
   // Initialize Cashfree SDK
   useEffect(() => {
     const initializeSDK = async () => {
       try {
+        setSdkLoading(true);
+        setSdkError(null);
+        console.log('Initializing Cashfree SDK...');
+        
         const cf = await load({
           mode: "production"
         });
+        
         setCashfree(cf);
+        console.log('Cashfree SDK initialized successfully');
+        
+        toast({
+          title: "Payment System Ready",
+          description: "You can now make donations safely.",
+        });
       } catch (error) {
         console.error('Failed to initialize Cashfree SDK:', error);
+        setSdkError('Failed to load payment system. Please refresh the page.');
+        toast({
+          title: "Payment System Error", 
+          description: "Failed to load payment system. Please refresh the page.",
+          variant: "destructive",
+        });
+      } finally {
+        setSdkLoading(false);
       }
     };
+    
     initializeSDK();
   }, []);
 
@@ -64,6 +86,11 @@ const ChiaGaming = () => {
       const sanitized = sanitizeInputs(formData.name, formData.message);
 
       if (!cashfree) {
+        toast({
+          title: "Payment System Not Ready",
+          description: "Please wait for the payment system to load or refresh the page.",
+          variant: "destructive",
+        });
         throw new Error('Payment system not initialized');
       }
 
@@ -232,10 +259,15 @@ const ChiaGaming = () => {
             {/* Pay Button */}
             <Button
               type="submit"
-              disabled={isProcessing}
+              disabled={isProcessing || sdkLoading || !cashfree}
               className="w-full bg-gradient-to-r from-gaming-pink-primary to-gaming-pink-secondary hover:from-gaming-pink-secondary hover:to-gaming-pink-accent text-gaming-pink-foreground font-medium py-3 relative overflow-hidden group transition-all duration-300 transform hover:scale-[1.02] disabled:scale-100"
             >
-              {isProcessing ? (
+              {sdkLoading ? (
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                  <span>Loading Payment System...</span>
+                </div>
+              ) : isProcessing ? (
                 <div className="flex items-center space-x-2">
                   <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
                   <span>Processing...</span>
@@ -253,12 +285,38 @@ const ChiaGaming = () => {
             </Button>
           </form>
 
-          {/* Gaming themed footer */}
-          <div className="text-center pt-4 border-t border-gaming-pink-primary/20">
-            <p className="text-xs text-muted-foreground">
-              💝 Every donation helps grow the gaming community
-            </p>
-          </div>
+          {/* Status messages */}
+          {sdkError && (
+            <div className="text-center pt-4 border-t border-gaming-pink-primary/20">
+              <p className="text-sm text-destructive">{sdkError}</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => window.location.reload()} 
+                className="mt-2"
+              >
+                Refresh Page
+              </Button>
+            </div>
+          )}
+          
+          {!sdkError && (
+            <div className="text-center pt-4 border-t border-gaming-pink-primary/20">
+              <p className="text-xs text-muted-foreground">
+                💝 Every donation helps grow the gaming community
+              </p>
+              {sdkLoading && (
+                <p className="text-xs text-gaming-pink-primary mt-1">
+                  🔄 Loading secure payment system...
+                </p>
+              )}
+              {cashfree && !sdkLoading && (
+                <p className="text-xs text-gaming-pink-primary mt-1">
+                  ✅ Payment system ready
+                </p>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
