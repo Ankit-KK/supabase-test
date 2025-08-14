@@ -67,6 +67,14 @@ serve(async (req) => {
       order_note: message || ""
     };
 
+    console.log('Order data to be sent:', JSON.stringify(orderData, null, 2));
+    console.log('API URL:', apiUrl);
+    console.log('Headers will be:', {
+      'x-client-id': clientId ? 'Present' : 'Missing',
+      'x-client-secret': clientSecret ? 'Present' : 'Missing',
+      'x-api-version': '2023-08-01'
+    });
+
     console.log('Creating Cashfree order:', {
       orderId,
       amount,
