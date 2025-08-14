@@ -35,11 +35,12 @@ serve(async (req) => {
     }
 
     // Get payment gateway credentials
-    const clientId = Deno.env.get('XclientId');
-    const clientSecret = Deno.env.get('XClientSecret');
-    const apiUrl = Deno.env.get('api_url');
+    const clientId = Deno.env.get('XCLIENTID');
+    const clientSecret = Deno.env.get('XCLIENTSECRET');
+    const apiUrl = Deno.env.get('API_URL');
 
     if (!clientId || !clientSecret || !apiUrl) {
+      console.error('Missing credentials:', { clientId: !!clientId, clientSecret: !!clientSecret, apiUrl: !!apiUrl });
       throw new Error('Payment gateway not configured');
     }
 
