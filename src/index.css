@@ -34,6 +34,14 @@
     --ring: 222.2 84% 4.9%;
  
     --radius: 0.5rem;
+
+    /* Pink gaming theme colors */
+    --pink-primary: 333 71% 68%;
+    --pink-primary-foreground: 0 0% 98%;
+    --pink-secondary: 316 73% 69%;
+    --pink-accent: 320 85% 60%;
+    --pink-light: 324 100% 95%;
+    --pink-gradient: linear-gradient(135deg, hsl(var(--pink-primary)), hsl(var(--pink-secondary)));
   }
 }
  

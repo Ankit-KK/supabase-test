@@ -70,6 +70,15 @@ export default {
 					blue: '#0EA5E9',
 					orange: '#F97316',
 					'light-purple': '#D6BCFA',
+				},
+				gaming: {
+					pink: {
+						primary: 'hsl(var(--pink-primary))',
+						secondary: 'hsl(var(--pink-secondary))',
+						accent: 'hsl(var(--pink-accent))',
+						light: 'hsl(var(--pink-light))',
+						foreground: 'hsl(var(--pink-primary-foreground))',
+					}
 				}
 			},
 			borderRadius: {
