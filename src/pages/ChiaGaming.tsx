@@ -8,8 +8,10 @@ import { toast } from "@/hooks/use-toast";
 import { Gamepad2, Heart, Sparkles } from "lucide-react";
 import { load } from '@cashfreepayments/cashfree-js';
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 const ChiaGaming = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     amount: '',
@@ -72,6 +74,7 @@ const ChiaGaming = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
+    let data: any = null;
 
     try {
       const amount = parseFloat(formData.amount);
@@ -95,13 +98,16 @@ const ChiaGaming = () => {
       }
 
       // Create order via Supabase edge function
-      const { data, error } = await supabase.functions.invoke('create-payment-order', {
+      const response = await supabase.functions.invoke('create-payment-order', {
         body: {
           name: sanitized.name,
           amount: amount,
           message: sanitized.message
         }
       });
+
+      data = response.data;
+      const error = response.error;
 
       if (error || !data?.success) {
         throw new Error(data?.error || 'Failed to create payment order');
@@ -115,41 +121,39 @@ const ChiaGaming = () => {
 
       const result = await cashfree.checkout(checkoutOptions);
       
+      // Always redirect to status page with order ID
+      const orderId = data.cf_order_id || data.order_id;
+      
       if (result.error) {
         console.log("Payment cancelled or error:", result.error);
-        toast({
-          title: "Payment Cancelled",
-          description: "Payment was cancelled or encountered an error.",
-          variant: "destructive",
-        });
+        // Redirect to status page for cancelled/failed payment
+        navigate(`/status?order_id=${orderId}&status=cancelled`);
       } else if (result.paymentDetails) {
         console.log("Payment completed:", result.paymentDetails);
-        toast({
-          title: "🎮 Payment Successful!",
-          description: `Thank you ${sanitized.name} for your ₹${amount} donation! Order ID: ${data.cf_order_id || data.order_id}`,
-        });
-        
-        // Reset form
-        setFormData({
-          name: '',
-          amount: '',
-          message: ''
-        });
+        // Redirect to status page for successful payment
+        navigate(`/status?order_id=${orderId}&status=success`);
       } else if (result.redirect) {
         console.log("Payment will be redirected");
-        toast({
-          title: "Payment Redirected",
-          description: "You will be redirected to complete the payment.",
-        });
+        // Redirect to status page for pending payment
+        navigate(`/status?order_id=${orderId}&status=pending`);
+      } else {
+        // Fallback redirect
+        navigate(`/status?order_id=${orderId}&status=unknown`);
       }
 
     } catch (error) {
       console.error('Payment error:', error);
-      toast({
-        title: "Payment Failed",
-        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
-        variant: "destructive",
-      });
+      // Redirect to status page even on error, if we have an order ID
+      const orderId = data?.cf_order_id || data?.order_id;
+      if (orderId) {
+        navigate(`/status?order_id=${orderId}&status=error`);
+      } else {
+        toast({
+          title: "Payment Failed",
+          description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsProcessing(false);
     }
