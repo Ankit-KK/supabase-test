@@ -1,25 +1,4 @@
 project_id = "vsevsjvtrshgeiudrnth"
 
-[functions.approve-donation]
-verify_jwt = false
-
-[functions.cleanup-gifs]
-verify_jwt = false
-
-[functions.create-payment-order]
-verify_jwt = false
-
-[functions.donation-notification]
-verify_jwt = false
-
-[functions.payment-status-updater]
-verify_jwt = false
-
 [functions.submit-contact]
-verify_jwt = false
-
-[functions.telegram-bot]
-verify_jwt = false
-
-[functions.verify-payment]
 verify_jwt = false
