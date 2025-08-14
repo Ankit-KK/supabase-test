@@ -15,23 +15,9 @@ import Blog from "./pages/Blog";
 import Sitemap from "./pages/Sitemap";
 import SitemapXml from "./pages/SitemapXml";
 import NotFound from "./pages/NotFound";
-import PaymentCheckout from "./pages/PaymentCheckout";
-import PaymentStatus from "./pages/PaymentStatus";
 import DemoPaymentFlow from "./pages/DemoPaymentFlow";
-import ContractSigning from "./pages/ContractSigning";
+
 import FeatureShowcase from "./pages/FeatureShowcase";
-import Ankit from "./pages/Ankit";
-import AnkitLogin from "./pages/AnkitLogin";
-import AnkitDashboard from "./pages/AnkitDashboard";
-import AnkitDonationMessages from "./pages/AnkitDonationMessages";
-import AnkitObsOverlay from "./pages/AnkitObsOverlay";
-import ChiaaGaming from "./pages/ChiaaGaming";
-import ChiaaGamingLogin from "./pages/ChiaaGamingLogin";
-import ChiaaGamingDashboard from "./pages/ChiaaGamingDashboard";
-import ChiaaGamingDonationMessages from "./pages/ChiaaGamingDonationMessages";
-import ChiaaGamingObsSettings from "./pages/ChiaaGamingObsSettings";
-import ChiaaGamingObsOverlay from "./pages/ChiaaGamingObsOverlay";
-import ChiaaGamingAudioPlayer from "./pages/ChiaaGamingAudioPlayer";
 
 // Blog posts
 import EarnMoneyStreamingIndia from "./pages/blog/EarnMoneyStreamingIndia";
@@ -62,27 +48,9 @@ const App = () => (
               <Route path="/sitemap" element={<Sitemap />} />
               <Route path="/sitemap.xml" element={<SitemapXml />} />
               <Route path="/feature-showcase" element={<FeatureShowcase />} />
-              <Route path="/payment/:streamerId" element={<PaymentCheckout />} />
-              <Route path="/payment-checkout" element={<PaymentCheckout />} />
-              <Route path="/payment-status" element={<PaymentStatus />} />
               <Route path="/demo-payment" element={<DemoPaymentFlow />} />
-              <Route path="/contract-signing" element={<ContractSigning />} />
               
-              {/* Ankit routes */}
-              <Route path="/ankit" element={<Ankit />} />
-              <Route path="/ankit/login" element={<AnkitLogin />} />
-              <Route path="/ankit/dashboard" element={<AnkitDashboard />} />
-              <Route path="/ankit/messages" element={<AnkitDonationMessages />} />
-              <Route path="/ankit/obs/:obsId" element={<AnkitObsOverlay />} />
               
-              {/* Chiaa Gaming routes */}
-              <Route path="/chiaa_gaming" element={<ChiaaGaming />} />
-              <Route path="/chiaa_gaming/login" element={<ChiaaGamingLogin />} />
-              <Route path="/chiaa_gaming/dashboard" element={<ChiaaGamingDashboard />} />
-              <Route path="/chiaa_gaming/messages" element={<ChiaaGamingDonationMessages />} />
-              <Route path="/chiaa_gaming/obs-settings" element={<ChiaaGamingObsSettings />} />
-              <Route path="/chiaa_gaming/obs/:obsId" element={<ChiaaGamingObsOverlay />} />
-              <Route path="/chiaa_gaming/audio-player/:obsId" element={<ChiaaGamingAudioPlayer />} />
               
               {/* Blog posts */}
               <Route path="/blog/earn-money-streaming-india" element={<EarnMoneyStreamingIndia />} />

@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -50,42 +50,6 @@ export type Database = {
         }
         Relationships: []
       }
-      ankit_donations: {
-        Row: {
-          amount: number
-          created_at: string | null
-          id: string
-          include_gif: boolean | null
-          message: string
-          name: string
-          order_id: string
-          payment_status: string
-          selected_emoji: string | null
-        }
-        Insert: {
-          amount: number
-          created_at?: string | null
-          id?: string
-          include_gif?: boolean | null
-          message: string
-          name: string
-          order_id: string
-          payment_status?: string
-          selected_emoji?: string | null
-        }
-        Update: {
-          amount?: number
-          created_at?: string | null
-          id?: string
-          include_gif?: boolean | null
-          message?: string
-          name?: string
-          order_id?: string
-          payment_status?: string
-          selected_emoji?: string | null
-        }
-        Relationships: []
-      }
       audit_logs: {
         Row: {
           action: string
@@ -116,84 +80,6 @@ export type Database = {
           table_name?: string | null
           user_agent?: string | null
           user_email?: string | null
-        }
-        Relationships: []
-      }
-      chiaa_gaming_donations: {
-        Row: {
-          amount: number
-          auto_verification_enabled: boolean | null
-          cashfree_order_data: Json | null
-          created_at: string | null
-          custom_sound_name: string | null
-          custom_sound_url: string | null
-          gif_url: string | null
-          hyperemotes_enabled: boolean | null
-          id: string
-          include_sound: boolean | null
-          last_verification_at: string | null
-          message: string
-          name: string
-          order_id: string
-          payment_session_id: string | null
-          payment_status: string
-          review_status: string | null
-          reviewed_at: string | null
-          reviewed_by: string | null
-          verification_attempts: number | null
-          voice_file_name: string | null
-          voice_file_size: number | null
-          voice_url: string | null
-        }
-        Insert: {
-          amount: number
-          auto_verification_enabled?: boolean | null
-          cashfree_order_data?: Json | null
-          created_at?: string | null
-          custom_sound_name?: string | null
-          custom_sound_url?: string | null
-          gif_url?: string | null
-          hyperemotes_enabled?: boolean | null
-          id?: string
-          include_sound?: boolean | null
-          last_verification_at?: string | null
-          message?: string
-          name: string
-          order_id: string
-          payment_session_id?: string | null
-          payment_status?: string
-          review_status?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          verification_attempts?: number | null
-          voice_file_name?: string | null
-          voice_file_size?: number | null
-          voice_url?: string | null
-        }
-        Update: {
-          amount?: number
-          auto_verification_enabled?: boolean | null
-          cashfree_order_data?: Json | null
-          created_at?: string | null
-          custom_sound_name?: string | null
-          custom_sound_url?: string | null
-          gif_url?: string | null
-          hyperemotes_enabled?: boolean | null
-          id?: string
-          include_sound?: boolean | null
-          last_verification_at?: string | null
-          message?: string
-          name?: string
-          order_id?: string
-          payment_session_id?: string | null
-          payment_status?: string
-          review_status?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          verification_attempts?: number | null
-          voice_file_name?: string | null
-          voice_file_size?: number | null
-          voice_url?: string | null
         }
         Relationships: []
       }
@@ -261,15 +147,7 @@ export type Database = {
           status?: string | null
           uploaded_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "donation_gifs_donation_id_fkey"
-            columns: ["donation_id"]
-            isOneToOne: false
-            referencedRelation: "chiaa_gaming_donations"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       donations: {
         Row: {
@@ -585,18 +463,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      can_access_chiaa_gaming_data: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
       can_access_streamer_data: {
         Args: { streamer_type: string }
         Returns: boolean
       }
       check_rate_limit: {
         Args: {
-          p_ip_address: string
           p_endpoint: string
+          p_ip_address: string
           p_max_requests?: number
           p_window_minutes?: number
         }
@@ -604,8 +478,8 @@ export type Database = {
       }
       check_username_exists: {
         Args:
+          | { exclude_user_id: string; username_to_check: string }
           | { username: string }
-          | { username_to_check: string; exclude_user_id: string }
         Returns: boolean
       }
       cleanup_expired_tokens: {
@@ -634,10 +508,10 @@ export type Database = {
       get_user_profile: {
         Args: { user_id: string }
         Returns: {
-          id: string
-          username: string
           created_at: string
+          id: string
           updated_at: string
+          username: string
         }[]
       }
       get_visitor_stats: {
@@ -652,23 +526,23 @@ export type Database = {
         Returns: boolean
       }
       is_moderator: {
-        Args: { p_telegram_id: number; p_streamer_id: string }
+        Args: { p_streamer_id: string; p_telegram_id: number }
         Returns: boolean
       }
       log_access_attempt: {
         Args: {
           p_action: string
-          p_table_name?: string
-          p_record_id?: string
           p_ip_address?: string
+          p_record_id?: string
+          p_table_name?: string
           p_user_agent?: string
         }
         Returns: undefined
       }
       log_security_event: {
         Args: {
-          event_type: string
           event_details?: string
+          event_type: string
           ip_address?: string
         }
         Returns: undefined
@@ -678,15 +552,15 @@ export type Database = {
         Returns: string
       }
       update_user_profile: {
-        Args: { user_id: string; new_username: string }
+        Args: { new_username: string; user_id: string }
         Returns: undefined
       }
       validate_donation_input: {
-        Args: { p_name: string; p_message: string; p_amount: number }
+        Args: { p_amount: number; p_message: string; p_name: string }
         Returns: boolean
       }
       validate_obs_token: {
-        Args: { p_token: string; p_admin_type: string }
+        Args: { p_admin_type: string; p_token: string }
         Returns: boolean
       }
     }
