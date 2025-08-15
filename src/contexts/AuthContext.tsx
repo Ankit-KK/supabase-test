@@ -9,7 +9,6 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, displayName: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
-  isAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,65 +25,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    console.log('AuthContext: Setting up auth listener');
-    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('AuthContext: Auth state changed', { event, session: !!session });
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          console.log('AuthContext: User exists, checking admin status');
-          // Check if user is an admin (owns any streamers)
-          setTimeout(async () => {
-            try {
-              const { data: streamers, error } = await supabase
-                .from('streamers')
-                .select('id')
-                .eq('user_id', session.user.id)
-                .limit(1);
-              
-              console.log('AuthContext: User streamers', streamers);
-              
-              if (error) {
-                console.error('AuthContext: Error fetching streamers', error);
-                setIsAdmin(false);
-                return;
-              }
-              
-              // If user owns any streamers, they're an admin
-              const isAdminValue = (streamers && streamers.length > 0);
-              console.log('AuthContext: Setting isAdmin to', isAdminValue);
-              setIsAdmin(isAdminValue);
-            } catch (error) {
-              console.error('AuthContext: Error fetching streamers', error);
-              setIsAdmin(false);
-            }
-          }, 0);
-        } else {
-          console.log('AuthContext: No user, setting admin to false');
-          setIsAdmin(false);
-        }
-        
         setLoading(false);
       }
     );
 
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('AuthContext: Initial session', !!session);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
     return () => {
-      console.log('AuthContext: Cleaning up auth listener');
       subscription.unsubscribe();
     };
   }, []);
@@ -125,7 +84,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signIn,
     signUp,
     signOut,
-    isAdmin,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -24,7 +24,7 @@ interface Profile {
 }
 
 const StreamerManagement = () => {
-  const { user, loading, isAdmin } = useAuth();
+  const { user, loading } = useAuth();
   const [streamers, setStreamers] = useState<Streamer[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loadingData, setLoadingData] = useState(true);
@@ -35,10 +35,7 @@ const StreamerManagement = () => {
 
     const fetchData = async () => {
       try {
-        if (!isAdmin) {
-          setLoadingData(false);
-          return;
-        }
+        // Allow any authenticated user
 
         // Fetch all streamers
         const { data: streamersData, error: streamersError } = await supabase
@@ -163,9 +160,7 @@ const StreamerManagement = () => {
     return <Navigate to="/auth" replace />;
   }
 
-  if (!isAdmin) {
-    return <Navigate to="/streamers" replace />;
-  }
+  // Allow any authenticated user to manage streamers
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 p-4">
