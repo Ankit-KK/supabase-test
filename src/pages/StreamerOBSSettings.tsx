@@ -168,7 +168,7 @@ const StreamerOBSSettings = () => {
     
     const { error } = await supabase
       .from('chia_gaming_donations')
-      .update({ message_visible: !currentVisibility })
+      .update({ message_visible: !currentVisibility } as any)
       .eq('id', donationId)
       .eq('streamer_id', streamer.id);
 

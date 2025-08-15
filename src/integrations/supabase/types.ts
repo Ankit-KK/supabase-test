@@ -53,6 +53,7 @@ export type Database = {
           created_at: string
           id: string
           message: string | null
+          message_visible: boolean | null
           name: string
           order_id: string | null
           payment_status: string | null
@@ -64,6 +65,7 @@ export type Database = {
           created_at?: string
           id?: string
           message?: string | null
+          message_visible?: boolean | null
           name: string
           order_id?: string | null
           payment_status?: string | null
@@ -75,6 +77,7 @@ export type Database = {
           created_at?: string
           id?: string
           message?: string | null
+          message_visible?: boolean | null
           name?: string
           order_id?: string | null
           payment_status?: string | null
