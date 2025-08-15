@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { useStreamerAuth } from '@/hooks/useStreamerAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency, calculateMonthlyTotal } from '@/utils/dashboardUtils';
+import { useToast } from '@/hooks/use-toast';
 import { DollarSign, TrendingUp, Users, Calendar, Settings, LogOut } from 'lucide-react';
 
 interface Donation {
@@ -31,6 +32,7 @@ interface Streamer {
 const StreamerDashboard = () => {
   const { session, loading, logout } = useStreamerAuth();
   const { streamerSlug } = useParams<{ streamerSlug: string }>();
+  const { toast } = useToast();
   const [streamer, setStreamer] = useState<Streamer | null>(null);
   const [donations, setDonations] = useState<Donation[]>([]);
   const [loadingData, setLoadingData] = useState(true);
@@ -132,6 +134,13 @@ const StreamerDashboard = () => {
               }
               return prev;
             });
+            
+            // Show notification for new donation
+            toast({
+              title: "New Donation! 🎉",
+              description: `${newDonation.name} donated ${formatCurrency(Number(newDonation.amount))}${newDonation.message ? `: ${newDonation.message}` : ''}`,
+              duration: 5000,
+            });
           }
           
           if (payload.eventType === 'UPDATE' && payload.new.payment_status === 'success' && payload.old.payment_status !== 'success') {
@@ -145,6 +154,13 @@ const StreamerDashboard = () => {
                 return prev + Number(updatedDonation.amount);
               }
               return prev;
+            });
+            
+            // Show notification for updated donation
+            toast({
+              title: "Donation Confirmed! ✅",
+              description: `${updatedDonation.name} donated ${formatCurrency(Number(updatedDonation.amount))}${updatedDonation.message ? `: ${updatedDonation.message}` : ''}`,
+              duration: 5000,
             });
           }
         }
