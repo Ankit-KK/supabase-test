@@ -43,13 +43,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Check if user is a streamer
           setTimeout(async () => {
             try {
-              const { data: profile } = await supabase
+              const { data: profile, error } = await supabase
                 .from('profiles')
                 .select('*')
                 .eq('id', session.user.id)
                 .single();
+              
               console.log('AuthContext: Profile data', profile);
-              setIsStreamer((profile as any)?.is_streamer || false);
+              
+              if (error && error.code !== 'PGRST116') {
+                console.error('AuthContext: Error fetching profile', error);
+                setIsStreamer(false);
+                return;
+              }
+              
+              // If no profile exists or is_streamer is not set, treat as non-streamer for now
+              const isStreamerValue = (profile as any)?.is_streamer === true;
+              console.log('AuthContext: Setting isStreamer to', isStreamerValue);
+              setIsStreamer(isStreamerValue);
             } catch (error) {
               console.error('AuthContext: Error fetching profile', error);
               setIsStreamer(false);

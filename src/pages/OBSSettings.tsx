@@ -31,8 +31,8 @@ const OBSSettings = () => {
   const [loadingDonations, setLoadingDonations] = useState(true);
   const [updatingVisibility, setUpdatingVisibility] = useState<string[]>([]);
 
-  // Redirect if not authenticated or not a streamer
-  if (!loading && (!user || !isStreamer)) {
+  // Allow access for all authenticated users for now
+  if (!loading && !user) {
     return <Navigate to="/auth" replace />;
   }
 
