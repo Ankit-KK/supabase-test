@@ -37,11 +37,6 @@ const Index = () => {
       {videoUrl && <VideoBackground videoSrc={videoUrl} />}
       <div className="content-overlay">
         <Navbar />
-        <div className="fixed top-4 right-4 z-50">
-          <Button asChild variant="outline">
-            <Link to="/login">Streamer Login</Link>
-          </Button>
-        </div>
         <HeroWithCanyonAnimation />
         <Features />
         <HowItWorks />
