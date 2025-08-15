@@ -21,6 +21,8 @@ import UpiSecurityBestPractices from "./pages/blog/UpiSecurityBestPractices";
 import Auth from "./pages/Auth";
 import StreamerDashboard from "./pages/StreamerDashboard";
 import StreamerOBSSettings from "./pages/StreamerOBSSettings";
+import StreamerSelection from "./pages/StreamerSelection";
+import StreamerManagement from "./pages/StreamerManagement";
 import AlertsPage from "./pages/AlertsPage";
 
 const queryClient = new QueryClient();
@@ -47,6 +49,8 @@ const App = () => (
             
             {/* Authentication and Streamer Dashboards */}
             <Route path="/auth" element={<Auth />} />
+            <Route path="/streamers" element={<StreamerSelection />} />
+            <Route path="/admin/streamers" element={<StreamerManagement />} />
             <Route path="/:streamerSlug/dashboard" element={<StreamerDashboard />} />
             <Route path="/:streamerSlug/dashboard/obs" element={<StreamerOBSSettings />} />
             <Route path="/alerts/:token" element={<AlertsPage />} />

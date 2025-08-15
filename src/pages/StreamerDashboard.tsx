@@ -60,7 +60,14 @@ const StreamerDashboard = () => {
         setStreamer(streamerInfo);
 
         // Check if user has access (either the streamer themselves or admin)
-        const userHasAccess = streamerInfo.user_id === user.id;
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('id', user.id)
+          .single();
+
+        const isAdmin = profile?.username === 'admin';
+        const userHasAccess = streamerInfo.user_id === user.id || isAdmin;
         setHasAccess(userHasAccess);
 
         if (!userHasAccess) {
