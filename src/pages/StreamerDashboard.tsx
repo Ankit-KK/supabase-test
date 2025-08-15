@@ -100,48 +100,52 @@ const StreamerDashboard = () => {
     };
 
     fetchStreamerAndData();
+  }, [session, streamerSlug]);
+
+  // Separate useEffect for realtime subscription to avoid dependency issues
+  useEffect(() => {
+    if (!streamer?.id) return;
 
     // Set up realtime subscription for this streamer's donations
     const channel = supabase
-      .channel(`donations-${streamerSlug}`)
+      .channel(`donations-${streamer.id}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'chia_gaming_donations'
+          table: 'chia_gaming_donations',
+          filter: `streamer_id=eq.${streamer.id}`
         },
         (payload) => {
+          console.log('Realtime donation update:', payload);
+          
           if (payload.eventType === 'INSERT' && payload.new.payment_status === 'success') {
             const newDonation = payload.new as Donation;
-            if (newDonation.streamer_id === streamer?.id) {
-              setDonations(prev => [newDonation, ...prev]);
-              setTotalAmount(prev => prev + Number(newDonation.amount));
-              setMonthlyAmount(prev => {
-                const donationDate = new Date(newDonation.created_at);
-                const now = new Date();
-                if (donationDate.getMonth() === now.getMonth() && donationDate.getFullYear() === now.getFullYear()) {
-                  return prev + Number(newDonation.amount);
-                }
-                return prev;
-              });
-            }
+            setDonations(prev => [newDonation, ...prev]);
+            setTotalAmount(prev => prev + Number(newDonation.amount));
+            setMonthlyAmount(prev => {
+              const donationDate = new Date(newDonation.created_at);
+              const now = new Date();
+              if (donationDate.getMonth() === now.getMonth() && donationDate.getFullYear() === now.getFullYear()) {
+                return prev + Number(newDonation.amount);
+              }
+              return prev;
+            });
           }
           
           if (payload.eventType === 'UPDATE' && payload.new.payment_status === 'success' && payload.old.payment_status !== 'success') {
             const updatedDonation = payload.new as Donation;
-            if (updatedDonation.streamer_id === streamer?.id) {
-              setDonations(prev => [updatedDonation, ...prev.filter(d => d.id !== updatedDonation.id)]);
-              setTotalAmount(prev => prev + Number(updatedDonation.amount));
-              setMonthlyAmount(prev => {
-                const donationDate = new Date(updatedDonation.created_at);
-                const now = new Date();
-                if (donationDate.getMonth() === now.getMonth() && donationDate.getFullYear() === now.getFullYear()) {
-                  return prev + Number(updatedDonation.amount);
-                }
-                return prev;
-              });
-            }
+            setDonations(prev => [updatedDonation, ...prev.filter(d => d.id !== updatedDonation.id)]);
+            setTotalAmount(prev => prev + Number(updatedDonation.amount));
+            setMonthlyAmount(prev => {
+              const donationDate = new Date(updatedDonation.created_at);
+              const now = new Date();
+              if (donationDate.getMonth() === now.getMonth() && donationDate.getFullYear() === now.getFullYear()) {
+                return prev + Number(updatedDonation.amount);
+              }
+              return prev;
+            });
           }
         }
       )
@@ -150,7 +154,7 @@ const StreamerDashboard = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [session, streamerSlug, streamer?.id]);
+  }, [streamer?.id]);
 
   // Show loading while auth is being determined
   if (loading) {
