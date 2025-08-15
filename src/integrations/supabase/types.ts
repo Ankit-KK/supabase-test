@@ -56,6 +56,7 @@ export type Database = {
           name: string
           order_id: string | null
           payment_status: string | null
+          streamer_id: string | null
           updated_at: string
         }
         Insert: {
@@ -66,6 +67,7 @@ export type Database = {
           name: string
           order_id?: string | null
           payment_status?: string | null
+          streamer_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -76,9 +78,18 @@ export type Database = {
           name?: string
           order_id?: string | null
           payment_status?: string | null
+          streamer_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "chia_gaming_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       page_visits: {
         Row: {
@@ -197,6 +208,42 @@ export type Database = {
         }
         Relationships: []
       }
+      streamers: {
+        Row: {
+          brand_color: string | null
+          brand_logo_url: string | null
+          created_at: string | null
+          id: string
+          obs_token: string | null
+          streamer_name: string
+          streamer_slug: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          brand_color?: string | null
+          brand_logo_url?: string | null
+          created_at?: string | null
+          id?: string
+          obs_token?: string | null
+          streamer_name: string
+          streamer_slug: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          brand_color?: string | null
+          brand_logo_url?: string | null
+          created_at?: string | null
+          id?: string
+          obs_token?: string | null
+          streamer_name?: string
+          streamer_slug?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_queries: {
         Row: {
           created_at: string
@@ -292,6 +339,18 @@ export type Database = {
         Returns: {
           total_visits: number
           unique_visitors: number
+        }[]
+      }
+      get_streamer_by_slug: {
+        Args: { slug: string }
+        Returns: {
+          brand_color: string
+          brand_logo_url: string
+          id: string
+          obs_token: string
+          streamer_name: string
+          streamer_slug: string
+          user_id: string
         }[]
       }
       get_user_profile: {
