@@ -14,6 +14,16 @@ interface Donation {
   streamer_id?: string;
 }
 
+interface Streamer {
+  id: string;
+  user_id: string;
+  streamer_slug: string;
+  streamer_name: string;
+  brand_color: string;
+  brand_logo_url?: string;
+  obs_token?: string;
+}
+
 interface AlertQueueItem {
   id: string;
   donation: Donation;
@@ -22,11 +32,19 @@ interface AlertQueueItem {
 
 const AlertsPage = () => {
   const { token } = useParams<{ token: string }>();
-  const [streamerId, setStreamerId] = useState<string | null>(null);
+  const [streamer, setStreamer] = useState<Streamer | null>(null);
   const [alertQueue, setAlertQueue] = useState<AlertQueueItem[]>([]);
   const [currentAlert, setCurrentAlert] = useState<AlertQueueItem | null>(null);
   const [isValidToken, setIsValidToken] = useState<boolean | null>(null);
+  const [obsAlertsEnabled, setObsAlertsEnabled] = useState(true);
   const alertTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Read enabled parameter from URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const enabled = urlParams.get('enabled');
+    setObsAlertsEnabled(enabled !== 'false');
+  }, []);
 
   useEffect(() => {
     if (!token) {
@@ -35,11 +53,22 @@ const AlertsPage = () => {
     }
 
     const validateToken = async () => {
-      // For now, just validate that token exists and set a dummy streamer ID
-      if (token && token.length > 10) {
-        setStreamerId('dummy-streamer-id');
+      try {
+        const { data: streamerData, error } = await supabase
+          .from('streamers')
+          .select('*')
+          .eq('obs_token', token)
+          .single();
+
+        if (error || !streamerData) {
+          setIsValidToken(false);
+          return;
+        }
+
+        setStreamer(streamerData);
         setIsValidToken(true);
-      } else {
+      } catch (error) {
+        console.error('Error validating token:', error);
         setIsValidToken(false);
       }
     };
@@ -48,7 +77,7 @@ const AlertsPage = () => {
   }, [token]);
 
   useEffect(() => {
-    if (!streamerId || !isValidToken) return;
+    if (!streamer || !isValidToken) return;
 
     // Set up realtime subscription for new donations
     const channel = supabase
@@ -59,7 +88,7 @@ const AlertsPage = () => {
           event: '*',
           schema: 'public',
           table: 'chia_gaming_donations',
-          filter: `streamer_id=eq.${streamerId}`
+          filter: `streamer_id=eq.${streamer.id}`
         },
         (payload) => {
           console.log('Alert update received:', payload);
@@ -100,7 +129,7 @@ const AlertsPage = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [streamerId, isValidToken]);
+  }, [streamer, isValidToken]);
 
   // Process alert queue
   useEffect(() => {
@@ -141,9 +170,16 @@ const AlertsPage = () => {
     );
   }
 
+  // If alerts are disabled, show nothing (transparent page for OBS)
+  if (!obsAlertsEnabled) {
+    return (
+      <div className="min-h-screen bg-transparent"></div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-transparent overflow-hidden relative">
-      {currentAlert && (
+      {currentAlert && obsAlertsEnabled && (
         <div className="fixed top-8 right-8 z-50 animate-slide-in-right">
           <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-lg shadow-2xl border border-primary/20 p-6 min-w-[400px] max-w-md animate-scale-in">
             <div className="flex items-center justify-between mb-3">

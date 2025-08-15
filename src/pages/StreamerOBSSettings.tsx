@@ -258,7 +258,7 @@ const StreamerOBSSettings = () => {
     );
   }
 
-  const obsUrl = `${window.location.origin}/alerts/${obsToken}`;
+  const obsUrl = `${window.location.origin}/alerts/${obsToken}?enabled=${obsAlertsEnabled}`;
 
   return (
     <div 
