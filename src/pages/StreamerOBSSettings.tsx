@@ -397,35 +397,6 @@ const StreamerOBSSettings = () => {
                         {new Date(donation.created_at).toLocaleString()}
                       </p>
                     </div>
-                    
-                    <div className="flex items-center gap-2 ml-4">
-                      <Switch
-                        checked={donation.message_visible !== false}
-                        onCheckedChange={() => handleToggleVisibility(
-                          donation.id, 
-                          donation.message_visible !== false
-                        )}
-                        disabled={updatingVisibility === donation.id}
-                      />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleToggleVisibility(
-                          donation.id, 
-                          donation.message_visible !== false
-                        )}
-                        disabled={updatingVisibility === donation.id}
-                      >
-                        {donation.message_visible !== false ? (
-                          <Eye className="w-4 h-4" />
-                        ) : (
-                          <EyeOff className="w-4 h-4" />
-                        )}
-                        <span className="ml-2 text-sm">
-                          {donation.message_visible !== false ? 'Show in OBS' : 'Hide from OBS'}
-                        </span>
-                      </Button>
-                    </div>
                   </div>
                 ))}
               </div>
