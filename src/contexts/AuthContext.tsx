@@ -29,23 +29,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isStreamer, setIsStreamer] = useState(false);
 
   useEffect(() => {
+    console.log('AuthContext: Setting up auth listener');
+    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('AuthContext: Auth state changed', { event, session: !!session });
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
+          console.log('AuthContext: User exists, checking streamer status');
           // Check if user is a streamer
           setTimeout(async () => {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', session.user.id)
-              .single();
-            setIsStreamer((profile as any)?.is_streamer || false);
+            try {
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', session.user.id)
+                .single();
+              console.log('AuthContext: Profile data', profile);
+              setIsStreamer((profile as any)?.is_streamer || false);
+            } catch (error) {
+              console.error('AuthContext: Error fetching profile', error);
+              setIsStreamer(false);
+            }
           }, 0);
         } else {
+          console.log('AuthContext: No user, setting streamer to false');
           setIsStreamer(false);
         }
         
@@ -55,12 +66,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('AuthContext: Initial session', !!session);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log('AuthContext: Cleaning up auth listener');
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -166,10 +166,10 @@ const OBSSettings = () => {
         {/* Header */}
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" asChild>
-            <a href="/dashboard">
+            <Link to="/dashboard">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Dashboard
-            </a>
+            </Link>
           </Button>
           <div>
             <h1 className="text-3xl font-bold">OBS Alert Settings</h1>

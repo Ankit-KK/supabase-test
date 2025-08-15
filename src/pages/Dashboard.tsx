@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,34 +26,50 @@ const Dashboard = () => {
   const [totalAmount, setTotalAmount] = useState(0);
   const [monthlyAmount, setMonthlyAmount] = useState(0);
 
+  console.log('Dashboard: Render start', { user: !!user, loading, isStreamer });
+
   // Redirect if not authenticated or not a streamer
   if (!loading && (!user || !isStreamer)) {
+    console.log('Dashboard: Redirecting to auth', { user: !!user, isStreamer });
     return <Navigate to="/auth" replace />;
   }
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      console.log('Dashboard: No user, skipping data fetch');
+      return;
+    }
+
+    console.log('Dashboard: Fetching donations for user', user.id);
 
     const fetchDonations = async () => {
       setLoadingDonations(true);
       
-      const { data, error } = await supabase
-        .from('chia_gaming_donations')
-        .select('*')
-        .eq('payment_status', 'success')
-        .order('created_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('chia_gaming_donations')
+          .select('*')
+          .eq('payment_status', 'success')
+          .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching donations:', error);
-      } else {
-        setDonations(data || []);
-        
-        // Calculate totals
-        const total = data?.reduce((sum, donation) => sum + Number(donation.amount), 0) || 0;
-        setTotalAmount(total);
-        
-        const monthly = calculateMonthlyTotal(data || []);
-        setMonthlyAmount(monthly);
+        console.log('Dashboard: Donations fetched', { count: data?.length, error });
+
+        if (error) {
+          console.error('Error fetching donations:', error);
+        } else {
+          setDonations(data || []);
+          
+          // Calculate totals
+          const total = data?.reduce((sum, donation) => sum + Number(donation.amount), 0) || 0;
+          setTotalAmount(total);
+          
+          const monthly = calculateMonthlyTotal(data || []);
+          setMonthlyAmount(monthly);
+          
+          console.log('Dashboard: Totals calculated', { total, monthly });
+        }
+      } catch (error) {
+        console.error('Dashboard: Error in fetchDonations', error);
       }
       
       setLoadingDonations(false);
@@ -62,6 +78,7 @@ const Dashboard = () => {
     fetchDonations();
 
     // Set up realtime subscription
+    console.log('Dashboard: Setting up realtime subscription');
     const channel = supabase
       .channel('donations-changes')
       .on(
@@ -69,11 +86,10 @@ const Dashboard = () => {
         {
           event: '*',
           schema: 'public',
-          table: 'chia_gaming_donations',
-          filter: `streamer_id=eq.${user.id}`
+          table: 'chia_gaming_donations'
         },
         (payload) => {
-          console.log('Donation update received:', payload);
+          console.log('Dashboard: Donation update received:', payload);
           
           if (payload.eventType === 'INSERT' && payload.new.payment_status === 'success') {
             const newDonation = payload.new as Donation;
@@ -107,17 +123,21 @@ const Dashboard = () => {
       .subscribe();
 
     return () => {
+      console.log('Dashboard: Cleaning up realtime subscription');
       supabase.removeChannel(channel);
     };
   }, [user]);
 
   if (loading || loadingDonations) {
+    console.log('Dashboard: Showing loading state', { loading, loadingDonations });
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
+
+  console.log('Dashboard: Rendering main content', { donationsCount: donations.length });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 p-6">
@@ -129,7 +149,7 @@ const Dashboard = () => {
             <p className="text-muted-foreground">Track your streaming donations in real-time</p>
           </div>
           <Button asChild>
-            <a href="/dashboard/obs">OBS Settings</a>
+            <Link to="/dashboard/obs">OBS Settings</Link>
           </Button>
         </div>
 

@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
@@ -38,7 +39,7 @@ const Index = () => {
         <Navbar />
         <div className="fixed top-4 right-4 z-50">
           <Button asChild variant="outline">
-            <a href="/auth">Streamer Login</a>
+            <Link to="/auth">Streamer Login</Link>
           </Button>
         </div>
         <HeroWithCanyonAnimation />
