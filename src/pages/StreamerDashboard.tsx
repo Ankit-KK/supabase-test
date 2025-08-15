@@ -38,20 +38,7 @@ const StreamerDashboard = () => {
   const [monthlyAmount, setMonthlyAmount] = useState(0);
   const [hasAccess, setHasAccess] = useState(false);
 
-  // Show loading while auth is being determined
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  // Redirect if not authenticated
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-
+  // Move useEffect to top level - before any conditional logic
   useEffect(() => {
     if (!user || !streamerSlug) return;
 
@@ -160,6 +147,20 @@ const StreamerDashboard = () => {
       supabase.removeChannel(channel);
     };
   }, [user, streamerSlug, streamer?.id]);
+
+  // Show loading while auth is being determined
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Redirect if not authenticated
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
 
   if (loadingData) {
     return (
