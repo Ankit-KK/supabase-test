@@ -55,17 +55,14 @@ const AlertsPage = () => {
     const validateToken = async () => {
       try {
         const { data: streamerData, error } = await supabase
-          .from('streamers')
-          .select('*')
-          .eq('obs_token', token)
-          .single();
+          .rpc('get_streamer_by_obs_token', { token });
 
-        if (error || !streamerData) {
+        if (error || !streamerData || streamerData.length === 0) {
           setIsValidToken(false);
           return;
         }
 
-        setStreamer(streamerData);
+        setStreamer(streamerData[0]);
         setIsValidToken(true);
       } catch (error) {
         console.error('Error validating token:', error);

@@ -350,6 +350,18 @@ export type Database = {
           unique_visitors: number
         }[]
       }
+      get_streamer_by_obs_token: {
+        Args: { token: string }
+        Returns: {
+          brand_color: string
+          brand_logo_url: string
+          id: string
+          obs_token: string
+          streamer_name: string
+          streamer_slug: string
+          user_id: string
+        }[]
+      }
       get_streamer_by_slug: {
         Args: { slug: string }
         Returns: {
