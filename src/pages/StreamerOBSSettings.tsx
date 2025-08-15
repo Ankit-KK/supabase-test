@@ -45,7 +45,7 @@ interface Streamer {
 }
 
 const StreamerOBSSettings = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
   const { streamerSlug } = useParams<{ streamerSlug: string }>();
   const { toast } = useToast();
   const [streamer, setStreamer] = useState<Streamer | null>(null);
@@ -90,7 +90,7 @@ const StreamerOBSSettings = () => {
         setStreamer(streamerInfo);
 
         // Check access
-        const userHasAccess = streamerInfo.user_id === user.id;
+        const userHasAccess = streamerInfo.user_id === user.id || isAdmin;
         setHasAccess(userHasAccess);
 
         if (!userHasAccess) {

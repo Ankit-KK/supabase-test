@@ -29,7 +29,7 @@ interface Streamer {
 }
 
 const StreamerDashboard = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
   const { streamerSlug } = useParams<{ streamerSlug: string }>();
   const [streamer, setStreamer] = useState<Streamer | null>(null);
   const [donations, setDonations] = useState<Donation[]>([]);
@@ -60,13 +60,6 @@ const StreamerDashboard = () => {
         setStreamer(streamerInfo);
 
         // Check if user has access (either the streamer themselves or admin)
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('username')
-          .eq('id', user.id)
-          .single();
-
-        const isAdmin = profile?.username === 'admin';
         const userHasAccess = streamerInfo.user_id === user.id || isAdmin;
         setHasAccess(userHasAccess);
 

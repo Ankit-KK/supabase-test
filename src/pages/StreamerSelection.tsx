@@ -15,10 +15,9 @@ interface Streamer {
 }
 
 const StreamerSelection = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
   const [streamers, setStreamers] = useState<Streamer[]>([]);
   const [loadingData, setLoadingData] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -26,21 +25,15 @@ const StreamerSelection = () => {
 
     const fetchUserStreamers = async () => {
       try {
-        // Check if user is admin
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
+        // Get streamers user has access to
+        let streamersQuery = supabase.from('streamers').select('*');
+        
+        if (!isAdmin) {
+          // Non-admin users can only see their assigned streamers
+          streamersQuery = streamersQuery.eq('user_id', user.id);
+        }
 
-        const userIsAdmin = profile?.username === 'admin';
-        setIsAdmin(userIsAdmin);
-
-        // Fetch streamers user has access to
-        const { data, error } = await supabase
-          .from('streamers')
-          .select('*')
-          .or(userIsAdmin ? undefined : `user_id.eq.${user.id}`);
+        const { data, error } = await streamersQuery;
 
         if (error) {
           console.error('Error fetching streamers:', error);
@@ -51,7 +44,7 @@ const StreamerSelection = () => {
 
         // If user has only one streamer, redirect directly
         if (data && data.length === 1) {
-          navigate(`/${data[0].streamer_slug}/dashboard`);
+          navigate(`/streamers/${data[0].streamer_slug}/dashboard`);
         }
       } catch (error) {
         console.error('Error:', error);

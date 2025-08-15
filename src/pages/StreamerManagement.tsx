@@ -24,11 +24,10 @@ interface Profile {
 }
 
 const StreamerManagement = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
   const [streamers, setStreamers] = useState<Streamer[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loadingData, setLoadingData] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -36,17 +35,7 @@ const StreamerManagement = () => {
 
     const fetchData = async () => {
       try {
-        // Check if user is admin
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-
-        const userIsAdmin = profile?.username === 'admin';
-        setIsAdmin(userIsAdmin);
-
-        if (!userIsAdmin) {
+        if (!isAdmin) {
           setLoadingData(false);
           return;
         }
@@ -62,19 +51,10 @@ const StreamerManagement = () => {
           return;
         }
 
-        // Fetch all profiles
-        const { data: profilesData, error: profilesError } = await supabase
-          .from('profiles')
-          .select('id, username')
-          .order('username');
-
-        if (profilesError) {
-          console.error('Error fetching profiles:', profilesError);
-          return;
-        }
-
+        // Get unique user IDs from streamers who have assignments
+        const uniqueUserIds = [...new Set(streamersData?.map(s => s.user_id).filter(Boolean))];
+        setProfiles(uniqueUserIds.map(id => ({ id, username: `User ${id.slice(0, 8)}` })));
         setStreamers(streamersData || []);
-        setProfiles(profilesData || []);
       } catch (error) {
         console.error('Error:', error);
       } finally {
