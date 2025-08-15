@@ -56,20 +56,6 @@ const StreamerOBSSettings = () => {
   const [hasAccess, setHasAccess] = useState(false);
   const [obsAlertsEnabled, setObsAlertsEnabled] = useState(true);
 
-  // Show loading while auth is being determined
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  // Redirect if not authenticated
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-
   useEffect(() => {
     if (!user || !streamerSlug) return;
 
@@ -155,6 +141,20 @@ const StreamerOBSSettings = () => {
       supabase.removeChannel(channel);
     };
   }, [user, streamerSlug, streamer?.id]);
+
+  // Show loading while auth is being determined
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Redirect if not authenticated
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
 
   const handleToggleVisibility = async (donationId: string, currentVisibility: boolean) => {
     if (!streamer) return;
