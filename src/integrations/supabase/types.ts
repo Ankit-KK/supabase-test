@@ -218,10 +218,12 @@ export type Database = {
           created_at: string | null
           id: string
           obs_token: string | null
+          password: string | null
           streamer_name: string
           streamer_slug: string
           updated_at: string | null
           user_id: string | null
+          username: string | null
         }
         Insert: {
           brand_color?: string | null
@@ -229,10 +231,12 @@ export type Database = {
           created_at?: string | null
           id?: string
           obs_token?: string | null
+          password?: string | null
           streamer_name: string
           streamer_slug: string
           updated_at?: string | null
           user_id?: string | null
+          username?: string | null
         }
         Update: {
           brand_color?: string | null
@@ -240,10 +244,12 @@ export type Database = {
           created_at?: string | null
           id?: string
           obs_token?: string | null
+          password?: string | null
           streamer_name?: string
           streamer_slug?: string
           updated_at?: string | null
           user_id?: string | null
+          username?: string | null
         }
         Relationships: []
       }

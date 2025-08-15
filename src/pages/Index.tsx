@@ -39,7 +39,7 @@ const Index = () => {
         <Navbar />
         <div className="fixed top-4 right-4 z-50">
           <Button asChild variant="outline">
-            <Link to="/auth">Streamer Login</Link>
+            <Link to="/login">Streamer Login</Link>
           </Button>
         </div>
         <HeroWithCanyonAnimation />

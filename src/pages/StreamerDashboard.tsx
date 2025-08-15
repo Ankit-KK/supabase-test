@@ -3,10 +3,10 @@ import { Navigate, Link, useParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/contexts/AuthContext';
+import { useStreamerAuth } from '@/hooks/useStreamerAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency, calculateMonthlyTotal } from '@/utils/dashboardUtils';
-import { DollarSign, TrendingUp, Users, Calendar, Settings } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, Calendar, Settings, LogOut } from 'lucide-react';
 
 interface Donation {
   id: string;
@@ -29,7 +29,7 @@ interface Streamer {
 }
 
 const StreamerDashboard = () => {
-  const { user, loading } = useAuth();
+  const { session, loading, logout } = useStreamerAuth();
   const { streamerSlug } = useParams<{ streamerSlug: string }>();
   const [streamer, setStreamer] = useState<Streamer | null>(null);
   const [donations, setDonations] = useState<Donation[]>([]);
@@ -40,7 +40,7 @@ const StreamerDashboard = () => {
 
   // Move useEffect to top level - before any conditional logic
   useEffect(() => {
-    if (!user || !streamerSlug) return;
+    if (!session || !streamerSlug) return;
 
     const fetchStreamerAndData = async () => {
       setLoadingData(true);
@@ -48,18 +48,28 @@ const StreamerDashboard = () => {
       try {
         // First, get the streamer info
         const { data: streamerData, error: streamerError } = await supabase
-          .rpc('get_streamer_by_slug', { slug: streamerSlug });
+          .from('streamers')
 
-        if (streamerError || !streamerData || streamerData.length === 0) {
+          .select('*')
+          .eq('streamer_slug', streamerSlug)
+          .single();
+
+        if (streamerError || !streamerData) {
           console.error('Error fetching streamer:', streamerError);
           setLoadingData(false);
           return;
         }
 
-        const streamerInfo = streamerData[0];
+        const streamerInfo = streamerData;
         setStreamer(streamerInfo);
 
-        // Allow any authenticated user to access
+        // Check if logged in user matches this streamer
+        if (session.streamerSlug !== streamerSlug) {
+          setHasAccess(false);
+          setLoadingData(false);
+          return;
+        }
+
         setHasAccess(true);
 
         // Fetch donations for this streamer
@@ -140,7 +150,7 @@ const StreamerDashboard = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, streamerSlug, streamer?.id]);
+  }, [session, streamerSlug, streamer?.id]);
 
   // Show loading while auth is being determined
   if (loading) {
@@ -152,8 +162,8 @@ const StreamerDashboard = () => {
   }
 
   // Redirect if not authenticated
-  if (!user) {
-    return <Navigate to="/auth" replace />;
+  if (!session) {
+    return <Navigate to="/login" replace />;
   }
 
   if (loadingData) {
@@ -206,11 +216,15 @@ const StreamerDashboard = () => {
             <p className="text-muted-foreground">Track your streaming donations in real-time</p>
           </div>
           <div className="flex gap-2">
-            <Button asChild>
+            <Button asChild variant="outline">
               <Link to={`/${streamerSlug}/dashboard/obs`}>
                 <Settings className="w-4 h-4 mr-2" />
                 OBS Settings
               </Link>
+            </Button>
+            <Button variant="outline" onClick={logout}>
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
             </Button>
           </div>
         </div>
