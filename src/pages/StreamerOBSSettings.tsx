@@ -54,6 +54,7 @@ const StreamerOBSSettings = () => {
   const [obsToken, setObsToken] = useState<string>('');
   const [updatingVisibility, setUpdatingVisibility] = useState<string | null>(null);
   const [hasAccess, setHasAccess] = useState(false);
+  const [obsAlertsEnabled, setObsAlertsEnabled] = useState(true);
 
   // Show loading while auth is being determined
   if (loading) {
@@ -314,12 +315,33 @@ const StreamerOBSSettings = () => {
               </div>
             </div>
             
-            <div className="flex gap-2">
-              <Button onClick={handleRegenerateToken} variant="outline">
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Regenerate URL
-              </Button>
+            <div className="flex items-center justify-between">
+              <div className="flex gap-2">
+                <Button onClick={handleRegenerateToken} variant="outline">
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Regenerate URL
+                </Button>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <Label htmlFor="obs-alerts-toggle" className="text-sm font-medium">
+                  Enable OBS Alerts
+                </Label>
+                <Switch
+                  id="obs-alerts-toggle"
+                  checked={obsAlertsEnabled}
+                  onCheckedChange={setObsAlertsEnabled}
+                />
+              </div>
             </div>
+            
+            {!obsAlertsEnabled && (
+              <div className="bg-muted/50 p-3 rounded-lg border-l-4 border-destructive">
+                <p className="text-sm text-muted-foreground">
+                  ⚠️ OBS alerts are currently disabled. No donation messages will appear in your OBS overlay.
+                </p>
+              </div>
+            )}
 
             <div className="bg-muted/50 p-4 rounded-lg">
               <h4 className="font-medium mb-2">OBS Setup Instructions:</h4>
