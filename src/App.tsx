@@ -19,8 +19,8 @@ import ChiaGaming from "./pages/ChiaGaming";
 import Status from "./pages/Status";
 import UpiSecurityBestPractices from "./pages/blog/UpiSecurityBestPractices";
 import Auth from "./pages/Auth";
-import Dashboard from "./pages/Dashboard";
-import OBSSettings from "./pages/OBSSettings";
+import StreamerDashboard from "./pages/StreamerDashboard";
+import StreamerOBSSettings from "./pages/StreamerOBSSettings";
 import AlertsPage from "./pages/AlertsPage";
 
 const queryClient = new QueryClient();
@@ -45,10 +45,10 @@ const App = () => (
             <Route path="/chia_gaming" element={<ChiaGaming />} />
             <Route path="/status" element={<Status />} />
             
-            {/* Authentication and Dashboard */}
+            {/* Authentication and Streamer Dashboards */}
             <Route path="/auth" element={<Auth />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/dashboard/obs" element={<OBSSettings />} />
+            <Route path="/:streamerSlug/dashboard" element={<StreamerDashboard />} />
+            <Route path="/:streamerSlug/dashboard/obs" element={<StreamerOBSSettings />} />
             <Route path="/alerts/:token" element={<AlertsPage />} />
             
             {/* Blog posts */}

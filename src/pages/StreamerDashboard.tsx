@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Navigate, Link } from 'react-router-dom';
+import { Navigate, Link, useParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency, calculateMonthlyTotal } from '@/utils/dashboardUtils';
-import { DollarSign, TrendingUp, Users, Calendar } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, Calendar, Settings } from 'lucide-react';
 
 interface Donation {
   id: string;
@@ -19,18 +19,27 @@ interface Donation {
   message_visible?: boolean;
 }
 
-const Dashboard = () => {
-  const { user, loading, isStreamer } = useAuth();
+interface Streamer {
+  id: string;
+  user_id: string;
+  streamer_slug: string;
+  streamer_name: string;
+  brand_color: string;
+  brand_logo_url?: string;
+}
+
+const StreamerDashboard = () => {
+  const { user, loading } = useAuth();
+  const { streamerSlug } = useParams<{ streamerSlug: string }>();
+  const [streamer, setStreamer] = useState<Streamer | null>(null);
   const [donations, setDonations] = useState<Donation[]>([]);
-  const [loadingDonations, setLoadingDonations] = useState(true);
+  const [loadingData, setLoadingData] = useState(true);
   const [totalAmount, setTotalAmount] = useState(0);
   const [monthlyAmount, setMonthlyAmount] = useState(0);
-
-  console.log('Dashboard: Render start', { user: !!user, loading, isStreamer });
+  const [hasAccess, setHasAccess] = useState(false);
 
   // Show loading while auth is being determined
   if (loading) {
-    console.log('Dashboard: Showing loading state - auth loading');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -40,63 +49,70 @@ const Dashboard = () => {
 
   // Redirect if not authenticated
   if (!user) {
-    console.log('Dashboard: Redirecting to auth - no user');
     return <Navigate to="/auth" replace />;
   }
 
-  // For now, allow access even if not a streamer (since field might not exist)
-  // TODO: Enforce streamer requirement after proper migration
-  if (!isStreamer) {
-    console.log('Dashboard: User is not a streamer, but allowing access for demo');
-  }
-
   useEffect(() => {
-    if (!user) {
-      console.log('Dashboard: No user, skipping data fetch');
-      return;
-    }
+    if (!user || !streamerSlug) return;
 
-    console.log('Dashboard: Fetching donations for user', user.id);
-
-    const fetchDonations = async () => {
-      setLoadingDonations(true);
+    const fetchStreamerAndData = async () => {
+      setLoadingData(true);
       
       try {
-        const { data, error } = await supabase
+        // First, get the streamer info
+        const { data: streamerData, error: streamerError } = await supabase
+          .rpc('get_streamer_by_slug', { slug: streamerSlug });
+
+        if (streamerError || !streamerData || streamerData.length === 0) {
+          console.error('Error fetching streamer:', streamerError);
+          setLoadingData(false);
+          return;
+        }
+
+        const streamerInfo = streamerData[0];
+        setStreamer(streamerInfo);
+
+        // Check if user has access (either the streamer themselves or admin)
+        const userHasAccess = streamerInfo.user_id === user.id;
+        setHasAccess(userHasAccess);
+
+        if (!userHasAccess) {
+          setLoadingData(false);
+          return;
+        }
+
+        // Fetch donations for this streamer
+        const { data: donationsData, error: donationsError } = await supabase
           .from('chia_gaming_donations')
           .select('*')
+          .eq('streamer_id', streamerInfo.id)
           .eq('payment_status', 'success')
           .order('created_at', { ascending: false });
 
-        console.log('Dashboard: Donations fetched', { count: data?.length, error });
-
-        if (error) {
-          console.error('Error fetching donations:', error);
+        if (donationsError) {
+          console.error('Error fetching donations:', donationsError);
         } else {
-          setDonations(data || []);
+          setDonations(donationsData || []);
           
           // Calculate totals
-          const total = data?.reduce((sum, donation) => sum + Number(donation.amount), 0) || 0;
+          const total = donationsData?.reduce((sum, donation) => sum + Number(donation.amount), 0) || 0;
           setTotalAmount(total);
           
-          const monthly = calculateMonthlyTotal(data || []);
+          const monthly = calculateMonthlyTotal(donationsData || []);
           setMonthlyAmount(monthly);
-          
-          console.log('Dashboard: Totals calculated', { total, monthly });
         }
       } catch (error) {
-        console.error('Dashboard: Error in fetchDonations', error);
+        console.error('Error in fetchStreamerAndData:', error);
       }
       
-      setLoadingDonations(false);
+      setLoadingData(false);
     };
 
-    fetchDonations();
+    fetchStreamerAndData();
 
-    // Set up realtime subscription
-    console.log('Dashboard: Setting up realtime subscription');
+    // Set up realtime subscription for this streamer's donations
     const channel = supabase
-      .channel('donations-changes')
+      .channel(`donations-${streamerSlug}`)
       .on(
         'postgres_changes',
         {
@@ -105,47 +121,47 @@ const Dashboard = () => {
           table: 'chia_gaming_donations'
         },
         (payload) => {
-          console.log('Dashboard: Donation update received:', payload);
-          
           if (payload.eventType === 'INSERT' && payload.new.payment_status === 'success') {
             const newDonation = payload.new as Donation;
-            setDonations(prev => [newDonation, ...prev]);
-            setTotalAmount(prev => prev + Number(newDonation.amount));
-            setMonthlyAmount(prev => {
-              const donationDate = new Date(newDonation.created_at);
-              const now = new Date();
-              if (donationDate.getMonth() === now.getMonth() && donationDate.getFullYear() === now.getFullYear()) {
-                return prev + Number(newDonation.amount);
-              }
-              return prev;
-            });
+            if (newDonation.streamer_id === streamer?.id) {
+              setDonations(prev => [newDonation, ...prev]);
+              setTotalAmount(prev => prev + Number(newDonation.amount));
+              setMonthlyAmount(prev => {
+                const donationDate = new Date(newDonation.created_at);
+                const now = new Date();
+                if (donationDate.getMonth() === now.getMonth() && donationDate.getFullYear() === now.getFullYear()) {
+                  return prev + Number(newDonation.amount);
+                }
+                return prev;
+              });
+            }
           }
           
           if (payload.eventType === 'UPDATE' && payload.new.payment_status === 'success' && payload.old.payment_status !== 'success') {
             const updatedDonation = payload.new as Donation;
-            setDonations(prev => [updatedDonation, ...prev.filter(d => d.id !== updatedDonation.id)]);
-            setTotalAmount(prev => prev + Number(updatedDonation.amount));
-            setMonthlyAmount(prev => {
-              const donationDate = new Date(updatedDonation.created_at);
-              const now = new Date();
-              if (donationDate.getMonth() === now.getMonth() && donationDate.getFullYear() === now.getFullYear()) {
-                return prev + Number(updatedDonation.amount);
-              }
-              return prev;
-            });
+            if (updatedDonation.streamer_id === streamer?.id) {
+              setDonations(prev => [updatedDonation, ...prev.filter(d => d.id !== updatedDonation.id)]);
+              setTotalAmount(prev => prev + Number(updatedDonation.amount));
+              setMonthlyAmount(prev => {
+                const donationDate = new Date(updatedDonation.created_at);
+                const now = new Date();
+                if (donationDate.getMonth() === now.getMonth() && donationDate.getFullYear() === now.getFullYear()) {
+                  return prev + Number(updatedDonation.amount);
+                }
+                return prev;
+              });
+            }
           }
         }
       )
       .subscribe();
 
     return () => {
-      console.log('Dashboard: Cleaning up realtime subscription');
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, streamerSlug, streamer?.id]);
 
-  if (loadingDonations) {
-    console.log('Dashboard: Showing loading state - donations loading');
+  if (loadingData) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -153,31 +169,68 @@ const Dashboard = () => {
     );
   }
 
-  console.log('Dashboard: Rendering main content', { donationsCount: donations.length });
+  if (!streamer) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card>
+          <CardHeader>
+            <CardTitle>Streamer Not Found</CardTitle>
+            <CardDescription>The streamer "{streamerSlug}" could not be found.</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!hasAccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card>
+          <CardHeader>
+            <CardTitle>Access Denied</CardTitle>
+            <CardDescription>You don't have permission to access this dashboard.</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20 p-6">
+    <div 
+      className="min-h-screen bg-gradient-to-br from-background to-secondary/20 p-6"
+      style={{ 
+        '--brand-color': streamer.brand_color,
+        '--brand-color-rgb': `hsl(${streamer.brand_color?.replace('#', '').match(/.{2}/g)?.map(hex => parseInt(hex, 16)).join(' ') || '99 102 241'})` 
+      } as React.CSSProperties}
+    >
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold">Donation Dashboard</h1>
+            <h1 className="text-3xl font-bold">{streamer.streamer_name} Dashboard</h1>
             <p className="text-muted-foreground">Track your streaming donations in real-time</p>
           </div>
-          <Button asChild>
-            <Link to="/dashboard/obs">OBS Settings</Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button asChild>
+              <Link to={`/${streamerSlug}/dashboard/obs`}>
+                <Settings className="w-4 h-4 mr-2" />
+                OBS Settings
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card>
+          <Card style={{ borderColor: streamer.brand_color }}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Donations</CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(totalAmount)}</div>
+              <div className="text-2xl font-bold" style={{ color: streamer.brand_color }}>
+                {formatCurrency(totalAmount)}
+              </div>
               <p className="text-xs text-muted-foreground">All-time total</p>
             </CardContent>
           </Card>
@@ -239,7 +292,12 @@ const Dashboard = () => {
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{donation.name}</span>
-                        <Badge variant="secondary">{formatCurrency(Number(donation.amount))}</Badge>
+                        <Badge 
+                          variant="secondary"
+                          style={{ backgroundColor: `${streamer.brand_color}20`, color: streamer.brand_color }}
+                        >
+                          {formatCurrency(Number(donation.amount))}
+                        </Badge>
                       </div>
                       {donation.message && (
                         <p className="text-sm text-muted-foreground mt-1">{donation.message}</p>
@@ -264,4 +322,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default StreamerDashboard;
