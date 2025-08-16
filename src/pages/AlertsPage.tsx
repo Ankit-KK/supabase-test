@@ -60,7 +60,7 @@ const AlertsPage = () => {
       try {
         console.log('OBS Alerts: validating token', obsToken);
         const { data, error } = await supabase
-          .rpc('get_streamer_by_obs_token', { token: obsToken });
+          .rpc('get_streamer_by_obs_token_v2', { token: obsToken });
 
         if (error) {
           console.error('OBS Alerts: RPC error', error);

@@ -79,33 +79,33 @@ const StreamerOBSSettings = () => {
         // Allow any authenticated user to access
         setHasAccess(true);
 
-        // Set OBS token
-        setObsToken(streamerInfo.obs_token || '');
+        // Get active OBS token from new table
+        const { data: activeToken, error: tokenError } = await supabase
+          .from('obs_tokens')
+          .select('token')
+          .eq('streamer_id', streamerInfo.id)
+          .eq('is_active', true)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-        // If no OBS token exists, verify from DB and generate once
-        if (!streamerInfo.obs_token) {
-          const { data: latest, error: latestErr } = await supabase
-            .from('streamers')
-            .select('obs_token')
-            .eq('id', streamerInfo.id)
-            .single();
+        if (!tokenError && activeToken?.token) {
+          setObsToken(activeToken.token);
+          setStreamer(prev => prev ? { ...prev, obs_token: activeToken.token } : null);
+        } else {
+          // Generate new token in new table
+          const newToken = generateObsToken();
+          const { error: insertError } = await supabase
+            .from('obs_tokens')
+            .insert({
+              streamer_id: streamerInfo.id,
+              token: newToken,
+              is_active: true
+            });
 
-          const currentToken = latest?.obs_token || streamerInfo.obs_token;
-
-          if (!latestErr && currentToken) {
-            setObsToken(currentToken);
-            setStreamer(prev => prev ? { ...prev, obs_token: currentToken } : null);
-          } else {
-            const newToken = generateObsToken();
-            const { error: updateError } = await supabase
-              .from('streamers')
-              .update({ obs_token: newToken })
-              .eq('id', streamerInfo.id);
-
-            if (!updateError) {
-              setObsToken(newToken);
-              setStreamer(prev => prev ? { ...prev, obs_token: newToken } : null);
-            }
+          if (!insertError) {
+            setObsToken(newToken);
+            setStreamer(prev => prev ? { ...prev, obs_token: newToken } : null);
           }
         }
 

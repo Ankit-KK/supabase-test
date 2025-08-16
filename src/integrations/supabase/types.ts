@@ -94,6 +94,33 @@ export type Database = {
           },
         ]
       }
+      obs_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          streamer_id: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          streamer_id: string
+          token: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          streamer_id?: string
+          token?: string
+        }
+        Relationships: []
+      }
       page_visits: {
         Row: {
           id: string
@@ -343,6 +370,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      get_active_obs_token: {
+        Args: { streamer_id: string }
+        Returns: string
+      }
       get_page_visitor_stats: {
         Args: { page: string }
         Returns: {
@@ -351,6 +382,18 @@ export type Database = {
         }[]
       }
       get_streamer_by_obs_token: {
+        Args: { token: string }
+        Returns: {
+          brand_color: string
+          brand_logo_url: string
+          id: string
+          obs_token: string
+          streamer_name: string
+          streamer_slug: string
+          user_id: string
+        }[]
+      }
+      get_streamer_by_obs_token_v2: {
         Args: { token: string }
         Returns: {
           brand_color: string

@@ -112,12 +112,22 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
   const handleRegenerateToken = async () => {
     setRegenerating(true);
     try {
+      // Deactivate current token
+      await supabase
+        .from('obs_tokens')
+        .update({ is_active: false })
+        .eq('streamer_id', streamer.id)
+        .eq('is_active', true);
+
+      // Generate new token
       const newToken = generateObsToken();
-      
       const { error } = await supabase
-        .from('streamers')
-        .update({ obs_token: newToken })
-        .eq('id', streamer.id);
+        .from('obs_tokens')
+        .insert({
+          streamer_id: streamer.id,
+          token: newToken,
+          is_active: true
+        });
 
       if (error) throw error;
 
@@ -126,7 +136,7 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
 
       toast({
         title: "Token Regenerated",
-        description: "New OBS alert URL generated. Update your OBS source!",
+        description: "New OBS alert URL generated. Old URL is now inactive.",
       });
     } catch (error) {
       toast({
@@ -166,32 +176,39 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
 
   const generateInitialToken = async () => {
     if (!streamer?.id) return;
-    if (streamer?.obs_token) return;
     
     setLoading(true);
     try {
-      // Re-fetch current token to avoid race conditions
-      const { data: latest, error: fetchError } = await supabase
-        .from('streamers')
-        .select('obs_token')
-        .eq('id', streamer.id)
-        .single();
+      // Check if active token exists
+      const { data: activeToken, error: tokenError } = await supabase
+        .from('obs_tokens')
+        .select('token')
+        .eq('streamer_id', streamer.id)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-      if (!fetchError && latest?.obs_token) {
-        onStreamerUpdate({ ...streamer, obs_token: latest.obs_token });
+      if (!tokenError && activeToken?.token) {
+        onStreamerUpdate({ ...streamer, obs_token: activeToken.token });
         setLoading(false);
         return;
       }
 
+      // Generate new token
       const newToken = generateObsToken();
       const { error } = await supabase
-        .from('streamers')
-        .update({ obs_token: newToken })
-        .eq('id', streamer.id);
+        .from('obs_tokens')
+        .insert({
+          streamer_id: streamer.id,
+          token: newToken,
+          is_active: true
+        });
 
       if (error) throw error;
 
-      onStreamerUpdate({ ...streamer, obs_token: newToken });
+      const updatedStreamer = { ...streamer, obs_token: newToken };
+      onStreamerUpdate(updatedStreamer);
     } catch (error) {
       toast({
         title: "Error",
@@ -202,13 +219,11 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
     setLoading(false);
   };
 
-  // Generate token when streamer loads and token is missing
+  // Generate token when streamer loads
   useEffect(() => {
     if (!streamer?.id) return;
-    if (!streamer?.obs_token) {
-      generateInitialToken();
-    }
-  }, [streamer?.id, streamer?.obs_token]);
+    generateInitialToken();
+  }, [streamer?.id]);
 
   return (
     <div className="space-y-6">
