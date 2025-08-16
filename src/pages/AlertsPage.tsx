@@ -123,23 +123,21 @@ const AlertsPage = () => {
 
   // Process alert queue
   useEffect(() => {
-    if (alertQueue.length > 0 && !currentAlert) {
+    if (!currentAlert && alertQueue.length > 0) {
       const nextAlert = alertQueue[0];
       setCurrentAlert(nextAlert);
       setAlertQueue(prev => prev.slice(1));
-
-      // Clear alert after 5 seconds
-      timeoutRef.current = setTimeout(() => {
-        setCurrentAlert(null);
-      }, 5000);
     }
-
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
   }, [alertQueue, currentAlert]);
+
+  // Auto-clear current alert after 5 seconds
+  useEffect(() => {
+    if (!currentAlert) return;
+    const timer = setTimeout(() => {
+      setCurrentAlert(null);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [currentAlert]);
 
   if (isValidToken === null) {
     return (
