@@ -32,6 +32,13 @@ const AlertsPage = () => {
   const obsToken = (pathToken && pathToken !== 'undefined' && pathToken !== 'null')
     ? pathToken
     : (searchParams.get('token') || searchParams.get('t') || '');
+  
+  console.log('OBS Alerts: token parsed', {
+    pathToken,
+    queryToken: searchParams.get('token'),
+    t: searchParams.get('t'),
+    obsToken
+  });
 
   const [streamer, setStreamer] = useState<Streamer | null>(null);
   const [currentAlert, setCurrentAlert] = useState<AlertQueueItem | null>(null);
@@ -51,6 +58,7 @@ const AlertsPage = () => {
 
     const validateToken = async () => {
       try {
+        console.log('OBS Alerts: validating token', obsToken);
         const { data, error } = await supabase
           .rpc('get_streamer_by_obs_token', { token: obsToken });
 
@@ -59,6 +67,7 @@ const AlertsPage = () => {
           setIsValidToken(false);
           return;
         }
+        console.log('OBS Alerts: RPC result', data);
         const rows = Array.isArray(data) ? data : (data ? [data] : []);
         if (!rows || rows.length === 0) {
           console.warn('OBS Alerts: token not found', obsToken);
