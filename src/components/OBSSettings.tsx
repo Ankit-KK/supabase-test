@@ -9,6 +9,7 @@ import { Copy, RefreshCw, Eye, EyeOff, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { generateObsToken } from '@/utils/secureIdGenerator';
+import { useStreamerAuth } from '@/hooks/useStreamerAuth';
 
 interface Donation {
   id: string;
@@ -41,6 +42,8 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
   const [loading, setLoading] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [authEmail, setAuthEmail] = useState<string | null>(null);
+  const { session: streamerSession, isAuthenticated: isStreamerAuthed } = useStreamerAuth();
+  const [backendStatus, setBackendStatus] = useState<'ok' | 'unauthorized' | 'error' | 'loading'>('loading');
 
   useEffect(() => {
     // Track Supabase auth status for clearer errors on 401
@@ -260,10 +263,28 @@ const handleRegenerateToken = async () => {
           <CardDescription>
             Add this URL as a browser source in OBS to show donation alerts on your stream
           </CardDescription>
-          <div className="mt-2">
+          <div className="mt-2 flex gap-2 flex-wrap items-center">
             <Badge variant="secondary">
-              {authEmail ? `Authenticated: ${authEmail}` : 'Not signed in'}
+              {authEmail
+                ? `Supabase: ${authEmail}`
+                : isStreamerAuthed
+                ? `Streamer: ${streamer.streamer_name}`
+                : 'Not signed in'}
             </Badge>
+            <Badge variant="outline">
+              {backendStatus === 'ok'
+                ? 'Backend: Connected'
+                : backendStatus === 'unauthorized'
+                ? 'Backend: 401 Unauthorized'
+                : backendStatus === 'loading'
+                ? 'Backend: Checking...'
+                : 'Backend: Error'}
+            </Badge>
+            {!authEmail && (
+              <Button variant="outline" size="sm" onClick={() => window.location.assign('/auth')}>
+                Sign in
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
