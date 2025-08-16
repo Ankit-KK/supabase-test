@@ -10,6 +10,7 @@ import { formatCurrency, calculateMonthlyTotal } from '@/utils/dashboardUtils';
 import { useToast } from '@/hooks/use-toast';
 import { DollarSign, TrendingUp, Users, Calendar, LogOut, Settings } from 'lucide-react';
 import OBSSettings from '@/components/OBSSettings';
+import { ConnectionStatus } from '@/components/ConnectionStatus';
 
 interface Donation {
   id: string;
@@ -372,6 +373,7 @@ const StreamerDashboard = () => {
           </TabsContent>
         </Tabs>
       </div>
+      <ConnectionStatus />
     </div>
   );
 };
