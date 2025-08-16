@@ -92,6 +92,7 @@ const AlertsPage = () => {
         (payload) => {
           if (payload.eventType === 'INSERT' && payload.new.payment_status === 'success') {
             const donation = payload.new as Donation;
+            console.log('New donation received:', { name: donation.name, amount: donation.amount, message: donation.message });
             if (donation.message_visible !== false) {
               setAlertQueue(prev => [...prev, { 
                 donation, 
