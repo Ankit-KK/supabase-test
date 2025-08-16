@@ -82,17 +82,30 @@ const StreamerOBSSettings = () => {
         // Set OBS token
         setObsToken(streamerInfo.obs_token || '');
 
-        // If no OBS token exists, generate one
+        // If no OBS token exists, verify from DB and generate once
         if (!streamerInfo.obs_token) {
-          const newToken = generateObsToken();
-          const { error: updateError } = await supabase
+          const { data: latest, error: latestErr } = await supabase
             .from('streamers')
-            .update({ obs_token: newToken })
-            .eq('id', streamerInfo.id);
+            .select('obs_token')
+            .eq('id', streamerInfo.id)
+            .single();
 
-          if (!updateError) {
-            setObsToken(newToken);
-            setStreamer(prev => prev ? { ...prev, obs_token: newToken } : null);
+          const currentToken = latest?.obs_token || streamerInfo.obs_token;
+
+          if (!latestErr && currentToken) {
+            setObsToken(currentToken);
+            setStreamer(prev => prev ? { ...prev, obs_token: currentToken } : null);
+          } else {
+            const newToken = generateObsToken();
+            const { error: updateError } = await supabase
+              .from('streamers')
+              .update({ obs_token: newToken })
+              .eq('id', streamerInfo.id);
+
+            if (!updateError) {
+              setObsToken(newToken);
+              setStreamer(prev => prev ? { ...prev, obs_token: newToken } : null);
+            }
           }
         }
 

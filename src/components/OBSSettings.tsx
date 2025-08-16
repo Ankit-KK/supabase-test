@@ -165,12 +165,25 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
   };
 
   const generateInitialToken = async () => {
-    if (streamer.obs_token) return;
+    if (!streamer?.id) return;
+    if (streamer?.obs_token) return;
     
     setLoading(true);
     try {
+      // Re-fetch current token to avoid race conditions
+      const { data: latest, error: fetchError } = await supabase
+        .from('streamers')
+        .select('obs_token')
+        .eq('id', streamer.id)
+        .single();
+
+      if (!fetchError && latest?.obs_token) {
+        onStreamerUpdate({ ...streamer, obs_token: latest.obs_token });
+        setLoading(false);
+        return;
+      }
+
       const newToken = generateObsToken();
-      
       const { error } = await supabase
         .from('streamers')
         .update({ obs_token: newToken })
@@ -189,12 +202,13 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
     setLoading(false);
   };
 
-  // Generate token on mount if it doesn't exist
+  // Generate token when streamer loads and token is missing
   useEffect(() => {
-    if (!streamer.obs_token) {
+    if (!streamer?.id) return;
+    if (!streamer?.obs_token) {
       generateInitialToken();
     }
-  }, []);
+  }, [streamer?.id, streamer?.obs_token]);
 
   return (
     <div className="space-y-6">
