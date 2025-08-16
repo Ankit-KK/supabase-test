@@ -19,6 +19,7 @@ import ChiaGaming from "./pages/ChiaGaming";
 import Status from "./pages/Status";
 import UpiSecurityBestPractices from "./pages/blog/UpiSecurityBestPractices";
 import Auth from "./pages/Auth";
+import ChiaGamingLogin from "./pages/ChiaGamingLogin";
 import StreamerDashboard from "./pages/StreamerDashboard";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,7 @@ const App = () => (
             
             {/* Authentication */}
             <Route path="/auth" element={<Auth />} />
+            <Route path="/chia_gaming/login" element={<ChiaGamingLogin />} />
             <Route path="/chia_gaming/dashboard" element={<StreamerDashboard />} />
             
             {/* Blog posts */}
