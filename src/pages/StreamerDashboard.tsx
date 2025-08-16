@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Navigate, Link, useParams } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,7 +7,7 @@ import { useStreamerAuth } from '@/hooks/useStreamerAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency, calculateMonthlyTotal } from '@/utils/dashboardUtils';
 import { useToast } from '@/hooks/use-toast';
-import { DollarSign, TrendingUp, Users, Calendar, Settings, LogOut } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, Calendar, LogOut } from 'lucide-react';
 
 interface Donation {
   id: string;
@@ -31,7 +31,7 @@ interface Streamer {
 
 const StreamerDashboard = () => {
   const { session, loading, logout } = useStreamerAuth();
-  const { streamerSlug } = useParams<{ streamerSlug: string }>();
+  const streamerSlug = 'chia_gaming';
   const { toast } = useToast();
   const [streamer, setStreamer] = useState<Streamer | null>(null);
   const [donations, setDonations] = useState<Donation[]>([]);
@@ -42,7 +42,7 @@ const StreamerDashboard = () => {
 
   // Move useEffect to top level - before any conditional logic
   useEffect(() => {
-    if (!session || !streamerSlug) return;
+    if (!session) return;
 
     const fetchStreamerAndData = async () => {
       setLoadingData(true);
@@ -102,7 +102,7 @@ const StreamerDashboard = () => {
     };
 
     fetchStreamerAndData();
-  }, [session, streamerSlug]);
+  }, [session]);
 
   // Separate useEffect for realtime subscription to avoid dependency issues
   useEffect(() => {
@@ -183,7 +183,7 @@ const StreamerDashboard = () => {
 
   // Redirect if not authenticated
   if (!session) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/auth" replace />;
   }
 
   if (loadingData) {
@@ -236,12 +236,6 @@ const StreamerDashboard = () => {
             <p className="text-muted-foreground">Track your streaming donations in real-time</p>
           </div>
           <div className="flex gap-2">
-            <Button asChild variant="outline">
-              <Link to={`/${streamerSlug}/dashboard/obs`}>
-                <Settings className="w-4 h-4 mr-2" />
-                OBS Settings
-              </Link>
-            </Button>
             <Button variant="outline" onClick={logout}>
               <LogOut className="w-4 h-4 mr-2" />
               Logout
