@@ -40,6 +40,18 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
   const [obsEnabled, setObsEnabled] = useState(true);
   const [loading, setLoading] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+  const [authEmail, setAuthEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Track Supabase auth status for clearer errors on 401
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setAuthEmail(session?.user?.email ?? null);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthEmail(session?.user?.email ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   const obsUrl = streamer.obs_token 
     ? `${window.location.origin}/alerts/${streamer.obs_token}`
@@ -109,44 +121,58 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
     }
   };
 
-  const handleRegenerateToken = async () => {
-    setRegenerating(true);
-    try {
-      // Deactivate current token
-      await supabase
-        .from('obs_tokens')
-        .update({ is_active: false })
-        .eq('streamer_id', streamer.id)
-        .eq('is_active', true);
-
-      // Generate new token
-      const newToken = generateObsToken();
-      const { error } = await supabase
-        .from('obs_tokens')
-        .insert({
-          streamer_id: streamer.id,
-          token: newToken,
-          is_active: true
-        });
-
-      if (error) throw error;
-
-      const updatedStreamer = { ...streamer, obs_token: newToken };
-      onStreamerUpdate(updatedStreamer);
-
+const handleRegenerateToken = async () => {
+  setRegenerating(true);
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
       toast({
-        title: "Token Regenerated",
-        description: "New OBS alert URL generated. Old URL is now inactive.",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to regenerate token",
+        title: "Sign in required",
+        description: "Please log in before regenerating the OBS link (401 Unauthorized).",
         variant: "destructive",
       });
+      setRegenerating(false);
+      return;
     }
-    setRegenerating(false);
-  };
+
+    // Deactivate current token
+    const { error: deactivateError } = await supabase
+      .from('obs_tokens')
+      .update({ is_active: false })
+      .eq('streamer_id', streamer.id)
+      .eq('is_active', true);
+    if (deactivateError) throw deactivateError;
+
+    // Generate new token
+    const newToken = generateObsToken();
+    const { error: insertError } = await supabase
+      .from('obs_tokens')
+      .insert({
+        streamer_id: streamer.id,
+        token: newToken,
+        is_active: true
+      });
+
+    if (insertError) throw insertError;
+
+    const updatedStreamer = { ...streamer, obs_token: newToken };
+    onStreamerUpdate(updatedStreamer);
+
+    toast({
+      title: "Token Regenerated",
+      description: "New OBS alert URL generated. Old URL is now inactive.",
+    });
+  } catch (error: any) {
+    const message = error?.message || 'Failed to regenerate token';
+    toast({
+      title: "Error",
+      description: message.includes('JWT') || message.includes('Unauthorized') ?
+        'Unauthorized (401). Please sign in again and retry.' : message,
+      variant: "destructive",
+    });
+  }
+  setRegenerating(false);
+};
 
   const handleToggleMessageVisibility = async (donationId: string, visible: boolean) => {
     try {
@@ -234,6 +260,11 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
           <CardDescription>
             Add this URL as a browser source in OBS to show donation alerts on your stream
           </CardDescription>
+          <div className="mt-2">
+            <Badge variant="secondary">
+              {authEmail ? `Authenticated: ${authEmail}` : 'Not signed in'}
+            </Badge>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {obsUrl ? (
@@ -276,10 +307,10 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
                   variant="outline"
                   size="sm"
                   onClick={handleRegenerateToken}
-                  disabled={regenerating}
+                  disabled={regenerating || !authEmail}
                 >
                   <RefreshCw className={`w-4 h-4 mr-2 ${regenerating ? 'animate-spin' : ''}`} />
-                  Regenerate URL
+                  {authEmail ? 'Regenerate URL' : 'Sign in to regenerate'}
                 </Button>
               </div>
               
