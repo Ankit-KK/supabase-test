@@ -197,7 +197,7 @@ const AlertsPage = () => {
       
       <div className="min-h-screen bg-transparent overflow-hidden relative">
         {currentAlert && (
-          <div className="fixed top-8 left-1/2 transform -translate-x-1/2 z-50 animate-slideIn">
+          <div className="fixed top-8 right-8 z-50 animate-slideIn">
             <div 
               className="bg-black/90 rounded-lg px-4 py-2 shadow-lg flex items-center gap-3 min-w-64"
               style={{ 
