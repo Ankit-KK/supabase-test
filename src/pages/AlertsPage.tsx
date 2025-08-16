@@ -1,7 +1,6 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { formatCurrency } from '@/utils/dashboardUtils';
 
 interface Donation {
   id: string;
@@ -9,9 +8,8 @@ interface Donation {
   amount: number;
   message?: string;
   created_at: string;
-  message_visible: boolean;
   payment_status: string;
-  streamer_id?: string;
+  message_visible?: boolean;
 }
 
 interface Streamer {
@@ -20,32 +18,26 @@ interface Streamer {
   streamer_slug: string;
   streamer_name: string;
   brand_color: string;
-  brand_logo_url?: string;
-  obs_token?: string;
+  obs_token: string;
 }
 
 interface AlertQueueItem {
-  id: string;
   donation: Donation;
   timestamp: number;
 }
 
 const AlertsPage = () => {
   const { token } = useParams<{ token: string }>();
+  const [searchParams] = useSearchParams();
   const [streamer, setStreamer] = useState<Streamer | null>(null);
-  const [alertQueue, setAlertQueue] = useState<AlertQueueItem[]>([]);
   const [currentAlert, setCurrentAlert] = useState<AlertQueueItem | null>(null);
+  const [alertQueue, setAlertQueue] = useState<AlertQueueItem[]>([]);
   const [isValidToken, setIsValidToken] = useState<boolean | null>(null);
-  const [obsAlertsEnabled, setObsAlertsEnabled] = useState(true);
-  const alertTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Read enabled parameter from URL
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const enabled = urlParams.get('enabled');
-    setObsAlertsEnabled(enabled !== 'false');
-  }, []);
+  const enabled = searchParams.get('enabled') !== 'false';
 
+  // Validate OBS token and fetch streamer
   useEffect(() => {
     if (!token) {
       setIsValidToken(false);
@@ -54,15 +46,15 @@ const AlertsPage = () => {
 
     const validateToken = async () => {
       try {
-        const { data: streamerData, error } = await supabase
+        const { data, error } = await supabase
           .rpc('get_streamer_by_obs_token', { token });
 
-        if (error || !streamerData || streamerData.length === 0) {
+        if (error || !data || data.length === 0) {
           setIsValidToken(false);
           return;
         }
 
-        setStreamer(streamerData[0]);
+        setStreamer(data[0]);
         setIsValidToken(true);
       } catch (error) {
         console.error('Error validating token:', error);
@@ -73,12 +65,12 @@ const AlertsPage = () => {
     validateToken();
   }, [token]);
 
+  // Subscribe to real-time donations
   useEffect(() => {
-    if (!streamer || !isValidToken) return;
+    if (!streamer?.id) return;
 
-    // Set up realtime subscription for new donations
     const channel = supabase
-      .channel('obs-alerts')
+      .channel(`alerts-${streamer.id}`)
       .on(
         'postgres_changes',
         {
@@ -88,35 +80,27 @@ const AlertsPage = () => {
           filter: `streamer_id=eq.${streamer.id}`
         },
         (payload) => {
-          console.log('Alert update received:', payload);
+          console.log('Alert received:', payload);
           
           if (payload.eventType === 'INSERT' && payload.new.payment_status === 'success') {
-            const newDonation = payload.new as Donation;
-            if (newDonation.message_visible) {
-              const alertItem: AlertQueueItem = {
-                id: `alert-${newDonation.id}-${Date.now()}`,
-                donation: newDonation,
-                timestamp: Date.now()
-              };
-              setAlertQueue(prev => [...prev, alertItem]);
+            const donation = payload.new as Donation;
+            if (donation.message_visible !== false) {
+              setAlertQueue(prev => [...prev, { 
+                donation, 
+                timestamp: Date.now() 
+              }]);
             }
           }
           
-          if (payload.eventType === 'UPDATE') {
-            const updatedDonation = payload.new as Donation;
-            
-            // If payment status changed to success and message is visible, show alert
-            if (
-              updatedDonation.payment_status === 'success' && 
-              (payload.old as any).payment_status !== 'success' &&
-              updatedDonation.message_visible
-            ) {
-              const alertItem: AlertQueueItem = {
-                id: `alert-${updatedDonation.id}-${Date.now()}`,
-                donation: updatedDonation,
-                timestamp: Date.now()
-              };
-              setAlertQueue(prev => [...prev, alertItem]);
+          if (payload.eventType === 'UPDATE' && 
+              payload.new.payment_status === 'success' && 
+              payload.old.payment_status !== 'success') {
+            const donation = payload.new as Donation;
+            if (donation.message_visible !== false) {
+              setAlertQueue(prev => [...prev, { 
+                donation, 
+                timestamp: Date.now() 
+              }]);
             }
           }
         }
@@ -126,99 +110,55 @@ const AlertsPage = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [streamer, isValidToken]);
+  }, [streamer?.id]);
 
   // Process alert queue
   useEffect(() => {
-    if (currentAlert || alertQueue.length === 0) return;
+    if (alertQueue.length > 0 && !currentAlert) {
+      const nextAlert = alertQueue[0];
+      setCurrentAlert(nextAlert);
+      setAlertQueue(prev => prev.slice(1));
 
-    const nextAlert = alertQueue[0];
-    setCurrentAlert(nextAlert);
-    setAlertQueue(prev => prev.slice(1));
-
-    // Clear alert after 5 seconds
-    alertTimeoutRef.current = setTimeout(() => {
-      setCurrentAlert(null);
-    }, 5000);
+      // Clear alert after 5 seconds
+      timeoutRef.current = setTimeout(() => {
+        setCurrentAlert(null);
+      }, 5000);
+    }
 
     return () => {
-      if (alertTimeoutRef.current) {
-        clearTimeout(alertTimeoutRef.current);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
       }
     };
-  }, [currentAlert, alertQueue]);
+  }, [alertQueue, currentAlert]);
 
   if (isValidToken === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="min-h-screen flex items-center justify-center bg-transparent">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
       </div>
     );
   }
 
-  if (isValidToken === false) {
+  if (!isValidToken) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-transparent">
-        <div className="text-center p-8">
-          <h1 className="text-2xl font-bold text-red-500">Invalid OBS Token</h1>
-          <p className="text-gray-600 mt-2">This alert URL is not valid or has been regenerated.</p>
+        <div className="text-white text-center">
+          <h1 className="text-2xl font-bold mb-2">Invalid OBS Token</h1>
+          <p className="text-gray-300">Please check your OBS browser source URL</p>
         </div>
       </div>
     );
   }
 
-  // If alerts are disabled, show nothing (transparent page for OBS)
-  if (!obsAlertsEnabled) {
-    return (
-      <div className="min-h-screen bg-transparent"></div>
-    );
+  if (!enabled) {
+    return <div className="min-h-screen bg-transparent"></div>;
   }
 
   return (
-    <div className="min-h-screen bg-transparent overflow-hidden relative">
-      {currentAlert && obsAlertsEnabled && (
-        <div className="fixed top-8 right-8 z-50 animate-slide-in-right">
-          <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-lg shadow-2xl border border-primary/20 p-6 min-w-[400px] max-w-md animate-scale-in">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-lg font-bold">New Donation!</h3>
-              <div className="text-2xl font-bold">
-                {formatCurrency(Number(currentAlert.donation.amount))}
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="text-sm opacity-90">From:</span>
-                <span className="font-semibold">{currentAlert.donation.name}</span>
-              </div>
-              
-              {currentAlert.donation.message && (
-                <div className="bg-white/10 rounded p-3 mt-3">
-                  <p className="text-sm italic">"{currentAlert.donation.message}"</p>
-                </div>
-              )}
-            </div>
-            
-            {/* Animated progress bar */}
-            <div className="mt-4 h-1 bg-white/20 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-white/60 animate-[progress_5s_linear]"
-                style={{
-                  animation: 'progress 5s linear forwards'
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-      
+    <>
       <style>{`
-        @keyframes progress {
-          from { width: 100%; }
-          to { width: 0%; }
-        }
-        
-        @keyframes slide-in-right {
+        @keyframes slideInRight {
           from {
             transform: translateX(100%);
             opacity: 0;
@@ -229,26 +169,57 @@ const AlertsPage = () => {
           }
         }
         
-        @keyframes scale-in {
-          from {
-            transform: scale(0.8);
-            opacity: 0;
-          }
-          to {
-            transform: scale(1);
-            opacity: 1;
-          }
-        }
-        
-        .animate-slide-in-right {
-          animation: slide-in-right 0.5s ease-out;
-        }
-        
-        .animate-scale-in {
-          animation: scale-in 0.3s ease-out;
+        .animate-slideInRight {
+          animation: slideInRight 0.5s ease-out forwards;
         }
       `}</style>
-    </div>
+      
+      <div className="min-h-screen bg-transparent overflow-hidden relative">
+        {currentAlert && (
+          <div 
+            className="fixed top-20 right-20 z-50 animate-slideInRight"
+            style={{
+              animationDuration: '0.5s',
+              animationFillMode: 'both'
+            }}
+          >
+            <div 
+              className="bg-black/80 backdrop-blur-sm border-2 rounded-lg p-6 shadow-2xl min-w-80 max-w-md"
+              style={{ 
+                borderColor: streamer?.brand_color || '#6366f1',
+                boxShadow: `0 0 30px ${streamer?.brand_color || '#6366f1'}40`
+              }}
+            >
+              <div className="text-center">
+                <div 
+                  className="text-2xl font-bold mb-2"
+                  style={{ color: streamer?.brand_color || '#6366f1' }}
+                >
+                  New Donation! 🎉
+                </div>
+                
+                <div className="text-white text-xl font-semibold mb-1">
+                  {currentAlert.donation.name}
+                </div>
+                
+                <div 
+                  className="text-3xl font-bold mb-3"
+                  style={{ color: streamer?.brand_color || '#6366f1' }}
+                >
+                  ₹{currentAlert.donation.amount}
+                </div>
+                
+                {currentAlert.donation.message && currentAlert.donation.message_visible !== false && (
+                  <div className="text-gray-200 text-sm italic max-w-xs mx-auto break-words">
+                    "{currentAlert.donation.message}"
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
   );
 };
 

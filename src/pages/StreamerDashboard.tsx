@@ -3,11 +3,13 @@ import { Navigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useStreamerAuth } from '@/hooks/useStreamerAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency, calculateMonthlyTotal } from '@/utils/dashboardUtils';
 import { useToast } from '@/hooks/use-toast';
-import { DollarSign, TrendingUp, Users, Calendar, LogOut } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, Calendar, LogOut, Settings } from 'lucide-react';
+import OBSSettings from '@/components/OBSSettings';
 
 interface Donation {
   id: string;
@@ -39,6 +41,11 @@ const StreamerDashboard = () => {
   const [totalAmount, setTotalAmount] = useState(0);
   const [monthlyAmount, setMonthlyAmount] = useState(0);
   const [hasAccess, setHasAccess] = useState(false);
+  const [activeTab, setActiveTab] = useState('dashboard');
+
+  const handleStreamerUpdate = (updatedStreamer: Streamer) => {
+    setStreamer(updatedStreamer);
+  };
 
   // Move useEffect to top level - before any conditional logic
   useEffect(() => {
@@ -243,6 +250,21 @@ const StreamerDashboard = () => {
           </div>
         </div>
 
+        {/* Navigation Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="dashboard" className="flex items-center gap-2">
+              <DollarSign className="w-4 h-4" />
+              Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="obs" className="flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              OBS Settings
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="dashboard" className="space-y-6 mt-6">
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card style={{ borderColor: streamer.brand_color }}>
@@ -340,6 +362,15 @@ const StreamerDashboard = () => {
             )}
           </CardContent>
         </Card>
+          </TabsContent>
+
+          <TabsContent value="obs" className="mt-6">
+            <OBSSettings 
+              streamer={streamer} 
+              onStreamerUpdate={handleStreamerUpdate}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
