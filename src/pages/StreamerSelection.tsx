@@ -21,7 +21,7 @@ const StreamerSelection = () => {
   useEffect(() => {
     if (!user) return;
     
-    // Directly redirect authenticated users to the streamer dashboard
+    // Directly redirect authenticated users to the chia gaming dashboard
     navigate('/chia_gaming/dashboard');
   }, [user, navigate]);
 

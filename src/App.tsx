@@ -19,12 +19,7 @@ import ChiaGaming from "./pages/ChiaGaming";
 import Status from "./pages/Status";
 import UpiSecurityBestPractices from "./pages/blog/UpiSecurityBestPractices";
 import Auth from "./pages/Auth";
-import StreamerLogin from "./pages/StreamerLogin";
 import StreamerDashboard from "./pages/StreamerDashboard";
-import StreamerOBSSettings from "./pages/StreamerOBSSettings";
-import StreamerSelection from "./pages/StreamerSelection";
-import StreamerManagement from "./pages/StreamerManagement";
-import AlertsPage from "./pages/AlertsPage";
 
 const queryClient = new QueryClient();
 
@@ -48,14 +43,9 @@ const App = () => (
             <Route path="/chia_gaming" element={<ChiaGaming />} />
             <Route path="/status" element={<Status />} />
             
-            {/* Authentication and Streamer Dashboards */}
+            {/* Authentication */}
             <Route path="/auth" element={<Auth />} />
-            <Route path="/login" element={<StreamerLogin />} />
-            <Route path="/streamers" element={<StreamerSelection />} />
-            <Route path="/admin/streamers" element={<StreamerManagement />} />
-            <Route path="/:streamerSlug/dashboard" element={<StreamerDashboard />} />
-            <Route path="/:streamerSlug/dashboard/obs" element={<StreamerOBSSettings />} />
-            <Route path="/alerts/:token" element={<AlertsPage />} />
+            <Route path="/chia_gaming/dashboard" element={<StreamerDashboard />} />
             
             {/* Blog posts */}
             <Route path="/blog/upi-security-best-practices" element={<UpiSecurityBestPractices />} />
