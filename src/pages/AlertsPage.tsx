@@ -179,62 +179,39 @@ const AlertsPage = () => {
   return (
     <>
       <style>{`
-        @keyframes slideInRight {
+        @keyframes slideIn {
           from {
-            transform: translateX(100%);
+            transform: translateY(-20px);
             opacity: 0;
           }
           to {
-            transform: translateX(0);
+            transform: translateY(0);
             opacity: 1;
           }
         }
         
-        .animate-slideInRight {
-          animation: slideInRight 0.5s ease-out forwards;
+        .animate-slideIn {
+          animation: slideIn 0.3s ease-out forwards;
         }
       `}</style>
       
       <div className="min-h-screen bg-transparent overflow-hidden relative">
         {currentAlert && (
-          <div 
-            className="fixed top-20 right-20 z-50 animate-slideInRight"
-            style={{
-              animationDuration: '0.5s',
-              animationFillMode: 'both'
-            }}
-          >
+          <div className="fixed top-8 left-1/2 transform -translate-x-1/2 z-50 animate-slideIn">
             <div 
-              className="bg-black/80 backdrop-blur-sm border-2 rounded-lg p-6 shadow-2xl min-w-80 max-w-md"
+              className="bg-black/90 rounded-lg px-4 py-2 shadow-lg flex items-center gap-3 min-w-64"
               style={{ 
-                borderColor: streamer?.brand_color || '#6366f1',
-                boxShadow: `0 0 30px ${streamer?.brand_color || '#6366f1'}40`
+                borderLeft: `4px solid ${streamer?.brand_color || '#6366f1'}`
               }}
             >
-              <div className="text-center">
-                <div 
-                  className="text-2xl font-bold mb-2"
-                  style={{ color: streamer?.brand_color || '#6366f1' }}
-                >
-                  New Donation! 🎉
-                </div>
-                
-                <div className="text-white text-xl font-semibold mb-1">
-                  {currentAlert.donation.name}
-                </div>
-                
-                <div 
-                  className="text-3xl font-bold mb-3"
-                  style={{ color: streamer?.brand_color || '#6366f1' }}
-                >
-                  ₹{currentAlert.donation.amount}
-                </div>
-                
-                {currentAlert.donation.message && currentAlert.donation.message_visible !== false && (
-                  <div className="text-gray-200 text-sm italic max-w-xs mx-auto break-words">
-                    "{currentAlert.donation.message}"
-                  </div>
-                )}
+              <div className="text-white font-medium">
+                {currentAlert.donation.name}
+              </div>
+              <div 
+                className="font-bold text-lg"
+                style={{ color: streamer?.brand_color || '#6366f1' }}
+              >
+                ₹{currentAlert.donation.amount}
               </div>
             </div>
           </div>
