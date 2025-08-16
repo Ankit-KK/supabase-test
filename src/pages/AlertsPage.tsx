@@ -27,8 +27,12 @@ interface AlertQueueItem {
 }
 
 const AlertsPage = () => {
-  const { token } = useParams<{ token: string }>();
+  const { token: pathToken } = useParams<{ token: string }>();
   const [searchParams] = useSearchParams();
+  const obsToken = (pathToken && pathToken !== 'undefined' && pathToken !== 'null')
+    ? pathToken
+    : (searchParams.get('token') || searchParams.get('t') || '');
+
   const [streamer, setStreamer] = useState<Streamer | null>(null);
   const [currentAlert, setCurrentAlert] = useState<AlertQueueItem | null>(null);
   const [alertQueue, setAlertQueue] = useState<AlertQueueItem[]>([]);
@@ -39,7 +43,8 @@ const AlertsPage = () => {
 
   // Validate OBS token and fetch streamer
   useEffect(() => {
-    if (!token) {
+    if (!obsToken) {
+      console.warn('OBS Alerts: missing token');
       setIsValidToken(false);
       return;
     }
@@ -47,14 +52,21 @@ const AlertsPage = () => {
     const validateToken = async () => {
       try {
         const { data, error } = await supabase
-          .rpc('get_streamer_by_obs_token', { token });
+          .rpc('get_streamer_by_obs_token', { token: obsToken });
 
-        if (error || !data || data.length === 0) {
+        if (error) {
+          console.error('OBS Alerts: RPC error', error);
+          setIsValidToken(false);
+          return;
+        }
+        const rows = Array.isArray(data) ? data : (data ? [data] : []);
+        if (!rows || rows.length === 0) {
+          console.warn('OBS Alerts: token not found', obsToken);
           setIsValidToken(false);
           return;
         }
 
-        setStreamer(data[0]);
+        setStreamer(rows[0]);
         setIsValidToken(true);
       } catch (error) {
         console.error('Error validating token:', error);
@@ -63,7 +75,7 @@ const AlertsPage = () => {
     };
 
     validateToken();
-  }, [token]);
+  }, [obsToken]);
 
   // Subscribe to real-time donations
   useEffect(() => {
