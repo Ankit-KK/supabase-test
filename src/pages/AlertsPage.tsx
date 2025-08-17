@@ -182,28 +182,28 @@ const AlertsPage = () => {
       `}</style>
       
       <div className="min-h-screen bg-transparent overflow-hidden relative">
-  {currentAlert && (
-    <div className="fixed top-8 right-8 z-50 animate-slideIn">
-      <div 
-        className="bg-black/90 rounded-xl px-10 py-6 shadow-2xl flex items-center gap-6 min-w-[400px] max-w-[500px]"
-        style={{ 
-          borderLeft: `6px solid ${streamer?.brand_color || '#6366f1'}`,
-          transform: "scale(1.15)" // optional scaling
-        }}
-      >
-        <div className="text-white font-semibold text-xl">
-          {currentAlert.donation.name}
-        </div>
-        <div 
-          className="font-extrabold text-2xl"
-          style={{ color: streamer?.brand_color || '#6366f1' }}
-        >
-          ₹{currentAlert.donation.amount}
-        </div>
+        {currentAlert && (
+          <div className="fixed top-8 right-8 z-50 animate-slideIn">
+            <div 
+              className="bg-black/90 rounded-lg px-6 py-4 shadow-lg flex items-center gap-4 min-w-80"
+              style={{ 
+                borderLeft: `4px solid ${streamer?.brand_color || '#6366f1'}`
+              }}
+            >
+              <div className="text-white font-medium">
+                {currentAlert.donation.name}
+              </div>
+              <div 
+                className="font-bold text-lg"
+                style={{ color: streamer?.brand_color || '#6366f1' }}
+              >
+                ₹{currentAlert.donation.amount}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-    </div>
-  )}
-</div>
+    </>
   );
 };
 
