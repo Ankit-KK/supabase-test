@@ -185,7 +185,7 @@ const AlertsPage = () => {
         {currentAlert && (
           <div className="fixed top-8 right-8 z-50 animate-slideIn">
             <div 
-              className="bg-black/90 rounded-lg px-6 py-4 shadow-lg flex items-center gap-4 min-w-80"
+              className="bg-black/90 rounded-lg px-9 py-6 shadow-lg flex items-center gap-6 min-w-[30rem]"
               style={{ 
                 borderLeft: `4px solid ${streamer?.brand_color || '#6366f1'}`
               }}
