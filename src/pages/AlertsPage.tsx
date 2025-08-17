@@ -183,22 +183,29 @@ const AlertsPage = () => {
       
       <div className="min-h-screen bg-transparent overflow-hidden relative">
         {currentAlert && (
-          <div className="fixed top-8 right-8 z-50 animate-slideIn">
+          <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50 animate-slideIn">
             <div 
-              className="bg-black/90 rounded-lg px-9 py-6 shadow-lg flex items-center gap-6 min-w-[30rem]"
+              className="bg-black/90 rounded-lg px-9 py-6 shadow-lg text-center min-w-[30rem]"
               style={{ 
                 borderLeft: `4px solid ${streamer?.brand_color || '#6366f1'}`
               }}
             >
-              <div className="text-white font-medium text-xl">
-                {currentAlert.donation.name}
+              <div className="flex items-center justify-center gap-6 mb-2">
+                <div className="text-white font-medium text-xl">
+                  {currentAlert.donation.name}
+                </div>
+                <div 
+                  className="font-bold text-3xl"
+                  style={{ color: streamer?.brand_color || '#6366f1' }}
+                >
+                  ₹{currentAlert.donation.amount}
+                </div>
               </div>
-              <div 
-                className="font-bold text-3xl"
-                style={{ color: streamer?.brand_color || '#6366f1' }}
-              >
-                ₹{currentAlert.donation.amount}
-              </div>
+              {currentAlert.donation.message && (
+                <div className="text-gray-300 text-lg mt-2">
+                  {currentAlert.donation.message}
+                </div>
+              )}
             </div>
           </div>
         )}
