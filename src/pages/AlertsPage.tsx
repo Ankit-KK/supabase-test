@@ -190,11 +190,11 @@ const AlertsPage = () => {
                 borderLeft: `4px solid ${streamer?.brand_color || '#6366f1'}`
               }}
             >
-              <div className="text-white font-medium">
+              <div className="text-white font-medium text-xl">
                 {currentAlert.donation.name}
               </div>
               <div 
-                className="font-bold text-lg"
+                className="font-bold text-3xl"
                 style={{ color: streamer?.brand_color || '#6366f1' }}
               >
                 ₹{currentAlert.donation.amount}
