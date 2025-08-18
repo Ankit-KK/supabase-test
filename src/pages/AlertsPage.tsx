@@ -38,6 +38,7 @@ const AlertsPage = () => {
   const [currentAlert, setCurrentAlert] = useState<AlertQueueItem | null>(null);
   const [alertQueue, setAlertQueue] = useState<AlertQueueItem[]>([]);
   const [isValidToken, setIsValidToken] = useState<boolean | null>(null);
+  const [displayedMessage, setDisplayedMessage] = useState("");
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const enabled = searchParams.get('enabled') !== 'false';
@@ -130,11 +131,32 @@ const AlertsPage = () => {
     }
   }, [alertQueue, currentAlert]);
 
+  // Typing effect for donation message
+  useEffect(() => {
+    if (!currentAlert?.donation.message) {
+      setDisplayedMessage("");
+      return;
+    }
+
+    const fullMessage = currentAlert.donation.message;
+    setDisplayedMessage("");
+    let index = 0;
+
+    const interval = setInterval(() => {
+      setDisplayedMessage(fullMessage.slice(0, index + 1));
+      index++;
+      if (index === fullMessage.length) clearInterval(interval);
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [currentAlert]);
+
   // Auto-clear current alert after 5 seconds
   useEffect(() => {
     if (!currentAlert) return;
     const timer = setTimeout(() => {
       setCurrentAlert(null);
+      setDisplayedMessage("");
     }, 5000);
     return () => clearTimeout(timer);
   }, [currentAlert]);
@@ -165,46 +187,36 @@ const AlertsPage = () => {
   return (
     <>
       <style>{`
-        @keyframes slideIn {
-          from {
-            transform: translateY(-20px);
-            opacity: 0;
-          }
-          to {
-            transform: translateY(0);
-            opacity: 1;
-          }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
         }
-        
-        .animate-slideIn {
-          animation: slideIn 0.3s ease-out forwards;
+        .animate-fadeIn {
+          animation: fadeIn 0.6s ease-out;
         }
       `}</style>
       
       <div className="min-h-screen bg-transparent overflow-hidden relative">
         {currentAlert && (
-          <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50 animate-slideIn">
+          <div className="fixed inset-x-0 bottom-6 flex items-center justify-center bg-transparent">
             <div 
-              className="bg-black/90 rounded-lg px-9 py-6 shadow-lg text-center min-w-[30rem]"
+              className="p-4 rounded-xl shadow-xl text-center animate-fadeIn text-white"
               style={{ 
-                borderLeft: `4px solid ${streamer?.brand_color || '#6366f1'}`
+                background: "linear-gradient(135deg, #4f46e5, #9333ea)",
+                minWidth: "280px",
+                maxWidth: "400px"
               }}
             >
-              <div className="flex items-center justify-center gap-6 mb-2">
-                <div className="text-white font-medium text-xl">
-                  {currentAlert.donation.name}
-                </div>
-                <div 
-                  className="font-bold text-3xl"
-                  style={{ color: streamer?.brand_color || '#6366f1' }}
-                >
-                  ₹{currentAlert.donation.amount}
-                </div>
-              </div>
+              <h2 className="text-xl font-bold mb-1">
+                {currentAlert.donation.name}
+              </h2>
+              <p className="text-3xl font-extrabold mb-3 animate-pulse">
+                ₹{currentAlert.donation.amount}
+              </p>
               {currentAlert.donation.message && (
-                <div className="text-gray-300 text-lg mt-2">
-                  {currentAlert.donation.message}
-                </div>
+                <p className="text-base font-light">
+                  {displayedMessage || "..."}
+                </p>
               )}
             </div>
           </div>
