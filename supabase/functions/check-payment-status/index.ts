@@ -95,17 +95,28 @@ serve(async (req) => {
       // If it's a 404 (order not found), return the status from our database
       if (response.status === 404) {
         console.log('Order not found in Cashfree, returning database status');
+        
+        // If order not found in Cashfree and status is still pending, mark as failed
+        let statusToReturn = donationData.payment_status || 'pending';
+        if (statusToReturn === 'pending') {
+          statusToReturn = 'failed';
+          await supabase
+            .from('chia_gaming_donations')
+            .update({ payment_status: 'failed' })
+            .eq('order_id', order_id);
+        }
+        
         return new Response(JSON.stringify({
           success: true,
           order_id,
           payments: [],
-          final_status: donationData.payment_status || 'pending',
+          final_status: statusToReturn,
           order_amount: donationData.amount,
           customer_details: {
             customer_name: donationData.name
           },
           message: donationData.message,
-          database_status: donationData.payment_status
+          database_status: statusToReturn
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
@@ -137,11 +148,17 @@ serve(async (req) => {
     if (result && result.length > 0) {
       const successfulPayment = result.find((payment: any) => payment.payment_status === "SUCCESS");
       const pendingPayment = result.find((payment: any) => payment.payment_status === "PENDING");
+      const cancelledPayment = result.find((payment: any) => payment.payment_status === "CANCELLED");
+      const failedPayment = result.find((payment: any) => payment.payment_status === "FAILED");
       
       if (successfulPayment) {
         finalStatus = 'success';
       } else if (pendingPayment) {
         finalStatus = 'pending';
+      } else if (cancelledPayment) {
+        finalStatus = 'cancelled';
+      } else if (failedPayment) {
+        finalStatus = 'failed';
       }
 
       // Update our database with the latest status
@@ -149,6 +166,19 @@ serve(async (req) => {
         .from('chia_gaming_donations')
         .update({ payment_status: finalStatus })
         .eq('order_id', order_id);
+    } else {
+      // If no payments found and order exists in database, check current status
+      if (donationData.payment_status === 'pending') {
+        // Order exists but no payments - likely failed or expired
+        finalStatus = 'failed';
+        await supabase
+          .from('chia_gaming_donations')
+          .update({ payment_status: 'failed' })
+          .eq('order_id', order_id);
+      } else {
+        // Use existing database status
+        finalStatus = donationData.payment_status;
+      }
     }
 
     return new Response(JSON.stringify({
