@@ -171,6 +171,20 @@ const StreamerDashboard = () => {
               duration: 5000,
             });
           }
+          
+          if (payload.eventType === 'DELETE') {
+            const deletedDonation = payload.old as Donation;
+            setDonations(prev => prev.filter(d => d.id !== deletedDonation.id));
+            setTotalAmount(prev => prev - Number(deletedDonation.amount));
+            setMonthlyAmount(prev => {
+              const donationDate = new Date(deletedDonation.created_at);
+              const now = new Date();
+              if (donationDate.getMonth() === now.getMonth() && donationDate.getFullYear() === now.getFullYear()) {
+                return prev - Number(deletedDonation.amount);
+              }
+              return prev;
+            });
+          }
         }
       )
       .subscribe();
