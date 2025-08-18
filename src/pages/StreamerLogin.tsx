@@ -19,15 +19,26 @@ const StreamerLogin = () => {
     setLoading(true);
 
     try {
-      // Check credentials against streamers table
-      const { data: streamer, error } = await supabase
-        .from('streamers')
-        .select('*')
-        .eq('username', username)
-        .eq('password', password)
-        .single();
+      // Use secure authentication function instead of direct table access
+      const { data: authResult, error } = await supabase
+        .rpc('authenticate_streamer', {
+          p_username: username,
+          p_password: password
+        });
 
-      if (error || !streamer) {
+      if (error) {
+        console.error('Authentication error:', error);
+        toast({
+          title: "Login Error",
+          description: "Something went wrong. Please try again.",
+          variant: "destructive"
+        });
+        setLoading(false);
+        return;
+      }
+
+      const streamer = authResult?.[0];
+      if (!streamer || !streamer.success) {
         toast({
           title: "Login Failed",
           description: "Invalid username or password",

@@ -351,6 +351,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      authenticate_streamer: {
+        Args: { p_password: string; p_username: string }
+        Returns: {
+          brand_color: string
+          id: string
+          streamer_name: string
+          streamer_slug: string
+          success: boolean
+        }[]
+      }
       check_rate_limit: {
         Args: {
           p_endpoint: string
@@ -379,6 +389,16 @@ export type Database = {
         Returns: {
           total_visits: number
           unique_visitors: number
+        }[]
+      }
+      get_public_streamer_info: {
+        Args: { slug: string }
+        Returns: {
+          brand_color: string
+          brand_logo_url: string
+          id: string
+          streamer_name: string
+          streamer_slug: string
         }[]
       }
       get_streamer_by_obs_token: {

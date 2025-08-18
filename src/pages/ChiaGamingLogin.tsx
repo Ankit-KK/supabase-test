@@ -39,26 +39,26 @@ const ChiaGamingLogin = () => {
     setIsLoggingIn(true);
 
     try {
-      // Query the streamers table for chia_gaming
-      const { data: streamerData, error } = await supabase
-        .from('streamers')
-        .select('*')
-        .eq('streamer_slug', 'chia_gaming')
-        .eq('username', formData.username)
-        .single();
+      // Use secure authentication function
+      const { data: authResult, error } = await supabase
+        .rpc('authenticate_streamer', {
+          p_username: formData.username,
+          p_password: formData.password
+        });
 
-      if (error || !streamerData) {
+      if (error) {
+        console.error('Authentication error:', error);
         toast({
-          title: "Login Failed",
-          description: "Invalid username or password.",
+          title: "Login Error",
+          description: "Something went wrong. Please try again.",
           variant: "destructive",
         });
         setIsLoggingIn(false);
         return;
       }
 
-      // For now, we'll check if password matches (in real app, this should be hashed)
-      if (streamerData.password !== formData.password) {
+      const streamer = authResult?.[0];
+      if (!streamer || !streamer.success || streamer.streamer_slug !== 'chia_gaming') {
         toast({
           title: "Login Failed",
           description: "Invalid username or password.",
@@ -70,10 +70,10 @@ const ChiaGamingLogin = () => {
 
       // Store session in localStorage
       const session = {
-        streamerId: streamerData.id,
-        streamerSlug: streamerData.streamer_slug,
-        streamerName: streamerData.streamer_name,
-        brandColor: streamerData.brand_color,
+        streamerId: streamer.id,
+        streamerSlug: streamer.streamer_slug,
+        streamerName: streamer.streamer_name,
+        brandColor: streamer.brand_color,
         loginTime: Date.now()
       };
 
@@ -81,7 +81,7 @@ const ChiaGamingLogin = () => {
 
       toast({
         title: "Login Successful!",
-        description: `Welcome back, ${streamerData.streamer_name}!`,
+        description: `Welcome back, ${streamer.streamer_name}!`,
       });
 
       // Navigate to dashboard
