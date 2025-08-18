@@ -25,7 +25,6 @@ interface Donation {
 
 interface Streamer {
   id: string;
-  user_id: string;
   streamer_slug: string;
   streamer_name: string;
   brand_color: string;
@@ -56,21 +55,17 @@ const StreamerDashboard = () => {
       setLoadingData(true);
       
       try {
-        // First, get the streamer info
+        // First, get the streamer info using secure function
         const { data: streamerData, error: streamerError } = await supabase
-          .from('streamers')
+          .rpc('get_public_streamer_info', { slug: streamerSlug });
 
-          .select('*')
-          .eq('streamer_slug', streamerSlug)
-          .single();
-
-        if (streamerError || !streamerData) {
+        if (streamerError || !streamerData || streamerData.length === 0) {
           console.error('Error fetching streamer:', streamerError);
           setLoadingData(false);
           return;
         }
 
-        const streamerInfo = streamerData;
+        const streamerInfo = streamerData[0];
         setStreamer(streamerInfo);
 
         // Check if logged in user matches this streamer

@@ -23,11 +23,10 @@ interface Donation {
 
 interface Streamer {
   id: string;
-  user_id: string;
   streamer_slug: string;
   streamer_name: string;
   brand_color: string;
-  obs_token?: string;
+  brand_logo_url?: string;
 }
 
 interface OBSSettingsProps {
@@ -41,10 +40,11 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
   const [obsEnabled, setObsEnabled] = useState(true);
   const [loading, setLoading] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+  const [obsToken, setObsToken] = useState<string>('');
   const { session: streamerSession, isAuthenticated: isStreamerAuthed } = useStreamerAuth();
 
-  const obsUrl = streamer.obs_token 
-    ? `${window.location.origin}/alerts/${streamer.obs_token}`
+  const obsUrl = obsToken 
+    ? `${window.location.origin}/alerts/${obsToken}`
     : '';
 
   // Fetch recent donations
@@ -134,8 +134,8 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
 
       if (insertError) throw insertError;
 
-      const updatedStreamer = { ...streamer, obs_token: newToken };
-      onStreamerUpdate(updatedStreamer);
+      setObsToken(newToken);
+      // Note: We don't need to update the streamer object since obs_token is now handled separately
 
       toast({
         title: "Token Regenerated",
@@ -193,7 +193,7 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
         .maybeSingle();
 
       if (!tokenError && activeToken?.token) {
-        onStreamerUpdate({ ...streamer, obs_token: activeToken.token });
+        setObsToken(activeToken.token);
         setLoading(false);
         return;
       }
@@ -210,8 +210,7 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
 
       if (error) throw error;
 
-      const updatedStreamer = { ...streamer, obs_token: newToken };
-      onStreamerUpdate(updatedStreamer);
+      setObsToken(newToken);
     } catch (error) {
       toast({
         title: "Error",
