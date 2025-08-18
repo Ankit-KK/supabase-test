@@ -151,13 +151,19 @@ const AlertsPage = () => {
     return () => clearInterval(interval);
   }, [currentAlert]);
 
-  // Auto-clear current alert after 5 seconds
+  // Auto-clear current alert after message is fully typed + 3 seconds display time
   useEffect(() => {
     if (!currentAlert) return;
+    
+    const messageLength = currentAlert.donation.message?.length || 0;
+    const typingTime = messageLength * 100; // 100ms per character
+    const displayTime = 3000; // 3 seconds after typing completes
+    const totalTime = typingTime + displayTime;
+    
     const timer = setTimeout(() => {
       setCurrentAlert(null);
       setDisplayedMessage("");
-    }, 5000);
+    }, totalTime);
     return () => clearTimeout(timer);
   }, [currentAlert]);
 
