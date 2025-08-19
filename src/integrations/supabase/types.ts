@@ -480,6 +480,12 @@ export type Database = {
         }
         Returns: undefined
       }
+      regenerate_obs_token: {
+        Args: { expires_at?: string; new_token: string; streamer_id: string }
+        Returns: {
+          token: string
+        }[]
+      }
       update_user_profile: {
         Args: { new_username: string; user_id: string }
         Returns: undefined

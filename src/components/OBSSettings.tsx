@@ -114,29 +114,20 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
   const handleRegenerateToken = async () => {
     setRegenerating(true);
     try {
-      // Deactivate current token
-      const { error: deactivateError } = await supabase
-        .from('obs_tokens')
-        .update({ is_active: false })
-        .eq('streamer_id', streamer.id)
-        .eq('is_active', true);
-      if (deactivateError) throw deactivateError;
-
       // Generate new token
       const newToken = generateObsToken();
-      const { error: insertError } = await supabase
-        .from('obs_tokens')
-        .insert({
+      
+      // Use secure RPC to regenerate token
+      const { data, error } = await supabase
+        .rpc('regenerate_obs_token', {
           streamer_id: streamer.id,
-          token: newToken,
-          is_active: true
+          new_token: newToken
         });
-
-      if (insertError) throw insertError;
+      
+      if (error) throw error;
 
       setObsToken(newToken);
-      // Note: We don't need to update the streamer object since obs_token is now handled separately
-
+      
       toast({
         title: "Token Regenerated",
         description: "New OBS alert URL generated successfully!",

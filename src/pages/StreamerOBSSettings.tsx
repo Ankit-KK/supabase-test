@@ -207,23 +207,27 @@ const StreamerOBSSettings = () => {
     
     const newToken = generateObsToken();
     
-    const { error } = await supabase
-      .from('streamers')
-      .update({ obs_token: newToken })
-      .eq('id', streamer.id);
+    try {
+      // Use secure RPC to regenerate token
+      const { data, error } = await supabase
+        .rpc('regenerate_obs_token', {
+          streamer_id: streamer.id,
+          new_token: newToken
+        });
+      
+      if (error) throw error;
 
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to regenerate OBS token",
-        variant: "destructive",
-      });
-    } else {
       setObsToken(newToken);
       setStreamer(prev => prev ? { ...prev, obs_token: newToken } : null);
       toast({
         title: "Success",
         description: "Your OBS alert link has been updated. Old link is now invalid.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error?.message || 'Failed to regenerate OBS token',
+        variant: "destructive",
       });
     }
   };
