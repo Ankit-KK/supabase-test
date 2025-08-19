@@ -28,7 +28,22 @@ const ChiaGaming = () => {
   const [selectedEmoji, setSelectedEmoji] = useState<string>('');
   const [showHyperemoteEffect, setShowHyperemoteEffect] = useState(false);
   const [selectedEmoteUrl, setSelectedEmoteUrl] = useState<string>('');
-  const [availableEmotes, setAvailableEmotes] = useState<Array<{name: string, url: string}>>([]);
+  
+  // Static emotes from chiaa-emotes bucket
+  const availableEmotes = [
+    { name: "emojis1", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/emojis1-Photoroom.png" },
+    { name: "image-10", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(10).png" },
+    { name: "image-1", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(1).png" },
+    { name: "image-2", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(2).png" },
+    { name: "image-3", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(3).png" },
+    { name: "image-4", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(4).png" },
+    { name: "image-5", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(5).png" },
+    { name: "image-6", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(6).png" },
+    { name: "image-7", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(7).png" },
+    { name: "image-8", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(8).png" },
+    { name: "image-9", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(9).png" },
+    { name: "image", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom.png" }
+  ];
   
   const { errors, validateDonation, sanitizeInputs, clearErrors } = useInputValidation();
 
@@ -78,34 +93,9 @@ const ChiaGaming = () => {
         console.error('Failed to fetch streamer settings:', error);
       }
     };
-
-    const fetchEmotes = async () => {
-      try {
-        const { data, error } = await supabase.storage
-          .from('chiaa-emotes')
-          .list('', {
-            limit: 20,
-            sortBy: { column: 'name', order: 'asc' }
-          });
-
-        if (error) throw error;
-
-        const emoteFiles = data
-          .filter(file => file.name.match(/\.(png|jpg|jpeg|gif|webp)$/i))
-          .map(file => ({
-            name: file.name.replace(/\.(png|jpg|jpeg|gif|webp)$/i, ''),
-            url: supabase.storage.from('chiaa-emotes').getPublicUrl(file.name).data.publicUrl
-          }));
-
-        setAvailableEmotes(emoteFiles);
-      } catch (error) {
-        console.error('Error fetching emotes:', error);
-      }
-    };
     
     initializeSDK();
     fetchStreamerSettings();
-    fetchEmotes();
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
