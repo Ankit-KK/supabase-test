@@ -310,42 +310,6 @@ const ChiaGaming = () => {
                 </div>
             </div>
 
-            {/* Hyperemote Selection and Preview */}
-            {donationType === 'hyperemote' && (
-              <div className="space-y-3">
-                <label className="text-sm font-medium text-purple-400">
-                  🎉 Choose Your Celebration Emote
-                </label>
-                <EmojiSelector
-                  selectedEmoji={selectedEmoji}
-                  onEmojiSelect={setSelectedEmoji}
-                  disabled={false}
-                />
-                
-                {/* Inline Hyperemote Preview */}
-                <div className="relative h-32 bg-gradient-to-br from-purple-900/20 to-pink-900/20 rounded-lg border border-purple-500/30 overflow-hidden">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-4xl animate-bounce">
-                      {selectedEmoji === 'happy' && '😊'}
-                      {selectedEmoji === 'love' && '❤️'}
-                      {selectedEmoji === 'fire' && '🔥'}
-                      {selectedEmoji === 'party' && '🎉'}
-                      {selectedEmoji === 'cool' && '😎'}
-                      {selectedEmoji === 'mind_blown' && '🤯'}
-                    </div>
-                  </div>
-                  <div className="absolute top-2 left-2 right-2">
-                    <div className="text-xs text-purple-300 bg-black/50 rounded px-2 py-1 text-center">
-                      Stream Effect Preview
-                    </div>
-                  </div>
-                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-transparent to-pink-500/10 animate-pulse"></div>
-                </div>
-                <p className="text-xs text-muted-foreground text-center">
-                  This is how your emote will appear on stream
-                </p>
-              </div>
-            )}
 
             {/* Amount Field */}
             <div className="space-y-2">
