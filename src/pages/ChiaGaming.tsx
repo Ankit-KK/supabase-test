@@ -26,6 +26,7 @@ const ChiaGaming = () => {
   const [donationType, setDonationType] = useState<'message' | 'hyperemote'>('message');
   const [streamerSettings, setStreamerSettings] = useState<any>(null);
   const [selectedEmoji, setSelectedEmoji] = useState<string>('happy');
+  const [showHyperemoteEffect, setShowHyperemoteEffect] = useState(false);
   
   const { errors, validateDonation, sanitizeInputs, clearErrors } = useInputValidation();
 
@@ -214,6 +215,9 @@ const ChiaGaming = () => {
     setDonationType(type);
     if (type === 'hyperemote') {
       setFormData(prev => ({ ...prev, amount: '100', message: '' }));
+      // Trigger hyperemote effect
+      setShowHyperemoteEffect(true);
+      setTimeout(() => setShowHyperemoteEffect(false), 3000);
     } else {
       setFormData(prev => ({ ...prev, amount: '' }));
     }
@@ -437,6 +441,34 @@ const ChiaGaming = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Hyperemote Animation Effect */}
+      {showHyperemoteEffect && (
+        <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center">
+          <div className="relative">
+            {/* Main Emote */}
+            <div className="text-9xl animate-bounce">
+              🎉
+            </div>
+            
+            {/* Particle Effects */}
+            <div className="absolute inset-0 animate-pulse">
+              <div className="absolute -top-8 -left-8 text-4xl animate-spin">✨</div>
+              <div className="absolute -top-8 -right-8 text-4xl animate-ping">🌟</div>
+              <div className="absolute -bottom-8 -left-8 text-4xl animate-bounce">💫</div>
+              <div className="absolute -bottom-8 -right-8 text-4xl animate-pulse">⭐</div>
+            </div>
+            
+            {/* Background Glow */}
+            <div className="absolute inset-0 -m-16 bg-gradient-to-r from-purple-500/30 via-pink-500/30 to-purple-500/30 rounded-full blur-3xl animate-pulse"></div>
+            
+            {/* Text Effect */}
+            <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2 text-2xl font-bold text-purple-300 animate-fade-in whitespace-nowrap">
+              HYPEREMOTE ACTIVATED! 🚀
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
