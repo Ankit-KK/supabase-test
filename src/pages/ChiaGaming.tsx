@@ -336,19 +336,6 @@ const ChiaGaming = () => {
                 </div>
             </div>
 
-            {/* Hyperemote Selection */}
-            {donationType === 'hyperemote' && (
-              <div className="space-y-3">
-                <label className="text-sm font-medium text-purple-400">
-                  🎉 Choose Your Celebration Emote
-                </label>
-                <EmojiSelector
-                  selectedEmoji={selectedEmoji}
-                  onEmojiSelect={(name, url) => handleEmojiSelect(name, url)}
-                  disabled={false}
-                />
-              </div>
-            )}
 
 
             {/* Amount Field */}
