@@ -10,7 +10,7 @@ import { load } from '@cashfreepayments/cashfree-js';
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import EmojiSelector from "@/components/EmojiSelector";
-import HyperemotePreview from "@/components/HyperemotePreview";
+import FullScreenHyperemotePreview from "@/components/FullScreenHyperemotePreview";
 
 const ChiaGaming = () => {
   const navigate = useNavigate();
@@ -26,6 +26,7 @@ const ChiaGaming = () => {
   const [donationType, setDonationType] = useState<'message' | 'hyperemote'>('message');
   const [streamerSettings, setStreamerSettings] = useState<any>(null);
   const [selectedEmoji, setSelectedEmoji] = useState<string>('happy');
+  const [showPreview, setShowPreview] = useState(false);
   const { errors, validateDonation, sanitizeInputs, clearErrors } = useInputValidation();
 
   // Initialize Cashfree SDK and fetch streamer settings
@@ -309,21 +310,28 @@ const ChiaGaming = () => {
                 </div>
             </div>
 
-            {/* Hyperemote Preview - Show when hyperemote is selected */}
+            {/* Hyperemote Preview Button */}
             {donationType === 'hyperemote' && (
               <div className="space-y-3">
                 <label className="text-sm font-medium text-purple-400">
                   🎉 Choose Your Celebration Emote
                 </label>
-                <p className="text-xs text-muted-foreground">
-                  This emote will be displayed on stream when you donate!
-                </p>
                 <EmojiSelector
                   selectedEmoji={selectedEmoji}
                   onEmojiSelect={setSelectedEmoji}
                   disabled={false}
                 />
-                <HyperemotePreview selectedEmoji={selectedEmoji} />
+                <Button
+                  type="button"
+                  onClick={() => setShowPreview(true)}
+                  variant="outline"
+                  className="w-full border-purple-500/50 text-purple-300 hover:bg-purple-500/10"
+                >
+                  👁️ Preview Full-Screen Stream Effect
+                </Button>
+                <p className="text-xs text-muted-foreground text-center">
+                  See exactly how your emote will appear on stream
+                </p>
               </div>
             )}
 
@@ -453,6 +461,13 @@ const ChiaGaming = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Full-screen preview modal */}
+      <FullScreenHyperemotePreview
+        isOpen={showPreview}
+        onClose={() => setShowPreview(false)}
+        selectedEmoji={selectedEmoji}
+      />
     </div>
   );
 };
