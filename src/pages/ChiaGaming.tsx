@@ -442,30 +442,42 @@ const ChiaGaming = () => {
         </CardContent>
       </Card>
 
-      {/* Hyperemote Animation Effect */}
+      {/* Stream-Style Hyperemote Animation */}
       {showHyperemoteEffect && (
-        <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center">
-          <div className="relative">
-            {/* Main Emote */}
-            <div className="text-9xl animate-bounce">
-              🎉
+        <div className="fixed inset-0 z-50 pointer-events-none overflow-hidden">
+          {/* Multiple floating emotes */}
+          {[...Array(12)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute text-6xl animate-float-up"
+              style={{
+                left: `${Math.random() * 90}%`,
+                animationDelay: `${i * 0.2}s`,
+                animationDuration: `${3 + Math.random() * 2}s`,
+              }}
+            >
+              {i % 6 === 0 && '🎉'}
+              {i % 6 === 1 && '✨'}
+              {i % 6 === 2 && '🌟'}
+              {i % 6 === 3 && '💫'}
+              {i % 6 === 4 && '⭐'}
+              {i % 6 === 5 && '🚀'}
             </div>
-            
-            {/* Particle Effects */}
-            <div className="absolute inset-0 animate-pulse">
-              <div className="absolute -top-8 -left-8 text-4xl animate-spin">✨</div>
-              <div className="absolute -top-8 -right-8 text-4xl animate-ping">🌟</div>
-              <div className="absolute -bottom-8 -left-8 text-4xl animate-bounce">💫</div>
-              <div className="absolute -bottom-8 -right-8 text-4xl animate-pulse">⭐</div>
-            </div>
-            
-            {/* Background Glow */}
-            <div className="absolute inset-0 -m-16 bg-gradient-to-r from-purple-500/30 via-pink-500/30 to-purple-500/30 rounded-full blur-3xl animate-pulse"></div>
-            
-            {/* Text Effect */}
-            <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2 text-2xl font-bold text-purple-300 animate-fade-in whitespace-nowrap">
-              HYPEREMOTE ACTIVATED! 🚀
-            </div>
+          ))}
+          
+          {/* Main celebration emote */}
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-8xl animate-float-up-main">
+            {selectedEmoji === 'happy' && '😊'}
+            {selectedEmoji === 'love' && '❤️'}
+            {selectedEmoji === 'fire' && '🔥'}
+            {selectedEmoji === 'party' && '🎉'}
+            {selectedEmoji === 'cool' && '😎'}
+            {selectedEmoji === 'mind_blown' && '🤯'}
+          </div>
+          
+          {/* Stream notification */}
+          <div className="absolute top-8 left-1/2 transform -translate-x-1/2 bg-purple-600/90 text-white px-6 py-3 rounded-lg font-bold text-xl animate-fade-in shadow-lg border border-purple-400">
+            HYPEREMOTE! 🎉
           </div>
         </div>
       )}
