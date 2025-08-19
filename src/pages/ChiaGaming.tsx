@@ -28,6 +28,7 @@ const ChiaGaming = () => {
   const [selectedEmoji, setSelectedEmoji] = useState<string>('');
   const [showHyperemoteEffect, setShowHyperemoteEffect] = useState(false);
   const [selectedEmoteUrl, setSelectedEmoteUrl] = useState<string>('');
+  const [availableEmotes, setAvailableEmotes] = useState<Array<{name: string, url: string}>>([]);
   
   const { errors, validateDonation, sanitizeInputs, clearErrors } = useInputValidation();
 
@@ -77,9 +78,34 @@ const ChiaGaming = () => {
         console.error('Failed to fetch streamer settings:', error);
       }
     };
+
+    const fetchEmotes = async () => {
+      try {
+        const { data, error } = await supabase.storage
+          .from('chiaa-emotes')
+          .list('', {
+            limit: 20,
+            sortBy: { column: 'name', order: 'asc' }
+          });
+
+        if (error) throw error;
+
+        const emoteFiles = data
+          .filter(file => file.name.match(/\.(png|jpg|jpeg|gif|webp)$/i))
+          .map(file => ({
+            name: file.name.replace(/\.(png|jpg|jpeg|gif|webp)$/i, ''),
+            url: supabase.storage.from('chiaa-emotes').getPublicUrl(file.name).data.publicUrl
+          }));
+
+        setAvailableEmotes(emoteFiles);
+      } catch (error) {
+        console.error('Error fetching emotes:', error);
+      }
+    };
     
     initializeSDK();
     fetchStreamerSettings();
+    fetchEmotes();
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -466,27 +492,30 @@ const ChiaGaming = () => {
       {showHyperemoteEffect && (
         <div className="fixed inset-0 z-50 pointer-events-none overflow-hidden">
           {/* Multiple floating emotes */}
-          {[...Array(8)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute animate-float-up"
-              style={{
-                left: `${Math.random() * 90}%`,
-                animationDelay: `${i * 0.3}s`,
-                animationDuration: `${3 + Math.random() * 2}s`,
-              }}
-            >
-              {selectedEmoteUrl ? (
-                <img 
-                  src={selectedEmoteUrl} 
-                  alt="emote"
-                  className="w-16 h-16 object-contain"
-                />
-              ) : (
-                <div className="text-6xl">🎉</div>
-              )}
-            </div>
-          ))}
+          {[...Array(8)].map((_, i) => {
+            const randomEmote = availableEmotes[Math.floor(Math.random() * availableEmotes.length)];
+            return (
+              <div
+                key={i}
+                className="absolute animate-float-up"
+                style={{
+                  left: `${Math.random() * 90}%`,
+                  animationDelay: `${i * 0.3}s`,
+                  animationDuration: `${3 + Math.random() * 2}s`,
+                }}
+              >
+                {randomEmote ? (
+                  <img 
+                    src={randomEmote.url} 
+                    alt={randomEmote.name}
+                    className="w-16 h-16 object-contain"
+                  />
+                ) : (
+                  <div className="text-6xl">🎉</div>
+                )}
+              </div>
+            );
+          })}
           
           {/* Main celebration emote */}
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 animate-float-up-main">
@@ -494,6 +523,12 @@ const ChiaGaming = () => {
               <img 
                 src={selectedEmoteUrl} 
                 alt="main emote"
+                className="w-24 h-24 object-contain"
+              />
+            ) : availableEmotes.length > 0 ? (
+              <img 
+                src={availableEmotes[0].url} 
+                alt={availableEmotes[0].name}
                 className="w-24 h-24 object-contain"
               />
             ) : (
