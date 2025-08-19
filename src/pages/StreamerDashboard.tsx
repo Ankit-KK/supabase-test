@@ -8,8 +8,7 @@ import { useStreamerAuth } from '@/hooks/useStreamerAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency, calculateMonthlyTotal } from '@/utils/dashboardUtils';
 import { useToast } from '@/hooks/use-toast';
-import { DollarSign, TrendingUp, Users, Calendar, LogOut, Settings, Sparkles } from 'lucide-react';
-import { HyperemoteSettings } from '@/components/HyperemoteSettings';
+import { DollarSign, TrendingUp, Users, Calendar, LogOut, Settings } from 'lucide-react';
 import OBSSettings from '@/components/OBSSettings';
 import { ConnectionStatus } from '@/components/ConnectionStatus';
 
@@ -266,7 +265,7 @@ const StreamerDashboard = () => {
 
         {/* Navigation Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <DollarSign className="w-4 h-4" />
               Dashboard
@@ -274,10 +273,6 @@ const StreamerDashboard = () => {
             <TabsTrigger value="obs" className="flex items-center gap-2">
               <Settings className="w-4 h-4" />
               OBS Settings
-            </TabsTrigger>
-            <TabsTrigger value="hyperemotes" className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4" />
-              Hyperemotes
             </TabsTrigger>
           </TabsList>
 
@@ -394,21 +389,6 @@ const StreamerDashboard = () => {
             <OBSSettings 
               streamer={streamer} 
               onStreamerUpdate={handleStreamerUpdate}
-            />
-          </TabsContent>
-
-          <TabsContent value="hyperemotes" className="mt-6">
-            <HyperemoteSettings 
-              streamerId={streamer.id}
-              hyperemotesEnabled={streamer.hyperemotes_enabled || false}
-              hyperemotesMinAmount={streamer.hyperemotes_min_amount || 50}
-              onUpdate={(enabled, minAmount) => {
-                setStreamer(prev => prev ? {
-                  ...prev,
-                  hyperemotes_enabled: enabled,
-                  hyperemotes_min_amount: minAmount
-                } : null);
-              }}
             />
           </TabsContent>
         </Tabs>
