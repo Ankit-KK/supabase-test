@@ -268,8 +268,7 @@ const ChiaGaming = () => {
             </div>
 
             {/* Donation Type Selection */}
-            {streamerSettings?.hyperemotes_enabled && (
-              <div className="space-y-3">
+            <div className="space-y-3">
                 <label className="text-sm font-medium text-gaming-pink-primary">
                   Choose your donation type
                 </label>
@@ -306,7 +305,6 @@ const ChiaGaming = () => {
                   </button>
                 </div>
               </div>
-            )}
 
             {/* Amount Field */}
             <div className="space-y-2">
