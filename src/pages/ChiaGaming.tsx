@@ -25,8 +25,9 @@ const ChiaGaming = () => {
   const [sdkError, setSdkError] = useState<string | null>(null);
   const [donationType, setDonationType] = useState<'message' | 'hyperemote'>('message');
   const [streamerSettings, setStreamerSettings] = useState<any>(null);
-  const [selectedEmoji, setSelectedEmoji] = useState<string>('happy');
+  const [selectedEmoji, setSelectedEmoji] = useState<string>('');
   const [showHyperemoteEffect, setShowHyperemoteEffect] = useState(false);
+  const [selectedEmoteUrl, setSelectedEmoteUrl] = useState<string>('');
   
   const { errors, validateDonation, sanitizeInputs, clearErrors } = useInputValidation();
 
@@ -223,6 +224,15 @@ const ChiaGaming = () => {
     }
   };
 
+  const handleEmojiSelect = (emojiName: string) => {
+    setSelectedEmoji(emojiName);
+    // Get the emote URL for display
+    if (emojiName) {
+      const emoteUrl = supabase.storage.from('chiaa-emotes').getPublicUrl(`${emojiName}.png`).data.publicUrl;
+      setSelectedEmoteUrl(emoteUrl);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gaming-pink-light via-background to-gaming-pink-light/30 flex items-center justify-center p-4">
       {/* Background decorations */}
@@ -313,6 +323,20 @@ const ChiaGaming = () => {
                   </button>
                 </div>
             </div>
+
+            {/* Hyperemote Selection */}
+            {donationType === 'hyperemote' && (
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-purple-400">
+                  🎉 Choose Your Celebration Emote
+                </label>
+                <EmojiSelector
+                  selectedEmoji={selectedEmoji}
+                  onEmojiSelect={handleEmojiSelect}
+                  disabled={false}
+                />
+              </div>
+            )}
 
 
             {/* Amount Field */}
@@ -446,33 +470,39 @@ const ChiaGaming = () => {
       {showHyperemoteEffect && (
         <div className="fixed inset-0 z-50 pointer-events-none overflow-hidden">
           {/* Multiple floating emotes */}
-          {[...Array(12)].map((_, i) => (
+          {[...Array(8)].map((_, i) => (
             <div
               key={i}
-              className="absolute text-6xl animate-float-up"
+              className="absolute animate-float-up"
               style={{
                 left: `${Math.random() * 90}%`,
-                animationDelay: `${i * 0.2}s`,
+                animationDelay: `${i * 0.3}s`,
                 animationDuration: `${3 + Math.random() * 2}s`,
               }}
             >
-              {i % 6 === 0 && '🎉'}
-              {i % 6 === 1 && '✨'}
-              {i % 6 === 2 && '🌟'}
-              {i % 6 === 3 && '💫'}
-              {i % 6 === 4 && '⭐'}
-              {i % 6 === 5 && '🚀'}
+              {selectedEmoteUrl ? (
+                <img 
+                  src={selectedEmoteUrl} 
+                  alt="emote"
+                  className="w-16 h-16 object-contain"
+                />
+              ) : (
+                <div className="text-6xl">🎉</div>
+              )}
             </div>
           ))}
           
           {/* Main celebration emote */}
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-8xl animate-float-up-main">
-            {selectedEmoji === 'happy' && '😊'}
-            {selectedEmoji === 'love' && '❤️'}
-            {selectedEmoji === 'fire' && '🔥'}
-            {selectedEmoji === 'party' && '🎉'}
-            {selectedEmoji === 'cool' && '😎'}
-            {selectedEmoji === 'mind_blown' && '🤯'}
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 animate-float-up-main">
+            {selectedEmoteUrl ? (
+              <img 
+                src={selectedEmoteUrl} 
+                alt="main emote"
+                className="w-24 h-24 object-contain"
+              />
+            ) : (
+              <div className="text-8xl">🎉</div>
+            )}
           </div>
           
           {/* Stream notification */}
