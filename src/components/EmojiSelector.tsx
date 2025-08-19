@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface EmojiSelectorProps {
   selectedEmoji: string;
-  onEmojiSelect: (emoji: string) => void;
+  onEmojiSelect: (emoji: string, url: string) => void;
   disabled?: boolean;
 }
 
@@ -46,7 +46,7 @@ const EmojiSelector: React.FC<EmojiSelectorProps> = ({
       
       // Set default emote if none selected
       if (emoteFiles.length > 0 && !selectedEmoji) {
-        onEmojiSelect(emoteFiles[0].name);
+        onEmojiSelect(emoteFiles[0].name, emoteFiles[0].url);
       }
     } catch (error) {
       console.error('Error fetching emotes:', error);
@@ -69,7 +69,7 @@ const EmojiSelector: React.FC<EmojiSelectorProps> = ({
         <button
           key={emote.name}
           type="button"
-          onClick={() => onEmojiSelect(emote.name)}
+          onClick={() => onEmojiSelect(emote.name, emote.url)}
           disabled={disabled}
           className={`p-2 rounded-lg border-2 transition-all hover:scale-105 ${
             selectedEmoji === emote.name

@@ -224,13 +224,9 @@ const ChiaGaming = () => {
     }
   };
 
-  const handleEmojiSelect = (emojiName: string) => {
+  const handleEmojiSelect = (emojiName: string, emoteUrl: string) => {
     setSelectedEmoji(emojiName);
-    // Get the emote URL for display
-    if (emojiName) {
-      const emoteUrl = supabase.storage.from('chiaa-emotes').getPublicUrl(`${emojiName}.png`).data.publicUrl;
-      setSelectedEmoteUrl(emoteUrl);
-    }
+    setSelectedEmoteUrl(emoteUrl);
   };
 
   return (
@@ -332,7 +328,7 @@ const ChiaGaming = () => {
                 </label>
                 <EmojiSelector
                   selectedEmoji={selectedEmoji}
-                  onEmojiSelect={handleEmojiSelect}
+                  onEmojiSelect={(name, url) => handleEmojiSelect(name, url)}
                   disabled={false}
                 />
               </div>
