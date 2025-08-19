@@ -8,7 +8,8 @@ import { useStreamerAuth } from '@/hooks/useStreamerAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency, calculateMonthlyTotal } from '@/utils/dashboardUtils';
 import { useToast } from '@/hooks/use-toast';
-import { DollarSign, TrendingUp, Users, Calendar, LogOut, Settings } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, Calendar, LogOut, Settings, Sparkles } from 'lucide-react';
+import { HyperemoteSettings } from '@/components/HyperemoteSettings';
 import OBSSettings from '@/components/OBSSettings';
 import { ConnectionStatus } from '@/components/ConnectionStatus';
 
@@ -21,6 +22,7 @@ interface Donation {
   payment_status: string;
   streamer_id?: string;
   message_visible?: boolean;
+  is_hyperemote?: boolean;
 }
 
 interface Streamer {
@@ -29,6 +31,8 @@ interface Streamer {
   streamer_name: string;
   brand_color: string;
   brand_logo_url?: string;
+  hyperemotes_enabled?: boolean;
+  hyperemotes_min_amount?: number;
 }
 
 const StreamerDashboard = () => {
@@ -55,17 +59,20 @@ const StreamerDashboard = () => {
       setLoadingData(true);
       
       try {
-        // First, get the streamer info using secure function
+        // First, get the streamer info with hyperemote settings
         const { data: streamerData, error: streamerError } = await supabase
-          .rpc('get_public_streamer_info', { slug: streamerSlug });
+          .from('streamers')
+          .select('id, streamer_slug, streamer_name, brand_color, brand_logo_url, hyperemotes_enabled, hyperemotes_min_amount')
+          .eq('streamer_slug', streamerSlug)
+          .single();
 
-        if (streamerError || !streamerData || streamerData.length === 0) {
+        if (streamerError || !streamerData) {
           console.error('Error fetching streamer:', streamerError);
           setLoadingData(false);
           return;
         }
 
-        const streamerInfo = streamerData[0];
+        const streamerInfo = streamerData;
         setStreamer(streamerInfo);
 
         // Check if logged in user matches this streamer
@@ -80,7 +87,7 @@ const StreamerDashboard = () => {
         // Fetch donations for this streamer
         const { data: donationsData, error: donationsError } = await supabase
           .from('chia_gaming_donations')
-          .select('*')
+          .select('*, is_hyperemote')
           .eq('streamer_id', streamerInfo.id)
           .eq('payment_status', 'success')
           .order('created_at', { ascending: false });
@@ -262,7 +269,7 @@ const StreamerDashboard = () => {
 
         {/* Navigation Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <DollarSign className="w-4 h-4" />
               Dashboard
@@ -270,6 +277,10 @@ const StreamerDashboard = () => {
             <TabsTrigger value="obs" className="flex items-center gap-2">
               <Settings className="w-4 h-4" />
               OBS Settings
+            </TabsTrigger>
+            <TabsTrigger value="hyperemotes" className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4" />
+              Hyperemotes
             </TabsTrigger>
           </TabsList>
 
@@ -353,9 +364,17 @@ const StreamerDashboard = () => {
                         >
                           {formatCurrency(Number(donation.amount))}
                         </Badge>
+                        {donation.is_hyperemote && (
+                          <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-300">
+                            🎉 Hyperemote
+                          </Badge>
+                        )}
                       </div>
-                      {donation.message && (
+                      {donation.message && !donation.is_hyperemote && (
                         <p className="text-sm text-muted-foreground mt-1">{donation.message}</p>
+                      )}
+                      {donation.is_hyperemote && (
+                        <p className="text-sm text-purple-600 italic mt-1">Celebration only - no message</p>
                       )}
                     </div>
                     <div className="text-right">
@@ -378,6 +397,21 @@ const StreamerDashboard = () => {
             <OBSSettings 
               streamer={streamer} 
               onStreamerUpdate={handleStreamerUpdate}
+            />
+          </TabsContent>
+
+          <TabsContent value="hyperemotes" className="mt-6">
+            <HyperemoteSettings 
+              streamerId={streamer.id}
+              hyperemotesEnabled={streamer.hyperemotes_enabled || false}
+              hyperemotesMinAmount={streamer.hyperemotes_min_amount || 50}
+              onUpdate={(enabled, minAmount) => {
+                setStreamer(prev => prev ? {
+                  ...prev,
+                  hyperemotes_enabled: enabled,
+                  hyperemotes_min_amount: minAmount
+                } : null);
+              }}
             />
           </TabsContent>
         </Tabs>

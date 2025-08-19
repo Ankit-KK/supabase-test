@@ -52,6 +52,7 @@ export type Database = {
           amount: number
           created_at: string
           id: string
+          is_hyperemote: boolean | null
           message: string | null
           message_visible: boolean | null
           name: string
@@ -64,6 +65,7 @@ export type Database = {
           amount: number
           created_at?: string
           id?: string
+          is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
           name: string
@@ -76,6 +78,7 @@ export type Database = {
           amount?: number
           created_at?: string
           id?: string
+          is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
           name?: string
@@ -243,6 +246,8 @@ export type Database = {
           brand_color: string | null
           brand_logo_url: string | null
           created_at: string | null
+          hyperemotes_enabled: boolean | null
+          hyperemotes_min_amount: number | null
           id: string
           obs_token: string | null
           password: string | null
@@ -256,6 +261,8 @@ export type Database = {
           brand_color?: string | null
           brand_logo_url?: string | null
           created_at?: string | null
+          hyperemotes_enabled?: boolean | null
+          hyperemotes_min_amount?: number | null
           id?: string
           obs_token?: string | null
           password?: string | null
@@ -269,6 +276,8 @@ export type Database = {
           brand_color?: string | null
           brand_logo_url?: string | null
           created_at?: string | null
+          hyperemotes_enabled?: boolean | null
+          hyperemotes_min_amount?: number | null
           id?: string
           obs_token?: string | null
           password?: string | null

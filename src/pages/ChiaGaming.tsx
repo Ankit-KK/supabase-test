@@ -21,9 +21,11 @@ const ChiaGaming = () => {
   const [cashfree, setCashfree] = useState<any>(null);
   const [sdkLoading, setSdkLoading] = useState(true);
   const [sdkError, setSdkError] = useState<string | null>(null);
+  const [isHyperemote, setIsHyperemote] = useState(false);
+  const [streamerSettings, setStreamerSettings] = useState<any>(null);
   const { errors, validateDonation, sanitizeInputs, clearErrors } = useInputValidation();
 
-  // Initialize Cashfree SDK
+  // Initialize Cashfree SDK and fetch streamer settings
   useEffect(() => {
     const initializeSDK = async () => {
       try {
@@ -54,8 +56,24 @@ const ChiaGaming = () => {
         setSdkLoading(false);
       }
     };
+
+    const fetchStreamerSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('streamers')
+          .select('hyperemotes_enabled, hyperemotes_min_amount')
+          .eq('streamer_slug', 'chia_gaming')
+          .single();
+
+        if (error) throw error;
+        setStreamerSettings(data);
+      } catch (error) {
+        console.error('Failed to fetch streamer settings:', error);
+      }
+    };
     
     initializeSDK();
+    fetchStreamerSettings();
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -102,7 +120,7 @@ const ChiaGaming = () => {
         body: {
           name: sanitized.name,
           amount: amount,
-          message: sanitized.message
+          message: isHyperemote ? '' : sanitized.message
         }
       });
 
@@ -122,8 +140,9 @@ const ChiaGaming = () => {
           order_id: orderId,
           name: sanitized.name,
           amount: amount,
-          message: sanitized.message,
-          payment_status: 'pending'
+          message: isHyperemote ? '' : sanitized.message,
+          payment_status: 'pending',
+          is_hyperemote: isHyperemote
         });
 
       if (dbError) {
@@ -185,6 +204,20 @@ const ChiaGaming = () => {
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const handleHyperemoteToggle = () => {
+    setIsHyperemote(!isHyperemote);
+    if (!isHyperemote) {
+      setFormData(prev => ({ ...prev, message: '' }));
+    }
+  };
+
+  const canUseHyperemotes = () => {
+    if (!streamerSettings) return false;
+    if (!streamerSettings.hyperemotes_enabled) return false;
+    const amount = parseFloat(formData.amount);
+    return amount >= (streamerSettings.hyperemotes_min_amount || 50);
   };
 
   return (
@@ -268,6 +301,27 @@ const ChiaGaming = () => {
               )}
             </div>
 
+            {/* Hyperemote Option */}
+            {streamerSettings?.hyperemotes_enabled && canUseHyperemotes() && (
+              <div className="bg-gradient-to-r from-gaming-pink-primary/10 to-gaming-pink-secondary/10 border border-gaming-pink-primary/30 rounded-lg p-4">
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    id="hyperemote"
+                    checked={isHyperemote}
+                    onChange={handleHyperemoteToggle}
+                    className="w-4 h-4 text-gaming-pink-primary bg-transparent border-gaming-pink-primary rounded focus:ring-gaming-pink-primary"
+                  />
+                  <label htmlFor="hyperemote" className="text-gaming-pink-primary font-medium">
+                    🎉 Celebrate with Hyperemotes
+                  </label>
+                </div>
+                <p className="text-gaming-pink-secondary text-sm mt-2">
+                  Skip the message and trigger amazing on-screen celebrations!
+                </p>
+              </div>
+            )}
+
             {/* Message Field */}
             <div className="space-y-2">
               <label htmlFor="message" className="text-sm font-medium text-gaming-pink-primary">
@@ -276,12 +330,13 @@ const ChiaGaming = () => {
               <Textarea
                 id="message"
                 name="message"
-                placeholder="Add a supportive message..."
+                placeholder={isHyperemote ? "Message disabled for Hyperemotes" : "Add a supportive message..."}
                 value={formData.message}
                 onChange={handleInputChange}
-                className={`min-h-20 border-gaming-pink-primary/30 focus:border-gaming-pink-primary focus:ring-gaming-pink-primary/20 resize-none ${
+                disabled={isHyperemote}
+                className={`min-h-20 border-gaming-pink-primary/30 focus:border-gaming-pink-primary focus:ring-gaming-pink-primary/20 resize-none transition-all ${
                   errors.message ? 'border-destructive' : ''
-                }`}
+                } ${isHyperemote ? 'opacity-50 cursor-not-allowed' : ''}`}
                 maxLength={500}
               />
               {errors.message && (
@@ -307,6 +362,12 @@ const ChiaGaming = () => {
                 <div className="flex items-center space-x-2">
                   <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
                   <span>Processing...</span>
+                </div>
+              ) : isHyperemote ? (
+                <div className="flex items-center space-x-2">
+                  <Sparkles className="h-4 w-4" />
+                  <span>🎉 Celebrate Now</span>
+                  <Sparkles className="h-4 w-4 group-hover:animate-pulse-glow" />
                 </div>
               ) : (
                 <div className="flex items-center space-x-2">
