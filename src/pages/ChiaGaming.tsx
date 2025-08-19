@@ -21,7 +21,7 @@ const ChiaGaming = () => {
   const [cashfree, setCashfree] = useState<any>(null);
   const [sdkLoading, setSdkLoading] = useState(true);
   const [sdkError, setSdkError] = useState<string | null>(null);
-  const [isHyperemote, setIsHyperemote] = useState(false);
+  const [donationType, setDonationType] = useState<'message' | 'hyperemote'>('message');
   const [streamerSettings, setStreamerSettings] = useState<any>(null);
   const { errors, validateDonation, sanitizeInputs, clearErrors } = useInputValidation();
 
@@ -120,7 +120,7 @@ const ChiaGaming = () => {
         body: {
           name: sanitized.name,
           amount: amount,
-          message: isHyperemote ? '' : sanitized.message
+          message: donationType === 'hyperemote' ? '' : sanitized.message
         }
       });
 
@@ -140,9 +140,9 @@ const ChiaGaming = () => {
           order_id: orderId,
           name: sanitized.name,
           amount: amount,
-          message: isHyperemote ? '' : sanitized.message,
+          message: donationType === 'hyperemote' ? '' : sanitized.message,
           payment_status: 'pending',
-          is_hyperemote: isHyperemote
+          is_hyperemote: donationType === 'hyperemote'
         });
 
       if (dbError) {
@@ -206,18 +206,13 @@ const ChiaGaming = () => {
     }
   };
 
-  const handleHyperemoteToggle = () => {
-    setIsHyperemote(!isHyperemote);
-    if (!isHyperemote) {
-      setFormData(prev => ({ ...prev, message: '' }));
+  const handleDonationTypeChange = (type: 'message' | 'hyperemote') => {
+    setDonationType(type);
+    if (type === 'hyperemote') {
+      setFormData(prev => ({ ...prev, amount: '100', message: '' }));
+    } else {
+      setFormData(prev => ({ ...prev, amount: '' }));
     }
-  };
-
-  const canUseHyperemotes = () => {
-    if (!streamerSettings) return false;
-    if (!streamerSettings.hyperemotes_enabled) return false;
-    const amount = parseFloat(formData.amount);
-    return amount >= (streamerSettings.hyperemotes_min_amount || 50);
   };
 
   return (
@@ -272,6 +267,47 @@ const ChiaGaming = () => {
               )}
             </div>
 
+            {/* Donation Type Selection */}
+            {streamerSettings?.hyperemotes_enabled && (
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-gaming-pink-primary">
+                  Choose your donation type
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleDonationTypeChange('message')}
+                    className={`p-4 rounded-lg border-2 transition-all ${
+                      donationType === 'message'
+                        ? 'border-gaming-pink-primary bg-gaming-pink-primary/10'
+                        : 'border-gaming-pink-primary/30 hover:border-gaming-pink-primary/50'
+                    }`}
+                  >
+                    <div className="text-center">
+                      <div className="text-lg mb-1">💬</div>
+                      <div className="font-medium text-sm">Send Message</div>
+                      <div className="text-xs text-muted-foreground">Any amount + message</div>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDonationTypeChange('hyperemote')}
+                    className={`p-4 rounded-lg border-2 transition-all ${
+                      donationType === 'hyperemote'
+                        ? 'border-purple-500 bg-purple-500/10'
+                        : 'border-purple-500/30 hover:border-purple-500/50'
+                    }`}
+                  >
+                    <div className="text-center">
+                      <div className="text-lg mb-1">🎉</div>
+                      <div className="font-medium text-sm">Hyperemotes</div>
+                      <div className="text-xs text-muted-foreground">₹100 celebration</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Amount Field */}
             <div className="space-y-2">
               <label htmlFor="amount" className="text-sm font-medium text-gaming-pink-primary">
@@ -285,14 +321,15 @@ const ChiaGaming = () => {
                   id="amount"
                   name="amount"
                   type="number"
-                  placeholder="100"
+                  placeholder={donationType === 'hyperemote' ? '100' : '100'}
                   min="1"
                   max="100000"
                   value={formData.amount}
                   onChange={handleInputChange}
+                  disabled={donationType === 'hyperemote'}
                   className={`pl-8 border-gaming-pink-primary/30 focus:border-gaming-pink-primary focus:ring-gaming-pink-primary/20 ${
                     errors.amount ? 'border-destructive' : ''
-                  }`}
+                  } ${donationType === 'hyperemote' ? 'opacity-50 cursor-not-allowed' : ''}`}
                   required
                 />
               </div>
@@ -300,27 +337,6 @@ const ChiaGaming = () => {
                 <p className="text-sm text-destructive">{errors.amount}</p>
               )}
             </div>
-
-            {/* Hyperemote Option */}
-            {streamerSettings?.hyperemotes_enabled && canUseHyperemotes() && (
-              <div className="bg-gradient-to-r from-gaming-pink-primary/10 to-gaming-pink-secondary/10 border border-gaming-pink-primary/30 rounded-lg p-4">
-                <div className="flex items-center space-x-3">
-                  <input
-                    type="checkbox"
-                    id="hyperemote"
-                    checked={isHyperemote}
-                    onChange={handleHyperemoteToggle}
-                    className="w-4 h-4 text-gaming-pink-primary bg-transparent border-gaming-pink-primary rounded focus:ring-gaming-pink-primary"
-                  />
-                  <label htmlFor="hyperemote" className="text-gaming-pink-primary font-medium">
-                    🎉 Celebrate with Hyperemotes
-                  </label>
-                </div>
-                <p className="text-gaming-pink-secondary text-sm mt-2">
-                  Skip the message and trigger amazing on-screen celebrations!
-                </p>
-              </div>
-            )}
 
             {/* Message Field */}
             <div className="space-y-2">
@@ -330,21 +346,23 @@ const ChiaGaming = () => {
               <Textarea
                 id="message"
                 name="message"
-                placeholder={isHyperemote ? "Message disabled for Hyperemotes" : "Add a supportive message..."}
+                placeholder={donationType === 'hyperemote' ? "Message disabled for Hyperemotes" : "Add a supportive message..."}
                 value={formData.message}
                 onChange={handleInputChange}
-                disabled={isHyperemote}
+                disabled={donationType === 'hyperemote'}
                 className={`min-h-20 border-gaming-pink-primary/30 focus:border-gaming-pink-primary focus:ring-gaming-pink-primary/20 resize-none transition-all ${
                   errors.message ? 'border-destructive' : ''
-                } ${isHyperemote ? 'opacity-50 cursor-not-allowed' : ''}`}
+                } ${donationType === 'hyperemote' ? 'opacity-50 cursor-not-allowed' : ''}`}
                 maxLength={500}
               />
               {errors.message && (
                 <p className="text-sm text-destructive">{errors.message}</p>
               )}
-              <p className="text-xs text-muted-foreground text-right">
-                {formData.message.length}/500
-              </p>
+              {donationType !== 'hyperemote' && (
+                <p className="text-xs text-muted-foreground text-right">
+                  {formData.message.length}/500
+                </p>
+              )}
             </div>
 
             {/* Pay Button */}
@@ -363,16 +381,16 @@ const ChiaGaming = () => {
                   <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
                   <span>Processing...</span>
                 </div>
-              ) : isHyperemote ? (
+              ) : donationType === 'hyperemote' ? (
                 <div className="flex items-center space-x-2">
                   <Sparkles className="h-4 w-4" />
-                  <span>🎉 Celebrate Now</span>
+                  <span>🎉 Celebrate with ₹100</span>
                   <Sparkles className="h-4 w-4 group-hover:animate-pulse-glow" />
                 </div>
               ) : (
                 <div className="flex items-center space-x-2">
                   <Heart className="h-4 w-4" />
-                  <span>Donate Now</span>
+                  <span>Donate ₹{formData.amount || '0'}</span>
                   <Sparkles className="h-4 w-4 group-hover:animate-pulse-glow" />
                 </div>
               )}
