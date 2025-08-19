@@ -10,6 +10,7 @@ import { load } from '@cashfreepayments/cashfree-js';
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import EmojiSelector from "@/components/EmojiSelector";
+import HyperemotePreview from "@/components/HyperemotePreview";
 
 const ChiaGaming = () => {
   const navigate = useNavigate();
@@ -322,6 +323,7 @@ const ChiaGaming = () => {
                   onEmojiSelect={setSelectedEmoji}
                   disabled={false}
                 />
+                <HyperemotePreview selectedEmoji={selectedEmoji} />
               </div>
             )}
 
