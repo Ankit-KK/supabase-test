@@ -120,8 +120,8 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
       // Use secure RPC to regenerate token
       const { data, error } = await supabase
         .rpc('regenerate_obs_token', {
-          streamer_id: streamer.id,
-          new_token: newToken
+          p_streamer_id: streamer.id,
+          p_new_token: newToken
         });
       
       if (error) throw error;

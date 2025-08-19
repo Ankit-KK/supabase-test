@@ -481,7 +481,11 @@ export type Database = {
         Returns: undefined
       }
       regenerate_obs_token: {
-        Args: { expires_at?: string; new_token: string; streamer_id: string }
+        Args: {
+          p_expires_at?: string
+          p_new_token: string
+          p_streamer_id: string
+        }
         Returns: {
           token: string
         }[]
