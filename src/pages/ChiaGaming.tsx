@@ -63,10 +63,10 @@ const ChiaGaming = () => {
           .from('streamers')
           .select('hyperemotes_enabled, hyperemotes_min_amount')
           .eq('streamer_slug', 'chia_gaming')
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
-        setStreamerSettings(data);
+        if (data) setStreamerSettings(data);
       } catch (error) {
         console.error('Failed to fetch streamer settings:', error);
       }

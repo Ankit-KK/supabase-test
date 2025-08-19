@@ -59,20 +59,17 @@ const StreamerDashboard = () => {
       setLoadingData(true);
       
       try {
-        // First, get the streamer info with hyperemote settings
+        // First, get the streamer info using secure function to bypass RLS
         const { data: streamerData, error: streamerError } = await supabase
-          .from('streamers')
-          .select('id, streamer_slug, streamer_name, brand_color, brand_logo_url, hyperemotes_enabled, hyperemotes_min_amount')
-          .eq('streamer_slug', streamerSlug)
-          .single();
+          .rpc('get_public_streamer_info', { slug: streamerSlug });
 
-        if (streamerError || !streamerData) {
+        if (streamerError || !streamerData || streamerData.length === 0) {
           console.error('Error fetching streamer:', streamerError);
           setLoadingData(false);
           return;
         }
 
-        const streamerInfo = streamerData;
+        const streamerInfo = streamerData[0];
         setStreamer(streamerInfo);
 
         // Check if logged in user matches this streamer
