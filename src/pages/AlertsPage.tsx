@@ -221,95 +221,132 @@ const AlertsPage = () => {
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        @keyframes bounceIn {
-          0% { transform: scale(0.3) rotate(-10deg); opacity: 0; }
-          50% { transform: scale(1.1) rotate(5deg); opacity: 1; }
-          100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        @keyframes floatUp {
+          0% { 
+            opacity: 0; 
+            transform: translateY(100vh) scale(0.5) rotate(0deg); 
+          }
+          20% { 
+            opacity: 1; 
+            transform: translateY(80vh) scale(1) rotate(180deg); 
+          }
+          80% { 
+            opacity: 1; 
+            transform: translateY(20vh) scale(1.2) rotate(340deg); 
+          }
+          100% { 
+            opacity: 0; 
+            transform: translateY(-10vh) scale(0.8) rotate(360deg); 
+          }
         }
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-10px); }
+        @keyframes floatUpLeft {
+          0% { 
+            opacity: 0; 
+            transform: translateY(100vh) translateX(0) scale(0.5) rotate(0deg); 
+          }
+          50% { 
+            opacity: 1; 
+            transform: translateY(50vh) translateX(-100px) scale(1.1) rotate(180deg); 
+          }
+          100% { 
+            opacity: 0; 
+            transform: translateY(-10vh) translateX(-200px) scale(0.7) rotate(360deg); 
+          }
+        }
+        @keyframes floatUpRight {
+          0% { 
+            opacity: 0; 
+            transform: translateY(100vh) translateX(0) scale(0.5) rotate(0deg); 
+          }
+          50% { 
+            opacity: 1; 
+            transform: translateY(50vh) translateX(100px) scale(1.1) rotate(-180deg); 
+          }
+          100% { 
+            opacity: 0; 
+            transform: translateY(-10vh) translateX(200px) scale(0.7) rotate(-360deg); 
+          }
+        }
+        @keyframes spiralUp {
+          0% { 
+            opacity: 0; 
+            transform: translateY(100vh) rotateY(0deg) scale(0.5); 
+          }
+          25% { 
+            opacity: 1; 
+            transform: translateY(75vh) rotateY(90deg) scale(1); 
+          }
+          50% { 
+            opacity: 1; 
+            transform: translateY(50vh) rotateY(180deg) scale(1.2); 
+          }
+          75% { 
+            opacity: 1; 
+            transform: translateY(25vh) rotateY(270deg) scale(1); 
+          }
+          100% { 
+            opacity: 0; 
+            transform: translateY(-10vh) rotateY(360deg) scale(0.8); 
+          }
         }
         .animate-fadeIn {
           animation: fadeIn 0.6s ease-out;
         }
-        .animate-bounceIn {
-          animation: bounceIn 0.8s ease-out;
-        }
-        .animate-float {
-          animation: float 2s ease-in-out infinite;
-        }
       `}</style>
       
       <div className="min-h-screen bg-transparent overflow-hidden relative">
-        {currentAlert && (
-          <>
-            {currentAlert.donation.is_hyperemote ? (
-              // Hyperemote Display
-              <div className="fixed inset-0 flex items-center justify-center pointer-events-none">
-                <div className="text-center">
-                  {/* Random emotes floating around */}
-                  {hyperemotes.slice(0, 6).map((emote, index) => (
-                    <img
-                      key={`${emote.id}-${index}`}
-                      src={emote.src}
-                      alt={emote.name}
-                      className="absolute w-16 h-16 animate-bounceIn animate-float"
-                      style={{
-                        left: `${20 + (index * 15)}%`,
-                        top: `${30 + (index % 3) * 20}%`,
-                        animationDelay: `${index * 0.2}s`,
-                        animationDuration: '2s'
-                      }}
-                    />
-                  ))}
-                  
-                  {/* Main donation info */}
-                  <div 
-                    className="p-6 rounded-2xl shadow-2xl text-center animate-bounceIn text-white z-10 relative"
-                    style={{ 
-                      background: "linear-gradient(135deg, #ff6b6b, #ffd93d)",
-                      minWidth: "350px",
-                    }}
-                  >
-                    <h2 className="text-2xl font-bold mb-2">
-                      🎉 {currentAlert.donation.name} 🎉
-                    </h2>
-                    <p className="text-4xl font-extrabold mb-2 animate-pulse">
-                      ₹{currentAlert.donation.amount}
-                    </p>
-                    <p className="text-lg font-medium">
-                      sent hyperemotes!
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              // Regular Message Display
-              <div className="fixed inset-x-0 bottom-6 flex items-center justify-center bg-transparent">
-                <div 
-                  className="p-4 rounded-xl shadow-xl text-center animate-fadeIn text-white"
-                  style={{ 
-                    background: "linear-gradient(135deg, #4f46e5, #9333ea)",
-                    minWidth: "280px",
-                    maxWidth: "400px"
+        {currentAlert && currentAlert.donation.is_hyperemote && (
+          <div className="fixed inset-0 pointer-events-none">
+            {/* Generate multiple emotes with different animations */}
+            {Array.from({ length: 12 }, (_, index) => {
+              const emote = hyperemotes[index % hyperemotes.length];
+              const animations = ['floatUp', 'floatUpLeft', 'floatUpRight', 'spiralUp'];
+              const animationType = animations[index % animations.length];
+              const delay = (index % 4) * 0.5; // Stagger the start times
+              const duration = 4 + (index % 3); // Vary duration between 4-6 seconds
+              const leftPosition = 10 + (index * 7) % 80; // Spread across screen width
+              
+              return (
+                <img
+                  key={`${emote.id}-${index}-${currentAlert.timestamp}`}
+                  src={emote.src}
+                  alt={emote.name}
+                  className="absolute w-20 h-20"
+                  style={{
+                    left: `${leftPosition}%`,
+                    animation: `${animationType} ${duration}s ease-in-out ${delay}s both`,
+                    zIndex: 10 + index
                   }}
-                >
-                  <h2 className="text-xl font-bold mb-1">
-                    {currentAlert.donation.name}
-                  </h2>
-                  <p className="text-3xl font-extrabold mb-3 animate-pulse">
-                    ₹{currentAlert.donation.amount}
-                  </p>
-                  {currentAlert.donation.message && (
-                    <p className="text-base font-light">
-                      {displayedMessage || "..."}
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-          </>
+                />
+              );
+            })}
+          </div>
+        )}
+        
+        {currentAlert && !currentAlert.donation.is_hyperemote && (
+          // Regular Message Display
+          <div className="fixed inset-x-0 bottom-6 flex items-center justify-center bg-transparent">
+            <div 
+              className="p-4 rounded-xl shadow-xl text-center animate-fadeIn text-white"
+              style={{ 
+                background: "linear-gradient(135deg, #4f46e5, #9333ea)",
+                minWidth: "280px",
+                maxWidth: "400px"
+              }}
+            >
+              <h2 className="text-xl font-bold mb-1">
+                {currentAlert.donation.name}
+              </h2>
+              <p className="text-3xl font-extrabold mb-3 animate-pulse">
+                ₹{currentAlert.donation.amount}
+              </p>
+              {currentAlert.donation.message && (
+                <p className="text-base font-light">
+                  {displayedMessage || "..."}
+                </p>
+              )}
+            </div>
+          </div>
         )}
       </div>
     </>
