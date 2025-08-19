@@ -9,6 +9,7 @@ import { Gamepad2, Heart, Sparkles } from "lucide-react";
 import { load } from '@cashfreepayments/cashfree-js';
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import EmojiSelector from "@/components/EmojiSelector";
 
 const ChiaGaming = () => {
   const navigate = useNavigate();
@@ -23,6 +24,7 @@ const ChiaGaming = () => {
   const [sdkError, setSdkError] = useState<string | null>(null);
   const [donationType, setDonationType] = useState<'message' | 'hyperemote'>('message');
   const [streamerSettings, setStreamerSettings] = useState<any>(null);
+  const [selectedEmoji, setSelectedEmoji] = useState<string>('happy');
   const { errors, validateDonation, sanitizeInputs, clearErrors } = useInputValidation();
 
   // Initialize Cashfree SDK and fetch streamer settings
@@ -304,7 +306,24 @@ const ChiaGaming = () => {
                     </div>
                   </button>
                 </div>
+            </div>
+
+            {/* Hyperemote Preview - Show when hyperemote is selected */}
+            {donationType === 'hyperemote' && (
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-purple-400">
+                  🎉 Choose Your Celebration Emote
+                </label>
+                <p className="text-xs text-muted-foreground">
+                  This emote will be displayed on stream when you donate!
+                </p>
+                <EmojiSelector
+                  selectedEmoji={selectedEmoji}
+                  onEmojiSelect={setSelectedEmoji}
+                  disabled={false}
+                />
               </div>
+            )}
 
             {/* Amount Field */}
             <div className="space-y-2">
