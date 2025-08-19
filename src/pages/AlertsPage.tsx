@@ -174,8 +174,8 @@ const AlertsPage = () => {
     
     let totalTime;
     if (currentAlert.donation.is_hyperemote) {
-      // Hyperemotes show for 4 seconds
-      totalTime = 4000;
+      // Hyperemotes show for 10 seconds
+      totalTime = 10000;
     } else {
       // Regular messages: typing time + display time
       const messageLength = currentAlert.donation.message?.length || 0;
@@ -302,8 +302,8 @@ const AlertsPage = () => {
               const emote = hyperemotes[index % hyperemotes.length];
               const animations = ['floatUp', 'floatUpLeft', 'floatUpRight', 'spiralUp'];
               const animationType = animations[index % animations.length];
-              const delay = (index % 4) * 0.5; // Stagger the start times
-              const duration = 4 + (index % 3); // Vary duration between 4-6 seconds
+              const delay = (index % 4) * 1; // Stagger the start times more
+              const duration = 10; // Fixed 10 second duration for all emotes
               const leftPosition = 10 + (index * 7) % 80; // Spread across screen width
               
               return (
