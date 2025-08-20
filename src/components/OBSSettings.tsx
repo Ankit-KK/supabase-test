@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Copy, RefreshCw, Eye, EyeOff, ExternalLink } from 'lucide-react';
+import { Copy, RefreshCw, Eye, EyeOff, ExternalLink, Volume2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { generateObsToken } from '@/utils/secureIdGenerator';
@@ -16,6 +16,7 @@ interface Donation {
   name: string;
   amount: number;
   message?: string;
+  voice_message_url?: string;
   created_at: string;
   payment_status: string;
   message_visible?: boolean;
@@ -45,6 +46,10 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
 
   const obsUrl = obsToken 
     ? `${window.location.origin}/alerts/${obsToken}`
+    : '';
+
+  const voiceAlertsUrl = obsToken 
+    ? `${window.location.origin}/voice-alerts/${obsToken}`
     : '';
 
   // Fetch recent donations
@@ -293,6 +298,42 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
                   <li>Check "Refresh browser when scene becomes active"</li>
                 </ol>
               </div>
+              
+              {/* Voice Alerts Section */}
+              <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                <h4 className="font-medium mb-2 flex items-center gap-2">
+                  <Volume2 className="w-4 h-4" />
+                  Voice Message Audio Player
+                </h4>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Open this link in a separate browser tab to hear voice message donations. Keep it running in the background.
+                </p>
+                {voiceAlertsUrl && (
+                  <div className="flex gap-2">
+                    <Input 
+                      value={voiceAlertsUrl}
+                      readOnly
+                      className="font-mono text-sm"
+                    />
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      onClick={() => navigator.clipboard.writeText(voiceAlertsUrl)}
+                      title="Copy Voice Alerts URL"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      onClick={() => window.open(voiceAlertsUrl, '_blank')}
+                      title="Open Voice Alerts Player"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
             </>
           ) : (
             <div className="text-center py-4">
@@ -340,6 +381,12 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
                       <p className="text-sm text-muted-foreground mt-1 truncate max-w-md">
                         {donation.message}
                       </p>
+                    )}
+                    {donation.voice_message_url && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <Volume2 className="w-3 h-3 text-blue-500" />
+                        <span className="text-xs text-blue-600 dark:text-blue-400">Voice message</span>
+                      </div>
                     )}
                   </div>
                   

@@ -22,6 +22,7 @@ import Auth from "./pages/Auth";
 import ChiaGamingLogin from "./pages/ChiaGamingLogin";
 import StreamerDashboard from "./pages/StreamerDashboard";
 import AlertsPage from "./pages/AlertsPage";
+import VoiceAlerts from "./pages/VoiceAlerts";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +53,7 @@ const App = () => (
             
             {/* OBS Alerts */}
             <Route path="/alerts/:token" element={<AlertsPage />} />
+            <Route path="/voice-alerts/:token" element={<VoiceAlerts />} />
             
             {/* Blog posts */}
             <Route path="/blog/upi-security-best-practices" element={<UpiSecurityBestPractices />} />
