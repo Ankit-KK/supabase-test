@@ -103,6 +103,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
         <div className="flex justify-center gap-2">
           {!isRecording && !audioBlob && (
             <Button
+              type="button"
               onClick={startRecording}
               className="bg-gaming-pink-primary hover:bg-gaming-pink-secondary text-white gap-2"
             >
@@ -113,6 +114,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
 
           {isRecording && (
             <Button
+              type="button"
               onClick={stopRecording}
               variant="destructive"
               className="gap-2"
@@ -125,6 +127,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
           {audioBlob && !isRecording && (
             <div className="flex gap-2">
               <Button
+                type="button"
                 onClick={isPlaying ? stopPlayback : playRecording}
                 variant="outline"
                 className="gap-2"
@@ -134,6 +137,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
               </Button>
               
               <Button
+                type="button"
                 onClick={clearRecording}
                 variant="outline"
                 className="gap-2"
