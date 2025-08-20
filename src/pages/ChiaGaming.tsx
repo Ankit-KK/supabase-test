@@ -1,35 +1,38 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useInputValidation } from "@/hooks/useInputValidation";
 import { toast } from "@/hooks/use-toast";
 import { Gamepad2, Heart, Sparkles } from "lucide-react";
 import { load } from '@cashfreepayments/cashfree-js';
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import EmojiSelector from "@/components/EmojiSelector";
+import VoiceRecorder from "@/components/VoiceRecorder";
+import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 
 
 const ChiaGaming = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
-    amount: '',
-    message: ''
+    amount: ''
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [cashfree, setCashfree] = useState<any>(null);
   const [sdkLoading, setSdkLoading] = useState(true);
   const [sdkError, setSdkError] = useState<string | null>(null);
-  const [donationType, setDonationType] = useState<'message' | 'hyperemote'>('message');
+  const [donationType, setDonationType] = useState<'voice' | 'hyperemote'>('voice');
   const [streamerSettings, setStreamerSettings] = useState<any>(null);
-  const [selectedEmoji, setSelectedEmoji] = useState<string>('');
+  const [hasVoiceRecording, setHasVoiceRecording] = useState(false);
+  const [voiceDuration, setVoiceDuration] = useState(0);
   const [showHyperemoteEffect, setShowHyperemoteEffect] = useState(false);
+  const [selectedEmoji, setSelectedEmoji] = useState<string>('');
   const [selectedEmoteUrl, setSelectedEmoteUrl] = useState<string>('');
   
-  // Static emotes from chiaa-emotes bucket
+  // Voice recorder instance
+  const voiceRecorder = useVoiceRecorder(60);
+  
+  // Static emotes from chiaa-emotes bucket (for hyperemotes)
   const availableEmotes = [
     { name: "emojis1", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/emojis1-Photoroom.png" },
     { name: "image-10", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(10).png" },
@@ -44,8 +47,6 @@ const ChiaGaming = () => {
     { name: "image-9", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(9).png" },
     { name: "image", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom.png" }
   ];
-  
-  const { errors, validateDonation, sanitizeInputs, clearErrors } = useInputValidation();
 
   // Initialize Cashfree SDK and fetch streamer settings
   useEffect(() => {
@@ -98,17 +99,12 @@ const ChiaGaming = () => {
     fetchStreamerSettings();
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-    
-    // Clear errors when user starts typing
-    if (errors[name as keyof typeof errors]) {
-      clearErrors();
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -119,14 +115,36 @@ const ChiaGaming = () => {
     try {
       const amount = parseFloat(formData.amount);
       
-      // Validate inputs
-      if (!validateDonation(formData.name, formData.message, amount)) {
+      // Validate inputs - voice donations need recording, hyperemotes don't
+      if (!formData.name?.trim()) {
+        toast({
+          title: "Name Required",
+          description: "Please enter your name.",
+          variant: "destructive",
+        });
         setIsProcessing(false);
         return;
       }
 
-      // Sanitize inputs
-      const sanitized = sanitizeInputs(formData.name, formData.message);
+      if (donationType === 'voice' && !hasVoiceRecording) {
+        toast({
+          title: "Voice Message Required",
+          description: "Please record a voice message for your donation.",
+          variant: "destructive",
+        });
+        setIsProcessing(false);
+        return;
+      }
+
+      if (!amount || amount < 1) {
+        toast({
+          title: "Invalid Amount",
+          description: "Please enter a valid donation amount.",
+          variant: "destructive",
+        });
+        setIsProcessing(false);
+        return;
+      }
 
       if (!cashfree) {
         toast({
@@ -140,9 +158,9 @@ const ChiaGaming = () => {
       // Create order via Supabase edge function
       const response = await supabase.functions.invoke('create-payment-order', {
         body: {
-          name: sanitized.name,
+          name: formData.name.trim(),
           amount: amount,
-          message: donationType === 'hyperemote' ? '' : sanitized.message
+          message: donationType === 'voice' ? 'Voice message donation' : ''
         }
       });
 
@@ -174,17 +192,31 @@ const ChiaGaming = () => {
         .from('chia_gaming_donations')
         .insert({
           order_id: orderId,
-          name: sanitized.name,
+          name: formData.name.trim(),
           amount: amount,
-          message: donationType === 'hyperemote' ? '' : sanitized.message,
+          message: donationType === 'voice' ? 'Voice message donation' : '',
           payment_status: 'pending',
           is_hyperemote: donationType === 'hyperemote',
-          streamer_id: streamerId
+          streamer_id: streamerId,
+          voice_duration_seconds: donationType === 'voice' ? voiceDuration : null
         });
 
       if (dbError) {
         console.error('Error saving donation:', dbError);
         // Continue with payment even if DB insert fails
+      }
+
+      // Upload voice message if it's a voice donation
+      let voiceMessageUrl: string | null = null;
+      if (donationType === 'voice' && voiceRecorder.audioBlob) {
+        voiceMessageUrl = await voiceRecorder.uploadRecording(orderId);
+        if (voiceMessageUrl) {
+          // Update donation with voice message URL
+          await supabase
+            .from('chia_gaming_donations')
+            .update({ voice_message_url: voiceMessageUrl })
+            .eq('order_id', orderId);
+        }
       }
 
       // Initialize Cashfree checkout
@@ -243,10 +275,10 @@ const ChiaGaming = () => {
     }
   };
 
-  const handleDonationTypeChange = (type: 'message' | 'hyperemote') => {
+  const handleDonationTypeChange = (type: 'voice' | 'hyperemote') => {
     setDonationType(type);
     if (type === 'hyperemote') {
-      setFormData(prev => ({ ...prev, amount: '1', message: '' }));
+      setFormData(prev => ({ ...prev, amount: '1' }));
       // Trigger hyperemote effect
       setShowHyperemoteEffect(true);
       setTimeout(() => setShowHyperemoteEffect(false), 3000);
@@ -302,14 +334,9 @@ const ChiaGaming = () => {
                 placeholder="Enter your name"
                 value={formData.name}
                 onChange={handleInputChange}
-                className={`border-gaming-pink-primary/30 focus:border-gaming-pink-primary focus:ring-gaming-pink-primary/20 ${
-                  errors.name ? 'border-destructive' : ''
-                }`}
+                className="border-gaming-pink-primary/30 focus:border-gaming-pink-primary focus:ring-gaming-pink-primary/20"
                 required
               />
-              {errors.name && (
-                <p className="text-sm text-destructive">{errors.name}</p>
-              )}
             </div>
 
             {/* Donation Type Selection */}
@@ -320,17 +347,17 @@ const ChiaGaming = () => {
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
-                    onClick={() => handleDonationTypeChange('message')}
+                    onClick={() => handleDonationTypeChange('voice')}
                     className={`p-4 rounded-lg border-2 transition-all ${
-                      donationType === 'message'
+                      donationType === 'voice'
                         ? 'border-gaming-pink-primary bg-gaming-pink-primary/10'
                         : 'border-gaming-pink-primary/30 hover:border-gaming-pink-primary/50'
                     }`}
                   >
                     <div className="text-center">
-                      <div className="text-lg mb-1">💬</div>
-                      <div className="font-medium text-sm">Send Message</div>
-                      <div className="text-xs text-muted-foreground">Any amount + message</div>
+                      <div className="text-lg mb-1">🎤</div>
+                      <div className="font-medium text-sm">Voice Message</div>
+                      <div className="text-xs text-muted-foreground">Record your message</div>
                     </div>
                   </button>
                   <button
@@ -350,8 +377,6 @@ const ChiaGaming = () => {
                   </button>
                 </div>
             </div>
-
-
 
             {/* Amount Field */}
             <div className="space-y-2">
@@ -373,47 +398,34 @@ const ChiaGaming = () => {
                   onChange={handleInputChange}
                   disabled={donationType === 'hyperemote'}
                   className={`pl-8 border-gaming-pink-primary/30 focus:border-gaming-pink-primary focus:ring-gaming-pink-primary/20 ${
-                    errors.amount ? 'border-destructive' : ''
-                  } ${donationType === 'hyperemote' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    donationType === 'hyperemote' ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                   required
                 />
               </div>
-              {errors.amount && (
-                <p className="text-sm text-destructive">{errors.amount}</p>
-              )}
             </div>
 
-            {/* Message Field */}
-            <div className="space-y-2">
-              <label htmlFor="message" className="text-sm font-medium text-gaming-pink-primary">
-                Message (Optional)
-              </label>
-              <Textarea
-                id="message"
-                name="message"
-                placeholder={donationType === 'hyperemote' ? "Message disabled for Hyperemotes" : "Add a supportive message..."}
-                value={formData.message}
-                onChange={handleInputChange}
-                disabled={donationType === 'hyperemote'}
-                className={`min-h-20 border-gaming-pink-primary/30 focus:border-gaming-pink-primary focus:ring-gaming-pink-primary/20 resize-none transition-all ${
-                  errors.message ? 'border-destructive' : ''
-                } ${donationType === 'hyperemote' ? 'opacity-50 cursor-not-allowed' : ''}`}
-                maxLength={500}
-              />
-              {errors.message && (
-                <p className="text-sm text-destructive">{errors.message}</p>
-              )}
-              {donationType !== 'hyperemote' && (
-                <p className="text-xs text-muted-foreground text-right">
-                  {formData.message.length}/500
-                </p>
-              )}
-            </div>
+            {/* Voice Message Field */}
+            {donationType === 'voice' && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gaming-pink-primary">
+                  Voice Message *
+                </label>
+                <VoiceRecorder
+                  onRecordingComplete={(hasRecording, duration) => {
+                    setHasVoiceRecording(hasRecording);
+                    setVoiceDuration(duration);
+                  }}
+                  maxDurationSeconds={60}
+                  disabled={false}
+                />
+              </div>
+            )}
 
             {/* Pay Button */}
             <Button
               type="submit"
-              disabled={isProcessing || sdkLoading || !cashfree}
+              disabled={isProcessing || sdkLoading || !cashfree || (donationType === 'voice' && !hasVoiceRecording)}
               className="w-full bg-gradient-to-r from-gaming-pink-primary to-gaming-pink-secondary hover:from-gaming-pink-secondary hover:to-gaming-pink-accent text-gaming-pink-foreground font-medium py-3 relative overflow-hidden group transition-all duration-300 transform hover:scale-[1.02] disabled:scale-100"
             >
               {sdkLoading ? (
@@ -435,7 +447,7 @@ const ChiaGaming = () => {
               ) : (
                 <div className="flex items-center space-x-2">
                   <Heart className="h-4 w-4" />
-                  <span>Donate ₹{formData.amount || '0'}</span>
+                  <span>{donationType === 'voice' ? '🎤 Send Voice Donation' : `Donate ₹${formData.amount || '0'}`}</span>
                   <Sparkles className="h-4 w-4 group-hover:animate-pulse-glow" />
                 </div>
               )}
@@ -463,7 +475,7 @@ const ChiaGaming = () => {
           {!sdkError && (
             <div className="text-center pt-4 border-t border-gaming-pink-primary/20">
               <p className="text-xs text-muted-foreground">
-                💝 Every donation helps grow the gaming community
+                🎤 Every voice message creates a personal connection with the streamer
               </p>
               {sdkLoading && (
                 <p className="text-xs text-gaming-pink-primary mt-1">

@@ -60,6 +60,8 @@ export type Database = {
           payment_status: string | null
           streamer_id: string | null
           updated_at: string
+          voice_duration_seconds: number | null
+          voice_message_url: string | null
         }
         Insert: {
           amount: number
@@ -73,6 +75,8 @@ export type Database = {
           payment_status?: string | null
           streamer_id?: string | null
           updated_at?: string
+          voice_duration_seconds?: number | null
+          voice_message_url?: string | null
         }
         Update: {
           amount?: number
@@ -86,6 +90,8 @@ export type Database = {
           payment_status?: string | null
           streamer_id?: string | null
           updated_at?: string
+          voice_duration_seconds?: number | null
+          voice_message_url?: string | null
         }
         Relationships: [
           {
