@@ -33,6 +33,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
   } = controller ?? internalRecorder;
 
   useEffect(() => {
+    console.log('VoiceRecorder useEffect - audioBlob:', !!audioBlob, 'duration:', duration);
     onRecordingComplete(!!audioBlob, duration);
   }, [audioBlob, duration, onRecordingComplete]);
 

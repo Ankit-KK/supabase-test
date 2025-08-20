@@ -473,6 +473,7 @@ const ChiaGaming = () => {
                 </label>
                 <VoiceRecorder
                   onRecordingComplete={(hasRecording, duration) => {
+                    console.log('ChiaGaming onRecordingComplete - hasRecording:', hasRecording, 'duration:', duration);
                     setHasVoiceRecording(hasRecording);
                     setVoiceDuration(duration);
                   }}
