@@ -445,7 +445,7 @@ const ChiaGaming = () => {
                   placeholder="Add your supportive message..."
                   value={formData.message}
                   onChange={handleInputChange}
-                  className="w-full min-h-20 px-3 py-2 border border-gaming-pink-primary/30 rounded-md focus:border-gaming-pink-primary focus:ring-gaming-pink-primary/20 focus:ring-2 resize-none transition-all"
+                  className="w-full min-h-20 px-3 py-2 bg-background text-foreground border border-gaming-pink-primary/30 rounded-md focus:border-gaming-pink-primary focus:ring-gaming-pink-primary/20 focus:ring-2 resize-none transition-all"
                   maxLength={500}
                   required
                 />
