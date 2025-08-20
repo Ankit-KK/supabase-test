@@ -231,7 +231,7 @@ const ChiaGaming = () => {
   const handleDonationTypeChange = (type: 'message' | 'hyperemote') => {
     setDonationType(type);
     if (type === 'hyperemote') {
-      setFormData(prev => ({ ...prev, amount: '100', message: '' }));
+      setFormData(prev => ({ ...prev, amount: '1', message: '' }));
       // Trigger hyperemote effect
       setShowHyperemoteEffect(true);
       setTimeout(() => setShowHyperemoteEffect(false), 3000);
@@ -330,7 +330,7 @@ const ChiaGaming = () => {
                     <div className="text-center">
                       <div className="text-lg mb-1">🎉</div>
                       <div className="font-medium text-sm">Hyperemotes</div>
-                      <div className="text-xs text-muted-foreground">₹100 celebration</div>
+                      <div className="text-xs text-muted-foreground">₹1 celebration</div>
                     </div>
                   </button>
                 </div>
@@ -351,7 +351,7 @@ const ChiaGaming = () => {
                   id="amount"
                   name="amount"
                   type="number"
-                  placeholder={donationType === 'hyperemote' ? '100' : '100'}
+                  placeholder={donationType === 'hyperemote' ? '1' : '100'}
                   min="1"
                   max="100000"
                   value={formData.amount}
@@ -414,7 +414,7 @@ const ChiaGaming = () => {
               ) : donationType === 'hyperemote' ? (
                 <div className="flex items-center space-x-2">
                   <Sparkles className="h-4 w-4" />
-                  <span>🎉 Celebrate with ₹100</span>
+                  <span>🎉 Celebrate with ₹1</span>
                   <Sparkles className="h-4 w-4 group-hover:animate-pulse-glow" />
                 </div>
               ) : (
