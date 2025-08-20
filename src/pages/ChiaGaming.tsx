@@ -219,27 +219,20 @@ const ChiaGaming = () => {
         // Continue with payment even if DB insert fails
       }
 
-      // Upload voice message if it's a voice donation
-      let voiceMessageUrl: string | null = null;
+      // Don't upload voice message immediately - wait for payment success
+      // Store voice data temporarily in the donation record
+      let voiceDataBase64: string | null = null;
       if (donationType === 'voice' && voiceRecorder.audioBlob) {
-        console.log('Uploading voice message for order:', orderId);
-        voiceMessageUrl = await voiceRecorder.uploadRecording(orderId);
-        if (voiceMessageUrl) {
-          console.log('Voice message uploaded successfully, updating database with URL:', voiceMessageUrl);
-          // Update donation with voice message URL
-          const { error: updateError } = await supabase
-            .from('chia_gaming_donations')
-            .update({ voice_message_url: voiceMessageUrl })
-            .eq('order_id', orderId);
-          
-          if (updateError) {
-            console.error('Error updating voice message URL:', updateError);
-          } else {
-            console.log('Database updated with voice message URL');
-          }
-        } else {
-          console.log('Voice message upload failed, continuing without URL');
-        }
+        console.log('Converting voice recording to base64 for temporary storage');
+        // Convert blob to base64 for temporary storage
+        const reader = new FileReader();
+        voiceDataBase64 = await new Promise((resolve) => {
+          reader.onload = () => {
+            const base64 = (reader.result as string).split(',')[1];
+            resolve(base64);
+          };
+          reader.readAsDataURL(voiceRecorder.audioBlob!);
+        });
       }
 
       // Initialize Cashfree checkout
