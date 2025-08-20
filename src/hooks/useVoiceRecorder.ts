@@ -158,10 +158,12 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
     if (!state.audioBlob) return null;
 
     try {
+      console.log('Starting voice message upload for donation:', donationId);
       const fileName = `${donationId}-${Date.now()}.webm`;
-      const filePath = `voice-messages/${fileName}`;
+      const filePath = `${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
+      console.log('Uploading to path:', filePath);
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('voice-messages')
         .upload(filePath, state.audioBlob, {
           contentType: 'audio/webm',
@@ -169,15 +171,24 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
         });
 
       if (uploadError) {
+        console.error('Upload error:', uploadError);
         throw uploadError;
       }
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('voice-messages')
-        .getPublicUrl(filePath);
+      console.log('Upload successful:', uploadData);
 
-      return publicUrl;
+      // Get signed URL since the bucket is private (expires in 1 year)
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+        .from('voice-messages')
+        .createSignedUrl(filePath, 31536000); // 1 year in seconds
+
+      if (signedUrlError) {
+        console.error('Signed URL error:', signedUrlError);
+        throw signedUrlError;
+      }
+
+      console.log('Signed URL created:', signedUrlData.signedUrl);
+      return signedUrlData.signedUrl;
       
     } catch (error) {
       console.error('Error uploading voice message:', error);

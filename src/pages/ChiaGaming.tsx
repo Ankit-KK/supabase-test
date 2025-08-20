@@ -222,13 +222,23 @@ const ChiaGaming = () => {
       // Upload voice message if it's a voice donation
       let voiceMessageUrl: string | null = null;
       if (donationType === 'voice' && voiceRecorder.audioBlob) {
+        console.log('Uploading voice message for order:', orderId);
         voiceMessageUrl = await voiceRecorder.uploadRecording(orderId);
         if (voiceMessageUrl) {
+          console.log('Voice message uploaded successfully, updating database with URL:', voiceMessageUrl);
           // Update donation with voice message URL
-          await supabase
+          const { error: updateError } = await supabase
             .from('chia_gaming_donations')
             .update({ voice_message_url: voiceMessageUrl })
             .eq('order_id', orderId);
+          
+          if (updateError) {
+            console.error('Error updating voice message URL:', updateError);
+          } else {
+            console.log('Database updated with voice message URL');
+          }
+        } else {
+          console.log('Voice message upload failed, continuing without URL');
         }
       }
 
