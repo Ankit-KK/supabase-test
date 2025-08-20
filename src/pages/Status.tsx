@@ -34,8 +34,19 @@ export default function Status() {
 
         setPaymentDetails(data);
         
-        // Determine status based on response
-        if (data.payments && data.payments.length > 0) {
+        // Prefer backend's final_status when available
+        if (data?.final_status) {
+          const fs = String(data.final_status).toLowerCase();
+          if (fs === 'success') {
+            setPaymentStatus('success');
+          } else if (fs === 'pending') {
+            setPaymentStatus('pending');
+          } else if (fs === 'cancelled' || fs === 'failed' || fs === 'failure') {
+            setPaymentStatus('failure');
+          } else {
+            setPaymentStatus('pending');
+          }
+        } else if (data.payments && data.payments.length > 0) {
           const successfulPayment = data.payments.find((p: any) => p.payment_status === "SUCCESS");
           const pendingPayment = data.payments.find((p: any) => p.payment_status === "PENDING");
           
@@ -47,8 +58,10 @@ export default function Status() {
             setPaymentStatus('failure');
           }
         } else {
-          // If no payments yet, check URL status parameter
-          setPaymentStatus(status === 'success' ? 'pending' : 'failure');
+          // Fallback to URL status parameter if no payments data
+          if (status === 'success') setPaymentStatus('success');
+          else if (status === 'pending') setPaymentStatus('pending');
+          else setPaymentStatus('failure');
         }
       } catch (err) {
         console.error('Payment status check failed:', err);

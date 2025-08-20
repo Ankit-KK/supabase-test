@@ -83,7 +83,7 @@ const ChiaGaming = () => {
       try {
         const { data, error } = await supabase
           .from('streamers')
-          .select('hyperemotes_enabled, hyperemotes_min_amount')
+          .select('id, hyperemotes_enabled, hyperemotes_min_amount')
           .eq('streamer_slug', 'chia_gaming')
           .maybeSingle();
 
@@ -155,6 +155,17 @@ const ChiaGaming = () => {
 
       const orderId = data.cf_order_id || data.order_id;
 
+      // Ensure we have streamer id for proper dashboard/OBS linkage
+      let streamerId = streamerSettings?.id as string | null | undefined;
+      if (!streamerId) {
+        const { data: streamerRow } = await supabase
+          .from('streamers')
+          .select('id')
+          .eq('streamer_slug', 'chia_gaming')
+          .maybeSingle();
+        streamerId = streamerRow?.id || null;
+      }
+
       // Insert donation record into database
       const { error: dbError } = await supabase
         .from('chia_gaming_donations')
@@ -164,7 +175,8 @@ const ChiaGaming = () => {
           amount: amount,
           message: donationType === 'hyperemote' ? '' : sanitized.message,
           payment_status: 'pending',
-          is_hyperemote: donationType === 'hyperemote'
+          is_hyperemote: donationType === 'hyperemote',
+          streamer_id: streamerId
         });
 
       if (dbError) {
