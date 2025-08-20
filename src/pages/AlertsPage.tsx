@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { RealtimeChannel } from '@supabase/supabase-js';
 
 interface Donation {
   id: string;
@@ -40,7 +41,18 @@ const AlertsPage = () => {
   const [alertQueue, setAlertQueue] = useState<AlertQueueItem[]>([]);
   const [isValidToken, setIsValidToken] = useState<boolean | null>(null);
   const [displayedMessage, setDisplayedMessage] = useState("");
+  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const validationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectAttemptsRef = useRef<number>(0);
+
+  const MAX_RECONNECT_ATTEMPTS = 10;
+  const RECONNECT_DELAY = 5000; // 5 seconds
+  const VALIDATION_INTERVAL = 60000; // 1 minute
+  const HEARTBEAT_INTERVAL = 30000; // 30 seconds
   
   // Hyperemote configurations
   const hyperemotes = [
@@ -58,42 +70,79 @@ const AlertsPage = () => {
 
   const enabled = searchParams.get('enabled') !== 'false';
 
-  // Validate OBS token and fetch streamer
-  useEffect(() => {
+  // Token validation function
+  const validateToken = useCallback(async () => {
     if (!obsToken) {
       setIsValidToken(false);
+      return false;
+    }
+
+    try {
+      console.log('Validating OBS token...');
+      const { data, error } = await supabase
+        .rpc('get_streamer_by_obs_token_v2', { token: obsToken });
+
+      if (error || !data) {
+        console.error('Token validation failed:', error);
+        setIsValidToken(false);
+        return false;
+      }
+      
+      const rows = Array.isArray(data) ? data : (data ? [data] : []);
+      if (!rows || rows.length === 0) {
+        console.error('No streamer found for token');
+        setIsValidToken(false);
+        return false;
+      }
+
+      console.log('Token validation successful:', rows[0].streamer_name);
+      setStreamer(rows[0]);
+      setIsValidToken(true);
+      reconnectAttemptsRef.current = 0; // Reset reconnect attempts on successful validation
+      return true;
+    } catch (error) {
+      console.error('Error validating token:', error);
+      setIsValidToken(false);
+      return false;
+    }
+  }, [obsToken]);
+
+  // Cleanup function
+  const cleanup = useCallback(() => {
+    console.log('Cleaning up connections and timers...');
+    
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+    
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+    
+    if (validationIntervalRef.current) {
+      clearInterval(validationIntervalRef.current);
+      validationIntervalRef.current = null;
+    }
+    
+    if (heartbeatIntervalRef.current) {
+      clearInterval(heartbeatIntervalRef.current);
+      heartbeatIntervalRef.current = null;
+    }
+  }, []);
+
+  // Subscribe to real-time donations with reconnection logic
+  const subscribeToUpdates = useCallback(() => {
+    if (!streamer?.id) {
+      console.log('No streamer ID available for subscription');
       return;
     }
 
-    const validateToken = async () => {
-      try {
-        const { data, error } = await supabase
-          .rpc('get_streamer_by_obs_token_v2', { token: obsToken });
-
-        if (error || !data) {
-          setIsValidToken(false);
-          return;
-        }
-        
-        const rows = Array.isArray(data) ? data : (data ? [data] : []);
-        if (!rows || rows.length === 0) {
-          setIsValidToken(false);
-          return;
-        }
-
-        setStreamer(rows[0]);
-        setIsValidToken(true);
-      } catch (error) {
-        setIsValidToken(false);
-      }
-    };
-
-    validateToken();
-  }, [obsToken]);
-
-  // Subscribe to real-time donations
-  useEffect(() => {
-    if (!streamer?.id) return;
+    cleanup(); // Clean up any existing connections
+    
+    console.log('Subscribing to real-time updates for streamer:', streamer.streamer_name);
+    setConnectionStatus('connecting');
 
     const channel = supabase
       .channel(`alerts-${streamer.id}`)
@@ -106,10 +155,13 @@ const AlertsPage = () => {
           filter: `streamer_id=eq.${streamer.id}`
         },
         (payload) => {
-          if (payload.eventType === 'INSERT' && payload.new.payment_status === 'success') {
-            const donation = payload.new as Donation;
+          const newDonation = payload.new as Donation;
+          console.log('Real-time event received:', payload.eventType, newDonation?.name);
+          
+          if (payload.eventType === 'INSERT' && newDonation.payment_status === 'success') {
+            const donation = newDonation;
             console.log('New donation received:', { name: donation.name, amount: donation.amount, message: donation.message });
-            // Show all donations (hyperemotes don't need message_visible check)
+            
             if (donation.is_hyperemote || donation.message_visible !== false) {
               setAlertQueue(prev => [...prev, { 
                 donation, 
@@ -119,10 +171,11 @@ const AlertsPage = () => {
           }
           
           if (payload.eventType === 'UPDATE' && 
-              payload.new.payment_status === 'success' && 
-              payload.old.payment_status !== 'success') {
-            const donation = payload.new as Donation;
-            // Show all donations (hyperemotes don't need message_visible check)
+              newDonation.payment_status === 'success' && 
+              (payload.old as Donation).payment_status !== 'success') {
+            const donation = newDonation;
+            console.log('Donation status updated to success:', { name: donation.name, amount: donation.amount });
+            
             if (donation.is_hyperemote || donation.message_visible !== false) {
               setAlertQueue(prev => [...prev, { 
                 donation, 
@@ -132,12 +185,100 @@ const AlertsPage = () => {
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Subscription status:', status);
+        
+        if (status === 'SUBSCRIBED') {
+          setConnectionStatus('connected');
+          reconnectAttemptsRef.current = 0;
+          console.log('Successfully connected to real-time updates');
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          setConnectionStatus('disconnected');
+          console.log('Connection lost, attempting to reconnect...');
+          scheduleReconnect();
+        }
+      });
+
+    channelRef.current = channel;
+  }, [streamer?.id, cleanup]);
+
+  // Schedule reconnection attempt
+  const scheduleReconnect = useCallback(() => {
+    if (reconnectAttemptsRef.current >= MAX_RECONNECT_ATTEMPTS) {
+      console.error('Max reconnection attempts reached. Stopping reconnection attempts.');
+      return;
+    }
+
+    reconnectAttemptsRef.current += 1;
+    const delay = RECONNECT_DELAY * Math.pow(2, Math.min(reconnectAttemptsRef.current - 1, 3)); // Exponential backoff
+    
+    console.log(`Scheduling reconnection attempt ${reconnectAttemptsRef.current}/${MAX_RECONNECT_ATTEMPTS} in ${delay}ms`);
+    
+    reconnectTimeoutRef.current = setTimeout(() => {
+      console.log('Attempting to reconnect...');
+      subscribeToUpdates();
+    }, delay);
+  }, [subscribeToUpdates]);
+
+  // Initial token validation
+  useEffect(() => {
+    validateToken();
+  }, [validateToken]);
+
+  // Set up periodic token validation
+  useEffect(() => {
+    if (isValidToken) {
+      console.log('Setting up periodic token validation');
+      validationIntervalRef.current = setInterval(() => {
+        console.log('Performing periodic token validation');
+        validateToken();
+      }, VALIDATION_INTERVAL);
+    }
 
     return () => {
-      supabase.removeChannel(channel);
+      if (validationIntervalRef.current) {
+        clearInterval(validationIntervalRef.current);
+        validationIntervalRef.current = null;
+      }
     };
-  }, [streamer?.id]);
+  }, [isValidToken, validateToken]);
+
+  // Subscribe to updates when streamer is available
+  useEffect(() => {
+    if (streamer?.id) {
+      subscribeToUpdates();
+    }
+
+    return cleanup;
+  }, [streamer?.id, subscribeToUpdates, cleanup]);
+
+  // Set up heartbeat to keep connection alive
+  useEffect(() => {
+    if (connectionStatus === 'connected') {
+      console.log('Setting up connection heartbeat');
+      heartbeatIntervalRef.current = setInterval(async () => {
+        try {
+          // Perform a simple query to keep the connection alive
+          await supabase
+            .from('chia_gaming_donations')
+            .select('id')
+            .limit(1);
+          console.log('Heartbeat successful');
+        } catch (error) {
+          console.error('Heartbeat failed:', error);
+          setConnectionStatus('disconnected');
+          scheduleReconnect();
+        }
+      }, HEARTBEAT_INTERVAL);
+    }
+
+    return () => {
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current);
+        heartbeatIntervalRef.current = null;
+      }
+    };
+  }, [connectionStatus, scheduleReconnect]);
 
   // Process alert queue
   useEffect(() => {
