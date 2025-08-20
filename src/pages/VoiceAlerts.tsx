@@ -106,17 +106,29 @@ const VoiceAlerts = () => {
           event: '*',
           schema: 'public',
           table: 'chia_gaming_donations',
-          filter: `streamer_id=eq.${streamer.id},voice_message_url=not.is.null`
+          filter: `streamer_id=eq.${streamer.id}`
         },
         (payload) => {
           console.log('Voice donation update:', payload);
-          if (payload.eventType === 'INSERT' && payload.new.payment_status === 'success') {
-            const newDonation = payload.new as VoiceDonation;
-            setVoiceDonations(prev => [newDonation, ...prev.slice(0, 49)]);
-            
-            // Auto-play new voice message if enabled
-            if (autoPlay && !currentlyPlaying && newDonation.voice_message_url) {
-              playVoiceMessage(newDonation);
+          const donation = payload.new as VoiceDonation;
+
+          if (payload.eventType === 'INSERT') {
+            if (donation.payment_status === 'success' && donation.voice_message_url) {
+              setVoiceDonations(prev => [donation, ...prev.slice(0, 49)]);
+              if (autoPlay && !currentlyPlaying) {
+                playVoiceMessage(donation);
+              }
+            }
+          } else if (payload.eventType === 'UPDATE') {
+            // If a pending donation gets its voice URL and success status later
+            if (donation.payment_status === 'success' && donation.voice_message_url) {
+              setVoiceDonations(prev => {
+                const exists = prev.some(d => d.id === donation.id);
+                return exists ? prev.map(d => d.id === donation.id ? donation : d) : [donation, ...prev.slice(0, 49)];
+              });
+              if (autoPlay && !currentlyPlaying) {
+                playVoiceMessage(donation);
+              }
             }
           }
         }

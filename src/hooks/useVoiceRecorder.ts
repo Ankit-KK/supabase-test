@@ -160,7 +160,7 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
     try {
       console.log('Starting voice message upload for donation:', donationId);
       const fileName = `${donationId}-${Date.now()}.webm`;
-      const filePath = `${fileName}`;
+      const filePath = `${fileName}`; // store at bucket root
 
       console.log('Uploading to path:', filePath);
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -177,18 +177,13 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
 
       console.log('Upload successful:', uploadData);
 
-      // Get signed URL since the bucket is private (expires in 1 year)
-      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+      // Bucket is public -> get public URL (no policy needed)
+      const { data: pub } = supabase.storage
         .from('voice-messages')
-        .createSignedUrl(filePath, 31536000); // 1 year in seconds
+        .getPublicUrl(filePath);
 
-      if (signedUrlError) {
-        console.error('Signed URL error:', signedUrlError);
-        throw signedUrlError;
-      }
-
-      console.log('Signed URL created:', signedUrlData.signedUrl);
-      return signedUrlData.signedUrl;
+      console.log('Public URL:', pub.publicUrl);
+      return pub.publicUrl;
       
     } catch (error) {
       console.error('Error uploading voice message:', error);
