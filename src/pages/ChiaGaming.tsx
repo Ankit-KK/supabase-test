@@ -155,16 +155,17 @@ const ChiaGaming = () => {
 
       const orderId = data.cf_order_id || data.order_id;
 
-      // Ensure we have streamer id for proper dashboard/OBS linkage
-      let streamerId = streamerSettings?.id as string | null | undefined;
-      if (!streamerId) {
-        const { data: streamerRow } = await supabase
-          .from('streamers')
-          .select('id')
-          .eq('streamer_slug', 'chia_gaming')
-          .maybeSingle();
-        streamerId = streamerRow?.id || null;
-      }
+      // Always fetch streamer id for proper dashboard/OBS linkage
+      console.log('Current streamerSettings:', streamerSettings);
+      const { data: streamerRow, error: streamerError } = await supabase
+        .from('streamers')
+        .select('id')
+        .eq('streamer_slug', 'chia_gaming')
+        .single();
+      
+      console.log('Streamer fetch result:', { streamerRow, streamerError });
+      const streamerId = streamerRow?.id || null;
+      console.log('Using streamer_id:', streamerId);
 
       // Insert donation record into database
       const { error: dbError } = await supabase
