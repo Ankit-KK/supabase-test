@@ -15,13 +15,14 @@ const ChiaGaming = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
-    amount: ''
+    amount: '',
+    message: ''
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [cashfree, setCashfree] = useState<any>(null);
   const [sdkLoading, setSdkLoading] = useState(true);
   const [sdkError, setSdkError] = useState<string | null>(null);
-  const [donationType, setDonationType] = useState<'voice' | 'hyperemote'>('voice');
+  const [donationType, setDonationType] = useState<'message' | 'voice' | 'hyperemote'>('message');
   const [streamerSettings, setStreamerSettings] = useState<any>(null);
   const [hasVoiceRecording, setHasVoiceRecording] = useState(false);
   const [voiceDuration, setVoiceDuration] = useState(0);
@@ -99,7 +100,7 @@ const ChiaGaming = () => {
     fetchStreamerSettings();
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -136,6 +137,16 @@ const ChiaGaming = () => {
         return;
       }
 
+      if (donationType === 'message' && !formData.message?.trim()) {
+        toast({
+          title: "Message Required",
+          description: "Please enter a message for your donation.",
+          variant: "destructive",
+        });
+        setIsProcessing(false);
+        return;
+      }
+
       if (!amount || amount < 1) {
         toast({
           title: "Invalid Amount",
@@ -160,7 +171,8 @@ const ChiaGaming = () => {
         body: {
           name: formData.name.trim(),
           amount: amount,
-          message: donationType === 'voice' ? 'Voice message donation' : ''
+          message: donationType === 'message' ? formData.message.trim() : 
+                  donationType === 'voice' ? 'Voice message donation' : ''
         }
       });
 
@@ -194,7 +206,8 @@ const ChiaGaming = () => {
           order_id: orderId,
           name: formData.name.trim(),
           amount: amount,
-          message: donationType === 'voice' ? 'Voice message donation' : '',
+          message: donationType === 'message' ? formData.message.trim() : 
+                  donationType === 'voice' ? 'Voice message donation' : '',
           payment_status: 'pending',
           is_hyperemote: donationType === 'hyperemote',
           streamer_id: streamerId,
@@ -275,10 +288,10 @@ const ChiaGaming = () => {
     }
   };
 
-  const handleDonationTypeChange = (type: 'voice' | 'hyperemote') => {
+  const handleDonationTypeChange = (type: 'message' | 'voice' | 'hyperemote') => {
     setDonationType(type);
     if (type === 'hyperemote') {
-      setFormData(prev => ({ ...prev, amount: '1' }));
+      setFormData(prev => ({ ...prev, amount: '1', message: '' }));
       // Trigger hyperemote effect
       setShowHyperemoteEffect(true);
       setTimeout(() => setShowHyperemoteEffect(false), 3000);
@@ -344,34 +357,49 @@ const ChiaGaming = () => {
                 <label className="text-sm font-medium text-gaming-pink-primary">
                   Choose your donation type
                 </label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleDonationTypeChange('message')}
+                    className={`p-3 rounded-lg border-2 transition-all ${
+                      donationType === 'message'
+                        ? 'border-gaming-pink-primary bg-gaming-pink-primary/10'
+                        : 'border-gaming-pink-primary/30 hover:border-gaming-pink-primary/50'
+                    }`}
+                  >
+                    <div className="text-center">
+                      <div className="text-base mb-1">💬</div>
+                      <div className="font-medium text-xs">Text Message</div>
+                      <div className="text-xs text-muted-foreground">Type message</div>
+                    </div>
+                  </button>
                   <button
                     type="button"
                     onClick={() => handleDonationTypeChange('voice')}
-                    className={`p-4 rounded-lg border-2 transition-all ${
+                    className={`p-3 rounded-lg border-2 transition-all ${
                       donationType === 'voice'
                         ? 'border-gaming-pink-primary bg-gaming-pink-primary/10'
                         : 'border-gaming-pink-primary/30 hover:border-gaming-pink-primary/50'
                     }`}
                   >
                     <div className="text-center">
-                      <div className="text-lg mb-1">🎤</div>
-                      <div className="font-medium text-sm">Voice Message</div>
-                      <div className="text-xs text-muted-foreground">Record your message</div>
+                      <div className="text-base mb-1">🎤</div>
+                      <div className="font-medium text-xs">Voice Message</div>
+                      <div className="text-xs text-muted-foreground">Record voice</div>
                     </div>
                   </button>
                   <button
                     type="button"
                     onClick={() => handleDonationTypeChange('hyperemote')}
-                    className={`p-4 rounded-lg border-2 transition-all ${
+                    className={`p-3 rounded-lg border-2 transition-all ${
                       donationType === 'hyperemote'
                         ? 'border-purple-500 bg-purple-500/10'
                         : 'border-purple-500/30 hover:border-purple-500/50'
                     }`}
                   >
                     <div className="text-center">
-                      <div className="text-lg mb-1">🎉</div>
-                      <div className="font-medium text-sm">Hyperemotes</div>
+                      <div className="text-base mb-1">🎉</div>
+                      <div className="font-medium text-xs">Hyperemotes</div>
                       <div className="text-xs text-muted-foreground">₹1 celebration</div>
                     </div>
                   </button>
@@ -405,6 +433,28 @@ const ChiaGaming = () => {
               </div>
             </div>
 
+            {/* Text Message Field */}
+            {donationType === 'message' && (
+              <div className="space-y-2">
+                <label htmlFor="message" className="text-sm font-medium text-gaming-pink-primary">
+                  Message *
+                </label>
+                <textarea
+                  id="message"
+                  name="message"
+                  placeholder="Add your supportive message..."
+                  value={formData.message}
+                  onChange={handleInputChange}
+                  className="w-full min-h-20 px-3 py-2 border border-gaming-pink-primary/30 rounded-md focus:border-gaming-pink-primary focus:ring-gaming-pink-primary/20 focus:ring-2 resize-none transition-all"
+                  maxLength={500}
+                  required
+                />
+                <p className="text-xs text-muted-foreground text-right">
+                  {formData.message.length}/500
+                </p>
+              </div>
+            )}
+
             {/* Voice Message Field */}
             {donationType === 'voice' && (
               <div className="space-y-2">
@@ -425,7 +475,9 @@ const ChiaGaming = () => {
             {/* Pay Button */}
             <Button
               type="submit"
-              disabled={isProcessing || sdkLoading || !cashfree || (donationType === 'voice' && !hasVoiceRecording)}
+              disabled={isProcessing || sdkLoading || !cashfree || 
+                       (donationType === 'voice' && !hasVoiceRecording) ||
+                       (donationType === 'message' && !formData.message?.trim())}
               className="w-full bg-gradient-to-r from-gaming-pink-primary to-gaming-pink-secondary hover:from-gaming-pink-secondary hover:to-gaming-pink-accent text-gaming-pink-foreground font-medium py-3 relative overflow-hidden group transition-all duration-300 transform hover:scale-[1.02] disabled:scale-100"
             >
               {sdkLoading ? (
@@ -447,7 +499,11 @@ const ChiaGaming = () => {
               ) : (
                 <div className="flex items-center space-x-2">
                   <Heart className="h-4 w-4" />
-                  <span>{donationType === 'voice' ? '🎤 Send Voice Donation' : `Donate ₹${formData.amount || '0'}`}</span>
+                  <span>
+                    {donationType === 'voice' ? '🎤 Voice Donation' : 
+                     donationType === 'message' ? '💬 Text Donation' : 
+                     `Donate ₹${formData.amount || '0'}`}
+                  </span>
                   <Sparkles className="h-4 w-4 group-hover:animate-pulse-glow" />
                 </div>
               )}
@@ -475,7 +531,7 @@ const ChiaGaming = () => {
           {!sdkError && (
             <div className="text-center pt-4 border-t border-gaming-pink-primary/20">
               <p className="text-xs text-muted-foreground">
-                🎤 Every voice message creates a personal connection with the streamer
+                💝 Choose your preferred way to support and connect with the streamer
               </p>
               {sdkLoading && (
                 <p className="text-xs text-gaming-pink-primary mt-1">
