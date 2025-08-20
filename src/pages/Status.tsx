@@ -35,33 +35,55 @@ export default function Status() {
         setPaymentDetails(data);
         
         // Prefer backend's final_status when available
+        let finalStatus = 'pending';
         if (data?.final_status) {
           const fs = String(data.final_status).toLowerCase();
           if (fs === 'success') {
-            setPaymentStatus('success');
+            finalStatus = 'success';
           } else if (fs === 'pending') {
-            setPaymentStatus('pending');
+            finalStatus = 'pending';
           } else if (fs === 'cancelled' || fs === 'failed' || fs === 'failure') {
-            setPaymentStatus('failure');
+            finalStatus = 'failure';
           } else {
-            setPaymentStatus('pending');
+            finalStatus = 'pending';
           }
         } else if (data.payments && data.payments.length > 0) {
           const successfulPayment = data.payments.find((p: any) => p.payment_status === "SUCCESS");
           const pendingPayment = data.payments.find((p: any) => p.payment_status === "PENDING");
           
           if (successfulPayment) {
-            setPaymentStatus('success');
+            finalStatus = 'success';
           } else if (pendingPayment) {
-            setPaymentStatus('pending');
+            finalStatus = 'pending';
           } else {
-            setPaymentStatus('failure');
+            finalStatus = 'failure';
           }
         } else {
           // Fallback to URL status parameter if no payments data
-          if (status === 'success') setPaymentStatus('success');
-          else if (status === 'pending') setPaymentStatus('pending');
-          else setPaymentStatus('failure');
+          if (status === 'success') finalStatus = 'success';
+          else if (status === 'pending') finalStatus = 'pending';
+          else finalStatus = 'failure';
+        }
+
+        setPaymentStatus(finalStatus as any);
+
+        // If payment is successful, upload voice message if it exists
+        if (finalStatus === 'success') {
+          try {
+            console.log('Payment successful, checking for voice message upload...');
+            const { data: uploadResult, error: uploadError } = await supabase.functions.invoke('upload-voice-message', {
+              body: { order_id: orderId }
+            });
+            
+            if (uploadError) {
+              console.error('Voice message upload error:', uploadError);
+            } else if (uploadResult?.success) {
+              console.log('Voice message uploaded successfully:', uploadResult.voice_message_url);
+            }
+          } catch (uploadErr) {
+            console.error('Failed to upload voice message:', uploadErr);
+            // Don't fail the entire status check if voice upload fails
+          }
         }
       } catch (err) {
         console.error('Payment status check failed:', err);

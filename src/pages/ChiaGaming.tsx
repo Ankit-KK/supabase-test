@@ -199,28 +199,7 @@ const ChiaGaming = () => {
         console.log('RPC call failed, streamer_id will be null');
       }
 
-      // Insert donation record into database
-      const { error: dbError } = await supabase
-        .from('chia_gaming_donations')
-        .insert({
-          order_id: orderId,
-          name: formData.name.trim(),
-          amount: amount,
-          message: donationType === 'message' ? formData.message.trim() : 
-                  donationType === 'voice' ? 'Voice message donation' : '',
-          payment_status: 'pending',
-          is_hyperemote: donationType === 'hyperemote',
-          streamer_id: streamerId,
-          voice_duration_seconds: donationType === 'voice' ? voiceDuration : null
-        });
-
-      if (dbError) {
-        console.error('Error saving donation:', dbError);
-        // Continue with payment even if DB insert fails
-      }
-
-      // Don't upload voice message immediately - wait for payment success
-      // Store voice data temporarily in the donation record
+      // Convert voice data to base64 for temporary storage if needed
       let voiceDataBase64: string | null = null;
       if (donationType === 'voice' && voiceRecorder.audioBlob) {
         console.log('Converting voice recording to base64 for temporary storage');
@@ -233,6 +212,27 @@ const ChiaGaming = () => {
           };
           reader.readAsDataURL(voiceRecorder.audioBlob!);
         });
+      }
+
+      // Insert donation record into database
+      const { error: dbError } = await supabase
+        .from('chia_gaming_donations')
+        .insert({
+          order_id: orderId,
+          name: formData.name.trim(),
+          amount: amount,
+          message: donationType === 'message' ? formData.message.trim() : 
+                  donationType === 'voice' ? 'Voice message donation' : '',
+          payment_status: 'pending',
+          is_hyperemote: donationType === 'hyperemote',
+          streamer_id: streamerId,
+          voice_duration_seconds: donationType === 'voice' ? voiceDuration : null,
+          temp_voice_data: voiceDataBase64 // Store voice data temporarily
+        });
+
+      if (dbError) {
+        console.error('Error saving donation:', dbError);
+        // Continue with payment even if DB insert fails
       }
 
       // Initialize Cashfree checkout
