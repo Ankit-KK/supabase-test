@@ -8,13 +8,16 @@ interface VoiceRecorderProps {
   onRecordingComplete: (hasRecording: boolean, duration: number) => void;
   maxDurationSeconds?: number;
   disabled?: boolean;
+  controller?: ReturnType<typeof useVoiceRecorder>;
 }
 
 const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ 
   onRecordingComplete, 
   maxDurationSeconds = 60,
-  disabled = false 
+  disabled = false,
+  controller
 }) => {
+  const internalRecorder = useVoiceRecorder(maxDurationSeconds);
   const {
     isRecording,
     audioBlob,
@@ -27,7 +30,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
     stopPlayback,
     clearRecording,
     cleanup,
-  } = useVoiceRecorder(maxDurationSeconds);
+  } = controller ?? internalRecorder;
 
   useEffect(() => {
     onRecordingComplete(!!audioBlob, duration);

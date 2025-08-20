@@ -478,6 +478,7 @@ const ChiaGaming = () => {
                   }}
                   maxDurationSeconds={60}
                   disabled={false}
+                  controller={voiceRecorder}
                 />
               </div>
             )}
