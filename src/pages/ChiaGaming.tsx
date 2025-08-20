@@ -155,17 +155,19 @@ const ChiaGaming = () => {
 
       const orderId = data.cf_order_id || data.order_id;
 
-      // Always fetch streamer id for proper dashboard/OBS linkage
-      console.log('Current streamerSettings:', streamerSettings);
-      const { data: streamerRow, error: streamerError } = await supabase
-        .from('streamers')
-        .select('id')
-        .eq('streamer_slug', 'chia_gaming')
-        .single();
-      
-      console.log('Streamer fetch result:', { streamerRow, streamerError });
-      const streamerId = streamerRow?.id || null;
-      console.log('Using streamer_id:', streamerId);
+      // Always fetch streamer id via RPC (bypasses RLS)
+      let streamerId: string | null = null;
+      try {
+        const { data: pubInfo, error: pubErr } = await supabase.rpc('get_public_streamer_info', { slug: 'chia_gaming' });
+        if (pubErr) {
+          console.log('RPC get_public_streamer_info error:', pubErr);
+        }
+        const info = Array.isArray(pubInfo) ? pubInfo[0] : pubInfo;
+        streamerId = info?.id ?? null;
+        console.log('Using streamer_id via RPC:', streamerId);
+      } catch (e) {
+        console.log('RPC call failed, streamer_id will be null');
+      }
 
       // Insert donation record into database
       const { error: dbError } = await supabase
