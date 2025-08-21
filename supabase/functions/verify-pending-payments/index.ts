@@ -32,14 +32,14 @@ serve(async (req) => {
 
     // Get pending donations older than 10 minutes
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
 
     const { data: pendingDonations, error: fetchError } = await supabase
       .from('chia_gaming_donations')
       .select('*')
       .eq('payment_status', 'pending')
       .lt('created_at', tenMinutesAgo)
-      .or(`last_verification_attempt.is.null,last_verification_attempt.lt.${oneHourAgo}`)
+      .or(`last_verification_attempt.is.null,last_verification_attempt.lt.${thirtyMinutesAgo}`)
       .limit(20); // Process max 20 at a time to avoid timeout
 
     if (fetchError) {
