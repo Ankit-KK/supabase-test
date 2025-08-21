@@ -27,7 +27,10 @@ serve(async (req) => {
       user = data.user;
     }
 
-    const { name, amount, message, streamer_slug } = await req.json();
+    const requestBody = await req.json();
+    console.log('Request body received:', JSON.stringify(requestBody, null, 2));
+    
+    const { name, amount, message, streamer_slug } = requestBody;
 
     // Validate input
     if (!name || !amount || amount <= 0 || amount > 100000) {
@@ -38,12 +41,16 @@ serve(async (req) => {
       throw new Error('Streamer slug is required');
     }
 
+    console.log('Looking for streamer with slug:', streamer_slug);
+
     // Get streamer ID from slug
-    const { data: streamerData } = await supabaseClient
+    const { data: streamerData, error: streamerError } = await supabaseClient
       .from('streamers')
       .select('id')
       .eq('streamer_slug', streamer_slug)
       .single();
+    
+    console.log('Streamer query result:', { streamerData, streamerError });
 
     if (!streamerData) {
       throw new Error('Streamer not found');
