@@ -50,9 +50,12 @@ export type Database = {
       chia_gaming_donations: {
         Row: {
           amount: number
+          auto_verified: boolean | null
+          cashfree_order_id: string | null
           created_at: string
           id: string
           is_hyperemote: boolean | null
+          last_verification_attempt: string | null
           message: string | null
           message_visible: boolean | null
           name: string
@@ -66,9 +69,12 @@ export type Database = {
         }
         Insert: {
           amount: number
+          auto_verified?: boolean | null
+          cashfree_order_id?: string | null
           created_at?: string
           id?: string
           is_hyperemote?: boolean | null
+          last_verification_attempt?: string | null
           message?: string | null
           message_visible?: boolean | null
           name: string
@@ -82,9 +88,12 @@ export type Database = {
         }
         Update: {
           amount?: number
+          auto_verified?: boolean | null
+          cashfree_order_id?: string | null
           created_at?: string
           id?: string
           is_hyperemote?: boolean | null
+          last_verification_attempt?: string | null
           message?: string | null
           message_visible?: boolean | null
           name?: string

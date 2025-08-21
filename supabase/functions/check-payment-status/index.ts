@@ -57,15 +57,12 @@ serve(async (req) => {
       throw new Error('Payment gateway not configured');
     }
 
-    // Try to get the Cashfree order ID - it might be stored differently
-    // For now, we'll use the order_id directly and handle the 404 gracefully
-    let cashfreeOrderId = order_id;
+    // Use the stored Cashfree order ID for API calls
+    let cashfreeOrderId = donationData.cashfree_order_id;
     
-    // Extract Cashfree ID if it's in the format from logs (4552935728)
-    if (order_id.startsWith('chiaa_')) {
-      // We need to get the Cashfree order ID from create-payment-order response
-      // For now, let's handle the 404 gracefully and return database status
-      console.log('Custom order ID detected, will handle API 404 gracefully');
+    if (!cashfreeOrderId) {
+      console.log('No Cashfree order ID found, falling back to custom order ID');
+      cashfreeOrderId = order_id;
     }
 
     console.log('Using Cashfree order ID:', cashfreeOrderId);

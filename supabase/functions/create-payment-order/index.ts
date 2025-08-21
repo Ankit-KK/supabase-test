@@ -119,6 +119,23 @@ serve(async (req) => {
       throw new Error('Invalid response from payment gateway');
     }
 
+    // Store donation data with both order IDs
+    const { error: insertError } = await supabaseClient
+      .from('chia_gaming_donations')
+      .insert({
+        order_id: orderId,
+        cashfree_order_id: result.cf_order_id,
+        name: name,
+        amount: amount,
+        message: message || '',
+        payment_status: 'pending'
+      });
+
+    if (insertError) {
+      console.error('Error storing donation data:', insertError);
+      // Don't throw error here as payment order was created successfully
+    }
+
     return new Response(JSON.stringify({
       success: true,
       payment_session_id: result.payment_session_id,
