@@ -45,9 +45,7 @@ serve(async (req) => {
 
     // Get streamer ID from slug
     const { data: streamerData, error: streamerError } = await supabaseClient
-      .from('streamers')
-      .select('id')
-      .eq('streamer_slug', streamer_slug)
+      .rpc('get_public_streamer_info', { slug: streamer_slug })
       .single();
     
     console.log('Streamer query result:', { streamerData, streamerError });
