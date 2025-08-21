@@ -27,12 +27,26 @@ serve(async (req) => {
 
     console.log('Checking payment status for order:', order_id);
 
-    // First, get the Cashfree order ID from our database
-    const { data: donationData, error: dbError } = await supabase
+    // First, get the donation record from our database - check both order_id and cashfree_order_id
+    let { data: donationData, error: dbError } = await supabase
       .from('chia_gaming_donations')
       .select('*')
       .eq('order_id', order_id)
       .single();
+
+    // If not found by order_id, try by cashfree_order_id
+    if (dbError || !donationData) {
+      const { data: cfData } = await supabase
+        .from('chia_gaming_donations')
+        .select('*')
+        .eq('cashfree_order_id', order_id)
+        .single();
+      
+      if (cfData) {
+        donationData = cfData;
+        dbError = null;
+      }
+    }
 
     if (dbError || !donationData) {
       console.error('Database error or donation not found:', dbError);
@@ -97,10 +111,10 @@ serve(async (req) => {
         let statusToReturn = donationData.payment_status || 'pending';
         if (statusToReturn === 'pending') {
           statusToReturn = 'failed';
-          await supabase
-            .from('chia_gaming_donations')
-            .update({ payment_status: 'failed' })
-            .eq('order_id', order_id);
+        await supabase
+          .from('chia_gaming_donations')
+          .update({ payment_status: 'failed' })
+          .eq('id', donationData.id);
         }
         
         return new Response(JSON.stringify({
@@ -158,11 +172,11 @@ serve(async (req) => {
         finalStatus = 'failed';
       }
 
-      // Update our database with the latest status
+      // Update our database with the latest status using the correct identifier
       await supabase
         .from('chia_gaming_donations')
         .update({ payment_status: finalStatus })
-        .eq('order_id', order_id);
+        .eq('id', donationData.id);
     } else {
       // If no payments found and order exists in database, check current status
       if (donationData.payment_status === 'pending') {
@@ -171,7 +185,7 @@ serve(async (req) => {
         await supabase
           .from('chia_gaming_donations')
           .update({ payment_status: 'failed' })
-          .eq('order_id', order_id);
+          .eq('id', donationData.id);
       } else {
         // Use existing database status
         finalStatus = donationData.payment_status;

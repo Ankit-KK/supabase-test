@@ -172,7 +172,8 @@ const ChiaGaming = () => {
           name: formData.name.trim(),
           amount: amount,
           message: donationType === 'message' ? formData.message.trim() : 
-                  donationType === 'voice' ? 'Voice message donation' : ''
+                  donationType === 'voice' ? 'Voice message donation' : '',
+          streamer_slug: 'chia_gaming'
         }
       });
 

@@ -27,11 +27,26 @@ serve(async (req) => {
       user = data.user;
     }
 
-    const { name, amount, message } = await req.json();
+    const { name, amount, message, streamer_slug } = await req.json();
 
     // Validate input
     if (!name || !amount || amount <= 0 || amount > 100000) {
       throw new Error('Invalid input data');
+    }
+
+    if (!streamer_slug) {
+      throw new Error('Streamer slug is required');
+    }
+
+    // Get streamer ID from slug
+    const { data: streamerData } = await supabaseClient
+      .from('streamers')
+      .select('id')
+      .eq('streamer_slug', streamer_slug)
+      .single();
+
+    if (!streamerData) {
+      throw new Error('Streamer not found');
     }
 
     // Get payment gateway credentials
@@ -119,12 +134,13 @@ serve(async (req) => {
       throw new Error('Invalid response from payment gateway');
     }
 
-    // Store donation data with both order IDs
+    // Store donation data with both order IDs and streamer ID
     const { error: insertError } = await supabaseClient
       .from('chia_gaming_donations')
       .insert({
         order_id: orderId,
         cashfree_order_id: result.cf_order_id,
+        streamer_id: streamerData.id,
         name: name,
         amount: amount,
         message: message || '',
