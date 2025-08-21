@@ -184,21 +184,9 @@ const ChiaGaming = () => {
         throw new Error(data?.error || 'Failed to create payment order');
       }
 
-      const orderId = data.cf_order_id || data.order_id;
+      const orderId = data.order_id;
 
-      // Always fetch streamer id via RPC (bypasses RLS)
-      let streamerId: string | null = null;
-      try {
-        const { data: pubInfo, error: pubErr } = await supabase.rpc('get_public_streamer_info', { slug: 'chia_gaming' });
-        if (pubErr) {
-          console.log('RPC get_public_streamer_info error:', pubErr);
-        }
-        const info = Array.isArray(pubInfo) ? pubInfo[0] : pubInfo;
-        streamerId = info?.id ?? null;
-        console.log('Using streamer_id via RPC:', streamerId);
-      } catch (e) {
-        console.log('RPC call failed, streamer_id will be null');
-      }
+      // Streamer ID is stored by the edge function; no need to fetch here
 
       // Convert voice data to base64 for temporary storage if needed
       let voiceDataBase64: string | null = null;
@@ -215,25 +203,27 @@ const ChiaGaming = () => {
         });
       }
 
-      // Insert donation record into database
-      const { error: dbError } = await supabase
-        .from('chia_gaming_donations')
-        .insert({
-          order_id: orderId,
-          name: formData.name.trim(),
-          amount: amount,
-          message: donationType === 'message' ? formData.message.trim() : 
-                  donationType === 'voice' ? 'Voice message donation' : '',
-          payment_status: 'pending',
-          is_hyperemote: donationType === 'hyperemote',
-          streamer_id: streamerId,
-          voice_duration_seconds: donationType === 'voice' ? voiceDuration : null,
-          temp_voice_data: voiceDataBase64 // Store voice data temporarily
-        });
-
-      if (dbError) {
-        console.error('Error saving donation:', dbError);
-        // Continue with payment even if DB insert fails
+      // Attach optional data to the existing donation (created by edge function)
+      try {
+        const updates: any = {};
+        if (donationType === 'voice' && voiceDataBase64) {
+          updates.temp_voice_data = voiceDataBase64;
+          updates.voice_duration_seconds = voiceDuration;
+        }
+        if (donationType === 'hyperemote') {
+          updates.is_hyperemote = true;
+        }
+        if (Object.keys(updates).length > 0) {
+          const { error: updErr } = await supabase
+            .from('chia_gaming_donations')
+            .update(updates)
+            .eq('order_id', data.order_id);
+          if (updErr) {
+            console.error('Error updating donation extras:', updErr);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to attach extras to donation:', e);
       }
 
       // Initialize Cashfree checkout
@@ -272,15 +262,15 @@ const ChiaGaming = () => {
     } catch (error) {
       console.error('Payment error:', error);
       // Redirect to status page even on error, if we have an order ID
-      const orderId = data?.cf_order_id || data?.order_id;
-      if (orderId) {
-        // Update payment status to failed in database
-        await supabase
-          .from('chia_gaming_donations')
-          .update({ payment_status: 'failed' })
-          .eq('order_id', orderId);
-        navigate(`/status?order_id=${orderId}&status=error`);
-      } else {
+       const orderId = data?.order_id;
+       if (orderId) {
+         // Update payment status to failed in database
+         await supabase
+           .from('chia_gaming_donations')
+           .update({ payment_status: 'failed' })
+           .eq('order_id', orderId);
+         navigate(`/status?order_id=${orderId}&status=error`);
+       } else {
         toast({
           title: "Payment Failed",
           description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
