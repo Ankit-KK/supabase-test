@@ -10,7 +10,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { generateObsToken } from '@/utils/secureIdGenerator';
 import { useStreamerAuth } from '@/hooks/useStreamerAuth';
-import TestAlertButton from '@/components/TestAlertButton';
 
 interface Donation {
   id: string;
@@ -298,15 +297,6 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
                   <li>Check "Shutdown source when not visible"</li>
                   <li>Check "Refresh browser when scene becomes active"</li>
                 </ol>
-              </div>
-              
-              {/* Test Alert Button */}
-              <div className="flex flex-col items-center space-y-2 p-4 bg-accent/20 rounded-lg border">
-                <h4 className="font-medium text-sm">Test Your Alerts</h4>
-                <p className="text-xs text-muted-foreground text-center">
-                  Click below to send a test alert to your OBS
-                </p>
-                <TestAlertButton streamerId={streamer.id} disabled={!obsEnabled} />
               </div>
               
               {/* Voice Alerts Section */}
