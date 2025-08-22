@@ -2,9 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { Gamepad2, Heart, Sparkles, Loader2 } from "lucide-react";
+import { Gamepad2, Heart, Sparkles } from "lucide-react";
 import { load } from '@cashfreepayments/cashfree-js';
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -30,8 +29,6 @@ const ChiaGaming = () => {
   const [showHyperemoteEffect, setShowHyperemoteEffect] = useState(false);
   const [selectedEmoji, setSelectedEmoji] = useState<string>('');
   const [selectedEmoteUrl, setSelectedEmoteUrl] = useState<string>('');
-  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const [paymentStatus, setPaymentStatus] = useState<string>('');
   
   // Voice recorder instance
   const voiceRecorder = useVoiceRecorder(60);
@@ -117,9 +114,6 @@ const ChiaGaming = () => {
     let data: any = null;
 
     try {
-      setIsProcessing(true);
-      setShowPaymentDialog(true);
-      setPaymentStatus('Creating payment order...');
       const amount = parseFloat(formData.amount);
       
       // Validate inputs - voice donations need recording, hyperemotes don't
@@ -233,7 +227,6 @@ const ChiaGaming = () => {
       }
 
       // Initialize Cashfree checkout
-      setPaymentStatus('Initializing payment gateway...');
       const checkoutOptions = {
         paymentSessionId: data.payment_session_id,
         redirectTarget: "_modal",
@@ -251,40 +244,23 @@ const ChiaGaming = () => {
       
       if (result.error) {
         console.log("Payment cancelled or error:", result.error);
-        setPaymentStatus('Payment cancelled');
         await updatePaymentStatus('cancelled');
-        setTimeout(() => {
-          setShowPaymentDialog(false);
-          navigate(`/status?order_id=${orderId}&status=cancelled`);
-        }, 2000);
+        navigate(`/status?order_id=${orderId}&status=cancelled`);
       } else if (result.paymentDetails) {
         console.log("Payment completed:", result.paymentDetails);
-        setPaymentStatus('Payment successful! Redirecting...');
         await updatePaymentStatus('success');
-        setTimeout(() => {
-          setShowPaymentDialog(false);
-          navigate(`/status?order_id=${orderId}&status=success`);
-        }, 1500);
+        navigate(`/status?order_id=${orderId}&status=success`);
       } else if (result.redirect) {
         console.log("Payment will be redirected");
-        setPaymentStatus('Processing payment...');
         await updatePaymentStatus('pending');
-        setTimeout(() => {
-          setShowPaymentDialog(false);
-          navigate(`/status?order_id=${orderId}&status=pending`);
-        }, 2000);
+        navigate(`/status?order_id=${orderId}&status=pending`);
       } else {
-        setPaymentStatus('Payment processing...');
         await updatePaymentStatus('unknown');
-        setTimeout(() => {
-          setShowPaymentDialog(false);
-          navigate(`/status?order_id=${orderId}&status=unknown`);
-        }, 2000);
+        navigate(`/status?order_id=${orderId}&status=unknown`);
       }
 
     } catch (error) {
       console.error('Payment error:', error);
-      setPaymentStatus('Payment failed');
       // Redirect to status page even on error, if we have an order ID
        const orderId = data?.order_id;
        if (orderId) {
@@ -293,12 +269,8 @@ const ChiaGaming = () => {
            .from('chia_gaming_donations')
            .update({ payment_status: 'failed' })
            .eq('order_id', orderId);
-         setTimeout(() => {
-           setShowPaymentDialog(false);
-           navigate(`/status?order_id=${orderId}&status=error`);
-         }, 2000);
+         navigate(`/status?order_id=${orderId}&status=error`);
        } else {
-        setShowPaymentDialog(false);
         toast({
           title: "Payment Failed",
           description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
@@ -571,29 +543,6 @@ const ChiaGaming = () => {
           )}
         </CardContent>
       </Card>
-
-      {/* Payment Processing Dialog */}
-      <Dialog open={showPaymentDialog} onOpenChange={() => {}}>
-        <DialogContent className="sm:max-w-md bg-card/95 backdrop-blur-sm border-gaming-pink-primary/20">
-          <DialogHeader>
-            <DialogTitle className="text-center text-gaming-pink-primary">
-              Processing Payment
-            </DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col items-center space-y-4 py-6">
-            <div className="relative">
-              <Loader2 className="h-12 w-12 animate-spin text-gaming-pink-primary" />
-              <div className="absolute inset-0 bg-gaming-pink-primary/20 rounded-full blur-xl animate-pulse"></div>
-            </div>
-            <p className="text-center text-muted-foreground text-sm">
-              {paymentStatus}
-            </p>
-            <p className="text-center text-xs text-muted-foreground max-w-xs">
-              Please do not close this tab. You will be redirected automatically upon completion.
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Stream-Style Hyperemote Animation */}
       {showHyperemoteEffect && (
