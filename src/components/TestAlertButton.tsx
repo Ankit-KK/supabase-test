@@ -23,7 +23,6 @@ const TestAlertButton: React.FC<TestAlertButtonProps> = ({ streamerId, disabled 
         message: 'Working',
         payment_status: 'success',
         payment_id: `test-${Date.now()}`,
-        is_test: true, // Mark as test to avoid affecting real stats
       };
 
       const { error } = await supabase
