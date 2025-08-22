@@ -300,7 +300,7 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
               </div>
               
               {/* Voice Alerts Section */}
-              <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="bg-secondary/10 p-4 rounded-lg border border-secondary/20">
                 <h4 className="font-medium mb-2 flex items-center gap-2">
                   <Volume2 className="w-4 h-4" />
                   Voice Message Audio Player
