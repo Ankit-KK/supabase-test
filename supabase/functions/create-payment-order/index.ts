@@ -161,7 +161,7 @@ serve(async (req) => {
     }
 
     // Store donation data with both order IDs and streamer ID
-    const { error: insertError } = await supabaseClient
+    const { data: donationData, error: insertError } = await supabaseClient
       .from('chia_gaming_donations')
       .insert({
         order_id: orderId,
@@ -170,12 +170,19 @@ serve(async (req) => {
         name: name,
         amount: amount,
         message: message || '',
-        payment_status: 'pending'
-      });
+        payment_status: 'pending',
+        moderation_status: 'pending'
+      })
+      .select()
+      .single();
 
     if (insertError) {
       console.error('Error storing donation data:', insertError);
       // Don't throw error here as payment order was created successfully
+    } else if (donationData) {
+      // Notify moderators about new donation that needs approval
+      console.log('Donation stored successfully, notifying moderators...');
+      await notifyModeratorsAboutNewDonation(streamerData.id, donationData, supabaseClient);
     }
 
     return new Response(JSON.stringify({
@@ -204,3 +211,70 @@ serve(async (req) => {
     });
   }
 });
+
+async function notifyModeratorsAboutNewDonation(streamerId: string, donation: any, supabase: any) {
+  try {
+    const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
+    if (!botToken) {
+      console.log('TELEGRAM_BOT_TOKEN not configured, skipping moderator notification');
+      return;
+    }
+
+    // Get all active moderators for this streamer
+    const { data: moderators, error } = await supabase
+      .from('streamers_moderators')
+      .select('telegram_user_id, mod_name')
+      .eq('streamer_id', streamerId)
+      .eq('is_active', true);
+
+    if (error || !moderators || moderators.length === 0) {
+      console.log('No active moderators found for streamer:', streamerId);
+      return;
+    }
+
+    const messageText = `🚨 **New Donation Needs Approval!** 🚨\n\n` +
+      `💰 **Amount:** ₹${donation.amount}\n` +
+      `👤 **From:** ${donation.name}\n` +
+      `📅 **Time:** ${new Date(donation.created_at).toLocaleString()}\n` +
+      `${donation.message ? `💬 **Message:** ${donation.message}\n` : ''}` +
+      `${donation.voice_message_url ? `🎵 **Has Voice Message**\n` : ''}\n` +
+      `Use /pending to review and approve/reject this donation.`;
+
+    // Send notification to all active moderators
+    for (const moderator of moderators) {
+      try {
+        await sendTelegramMessage(parseInt(moderator.telegram_user_id), messageText, botToken);
+        console.log(`Notified moderator ${moderator.mod_name} (${moderator.telegram_user_id})`);
+      } catch (err) {
+        console.error(`Error sending notification to moderator ${moderator.mod_name}:`, err);
+      }
+    }
+
+    console.log(`Sent new donation notifications to ${moderators.length} moderators`);
+  } catch (error) {
+    console.error('Error in notifyModeratorsAboutNewDonation:', error);
+  }
+}
+
+async function sendTelegramMessage(chatId: number, text: string, botToken: string) {
+  const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+  const payload = {
+    chat_id: chatId,
+    text: text,
+    parse_mode: 'Markdown'
+  };
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    console.error('Error sending Telegram message:', error);
+    throw new Error(`Failed to send message: ${error}`);
+  }
+
+  return await response.json();
+}
