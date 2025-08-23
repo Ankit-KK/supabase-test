@@ -10,6 +10,7 @@ import { formatCurrency, calculateMonthlyTotal } from '@/utils/dashboardUtils';
 import { useToast } from '@/hooks/use-toast';
 import { DollarSign, TrendingUp, Users, Calendar, LogOut, Settings } from 'lucide-react';
 import OBSSettings from '@/components/OBSSettings';
+import { MessagesModerationPage } from './MessagesModerationPage';
 import { ConnectionStatus } from '@/components/ConnectionStatus';
 
 interface Donation {
@@ -265,10 +266,14 @@ const StreamerDashboard = () => {
 
         {/* Navigation Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="dashboard" className="flex items-center gap-2">
               <DollarSign className="w-4 h-4" />
               Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="messages" className="flex items-center gap-2">
+              <Settings className="w-4 h-4" />
+              Messages
             </TabsTrigger>
             <TabsTrigger value="obs" className="flex items-center gap-2">
               <Settings className="w-4 h-4" />
@@ -383,6 +388,10 @@ const StreamerDashboard = () => {
             )}
           </CardContent>
         </Card>
+          </TabsContent>
+
+          <TabsContent value="messages" className="mt-6">
+            <MessagesModerationPage />
           </TabsContent>
 
           <TabsContent value="obs" className="mt-6">

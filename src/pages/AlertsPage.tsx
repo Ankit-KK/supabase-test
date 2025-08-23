@@ -13,6 +13,7 @@ interface Donation {
   message_visible?: boolean;
   is_hyperemote?: boolean;
   voice_message_url?: string;
+  moderation_status?: string;
 }
 
 interface Streamer {
@@ -163,7 +164,8 @@ const AlertsPage = () => {
             const donation = newDonation;
             console.log('New donation received:', { name: donation.name, amount: donation.amount, message: donation.message });
             
-            if (donation.is_hyperemote || donation.message_visible !== false || donation.voice_message_url) {
+            // Only show approved donations or auto-approved hyperemotes
+            if (donation.moderation_status === 'approved' || donation.moderation_status === 'auto_approved') {
               setAlertQueue(prev => [...prev, { 
                 donation, 
                 timestamp: Date.now() 
@@ -177,7 +179,8 @@ const AlertsPage = () => {
             const donation = newDonation;
             console.log('Donation status updated to success:', { name: donation.name, amount: donation.amount });
             
-            if (donation.is_hyperemote || donation.message_visible !== false || donation.voice_message_url) {
+            // Only show approved donations or auto-approved hyperemotes
+            if (donation.moderation_status === 'approved' || donation.moderation_status === 'auto_approved') {
               setAlertQueue(prev => [...prev, { 
                 donation, 
                 timestamp: Date.now() 
