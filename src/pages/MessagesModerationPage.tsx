@@ -278,7 +278,7 @@ export const MessagesModerationPage = () => {
         </div>
 
         <Tabs defaultValue="pending" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1">
             <TabsTrigger value="pending" className="flex items-center gap-2">
               <Clock className="w-4 h-4" />
               Pending ({getDonationsByStatus('pending').length})
