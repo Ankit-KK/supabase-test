@@ -60,7 +60,7 @@ async function handleMessage(message: any, supabase: any, botToken: string) {
   console.log('Handling message:', { chatId, text, userId });
 
   if (text === '/start') {
-    await sendMessage(chatId, 'Welcome to Chia Gaming Moderation Bot! 🎮\n\nUse /pending to see donations awaiting approval.', botToken);
+    await sendMessage(chatId, 'Welcome to Chia Gaming Moderation Bot! 🎮\n\nAvailable commands:\n/pending - See donations awaiting approval\n/status - Check your moderator status', botToken);
     return;
   }
 
@@ -69,8 +69,13 @@ async function handleMessage(message: any, supabase: any, botToken: string) {
     return;
   }
 
+  if (text === '/status') {
+    await showModeratorStatus(chatId, userId, supabase, botToken);
+    return;
+  }
+
   // Default response for unknown commands
-  await sendMessage(chatId, 'Unknown command. Use /pending to see donations awaiting approval.', botToken);
+  await sendMessage(chatId, 'Unknown command. Available commands:\n/pending - See donations awaiting approval\n/status - Check your moderator status', botToken);
 }
 
 async function handleCallbackQuery(callbackQuery: any, supabase: any, botToken: string) {
@@ -94,6 +99,57 @@ async function handleCallbackQuery(callbackQuery: any, supabase: any, botToken: 
 
   // Answer the callback query to remove the loading indicator
   await answerCallbackQuery(callbackQuery.id, botToken);
+}
+
+async function showModeratorStatus(chatId: number, userId: string, supabase: any, botToken: string) {
+  try {
+    // Check if user is a moderator for any streamers
+    const { data: moderatorData, error } = await supabase
+      .from('streamers_moderators')
+      .select(`
+        *,
+        streamers (
+          streamer_name,
+          streamer_slug
+        )
+      `)
+      .eq('telegram_user_id', userId)
+      .eq('is_active', true);
+
+    if (error) {
+      console.error('Error checking moderator status:', error);
+      await sendMessage(chatId, '❌ Error checking moderator status. Please try again later.', botToken);
+      return;
+    }
+
+    if (!moderatorData || moderatorData.length === 0) {
+      await sendMessage(chatId, '❌ You are not a verified moderator for any streamers.\n\nTo become a moderator, ask a streamer to add your Telegram User ID to their moderator list in their dashboard.', botToken);
+      return;
+    }
+
+    // Build status message
+    let statusMessage = '✅ **Moderator Status: VERIFIED**\n\n';
+    statusMessage += `👤 **Name:** ${moderatorData[0].mod_name}\n`;
+    statusMessage += `🆔 **Telegram ID:** ${userId}\n\n`;
+    statusMessage += '🎮 **Moderating for:**\n';
+
+    moderatorData.forEach((mod: any) => {
+      const streamer = mod.streamers;
+      if (streamer) {
+        statusMessage += `• ${streamer.streamer_name} (@${streamer.streamer_slug})\n`;
+      }
+    });
+
+    statusMessage += '\n📋 **Available Commands:**\n';
+    statusMessage += '• /pending - View donations awaiting approval\n';
+    statusMessage += '• /status - Check this status again';
+
+    await sendMessage(chatId, statusMessage, botToken, { parse_mode: 'Markdown' });
+
+  } catch (error) {
+    console.error('Error in showModeratorStatus:', error);
+    await sendMessage(chatId, '❌ An error occurred while checking your status.', botToken);
+  }
 }
 
 async function showPendingDonations(chatId: number, userId: string, supabase: any, botToken: string) {
