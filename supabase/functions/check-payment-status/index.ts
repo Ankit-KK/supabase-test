@@ -140,7 +140,7 @@ serve(async (req) => {
                   `${donationData.message ? `💬 Message: ${donationData.message}\n` : ''}` +
                   `${donationData.voice_message_url ? `🎵 Has Voice Message\n` : ''}`;
 
-                const keyboard = donationData.voice_message_url ? {
+                const keyboard = {
                   inline_keyboard: [
                     [{ text: '🎵 Play Voice', callback_data: `play_${donationData.id}` }],
                     [
@@ -148,11 +148,6 @@ serve(async (req) => {
                       { text: '❌ Reject', callback_data: `reject_${donationData.id}` }
                     ]
                   ]
-                } : {
-                  inline_keyboard: [[
-                    { text: '✅ Approve', callback_data: `approve_${donationData.id}` },
-                    { text: '❌ Reject', callback_data: `reject_${donationData.id}` }
-                  ]]
                 };
 
                 for (const moderator of moderators) {
@@ -264,7 +259,7 @@ serve(async (req) => {
                 `${donationData.message ? `💬 Message: ${donationData.message}\n` : ''}` +
                 `${donationData.voice_message_url ? `🎵 Has Voice Message\n` : ''}`;
 
-              const keyboard = donationData.voice_message_url ? {
+              const keyboard = {
                 inline_keyboard: [
                   [{ text: '🎵 Play Voice', callback_data: `play_${donationData.id}` }],
                   [
@@ -272,11 +267,6 @@ serve(async (req) => {
                     { text: '❌ Reject', callback_data: `reject_${donationData.id}` }
                   ]
                 ]
-              } : {
-                inline_keyboard: [[
-                  { text: '✅ Approve', callback_data: `approve_${donationData.id}` },
-                  { text: '❌ Reject', callback_data: `reject_${donationData.id}` }
-                ]]
               };
 
               for (const moderator of moderators) {
