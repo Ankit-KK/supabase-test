@@ -30,7 +30,7 @@ serve(async (req) => {
     const requestBody = await req.json();
     console.log('Request body received:', JSON.stringify(requestBody, null, 2));
     
-    const { name, amount, message, streamer_slug } = requestBody;
+    const { name, amount, message, streamer_slug, phone } = requestBody;
 
     // Validate input
     if (!name || !amount || amount <= 0 || amount > 100000) {
@@ -68,19 +68,31 @@ serve(async (req) => {
     const randomNum = Math.floor(Math.random() * 1e16).toString().padStart(16, '0');
     const orderId = `chiaa_${randomNum}`;
     
-    // Generate secure phone number (Indian format starting with 9)
-    const phoneNumber = `9${Math.floor(Math.random() * 1000000000).toString().padStart(9, '0')}`;
+    // Use user's provided phone if available and valid; do not generate random numbers
+    const sanitizePhone = (input: unknown): string | undefined => {
+      try {
+        const raw = String(input ?? '');
+        const digits = raw.replace(/\D/g, '');
+        if (digits.length >= 8 && digits.length <= 15) return digits;
+        return undefined;
+      } catch {
+        return undefined;
+      }
+    };
+    const sanitizedPhone = sanitizePhone(phone);
 
     // Create order data matching Cashfree format
+    const customerDetails: Record<string, string> = {
+      customer_id: user?.id || "guest_user",
+      customer_name: name,
+    };
+    if (sanitizedPhone) customerDetails.customer_phone = sanitizedPhone;
+
     const orderData = {
       order_amount: amount,
       order_currency: "INR",
       order_id: orderId,
-      customer_details: {
-        customer_id: user?.id || "guest_user",
-        customer_name: name,
-        customer_phone: phoneNumber
-      },
+      customer_details: customerDetails,
       order_meta: {
         return_url: `${req.headers.get("origin")}/status?order_id=${orderId}`,
         notify_url: `${req.headers.get("origin")}/status?order_id=${orderId}`

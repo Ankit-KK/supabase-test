@@ -15,6 +15,7 @@ const ChiaGaming = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
+    phone: '',
     amount: '',
     message: ''
   });
@@ -173,6 +174,7 @@ const ChiaGaming = () => {
           amount: amount,
           message: donationType === 'message' ? formData.message.trim() : 
                   donationType === 'voice' ? 'Voice message donation' : '',
+          phone: formData.phone?.trim() || undefined,
           streamer_slug: 'chia_gaming'
         }
       });
@@ -343,6 +345,22 @@ const ChiaGaming = () => {
                 onChange={handleInputChange}
                 className="border-gaming-pink-primary/30 focus:border-gaming-pink-primary focus:ring-gaming-pink-primary/20"
                 required
+              />
+            </div>
+
+            {/* Mobile Number Field (optional) */}
+            <div className="space-y-2">
+              <label htmlFor="phone" className="text-sm font-medium text-gaming-pink-primary">
+                Mobile Number (optional)
+              </label>
+              <Input
+                id="phone"
+                name="phone"
+                type="tel"
+                placeholder="Enter your mobile number"
+                value={formData.phone}
+                onChange={handleInputChange}
+                className="border-gaming-pink-primary/30 focus:border-gaming-pink-primary focus:ring-gaming-pink-primary/20"
               />
             </div>
 
