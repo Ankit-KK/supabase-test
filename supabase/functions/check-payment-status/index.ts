@@ -172,11 +172,80 @@ serve(async (req) => {
         finalStatus = 'failed';
       }
 
+      const previousStatus = donationData.payment_status || 'pending';
       // Update our database with the latest status using the correct identifier
       await supabase
         .from('chia_gaming_donations')
         .update({ payment_status: finalStatus })
         .eq('id', donationData.id);
+
+      // If payment just transitioned to success, notify moderators with inline buttons
+      if (finalStatus === 'success' && previousStatus !== 'success') {
+        try {
+          const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
+          if (!botToken) {
+            console.log('TELEGRAM_BOT_TOKEN not configured, skipping moderator notification');
+          } else if (!donationData.streamer_id) {
+            console.log('Donation missing streamer_id, skipping moderator notification');
+          } else {
+            const { data: moderators, error: modError } = await supabase
+              .from('streamers_moderators')
+              .select('telegram_user_id, mod_name')
+              .eq('streamer_id', donationData.streamer_id)
+              .eq('is_active', true);
+
+            if (modError || !moderators || moderators.length === 0) {
+              console.log('No active moderators found for streamer:', donationData.streamer_id);
+            } else {
+              const messageText = `🚨 New Donation Needs Approval! 🚨\n\n` +
+                `💰 Amount: ₹${donationData.amount}\n` +
+                `👤 From: ${donationData.name}\n` +
+                `📅 Time: ${new Date(donationData.created_at).toLocaleString()}\n` +
+                `${donationData.message ? `💬 Message: ${donationData.message}\n` : ''}` +
+                `${donationData.voice_message_url ? `🎵 Has Voice Message\n` : ''}`;
+
+              const keyboard = donationData.voice_message_url ? {
+                inline_keyboard: [
+                  [{ text: '🎵 Play Voice', callback_data: `play_${donationData.id}` }],
+                  [
+                    { text: '✅ Approve', callback_data: `approve_${donationData.id}` },
+                    { text: '❌ Reject', callback_data: `reject_${donationData.id}` }
+                  ]
+                ]
+              } : {
+                inline_keyboard: [[
+                  { text: '✅ Approve', callback_data: `approve_${donationData.id}` },
+                  { text: '❌ Reject', callback_data: `reject_${donationData.id}` }
+                ]]
+              };
+
+              for (const moderator of moderators) {
+                try {
+                  const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+                  const payload: any = {
+                    chat_id: moderator.telegram_user_id,
+                    text: messageText,
+                    reply_markup: keyboard
+                  };
+                  const resp = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                  });
+                  if (!resp.ok) {
+                    const errText = await resp.text();
+                    console.error('Error sending Telegram message:', errText);
+                  }
+                } catch (e) {
+                  console.error('Error notifying moderator:', e);
+                }
+              }
+            }
+          }
+        } catch (notifyErr) {
+          console.error('Error during moderator notification after payment success:', notifyErr);
+        }
+      }
     } else {
       // If no payments found and order exists in database, check current status
       if (donationData.payment_status === 'pending') {

@@ -180,9 +180,7 @@ serve(async (req) => {
       console.error('Error storing donation data:', insertError);
       // Don't throw error here as payment order was created successfully
     } else if (donationData) {
-      // Notify moderators about new donation that needs approval
-      console.log('Donation stored successfully, notifying moderators...');
-      await notifyModeratorsAboutNewDonation(streamerData.id, donationData, supabaseClient);
+      console.log('Donation stored successfully; moderators will be notified after payment success.');
     }
 
     return new Response(JSON.stringify({
