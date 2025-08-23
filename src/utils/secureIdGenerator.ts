@@ -16,21 +16,6 @@ export const validateSecureId = (id: string): boolean => {
   return /^[a-f0-9]{32,}$/.test(id);
 };
 
-// Replace all insecure random generation
-export const generateSecurePhoneNumber = (): string => {
-  // Generate a secure 10-digit phone number
-  const array = new Uint8Array(5);
-  crypto.getRandomValues(array);
-  let phoneNumber = '9'; // Start with 9 for Indian mobile numbers
-  
-  for (let i = 0; i < 9; i++) {
-    const randomByte = array[i % 5];
-    phoneNumber += (randomByte % 10).toString();
-  }
-  
-  return phoneNumber.substring(0, 10);
-};
-
 export const generateSecureOrderId = (): string => {
   const timestamp = Date.now().toString();
   const secureRandom = generateSecureId(16);

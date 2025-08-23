@@ -1,5 +1,5 @@
 
-import { generateSecureOrderId, generateSecurePhoneNumber } from './secureIdGenerator';
+import { generateSecureOrderId } from './secureIdGenerator';
 import { validateAndSanitizeInput } from './xssProtection';
 import { SecurityMonitor, SECURITY_EVENTS } from './securityMonitoring';
 
@@ -38,7 +38,7 @@ export const sanitizePaymentRequest = (request: SecurePaymentRequest): SecurePay
     name: validateAndSanitizeInput(request.name, 100),
     amount: Math.min(Math.max(request.amount, 1), 100000), // Clamp between 1 and 100000
     message: validateAndSanitizeInput(request.message || '', 500),
-    phone: request.phone ? generateSecurePhoneNumber() : undefined
+    phone: request.phone ? validateAndSanitizeInput(request.phone, 15) : undefined
   };
 };
 
