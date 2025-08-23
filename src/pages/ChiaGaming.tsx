@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { Gamepad2, Heart, Sparkles } from "lucide-react";
 import { load } from '@cashfreepayments/cashfree-js';
@@ -15,7 +16,6 @@ const ChiaGaming = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
-    phone: '',
     amount: '',
     message: ''
   });
@@ -30,6 +30,11 @@ const ChiaGaming = () => {
   const [showHyperemoteEffect, setShowHyperemoteEffect] = useState(false);
   const [selectedEmoji, setSelectedEmoji] = useState<string>('');
   const [selectedEmoteUrl, setSelectedEmoteUrl] = useState<string>('');
+  
+  // Phone number dialog states
+  const [showPhoneDialog, setShowPhoneDialog] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneError, setPhoneError] = useState('');
   
   // Voice recorder instance
   const voiceRecorder = useVoiceRecorder(60);
@@ -111,61 +116,65 @@ const ChiaGaming = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate inputs first
+    const amount = parseFloat(formData.amount);
+    
+    if (!formData.name?.trim()) {
+      toast({
+        title: "Name Required",
+        description: "Please enter your name.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (donationType === 'voice' && !hasVoiceRecording) {
+      toast({
+        title: "Voice Message Required", 
+        description: "Please record a voice message for your donation.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (donationType === 'message' && !formData.message?.trim()) {
+      toast({
+        title: "Message Required",
+        description: "Please enter a message for your donation.", 
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!amount || amount < 1) {
+      toast({
+        title: "Invalid Amount",
+        description: "Please enter a valid donation amount.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!cashfree) {
+      toast({
+        title: "Payment System Not Ready",
+        description: "Please wait for the payment system to load or refresh the page.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Show phone dialog after validation passes
+    setShowPhoneDialog(true);
+  };
+
+  const handlePaymentAfterPhone = async () => {
     setIsProcessing(true);
     let data: any = null;
 
     try {
       const amount = parseFloat(formData.amount);
-      
-      // Validate inputs - voice donations need recording, hyperemotes don't
-      if (!formData.name?.trim()) {
-        toast({
-          title: "Name Required",
-          description: "Please enter your name.",
-          variant: "destructive",
-        });
-        setIsProcessing(false);
-        return;
-      }
-
-      if (donationType === 'voice' && !hasVoiceRecording) {
-        toast({
-          title: "Voice Message Required",
-          description: "Please record a voice message for your donation.",
-          variant: "destructive",
-        });
-        setIsProcessing(false);
-        return;
-      }
-
-      if (donationType === 'message' && !formData.message?.trim()) {
-        toast({
-          title: "Message Required",
-          description: "Please enter a message for your donation.",
-          variant: "destructive",
-        });
-        setIsProcessing(false);
-        return;
-      }
-
-      if (!amount || amount < 1) {
-        toast({
-          title: "Invalid Amount",
-          description: "Please enter a valid donation amount.",
-          variant: "destructive",
-        });
-        setIsProcessing(false);
-        return;
-      }
-
-      if (!cashfree) {
-        toast({
-          title: "Payment System Not Ready",
-          description: "Please wait for the payment system to load or refresh the page.",
-          variant: "destructive",
-        });
-        throw new Error('Payment system not initialized');
-      }
 
       // Create order via Supabase edge function
       const response = await supabase.functions.invoke('create-payment-order', {
@@ -174,7 +183,7 @@ const ChiaGaming = () => {
           amount: amount,
           message: donationType === 'message' ? formData.message.trim() : 
                   donationType === 'voice' ? 'Voice message donation' : '',
-          phone: formData.phone?.trim() || undefined,
+          phone: phoneNumber?.trim() || undefined,
           streamer_slug: 'chia_gaming'
         }
       });
@@ -281,7 +290,29 @@ const ChiaGaming = () => {
       }
     } finally {
       setIsProcessing(false);
+      setShowPhoneDialog(false);
     }
+  };
+
+  const validatePhoneNumber = (phone: string): boolean => {
+    const phoneRegex = /^[6-9]\d{9}$/; // Indian mobile number format
+    return phoneRegex.test(phone);
+  };
+
+  const handlePhoneSubmit = () => {
+    setPhoneError('');
+    
+    if (!phoneNumber.trim()) {
+      setPhoneError('Please enter your mobile number');
+      return;
+    }
+    
+    if (!validatePhoneNumber(phoneNumber)) {
+      setPhoneError('Please enter a valid 10-digit mobile number');
+      return;
+    }
+    
+    handlePaymentAfterPhone();
   };
 
   const handleDonationTypeChange = (type: 'message' | 'voice' | 'hyperemote') => {
@@ -348,21 +379,6 @@ const ChiaGaming = () => {
               />
             </div>
 
-            {/* Mobile Number Field (optional) */}
-            <div className="space-y-2">
-              <label htmlFor="phone" className="text-sm font-medium text-gaming-pink-primary">
-                Mobile Number (optional)
-              </label>
-              <Input
-                id="phone"
-                name="phone"
-                type="tel"
-                placeholder="Enter your mobile number"
-                value={formData.phone}
-                onChange={handleInputChange}
-                className="border-gaming-pink-primary/30 focus:border-gaming-pink-primary focus:ring-gaming-pink-primary/20"
-              />
-            </div>
 
             {/* Donation Type Selection */}
             <div className="space-y-3">
@@ -561,6 +577,58 @@ const ChiaGaming = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Phone Number Dialog */}
+      <Dialog open={showPhoneDialog} onOpenChange={setShowPhoneDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-gaming-pink-primary">Enter Mobile Number</DialogTitle>
+            <DialogDescription>
+              Please enter your mobile number to proceed with the payment.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="dialog-phone" className="text-sm font-medium text-gaming-pink-primary">
+                Mobile Number *
+              </label>
+              <Input
+                id="dialog-phone"
+                type="tel"
+                placeholder="Enter 10-digit mobile number"
+                value={phoneNumber}
+                onChange={(e) => {
+                  setPhoneNumber(e.target.value);
+                  setPhoneError('');
+                }}
+                className="border-gaming-pink-primary/30 focus:border-gaming-pink-primary focus:ring-gaming-pink-primary/20"
+                maxLength={10}
+              />
+              {phoneError && (
+                <p className="text-sm text-red-500">{phoneError}</p>
+              )}
+            </div>
+          </div>
+          
+          <div className="flex justify-end space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowPhoneDialog(false)}
+              disabled={isProcessing}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handlePhoneSubmit}
+              disabled={isProcessing}
+              className="bg-gaming-pink-primary hover:bg-gaming-pink-primary/90"
+            >
+              {isProcessing ? 'Processing...' : 'Continue to Payment'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Stream-Style Hyperemote Animation */}
       {showHyperemoteEffect && (
