@@ -5,22 +5,11 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Copy, RefreshCw, Eye, EyeOff, ExternalLink, Volume2, Users, Plus, Trash2 } from 'lucide-react';
+import { Copy, RefreshCw, ExternalLink, Volume2, Users, Plus, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { generateObsToken } from '@/utils/secureIdGenerator';
 import { useStreamerAuth } from '@/hooks/useStreamerAuth';
-
-interface Donation {
-  id: string;
-  name: string;
-  amount: number;
-  message?: string;
-  voice_message_url?: string;
-  created_at: string;
-  payment_status: string;
-  message_visible?: boolean;
-}
 
 interface Streamer {
   id: string;
@@ -45,7 +34,6 @@ interface OBSSettingsProps {
 
 const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate }) => {
   const { toast } = useToast();
-  const [donations, setDonations] = useState<Donation[]>([]);
   const [obsEnabled, setObsEnabled] = useState(true);
   const [loading, setLoading] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
@@ -66,51 +54,6 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
     ? `${window.location.origin}/voice-alerts/${obsToken}`
     : '';
 
-  // Fetch recent donations
-  useEffect(() => {
-    const fetchDonations = async () => {
-      const { data, error } = await supabase
-        .from('chia_gaming_donations')
-        .select('*')
-        .eq('streamer_id', streamer.id)
-        .eq('payment_status', 'success')
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      if (!error && data) {
-        setDonations(data);
-      }
-    };
-
-    fetchDonations();
-
-    // Real-time subscription for donation updates
-    const channel = supabase
-      .channel(`obs-donations-${streamer.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'chia_gaming_donations',
-          filter: `streamer_id=eq.${streamer.id}`
-        },
-        (payload) => {
-          if (payload.eventType === 'INSERT' && payload.new.payment_status === 'success') {
-            setDonations(prev => [payload.new as Donation, ...prev.slice(0, 9)]);
-          } else if (payload.eventType === 'UPDATE') {
-            setDonations(prev => 
-              prev.map(d => d.id === payload.new.id ? payload.new as Donation : d)
-            );
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [streamer.id]);
 
   const handleCopyLink = async () => {
     if (!obsUrl) return;
@@ -161,31 +104,6 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
     setRegenerating(false);
   };
 
-  const handleToggleMessageVisibility = async (donationId: string, visible: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('chia_gaming_donations')
-        .update({ message_visible: visible })
-        .eq('id', donationId);
-
-      if (error) throw error;
-
-      setDonations(prev =>
-        prev.map(d => d.id === donationId ? { ...d, message_visible: visible } : d)
-      );
-
-      toast({
-        title: visible ? "Message Shown" : "Message Hidden",
-        description: `Donation message ${visible ? 'will be' : 'will not be'} displayed in alerts`,
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update message visibility",
-        variant: "destructive",
-      });
-    }
-  };
 
   const generateInitialToken = async () => {
     if (!streamer?.id) return;
@@ -448,82 +366,6 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
         </CardContent>
       </Card>
 
-      {/* Recent Donations Management */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Donations</CardTitle>
-          <CardDescription>
-            Manage which donation messages appear in your OBS alerts
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {donations.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No recent donations to manage
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {donations.map((donation) => (
-                <div
-                  key={donation.id}
-                  className="flex items-center justify-between p-3 rounded-lg border bg-card"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{donation.name}</span>
-                      <Badge 
-                        variant="secondary"
-                        style={{ 
-                          backgroundColor: `${streamer.brand_color}20`, 
-                          color: streamer.brand_color 
-                        }}
-                      >
-                        ₹{donation.amount}
-                      </Badge>
-                    </div>
-                    {donation.message && (
-                      <p className="text-sm text-muted-foreground mt-1 truncate max-w-md">
-                        {donation.message}
-                      </p>
-                    )}
-                    {donation.voice_message_url && (
-                      <div className="flex items-center gap-1 mt-1">
-                        <Volume2 className="w-3 h-3 text-blue-500" />
-                        <span className="text-xs text-blue-600 dark:text-blue-400">Voice message</span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(donation.created_at).toLocaleDateString()}
-                    </span>
-                    {donation.message && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => 
-                          handleToggleMessageVisibility(
-                            donation.id, 
-                            !donation.message_visible
-                          )
-                        }
-                        title={donation.message_visible ? "Hide message" : "Show message"}
-                      >
-                        {donation.message_visible ? (
-                          <Eye className="w-4 h-4" />
-                        ) : (
-                          <EyeOff className="w-4 h-4" />
-                        )}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {/* Telegram Moderator Management */}
       <Card>
