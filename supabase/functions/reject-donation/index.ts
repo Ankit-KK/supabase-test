@@ -19,46 +19,29 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    // Get authenticated user
-    const authHeader = req.headers.get('Authorization')!;
-    const token = authHeader.replace('Bearer ', '');
-    
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-    );
-    
-    const { data: userData } = await supabaseClient.auth.getUser(token);
-    if (!userData.user) {
-      throw new Error('User not authenticated');
-    }
-
-    const { donation_id, reason } = await req.json();
+    const { donation_id, reason, streamer_session } = await req.json();
 
     if (!donation_id) {
       throw new Error('Donation ID is required');
     }
 
-    console.log('Rejecting donation:', donation_id, 'Reason:', reason);
+    if (!streamer_session || !streamer_session.streamerId) {
+      throw new Error('Valid streamer session is required');
+    }
+
+    console.log('Rejecting donation:', donation_id, 'Reason:', reason, 'by streamer:', streamer_session.streamerId);
 
     // Get donation details and verify ownership
     const { data: donation, error: fetchError } = await supabaseAdmin
       .from('chia_gaming_donations')
-      .select(`
-        *,
-        streamers!inner(user_id)
-      `)
+      .select('*')
       .eq('id', donation_id)
+      .eq('streamer_id', streamer_session.streamerId)
       .single();
 
     if (fetchError) {
       console.error('Error fetching donation:', fetchError);
-      throw new Error('Donation not found');
-    }
-
-    // Verify user owns this streamer
-    if (donation.streamers.user_id !== userData.user.id) {
-      throw new Error('Unauthorized: You can only reject donations for your own stream');
+      throw new Error('Donation not found or access denied');
     }
 
     // Update donation status to rejected

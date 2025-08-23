@@ -97,7 +97,10 @@ export const MessagesModerationPage = () => {
     setProcessingId(donationId);
     try {
       const { error } = await supabase.functions.invoke('approve-donation', {
-        body: { donation_id: donationId }
+        body: { 
+          donation_id: donationId,
+          streamer_session: session 
+        }
       });
 
       if (error) throw error;
@@ -126,7 +129,8 @@ export const MessagesModerationPage = () => {
       const { error } = await supabase.functions.invoke('reject-donation', {
         body: { 
           donation_id: donationId, 
-          reason: reason || 'Inappropriate content' 
+          reason: reason || 'Inappropriate content',
+          streamer_session: session
         }
       });
 
