@@ -59,16 +59,32 @@ export const MessagesModerationPage = () => {
   useEffect(() => {
     fetchDonations();
 
-    // Set up real-time subscription
+    // Set up real-time subscription for this specific streamer
     const subscription = supabase
-      .channel('donation-moderation')
+      .channel(`donation-moderation-${session?.streamerId}`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'chia_gaming_donations',
         filter: `streamer_id=eq.${session?.streamerId}`,
-      }, () => {
-        fetchDonations();
+      }, (payload) => {
+        console.log('Real-time moderation update:', payload);
+        
+        if (payload.eventType === 'INSERT') {
+          // New donation added - refresh list
+          fetchDonations();
+        } else if (payload.eventType === 'UPDATE') {
+          // Donation status updated - move between tabs
+          const updatedDonation = payload.new;
+          setDonations(prev => prev.map(d => 
+            d.id === updatedDonation.id ? updatedDonation as Donation : d
+          ));
+          
+          toast({
+            title: `Donation ${updatedDonation.moderation_status === 'approved' ? 'Approved' : 'Rejected'}`,
+            description: `${updatedDonation.name}'s donation has been ${updatedDonation.moderation_status}`,
+          });
+        }
       })
       .subscribe();
 

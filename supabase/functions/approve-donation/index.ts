@@ -78,6 +78,14 @@ serve(async (req) => {
 
     console.log('Donation approved successfully:', donation_id);
 
+    // Notify Telegram moderators
+    try {
+      await notifyTelegramModerators(donation.streamer_id, `✅ Donation approved via web dashboard\n💰 ₹${donation.amount} from ${donation.name}`, supabaseAdmin);
+    } catch (telegramError) {
+      console.error('Error notifying Telegram moderators:', telegramError);
+      // Don't fail the approval if Telegram notification fails
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
@@ -103,3 +111,41 @@ serve(async (req) => {
     );
   }
 });
+
+async function notifyTelegramModerators(streamerId: string, message: string, supabase: any) {
+  try {
+    const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
+    if (!botToken) return;
+
+    // Get all active moderators for this streamer
+    const { data: moderators, error } = await supabase
+      .from('streamers_moderators')
+      .select('telegram_user_id')
+      .eq('streamer_id', streamerId)
+      .eq('is_active', true);
+
+    if (error || !moderators) {
+      console.error('Error fetching moderators:', error);
+      return;
+    }
+
+    // Send notification to all moderators
+    for (const moderator of moderators) {
+      try {
+        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: parseInt(moderator.telegram_user_id),
+            text: message,
+            parse_mode: 'Markdown'
+          })
+        });
+      } catch (err) {
+        console.error(`Error sending notification to moderator ${moderator.telegram_user_id}:`, err);
+      }
+    }
+  } catch (error) {
+    console.error('Error in notifyTelegramModerators:', error);
+  }
+}

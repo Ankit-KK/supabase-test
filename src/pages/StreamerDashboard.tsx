@@ -23,6 +23,7 @@ interface Donation {
   streamer_id?: string;
   message_visible?: boolean;
   is_hyperemote?: boolean;
+  moderation_status?: string;
 }
 
 interface Streamer {
@@ -81,12 +82,13 @@ const StreamerDashboard = () => {
 
         setHasAccess(true);
 
-        // Fetch donations for this streamer
+        // Fetch donations for this streamer (only approved or auto-approved)
         const { data: donationsData, error: donationsError } = await supabase
           .from('chia_gaming_donations')
           .select('*, is_hyperemote')
           .eq('streamer_id', streamerInfo.id)
           .eq('payment_status', 'success')
+          .in('moderation_status', ['approved', 'auto_approved'])
           .order('created_at', { ascending: false });
 
         if (donationsError) {
@@ -129,7 +131,8 @@ const StreamerDashboard = () => {
         (payload) => {
           console.log('Realtime donation update:', payload);
           
-          if (payload.eventType === 'INSERT' && payload.new.payment_status === 'success') {
+          if (payload.eventType === 'INSERT' && payload.new.payment_status === 'success' && 
+              (payload.new.moderation_status === 'approved' || payload.new.moderation_status === 'auto_approved')) {
             const newDonation = payload.new as Donation;
             setDonations(prev => [newDonation, ...prev]);
             setTotalAmount(prev => prev + Number(newDonation.amount));
@@ -150,25 +153,65 @@ const StreamerDashboard = () => {
             });
           }
           
-          if (payload.eventType === 'UPDATE' && payload.new.payment_status === 'success' && payload.old.payment_status !== 'success') {
+          if (payload.eventType === 'UPDATE') {
             const updatedDonation = payload.new as Donation;
-            setDonations(prev => [updatedDonation, ...prev.filter(d => d.id !== updatedDonation.id)]);
-            setTotalAmount(prev => prev + Number(updatedDonation.amount));
-            setMonthlyAmount(prev => {
-              const donationDate = new Date(updatedDonation.created_at);
-              const now = new Date();
-              if (donationDate.getMonth() === now.getMonth() && donationDate.getFullYear() === now.getFullYear()) {
-                return prev + Number(updatedDonation.amount);
-              }
-              return prev;
-            });
+            const oldDonation = payload.old as Donation;
             
-            // Show notification for updated donation
-            toast({
-              title: "Donation Confirmed! ✅",
-              description: `${updatedDonation.name} donated ${formatCurrency(Number(updatedDonation.amount))}${updatedDonation.message ? `: ${updatedDonation.message}` : ''}`,
-              duration: 5000,
-            });
+            // Handle approval/rejection updates
+            if (oldDonation.moderation_status === 'pending' && 
+                (updatedDonation.moderation_status === 'approved' || updatedDonation.moderation_status === 'auto_approved')) {
+              // Donation was approved - add to dashboard
+              setDonations(prev => [updatedDonation, ...prev.filter(d => d.id !== updatedDonation.id)]);
+              setTotalAmount(prev => prev + Number(updatedDonation.amount));
+              setMonthlyAmount(prev => {
+                const donationDate = new Date(updatedDonation.created_at);
+                const now = new Date();
+                if (donationDate.getMonth() === now.getMonth() && donationDate.getFullYear() === now.getFullYear()) {
+                  return prev + Number(updatedDonation.amount);
+                }
+                return prev;
+              });
+              
+              toast({
+                title: "Donation Approved! ✅",
+                description: `${updatedDonation.name}'s donation is now live`,
+                duration: 5000,
+              });
+            } else if ((oldDonation.moderation_status === 'approved' || oldDonation.moderation_status === 'auto_approved') && 
+                       updatedDonation.moderation_status === 'rejected') {
+              // Donation was rejected - remove from dashboard
+              setDonations(prev => prev.filter(d => d.id !== updatedDonation.id));
+              setTotalAmount(prev => prev - Number(updatedDonation.amount));
+              setMonthlyAmount(prev => {
+                const donationDate = new Date(updatedDonation.created_at);
+                const now = new Date();
+                if (donationDate.getMonth() === now.getMonth() && donationDate.getFullYear() === now.getFullYear()) {
+                  return prev - Number(updatedDonation.amount);
+                }
+                return prev;
+              });
+            }
+            
+            // Handle payment status updates
+            if (updatedDonation.payment_status === 'success' && oldDonation.payment_status !== 'success' &&
+                (updatedDonation.moderation_status === 'approved' || updatedDonation.moderation_status === 'auto_approved')) {
+              setDonations(prev => [updatedDonation, ...prev.filter(d => d.id !== updatedDonation.id)]);
+              setTotalAmount(prev => prev + Number(updatedDonation.amount));
+              setMonthlyAmount(prev => {
+                const donationDate = new Date(updatedDonation.created_at);
+                const now = new Date();
+                if (donationDate.getMonth() === now.getMonth() && donationDate.getFullYear() === now.getFullYear()) {
+                  return prev + Number(updatedDonation.amount);
+                }
+                return prev;
+              });
+              
+              toast({
+                title: "Payment Confirmed! ✅",
+                description: `${updatedDonation.name} donated ${formatCurrency(Number(updatedDonation.amount))}`,
+                duration: 5000,
+              });
+            }
           }
           
           if (payload.eventType === 'DELETE') {
