@@ -160,89 +160,84 @@ export const MessagesModerationPage = () => {
 
   const renderDonationCard = (donation: Donation) => (
     <Card key={donation.id} className="mb-4">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Avatar className="w-10 h-10">
-              <AvatarFallback className="bg-primary text-primary-foreground">
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <Avatar className="w-8 h-8 flex-shrink-0">
+              <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                 {donation.name.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <div>
-              <CardTitle className="text-lg">{donation.name}</CardTitle>
-              <CardDescription className="flex items-center gap-2">
-                <span className="text-2xl font-bold text-primary">₹{donation.amount}</span>
-                <Badge variant={
-                  donation.moderation_status === 'approved' ? 'default' :
-                  donation.moderation_status === 'rejected' ? 'destructive' : 'secondary'
-                }>
-                  {donation.moderation_status === 'pending' && <Clock className="w-3 h-3 mr-1" />}
-                  {donation.moderation_status === 'approved' && <CheckCircle className="w-3 h-3 mr-1" />}
-                  {donation.moderation_status === 'rejected' && <XCircle className="w-3 h-3 mr-1" />}
-                  {donation.moderation_status.toUpperCase()}
-                </Badge>
-              </CardDescription>
+            <div className="flex-shrink-0">
+              <p className="font-medium text-sm">{donation.name}</p>
+              <p className="text-xs text-muted-foreground">₹{donation.amount}</p>
             </div>
+            <div className="flex-1 min-w-0">
+              {donation.voice_message_url ? (
+                <div className="flex items-center gap-2">
+                  <Volume2 className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+                  <span className="text-xs text-muted-foreground">Voice Message</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2"
+                    onClick={() => playAudio(donation.voice_message_url!, donation.id)}
+                    disabled={!donation.voice_message_url}
+                  >
+                    <Play className="w-3 h-3" />
+                  </Button>
+                </div>
+              ) : donation.message ? (
+                <p className="text-xs text-muted-foreground truncate">{donation.message}</p>
+              ) : null}
+            </div>
+            <Badge 
+              variant={
+                donation.moderation_status === 'approved' ? 'default' :
+                donation.moderation_status === 'rejected' ? 'destructive' : 'secondary'
+              }
+              className="flex-shrink-0"
+            >
+              {donation.moderation_status === 'pending' && <Clock className="w-3 h-3 mr-1" />}
+              {donation.moderation_status === 'approved' && <CheckCircle className="w-3 h-3 mr-1" />}
+              {donation.moderation_status === 'rejected' && <XCircle className="w-3 h-3 mr-1" />}
+              {donation.moderation_status.toUpperCase()}
+            </Badge>
+            <span className="text-xs text-muted-foreground flex-shrink-0">
+              {format(new Date(donation.created_at), 'MMM dd, HH:mm')}
+            </span>
           </div>
-          <div className="text-sm text-muted-foreground">
-            {format(new Date(donation.created_at), 'MMM dd, HH:mm')}
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {donation.voice_message_url ? (
-          <div className="mb-4 p-3 bg-muted rounded-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Volume2 className="w-4 h-4" />
-                <span className="text-sm font-medium">Voice Message</span>
-              </div>
+          
+          {donation.moderation_status === 'pending' && (
+            <div className="flex gap-2 flex-shrink-0">
               <Button
-                variant="outline"
                 size="sm"
-                onClick={() => playAudio(donation.voice_message_url!, donation.id)}
-                disabled={!donation.voice_message_url}
+                onClick={() => handleApprove(donation.id)}
+                disabled={processingId === donation.id}
               >
-                <Play className="w-4 h-4 mr-1" />
-                {playingAudio === donation.id ? 'Playing...' : 'Preview'}
+                <CheckCircle className="w-4 h-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleReject(donation.id)}
+                disabled={processingId === donation.id}
+              >
+                <XCircle className="w-4 h-4" />
               </Button>
             </div>
-          </div>
-        ) : donation.message ? (
-          <div className="mb-4 p-3 bg-muted rounded-lg">
-            <p className="text-sm">{donation.message}</p>
-          </div>
-        ) : null}
-
-        {donation.moderation_status === 'pending' && (
-          <div className="flex gap-2 justify-end">
-            <Button
-              size="sm"
-              onClick={() => handleApprove(donation.id)}
-              disabled={processingId === donation.id}
-            >
-              <CheckCircle className="w-4 h-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => handleReject(donation.id)}
-              disabled={processingId === donation.id}
-            >
-              <XCircle className="w-4 h-4" />
-            </Button>
-          </div>
-        )}
+          )}
+        </div>
 
         {donation.moderation_status === 'approved' && donation.approved_by && (
-          <div className="text-xs text-muted-foreground">
+          <div className="text-xs text-muted-foreground mt-2">
             Approved by {donation.approved_by}
             {donation.approved_at && ` on ${format(new Date(donation.approved_at), 'MMM dd, HH:mm')}`}
           </div>
         )}
 
         {donation.moderation_status === 'rejected' && (
-          <div className="text-xs text-muted-foreground">
+          <div className="text-xs text-muted-foreground mt-2">
             {donation.rejected_reason && (
               <p className="text-red-600">Reason: {donation.rejected_reason}</p>
             )}
