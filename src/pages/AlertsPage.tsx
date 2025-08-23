@@ -173,18 +173,30 @@ const AlertsPage = () => {
             }
           }
           
-          if (payload.eventType === 'UPDATE' && 
-              newDonation.payment_status === 'success' && 
-              (payload.old as Donation).payment_status !== 'success') {
+          if (payload.eventType === 'UPDATE' && newDonation.payment_status === 'success') {
+            const oldDonation = payload.old as Donation;
             const donation = newDonation;
-            console.log('Donation status updated to success:', { name: donation.name, amount: donation.amount });
             
-            // Only show approved donations or auto-approved hyperemotes
-            if (donation.moderation_status === 'approved' || donation.moderation_status === 'auto_approved') {
-              setAlertQueue(prev => [...prev, { 
-                donation, 
-                timestamp: Date.now() 
-              }]);
+            // Show alert if payment was completed OR if donation was just approved
+            const paymentCompleted = oldDonation.payment_status !== 'success';
+            const justApproved = oldDonation.moderation_status !== 'approved' && 
+                               donation.moderation_status === 'approved';
+            
+            if (paymentCompleted || justApproved) {
+              console.log('Donation update triggered alert:', { 
+                name: donation.name, 
+                amount: donation.amount,
+                paymentCompleted,
+                justApproved
+              });
+              
+              // Only show approved donations or auto-approved hyperemotes
+              if (donation.moderation_status === 'approved' || donation.moderation_status === 'auto_approved') {
+                setAlertQueue(prev => [...prev, { 
+                  donation, 
+                  timestamp: Date.now() 
+                }]);
+              }
             }
           }
         }
