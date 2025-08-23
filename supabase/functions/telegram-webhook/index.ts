@@ -179,6 +179,7 @@ async function showPendingDonations(chatId: number, userId: string, supabase: an
       .select('id, name, amount, message, voice_message_url, voice_duration_seconds, created_at')
       .eq('streamer_id', moderator.streamer_id)
       .eq('moderation_status', 'pending')
+      .eq('payment_status', 'success')
       .order('created_at', { ascending: false })
       .limit(10);
 
@@ -289,20 +290,29 @@ async function approveDonation(donationId: string, userId: string, chatId: numbe
       (mod: any) => mod.telegram_user_id === userId && mod.is_active
     );
 
-    if (!isModerator) {
-      await editMessage(chatId, messageId, '❌ You are not authorized to moderate this donation.', botToken);
-      return;
-    }
+  if (!isModerator) {
+    await editMessage(chatId, messageId, '❌ You are not authorized to moderate this donation.', botToken);
+    return;
+  }
 
-    // Approve the donation
-    const { error: updateError } = await supabase
-      .from('chia_gaming_donations')
-      .update({
-        moderation_status: 'approved',
-        approved_by: 'telegram_moderator',
-        approved_at: new Date().toISOString()
-      })
-      .eq('id', donationId);
+  // If already moderated, just update the message and return
+  if (donation.moderation_status && donation.moderation_status !== 'pending') {
+    const alreadyText = donation.moderation_status === 'approved'
+      ? `✅ Already approved\n\n💰 **Amount:** ₹${donation.amount}\n👤 **From:** ${donation.name}\n📺 **Streamer:** ${donation.streamers.streamer_name}`
+      : `❌ Already rejected\n\n💰 **Amount:** ₹${donation.amount}\n👤 **From:** ${donation.name}\n📺 **Streamer:** ${donation.streamers.streamer_name}`;
+    await editMessage(chatId, messageId, alreadyText, botToken, { inline_keyboard: [] });
+    return;
+  }
+
+  // Approve the donation
+  const { error: updateError } = await supabase
+    .from('chia_gaming_donations')
+    .update({
+      moderation_status: 'approved',
+      approved_by: 'telegram_moderator',
+      approved_at: new Date().toISOString()
+    })
+    .eq('id', donationId);
 
     if (updateError) {
       console.error('Error approving donation:', updateError);
@@ -317,7 +327,7 @@ async function approveDonation(donationId: string, userId: string, chatId: numbe
       `⏰ **Approved at:** ${new Date().toLocaleString()}\n\n` +
       `The donation will now appear in OBS alerts! 🎉`;
 
-    await editMessage(chatId, messageId, successText, botToken);
+    await editMessage(chatId, messageId, successText, botToken, { inline_keyboard: [] });
 
     // Notify all moderators about the approval
     await notifyModerators(donation.streamers.id, `✅ Donation approved by moderator\n💰 ₹${donation.amount} from ${donation.name}`, supabase, botToken, userId);
@@ -359,6 +369,15 @@ async function rejectDonation(donationId: string, userId: string, chatId: number
       return;
     }
 
+    // If already moderated, update message and return
+    if (donation.moderation_status && donation.moderation_status !== 'pending') {
+      const alreadyText = donation.moderation_status === 'approved'
+        ? `✅ Already approved\n\n💰 **Amount:** ₹${donation.amount}\n👤 **From:** ${donation.name}\n📺 **Streamer:** ${donation.streamers.streamer_name}`
+        : `❌ Already rejected\n\n💰 **Amount:** ₹${donation.amount}\n👤 **From:** ${donation.name}\n📺 **Streamer:** ${donation.streamers.streamer_name}`;
+      await editMessage(chatId, messageId, alreadyText, botToken, { inline_keyboard: [] });
+      return;
+    }
+
     // Reject the donation
     const { error: updateError } = await supabase
       .from('chia_gaming_donations')
@@ -381,7 +400,7 @@ async function rejectDonation(donationId: string, userId: string, chatId: number
       `⏰ **Rejected at:** ${new Date().toLocaleString()}\n\n` +
       `The donation will NOT appear in OBS alerts.`;
 
-    await editMessage(chatId, messageId, successText, botToken);
+    await editMessage(chatId, messageId, successText, botToken, { inline_keyboard: [] });
 
     // Notify all moderators about the rejection
     await notifyModerators(donation.streamers.id, `❌ Donation rejected by moderator\n💰 ₹${donation.amount} from ${donation.name}`, supabase, botToken, userId);
