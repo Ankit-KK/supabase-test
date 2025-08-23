@@ -243,7 +243,7 @@ async function notifyModeratorsAboutNewDonation(streamerId: string, donation: an
     // Send notification to all active moderators
     for (const moderator of moderators) {
       try {
-        await sendTelegramMessage(parseInt(moderator.telegram_user_id), messageText, botToken);
+        await sendTelegramMessage(moderator.telegram_user_id, messageText, botToken);
         console.log(`Notified moderator ${moderator.mod_name} (${moderator.telegram_user_id})`);
       } catch (err) {
         console.error(`Error sending notification to moderator ${moderator.mod_name}:`, err);
@@ -256,12 +256,11 @@ async function notifyModeratorsAboutNewDonation(streamerId: string, donation: an
   }
 }
 
-async function sendTelegramMessage(chatId: number, text: string, botToken: string) {
+async function sendTelegramMessage(chatId: string, text: string, botToken: string) {
   const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
   const payload = {
     chat_id: chatId,
-    text: text,
-    parse_mode: 'Markdown'
+    text: text
   };
 
   const response = await fetch(url, {
