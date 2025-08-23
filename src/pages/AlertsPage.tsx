@@ -430,8 +430,37 @@ const AlertsPage = () => {
             transform: translateY(-10vh) rotateY(360deg) scale(0.8); 
           }
         }
+        @keyframes rotation_9018 {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
         .animate-fadeIn {
           animation: fadeIn 0.6s ease-out;
+        }
+        .alert-card {
+          position: relative;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          overflow: hidden;
+          cursor: pointer;
+          border-radius: 12px;
+        }
+        .alert-card::before {
+          content: "";
+          position: absolute;
+          width: 80px;
+          height: 150%;
+          background: linear-gradient(hsl(var(--pink-primary)), hsl(var(--pink-accent)));
+          animation: rotation_9018 8s linear infinite;
+        }
+        .alert-content {
+          position: relative;
+          z-index: 1;
+          border-radius: 8px;
+          background: hsl(var(--background));
+          margin: 4px;
+          padding: 1rem;
         }
       `}</style>
       
@@ -467,25 +496,20 @@ const AlertsPage = () => {
         {currentAlert && !currentAlert.donation.is_hyperemote && (
           // Regular Message Display
           <div className="fixed inset-x-0 bottom-6 flex items-center justify-center bg-transparent">
-            <div 
-              className="p-4 rounded-xl shadow-xl text-center animate-fadeIn text-white"
-              style={{ 
-                background: "linear-gradient(135deg, #4f46e5, #9333ea)",
-                minWidth: "280px",
-                maxWidth: "400px"
-              }}
-            >
-              <h2 className="text-xl font-bold mb-1">
-                {currentAlert.donation.name}
-              </h2>
-              <p className="text-3xl font-extrabold mb-3 animate-pulse">
-                ₹{currentAlert.donation.amount}
-              </p>
-              {currentAlert.donation.message && (
-                <p className="text-base font-light">
-                  {displayedMessage || "..."}
+            <div className="alert-card animate-fadeIn" style={{ minWidth: "280px", maxWidth: "400px" }}>
+              <div className="alert-content text-white text-center">
+                <h2 className="text-xl font-bold mb-1">
+                  {currentAlert.donation.name}
+                </h2>
+                <p className="text-3xl font-extrabold mb-3 animate-pulse text-gaming-pink-accent">
+                  ₹{currentAlert.donation.amount}
                 </p>
-              )}
+                {currentAlert.donation.message && (
+                  <p className="text-base font-light">
+                    {displayedMessage || "..."}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         )}
