@@ -199,7 +199,7 @@ async function playVoiceMessage(donationId: string, userId: string, chatId: numb
     }
 
     // Send voice message
-    await sendVoiceMessage(chatId, donation.voice_message_url, botToken, `Voice message from ${donation.name} (₹${donation.amount})`);
+    await sendAudioFile(chatId, donation.voice_message_url, botToken, `Voice message from ${donation.name} (₹${donation.amount})`);
 
   } catch (error) {
     console.error('Error in playVoiceMessage:', error);
@@ -393,7 +393,48 @@ async function sendMessage(chatId: number, text: string, botToken: string, reply
   return await response.json();
 }
 
-async function sendVoiceMessage(chatId: number, voiceUrl: string, botToken: string, caption?: string) {
+async function sendAudioFile(chatId: number, audioUrl: string, botToken: string, caption?: string) {
+  try {
+    console.log('Fetching audio for Telegram upload:', audioUrl);
+    const resp = await fetch(audioUrl);
+    if (!resp.ok) {
+      const t = await resp.text();
+      throw new Error(`Fetch audio failed: ${resp.status} ${t}`);
+    }
+    const mime = resp.headers.get('content-type') || 'application/octet-stream';
+    const ab = await resp.arrayBuffer();
+    const bytes = new Uint8Array(ab);
+
+    let ext = '.mp3';
+    if (mime.includes('ogg')) ext = '.ogg';
+    else if (mime.includes('webm')) ext = '.webm';
+    else if (mime.includes('mpeg')) ext = '.mp3';
+    else if (mime.includes('wav')) ext = '.wav';
+
+    const fileName = `voice_message${ext}`;
+    const form = new FormData();
+    form.append('chat_id', chatId.toString());
+    if (caption) form.append('caption', caption);
+    const file = new File([bytes], fileName, { type: mime });
+    form.append('audio', file);
+
+    const url = `https://api.telegram.org/bot${botToken}/sendAudio`;
+    const tgResp = await fetch(url, { method: 'POST', body: form });
+
+    if (!tgResp.ok) {
+      const errText = await tgResp.text();
+      console.error('sendAudio failed, falling back to sendVoice with URL:', errText);
+      return await sendVoiceWithUrl(chatId, audioUrl, botToken, caption);
+    }
+
+    return await tgResp.json();
+  } catch (error) {
+    console.error('Error in sendAudioFile:', error);
+    return await sendVoiceWithUrl(chatId, audioUrl, botToken, caption);
+  }
+}
+
+async function sendVoiceWithUrl(chatId: number, voiceUrl: string, botToken: string, caption?: string) {
   const url = `https://api.telegram.org/bot${botToken}/sendVoice`;
   const payload: any = {
     chat_id: chatId,
@@ -412,7 +453,7 @@ async function sendVoiceMessage(chatId: number, voiceUrl: string, botToken: stri
 
   if (!response.ok) {
     const error = await response.text();
-    console.error('Error sending voice message:', error);
+    console.error('Error sending voice (URL) message:', error);
     throw new Error(`Failed to send voice message: ${error}`);
   }
 

@@ -24,6 +24,7 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
   const chunksRef = useRef<Blob[]>([]);
   const startTimeRef = useRef<number>(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const selectedMimeTypeRef = useRef<string | undefined>(undefined);
 
   const startRecording = useCallback(async () => {
     try {
@@ -36,9 +37,12 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
         } 
       });
 
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm;codecs=opus'
-      });
+      const preferredTypes = ['audio/ogg;codecs=opus','audio/webm;codecs=opus','audio/webm'];
+      const supported = (typeof MediaRecorder !== 'undefined' && (MediaRecorder as any).isTypeSupported)
+        ? preferredTypes.find(t => (MediaRecorder as any).isTypeSupported(t))
+        : undefined;
+      selectedMimeTypeRef.current = supported;
+      const mediaRecorder = supported ? new MediaRecorder(stream, { mimeType: supported }) : new MediaRecorder(stream);
 
       chunksRef.current = [];
       mediaRecorderRef.current = mediaRecorder;
@@ -51,7 +55,8 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
       };
 
       mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm;codecs=opus' });
+        const mime = selectedMimeTypeRef.current || 'audio/webm;codecs=opus';
+        const audioBlob = new Blob(chunksRef.current, { type: mime });
         const audioUrl = URL.createObjectURL(audioBlob);
         const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
 
