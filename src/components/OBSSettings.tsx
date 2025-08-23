@@ -424,4 +424,6 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
   );
 };
 
+// Export both as named and default exports to ensure compatibility
+export { OBSSettings };
 export default OBSSettings;
