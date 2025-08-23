@@ -584,7 +584,7 @@ const ChiaGaming = () => {
           <DialogHeader>
             <DialogTitle className="text-gaming-pink-primary">Enter Mobile Number</DialogTitle>
             <DialogDescription>
-              Please enter your mobile number to proceed with the payment.
+              Please enter your mobile number to proceed with the payment (required by Cashfree Payments).
             </DialogDescription>
           </DialogHeader>
           
