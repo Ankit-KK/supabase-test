@@ -215,23 +215,21 @@ export const MessagesModerationPage = () => {
         ) : null}
 
         {donation.moderation_status === 'pending' && (
-          <div className="flex gap-2">
+          <div className="flex gap-2 justify-end">
             <Button
+              size="sm"
               onClick={() => handleApprove(donation.id)}
               disabled={processingId === donation.id}
-              className="flex-1"
             >
-              <CheckCircle className="w-4 h-4 mr-2" />
-              Approve
+              <CheckCircle className="w-4 h-4" />
             </Button>
             <Button
+              size="sm"
               variant="outline"
               onClick={() => handleReject(donation.id)}
               disabled={processingId === donation.id}
-              className="flex-1"
             >
-              <XCircle className="w-4 h-4 mr-2" />
-              Reject
+              <XCircle className="w-4 h-4" />
             </Button>
           </div>
         )}
