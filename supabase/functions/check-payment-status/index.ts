@@ -111,10 +111,70 @@ serve(async (req) => {
         let statusToReturn = donationData.payment_status || 'pending';
         if (statusToReturn === 'pending') {
           statusToReturn = 'failed';
-        await supabase
-          .from('chia_gaming_donations')
-          .update({ payment_status: 'failed' })
-          .eq('id', donationData.id);
+          await supabase
+            .from('chia_gaming_donations')
+            .update({ payment_status: 'failed' })
+            .eq('id', donationData.id);
+        }
+
+        // If DB already shows success and moderation is pending, notify moderators here as well
+        if (statusToReturn === 'success' && donationData.moderation_status === 'pending' && donationData.streamer_id) {
+          try {
+            const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
+            if (!botToken) {
+              console.log('TELEGRAM_BOT_TOKEN not configured, skipping moderator notification');
+            } else {
+              const { data: moderators, error: modError } = await supabase
+                .from('streamers_moderators')
+                .select('telegram_user_id, mod_name')
+                .eq('streamer_id', donationData.streamer_id)
+                .eq('is_active', true);
+
+              if (modError || !moderators || moderators.length === 0) {
+                console.log('No active moderators found for streamer:', donationData.streamer_id);
+              } else {
+                const messageText = `🚨 New Donation Needs Approval! 🚨\n\n` +
+                  `💰 Amount: ₹${donationData.amount}\n` +
+                  `👤 From: ${donationData.name}\n` +
+                  `📅 Time: ${new Date(donationData.created_at).toLocaleString()}\n` +
+                  `${donationData.message ? `💬 Message: ${donationData.message}\n` : ''}` +
+                  `${donationData.voice_message_url ? `🎵 Has Voice Message\n` : ''}`;
+
+                const keyboard = donationData.voice_message_url ? {
+                  inline_keyboard: [
+                    [{ text: '🎵 Play Voice', callback_data: `play_${donationData.id}` }],
+                    [
+                      { text: '✅ Approve', callback_data: `approve_${donationData.id}` },
+                      { text: '❌ Reject', callback_data: `reject_${donationData.id}` }
+                    ]
+                  ]
+                } : {
+                  inline_keyboard: [[
+                    { text: '✅ Approve', callback_data: `approve_${donationData.id}` },
+                    { text: '❌ Reject', callback_data: `reject_${donationData.id}` }
+                  ]]
+                };
+
+                for (const moderator of moderators) {
+                  try {
+                    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        chat_id: moderator.telegram_user_id,
+                        text: messageText,
+                        reply_markup: keyboard
+                      })
+                    });
+                  } catch (e) {
+                    console.error('Error notifying moderator (404 path):', e);
+                  }
+                }
+              }
+            }
+          } catch (notifyErr) {
+            console.error('Error during moderator notification after DB success (404 path):', notifyErr);
+          }
         }
         
         return new Response(JSON.stringify({
