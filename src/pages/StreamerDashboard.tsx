@@ -324,7 +324,7 @@ const StreamerDashboard = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="dashboard" className="space-y-6 mt-6">
+          <TabsContent value="dashboard" forceMount className="space-y-6 mt-6">
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -433,11 +433,11 @@ const StreamerDashboard = () => {
         </Card>
           </TabsContent>
 
-          <TabsContent value="messages" className="mt-6">
+          <TabsContent value="messages" forceMount className="mt-6">
             <MessagesModerationPage />
           </TabsContent>
 
-          <TabsContent value="obs" className="mt-6">
+          <TabsContent value="obs" forceMount className="mt-6">
             <OBSSettings 
               streamer={streamer} 
               onStreamerUpdate={handleStreamerUpdate}

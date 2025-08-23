@@ -22,7 +22,9 @@ interface Donation {
   rejected_reason?: string | null;
   created_at: string;
   is_hyperemote?: boolean | null;
+  payment_status?: string | null;
 }
+
 
 export const MessagesModerationPage = () => {
   const { session } = useStreamerAuth();
@@ -39,6 +41,7 @@ export const MessagesModerationPage = () => {
         .from('chia_gaming_donations')
         .select('*')
         .eq('streamer_id', session.streamerId)
+        .eq('payment_status', 'success')
         .neq('moderation_status', 'auto_approved') // Don't show hyperemotes
         .order('created_at', { ascending: false });
 
@@ -73,19 +76,32 @@ export const MessagesModerationPage = () => {
         console.log('Real-time moderation update:', payload);
         
         if (payload.eventType === 'INSERT') {
-          // New donation added - refresh list
-          fetchDonations();
+          const newDonation = payload.new as Donation;
+          if (newDonation.payment_status === 'success' && newDonation.moderation_status !== 'auto_approved') {
+            setDonations(prev => [newDonation, ...prev]);
+          }
         } else if (payload.eventType === 'UPDATE') {
-          // Donation status updated - move between tabs
-          const updatedDonation = payload.new;
-          setDonations(prev => prev.map(d => 
-            d.id === updatedDonation.id ? updatedDonation as Donation : d
-          ));
-          
-          toast({
-            title: `Donation ${updatedDonation.moderation_status === 'approved' ? 'Approved' : 'Rejected'}`,
-            description: `${updatedDonation.name}'s donation has been ${updatedDonation.moderation_status}`,
+          const updatedDonation = payload.new as Donation;
+          const oldDonation = payload.old as Donation;
+
+          setDonations(prev => {
+            const exists = prev.some(d => d.id === updatedDonation.id);
+            const isEligible = updatedDonation.payment_status === 'success' && updatedDonation.moderation_status !== 'auto_approved';
+            if (isEligible) {
+              return exists 
+                ? prev.map(d => d.id === updatedDonation.id ? updatedDonation : d)
+                : [updatedDonation, ...prev];
+            } else {
+              return exists ? prev.filter(d => d.id !== updatedDonation.id) : prev;
+            }
           });
+
+          if (oldDonation?.moderation_status !== updatedDonation.moderation_status) {
+            toast({
+              title: `Donation ${updatedDonation.moderation_status === 'approved' ? 'Approved' : updatedDonation.moderation_status === 'rejected' ? 'Rejected' : 'Updated'}`,
+              description: `${updatedDonation.name}'s donation has been ${updatedDonation.moderation_status}`,
+            });
+          }
         }
       })
       .subscribe((status) => {
