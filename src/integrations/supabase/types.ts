@@ -50,6 +50,8 @@ export type Database = {
       chia_gaming_donations: {
         Row: {
           amount: number
+          approved_at: string | null
+          approved_by: string | null
           auto_verified: boolean | null
           cashfree_order_id: string | null
           created_at: string
@@ -58,9 +60,11 @@ export type Database = {
           last_verification_attempt: string | null
           message: string | null
           message_visible: boolean | null
+          moderation_status: string | null
           name: string
           order_id: string | null
           payment_status: string | null
+          rejected_reason: string | null
           streamer_id: string | null
           temp_voice_data: string | null
           updated_at: string
@@ -69,6 +73,8 @@ export type Database = {
         }
         Insert: {
           amount: number
+          approved_at?: string | null
+          approved_by?: string | null
           auto_verified?: boolean | null
           cashfree_order_id?: string | null
           created_at?: string
@@ -77,9 +83,11 @@ export type Database = {
           last_verification_attempt?: string | null
           message?: string | null
           message_visible?: boolean | null
+          moderation_status?: string | null
           name: string
           order_id?: string | null
           payment_status?: string | null
+          rejected_reason?: string | null
           streamer_id?: string | null
           temp_voice_data?: string | null
           updated_at?: string
@@ -88,6 +96,8 @@ export type Database = {
         }
         Update: {
           amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
           auto_verified?: boolean | null
           cashfree_order_id?: string | null
           created_at?: string
@@ -96,9 +106,11 @@ export type Database = {
           last_verification_attempt?: string | null
           message?: string | null
           message_visible?: boolean | null
+          moderation_status?: string | null
           name?: string
           order_id?: string | null
           payment_status?: string | null
+          rejected_reason?: string | null
           streamer_id?: string | null
           temp_voice_data?: string | null
           updated_at?: string
@@ -306,6 +318,41 @@ export type Database = {
           username?: string | null
         }
         Relationships: []
+      }
+      streamers_moderators: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          mod_name: string
+          streamer_id: string | null
+          telegram_user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          mod_name: string
+          streamer_id?: string | null
+          telegram_user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          mod_name?: string
+          streamer_id?: string | null
+          telegram_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamers_moderators_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_queries: {
         Row: {
