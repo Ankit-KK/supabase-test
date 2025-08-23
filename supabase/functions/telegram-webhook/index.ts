@@ -203,15 +203,16 @@ async function showPendingDonations(chatId: number, userId: string, supabase: an
         `${donation.message ? `💬 **Message:** ${donation.message}\n` : ''}` +
         `${donation.voice_message_url ? `🎵 **Voice Message:** ${donation.voice_duration_seconds}s\n` : ''}`;
 
-      const keyboard = {
-        inline_keyboard: [
-          [{ text: '🎵 Play Voice', callback_data: `play_${donation.id}` }],
-          [
-            { text: '✅ Approve', callback_data: `approve_${donation.id}` },
-            { text: '❌ Reject', callback_data: `reject_${donation.id}` }
-          ]
-        ]
-      };
+      const keyboardRows: any[] = [];
+      if (donation.voice_message_url) {
+        keyboardRows.push([{ text: '🎵 Play Voice', callback_data: `play_${donation.id}` }]);
+      }
+      keyboardRows.push([
+        { text: '✅ Approve', callback_data: `approve_${donation.id}` },
+        { text: '❌ Reject', callback_data: `reject_${donation.id}` }
+      ]);
+
+      const keyboard = { inline_keyboard: keyboardRows };
 
       await sendMessage(chatId, messageText, botToken, keyboard);
     }
