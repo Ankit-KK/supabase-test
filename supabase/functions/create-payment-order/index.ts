@@ -41,6 +41,11 @@ serve(async (req) => {
       throw new Error('Streamer slug is required');
     }
 
+    // Validate and require phone number
+    if (!phone || typeof phone !== 'string' || phone.trim().length === 0) {
+      throw new Error('Phone number is required');
+    }
+
     console.log('Looking for streamer with slug:', streamer_slug);
 
     // Get streamer ID from slug
@@ -68,31 +73,34 @@ serve(async (req) => {
     const randomNum = Math.floor(Math.random() * 1e16).toString().padStart(16, '0');
     const orderId = `chiaa_${randomNum}`;
     
-    // Use user's provided phone if available and valid; do not generate random numbers
-    const sanitizePhone = (input: unknown): string | undefined => {
-      try {
-        const raw = String(input ?? '');
-        const digits = raw.replace(/\D/g, '');
-        if (digits.length >= 8 && digits.length <= 15) return digits;
-        return undefined;
-      } catch {
-        return undefined;
+    // Strictly validate and use the provided phone number
+    const sanitizePhone = (input: string): string => {
+      const digits = input.replace(/\D/g, '');
+      
+      // Must be exactly 10 digits and start with 6-9 (Indian mobile format)
+      if (digits.length === 10 && /^[6-9]/.test(digits)) {
+        return digits;
       }
+      
+      throw new Error(`Invalid phone number format: ${input}. Must be 10 digits starting with 6-9`);
     };
-    const sanitizedPhone = sanitizePhone(phone);
+    
+    const sanitizedPhone = sanitizePhone(phone.trim());
+    console.log('Phone number validation:', {
+      original: phone,
+      sanitized: sanitizedPhone
+    });
 
-    // Create order data matching Cashfree format
-    const customerDetails: Record<string, string> = {
-      customer_id: user?.id || "guest_user",
-      customer_name: name,
-    };
-    if (sanitizedPhone) customerDetails.customer_phone = sanitizedPhone;
-
+    // Create order data matching Cashfree format - phone is now required
     const orderData = {
       order_amount: amount,
       order_currency: "INR",
       order_id: orderId,
-      customer_details: customerDetails,
+      customer_details: {
+        customer_id: user?.id || "guest_user",
+        customer_name: name,
+        customer_phone: sanitizedPhone
+      },
       order_meta: {
         return_url: `${req.headers.get("origin")}/status?order_id=${orderId}`,
         notify_url: `${req.headers.get("origin")}/status?order_id=${orderId}`
@@ -112,6 +120,7 @@ serve(async (req) => {
       orderId,
       amount,
       customerName: name,
+      customerPhone: sanitizedPhone,
       message: message || 'No message'
     });
 
