@@ -26,9 +26,14 @@ interface Donation {
 }
 
 
-export const MessagesModerationPage = () => {
+interface Props {
+  donations?: Donation[];
+  onRefresh?: () => void;
+}
+
+export const MessagesModerationPage = ({ donations: propDonations, onRefresh }: Props = {}) => {
   const { session } = useStreamerAuth();
-  const [donations, setDonations] = useState<Donation[]>([]);
+  const [donations, setDonations] = useState<Donation[]>(propDonations || []);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
@@ -59,58 +64,18 @@ export const MessagesModerationPage = () => {
     }
   };
 
+  // Update donations when prop changes
+  useEffect(() => {
+    if (propDonations) {
+      setDonations(propDonations);
+    }
+  }, [propDonations]);
+
   useEffect(() => {
     if (!session?.streamerId) return;
     fetchDonations();
-
-    // Set up real-time subscription for this specific streamer
-    const channelName = `donation-moderation-${session.streamerId}`;
-    const subscription = supabase
-      .channel(channelName)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'chia_gaming_donations',
-        filter: `streamer_id=eq.${session.streamerId}`,
-      }, (payload) => {
-        console.log('Real-time moderation update:', payload);
-        
-        if (payload.eventType === 'INSERT') {
-          const newDonation = payload.new as Donation;
-          if (newDonation.payment_status === 'success' && newDonation.moderation_status !== 'auto_approved') {
-            setDonations(prev => [newDonation, ...prev]);
-          }
-        } else if (payload.eventType === 'UPDATE') {
-          const updatedDonation = payload.new as Donation;
-          const oldDonation = payload.old as Donation;
-
-          setDonations(prev => {
-            const exists = prev.some(d => d.id === updatedDonation.id);
-            const isEligible = updatedDonation.payment_status === 'success' && updatedDonation.moderation_status !== 'auto_approved';
-            if (isEligible) {
-              return exists 
-                ? prev.map(d => d.id === updatedDonation.id ? updatedDonation : d)
-                : [updatedDonation, ...prev];
-            } else {
-              return exists ? prev.filter(d => d.id !== updatedDonation.id) : prev;
-            }
-          });
-
-          if (oldDonation?.moderation_status !== updatedDonation.moderation_status) {
-            toast({
-              title: `Donation ${updatedDonation.moderation_status === 'approved' ? 'Approved' : updatedDonation.moderation_status === 'rejected' ? 'Rejected' : 'Updated'}`,
-              description: `${updatedDonation.name}'s donation has been ${updatedDonation.moderation_status}`,
-            });
-          }
-        }
-      })
-      .subscribe((status) => {
-        console.log('Realtime status:', status, 'channel:', channelName);
-      });
-
-    return () => {
-      supabase.removeChannel(subscription);
-    };
+    
+    // No realtime subscription here - parent component handles it
   }, [session?.streamerId]);
 
   const handleApprove = async (donationId: string) => {
@@ -131,6 +96,7 @@ export const MessagesModerationPage = () => {
       });
       
       fetchDonations();
+      onRefresh?.();
     } catch (error) {
       console.error('Error approving donation:', error);
       toast({
@@ -162,6 +128,7 @@ export const MessagesModerationPage = () => {
       });
       
       fetchDonations();
+      onRefresh?.();
     } catch (error) {
       console.error('Error rejecting donation:', error);
       toast({

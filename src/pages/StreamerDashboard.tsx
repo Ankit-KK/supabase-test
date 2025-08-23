@@ -17,13 +17,17 @@ interface Donation {
   id: string;
   name: string;
   amount: number;
-  message?: string;
+  message?: string | null;
+  voice_message_url?: string | null;
+  moderation_status: string;
+  approved_by?: string | null;
+  approved_at?: string | null;
+  rejected_reason?: string | null;
   created_at: string;
-  payment_status: string;
+  is_hyperemote?: boolean | null;
+  payment_status?: string | null;
   streamer_id?: string;
   message_visible?: boolean;
-  is_hyperemote?: boolean;
-  moderation_status?: string;
 }
 
 interface Streamer {
@@ -42,6 +46,7 @@ const StreamerDashboard = () => {
   const { toast } = useToast();
   const [streamer, setStreamer] = useState<Streamer | null>(null);
   const [donations, setDonations] = useState<Donation[]>([]);
+  const [moderationDonations, setModerationDonations] = useState<Donation[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [totalAmount, setTotalAmount] = useState(0);
   const [monthlyAmount, setMonthlyAmount] = useState(0);
@@ -50,6 +55,26 @@ const StreamerDashboard = () => {
 
   const handleStreamerUpdate = (updatedStreamer: Streamer) => {
     setStreamer(updatedStreamer);
+  };
+
+  const refreshModerationData = async () => {
+    if (!streamer?.id) return;
+    
+    try {
+      const { data: moderationData, error } = await supabase
+        .from('chia_gaming_donations')
+        .select('*')
+        .eq('streamer_id', streamer.id)
+        .eq('payment_status', 'success')
+        .neq('moderation_status', 'auto_approved')
+        .order('created_at', { ascending: false });
+
+      if (!error) {
+        setModerationDonations(moderationData || []);
+      }
+    } catch (error) {
+      console.error('Error refreshing moderation data:', error);
+    }
   };
 
   // Move useEffect to top level - before any conditional logic
@@ -91,6 +116,15 @@ const StreamerDashboard = () => {
           .in('moderation_status', ['approved', 'auto_approved'])
           .order('created_at', { ascending: false });
 
+        // Fetch donations for moderation (successful payments, not auto-approved)
+        const { data: moderationData, error: moderationError } = await supabase
+          .from('chia_gaming_donations')
+          .select('*')
+          .eq('streamer_id', streamerInfo.id)
+          .eq('payment_status', 'success')
+          .neq('moderation_status', 'auto_approved')
+          .order('created_at', { ascending: false });
+
         if (donationsError) {
           console.error('Error fetching donations:', donationsError);
         } else {
@@ -102,6 +136,12 @@ const StreamerDashboard = () => {
           
           const monthly = calculateMonthlyTotal(donationsData || []);
           setMonthlyAmount(monthly);
+        }
+
+        if (moderationError) {
+          console.error('Error fetching moderation donations:', moderationError);
+        } else {
+          setModerationDonations(moderationData || []);
         }
       } catch (error) {
         console.error('Error in fetchStreamerAndData:', error);
@@ -131,33 +171,41 @@ const StreamerDashboard = () => {
         (payload) => {
           console.log('Realtime donation update:', payload);
           
-          if (payload.eventType === 'INSERT' && payload.new.payment_status === 'success' && 
-              (payload.new.moderation_status === 'approved' || payload.new.moderation_status === 'auto_approved')) {
+          if (payload.eventType === 'INSERT' && payload.new.payment_status === 'success') {
             const newDonation = payload.new as Donation;
-            setDonations(prev => [newDonation, ...prev]);
-            setTotalAmount(prev => prev + Number(newDonation.amount));
-            setMonthlyAmount(prev => {
-              const donationDate = new Date(newDonation.created_at);
-              const now = new Date();
-              if (donationDate.getMonth() === now.getMonth() && donationDate.getFullYear() === now.getFullYear()) {
-                return prev + Number(newDonation.amount);
-              }
-              return prev;
-            });
             
-            // Show notification for new donation
-            toast({
-              title: "New Donation! 🎉",
-              description: `${newDonation.name} donated ${formatCurrency(Number(newDonation.amount))}${newDonation.message ? `: ${newDonation.message}` : ''}`,
-              duration: 5000,
-            });
+            // Update dashboard donations if approved/auto-approved
+            if (newDonation.moderation_status === 'approved' || newDonation.moderation_status === 'auto_approved') {
+              setDonations(prev => [newDonation, ...prev]);
+              setTotalAmount(prev => prev + Number(newDonation.amount));
+              setMonthlyAmount(prev => {
+                const donationDate = new Date(newDonation.created_at);
+                const now = new Date();
+                if (donationDate.getMonth() === now.getMonth() && donationDate.getFullYear() === now.getFullYear()) {
+                  return prev + Number(newDonation.amount);
+                }
+                return prev;
+              });
+              
+              // Show notification for new donation
+              toast({
+                title: "New Donation! 🎉",
+                description: `${newDonation.name} donated ${formatCurrency(Number(newDonation.amount))}${newDonation.message ? `: ${newDonation.message}` : ''}`,
+                duration: 5000,
+              });
+            }
+
+            // Update moderation donations if not auto-approved
+            if (newDonation.moderation_status !== 'auto_approved') {
+              setModerationDonations(prev => [newDonation, ...prev]);
+            }
           }
           
           if (payload.eventType === 'UPDATE') {
             const updatedDonation = payload.new as Donation;
             const oldDonation = payload.old as Donation;
             
-            // Handle approval/rejection updates
+            // Handle approval/rejection updates for dashboard
             if (oldDonation.moderation_status === 'pending' && 
                 (updatedDonation.moderation_status === 'approved' || updatedDonation.moderation_status === 'auto_approved')) {
               // Donation was approved - add to dashboard
@@ -191,6 +239,18 @@ const StreamerDashboard = () => {
                 return prev;
               });
             }
+
+            // Update moderation donations for any successful payment that's not auto-approved
+            if (updatedDonation.payment_status === 'success' && updatedDonation.moderation_status !== 'auto_approved') {
+              setModerationDonations(prev => {
+                const exists = prev.some(d => d.id === updatedDonation.id);
+                return exists 
+                  ? prev.map(d => d.id === updatedDonation.id ? updatedDonation : d)
+                  : [updatedDonation, ...prev];
+              });
+            } else if (updatedDonation.moderation_status === 'auto_approved' || updatedDonation.payment_status !== 'success') {
+              setModerationDonations(prev => prev.filter(d => d.id !== updatedDonation.id));
+            }
             
             // Handle payment status updates
             if (updatedDonation.payment_status === 'success' && oldDonation.payment_status !== 'success' &&
@@ -217,6 +277,7 @@ const StreamerDashboard = () => {
           if (payload.eventType === 'DELETE') {
             const deletedDonation = payload.old as Donation;
             setDonations(prev => prev.filter(d => d.id !== deletedDonation.id));
+            setModerationDonations(prev => prev.filter(d => d.id !== deletedDonation.id));
             setTotalAmount(prev => prev - Number(deletedDonation.amount));
             setMonthlyAmount(prev => {
               const donationDate = new Date(deletedDonation.created_at);
@@ -324,7 +385,7 @@ const StreamerDashboard = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="dashboard" forceMount className="space-y-6 mt-6">
+          <TabsContent value="dashboard" className="space-y-6 mt-6">
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -433,11 +494,14 @@ const StreamerDashboard = () => {
         </Card>
           </TabsContent>
 
-          <TabsContent value="messages" forceMount className="mt-6">
-            <MessagesModerationPage />
+          <TabsContent value="messages" className="mt-6">
+            <MessagesModerationPage 
+              donations={moderationDonations}
+              onRefresh={refreshModerationData}
+            />
           </TabsContent>
 
-          <TabsContent value="obs" forceMount className="mt-6">
+          <TabsContent value="obs" className="mt-6">
             <OBSSettings 
               streamer={streamer} 
               onStreamerUpdate={handleStreamerUpdate}
