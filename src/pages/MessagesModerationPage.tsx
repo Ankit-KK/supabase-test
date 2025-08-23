@@ -57,16 +57,18 @@ export const MessagesModerationPage = () => {
   };
 
   useEffect(() => {
+    if (!session?.streamerId) return;
     fetchDonations();
 
     // Set up real-time subscription for this specific streamer
+    const channelName = `donation-moderation-${session.streamerId}`;
     const subscription = supabase
-      .channel(`donation-moderation-${session?.streamerId}`)
+      .channel(channelName)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'chia_gaming_donations',
-        filter: `streamer_id=eq.${session?.streamerId}`,
+        filter: `streamer_id=eq.${session.streamerId}`,
       }, (payload) => {
         console.log('Real-time moderation update:', payload);
         
@@ -86,7 +88,9 @@ export const MessagesModerationPage = () => {
           });
         }
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Realtime status:', status, 'channel:', channelName);
+      });
 
     return () => {
       supabase.removeChannel(subscription);
