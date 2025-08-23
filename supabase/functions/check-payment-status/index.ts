@@ -152,15 +152,24 @@ serve(async (req) => {
 
                 for (const moderator of moderators) {
                   try {
-                    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                    const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+                    const payload: any = {
+                      chat_id: parseInt(moderator.telegram_user_id),
+                      text: messageText,
+                      parse_mode: 'Markdown',
+                      disable_web_page_preview: true,
+                      reply_markup: keyboard
+                    };
+                    console.log('Sending Telegram moderation message (404 path):', JSON.stringify(payload));
+                    const resp = await fetch(url, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        chat_id: moderator.telegram_user_id,
-                        text: messageText,
-                        reply_markup: keyboard
-                      })
+                      body: JSON.stringify(payload)
                     });
+                    if (!resp.ok) {
+                      const errText = await resp.text();
+                      console.error('Error sending Telegram message (404 path):', errText);
+                    }
                   } catch (e) {
                     console.error('Error notifying moderator (404 path):', e);
                   }
@@ -273,10 +282,13 @@ serve(async (req) => {
                 try {
                   const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
                   const payload: any = {
-                    chat_id: moderator.telegram_user_id,
+                    chat_id: parseInt(moderator.telegram_user_id),
                     text: messageText,
+                    parse_mode: 'Markdown',
+                    disable_web_page_preview: true,
                     reply_markup: keyboard
                   };
+                  console.log('Sending Telegram moderation message (success path):', JSON.stringify(payload));
                   const resp = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -284,7 +296,7 @@ serve(async (req) => {
                   });
                   if (!resp.ok) {
                     const errText = await resp.text();
-                    console.error('Error sending Telegram message:', errText);
+                    console.error('Error sending Telegram message (success path):', errText);
                   }
                 } catch (e) {
                   console.error('Error notifying moderator:', e);
