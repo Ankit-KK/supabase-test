@@ -12,6 +12,7 @@ interface Donation {
   payment_status: string;
   message_visible?: boolean;
   is_hyperemote?: boolean;
+  voice_message_url?: string;
 }
 
 interface Streamer {
@@ -162,7 +163,7 @@ const AlertsPage = () => {
             const donation = newDonation;
             console.log('New donation received:', { name: donation.name, amount: donation.amount, message: donation.message });
             
-            if (donation.is_hyperemote || donation.message_visible !== false) {
+            if (donation.is_hyperemote || donation.message_visible !== false || donation.voice_message_url) {
               setAlertQueue(prev => [...prev, { 
                 donation, 
                 timestamp: Date.now() 
@@ -176,7 +177,7 @@ const AlertsPage = () => {
             const donation = newDonation;
             console.log('Donation status updated to success:', { name: donation.name, amount: donation.amount });
             
-            if (donation.is_hyperemote || donation.message_visible !== false) {
+            if (donation.is_hyperemote || donation.message_visible !== false || donation.voice_message_url) {
               setAlertQueue(prev => [...prev, { 
                 donation, 
                 timestamp: Date.now() 
@@ -317,6 +318,9 @@ const AlertsPage = () => {
     if (currentAlert.donation.is_hyperemote) {
       // Hyperemotes show for 10 seconds
       totalTime = 10000;
+    } else if (currentAlert.donation.voice_message_url) {
+      // Voice messages show for 4 seconds
+      totalTime = 4000;
     } else {
       // Regular messages: typing time + display time
       const messageLength = currentAlert.donation.message?.length || 0;
@@ -470,7 +474,9 @@ const AlertsPage = () => {
             <div 
               className="p-4 rounded-xl shadow-xl text-center animate-fadeIn text-white"
               style={{ 
-                background: "linear-gradient(135deg, #4f46e5, #9333ea)",
+                background: currentAlert.donation.voice_message_url 
+                  ? "linear-gradient(135deg, #007BFF, #8A2BE2)" 
+                  : "linear-gradient(135deg, #1E90FF, #BF00FF)",
                 minWidth: "280px",
                 maxWidth: "400px"
               }}
@@ -481,11 +487,18 @@ const AlertsPage = () => {
               <p className="text-3xl font-extrabold mb-3 animate-pulse">
                 ₹{currentAlert.donation.amount}
               </p>
-              {currentAlert.donation.message && (
+              {currentAlert.donation.voice_message_url ? (
+                <div className="flex items-center justify-center gap-2">
+                  <svg className="w-5 h-5 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
+                  </svg>
+                  <p className="text-base font-light">sent a Voice message</p>
+                </div>
+              ) : currentAlert.donation.message ? (
                 <p className="text-base font-light">
                   {displayedMessage || "..."}
                 </p>
-              )}
+              ) : null}
             </div>
           </div>
         )}
