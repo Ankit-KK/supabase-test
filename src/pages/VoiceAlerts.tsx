@@ -14,6 +14,7 @@ interface VoiceDonation {
   voice_message_url?: string;
   created_at: string;
   payment_status: string;
+  moderation_status?: string;
   played?: boolean;
 }
 
@@ -86,6 +87,7 @@ const VoiceAlerts = () => {
         .select('*')
         .eq('streamer_id', streamer.id)
         .eq('payment_status', 'success')
+        .eq('moderation_status', 'approved')
         .not('voice_message_url', 'is', null)
         .order('created_at', { ascending: false })
         .limit(50);
@@ -113,7 +115,11 @@ const VoiceAlerts = () => {
           const donation = payload.new as VoiceDonation;
 
           if (payload.eventType === 'INSERT') {
-            if (donation.payment_status === 'success' && donation.voice_message_url) {
+            if (
+              donation.payment_status === 'success' &&
+              donation.moderation_status === 'approved' &&
+              donation.voice_message_url
+            ) {
               setVoiceDonations(prev => [donation, ...prev.slice(0, 49)]);
               if (autoPlay && !currentlyPlaying) {
                 playVoiceMessage(donation);
@@ -121,7 +127,11 @@ const VoiceAlerts = () => {
             }
           } else if (payload.eventType === 'UPDATE') {
             // If a pending donation gets its voice URL and success status later
-            if (donation.payment_status === 'success' && donation.voice_message_url) {
+            if (
+              donation.payment_status === 'success' &&
+              donation.moderation_status === 'approved' &&
+              donation.voice_message_url
+            ) {
               setVoiceDonations(prev => {
                 const exists = prev.some(d => d.id === donation.id);
                 return exists ? prev.map(d => d.id === donation.id ? donation : d) : [donation, ...prev.slice(0, 49)];
