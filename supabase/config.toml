@@ -2,3 +2,6 @@ project_id = "vsevsjvtrshgeiudrnth"
 
 [functions.submit-contact]
 verify_jwt = false
+
+[functions.get-telegram-user]
+verify_jwt = false
