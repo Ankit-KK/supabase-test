@@ -527,6 +527,10 @@ export type Database = {
           unique_visitors: number
         }[]
       }
+      is_admin_user: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       log_access_attempt: {
         Args: {
           p_action: string
