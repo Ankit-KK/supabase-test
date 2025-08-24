@@ -341,7 +341,7 @@ const ChiaGaming = () => {
         <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-gaming-pink-accent/10 rounded-full blur-2xl animate-pulse-glow"></div>
       </div>
 
-      <Card className="w-full max-w-md mx-auto bg-card/95 backdrop-blur-sm border-gaming-pink-primary/20 shadow-2xl relative overflow-hidden">
+      <Card className="w-full max-w-md mx-auto bg-cover bg-center bg-no-repeat border-gaming-pink-primary/20 shadow-2xl relative overflow-hidden" style={{ backgroundImage: 'url(/lovable-uploads/8a388a78-3b65-494b-86b7-883898658092.png)' }}>
         {/* Card glow effect */}
         <div className="absolute inset-0 bg-gradient-to-r from-gaming-pink-primary/20 via-gaming-pink-secondary/20 to-gaming-pink-accent/20 opacity-50 blur-xl"></div>
         
