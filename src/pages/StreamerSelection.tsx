@@ -22,7 +22,7 @@ const StreamerSelection = () => {
     if (!user) return;
     
     // Directly redirect authenticated users to the chia gaming dashboard
-    navigate('/chia_gaming/dashboard');
+    navigate('/chiaa_gaming/dashboard');
   }, [user, navigate]);
 
   if (loading) {

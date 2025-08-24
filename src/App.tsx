@@ -15,11 +15,11 @@ import Sitemap from "./pages/Sitemap";
 import SitemapXml from "./pages/SitemapXml";
 import NotFound from "./pages/NotFound";
 import FeatureShowcase from "./pages/FeatureShowcase";
-import ChiaGaming from "./pages/ChiaGaming";
+import ChiaaGaming from "./pages/ChiaaGaming";
 import Status from "./pages/Status";
 import UpiSecurityBestPractices from "./pages/blog/UpiSecurityBestPractices";
 import Auth from "./pages/Auth";
-import ChiaGamingLogin from "./pages/ChiaGamingLogin";
+import ChiaaGamingLogin from "./pages/ChiaaGamingLogin";
 import StreamerDashboard from "./pages/StreamerDashboard";
 import AlertsPage from "./pages/AlertsPage";
 import VoiceAlerts from "./pages/VoiceAlerts";
@@ -43,13 +43,13 @@ const App = () => (
             <Route path="/sitemap" element={<Sitemap />} />
             <Route path="/sitemap.xml" element={<SitemapXml />} />
             <Route path="/feature-showcase" element={<FeatureShowcase />} />
-            <Route path="/chia_gaming" element={<ChiaGaming />} />
+            <Route path="/chiaa_gaming" element={<ChiaaGaming />} />
             <Route path="/status" element={<Status />} />
             
             {/* Authentication */}
             <Route path="/auth" element={<Auth />} />
-            <Route path="/chia_gaming/login" element={<ChiaGamingLogin />} />
-            <Route path="/chia_gaming/dashboard" element={<StreamerDashboard />} />
+            <Route path="/chiaa_gaming/login" element={<ChiaaGamingLogin />} />
+            <Route path="/chiaa_gaming/dashboard" element={<StreamerDashboard />} />
             
             {/* OBS Alerts */}
             <Route path="/alerts/:token" element={<AlertsPage />} />

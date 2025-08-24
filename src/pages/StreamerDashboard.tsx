@@ -308,7 +308,7 @@ const StreamerDashboard = () => {
 
   // Redirect if not authenticated
   if (!session) {
-    return <Navigate to="/chia_gaming/login" replace />;
+    return <Navigate to="/chiaa_gaming/login" replace />;
   }
 
   if (loadingData) {

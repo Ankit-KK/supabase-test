@@ -161,7 +161,7 @@ export default function Status() {
 
           <div className="flex flex-col gap-2">
             <Button asChild className="w-full">
-              <Link to="/chia_gaming">
+              <Link to="/chiaa_gaming">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Donation Page
               </Link>

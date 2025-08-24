@@ -22,7 +22,7 @@ const ChiaGamingLogin = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (session && !loading) {
-      navigate('/chia_gaming/dashboard');
+      navigate('/chiaa_gaming/dashboard');
     }
   }, [session, loading, navigate]);
 
@@ -85,7 +85,7 @@ const ChiaGamingLogin = () => {
       });
 
       // Navigate to dashboard
-      navigate('/chia_gaming/dashboard');
+      navigate('/chiaa_gaming/dashboard');
 
     } catch (error) {
       console.error('Login error:', error);
