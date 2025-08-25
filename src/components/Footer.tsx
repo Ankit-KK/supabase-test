@@ -17,7 +17,7 @@ const Footer: React.FC = () => {
             <div className="space-y-1 text-xs text-muted-foreground">
               <p>✓ Direct fan support via UPI</p>
               <p>✓ Get paid by fans instantly</p>
-              <p>✓ Virtual gifts for live streamers</p>
+              <p>✓ Voice messages with donations</p>
             </div>
           </div>
           <div>
@@ -32,7 +32,7 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="font-medium mb-4">Features</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-hyperchat-purple transition-colors">Virtual Gifting</a></li>
+              <li><a href="#" className="hover:text-hyperchat-purple transition-colors">Voice Messages</a></li>
               <li><a href="#" className="hover:text-hyperchat-purple transition-colors">Fan Engagement</a></li>
               <li><a href="#" className="hover:text-hyperchat-purple transition-colors">UPI-based Tipping Solution</a></li>
               <li><a href="#" className="hover:text-hyperchat-purple transition-colors">Indian Streaming Monetization</a></li>

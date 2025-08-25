@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, Mic, Gift, IndianRupee } from "lucide-react";
+import { ChevronRight, Mic, IndianRupee } from "lucide-react";
 import CanyonAnimatedText from "@/components/CanyonAnimatedText";
 import SignupDialog from "@/components/SignupDialog";
 
@@ -33,7 +33,7 @@ const HeroWithCanyonAnimation = () => {
             </div>
             
             <p className="text-xl md:text-2xl text-muted-foreground max-w-[50ch] mx-auto">
-              The world's first platform where fans send voice messages and custom GIFs with UPI donations. Built for Indian creators, powered by Indian innovation.
+              The world's first platform where fans send voice messages with UPI donations. Built for Indian creators, powered by Indian innovation.
             </p>
             
             <div className="flex flex-col sm:flex-row justify-center gap-4">
@@ -51,24 +51,17 @@ const HeroWithCanyonAnimation = () => {
                 className="border-hyperchat-purple text-hyperchat-purple hover:bg-hyperchat-purple hover:text-white rounded-full font-medium"
                 onClick={() => setShowSignupDialog(true)}
               >
-                Upgrade with Voice & GIFs
+                Upgrade with Voice Messages
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 text-sm">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12 text-sm max-w-2xl mx-auto">
               <div className="flex flex-col items-center space-y-3 p-4 rounded-lg bg-secondary/20 border border-white/10">
                 <div className="flex items-center gap-2">
                   <Mic className="text-hyperchat-pink h-5 w-5" />
                   <div className="text-hyperchat-pink font-semibold">Voice Messages</div>
                 </div>
                 <div className="text-muted-foreground text-center">Record your voice with donations. Real emotions, real connections.</div>
-              </div>
-              <div className="flex flex-col items-center space-y-3 p-4 rounded-lg bg-secondary/20 border border-white/10">
-                <div className="flex items-center gap-2">
-                  <Gift className="text-hyperchat-purple h-5 w-5" />
-                  <div className="text-hyperchat-purple font-semibold">Custom GIFs</div>
-                </div>
-                <div className="text-muted-foreground text-center">Upload your own GIFs for personalized donation alerts</div>
               </div>
               <div className="flex flex-col items-center space-y-3 p-4 rounded-lg bg-secondary/20 border border-white/10">
                 <div className="flex items-center gap-2">
@@ -90,10 +83,10 @@ const HeroWithCanyonAnimation = () => {
                     <Mic className="h-4 w-4 text-hyperchat-purple" />
                   </div>
                   <div className="text-white text-lg mt-2 font-medium">
-                    🎤 "Bhai, your gameplay is insane! Keep it up!" + Custom GIF 🔥
+                    🎤 "Bhai, your gameplay is insane! Keep it up!" 🔥
                   </div>
                   <div className="text-xs text-white/70 mt-2">
-                    Voice message + GIF • Powered by UPI
+                    Voice message • Powered by UPI
                   </div>
                 </div>
               </div>

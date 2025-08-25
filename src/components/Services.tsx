@@ -76,12 +76,12 @@ const Services: React.FC = () => {
               <div className="bg-gradient-to-br from-hyperchat-purple to-hyperchat-pink p-2 rounded-lg">
                 <MessageCircle className="text-white h-5 w-5" />
               </div>
-              <h3 className="text-xl font-semibold">Live Chat Tipping & Virtual Gifting</h3>
+              <h3 className="text-xl font-semibold">Live Chat Tipping & Voice Messages</h3>
             </div>
             <ul className="space-y-2">
               <li className="flex items-start gap-2">
                 <Check size={18} className="shrink-0 mt-1 text-hyperchat-pink" />
-                <span className="text-muted-foreground">Virtual gifts for live streamers with animations</span>
+                <span className="text-muted-foreground">Voice messages with donations for authentic fan interaction</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check size={18} className="shrink-0 mt-1 text-hyperchat-pink" />

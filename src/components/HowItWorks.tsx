@@ -19,7 +19,7 @@ const HowItWorks = () => {
     {
       icon: <Users className="text-white" size={24} />,
       title: "Engage Your Fans",
-      description: "Let fans tip your favorite content creators with virtual gifts, live chat tipping, and interactive fan engagement tools.",
+      description: "Let fans tip your favorite content creators with voice messages, live chat tipping, and interactive fan engagement tools.",
       gradient: "bg-gradient-to-br from-hyperchat-orange to-hyperchat-pink",
     },
     {
@@ -63,7 +63,7 @@ const HowItWorks = () => {
           <div className="bg-secondary/50 p-8 rounded-xl border border-white/10 max-w-4xl mx-auto">
             <h3 className="text-2xl font-bold mb-4">Ready to Start Your Content Monetization Journey?</h3>
             <p className="text-muted-foreground mb-6">
-              Join thousands of creators already using our UPI for content creators platform to earn money from streaming and receive virtual gifts for live streamers.
+              Join thousands of creators already using our UPI for content creators platform to earn money from streaming and receive voice messages with donations.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
               <div className="flex items-center justify-center space-x-2">
