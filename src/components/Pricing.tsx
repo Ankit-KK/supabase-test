@@ -141,19 +141,6 @@ const Pricing: React.FC = () => {
       ],
     },
     {
-      name: "Custom GIFs",
-      description: "Viewers upload custom GIFs with donations",
-      price: "500",
-      icon: <Gift className="text-white h-5 w-5" />,
-      gradient: "bg-gradient-to-br from-hyperchat-pink to-hyperchat-orange",
-      features: [
-        "Fan GIF uploads",
-        "Live GIF alerts",
-        "GIF moderation tools",
-        "Custom display duration",
-      ],
-    },
-    {
       name: "HyperEmotes",
       description: "Epic emoji rain effects for premium donations",
       price: "500",
@@ -183,17 +170,16 @@ const Pricing: React.FC = () => {
 
   const bundleOffer = {
     name: "Complete Bundle",
-    description: "Base Plan + Voice + GIFs + HyperEmotes",
-    price: "1299",
-    originalPrice: "1500",
+    description: "Base Plan + Voice + HyperEmotes",
+    price: "999",
+    originalPrice: "1399",
     popular: true,
     gradient: "bg-hero-gradient",
     icon: <Crown className="text-white h-5 w-5" />,
-    badge: "SAVE ₹200",
+    badge: "SAVE ₹400",
     features: [
       "Everything in Base Plan",
       "Voice message recordings",
-      "Custom GIF uploads by fans",
       "HyperEmotes emoji rain effects",
       "Advanced customization",
       "Priority support",
@@ -231,7 +217,7 @@ const Pricing: React.FC = () => {
         {/* Add-Ons Section */}
         <div className="max-w-6xl mx-auto mb-12">
           <h3 className="text-2xl font-bold text-center mb-8">Add-On Features</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {addOns.map((addon, index) => (
               <PricingPlan
                 key={index}
