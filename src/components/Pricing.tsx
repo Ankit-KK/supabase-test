@@ -85,10 +85,10 @@ const PricingPlan: React.FC<PricingPlanProps> = ({
           </ul>
           
           <Button
-            className={`w-full ${
+            className={`w-full transition-all duration-300 ${
               popular
-                ? 'bg-hero-gradient hover:opacity-90 transition-opacity'
-                : 'bg-secondary hover:bg-secondary/80'
+                ? 'bg-gradient-to-r from-gaming-pink-primary to-gaming-pink-accent hover:from-gaming-pink-accent hover:to-gaming-pink-primary transform hover:scale-105 shadow-lg hover:shadow-gaming-pink-primary/50'
+                : 'bg-gradient-to-r from-hyperchat-blue to-hyperchat-purple hover:from-hyperchat-purple hover:to-hyperchat-blue transform hover:scale-105 shadow-lg hover:shadow-hyperchat-blue/50'
             }`}
             onClick={() => setShowSignupDialog(true)}
           >
