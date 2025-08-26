@@ -105,47 +105,53 @@ const VoiceAlerts = () => {
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'chia_gaming_donations',
           filter: `streamer_id=eq.${streamer.id}`
         },
         (payload) => {
-          console.log('Voice donation update:', payload);
+          console.log('Voice donation INSERT:', payload);
           const donation = payload.new as VoiceDonation;
-
-          if (payload.eventType === 'INSERT') {
-            if (
-              donation.payment_status === 'success' &&
-              donation.moderation_status === 'approved' &&
-              donation.voice_message_url
-            ) {
-              setVoiceDonations(prev => [donation, ...prev.slice(0, 49)]);
-              // Check if should autoplay without causing subscription recreation
-              setTimeout(() => {
-                if (autoPlay && !audioRef.current?.currentTime) {
-                  playVoiceMessage(donation);
-                }
-              }, 100);
-            }
-          } else if (payload.eventType === 'UPDATE') {
-            // If a pending donation gets its voice URL and success status later
-            if (
-              donation.payment_status === 'success' &&
-              donation.moderation_status === 'approved' &&
-              donation.voice_message_url
-            ) {
-              setVoiceDonations(prev => {
-                const exists = prev.some(d => d.id === donation.id);
-                return exists ? prev.map(d => d.id === donation.id ? donation : d) : [donation, ...prev.slice(0, 49)];
-              });
-              // Check if should autoplay without causing subscription recreation
-              setTimeout(() => {
-                if (autoPlay && !audioRef.current?.currentTime) {
-                  playVoiceMessage(donation);
-                }
-              }, 100);
-            }
+          if (
+            donation.payment_status === 'success' &&
+            donation.moderation_status === 'approved' &&
+            donation.voice_message_url
+          ) {
+            setVoiceDonations(prev => [donation, ...prev.slice(0, 49)]);
+            setTimeout(() => {
+              if (autoPlay && !audioRef.current?.currentTime) {
+                playVoiceMessage(donation);
+              }
+            }, 100);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'chia_gaming_donations',
+          filter: `streamer_id=eq.${streamer.id}`
+        },
+        (payload) => {
+          console.log('Voice donation UPDATE:', payload);
+          const donation = payload.new as VoiceDonation;
+          if (
+            donation.payment_status === 'success' &&
+            donation.moderation_status === 'approved' &&
+            donation.voice_message_url
+          ) {
+            setVoiceDonations(prev => {
+              const exists = prev.some(d => d.id === donation.id);
+              return exists ? prev.map(d => d.id === donation.id ? donation : d) : [donation, ...prev.slice(0, 49)];
+            });
+            setTimeout(() => {
+              if (autoPlay && !audioRef.current?.currentTime) {
+                playVoiceMessage(donation);
+              }
+            }, 100);
           }
         }
       )
