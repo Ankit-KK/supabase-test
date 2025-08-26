@@ -121,9 +121,12 @@ const VoiceAlerts = () => {
               donation.voice_message_url
             ) {
               setVoiceDonations(prev => [donation, ...prev.slice(0, 49)]);
-              if (autoPlay && !currentlyPlaying) {
-                playVoiceMessage(donation);
-              }
+              // Check if should autoplay without causing subscription recreation
+              setTimeout(() => {
+                if (autoPlay && !audioRef.current?.currentTime) {
+                  playVoiceMessage(donation);
+                }
+              }, 100);
             }
           } else if (payload.eventType === 'UPDATE') {
             // If a pending donation gets its voice URL and success status later
@@ -136,9 +139,12 @@ const VoiceAlerts = () => {
                 const exists = prev.some(d => d.id === donation.id);
                 return exists ? prev.map(d => d.id === donation.id ? donation : d) : [donation, ...prev.slice(0, 49)];
               });
-              if (autoPlay && !currentlyPlaying) {
-                playVoiceMessage(donation);
-              }
+              // Check if should autoplay without causing subscription recreation
+              setTimeout(() => {
+                if (autoPlay && !audioRef.current?.currentTime) {
+                  playVoiceMessage(donation);
+                }
+              }, 100);
             }
           }
         }
@@ -148,7 +154,7 @@ const VoiceAlerts = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [streamer?.id, autoPlay, currentlyPlaying]);
+  }, [streamer?.id]);
 
   const playVoiceMessage = (donation: VoiceDonation) => {
     if (!donation.voice_message_url || isMuted) return;
