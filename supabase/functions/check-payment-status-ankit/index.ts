@@ -171,6 +171,7 @@ serve(async (req) => {
             
             // Notify moderators if payment is successful and needs moderation
             if (finalStatus === 'success' && donation.moderation_status === 'pending') {
+              console.log('Payment successful and pending moderation, sending Telegram notifications...');
               const notificationMessage = `
 🎉 <b>New Donation for Ankit!</b>
 
@@ -181,7 +182,12 @@ serve(async (req) => {
 Please approve or reject this donation in the dashboard.
               `.trim();
               
-              await notifyTelegramModerators(donation.streamer_id, notificationMessage, supabaseAdmin);
+              try {
+                await notifyTelegramModerators(donation.streamer_id, notificationMessage, supabaseAdmin);
+                console.log('Telegram notifications sent successfully');
+              } catch (telegramError) {
+                console.error('Error sending Telegram notifications:', telegramError);
+              }
             }
           }
         }
