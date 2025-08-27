@@ -21,8 +21,11 @@ export default function Status() {
       }
 
       try {
-        // Call edge function to check payment status
-        const { data, error } = await supabase.functions.invoke('check-payment-status', {
+        // Determine which function to call based on order ID prefix
+        const functionName = orderId.startsWith('ankit_') ? 'check-payment-status-ankit' : 'check-payment-status';
+        
+        // Call the appropriate edge function to check payment status
+        const { data, error } = await supabase.functions.invoke(functionName, {
           body: { order_id: orderId }
         });
 
@@ -71,7 +74,8 @@ export default function Status() {
         if (finalStatus === 'success') {
           try {
             console.log('Payment successful, checking for voice message upload...');
-            const { data: uploadResult, error: uploadError } = await supabase.functions.invoke('upload-voice-message', {
+            const voiceFunctionName = orderId.startsWith('ankit_') ? 'upload-voice-message-ankit' : 'upload-voice-message';
+            const { data: uploadResult, error: uploadError } = await supabase.functions.invoke(voiceFunctionName, {
               body: { order_id: orderId }
             });
             
@@ -161,7 +165,7 @@ export default function Status() {
 
           <div className="flex flex-col gap-2">
             <Button asChild className="w-full">
-              <Link to="/chiaa_gaming">
+              <Link to={orderId?.startsWith('ankit_') ? "/ankit" : "/chiaa_gaming"}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Donation Page
               </Link>

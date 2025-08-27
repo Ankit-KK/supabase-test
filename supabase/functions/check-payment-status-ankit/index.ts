@@ -85,7 +85,19 @@ serve(async (req) => {
         .single();
         
       if (altError || !altDonation) {
-        throw new Error("Donation not found");
+        return new Response(
+          JSON.stringify({
+            success: false,
+            order_id: order_id,
+            payments: [],
+            final_status: 'failure',
+            error: 'Donation not found'
+          }),
+          { 
+            status: 404,
+            headers: { ...corsHeaders, "Content-Type": "application/json" } 
+          }
+        );
       }
       donation = altDonation;
     }
@@ -184,15 +196,14 @@ Please approve or reject this donation in the dashboard.
     return new Response(
       JSON.stringify({
         success: true,
-        payment_status: paymentStatus,
-        order_details: {
-          order_id: donation.order_id,
-          amount: donation.amount,
-          name: donation.name,
-          message: donation.message,
-          created_at: donation.created_at
+        order_id: donation.order_id,
+        payments: [], // Keep empty for compatibility
+        final_status: paymentStatus,
+        order_amount: donation.amount,
+        customer_details: customerDetails || {
+          customer_name: donation.name
         },
-        customer_details: customerDetails
+        message: donation.message
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
@@ -202,6 +213,9 @@ Please approve or reject this donation in the dashboard.
     return new Response(
       JSON.stringify({
         success: false,
+        order_id: "",
+        payments: [],
+        final_status: 'failure',
         error: error.message
       }),
       { 
