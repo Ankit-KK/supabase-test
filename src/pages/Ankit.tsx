@@ -89,13 +89,10 @@ const Ankit = () => {
     const fetchStreamerSettings = async () => {
       try {
         const { data, error } = await supabase
-          .from('streamers')
-          .select('id, hyperemotes_enabled, hyperemotes_min_amount')
-          .eq('streamer_slug', 'ankit')
-          .maybeSingle();
+          .rpc('get_streamer_public_settings', { slug: 'ankit' });
 
         if (error) throw error;
-        if (data) setStreamerSettings(data);
+        if (data && data.length > 0) setStreamerSettings(data[0]);
       } catch (error) {
         console.error('Failed to fetch streamer settings:', error);
       }

@@ -646,6 +646,14 @@ export type Database = {
         Args: { p_streamer_id: string }
         Returns: number
       }
+      get_streamer_public_settings: {
+        Args: { slug: string }
+        Returns: {
+          hyperemotes_enabled: boolean
+          hyperemotes_min_amount: number
+          id: string
+        }[]
+      }
       get_user_profile: {
         Args: { user_id: string }
         Returns: {
