@@ -171,67 +171,14 @@ serve(async (req) => {
             
             // Notify moderators if payment is successful and needs moderation and not already notified
             if (finalStatus === 'success' && donation.moderation_status === 'pending' && !donation.mod_notified) {
-              console.log('Payment successful and pending moderation, sending Telegram notifications...');
-              const telegramBotToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
-              if (!telegramBotToken) {
-                console.log('No Telegram bot token configured, skipping moderator notifications');
-              } else {
-                // Fetch active moderators for this streamer
-                const { data: moderators, error: modErr } = await supabaseAdmin
-                  .from('streamers_moderators')
-                  .select('telegram_user_id')
-                  .eq('streamer_id', donation.streamer_id)
-                  .eq('is_active', true);
-                if (modErr) {
-                  console.error('Error fetching moderators:', modErr);
-                } else if (!moderators || moderators.length === 0) {
-                  console.log('No active moderators found for streamer', donation.streamer_id);
-                } else {
-                  console.log(`Sending notifications to ${moderators.length} moderators`);
-                  const messageText = `🎁 <b>New Donation</b>\n\n💰 <b>Amount:</b> ₹${donation.amount}\n👤 <b>From:</b> ${donation.name}${donation.message ? `\n💬 <b>Message:</b> ${donation.message}` : ''}`;
-                  const inlineKeyboard: any = {
-                    inline_keyboard: [
-                      [
-                        { text: '✅ Approve', callback_data: `approve_${donation.id}` },
-                        { text: '❌ Reject', callback_data: `reject_${donation.id}` }
-                      ]
-                    ]
-                  };
-                  let successCount = 0;
-                  for (const mod of moderators) {
-                    if (!mod.telegram_user_id) continue;
-                    try {
-                      console.log(`Sending notification to moderator ${mod.telegram_user_id}`);
-                      const response = await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          chat_id: mod.telegram_user_id,
-                          text: messageText,
-                          parse_mode: 'HTML',
-                          reply_markup: inlineKeyboard
-                        })
-                      });
-                      const result = await response.json();
-                      if (response.ok) {
-                        console.log(`Successfully sent notification to ${mod.telegram_user_id}:`, result);
-                        successCount++;
-                      } else {
-                        console.error(`Failed to send notification to ${mod.telegram_user_id}:`, result);
-                      }
-                    } catch (err) {
-                      console.error('Error sending Telegram message to moderator:', err);
-                    }
-                  }
-                  // Mark as notified if at least one message was sent successfully
-                  if (successCount > 0) {
-                    await supabaseAdmin
-                      .from('ankit_donations')
-                      .update({ mod_notified: true })
-                      .eq('id', donation.id);
-                    console.log(`Marked donation ${donation.id} as mod_notified`);
-                  }
-                }
+              console.log('Payment successful and pending moderation, triggering Telegram notifications...');
+              try {
+                await supabaseAdmin.functions.invoke('notify-moderators-ankit', {
+                  body: { donation_id: donation.id }
+                });
+                console.log('Telegram notification function invoked successfully');
+              } catch (telegramError) {
+                console.error('Error invoking Telegram notification function:', telegramError);
               }
             }
           }

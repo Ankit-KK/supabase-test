@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.generate-obs-token]
 verify_jwt = false
+
+[functions.notify-moderators-ankit]
+verify_jwt = false
