@@ -122,6 +122,13 @@ export type Database = {
             foreignKeyName: "chia_gaming_donations_streamer_id_fkey"
             columns: ["streamer_id"]
             isOneToOne: false
+            referencedRelation: "public_streamers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chia_gaming_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
             referencedRelation: "streamers"
             referencedColumns: ["id"]
           },
@@ -349,6 +356,13 @@ export type Database = {
             foreignKeyName: "streamers_moderators_streamer_id_fkey"
             columns: ["streamer_id"]
             isOneToOne: false
+            referencedRelation: "public_streamers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "streamers_moderators_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
             referencedRelation: "streamers"
             referencedColumns: ["id"]
           },
@@ -422,7 +436,42 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_streamers: {
+        Row: {
+          brand_color: string | null
+          brand_logo_url: string | null
+          created_at: string | null
+          hyperemotes_enabled: boolean | null
+          hyperemotes_min_amount: number | null
+          id: string | null
+          streamer_name: string | null
+          streamer_slug: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          brand_color?: string | null
+          brand_logo_url?: string | null
+          created_at?: string | null
+          hyperemotes_enabled?: boolean | null
+          hyperemotes_min_amount?: number | null
+          id?: string | null
+          streamer_name?: string | null
+          streamer_slug?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          brand_color?: string | null
+          brand_logo_url?: string | null
+          created_at?: string | null
+          hyperemotes_enabled?: boolean | null
+          hyperemotes_min_amount?: number | null
+          id?: string | null
+          streamer_name?: string | null
+          streamer_slug?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       authenticate_streamer: {
