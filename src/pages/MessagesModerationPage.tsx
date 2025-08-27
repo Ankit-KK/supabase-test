@@ -35,9 +35,12 @@ interface Props {
     brandColor: string;
     loginTime: number;
   } | null;
+  tableName?: 'chia_gaming_donations' | 'ankit_donations';
+  approveFunctionName?: string;
+  rejectFunctionName?: string;
 }
 
-export const MessagesModerationPage = ({ donations: propDonations, onRefresh, session: propSession }: Props = {}) => {
+export const MessagesModerationPage = ({ donations: propDonations, onRefresh, session: propSession, tableName = 'chia_gaming_donations', approveFunctionName = 'approve-donation', rejectFunctionName = 'reject-donation' }: Props = {}) => {
   const session = propSession;
   const [donations, setDonations] = useState<Donation[]>(propDonations || []);
   const [loading, setLoading] = useState(true);
@@ -49,7 +52,7 @@ export const MessagesModerationPage = ({ donations: propDonations, onRefresh, se
 
     try {
       const { data, error } = await supabase
-        .from('chia_gaming_donations')
+        .from(tableName)
         .select('*')
         .eq('streamer_id', session.streamerId)
         .eq('payment_status', 'success')
@@ -87,7 +90,7 @@ export const MessagesModerationPage = ({ donations: propDonations, onRefresh, se
   const handleApprove = async (donationId: string) => {
     setProcessingId(donationId);
     try {
-      const { error } = await supabase.functions.invoke('approve-donation', {
+      const { error } = await supabase.functions.invoke(approveFunctionName, {
         body: { 
           donation_id: donationId,
           streamer_session: session 
@@ -118,7 +121,7 @@ export const MessagesModerationPage = ({ donations: propDonations, onRefresh, se
   const handleReject = async (donationId: string, reason?: string) => {
     setProcessingId(donationId);
     try {
-      const { error } = await supabase.functions.invoke('reject-donation', {
+      const { error } = await supabase.functions.invoke(rejectFunctionName, {
         body: { 
           donation_id: donationId, 
           reason: reason || 'Inappropriate content',

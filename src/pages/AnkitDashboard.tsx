@@ -496,6 +496,9 @@ const AnkitDashboard = () => {
               donations={moderationDonations}
               onRefresh={refreshModerationData}
               session={session}
+              tableName="ankit_donations"
+              approveFunctionName="approve-donation-ankit"
+              rejectFunctionName="reject-donation-ankit"
             />
           </TabsContent>
 
