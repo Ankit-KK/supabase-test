@@ -93,19 +93,16 @@ const StreamerOBSSettings = () => {
           setObsToken(activeToken.token);
           setStreamer(prev => prev ? { ...prev, obs_token: activeToken.token } : null);
         } else {
-          // Generate new token in new table
-          const newToken = generateObsToken();
-          const { error: insertError } = await supabase
-            .from('obs_tokens')
-            .insert({
-              streamer_id: streamerInfo.id,
-              token: newToken,
-              is_active: true
-            });
+          // Generate new token via edge function
+          const { data, error } = await supabase.functions.invoke('generate-obs-token', {
+            body: { streamerId: streamerInfo.id }
+          });
 
-          if (!insertError) {
-            setObsToken(newToken);
-            setStreamer(prev => prev ? { ...prev, obs_token: newToken } : null);
+          if (error) {
+            console.error('Error generating OBS token:', error);
+          } else if (data?.token) {
+            setObsToken(data.token);
+            setStreamer(prev => prev ? { ...prev, obs_token: data.token } : null);
           }
         }
 

@@ -126,23 +126,19 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
         return;
       }
 
-      // Generate new token
-      const newToken = generateObsToken();
-      const { error } = await supabase
-        .from('obs_tokens')
-        .insert({
-          streamer_id: streamer.id,
-          token: newToken,
-          is_active: true
-        });
+      // Generate new token via edge function
+      const { data, error } = await supabase.functions.invoke('generate-obs-token', {
+        body: { streamerId: streamer.id }
+      });
 
       if (error) throw error;
+      if (!data?.token) throw new Error('No token received');
 
-      setObsToken(newToken);
-    } catch (error) {
+      setObsToken(data.token);
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to generate OBS token",
+        description: error?.message || "Failed to generate OBS token",
         variant: "destructive",
       });
     }
