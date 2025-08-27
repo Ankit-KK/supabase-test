@@ -637,6 +637,17 @@ export type Database = {
           streamer_slug: string
         }[]
       }
+      validate_obs_token_secure: {
+        Args: { token_to_check: string }
+        Returns: {
+          brand_color: string
+          brand_logo_url: string
+          is_valid: boolean
+          streamer_id: string
+          streamer_name: string
+          streamer_slug: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
