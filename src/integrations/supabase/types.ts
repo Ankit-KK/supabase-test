@@ -563,6 +563,17 @@ export type Database = {
         Args: { new_username: string; user_id: string }
         Returns: undefined
       }
+      validate_obs_token: {
+        Args: { token_to_check: string }
+        Returns: {
+          brand_color: string
+          brand_logo_url: string
+          is_valid: boolean
+          streamer_id: string
+          streamer_name: string
+          streamer_slug: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
