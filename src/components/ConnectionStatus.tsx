@@ -11,7 +11,7 @@ export const ConnectionStatus = () => {
     const checkConnection = async () => {
       try {
         // Test basic connection
-        const { data, error } = await supabase.from('streamers').select('count').limit(1);
+        const { data, error } = await supabase.rpc('get_public_streamer_info', { slug: 'ankit' });
         
         if (error) {
           setStatus('error');
@@ -34,7 +34,7 @@ export const ConnectionStatus = () => {
     setError('');
     
     try {
-      const { data, error } = await supabase.from('streamers').select('count').limit(1);
+      const { data, error } = await supabase.rpc('get_public_streamer_info', { slug: 'ankit' });
       
       if (error) {
         setStatus('error');
