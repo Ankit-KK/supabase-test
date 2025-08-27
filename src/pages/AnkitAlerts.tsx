@@ -15,6 +15,7 @@ interface Donation {
   created_at: string;
   is_hyperemote?: boolean | null;
   payment_status?: string | null;
+  message_visible?: boolean;
 }
 
 interface Streamer {

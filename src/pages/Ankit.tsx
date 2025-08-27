@@ -479,8 +479,12 @@ const Ankit = () => {
                   Record Voice Message *
                 </label>
                 <VoiceRecorder
-                  maxDuration={60}
-                  voiceRecorder={voiceRecorder}
+                  onRecordingComplete={(hasRecording, duration) => {
+                    setHasVoiceRecording(hasRecording);
+                    setVoiceDuration(duration);
+                  }}
+                  maxDurationSeconds={60}
+                  controller={voiceRecorder}
                 />
               </div>
             )}
