@@ -169,8 +169,8 @@ serve(async (req) => {
           } else {
             console.log(`Payment status updated to: ${finalStatus}`);
             
-            // Notify moderators if payment is successful and needs moderation
-            if (finalStatus === 'success' && donation.moderation_status === 'pending') {
+            // Notify moderators if payment is successful and needs moderation and not already notified
+            if (finalStatus === 'success' && donation.moderation_status === 'pending' && !donation.mod_notified) {
               console.log('Payment successful and pending moderation, sending Telegram notifications...');
               const telegramBotToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
               if (!telegramBotToken) {
@@ -187,6 +187,7 @@ serve(async (req) => {
                 } else if (!moderators || moderators.length === 0) {
                   console.log('No active moderators found for streamer', donation.streamer_id);
                 } else {
+                  console.log(`Sending notifications to ${moderators.length} moderators`);
                   const messageText = `🎁 <b>New Donation</b>\n\n💰 <b>Amount:</b> ₹${donation.amount}\n👤 <b>From:</b> ${donation.name}${donation.message ? `\n💬 <b>Message:</b> ${donation.message}` : ''}`;
                   const inlineKeyboard: any = {
                     inline_keyboard: [
@@ -196,11 +197,12 @@ serve(async (req) => {
                       ]
                     ]
                   };
-                  // Optional play voice row
+                  let successCount = 0;
                   for (const mod of moderators) {
                     if (!mod.telegram_user_id) continue;
                     try {
-                      await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
+                      console.log(`Sending notification to moderator ${mod.telegram_user_id}`);
+                      const response = await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -210,9 +212,24 @@ serve(async (req) => {
                           reply_markup: inlineKeyboard
                         })
                       });
+                      const result = await response.json();
+                      if (response.ok) {
+                        console.log(`Successfully sent notification to ${mod.telegram_user_id}:`, result);
+                        successCount++;
+                      } else {
+                        console.error(`Failed to send notification to ${mod.telegram_user_id}:`, result);
+                      }
                     } catch (err) {
                       console.error('Error sending Telegram message to moderator:', err);
                     }
+                  }
+                  // Mark as notified if at least one message was sent successfully
+                  if (successCount > 0) {
+                    await supabaseAdmin
+                      .from('ankit_donations')
+                      .update({ mod_notified: true })
+                      .eq('id', donation.id);
+                    console.log(`Marked donation ${donation.id} as mod_notified`);
                   }
                 }
               }

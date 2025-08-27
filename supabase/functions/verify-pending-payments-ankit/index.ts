@@ -122,6 +122,55 @@ serve(async (req) => {
             console.log(`Updated donation ${donation.order_id} status to: ${finalStatus}`);
             updatedCount++;
 
+            // Notify moderators via Telegram if payment succeeded and needs moderation
+            if (finalStatus === 'success' && donation.moderation_status === 'pending' && !donation.mod_notified) {
+              console.log('Triggering Telegram notification for payment success');
+              const telegramBotToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
+              if (telegramBotToken) {
+                const { data: moderators, error: modErr } = await supabaseAdmin
+                  .from('streamers_moderators')
+                  .select('telegram_user_id')
+                  .eq('streamer_id', donation.streamer_id)
+                  .eq('is_active', true);
+                if (!modErr && moderators && moderators.length > 0) {
+                  const messageText = `🎁 <b>New Donation</b>\n\n💰 <b>Amount:</b> ₹${donation.amount}\n👤 <b>From:</b> ${donation.name}${donation.message ? `\n💬 <b>Message:</b> ${donation.message}` : ''}`;
+                  const inlineKeyboard: any = {
+                    inline_keyboard: [
+                      [
+                        { text: '✅ Approve', callback_data: `approve_${donation.id}` },
+                        { text: '❌ Reject', callback_data: `reject_${donation.id}` }
+                      ]
+                    ]
+                  };
+                  let successCount = 0;
+                  for (const mod of moderators) {
+                    if (!mod.telegram_user_id) continue;
+                    try {
+                      const response = await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          chat_id: mod.telegram_user_id,
+                          text: messageText,
+                          parse_mode: 'HTML',
+                          reply_markup: inlineKeyboard
+                        })
+                      });
+                      if (response.ok) successCount++;
+                    } catch (err) {
+                      console.error('Error sending Telegram notification:', err);
+                    }
+                  }
+                  if (successCount > 0) {
+                    await supabaseAdmin
+                      .from('ankit_donations')
+                      .update({ mod_notified: true })
+                      .eq('id', donation.id);
+                  }
+                }
+              }
+            }
+
             // If payment is successful and has voice data, trigger voice upload
             if (finalStatus === 'success' && donation.temp_voice_data) {
               try {
