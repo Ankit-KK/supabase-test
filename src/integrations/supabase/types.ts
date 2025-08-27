@@ -507,6 +507,16 @@ export type Database = {
         Args: { streamer_id: string }
         Returns: string
       }
+      get_my_moderators: {
+        Args: { p_streamer_id: string }
+        Returns: {
+          created_at: string
+          id: string
+          is_active: boolean
+          mod_name: string
+          telegram_user_id: string
+        }[]
+      }
       get_page_visitor_stats: {
         Args: { page: string }
         Returns: {
@@ -559,6 +569,10 @@ export type Database = {
           streamer_slug: string
           user_id: string
         }[]
+      }
+      get_streamer_moderator_count: {
+        Args: { p_streamer_id: string }
+        Returns: number
       }
       get_user_profile: {
         Args: { user_id: string }
