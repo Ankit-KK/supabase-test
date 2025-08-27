@@ -6,13 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useStreamerAuth } from '@/hooks/useStreamerAuth';
+import { useChiaAuth } from '@/hooks/useChiaAuth';
 import { Gamepad2, Heart, Sparkles, LogIn } from 'lucide-react';
 
 const ChiaGamingLogin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { session, loading } = useStreamerAuth();
+  const { session, loading } = useChiaAuth();
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -77,7 +77,7 @@ const ChiaGamingLogin = () => {
         loginTime: Date.now()
       };
 
-      localStorage.setItem('streamer_session', JSON.stringify(session));
+      localStorage.setItem('chia_session', JSON.stringify(session));
 
       toast({
         title: "Login Successful!",

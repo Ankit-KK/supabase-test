@@ -4,12 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useStreamerAuth } from '@/hooks/useStreamerAuth';
+import { useAnkitAuth } from '@/hooks/useAnkitAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency, calculateMonthlyTotal } from '@/utils/dashboardUtils';
 import { useToast } from '@/hooks/use-toast';
 import { DollarSign, TrendingUp, Users, Calendar, LogOut, Settings } from 'lucide-react';
-import OBSSettings from '@/components/OBSSettings';
+import AnkitOBSSettings from '@/components/AnkitOBSSettings';
 import { MessagesModerationPage } from '@/pages/MessagesModerationPage';
 import { ConnectionStatus } from '@/components/ConnectionStatus';
 
@@ -41,7 +41,7 @@ interface Streamer {
 }
 
 const AnkitDashboard = () => {
-  const { session, loading, logout } = useStreamerAuth();
+  const { session, loading, logout } = useAnkitAuth();
   const streamerSlug = 'ankit';
   const { toast } = useToast();
   const [streamer, setStreamer] = useState<Streamer | null>(null);
@@ -495,13 +495,14 @@ const AnkitDashboard = () => {
             <MessagesModerationPage 
               donations={moderationDonations}
               onRefresh={refreshModerationData}
+              session={session}
             />
           </TabsContent>
 
           <TabsContent value="obs" className="mt-6">
             <div className="space-y-6">
               <ConnectionStatus />
-              <OBSSettings 
+              <AnkitOBSSettings 
                 streamer={streamer}
                 onStreamerUpdate={handleStreamerUpdate}
               />

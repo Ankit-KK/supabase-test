@@ -4,13 +4,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useStreamerAuth } from '@/hooks/useStreamerAuth';
+import { useAnkitAuth } from '@/hooks/useAnkitAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { User, Lock, LogIn } from 'lucide-react';
 
 const AnkitLogin = () => {
-  const { session, loading } = useStreamerAuth();
+  const { session, loading } = useAnkitAuth();
   const { toast } = useToast();
   const [credentials, setCredentials] = useState({
     username: '',
@@ -62,7 +62,7 @@ const AnkitLogin = () => {
         loginTime: Date.now()
       };
 
-      localStorage.setItem('streamer_session', JSON.stringify(sessionData));
+      localStorage.setItem('ankit_session', JSON.stringify(sessionData));
 
       toast({
         title: "Login Successful",

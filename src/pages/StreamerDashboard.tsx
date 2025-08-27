@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useStreamerAuth } from '@/hooks/useStreamerAuth';
+import { useChiaAuth } from '@/hooks/useChiaAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency, calculateMonthlyTotal } from '@/utils/dashboardUtils';
 import { useToast } from '@/hooks/use-toast';
@@ -41,7 +41,7 @@ interface Streamer {
 }
 
 const StreamerDashboard = () => {
-  const { session, loading, logout } = useStreamerAuth();
+  const { session, loading, logout } = useChiaAuth();
   const streamerSlug = 'chia_gaming';
   const { toast } = useToast();
   const [streamer, setStreamer] = useState<Streamer | null>(null);
@@ -498,6 +498,7 @@ const StreamerDashboard = () => {
             <MessagesModerationPage 
               donations={moderationDonations}
               onRefresh={refreshModerationData}
+              session={session}
             />
           </TabsContent>
 

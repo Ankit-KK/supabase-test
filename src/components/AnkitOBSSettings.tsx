@@ -9,7 +9,7 @@ import { Copy, RefreshCw, ExternalLink, Volume2, Users, Plus, Trash2 } from 'luc
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { generateObsToken } from '@/utils/secureIdGenerator';
-import { useChiaAuth } from '@/hooks/useChiaAuth';
+import { useAnkitAuth } from '@/hooks/useAnkitAuth';
 
 interface Streamer {
   id: string;
@@ -27,18 +27,18 @@ interface Moderator {
   created_at: string;
 }
 
-interface OBSSettingsProps {
+interface AnkitOBSSettingsProps {
   streamer: Streamer;
   onStreamerUpdate: (updatedStreamer: Streamer) => void;
 }
 
-const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate }) => {
+const AnkitOBSSettings: React.FC<AnkitOBSSettingsProps> = ({ streamer, onStreamerUpdate }) => {
   const { toast } = useToast();
   const [obsEnabled, setObsEnabled] = useState(true);
   const [loading, setLoading] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [obsToken, setObsToken] = useState<string>('');
-  const { session: streamerSession, isAuthenticated: isStreamerAuthed } = useChiaAuth();
+  const { session: streamerSession, isAuthenticated: isStreamerAuthed } = useAnkitAuth();
   
   // Moderator management state
   const [moderators, setModerators] = useState<Moderator[]>([]);
@@ -47,13 +47,8 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
   const [addingModerator, setAddingModerator] = useState(false);
 
   const obsUrl = obsToken 
-    ? `${window.location.origin}/alerts/${obsToken}`
+    ? `${window.location.origin}/ankit-alerts/${obsToken}`
     : '';
-
-  const voiceAlertsUrl = obsToken 
-    ? `${window.location.origin}/voice-alerts/${obsToken}`
-    : '';
-
 
   const handleCopyLink = async () => {
     if (!obsUrl) return;
@@ -76,19 +71,15 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
   const handleRegenerateToken = async () => {
     setRegenerating(true);
     try {
-      // Generate new token
-      const newToken = generateObsToken();
-      
-      // Use secure RPC to regenerate token
-      const { data, error } = await supabase
-        .rpc('regenerate_obs_token', {
-          p_streamer_id: streamer.id,
-          p_new_token: newToken
-        });
+      // Generate new token via edge function
+      const { data, error } = await supabase.functions.invoke('generate-obs-token', {
+        body: { streamerId: streamer.id }
+      });
       
       if (error) throw error;
+      if (!data?.token) throw new Error('No token received');
 
-      setObsToken(newToken);
+      setObsToken(data.token);
       
       toast({
         title: "Token Regenerated",
@@ -103,7 +94,6 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
     }
     setRegenerating(false);
   };
-
 
   const generateInitialToken = async () => {
     if (!streamer?.id) return;
@@ -316,42 +306,6 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
                   <li>Check "Refresh browser when scene becomes active"</li>
                 </ol>
               </div>
-              
-              {/* Voice Alerts Section */}
-              <div className="bg-secondary/10 p-4 rounded-lg border border-secondary/20">
-                <h4 className="font-medium mb-2 flex items-center gap-2">
-                  <Volume2 className="w-4 h-4" />
-                  Voice Message Audio Player
-                </h4>
-                <p className="text-sm text-muted-foreground mb-3">
-                  Open this link in a separate browser tab to hear voice message donations. Keep it running in the background.
-                </p>
-                {voiceAlertsUrl && (
-                  <div className="flex gap-2">
-                    <Input 
-                      value={voiceAlertsUrl}
-                      readOnly
-                      className="font-mono text-sm"
-                    />
-                    <Button 
-                      variant="outline" 
-                      size="icon"
-                      onClick={() => navigator.clipboard.writeText(voiceAlertsUrl)}
-                      title="Copy Voice Alerts URL"
-                    >
-                      <Copy className="w-4 h-4" />
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="icon"
-                      onClick={() => window.open(voiceAlertsUrl, '_blank')}
-                      title="Open Voice Alerts Player"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                    </Button>
-                  </div>
-                )}
-              </div>
             </>
           ) : (
             <div className="text-center py-4">
@@ -361,7 +315,6 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
           )}
         </CardContent>
       </Card>
-
 
       {/* Telegram Moderator Management */}
       <Card>
@@ -473,6 +426,4 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
   );
 };
 
-// Export both as named and default exports to ensure compatibility
-export { OBSSettings };
-export default OBSSettings;
+export default AnkitOBSSettings;

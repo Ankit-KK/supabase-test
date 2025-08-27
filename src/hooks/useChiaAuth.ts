@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-interface StreamerSession {
+interface ChiaSession {
   streamerId: string;
   streamerSlug: string;
   streamerName: string;
@@ -8,30 +8,31 @@ interface StreamerSession {
   loginTime: number;
 }
 
-export const useStreamerAuth = () => {
-  const [session, setSession] = useState<StreamerSession | null>(null);
+export const useChiaAuth = () => {
+  const [session, setSession] = useState<ChiaSession | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkSession = () => {
       try {
-        const stored = localStorage.getItem('streamer_session');
+        const stored = localStorage.getItem('chia_session');
         if (stored) {
-          const session = JSON.parse(stored) as StreamerSession;
+          const session = JSON.parse(stored) as ChiaSession;
           
-          // Check if session is less than 24 hours old
+          // Check if session is less than 24 hours old and is chia_gaming
           const isValid = Date.now() - session.loginTime < 24 * 60 * 60 * 1000;
+          const isChia = session.streamerSlug === 'chia_gaming';
           
-          if (isValid) {
+          if (isValid && isChia) {
             setSession(session);
           } else {
-            localStorage.removeItem('streamer_session');
+            localStorage.removeItem('chia_session');
             setSession(null);
           }
         }
       } catch (error) {
-        console.error('Error checking session:', error);
-        localStorage.removeItem('streamer_session');
+        console.error('Error checking chia session:', error);
+        localStorage.removeItem('chia_session');
         setSession(null);
       }
       setLoading(false);
@@ -41,7 +42,7 @@ export const useStreamerAuth = () => {
   }, []);
 
   const logout = () => {
-    localStorage.removeItem('streamer_session');
+    localStorage.removeItem('chia_session');
     setSession(null);
   };
 
