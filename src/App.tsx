@@ -23,6 +23,10 @@ import ChiaaGamingLogin from "./pages/ChiaaGamingLogin";
 import StreamerDashboard from "./pages/StreamerDashboard";
 import AlertsPage from "./pages/AlertsPage";
 import VoiceAlerts from "./pages/VoiceAlerts";
+import Ankit from "./pages/Ankit";
+import AnkitLogin from "./pages/AnkitLogin";
+import AnkitDashboard from "./pages/AnkitDashboard";
+import AnkitAlerts from "./pages/AnkitAlerts";
 
 const queryClient = new QueryClient();
 
@@ -44,16 +48,20 @@ const App = () => (
             <Route path="/sitemap.xml" element={<SitemapXml />} />
             <Route path="/feature-showcase" element={<FeatureShowcase />} />
             <Route path="/chiaa_gaming" element={<ChiaaGaming />} />
+            <Route path="/ankit" element={<Ankit />} />
             <Route path="/status" element={<Status />} />
             
             {/* Authentication */}
             <Route path="/auth" element={<Auth />} />
             <Route path="/chiaa_gaming/login" element={<ChiaaGamingLogin />} />
             <Route path="/chiaa_gaming/dashboard" element={<StreamerDashboard />} />
+            <Route path="/ankit/login" element={<AnkitLogin />} />
+            <Route path="/ankit/dashboard" element={<AnkitDashboard />} />
             
             {/* OBS Alerts */}
             <Route path="/alerts/:token" element={<AlertsPage />} />
             <Route path="/voice-alerts/:token" element={<VoiceAlerts />} />
+            <Route path="/ankit-alerts/:token" element={<AnkitAlerts />} />
             
             {/* Blog posts */}
             <Route path="/blog/upi-security-best-practices" element={<UpiSecurityBestPractices />} />
