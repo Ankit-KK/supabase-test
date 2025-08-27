@@ -173,8 +173,8 @@ async function showPendingDonations(chatId: number, userId: string, supabase: an
       return;
     }
 
-    // Get pending donations for this streamer
-    const { data: donations, error: donationsError } = await supabase
+    // Get pending donations for this streamer from both tables
+    const { data: chiaDonations, error: chiaErr } = await supabase
       .from('chia_gaming_donations')
       .select('id, name, amount, message, voice_message_url, voice_duration_seconds, created_at')
       .eq('streamer_id', moderator.streamer_id)
@@ -183,11 +183,21 @@ async function showPendingDonations(chatId: number, userId: string, supabase: an
       .order('created_at', { ascending: false })
       .limit(10);
 
-    if (donationsError) {
-      console.error('Error fetching donations:', donationsError);
-      await sendMessage(chatId, 'Error fetching pending donations. Please try again.', botToken);
-      return;
-    }
+    const { data: ankitDonations, error: ankitErr } = await supabase
+      .from('ankit_donations')
+      .select('id, name, amount, message, voice_message_url, voice_duration_seconds, created_at')
+      .eq('streamer_id', moderator.streamer_id)
+      .eq('moderation_status', 'pending')
+      .eq('payment_status', 'success')
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (chiaErr) console.error('Error fetching chia pending donations:', chiaErr);
+    if (ankitErr) console.error('Error fetching ankit pending donations:', ankitErr);
+
+    const donations = [ ...(chiaDonations || []), ...(ankitDonations || []) ]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(0, 10);
 
     if (!donations || donations.length === 0) {
       await sendMessage(chatId, `✅ No pending donations for ${moderator.streamers.streamer_name}!\n\nAll donations have been reviewed.`, botToken);
@@ -267,8 +277,8 @@ async function playVoiceMessage(donationId: string, userId: string, chatId: numb
 
 async function approveDonation(donationId: string, userId: string, chatId: number, messageId: number, supabase: any, botToken: string) {
   try {
-    // Verify the moderator has access to this donation
-    const { data: donation, error: fetchError } = await supabase
+    // First try in chia_gaming_donations with joins
+    const { data: chiaDonation, error: chiaErr } = await supabase
       .from('chia_gaming_donations')
       .select(`
         *,
@@ -281,57 +291,96 @@ async function approveDonation(donationId: string, userId: string, chatId: numbe
       .eq('id', donationId)
       .single();
 
-    if (fetchError || !donation) {
+    if (chiaDonation && !chiaErr) {
+      const isModerator = chiaDonation.streamers.streamers_moderators.some(
+        (mod: any) => mod.telegram_user_id === userId && mod.is_active
+      );
+      if (!isModerator) {
+        await editMessage(chatId, messageId, '❌ You are not authorized to moderate this donation.', botToken);
+        return;
+      }
+      if (chiaDonation.moderation_status && chiaDonation.moderation_status !== 'pending') {
+        const alreadyText = chiaDonation.moderation_status === 'approved'
+          ? `✅ Already approved\n\n💰 **Amount:** ₹${chiaDonation.amount}\n👤 **From:** ${chiaDonation.name}\n📺 **Streamer:** ${chiaDonation.streamers.streamer_name}`
+          : `❌ Already rejected\n\n💰 **Amount:** ₹${chiaDonation.amount}\n👤 **From:** ${chiaDonation.name}\n📺 **Streamer:** ${chiaDonation.streamers.streamer_name}`;
+        await editMessage(chatId, messageId, alreadyText, botToken, { inline_keyboard: [] });
+        return;
+      }
+      const { error: updErr } = await supabase
+        .from('chia_gaming_donations')
+        .update({ moderation_status: 'approved', approved_by: 'telegram_moderator', approved_at: new Date().toISOString() })
+        .eq('id', donationId);
+      if (updErr) {
+        console.error('Error approving chia donation:', updErr);
+        await editMessage(chatId, messageId, '❌ Error approving donation. Please try again.', botToken);
+        return;
+      }
+      const successText = `✅ **APPROVED**\n\n` +
+        `💰 **Amount:** ₹${chiaDonation.amount}\n` +
+        `👤 **From:** ${chiaDonation.name}\n` +
+        `📺 **Streamer:** ${chiaDonation.streamers.streamer_name}\n` +
+        `⏰ **Approved at:** ${new Date().toLocaleString()}\n\n` +
+        `The donation will now appear in OBS alerts! 🎉`;
+      await editMessage(chatId, messageId, successText, botToken, { inline_keyboard: [] });
+      await notifyModerators(chiaDonation.streamers.id, `✅ Donation approved by moderator\n💰 ₹${chiaDonation.amount} from ${chiaDonation.name}`, supabase, botToken, userId);
+      return;
+    }
+
+    // Fallback: try in ankit_donations
+    const { data: ankitDonation, error: ankitFetchErr } = await supabase
+      .from('ankit_donations')
+      .select('*')
+      .eq('id', donationId)
+      .single();
+
+    if (ankitFetchErr || !ankitDonation) {
       await editMessage(chatId, messageId, '❌ Donation not found.', botToken);
       return;
     }
 
-    // Check if user is authorized moderator
-    const isModerator = donation.streamers.streamers_moderators.some(
-      (mod: any) => mod.telegram_user_id === userId && mod.is_active
-    );
+    // Verify moderator for this streamer
+    const { data: mods, error: modsErr } = await supabase
+      .from('streamers_moderators')
+      .select('telegram_user_id')
+      .eq('streamer_id', ankitDonation.streamer_id)
+      .eq('is_active', true);
+    if (modsErr) {
+      console.error('Error fetching moderators:', modsErr);
+    }
+    const isModerator = (mods || []).some((m: any) => m.telegram_user_id === userId);
+    if (!isModerator) {
+      await editMessage(chatId, messageId, '❌ You are not authorized to moderate this donation.', botToken);
+      return;
+    }
 
-  if (!isModerator) {
-    await editMessage(chatId, messageId, '❌ You are not authorized to moderate this donation.', botToken);
-    return;
-  }
+    if (ankitDonation.moderation_status && ankitDonation.moderation_status !== 'pending') {
+      const streamerName = await getStreamerName(ankitDonation.streamer_id, supabase);
+      const alreadyText = ankitDonation.moderation_status === 'approved'
+        ? `✅ Already approved\n\n💰 **Amount:** ₹${ankitDonation.amount}\n👤 **From:** ${ankitDonation.name}\n📺 **Streamer:** ${streamerName}`
+        : `❌ Already rejected\n\n💰 **Amount:** ₹${ankitDonation.amount}\n👤 **From:** ${ankitDonation.name}\n📺 **Streamer:** ${streamerName}`;
+      await editMessage(chatId, messageId, alreadyText, botToken, { inline_keyboard: [] });
+      return;
+    }
 
-  // If already moderated, just update the message and return
-  if (donation.moderation_status && donation.moderation_status !== 'pending') {
-    const alreadyText = donation.moderation_status === 'approved'
-      ? `✅ Already approved\n\n💰 **Amount:** ₹${donation.amount}\n👤 **From:** ${donation.name}\n📺 **Streamer:** ${donation.streamers.streamer_name}`
-      : `❌ Already rejected\n\n💰 **Amount:** ₹${donation.amount}\n👤 **From:** ${donation.name}\n📺 **Streamer:** ${donation.streamers.streamer_name}`;
-    await editMessage(chatId, messageId, alreadyText, botToken, { inline_keyboard: [] });
-    return;
-  }
-
-  // Approve the donation
-  const { error: updateError } = await supabase
-    .from('chia_gaming_donations')
-    .update({
-      moderation_status: 'approved',
-      approved_by: 'telegram_moderator',
-      approved_at: new Date().toISOString()
-    })
-    .eq('id', donationId);
-
-    if (updateError) {
-      console.error('Error approving donation:', updateError);
+    const { error: ankitUpdErr } = await supabase
+      .from('ankit_donations')
+      .update({ moderation_status: 'approved', approved_by: 'telegram_moderator', approved_at: new Date().toISOString() })
+      .eq('id', donationId);
+    if (ankitUpdErr) {
+      console.error('Error approving ankit donation:', ankitUpdErr);
       await editMessage(chatId, messageId, '❌ Error approving donation. Please try again.', botToken);
       return;
     }
 
+    const streamerName = await getStreamerName(ankitDonation.streamer_id, supabase);
     const successText = `✅ **APPROVED**\n\n` +
-      `💰 **Amount:** ₹${donation.amount}\n` +
-      `👤 **From:** ${donation.name}\n` +
-      `📺 **Streamer:** ${donation.streamers.streamer_name}\n` +
+      `💰 **Amount:** ₹${ankitDonation.amount}\n` +
+      `👤 **From:** ${ankitDonation.name}\n` +
+      `📺 **Streamer:** ${streamerName}\n` +
       `⏰ **Approved at:** ${new Date().toLocaleString()}\n\n` +
       `The donation will now appear in OBS alerts! 🎉`;
-
     await editMessage(chatId, messageId, successText, botToken, { inline_keyboard: [] });
-
-    // Notify all moderators about the approval
-    await notifyModerators(donation.streamers.id, `✅ Donation approved by moderator\n💰 ₹${donation.amount} from ${donation.name}`, supabase, botToken, userId);
+    await notifyModerators(ankitDonation.streamer_id, `✅ Donation approved by moderator\n💰 ₹${ankitDonation.amount} from ${ankitDonation.name}`, supabase, botToken, userId);
 
   } catch (error) {
     console.error('Error in approveDonation:', error);
