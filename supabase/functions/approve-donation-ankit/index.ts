@@ -72,10 +72,24 @@ serve(async (req) => {
     // Get donation record and verify it belongs to the authenticated streamer
     const { data: donation, error: fetchError } = await supabaseAdmin
       .from('ankit_donations')
-      .select('*, streamers!inner(id, streamer_slug)')
+      .select('*')
       .eq('id', donation_id)
-      .eq('streamers.streamer_slug', streamer_session.streamerSlug)
       .single();
+
+    if (fetchError || !donation) {
+      throw new Error("Donation not found");
+    }
+
+    // Verify the donation belongs to the streamer in the current session (by slug)
+    const { data: streamer, error: streamerError } = await supabaseAdmin
+      .from('streamers')
+      .select('id, streamer_slug, streamer_name')
+      .eq('id', donation.streamer_id)
+      .single();
+
+    if (streamerError || !streamer || streamer.streamer_slug !== streamer_session.streamerSlug) {
+      throw new Error("Donation not found or access denied");
+    }
 
     if (fetchError || !donation) {
       throw new Error("Donation not found or access denied");
