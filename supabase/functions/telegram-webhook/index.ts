@@ -301,8 +301,8 @@ async function approveDonation(donationId: string, userId: string, chatId: numbe
       }
       if (chiaDonation.moderation_status && chiaDonation.moderation_status !== 'pending') {
         const alreadyText = chiaDonation.moderation_status === 'approved'
-          ? `✅ Already approved\n\n💰 **Amount:** ₹${chiaDonation.amount}\n👤 **From:** ${chiaDonation.name}\n📺 **Streamer:** ${chiaDonation.streamers.streamer_name}`
-          : `❌ Already rejected\n\n💰 **Amount:** ₹${chiaDonation.amount}\n👤 **From:** ${chiaDonation.name}\n📺 **Streamer:** ${chiaDonation.streamers.streamer_name}`;
+          ? `✅ Already approved\n\n💰 <b>Amount:</b> ₹${chiaDonation.amount}\n👤 <b>From:</b> ${chiaDonation.name}\n📺 <b>Streamer:</b> ${chiaDonation.streamers.streamer_name}`
+          : `❌ Already rejected\n\n💰 <b>Amount:</b> ₹${chiaDonation.amount}\n👤 <b>From:</b> ${chiaDonation.name}\n📺 <b>Streamer:</b> ${chiaDonation.streamers.streamer_name}`;
         await editMessage(chatId, messageId, alreadyText, botToken, { inline_keyboard: [] });
         return;
       }
@@ -315,11 +315,11 @@ async function approveDonation(donationId: string, userId: string, chatId: numbe
         await editMessage(chatId, messageId, '❌ Error approving donation. Please try again.', botToken);
         return;
       }
-      const successText = `✅ **APPROVED**\n\n` +
-        `💰 **Amount:** ₹${chiaDonation.amount}\n` +
-        `👤 **From:** ${chiaDonation.name}\n` +
-        `📺 **Streamer:** ${chiaDonation.streamers.streamer_name}\n` +
-        `⏰ **Approved at:** ${new Date().toLocaleString()}\n\n` +
+      const successText = `✅ <b>APPROVED</b>\n\n` +
+        `💰 <b>Amount:</b> ₹${chiaDonation.amount}\n` +
+        `👤 <b>From:</b> ${chiaDonation.name}\n` +
+        `📺 <b>Streamer:</b> ${chiaDonation.streamers.streamer_name}\n` +
+        `⏰ <b>Approved at:</b> ${new Date().toLocaleString()}\n\n` +
         `The donation will now appear in OBS alerts! 🎉`;
       await editMessage(chatId, messageId, successText, botToken, { inline_keyboard: [] });
       await notifyModerators(chiaDonation.streamers.id, `✅ Donation approved by moderator\n💰 ₹${chiaDonation.amount} from ${chiaDonation.name}`, supabase, botToken, userId);
@@ -356,8 +356,8 @@ async function approveDonation(donationId: string, userId: string, chatId: numbe
     if (ankitDonation.moderation_status && ankitDonation.moderation_status !== 'pending') {
       const streamerName = await getStreamerName(ankitDonation.streamer_id, supabase);
       const alreadyText = ankitDonation.moderation_status === 'approved'
-        ? `✅ Already approved\n\n💰 **Amount:** ₹${ankitDonation.amount}\n👤 **From:** ${ankitDonation.name}\n📺 **Streamer:** ${streamerName}`
-        : `❌ Already rejected\n\n💰 **Amount:** ₹${ankitDonation.amount}\n👤 **From:** ${ankitDonation.name}\n📺 **Streamer:** ${streamerName}`;
+        ? `✅ Already approved\n\n💰 <b>Amount:</b> ₹${ankitDonation.amount}\n👤 <b>From:</b> ${ankitDonation.name}\n📺 <b>Streamer:</b> ${streamerName}`
+        : `❌ Already rejected\n\n💰 <b>Amount:</b> ₹${ankitDonation.amount}\n👤 <b>From:</b> ${ankitDonation.name}\n📺 <b>Streamer:</b> ${streamerName}`;
       await editMessage(chatId, messageId, alreadyText, botToken, { inline_keyboard: [] });
       return;
     }
@@ -373,11 +373,11 @@ async function approveDonation(donationId: string, userId: string, chatId: numbe
     }
 
     const streamerName = await getStreamerName(ankitDonation.streamer_id, supabase);
-    const successText = `✅ **APPROVED**\n\n` +
-      `💰 **Amount:** ₹${ankitDonation.amount}\n` +
-      `👤 **From:** ${ankitDonation.name}\n` +
-      `📺 **Streamer:** ${streamerName}\n` +
-      `⏰ **Approved at:** ${new Date().toLocaleString()}\n\n` +
+    const successText = `✅ <b>APPROVED</b>\n\n` +
+      `💰 <b>Amount:</b> ₹${ankitDonation.amount}\n` +
+      `👤 <b>From:</b> ${ankitDonation.name}\n` +
+      `📺 <b>Streamer:</b> ${streamerName}\n` +
+      `⏰ <b>Approved at:</b> ${new Date().toLocaleString()}\n\n` +
       `The donation will now appear in OBS alerts! 🎉`;
     await editMessage(chatId, messageId, successText, botToken, { inline_keyboard: [] });
     await notifyModerators(ankitDonation.streamer_id, `✅ Donation approved by moderator\n💰 ₹${ankitDonation.amount} from ${ankitDonation.name}`, supabase, botToken, userId);
@@ -443,11 +443,11 @@ async function rejectDonation(donationId: string, userId: string, chatId: number
       return;
     }
 
-    const successText = `❌ **REJECTED**\n\n` +
-      `💰 **Amount:** ₹${donation.amount}\n` +
-      `👤 **From:** ${donation.name}\n` +
-      `📺 **Streamer:** ${donation.streamers.streamer_name}\n` +
-      `⏰ **Rejected at:** ${new Date().toLocaleString()}\n\n` +
+    const successText = `❌ <b>REJECTED</b>\n\n` +
+      `💰 <b>Amount:</b> ₹${donation.amount}\n` +
+      `👤 <b>From:</b> ${donation.name}\n` +
+      `📺 <b>Streamer:</b> ${donation.streamers.streamer_name}\n` +
+      `⏰ <b>Rejected at:</b> ${new Date().toLocaleString()}\n\n` +
       `The donation will NOT appear in OBS alerts.`;
 
     await editMessage(chatId, messageId, successText, botToken, { inline_keyboard: [] });
@@ -487,6 +487,26 @@ async function notifyModerators(streamerId: string, message: string, supabase: a
     }
   } catch (error) {
     console.error('Error in notifyModerators:', error);
+  }
+}
+
+async function getStreamerName(streamerId: string, supabase: any): Promise<string> {
+  try {
+    const { data: streamer, error } = await supabase
+      .from('streamers')
+      .select('streamer_name')
+      .eq('id', streamerId)
+      .single();
+    
+    if (error || !streamer) {
+      console.error('Error fetching streamer name:', error);
+      return 'Unknown Streamer';
+    }
+    
+    return streamer.streamer_name;
+  } catch (error) {
+    console.error('Error in getStreamerName:', error);
+    return 'Unknown Streamer';
   }
 }
 
@@ -608,7 +628,7 @@ async function editMessage(chatId: number, messageId: number, text: string, botT
     chat_id: chatId,
     message_id: messageId,
     text: text,
-    parse_mode: 'Markdown'
+    parse_mode: 'HTML'  // Changed from Markdown to HTML for better compatibility
   };
 
   if (replyMarkup) {
@@ -624,6 +644,8 @@ async function editMessage(chatId: number, messageId: number, text: string, botT
   if (!response.ok) {
     const error = await response.text();
     console.error('Error editing message:', error);
+    // Don't throw error for message editing failures - just log them
+    // The approval/rejection should still be considered successful
   }
 
   return response.ok;
