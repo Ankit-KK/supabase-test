@@ -35,12 +35,23 @@ interface Props {
     brandColor: string;
     loginTime: number;
   } | null;
-  tableName?: 'chia_gaming_donations' | 'ankit_donations';
+  tableName?: 'chia_gaming_donations' | 'ankit_donations' | 'newstreamer_donations';
+  streamerName?: string;
+  streamerSlug?: string;
   approveFunctionName?: string;
   rejectFunctionName?: string;
 }
 
-export const MessagesModerationPage = ({ donations: propDonations, onRefresh, session: propSession, tableName = 'chia_gaming_donations', approveFunctionName = 'approve-donation', rejectFunctionName = 'reject-donation' }: Props = {}) => {
+export const MessagesModerationPage = ({ 
+  donations: propDonations, 
+  onRefresh, 
+  session: propSession, 
+  tableName = 'chia_gaming_donations',
+  streamerName: propStreamerName,
+  streamerSlug: propStreamerSlug,
+  approveFunctionName = 'approve-donation', 
+  rejectFunctionName = 'reject-donation' 
+}: Props = {}) => {
   const session = propSession;
   const [donations, setDonations] = useState<Donation[]>(propDonations || []);
   const [loading, setLoading] = useState(true);
