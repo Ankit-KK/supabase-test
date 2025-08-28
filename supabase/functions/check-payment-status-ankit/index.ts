@@ -191,6 +191,22 @@ serve(async (req) => {
       paymentStatus = donation.payment_status || 'unknown';
     }
 
+    // If payment is already successful in DB but moderators not notified yet, trigger now
+    try {
+      if (
+        (donation.payment_status === 'success' || paymentStatus === 'success') &&
+        donation.moderation_status === 'pending' &&
+        !donation.mod_notified
+      ) {
+        console.log('Payment already success and pending moderation, triggering Telegram notifications...');
+        await supabaseAdmin.functions.invoke('notify-moderators-ankit', {
+          body: { donation_id: donation.id }
+        });
+      }
+    } catch (telegramError) {
+      console.error('Error invoking Telegram notification function (post-check):', telegramError);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,

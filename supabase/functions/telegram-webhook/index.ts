@@ -235,39 +235,64 @@ async function showPendingDonations(chatId: number, userId: string, supabase: an
 
 async function playVoiceMessage(donationId: string, userId: string, chatId: number, messageId: number, supabase: any, botToken: string) {
   try {
-    // Verify the moderator has access to this donation
-    const { data: donation, error: fetchError } = await supabase
+    // Try Chia table first with joins
+    let voiceUrl: string | null = null;
+    let donorName = '';
+    let amount = 0;
+    let streamerId: string | null = null;
+
+    const { data: chiaDonation } = await supabase
       .from('chia_gaming_donations')
-      .select(`
-        voice_message_url,
-        name,
-        amount,
-        streamers!inner(
-          id,
-          streamer_name,
-          streamers_moderators!inner(telegram_user_id, is_active)
-        )
-      `)
+      .select(`voice_message_url, name, amount, streamers!inner(id, streamer_name, streamers_moderators!inner(telegram_user_id, is_active))`)
       .eq('id', donationId)
-      .single();
+      .maybeSingle();
 
-    if (fetchError || !donation || !donation.voice_message_url) {
-      await editMessage(chatId, messageId, '❌ Voice message not found.', botToken);
-      return;
-    }
+    if (chiaDonation && chiaDonation.voice_message_url) {
+      // Verify moderator
+      const isModerator = chiaDonation.streamers.streamers_moderators.some(
+        (mod: any) => mod.telegram_user_id === userId && mod.is_active
+      );
+      if (!isModerator) {
+        await editMessage(chatId, messageId, '❌ You are not authorized to access this donation.', botToken);
+        return;
+      }
+      voiceUrl = chiaDonation.voice_message_url;
+      donorName = chiaDonation.name;
+      amount = chiaDonation.amount;
+    } else {
+      // Fallback to Ankit table
+      const { data: ankitDonation } = await supabase
+        .from('ankit_donations')
+        .select('voice_message_url, name, amount, streamer_id')
+        .eq('id', donationId)
+        .maybeSingle();
 
-    // Check if user is authorized moderator
-    const isModerator = donation.streamers.streamers_moderators.some(
-      (mod: any) => mod.telegram_user_id === userId && mod.is_active
-    );
+      if (!ankitDonation || !ankitDonation.voice_message_url) {
+        await editMessage(chatId, messageId, '❌ Voice message not found.', botToken);
+        return;
+      }
 
-    if (!isModerator) {
-      await editMessage(chatId, messageId, '❌ You are not authorized to access this donation.', botToken);
-      return;
+      // Verify moderator for this streamer
+      streamerId = ankitDonation.streamer_id;
+      const { data: mods } = await supabase
+        .from('streamers_moderators')
+        .select('telegram_user_id, is_active')
+        .eq('streamer_id', streamerId)
+        .eq('is_active', true);
+
+      const isModerator = (mods || []).some((m: any) => m.telegram_user_id === userId);
+      if (!isModerator) {
+        await editMessage(chatId, messageId, '❌ You are not authorized to access this donation.', botToken);
+        return;
+      }
+
+      voiceUrl = ankitDonation.voice_message_url;
+      donorName = ankitDonation.name;
+      amount = ankitDonation.amount;
     }
 
     // Send voice message
-    await sendAudioFile(chatId, donation.voice_message_url, botToken, `Voice message from ${donation.name} (₹${donation.amount})`);
+    await sendAudioFile(chatId, voiceUrl!, botToken, `Voice message from ${donorName} (₹${amount})`);
 
   } catch (error) {
     console.error('Error in playVoiceMessage:', error);
@@ -319,10 +344,15 @@ async function approveDonation(donationId: string, userId: string, chatId: numbe
         `💰 <b>Amount:</b> ₹${chiaDonation.amount}\n` +
         `👤 <b>From:</b> ${chiaDonation.name}\n` +
         `📺 <b>Streamer:</b> ${chiaDonation.streamers.streamer_name}\n` +
+        `${chiaDonation.message ? `💬 <b>Message:</b> ${chiaDonation.message}\n` : ''}` +
+        `${chiaDonation.voice_message_url ? `🎵 <b>Voice:</b> ${chiaDonation.voice_duration_seconds ? chiaDonation.voice_duration_seconds + 's' : 'available'}\n` : ''}` +
         `⏰ <b>Approved at:</b> ${new Date().toLocaleString()}\n\n` +
         `The donation will now appear in OBS alerts! 🎉`;
       await editMessage(chatId, messageId, successText, botToken, { inline_keyboard: [] });
-      await notifyModerators(chiaDonation.streamers.id, `✅ Donation approved by moderator\n💰 ₹${chiaDonation.amount} from ${chiaDonation.name}`, supabase, botToken, userId);
+      if (chiaDonation.voice_message_url) {
+        await sendAudioFile(chatId, chiaDonation.voice_message_url, botToken, `Voice from ${chiaDonation.name} (₹${chiaDonation.amount})`);
+      }
+      await notifyModerators(chiaDonation.streamers.id, `✅ Donation approved by moderator\n💰 ₹${chiaDonation.amount} from ${chiaDonation.name}` + (chiaDonation.message ? `\n💬 ${chiaDonation.message}` : ''), supabase, botToken, userId);
       return;
     }
 
