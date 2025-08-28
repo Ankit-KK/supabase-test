@@ -332,27 +332,6 @@ async function playVoiceMessage(donationId: string, userId: string, chatId: numb
     await sendMessage(chatId, '❌ Error playing voice message.', botToken);
   }
 }
-        .eq('is_active', true);
-
-      const isModerator = (mods || []).some((m: any) => m.telegram_user_id === userId);
-      if (!isModerator) {
-        await editMessage(chatId, messageId, '❌ You are not authorized to access this donation.', botToken);
-        return;
-      }
-
-      voiceUrl = ankitDonation.voice_message_url;
-      donorName = ankitDonation.name;
-      amount = ankitDonation.amount;
-    }
-
-    // Send voice message
-    await sendAudioFile(chatId, voiceUrl!, botToken, `Voice message from ${donorName} (₹${amount})`);
-
-  } catch (error) {
-    console.error('Error in playVoiceMessage:', error);
-    await sendMessage(chatId, '❌ Error playing voice message.', botToken);
-  }
-}
 
 async function approveDonation(donationId: string, userId: string, chatId: number, messageId: number, supabase: any, botToken: string) {
   try {
