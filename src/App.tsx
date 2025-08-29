@@ -16,6 +16,7 @@ import NotFound from "./pages/NotFound";
 import FeatureShowcase from "./pages/FeatureShowcase";
 import ChiaaGaming from "./pages/ChiaaGaming";
 import ChiaaGamingLogin from "./pages/ChiaaGamingLogin";
+import ChiaaGamingDashboard from "./pages/ChiaaGamingDashboard";
 import Status from "./pages/Status";
 import UpiSecurityBestPractices from "./pages/blog/UpiSecurityBestPractices";
 import Ankit from "./pages/Ankit";
@@ -54,6 +55,7 @@ const App = () => (
             {/* Chia Gaming Routes */}
             <Route path="/chiaa_gaming" element={<ChiaaGaming />} />
             <Route path="/chiaa_gaming/login" element={<ChiaaGamingLogin />} />
+            <Route path="/chiaa_gaming/dashboard" element={<ChiaaGamingDashboard />} />
             
             {/* Ankit Routes */}
             <Route path="/ankit" element={<Ankit />} />
