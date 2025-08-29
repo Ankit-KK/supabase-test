@@ -17,24 +17,3 @@ verify_jwt = false
 
 [functions.notify-moderators-ankit]
 verify_jwt = false
-
-[functions.create-payment-order-newstreamer]
-verify_jwt = false
-
-[functions.check-payment-status-newstreamer]
-verify_jwt = false
-
-[functions.notify-moderators-newstreamer]
-verify_jwt = false
-
-[functions.approve-donation-newstreamer]
-verify_jwt = false
-
-[functions.reject-donation-newstreamer]
-verify_jwt = false
-
-[functions.upload-voice-message-newstreamer]
-verify_jwt = false
-
-[functions.verify-pending-payments-newstreamer]
-verify_jwt = false

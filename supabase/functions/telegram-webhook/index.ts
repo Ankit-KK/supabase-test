@@ -235,13 +235,12 @@ async function showPendingDonations(chatId: number, userId: string, supabase: an
 
 async function playVoiceMessage(donationId: string, userId: string, chatId: number, messageId: number, supabase: any, botToken: string) {
   try {
-    // Try each table to find the donation and voice message
+    // Try Chia table first with joins
     let voiceUrl: string | null = null;
     let donorName = '';
     let amount = 0;
     let streamerId: string | null = null;
 
-    // Try Chia table first with joins
     const { data: chiaDonation } = await supabase
       .from('chia_gaming_donations')
       .select(`voice_message_url, name, amount, streamers!inner(id, streamer_name, streamers_moderators!inner(telegram_user_id, is_active))`)
@@ -261,67 +260,35 @@ async function playVoiceMessage(donationId: string, userId: string, chatId: numb
       donorName = chiaDonation.name;
       amount = chiaDonation.amount;
     } else {
-      // Try Ankit table
+      // Fallback to Ankit table
       const { data: ankitDonation } = await supabase
         .from('ankit_donations')
         .select('voice_message_url, name, amount, streamer_id')
         .eq('id', donationId)
         .maybeSingle();
 
-      if (ankitDonation && ankitDonation.voice_message_url) {
-        // Verify moderator for this streamer
-        streamerId = ankitDonation.streamer_id;
-        const { data: mods } = await supabase
-          .from('streamers_moderators')
-          .select('telegram_user_id, is_active')
-          .eq('streamer_id', streamerId)
-          .eq('is_active', true);
-
-        const isModerator = mods?.some((mod: any) => mod.telegram_user_id === userId);
-        if (!isModerator) {
-          await editMessage(chatId, messageId, '❌ You are not authorized to access this donation.', botToken);
-          return;
-        }
-
-        voiceUrl = ankitDonation.voice_message_url;
-        donorName = ankitDonation.name;
-        amount = ankitDonation.amount;
-      } else {
-        // Try New Streamer table
-        const { data: newstreamerDonation } = await supabase
-          .from('newstreamer_donations')
-          .select('voice_message_url, name, amount, streamer_id')
-          .eq('id', donationId)
-          .maybeSingle();
-
-        if (!newstreamerDonation || !newstreamerDonation.voice_message_url) {
-          await editMessage(chatId, messageId, '❌ Voice message not found.', botToken);
-          return;
-        }
-
-        // Verify moderator for this streamer
-        streamerId = newstreamerDonation.streamer_id;
-        const { data: mods } = await supabase
-          .from('streamers_moderators')
-          .select('telegram_user_id, is_active')
-          .eq('streamer_id', streamerId)
-          .eq('is_active', true);
-
-        const isModerator = mods?.some((mod: any) => mod.telegram_user_id === userId);
-        if (!isModerator) {
-          await editMessage(chatId, messageId, '❌ You are not authorized to access this donation.', botToken);
-          return;
-        }
-
-        voiceUrl = newstreamerDonation.voice_message_url;
-        donorName = newstreamerDonation.name;
-        amount = newstreamerDonation.amount;
+      if (!ankitDonation || !ankitDonation.voice_message_url) {
+        await editMessage(chatId, messageId, '❌ Voice message not found.', botToken);
+        return;
       }
-    }
 
-    if (!voiceUrl) {
-      await editMessage(chatId, messageId, '❌ Voice message not found.', botToken);
-      return;
+      // Verify moderator for this streamer
+      streamerId = ankitDonation.streamer_id;
+      const { data: mods } = await supabase
+        .from('streamers_moderators')
+        .select('telegram_user_id, is_active')
+        .eq('streamer_id', streamerId)
+        .eq('is_active', true);
+
+      const isModerator = (mods || []).some((m: any) => m.telegram_user_id === userId);
+      if (!isModerator) {
+        await editMessage(chatId, messageId, '❌ You are not authorized to access this donation.', botToken);
+        return;
+      }
+
+      voiceUrl = ankitDonation.voice_message_url;
+      donorName = ankitDonation.name;
+      amount = ankitDonation.amount;
     }
 
     // Send voice message
