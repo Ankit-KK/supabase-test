@@ -29,6 +29,7 @@ const formSchema = z.object({
   mobile_number: z.string().min(10, { message: "Please enter a valid mobile number." }),
   youtube_channel: z.string().min(1, { message: "YouTube channel link is required." }),
   email: z.string().email({ message: "Please enter a valid email address." }),
+  instagram_handle: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -51,6 +52,7 @@ const SignupDialog: React.FC<SignupDialogProps> = ({ open, onOpenChange }) => {
       mobile_number: "",
       youtube_channel: "",
       email: "",
+      instagram_handle: "",
     },
   });
 
@@ -60,7 +62,8 @@ const SignupDialog: React.FC<SignupDialogProps> = ({ open, onOpenChange }) => {
         name: data.name,
         mobile_number: data.mobile_number,
         youtube_channel: data.youtube_channel,
-        email: data.email
+        email: data.email,
+        instagram_handle: data.instagram_handle || null
       });
       
       if (error) {
@@ -143,6 +146,20 @@ const SignupDialog: React.FC<SignupDialogProps> = ({ open, onOpenChange }) => {
                   <FormLabel>Email</FormLabel>
                   <FormControl>
                     <Input placeholder="Your email" type="email" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="instagram_handle"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Instagram Handle (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="@your_instagram" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
