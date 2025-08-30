@@ -247,11 +247,34 @@ const Ankit = () => {
       };
 
       // Add a small delay to ensure proper focus handling
-      setTimeout(() => {
-        cashfree.checkout(checkoutOptions);
+      setTimeout(async () => {
+        const result = await cashfree.checkout(checkoutOptions);
+        
+        // Update payment status and redirect based on result
+        const updatePaymentStatus = async (status: string) => {
+          await supabase
+            .from('ankit_donations')
+            .update({ payment_status: status })
+            .eq('order_id', orderId);
+        };
+        
+        if (result.error) {
+          console.log("Payment cancelled or error:", result.error);
+          await updatePaymentStatus('cancelled');
+          navigate(`/status?order_id=${orderId}&status=failure`);
+        } else if (result.paymentDetails) {
+          console.log("Payment completed:", result.paymentDetails);
+          await updatePaymentStatus('success');
+          navigate(`/status?order_id=${orderId}&status=success`);
+        } else if (result.redirect) {
+          console.log("Payment will be redirected");
+          await updatePaymentStatus('pending');
+          navigate(`/status?order_id=${orderId}&status=pending`);
+        } else {
+          await updatePaymentStatus('failed');
+          navigate(`/status?order_id=${orderId}&status=failure`);
+        }
       }, 100);
-
-      return;
 
     } catch (error) {
       console.error('Payment error:', error);
