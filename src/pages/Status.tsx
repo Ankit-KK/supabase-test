@@ -37,35 +37,36 @@ export default function Status() {
 
         setPaymentDetails(data);
         
-        // Prefer backend's final_status when available
-        let finalStatus = 'pending';
+        // Compute backend status, then safely merge with URL hint
+        let backendStatus: 'success' | 'pending' | 'failure' = 'pending';
         if (data?.final_status) {
           const fs = String(data.final_status).toLowerCase();
-          if (fs === 'success') {
-            finalStatus = 'success';
-          } else if (fs === 'pending') {
-            finalStatus = 'pending';
-          } else if (fs === 'cancelled' || fs === 'failed' || fs === 'failure') {
-            finalStatus = 'failure';
-          } else {
-            finalStatus = 'pending';
-          }
-        } else if (data.payments && data.payments.length > 0) {
+          if (fs === 'success') backendStatus = 'success';
+          else if (fs === 'pending') backendStatus = 'pending';
+          else if (fs === 'cancelled' || fs === 'failed' || fs === 'failure') backendStatus = 'failure';
+          else backendStatus = 'pending';
+        } else if (data?.payments && data.payments.length > 0) {
           const successfulPayment = data.payments.find((p: any) => p.payment_status === "SUCCESS");
           const pendingPayment = data.payments.find((p: any) => p.payment_status === "PENDING");
-          
-          if (successfulPayment) {
-            finalStatus = 'success';
-          } else if (pendingPayment) {
-            finalStatus = 'pending';
-          } else {
-            finalStatus = 'failure';
-          }
+          if (successfulPayment) backendStatus = 'success';
+          else if (pendingPayment) backendStatus = 'pending';
+          else backendStatus = 'failure';
         } else {
           // Fallback to URL status parameter if no payments data
-          if (status === 'success') finalStatus = 'success';
-          else if (status === 'pending') finalStatus = 'pending';
-          else finalStatus = 'failure';
+          const url = (status || '').toLowerCase();
+          if (url === 'success') backendStatus = 'success';
+          else if (url === 'pending') backendStatus = 'pending';
+          else if (url === 'failure' || url === 'failed' || url === 'cancelled') backendStatus = 'failure';
+          else backendStatus = 'pending';
+        }
+
+        // Merge rule: never downgrade success; if URL says failure, prefer it over pending
+        const urlStatus = (status || '').toLowerCase();
+        let finalStatus: 'success' | 'pending' | 'failure' = backendStatus;
+        if (urlStatus === 'success') {
+          finalStatus = 'success';
+        } else if (urlStatus === 'failure' || urlStatus === 'failed' || urlStatus === 'cancelled') {
+          if (backendStatus !== 'success') finalStatus = 'failure';
         }
 
         setPaymentStatus(finalStatus as any);
