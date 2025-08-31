@@ -43,14 +43,22 @@ export default function Status() {
           const fs = String(data.final_status).toLowerCase();
           if (fs === 'success') backendStatus = 'success';
           else if (fs === 'pending') backendStatus = 'pending';
-          else if (fs === 'cancelled' || fs === 'failed' || fs === 'failure') backendStatus = 'failure';
+          else if (fs === 'cancelled' || fs === 'failed' || fs === 'failure' || fs === 'expired' || fs === 'void') backendStatus = 'failure';
+          else backendStatus = 'pending';
+        } else if (data?.order_status) {
+          const os = String(data.order_status).toLowerCase();
+          if (['paid', 'success', 'captured', 'authorized'].includes(os)) backendStatus = 'success';
+          else if (['active', 'pending', 'in_progress', 'requires_action'].includes(os)) backendStatus = 'pending';
+          else if (['cancelled', 'failed', 'failure', 'expired', 'void'].includes(os)) backendStatus = 'failure';
           else backendStatus = 'pending';
         } else if (data?.payments && data.payments.length > 0) {
-          const successfulPayment = data.payments.find((p: any) => p.payment_status === "SUCCESS");
-          const pendingPayment = data.payments.find((p: any) => p.payment_status === "PENDING");
+          const successfulPayment = data.payments.find((p: any) => ['SUCCESS', 'CAPTURED'].includes(String(p.payment_status)));
+          const pendingPayment = data.payments.find((p: any) => ['PENDING', 'AUTHORIZED'].includes(String(p.payment_status)));
+          const failedPayment = data.payments.find((p: any) => ['FAILED', 'CANCELLED', 'NOT_ATTEMPTED', 'USER_DROPPED', 'REFUNDED'].includes(String(p.payment_status)));
           if (successfulPayment) backendStatus = 'success';
           else if (pendingPayment) backendStatus = 'pending';
-          else backendStatus = 'failure';
+          else if (failedPayment) backendStatus = 'failure';
+          else backendStatus = 'pending';
         } else {
           // Fallback to URL status parameter if no payments data
           const url = (status || '').toLowerCase();
