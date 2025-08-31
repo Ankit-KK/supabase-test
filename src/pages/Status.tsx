@@ -99,8 +99,13 @@ export default function Status() {
     checkPaymentStatus();
   }, [orderId, status]);
 
-  const getStatusContent = () => {
-    switch (paymentStatus) {
+  // Derive effective status: if URL indicates failure/cancelled, show failure unless backend says success
+  const urlStatusLower = (status || '').toLowerCase();
+  const failureFromUrl = urlStatusLower === 'failure' || urlStatusLower === 'failed' || urlStatusLower === 'cancelled';
+  const effectiveStatus = failureFromUrl ? (paymentStatus === 'success' ? 'success' : 'failure') : paymentStatus;
+
+  const getStatusContent = (st: typeof paymentStatus) => {
+    switch (st) {
       case 'success':
         return {
           icon: <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />,
@@ -132,7 +137,7 @@ export default function Status() {
     }
   };
 
-  const statusContent = getStatusContent();
+  const statusContent = getStatusContent(effectiveStatus);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
@@ -172,7 +177,7 @@ export default function Status() {
               </Link>
             </Button>
             
-            {paymentStatus === 'pending' && (
+            {effectiveStatus === 'pending' && (
               <Button 
                 variant="outline" 
                 onClick={() => window.location.reload()}
