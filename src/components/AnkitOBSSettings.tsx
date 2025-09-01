@@ -50,6 +50,10 @@ const AnkitOBSSettings: React.FC<AnkitOBSSettingsProps> = ({ streamer, onStreame
     ? `${window.location.origin}/ankit-alerts/${obsToken}`
     : '';
 
+  const voiceAlertsUrl = obsToken 
+    ? `${window.location.origin}/ankit-voice-alerts/${obsToken}`
+    : '';
+
   const handleCopyLink = async () => {
     if (!obsUrl) return;
     
@@ -58,6 +62,24 @@ const AnkitOBSSettings: React.FC<AnkitOBSSettingsProps> = ({ streamer, onStreame
       toast({
         title: "Copied!",
         description: "OBS alert URL copied to clipboard",
+      });
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to copy URL to clipboard",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCopyVoiceAlertsLink = async () => {
+    if (!voiceAlertsUrl) return;
+    
+    try {
+      await navigator.clipboard.writeText(voiceAlertsUrl);
+      toast({
+        title: "Copied!",
+        description: "Voice alerts URL copied to clipboard",
       });
     } catch (err) {
       toast({
@@ -311,6 +333,65 @@ const AnkitOBSSettings: React.FC<AnkitOBSSettingsProps> = ({ streamer, onStreame
             <div className="text-center py-4">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
               <p className="text-sm text-muted-foreground">Generating OBS token...</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Voice Alerts URL Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Volume2 className="w-5 h-5" />
+            Voice Message Player
+          </CardTitle>
+          <CardDescription>
+            External audio player for voice message donations - separate from OBS for better audio control
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {voiceAlertsUrl ? (
+            <>
+              <div className="flex gap-2">
+                <Input 
+                  value={voiceAlertsUrl}
+                  readOnly
+                  className="font-mono text-sm"
+                />
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={handleCopyVoiceAlertsLink}
+                  title="Copy Voice Alerts URL"
+                >
+                  <Copy className="w-4 h-4" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={() => window.open(voiceAlertsUrl, '_blank')}
+                  title="Open voice alerts player"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              <div className="bg-muted/50 p-4 rounded-lg">
+                <h4 className="font-medium mb-2">Voice Player Features:</h4>
+                <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                  <li>Play/pause controls for voice messages</li>
+                  <li>Auto-play new voice donations</li>
+                  <li>Skip current message</li>
+                  <li>Mute/unmute audio</li>
+                  <li>Mark messages as played</li>
+                  <li>Real-time updates when new voice donations arrive</li>
+                </ul>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+              <p className="text-sm text-muted-foreground">Generating voice alerts URL...</p>
             </div>
           )}
         </CardContent>
