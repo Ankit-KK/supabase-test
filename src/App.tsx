@@ -27,6 +27,7 @@ import Ankit from "./pages/Ankit";
 import AnkitLogin from "./pages/AnkitLogin";
 import AnkitDashboard from "./pages/AnkitDashboard";
 import AnkitAlerts from "./pages/AnkitAlerts";
+import AnkitVoiceAlerts from "./pages/AnkitVoiceAlerts";
 
 const queryClient = new QueryClient();
 
@@ -62,6 +63,7 @@ const App = () => (
             <Route path="/alerts/:token" element={<AlertsPage />} />
             <Route path="/voice-alerts/:token" element={<VoiceAlerts />} />
             <Route path="/ankit-alerts/:token" element={<AnkitAlerts />} />
+            <Route path="/ankit-voice-alerts/:token" element={<AnkitVoiceAlerts />} />
             
             {/* Blog posts */}
             <Route path="/blog/upi-security-best-practices" element={<UpiSecurityBestPractices />} />
