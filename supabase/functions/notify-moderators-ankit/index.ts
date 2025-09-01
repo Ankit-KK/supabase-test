@@ -36,6 +36,18 @@ serve(async (req) => {
       throw new Error("Donation not found");
     }
 
+    // Skip notifications for auto-approved hyperemotes
+    if (donation.is_hyperemote && donation.moderation_status === 'auto_approved') {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: "Auto-approved hyperemote - no notification needed",
+          auto_approved: true
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Check if already notified
     if (donation.mod_notified) {
       return new Response(
