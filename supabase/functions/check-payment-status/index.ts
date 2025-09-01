@@ -71,18 +71,13 @@ serve(async (req) => {
       throw new Error('Payment gateway not configured');
     }
 
-    // Use the stored Cashfree order ID for API calls
-    let cashfreeOrderId = donationData.cashfree_order_id;
+    // Use the original order_id (merchant order ID) for API calls, not cashfree_order_id
+    const merchantOrderId = donationData.order_id || order_id;
     
-    if (!cashfreeOrderId) {
-      console.log('No Cashfree order ID found, falling back to custom order ID');
-      cashfreeOrderId = order_id;
-    }
+    console.log('Using merchant order ID for API call:', merchantOrderId);
 
-    console.log('Using Cashfree order ID:', cashfreeOrderId);
-
-    // Check payment status with Cashfree
-    const response = await fetch(`${apiUrl}/orders/${cashfreeOrderId}/payments`, {
+    // Check payment status with Cashfree using merchant order ID
+    const response = await fetch(`${apiUrl}/orders/${merchantOrderId}/payments`, {
       method: 'GET',
       headers: {
         'x-client-id': clientId,
@@ -203,8 +198,8 @@ serve(async (req) => {
     result = await response.json();
     console.log('Payment status response:', result);
 
-    // Also get order details
-    const orderResponse = await fetch(`${apiUrl}/orders/${cashfreeOrderId}`, {
+    // Also get order details using merchant order ID
+    const orderResponse = await fetch(`${apiUrl}/orders/${merchantOrderId}`, {
       method: 'GET',
       headers: {
         'x-client-id': clientId,
