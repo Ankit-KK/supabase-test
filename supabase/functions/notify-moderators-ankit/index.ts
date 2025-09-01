@@ -84,9 +84,15 @@ serve(async (req) => {
     console.log(`Sending notifications to ${moderators.length} moderators for donation ${donation_id}`);
 
     const messageText = `🎁 <b>New Donation</b>\n\n💰 <b>Amount:</b> ₹${donation.amount}\n👤 <b>From:</b> ${donation.name}${donation.message ? `\n💬 <b>Message:</b> ${donation.message}` : ''}${donation.voice_message_url ? `\n🎵 <b>Voice:</b> ${donation.voice_duration_seconds ? donation.voice_duration_seconds + 's' : 'available'}` : ''}`;
+    const hasVoice = Boolean(
+      donation.voice_message_url ||
+      donation.temp_voice_data ||
+      (donation.voice_duration_seconds && donation.voice_duration_seconds > 0) ||
+      (donation.message && donation.message.toLowerCase().includes('voice'))
+    );
     const inlineKeyboard = {
       inline_keyboard: [
-        ...(donation.voice_message_url ? [[{ text: '🎵 Play Voice', callback_data: `play_${donation.id}` }]] : []),
+        ...(hasVoice ? [[{ text: '🎵 Play Voice', callback_data: `play_${donation.id}` }]] : []),
         [
           { text: '✅ Approve', callback_data: `approve_${donation.id}` },
           { text: '❌ Reject', callback_data: `reject_${donation.id}` }
