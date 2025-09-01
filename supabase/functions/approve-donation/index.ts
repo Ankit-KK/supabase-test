@@ -63,7 +63,20 @@ serve(async (req) => {
 
     // Notify Telegram moderators
     try {
-      await notifyTelegramModerators(donation.streamer_id, `✅ Donation approved via web dashboard\n💰 ₹${donation.amount} from ${donation.name}`, supabaseAdmin);
+      const messageText = donation.message && donation.message.trim() 
+        ? donation.message 
+        : 'No message';
+      
+      const notificationMessage = `✅ Donation Approved!
+
+💰 Amount: ₹${donation.amount}
+👤 From: ${donation.name}
+💬 Message: ${messageText}
+👨‍💼 Approved by: ${donation.approved_by || 'Streamer'}
+
+This donation is now live on the stream!`;
+      
+      await notifyTelegramModerators(donation.streamer_id, notificationMessage, supabaseAdmin);
     } catch (telegramError) {
       console.error('Error notifying Telegram moderators:', telegramError);
       // Don't fail the approval if Telegram notification fails
