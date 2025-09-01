@@ -59,6 +59,19 @@ serve(async (req) => {
       throw new Error('Streamer not found');
     }
 
+    // Fetch hyperemotes settings to determine hyperemote eligibility
+    const { data: hmSettings, error: hmErr } = await supabaseClient
+      .rpc('get_streamer_public_settings', { slug: streamer_slug })
+      .maybeSingle();
+
+    if (hmErr) {
+      console.log('Error fetching hyperemotes settings:', hmErr);
+    }
+
+    const hyperemotesEnabled = hmSettings?.hyperemotes_enabled === true;
+    const hyperemotesMin = Number(hmSettings?.hyperemotes_min_amount ?? 0);
+    const isHyperemote = hyperemotesEnabled && Number(amount) >= hyperemotesMin;
+
     // Get payment gateway credentials
     const clientId = Deno.env.get('XClientId');
     const clientSecret = Deno.env.get('XClientSecret');
@@ -170,6 +183,7 @@ serve(async (req) => {
         name: name,
         amount: amount,
         message: message || '',
+        is_hyperemote: isHyperemote,
         payment_status: 'pending',
         moderation_status: 'pending'
       })

@@ -118,7 +118,7 @@ serve(async (req) => {
         }
 
         // If DB already shows success and moderation is pending, notify moderators here as well
-        if (statusToReturn === 'success' && donationData.moderation_status === 'pending' && donationData.streamer_id) {
+        if (statusToReturn === 'success' && donationData.moderation_status === 'pending' && donationData.streamer_id && donationData.is_hyperemote !== true) {
           try {
             const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
             if (!botToken) {
@@ -244,7 +244,7 @@ serve(async (req) => {
         .eq('id', donationData.id);
 
       // If payment just transitioned to success, notify moderators with inline buttons
-      if (finalStatus === 'success' && previousStatus !== 'success') {
+      if (finalStatus === 'success' && previousStatus !== 'success' && donationData.moderation_status === 'pending' && donationData.is_hyperemote !== true) {
         try {
           const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
           if (!botToken) {
