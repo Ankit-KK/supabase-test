@@ -1,111 +1,180 @@
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { formatCurrency } from '@/utils/dashboardUtils';
+import { RealtimeChannel } from '@supabase/supabase-js';
 
 interface Donation {
   id: string;
   name: string;
   amount: number;
-  message?: string | null;
-  voice_message_url?: string | null;
-  moderation_status: string;
+  message?: string;
   created_at: string;
-  is_hyperemote?: boolean | null;
-  payment_status?: string | null;
+  payment_status: string;
   message_visible?: boolean;
+  is_hyperemote?: boolean;
+  voice_message_url?: string;
+  moderation_status?: string;
 }
 
 interface Streamer {
   id: string;
+  user_id: string;
   streamer_slug: string;
   streamer_name: string;
   brand_color: string;
-  brand_logo_url?: string;
+  obs_token: string;
+}
+
+interface AlertQueueItem {
+  donation: Donation;
+  timestamp: number;
 }
 
 const AnkitAlerts = () => {
-  const { token } = useParams<{ token: string }>();
+  const { token: pathToken } = useParams<{ token: string }>();
+  const [searchParams] = useSearchParams();
+  const obsToken = (pathToken && pathToken !== 'undefined' && pathToken !== 'null')
+    ? pathToken
+    : (searchParams.get('token') || searchParams.get('t') || '');
+  
+
   const [streamer, setStreamer] = useState<Streamer | null>(null);
-  const [recentDonations, setRecentDonations] = useState<Donation[]>([]);
-  const [currentAlert, setCurrentAlert] = useState<Donation | null>(null);
-  const [displayedMessage, setDisplayedMessage] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isValid, setIsValid] = useState(false);
+  const [currentAlert, setCurrentAlert] = useState<AlertQueueItem | null>(null);
+  const [alertQueue, setAlertQueue] = useState<AlertQueueItem[]>([]);
+  const [isValidToken, setIsValidToken] = useState<boolean | null>(null);
+  const [displayedMessage, setDisplayedMessage] = useState("");
+  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const validationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectAttemptsRef = useRef<number>(0);
 
-  useEffect(() => {
-    const validateToken = async () => {
-      if (!token) {
-        setError('No OBS token provided');
-        setLoading(false);
-        return;
+  const MAX_RECONNECT_ATTEMPTS = 10;
+  const RECONNECT_DELAY = 5000; // 5 seconds
+  const VALIDATION_INTERVAL = 60000; // 1 minute
+  const HEARTBEAT_INTERVAL = 30000; // 30 seconds
+  
+  // Hyperemote configurations
+  const hyperemotes = [
+    { id: 'happy', src: '/lovable-uploads/2f07c754-6bf7-40e6-8a98-f181f991614a.png', name: 'Happy' },
+    { id: 'peaceful', src: '/lovable-uploads/292d1bf8-f7af-4bf3-8540-9e79fda428c2.png', name: 'Peaceful' },
+    { id: 'disappointed', src: '/lovable-uploads/a62460bb-2981-4570-8bce-51472286d43f.png', name: 'Disappointed' },
+    { id: 'upset', src: '/lovable-uploads/2016b23f-1791-4159-b604-4ec5ecbf505e.png', name: 'Upset' },
+    { id: 'wink', src: '/lovable-uploads/2e0cb8ea-caa0-4039-a256-b14849269d25.png', name: 'Wink' },
+    { id: 'surprised', src: '/lovable-uploads/6c1ab8e8-8d6f-48bf-9111-059acae74a34.png', name: 'Surprised' },
+    { id: 'excited', src: '/lovable-uploads/5459b5bb-a628-4c02-a9ca-4b374fe1fe38.png', name: 'Excited' },
+    { id: 'love', src: '/lovable-uploads/33359350-7d33-4384-81d9-99fcf0220f60.png', name: 'Love' },
+    { id: 'sleepy', src: '/lovable-uploads/cd661d15-1109-41d5-9908-70531edc117c.png', name: 'Sleepy' },
+    { id: 'crying', src: '/lovable-uploads/2d18e120-71ab-48bf-8ead-36620a7546a8.png', name: 'Crying' },
+  ];
+
+  const enabled = searchParams.get('enabled') !== 'false';
+
+  // Token validation function
+  const validateToken = useCallback(async () => {
+    if (!obsToken) {
+      setIsValidToken(false);
+      return false;
+    }
+
+    try {
+      console.log('Validating OBS token...');
+      const { data, error } = await supabase
+        .rpc('get_streamer_by_obs_token_v2', { token: obsToken });
+
+      if (error || !data) {
+        console.error('Token validation failed:', error);
+        setIsValidToken(false);
+        return false;
+      }
+      
+      const rows = Array.isArray(data) ? data : (data ? [data] : []);
+      if (!rows || rows.length === 0) {
+        console.error('No streamer found for token');
+        setIsValidToken(false);
+        return false;
       }
 
-      try {
-        // Validate OBS token and get streamer info
-        const { data, error } = await supabase
-          .rpc('validate_obs_token_secure', { token_to_check: token });
-
-        if (error || !data || data.length === 0 || !data[0].is_valid) {
-          setError('Invalid or expired OBS token');
-          setLoading(false);
-          return;
-        }
-
-        const tokenData = data[0];
-        
-        // Verify this is for ankit
-        if (tokenData.streamer_slug !== 'ankit') {
-          setError('This token is not valid for Ankit');
-          setLoading(false);
-          return;
-        }
-
-        setStreamer({
-          id: tokenData.streamer_id,
-          streamer_slug: tokenData.streamer_slug,
-          streamer_name: tokenData.streamer_name,
-          brand_color: tokenData.brand_color,
-          brand_logo_url: tokenData.brand_logo_url
-        });
-        
-        setIsValid(true);
-        setLoading(false);
-
-        // Fetch recent donations
-        const { data: donationsData, error: donationsError } = await supabase
-          .from('ankit_donations')
-          .select('*')
-          .eq('streamer_id', tokenData.streamer_id)
-          .eq('payment_status', 'success')
-          .in('moderation_status', ['approved', 'auto_approved'])
-          .eq('message_visible', true)
-          .order('created_at', { ascending: false })
-          .limit(10);
-
-        if (!donationsError && donationsData) {
-          setRecentDonations(donationsData);
-        }
-
-      } catch (err) {
-        console.error('Error validating token:', err);
-        setError('Failed to validate OBS token');
-        setLoading(false);
+      // Verify this is for ankit
+      if (rows[0].streamer_slug !== 'ankit') {
+        console.error('This token is not valid for Ankit');
+        setIsValidToken(false);
+        return false;
       }
-    };
 
-    validateToken();
-  }, [token]);
+      console.log('Token validation successful:', rows[0].streamer_name);
+      setStreamer(rows[0]);
+      setIsValidToken(true);
+      reconnectAttemptsRef.current = 0; // Reset reconnect attempts on successful validation
+      return true;
+    } catch (error) {
+      console.error('Error validating token:', error);
+      setIsValidToken(false);
+      return false;
+    }
+  }, [obsToken]);
 
-  useEffect(() => {
-    if (!isValid || !streamer) return;
+  // Cleanup function
+  const cleanup = useCallback(() => {
+    console.log('Cleaning up connections and timers...');
+    
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+    
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+    
+    if (validationIntervalRef.current) {
+      clearInterval(validationIntervalRef.current);
+      validationIntervalRef.current = null;
+    }
+    
+    if (heartbeatIntervalRef.current) {
+      clearInterval(heartbeatIntervalRef.current);
+      heartbeatIntervalRef.current = null;
+    }
+  }, []);
 
-    // Set up realtime subscription for new donations
+  // Schedule reconnection attempt
+  const scheduleReconnect = useCallback(() => {
+    if (reconnectAttemptsRef.current >= MAX_RECONNECT_ATTEMPTS) {
+      console.error('Max reconnection attempts reached. Stopping reconnection attempts.');
+      return;
+    }
+
+    reconnectAttemptsRef.current += 1;
+    const delay = RECONNECT_DELAY * Math.pow(2, Math.min(reconnectAttemptsRef.current - 1, 3)); // Exponential backoff
+    
+    console.log(`Scheduling reconnection attempt ${reconnectAttemptsRef.current}/${MAX_RECONNECT_ATTEMPTS} in ${delay}ms`);
+    
+    reconnectTimeoutRef.current = setTimeout(() => {
+      console.log('Attempting to reconnect...');
+      if (streamer?.id) {
+        subscribeToUpdates();
+      }
+    }, delay);
+  }, [streamer?.id]);
+
+  // Subscribe to real-time donations with reconnection logic
+  const subscribeToUpdates = useCallback(() => {
+    if (!streamer?.id) {
+      console.log('No streamer ID available for subscription');
+      return;
+    }
+
+    cleanup(); // Clean up any existing connections
+    
+    console.log('Subscribing to real-time updates for streamer:', streamer.streamer_name);
+    setConnectionStatus('connecting');
+
     const channel = supabase
-      .channel(`ankit-alerts-${streamer.id}`)
+      .channel(`alerts-${streamer.id}`)
       .on(
         'postgres_changes',
         {
@@ -115,205 +184,357 @@ const AnkitAlerts = () => {
           filter: `streamer_id=eq.${streamer.id}`
         },
         (payload) => {
-          console.log('Realtime alert update:', payload);
+          const newDonation = payload.new as Donation;
+          console.log('Real-time event received:', payload.eventType, newDonation?.name);
           
-          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-            const donation = payload.new as Donation;
+          if (payload.eventType === 'INSERT' && newDonation.payment_status === 'success') {
+            const donation = newDonation;
+            console.log('New donation received:', { name: donation.name, amount: donation.amount, message: donation.message });
             
-            // Show alert for approved donations with successful payments
-            if (donation.payment_status === 'success' && 
-                (donation.moderation_status === 'approved' || donation.moderation_status === 'auto_approved') &&
-                donation.message_visible) {
-              
-              // Update recent donations list
-              setRecentDonations(prev => {
-                const exists = prev.some(d => d.id === donation.id);
-                const updated = exists 
-                  ? prev.map(d => d.id === donation.id ? donation : d)
-                  : [donation, ...prev];
-                return updated.slice(0, 10); // Keep only last 10
+            // Only show approved donations or auto-approved hyperemotes
+            if (donation.moderation_status === 'approved' || donation.moderation_status === 'auto_approved') {
+              setAlertQueue(prev => [...prev, { 
+                donation, 
+                timestamp: Date.now() 
+              }]);
+            }
+          }
+          
+          if (payload.eventType === 'UPDATE' && newDonation.payment_status === 'success') {
+            const oldDonation = payload.old as Donation;
+            const donation = newDonation;
+            
+            // Show alert if payment was completed OR if donation was just approved
+            const paymentCompleted = oldDonation.payment_status !== 'success';
+            const justApproved = oldDonation.moderation_status !== 'approved' && 
+                               donation.moderation_status === 'approved';
+            
+            if (paymentCompleted || justApproved) {
+              console.log('Donation update triggered alert:', { 
+                name: donation.name, 
+                amount: donation.amount,
+                paymentCompleted,
+                justApproved
               });
-
-              // Show alert animation
-              setCurrentAlert(donation);
               
-              // Clear alert after animation duration
-              setTimeout(() => {
-                setCurrentAlert(null);
-              }, 6000); // Show for 6 seconds
+              // Only show approved donations or auto-approved hyperemotes
+              if (donation.moderation_status === 'approved' || donation.moderation_status === 'auto_approved') {
+                setAlertQueue(prev => [...prev, { 
+                  donation, 
+                  timestamp: Date.now() 
+                }]);
+              }
             }
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Subscription status:', status);
+        
+        if (status === 'SUBSCRIBED') {
+          setConnectionStatus('connected');
+          reconnectAttemptsRef.current = 0;
+          console.log('Successfully connected to real-time updates');
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          setConnectionStatus('disconnected');
+          console.log('Connection lost, attempting to reconnect...');
+          scheduleReconnect();
+        }
+      });
+
+    channelRef.current = channel;
+  }, [streamer?.id, cleanup]);
+
+  // Initial token validation
+  useEffect(() => {
+    validateToken();
+  }, [validateToken]);
+
+  // Set up periodic token validation
+  useEffect(() => {
+    if (isValidToken) {
+      console.log('Setting up periodic token validation');
+      validationIntervalRef.current = setInterval(() => {
+        console.log('Performing periodic token validation');
+        validateToken();
+      }, VALIDATION_INTERVAL);
+    }
 
     return () => {
-      supabase.removeChannel(channel);
+      if (validationIntervalRef.current) {
+        clearInterval(validationIntervalRef.current);
+        validationIntervalRef.current = null;
+      }
     };
-  }, [isValid, streamer?.id]);
+  }, [isValidToken, validateToken]);
 
-  // Typing effect for messages
+  // Subscribe to updates when streamer is available
   useEffect(() => {
-    if (!currentAlert?.message) {
-      setDisplayedMessage('');
+    if (streamer?.id) {
+      subscribeToUpdates();
+    }
+
+    return cleanup;
+  }, [streamer?.id, subscribeToUpdates, cleanup]);
+
+  // Set up heartbeat to keep connection alive
+  useEffect(() => {
+    if (connectionStatus === 'connected') {
+      console.log('Setting up connection heartbeat');
+      heartbeatIntervalRef.current = setInterval(async () => {
+        try {
+          // Perform a simple query to keep the connection alive
+          await supabase
+            .from('ankit_donations')
+            .select('id')
+            .limit(1);
+          console.log('Heartbeat successful');
+        } catch (error) {
+          console.error('Heartbeat failed:', error);
+          setConnectionStatus('disconnected');
+          scheduleReconnect();
+        }
+      }, HEARTBEAT_INTERVAL);
+    }
+
+    return () => {
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current);
+        heartbeatIntervalRef.current = null;
+      }
+    };
+  }, [connectionStatus, scheduleReconnect]);
+
+  // Process alert queue
+  useEffect(() => {
+    if (!currentAlert && alertQueue.length > 0) {
+      const nextAlert = alertQueue[0];
+      setCurrentAlert(nextAlert);
+      setAlertQueue(prev => prev.slice(1));
+    }
+  }, [alertQueue, currentAlert]);
+
+  // Typing effect for donation message
+  useEffect(() => {
+    if (!currentAlert?.donation.message) {
+      setDisplayedMessage("");
       return;
     }
 
-    const message = currentAlert.message;
+    const fullMessage = currentAlert.donation.message;
+    setDisplayedMessage("");
     let index = 0;
-    setDisplayedMessage('');
 
-    const typing = setInterval(() => {
-      if (index < message.length) {
-        setDisplayedMessage(message.slice(0, index + 1));
-        index++;
-      } else {
-        clearInterval(typing);
-      }
+    const interval = setInterval(() => {
+      setDisplayedMessage(fullMessage.slice(0, index + 1));
+      index++;
+      if (index === fullMessage.length) clearInterval(interval);
     }, 100);
 
-    return () => clearInterval(typing);
-  }, [currentAlert?.message]);
+    return () => clearInterval(interval);
+  }, [currentAlert]);
 
-  if (loading) {
+  // Auto-clear current alert after display time
+  useEffect(() => {
+    if (!currentAlert) return;
+    
+    let totalTime;
+    if (currentAlert.donation.is_hyperemote) {
+      // Hyperemotes show for 10 seconds
+      totalTime = 10000;
+    } else if (currentAlert.donation.voice_message_url) {
+      // Voice messages show for 4 seconds
+      totalTime = 4000;
+    } else {
+      // Regular messages: typing time + display time
+      const messageLength = currentAlert.donation.message?.length || 0;
+      const typingTime = messageLength * 100; // 100ms per character
+      const displayTime = 3000; // 3 seconds after typing completes
+      totalTime = typingTime + displayTime;
+    }
+    
+    const timer = setTimeout(() => {
+      setCurrentAlert(null);
+      setDisplayedMessage("");
+    }, totalTime);
+    return () => clearTimeout(timer);
+  }, [currentAlert]);
+
+  if (isValidToken === null) {
     return (
-      <div className="min-h-screen bg-transparent flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-transparent">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
       </div>
     );
   }
 
-  if (error || !isValid) {
+  if (!isValidToken) {
     return (
-      <div className="min-h-screen bg-transparent flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-transparent">
         <div className="text-white text-center">
-          <h2 className="text-xl font-bold mb-2">OBS Alert Error</h2>
-          <p>{error}</p>
+          <h1 className="text-2xl font-bold mb-2">Invalid OBS Token</h1>
+          <p className="text-gray-300">Please check your OBS browser source URL</p>
         </div>
       </div>
     );
   }
 
-  if (!streamer) {
-    return (
-      <div className="min-h-screen bg-transparent flex items-center justify-center">
-        <div className="text-white">Loading streamer data...</div>
-      </div>
-    );
+  if (!enabled) {
+    return <div className="min-h-screen bg-transparent"></div>;
   }
 
   return (
-    <div className="min-h-screen bg-transparent relative overflow-hidden">
-      {/* Main Alert Animation */}
-      {currentAlert && (
-        <div 
-          className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none"
-          style={{ 
-            '--brand-color': streamer.brand_color,
-          } as React.CSSProperties}
-        >
-          <div className="animate-[bounceIn_0.8s_ease-out,fadeOut_1s_ease-in_5s_forwards] transform">
-            <Card className="bg-gradient-to-r from-primary/90 to-primary-foreground/90 backdrop-blur-sm border-2 shadow-2xl max-w-md">
-              <CardContent className="p-6 text-center">
-                {/* Hyperemote Effect */}
-                {currentAlert.is_hyperemote && (
-                  <div className="mb-4">
-                    <div className="text-6xl animate-bounce">🎉</div>
-                    <div className="text-yellow-400 font-bold text-lg animate-pulse">
-                      HYPEREMOTE!
-                    </div>
-                  </div>
-                )}
-
-                {/* Donation Info */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="text-2xl">💝</div>
-                    <h2 className="text-xl font-bold text-white">
-                      New Donation!
-                    </h2>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="text-white">
-                      <span className="font-semibold">{currentAlert.name}</span> donated
-                    </div>
-                    
-                    <div className="text-3xl font-bold text-yellow-400">
-                      {formatCurrency(Number(currentAlert.amount))}
-                    </div>
-                    
-                    {currentAlert.message && (
-                      <div className="text-white/90 text-sm italic border-t pt-2 mt-2">
-                        "{displayedMessage}"
-                      </div>
-                    )}
-
-                    {currentAlert.voice_message_url && (
-                      <Badge variant="secondary" className="text-xs">
-                        🎤 Voice Message
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-
-                {/* Sparkle Effects */}
-                <div className="absolute -top-2 -left-2 text-yellow-400 animate-ping">✨</div>
-                <div className="absolute -top-2 -right-2 text-yellow-400 animate-ping animation-delay-300">✨</div>
-                <div className="absolute -bottom-2 -left-2 text-yellow-400 animate-ping animation-delay-150">✨</div>
-                <div className="absolute -bottom-2 -right-2 text-yellow-400 animate-ping animation-delay-450">✨</div>
-              </CardContent>
-            </Card>
+    <>
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes floatUp {
+          0% { 
+            opacity: 0; 
+            transform: translateY(100vh) scale(0.5) rotate(0deg); 
+          }
+          20% { 
+            opacity: 1; 
+            transform: translateY(80vh) scale(1) rotate(180deg); 
+          }
+          80% { 
+            opacity: 1; 
+            transform: translateY(20vh) scale(1.2) rotate(340deg); 
+          }
+          100% { 
+            opacity: 0; 
+            transform: translateY(-10vh) scale(0.8) rotate(360deg); 
+          }
+        }
+        @keyframes floatUpLeft {
+          0% { 
+            opacity: 0; 
+            transform: translateY(100vh) translateX(0) scale(0.5) rotate(0deg); 
+          }
+          50% { 
+            opacity: 1; 
+            transform: translateY(50vh) translateX(-100px) scale(1.1) rotate(180deg); 
+          }
+          100% { 
+            opacity: 0; 
+            transform: translateY(-10vh) translateX(-200px) scale(0.7) rotate(360deg); 
+          }
+        }
+        @keyframes floatUpRight {
+          0% { 
+            opacity: 0; 
+            transform: translateY(100vh) translateX(0) scale(0.5) rotate(0deg); 
+          }
+          50% { 
+            opacity: 1; 
+            transform: translateY(50vh) translateX(100px) scale(1.1) rotate(-180deg); 
+          }
+          100% { 
+            opacity: 0; 
+            transform: translateY(-10vh) translateX(200px) scale(0.7) rotate(-360deg); 
+          }
+        }
+        @keyframes spiralUp {
+          0% { 
+            opacity: 0; 
+            transform: translateY(100vh) rotateY(0deg) scale(0.5); 
+          }
+          25% { 
+            opacity: 1; 
+            transform: translateY(75vh) rotateY(90deg) scale(1); 
+          }
+          50% { 
+            opacity: 1; 
+            transform: translateY(50vh) rotateY(180deg) scale(1.2); 
+          }
+          75% { 
+            opacity: 1; 
+            transform: translateY(25vh) rotateY(270deg) scale(1); 
+          }
+          100% { 
+            opacity: 0; 
+            transform: translateY(-10vh) rotateY(360deg) scale(0.8); 
+          }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.6s ease-out;
+        }
+      `}</style>
+      
+      <div className="min-h-screen bg-transparent overflow-hidden relative">
+        {currentAlert && currentAlert.donation.is_hyperemote && (
+          <div className="fixed inset-0 pointer-events-none">
+            {/* Generate multiple emotes with different animations */}
+            {Array.from({ length: 12 }, (_, index) => {
+              const emote = hyperemotes[index % hyperemotes.length];
+              const animations = ['floatUp', 'floatUpLeft', 'floatUpRight', 'spiralUp'];
+              const animationType = animations[index % animations.length];
+              const delay = (index % 4) * 1; // Stagger the start times more
+              const duration = 10; // Fixed 10 second duration for all emotes
+              const leftPosition = 10 + (index * 7) % 80; // Spread across screen width
+              
+              return (
+                <img
+                  key={`${emote.id}-${index}-${currentAlert.timestamp}`}
+                  src={emote.src}
+                  alt={emote.name}
+                  className="absolute w-20 h-20"
+                  style={{
+                    left: `${leftPosition}%`,
+                    animation: `${animationType} ${duration}s ease-in-out ${delay}s both`,
+                    zIndex: 10 + index
+                  }}
+                />
+              );
+            })}
           </div>
-        </div>
-      )}
-
-      {/* Background Particles Effect */}
-      {currentAlert && (
-        <div className="fixed inset-0 pointer-events-none z-40">
-          {[...Array(20)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute animate-[float_3s_ease-in-out_infinite] opacity-60"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 2}s`,
-                fontSize: `${Math.random() * 20 + 10}px`,
+        )}
+        
+        {currentAlert && !currentAlert.donation.is_hyperemote && (
+          // Regular Message Display
+          <div className="fixed inset-x-0 bottom-6 flex items-center justify-center bg-transparent">
+            <div 
+              className="p-4 rounded-xl shadow-xl text-center animate-fadeIn text-white"
+              style={{ 
+                background: currentAlert.donation.voice_message_url 
+                  ? "linear-gradient(135deg, #007BFF, #8A2BE2)" 
+                  : "linear-gradient(135deg, #1E90FF, #BF00FF)",
+                minWidth: "280px",
+                maxWidth: "400px"
               }}
             >
-              {['🎉', '✨', '💝', '🎊', '⭐'][Math.floor(Math.random() * 5)]}
-            </div>
-          ))}
-        </div>
-      )}
-
-
-      {/* Recent Donations Ticker (Optional - only shows when no active alert) */}
-      {!currentAlert && recentDonations.length > 0 && (
-        <div className="fixed bottom-4 left-4 right-4 z-20">
-          <div className="bg-black/30 backdrop-blur-sm rounded-lg p-2">
-            <div className="text-white/70 text-xs text-center">
-              Recent: {recentDonations.slice(0, 3).map(d => 
-                `${d.name} (${formatCurrency(Number(d.amount))})`
-              ).join(' • ')}
+              <div className="mb-2 text-lg font-bold">
+                🎉 {currentAlert.donation.name} donated ₹{currentAlert.donation.amount}!
+              </div>
+              {currentAlert.donation.message && (
+                <div className="text-sm italic border-t border-white/20 pt-2">
+                  "{displayedMessage}"
+                </div>
+              )}
+              {currentAlert.donation.voice_message_url && (
+                <div className="mt-2 text-xs bg-white/20 rounded-full px-3 py-1 inline-block">
+                  🎤 Voice Message
+                </div>
+              )}
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Voice Message Player */}
-      {currentAlert?.voice_message_url && (
-        <audio
-          autoPlay
-          className="hidden"
-          onEnded={() => console.log('Voice message finished')}
-        >
-          <source src={currentAlert.voice_message_url} type="audio/webm" />
-          <source src={currentAlert.voice_message_url} type="audio/mpeg" />
-        </audio>
-      )}
-    </div>
+        {/* Voice Message Player */}
+        {currentAlert?.donation.voice_message_url && (
+          <audio
+            autoPlay
+            className="hidden"
+            onEnded={() => console.log('Voice message finished')}
+          >
+            <source src={currentAlert.donation.voice_message_url} type="audio/webm" />
+            <source src={currentAlert.donation.voice_message_url} type="audio/mpeg" />
+          </audio>
+        )}
+      </div>
+    </>
   );
 };
 
