@@ -31,6 +31,7 @@ const AnkitAlerts = () => {
   const [streamer, setStreamer] = useState<Streamer | null>(null);
   const [recentDonations, setRecentDonations] = useState<Donation[]>([]);
   const [currentAlert, setCurrentAlert] = useState<Donation | null>(null);
+  const [displayedMessage, setDisplayedMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isValid, setIsValid] = useState(false);
@@ -151,6 +152,29 @@ const AnkitAlerts = () => {
     };
   }, [isValid, streamer?.id]);
 
+  // Typing effect for messages
+  useEffect(() => {
+    if (!currentAlert?.message) {
+      setDisplayedMessage('');
+      return;
+    }
+
+    const message = currentAlert.message;
+    let index = 0;
+    setDisplayedMessage('');
+
+    const typing = setInterval(() => {
+      if (index < message.length) {
+        setDisplayedMessage(message.slice(0, index + 1));
+        index++;
+      } else {
+        clearInterval(typing);
+      }
+    }, 100);
+
+    return () => clearInterval(typing);
+  }, [currentAlert?.message]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-transparent flex items-center justify-center">
@@ -221,7 +245,7 @@ const AnkitAlerts = () => {
                     
                     {currentAlert.message && (
                       <div className="text-white/90 text-sm italic border-t pt-2 mt-2">
-                        "{currentAlert.message}"
+                        "{displayedMessage}"
                       </div>
                     )}
 
@@ -264,15 +288,6 @@ const AnkitAlerts = () => {
         </div>
       )}
 
-      {/* Status Indicator (always visible, small) */}
-      <div className="fixed top-4 right-4 z-30">
-        <div className="flex items-center gap-2 bg-black/50 backdrop-blur-sm rounded-lg px-3 py-2">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-          <span className="text-white text-xs font-medium">
-            Ankit Alerts • Live
-          </span>
-        </div>
-      </div>
 
       {/* Recent Donations Ticker (Optional - only shows when no active alert) */}
       {!currentAlert && recentDonations.length > 0 && (
