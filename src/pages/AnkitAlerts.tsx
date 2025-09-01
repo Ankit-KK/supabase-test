@@ -509,7 +509,7 @@ const AnkitAlerts = () => {
                 🎉 {currentAlert.donation.name} donated ₹{currentAlert.donation.amount}!
               </div>
               {currentAlert.donation.message && (
-                <div className="text-sm italic border-t border-white/20 pt-2">
+                <div className="text-sm italic border-t border-white/20 pt-2 break-words whitespace-pre-wrap">
                   "{displayedMessage}"
                 </div>
               )}
