@@ -20,7 +20,7 @@ const Services: React.FC = () => {
             Streamer Donation App & Live Stream Payment Gateway
           </h2>
           <p className="mt-4 text-muted-foreground md:text-xl">
-            Start earning with our UPI for content creators platform at just ₹300. Support streamers with UPI and monetize your content in India.
+            Start earning with our UPI & Card payment platform (Rupay, Master cards) at just ₹300. Visa support coming soon! Support streamers with multiple payment methods and monetize your content in India.
           </p>
         </div>
         
@@ -30,16 +30,16 @@ const Services: React.FC = () => {
               <div className="bg-gradient-to-br from-hyperchat-purple to-hyperchat-pink p-2 rounded-lg">
                 <IndianRupee className="text-white h-5 w-5" />
               </div>
-              <h3 className="text-xl font-semibold">UPI Payment Integration</h3>
+              <h3 className="text-xl font-semibold">UPI & Card Payment Integration</h3>
             </div>
             <ul className="space-y-2">
               <li className="flex items-start gap-2">
                 <Check size={18} className="shrink-0 mt-1 text-hyperchat-pink" />
-                <span className="text-muted-foreground">Direct fan support via UPI payments</span>
+                <span className="text-muted-foreground">Direct fan support via UPI, Rupay & Master cards</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check size={18} className="shrink-0 mt-1 text-hyperchat-pink" />
-                <span className="text-muted-foreground">Instant UPI-based tipping solution</span>
+                <span className="text-muted-foreground">Multiple payment methods with Visa coming soon</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check size={18} className="shrink-0 mt-1 text-hyperchat-pink" />
@@ -58,7 +58,7 @@ const Services: React.FC = () => {
             <ul className="space-y-2">
               <li className="flex items-start gap-2">
                 <Check size={18} className="shrink-0 mt-1 text-hyperchat-pink" />
-                <span className="text-muted-foreground">Track creators earning with UPI in real-time</span>
+                <span className="text-muted-foreground">Track creators earning with UPI & cards in real-time</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check size={18} className="shrink-0 mt-1 text-hyperchat-pink" />
@@ -120,7 +120,7 @@ const Services: React.FC = () => {
         
         <div className="mt-12 text-center">
           <div className="inline-flex items-center justify-center p-1 mb-8 rounded-full bg-secondary/80 text-muted-foreground">
-            <span className="text-sm px-4 py-1">UPI Payment Platform for Creators - Starting at just ₹300</span>
+            <span className="text-sm px-4 py-1">UPI & Card Payment Platform for Creators - Starting at just ₹300</span>
           </div>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
@@ -131,7 +131,7 @@ const Services: React.FC = () => {
               Start Monetizing Content Now
             </Button>
             <Button variant="outline" size="lg" asChild>
-              <Link to="/contact">Learn About UPI Integration</Link>
+              <Link to="/contact">Learn About Payment Integration</Link>
             </Button>
           </div>
         </div>

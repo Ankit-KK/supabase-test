@@ -21,7 +21,7 @@ const Hero: React.FC = () => {
             </div>
             <p className="max-w-[700px] text-md md:text-xl text-muted-foreground mx-auto">
               The ultimate fan-to-streamer engagement tool that lets you stand out during live streams.
-              Make your messages shine and support your favorite creators with UPI payments!
+              Make your messages shine and support your favorite creators with UPI, Rupay, Master cards & more!
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-4">
