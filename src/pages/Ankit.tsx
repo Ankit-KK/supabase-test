@@ -11,7 +11,7 @@ import { useNavigate } from "react-router-dom";
 import VoiceRecorder from "@/components/VoiceRecorder";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import EmotionPack from "@/components/EmotionPack";
-import { parseEmotionalMessage, validateEmotionUsage, getEmotionTier } from "@/utils/emotionParser";
+import { parseEmotionalMessage, validateEmotionUsage } from "@/utils/emotionParser";
 
 const Ankit = () => {
   const navigate = useNavigate();
@@ -277,7 +277,6 @@ const Ankit = () => {
         // Add emotional TTS data if applicable
         if (emotionData?.hasEmotions) {
           updates.emotion_tags = emotionData.emotions;
-          updates.emotion_tier = getEmotionTier(amount);
           updates.processing_status = 'pending';
         }
 

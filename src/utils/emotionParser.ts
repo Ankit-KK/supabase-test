@@ -13,7 +13,7 @@ export interface EmotionConfig {
 }
 
 export const EMOTION_CONFIGS: Record<string, EmotionConfig> = {
-  // Basic Tier (≥₹1) - Lowered for testing
+  // All emotions available for ₹1
   happy: {
     name: 'happy',
     displayName: 'Happy',
@@ -66,15 +66,13 @@ export const EMOTION_CONFIGS: Record<string, EmotionConfig> = {
       style_exaggeration: 0.3
     }
   },
-
-  // Premium Tier (≥₹25)
   laughing: {
     name: 'laughing',
     displayName: 'Laughing',
     icon: '😂',
     description: 'Joyful laughter and giggles',
-    tier: 'premium',
-    minAmount: 25,
+    tier: 'basic',
+    minAmount: 1,
     voiceSettings: {
       stability: 0.2,
       similarity_boost: 0.8,
@@ -86,8 +84,8 @@ export const EMOTION_CONFIGS: Record<string, EmotionConfig> = {
     displayName: 'Angry',
     icon: '😠',
     description: 'Intense and fierce tone',
-    tier: 'premium',
-    minAmount: 25,
+    tier: 'basic',
+    minAmount: 1,
     voiceSettings: {
       stability: 0.1,
       similarity_boost: 0.9,
@@ -99,8 +97,8 @@ export const EMOTION_CONFIGS: Record<string, EmotionConfig> = {
     displayName: 'Surprised',
     icon: '😲',
     description: 'Shocked and amazed tone',
-    tier: 'premium',
-    minAmount: 25,
+    tier: 'basic',
+    minAmount: 1,
     voiceSettings: {
       stability: 0.2,
       similarity_boost: 0.7,
@@ -112,8 +110,8 @@ export const EMOTION_CONFIGS: Record<string, EmotionConfig> = {
     displayName: 'Whispering',
     icon: '🤫',
     description: 'Soft and secretive tone',
-    tier: 'premium',
-    minAmount: 25,
+    tier: 'basic',
+    minAmount: 1,
     voiceSettings: {
       stability: 0.9,
       similarity_boost: 0.5,
@@ -125,23 +123,21 @@ export const EMOTION_CONFIGS: Record<string, EmotionConfig> = {
     displayName: 'Cheerful',
     icon: '😄',
     description: 'Bright and optimistic tone',
-    tier: 'premium',
-    minAmount: 25,
+    tier: 'basic',
+    minAmount: 1,
     voiceSettings: {
       stability: 0.4,
       similarity_boost: 0.8,
       style_exaggeration: 0.7
     }
   },
-
-  // VIP Tier (≥₹100)
   dramatic: {
     name: 'dramatic',
     displayName: 'Dramatic',
     icon: '🎭',
     description: 'Theatrical and intense',
-    tier: 'vip',
-    minAmount: 100,
+    tier: 'basic',
+    minAmount: 1,
     voiceSettings: {
       stability: 0.1,
       similarity_boost: 0.9,
@@ -153,8 +149,8 @@ export const EMOTION_CONFIGS: Record<string, EmotionConfig> = {
     displayName: 'Villain',
     icon: '😈',
     description: 'Dark and menacing tone',
-    tier: 'vip',
-    minAmount: 100,
+    tier: 'basic',
+    minAmount: 1,
     voiceSettings: {
       stability: 0.2,
       similarity_boost: 0.9,
@@ -166,8 +162,8 @@ export const EMOTION_CONFIGS: Record<string, EmotionConfig> = {
     displayName: 'Mysterious',
     icon: '🕵️',
     description: 'Enigmatic and intriguing',
-    tier: 'vip',
-    minAmount: 100,
+    tier: 'basic',
+    minAmount: 1,
     voiceSettings: {
       stability: 0.7,
       similarity_boost: 0.6,
@@ -179,8 +175,8 @@ export const EMOTION_CONFIGS: Record<string, EmotionConfig> = {
     displayName: 'Romantic',
     icon: '💕',
     description: 'Loving and passionate tone',
-    tier: 'vip',
-    minAmount: 100,
+    tier: 'basic',
+    minAmount: 1,
     voiceSettings: {
       stability: 0.8,
       similarity_boost: 0.7,
@@ -192,8 +188,8 @@ export const EMOTION_CONFIGS: Record<string, EmotionConfig> = {
     displayName: 'Energetic',
     icon: '⚡',
     description: 'High-energy and dynamic',
-    tier: 'vip',
-    minAmount: 100,
+    tier: 'basic',
+    minAmount: 1,
     voiceSettings: {
       stability: 0.1,
       similarity_boost: 0.8,
@@ -288,27 +284,11 @@ export function parseEmotionalMessage(message: string): ParsedMessage {
 }
 
 /**
- * Get emotion tier based on donation amount
- */
-export function getEmotionTier(amount: number): 'basic' | 'premium' | 'vip' {
-  if (amount >= 100) return 'vip';
-  if (amount >= 25) return 'premium';
-  if (amount >= 1) return 'basic'; // Lowered for testing
-  return 'basic';
-}
-
-/**
- * Get available emotions for a given tier and amount
+ * Get available emotions for any donation amount (all emotions unlocked)
  */
 export function getAvailableEmotions(amount: number): EmotionConfig[] {
-  const tier = getEmotionTier(amount);
-  
-  return Object.values(EMOTION_CONFIGS).filter(emotion => {
-    if (tier === 'basic') return emotion.tier === 'basic';
-    if (tier === 'premium') return emotion.tier === 'basic' || emotion.tier === 'premium';
-    if (tier === 'vip') return true; // VIP gets all emotions
-    return false;
-  }).filter(emotion => amount >= emotion.minAmount);
+  // All emotions are available for ₹1 or more
+  return amount >= 1 ? Object.values(EMOTION_CONFIGS) : [];
 }
 
 /**
