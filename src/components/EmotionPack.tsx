@@ -76,9 +76,9 @@ export const EmotionPack: React.FC<EmotionPackProps> = ({
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <Badge variant={getTierBadgeVariant('basic')} className="text-xs">
-              Basic (≥₹5)
+              Basic (≥₹1)
             </Badge>
-            {donationAmount < 5 && (
+            {donationAmount < 1 && (
               <Lock className="w-4 h-4 text-muted-foreground" />
             )}
           </div>

@@ -549,7 +549,7 @@ const Ankit = () => {
             )}
 
             {/* Emotion Pack for Message Donations */}
-            {donationType === 'message' && formData.amount && parseFloat(formData.amount) >= 5 && (
+            {donationType === 'message' && formData.amount && parseFloat(formData.amount) >= 1 && (
               <EmotionPack
                 donationAmount={parseFloat(formData.amount)}
                 onEmotionSelect={handleEmotionSelect}

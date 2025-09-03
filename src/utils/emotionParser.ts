@@ -13,14 +13,14 @@ export interface EmotionConfig {
 }
 
 export const EMOTION_CONFIGS: Record<string, EmotionConfig> = {
-  // Basic Tier (≥₹5)
+  // Basic Tier (≥₹1) - Lowered for testing
   happy: {
     name: 'happy',
     displayName: 'Happy',
     icon: '😊',
     description: 'Cheerful and upbeat tone',
     tier: 'basic',
-    minAmount: 5,
+    minAmount: 1,
     voiceSettings: {
       stability: 0.5,
       similarity_boost: 0.7,
@@ -33,7 +33,7 @@ export const EMOTION_CONFIGS: Record<string, EmotionConfig> = {
     icon: '😢',
     description: 'Melancholic and emotional tone',
     tier: 'basic',
-    minAmount: 5,
+    minAmount: 1,
     voiceSettings: {
       stability: 0.8,
       similarity_boost: 0.6,
@@ -46,7 +46,7 @@ export const EMOTION_CONFIGS: Record<string, EmotionConfig> = {
     icon: '🤩',
     description: 'Energetic and enthusiastic',
     tier: 'basic',
-    minAmount: 5,
+    minAmount: 1,
     voiceSettings: {
       stability: 0.3,
       similarity_boost: 0.7,
@@ -59,7 +59,7 @@ export const EMOTION_CONFIGS: Record<string, EmotionConfig> = {
     icon: '😌',
     description: 'Peaceful and soothing tone',
     tier: 'basic',
-    minAmount: 5,
+    minAmount: 1,
     voiceSettings: {
       stability: 0.9,
       similarity_boost: 0.8,
@@ -293,6 +293,7 @@ export function parseEmotionalMessage(message: string): ParsedMessage {
 export function getEmotionTier(amount: number): 'basic' | 'premium' | 'vip' {
   if (amount >= 100) return 'vip';
   if (amount >= 25) return 'premium';
+  if (amount >= 1) return 'basic'; // Lowered for testing
   return 'basic';
 }
 
