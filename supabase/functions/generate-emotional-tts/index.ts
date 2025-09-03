@@ -152,16 +152,12 @@ serve(async (req) => {
       .from('voice-messages')
       .getPublicUrl(fileName);
 
-    // Determine emotion tier - For testing, all emotions available for 1 rupee
-    let emotionTier = 'vip'; // Always set to VIP for testing
-
     // Update donation with TTS results
     const { error: updateError } = await supabase
       .from('ankit_donations')
       .update({
         tts_audio_url: publicUrl,
         emotion_tags: emotions,
-        emotion_tier: emotionTier,
         processing_status: 'completed'
       })
       .eq('id', donationId);
@@ -176,8 +172,7 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         audioUrl: publicUrl,
-        emotions: emotions,
-        emotionTier: emotionTier
+        emotions: emotions
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
