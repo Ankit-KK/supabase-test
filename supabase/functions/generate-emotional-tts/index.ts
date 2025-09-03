@@ -143,7 +143,7 @@ serve(async (req) => {
       message, 
       donorName, 
       amount,
-      voiceId = "9BWtsMINqrJLrRacOk9x" // Default to Aria voice
+      voiceId = "H6QPv2pQZDcGqLwDTIJQ" // Default to Aria voice
     } = await req.json();
 
     if (!donationId || !message) {
