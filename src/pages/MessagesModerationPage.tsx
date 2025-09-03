@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ interface Donation {
   amount: number;
   message?: string | null;
   voice_message_url?: string | null;
+  tts_audio_url?: string | null;
   moderation_status: string;
   approved_by?: string | null;
   approved_at?: string | null;
@@ -46,6 +47,7 @@ export const MessagesModerationPage = ({ donations: propDonations, onRefresh, se
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const fetchDonations = async () => {
     if (!session?.streamerId) return;
@@ -151,23 +153,31 @@ export const MessagesModerationPage = ({ donations: propDonations, onRefresh, se
   };
 
   const playAudio = (url: string, donationId: string) => {
-    if (playingAudio) {
-      // Stop current audio
-      const currentAudio = document.getElementById('moderation-audio') as HTMLAudioElement;
-      if (currentAudio) {
-        currentAudio.pause();
-        currentAudio.currentTime = 0;
-      }
-      setPlayingAudio(null);
+    // Stop any existing audio
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current = null;
     }
 
-    if (playingAudio !== donationId) {
-      setPlayingAudio(donationId);
-      const audio = new Audio(url);
-      audio.id = 'moderation-audio';
-      audio.onended = () => setPlayingAudio(null);
-      audio.play();
+    // Toggle off if clicking the same item
+    if (playingAudio === donationId) {
+      setPlayingAudio(null);
+      return;
     }
+
+    // Play new audio
+    const audio = new Audio(url);
+    audioRef.current = audio;
+    setPlayingAudio(donationId);
+    audio.onended = () => {
+      setPlayingAudio(null);
+      audioRef.current = null;
+    };
+    audio.play().catch(() => {
+      setPlayingAudio(null);
+      audioRef.current = null;
+    });
   };
 
   const getDonationsByStatus = (status: string) => {
@@ -189,16 +199,21 @@ export const MessagesModerationPage = ({ donations: propDonations, onRefresh, se
               <p className="text-xs text-muted-foreground">₹{donation.amount}</p>
             </div>
             <div className="flex-1 min-w-0">
-              {donation.voice_message_url ? (
+              {(donation.tts_audio_url || donation.voice_message_url) ? (
                 <div className="flex items-center gap-2">
                   <Volume2 className="w-3 h-3 text-muted-foreground flex-shrink-0" />
-                  <span className="text-xs text-muted-foreground">Voice Message</span>
+                  <span className="text-xs text-muted-foreground">
+                    {donation.tts_audio_url ? 'Emotional TTS' : 'Voice Message'}
+                  </span>
                   <Button
                     variant="ghost"
                     size="sm"
                     className="h-6 px-2"
-                    onClick={() => playAudio(donation.voice_message_url!, donation.id)}
-                    disabled={!donation.voice_message_url}
+                    onClick={() => {
+                      const url = donation.tts_audio_url || donation.voice_message_url!;
+                      playAudio(url, donation.id);
+                    }}
+                    disabled={!donation.tts_audio_url && !donation.voice_message_url}
                   >
                     <Play className="w-3 h-3" />
                   </Button>
