@@ -152,10 +152,8 @@ serve(async (req) => {
       .from('voice-messages')
       .getPublicUrl(fileName);
 
-    // Determine emotion tier
-    let emotionTier = 'basic';
-    if (amount >= 100) emotionTier = 'vip';
-    else if (amount >= 25) emotionTier = 'premium';
+    // Determine emotion tier - For testing, all emotions available for 1 rupee
+    let emotionTier = 'vip'; // Always set to VIP for testing
 
     // Update donation with TTS results
     const { error: updateError } = await supabase
