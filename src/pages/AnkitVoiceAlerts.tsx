@@ -92,12 +92,14 @@ const AnkitVoiceAlerts = () => {
         .eq('streamer_id', streamer.id)
         .eq('payment_status', 'success')
         .eq('moderation_status', 'approved')
-        .or('voice_message_url.not.is.null,tts_audio_url.not.is.null')
         .order('created_at', { ascending: false })
         .limit(50);
 
       if (!error && data) {
-        setVoiceDonations(data);
+        const filtered = data.filter((d: VoiceDonation) =>
+          (d.voice_message_url || d.tts_audio_url) || (d.emotion_tags && d.emotion_tags.length > 0)
+        );
+        setVoiceDonations(filtered);
       }
     };
 
@@ -120,11 +122,11 @@ const AnkitVoiceAlerts = () => {
           if (
             donation.payment_status === 'success' &&
             donation.moderation_status === 'approved' &&
-            (donation.voice_message_url || donation.tts_audio_url)
+            ((donation.voice_message_url || donation.tts_audio_url) || (donation.emotion_tags && donation.emotion_tags.length > 0))
           ) {
             setVoiceDonations(prev => [donation, ...prev.slice(0, 49)]);
             setTimeout(() => {
-              if (autoPlay && !audioRef.current?.currentTime) {
+              if (autoPlay && !audioRef.current?.currentTime && (donation.voice_message_url || donation.tts_audio_url)) {
                 playVoiceMessage(donation);
               }
             }, 100);
@@ -145,14 +147,14 @@ const AnkitVoiceAlerts = () => {
           if (
             donation.payment_status === 'success' &&
             donation.moderation_status === 'approved' &&
-            (donation.voice_message_url || donation.tts_audio_url)
+            ((donation.voice_message_url || donation.tts_audio_url) || (donation.emotion_tags && donation.emotion_tags.length > 0))
           ) {
             setVoiceDonations(prev => {
               const exists = prev.some(d => d.id === donation.id);
               return exists ? prev.map(d => d.id === donation.id ? donation : d) : [donation, ...prev.slice(0, 49)];
             });
             setTimeout(() => {
-              if (autoPlay && !audioRef.current?.currentTime) {
+              if (autoPlay && !audioRef.current?.currentTime && (donation.voice_message_url || donation.tts_audio_url)) {
                 playVoiceMessage(donation);
               }
             }, 100);
@@ -164,6 +166,18 @@ const AnkitVoiceAlerts = () => {
     return () => {
       supabase.removeChannel(channel);
     };
+  }, [streamer?.id]);
+
+  // Kick off TTS processing for any pending donations (safety net)
+  useEffect(() => {
+    if (!streamer?.id) return;
+    (async () => {
+      try {
+        await supabase.functions.invoke('ankit-payment-webhook');
+      } catch (e) {
+        console.error('Failed to trigger TTS webhook:', e);
+      }
+    })();
   }, [streamer?.id]);
 
   const playVoiceMessage = (donation: VoiceDonation) => {
