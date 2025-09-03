@@ -47,6 +47,7 @@ const AnkitVoiceAlerts = () => {
   const [autoPlay, setAutoPlay] = useState(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playedDonations, setPlayedDonations] = useState<Set<string>>(new Set());
+  const autoPlayedRef = useRef<Set<string>>(new Set());
 
   // Validate OBS token and fetch streamer
   useEffect(() => {
@@ -126,7 +127,12 @@ const AnkitVoiceAlerts = () => {
           ) {
             setVoiceDonations(prev => [donation, ...prev.slice(0, 49)]);
             setTimeout(() => {
-              if (autoPlay && !audioRef.current?.currentTime && (donation.voice_message_url || donation.tts_audio_url)) {
+              if (
+                autoPlay &&
+                currentlyPlaying === null &&
+                !autoPlayedRef.current.has(donation.id) &&
+                (donation.voice_message_url || donation.tts_audio_url)
+              ) {
                 playVoiceMessage(donation);
               }
             }, 100);
@@ -154,7 +160,12 @@ const AnkitVoiceAlerts = () => {
               return exists ? prev.map(d => d.id === donation.id ? donation : d) : [donation, ...prev.slice(0, 49)];
             });
             setTimeout(() => {
-              if (autoPlay && !audioRef.current?.currentTime && (donation.voice_message_url || donation.tts_audio_url)) {
+              if (
+                autoPlay &&
+                currentlyPlaying === null &&
+                !autoPlayedRef.current.has(donation.id) &&
+                (donation.voice_message_url || donation.tts_audio_url)
+              ) {
                 playVoiceMessage(donation);
               }
             }, 100);
@@ -184,6 +195,9 @@ const AnkitVoiceAlerts = () => {
     // Prefer TTS audio for emotional messages, fallback to regular voice
     const audioUrl = donation.tts_audio_url || donation.voice_message_url;
     if (!audioUrl || isMuted) return;
+
+    // mark this donation as auto-played to prevent repeat triggers from realtime updates
+    autoPlayedRef.current.add(donation.id);
 
     if (audioRef.current) {
       audioRef.current.pause();
