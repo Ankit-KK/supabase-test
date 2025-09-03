@@ -135,15 +135,15 @@ serve(async (req) => {
               }
             }
 
-            // If payment is successful and has voice data, trigger voice upload
-            if (finalStatus === 'success' && donation.temp_voice_data) {
+            // If payment is successful, trigger post-payment processing (TTS, voice upload, etc.)
+            if (finalStatus === 'success') {
               try {
-                console.log(`Triggering voice upload for ${donation.order_id}`);
-                await supabaseAdmin.functions.invoke('upload-voice-message-ankit', {
-                  body: { order_id: donation.order_id }
+                console.log(`Triggering post-payment processing for ${donation.order_id}`);
+                await supabaseAdmin.functions.invoke('process-ankit-payment', {
+                  body: { donationId: donation.id }
                 });
-              } catch (voiceError) {
-                console.error(`Voice upload error for ${donation.order_id}:`, voiceError);
+              } catch (processError) {
+                console.error(`Post-payment processing error for ${donation.order_id}:`, processError);
               }
             }
           }

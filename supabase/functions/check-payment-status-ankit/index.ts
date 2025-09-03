@@ -169,16 +169,16 @@ serve(async (req) => {
           } else {
             console.log(`Payment status updated to: ${finalStatus}`);
             
-            // Notify moderators if payment is successful and needs moderation and not already notified
-            if (finalStatus === 'success' && donation.moderation_status === 'pending' && !donation.mod_notified) {
-              console.log('Payment successful and pending moderation, triggering Telegram notifications...');
+            // If payment is successful, trigger post-payment processing (TTS, voice upload, notifications)
+            if (finalStatus === 'success') {
+              console.log('Payment successful, triggering post-payment processing...');
               try {
-                await supabaseAdmin.functions.invoke('notify-moderators-ankit', {
-                  body: { donation_id: donation.id }
+                await supabaseAdmin.functions.invoke('process-ankit-payment', {
+                  body: { donationId: donation.id }
                 });
-                console.log('Telegram notification function invoked successfully');
-              } catch (telegramError) {
-                console.error('Error invoking Telegram notification function:', telegramError);
+                console.log('Post-payment processing function invoked successfully');
+              } catch (processError) {
+                console.error('Error invoking post-payment processing function:', processError);
               }
             }
           }
