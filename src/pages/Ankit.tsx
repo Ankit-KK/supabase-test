@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import VoiceRecorder from "@/components/VoiceRecorder";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
+import EmotionPack from "@/components/EmotionPack";
+import { parseEmotionalMessage, validateEmotionUsage, getEmotionTier } from "@/utils/emotionParser";
 
 const Ankit = () => {
   const navigate = useNavigate();
@@ -37,6 +39,11 @@ const Ankit = () => {
   
   // Voice recorder instance
   const voiceRecorder = useVoiceRecorder(60);
+
+  // Emotional TTS states
+  const [messageInputRef, setMessageInputRef] = useState<HTMLTextAreaElement | null>(null);
+  const [cursorPosition, setCursorPosition] = useState(0);
+  const [showEmotionalPreview, setShowEmotionalPreview] = useState(false);
   
   // Static emotes from chiaa-emotes bucket (for hyperemotes)
   const availableEmotes = [
@@ -108,6 +115,35 @@ const Ankit = () => {
       ...prev,
       [name]: value
     }));
+
+    // Track cursor position for emotion insertion
+    if (name === 'message' && e.target instanceof HTMLTextAreaElement) {
+      setCursorPosition(e.target.selectionStart);
+    }
+  };
+
+  const handleEmotionSelect = (emotionTag: string) => {
+    if (!messageInputRef) return;
+
+    const currentMessage = formData.message;
+    const before = currentMessage.slice(0, cursorPosition);
+    const after = currentMessage.slice(cursorPosition);
+    const newMessage = before + emotionTag + ' ' + after;
+
+    setFormData(prev => ({
+      ...prev,
+      message: newMessage
+    }));
+
+    // Update cursor position to after the inserted emotion
+    setTimeout(() => {
+      if (messageInputRef) {
+        const newCursorPos = cursorPosition + emotionTag.length + 1;
+        messageInputRef.setSelectionRange(newCursorPos, newCursorPos);
+        messageInputRef.focus();
+        setCursorPosition(newCursorPos);
+      }
+    }, 0);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -143,6 +179,22 @@ const Ankit = () => {
       return;
     }
 
+    // Validate emotional messages
+    if (donationType === 'message' && formData.message?.trim()) {
+      const parsed = parseEmotionalMessage(formData.message);
+      if (parsed.hasEmotions) {
+        const validation = validateEmotionUsage(parsed.emotions, amount);
+        if (!validation.valid) {
+          toast({
+            title: "Invalid Emotions",
+            description: `These emotions require a higher donation amount: ${validation.invalidEmotions.join(', ')}`,
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+    }
+
     if (!amount || amount < 1) {
       toast({
         title: "Invalid Amount",
@@ -171,6 +223,11 @@ const Ankit = () => {
 
     try {
       const amount = parseFloat(formData.amount);
+
+      // Parse emotions from message if applicable
+      const emotionData = donationType === 'message' && formData.message?.trim() 
+        ? parseEmotionalMessage(formData.message.trim())
+        : null;
 
       // Create order via Supabase edge function
       const response = await supabase.functions.invoke('create-payment-order-ankit', {
@@ -217,6 +274,13 @@ const Ankit = () => {
         if (donationType === 'hyperemote') {
           updates.is_hyperemote = true;
         }
+        // Add emotional TTS data if applicable
+        if (emotionData?.hasEmotions) {
+          updates.emotion_tags = emotionData.emotions;
+          updates.emotion_tier = getEmotionTier(amount);
+          updates.processing_status = 'pending';
+        }
+
         if (Object.keys(updates).length > 0) {
           const { error: updErr } = await supabase
             .from('ankit_donations')
@@ -468,9 +532,11 @@ const Ankit = () => {
                 <textarea
                   id="message"
                   name="message"
-                  placeholder="Enter your message"
+                  placeholder="Enter your message (use [emotion] tags for expressive TTS)"
                   value={formData.message}
                   onChange={handleInputChange}
+                  onSelect={(e) => setCursorPosition((e.target as HTMLTextAreaElement).selectionStart)}
+                  ref={(ref) => setMessageInputRef(ref)}
                   className="w-full p-3 border border-blue-500/30 rounded-lg bg-background/50 backdrop-blur-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none resize-none"
                   rows={3}
                   maxLength={500}
@@ -482,7 +548,33 @@ const Ankit = () => {
               </div>
             )}
 
-            {/* Voice Recorder */}
+            {/* Emotion Pack for Message Donations */}
+            {donationType === 'message' && formData.amount && parseFloat(formData.amount) >= 5 && (
+              <EmotionPack
+                donationAmount={parseFloat(formData.amount)}
+                onEmotionSelect={handleEmotionSelect}
+                className="mt-4"
+              />
+            )}
+
+            {/* Emotional TTS Preview */}
+            {donationType === 'message' && formData.message && parseEmotionalMessage(formData.message).hasEmotions && (
+              <div className="p-3 bg-muted/50 rounded-lg border border-primary/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium">Emotional TTS Preview</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Your message will be spoken with these emotions: {' '}
+                  <span className="font-medium text-primary">
+                    {parseEmotionalMessage(formData.message).emotions.join(', ')}
+                  </span>
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  💡 After payment, your emotional message will be processed by our advanced TTS system!
+                </p>
+              </div>
+            )}
             {donationType === 'voice' && (
               <div className="space-y-3">
                 <label className="text-sm font-medium text-blue-500">

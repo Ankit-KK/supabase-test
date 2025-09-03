@@ -22,6 +22,8 @@ export type Database = {
           auto_verified: boolean | null
           cashfree_order_id: string | null
           created_at: string
+          emotion_tags: string[] | null
+          emotion_tier: string | null
           id: string
           is_hyperemote: boolean | null
           last_verification_attempt: string | null
@@ -32,9 +34,12 @@ export type Database = {
           name: string
           order_id: string | null
           payment_status: string | null
+          processing_status: string | null
           rejected_reason: string | null
           streamer_id: string | null
           temp_voice_data: string | null
+          tts_audio_url: string | null
+          tts_segments: Json | null
           updated_at: string
           voice_duration_seconds: number | null
           voice_message_url: string | null
@@ -46,6 +51,8 @@ export type Database = {
           auto_verified?: boolean | null
           cashfree_order_id?: string | null
           created_at?: string
+          emotion_tags?: string[] | null
+          emotion_tier?: string | null
           id?: string
           is_hyperemote?: boolean | null
           last_verification_attempt?: string | null
@@ -56,9 +63,12 @@ export type Database = {
           name: string
           order_id?: string | null
           payment_status?: string | null
+          processing_status?: string | null
           rejected_reason?: string | null
           streamer_id?: string | null
           temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          tts_segments?: Json | null
           updated_at?: string
           voice_duration_seconds?: number | null
           voice_message_url?: string | null
@@ -70,6 +80,8 @@ export type Database = {
           auto_verified?: boolean | null
           cashfree_order_id?: string | null
           created_at?: string
+          emotion_tags?: string[] | null
+          emotion_tier?: string | null
           id?: string
           is_hyperemote?: boolean | null
           last_verification_attempt?: string | null
@@ -80,9 +92,12 @@ export type Database = {
           name?: string
           order_id?: string | null
           payment_status?: string | null
+          processing_status?: string | null
           rejected_reason?: string | null
           streamer_id?: string | null
           temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          tts_segments?: Json | null
           updated_at?: string
           voice_duration_seconds?: number | null
           voice_message_url?: string | null

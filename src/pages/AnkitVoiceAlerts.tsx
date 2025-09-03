@@ -12,6 +12,10 @@ interface VoiceDonation {
   amount: number;
   message?: string;
   voice_message_url?: string;
+  tts_audio_url?: string;
+  emotion_tags?: string[];
+  emotion_tier?: string;
+  processing_status?: string;
   created_at: string;
   payment_status: string;
   moderation_status?: string;
@@ -77,7 +81,7 @@ const AnkitVoiceAlerts = () => {
     validateToken();
   }, [obsToken]);
 
-  // Fetch voice donations
+  // Fetch voice donations including emotional TTS
   useEffect(() => {
     if (!streamer?.id) return;
 
@@ -88,7 +92,7 @@ const AnkitVoiceAlerts = () => {
         .eq('streamer_id', streamer.id)
         .eq('payment_status', 'success')
         .eq('moderation_status', 'approved')
-        .not('voice_message_url', 'is', null)
+        .or('voice_message_url.not.is.null,tts_audio_url.not.is.null')
         .order('created_at', { ascending: false })
         .limit(50);
 
@@ -116,7 +120,7 @@ const AnkitVoiceAlerts = () => {
           if (
             donation.payment_status === 'success' &&
             donation.moderation_status === 'approved' &&
-            donation.voice_message_url
+            (donation.voice_message_url || donation.tts_audio_url)
           ) {
             setVoiceDonations(prev => [donation, ...prev.slice(0, 49)]);
             setTimeout(() => {
@@ -141,7 +145,7 @@ const AnkitVoiceAlerts = () => {
           if (
             donation.payment_status === 'success' &&
             donation.moderation_status === 'approved' &&
-            donation.voice_message_url
+            (donation.voice_message_url || donation.tts_audio_url)
           ) {
             setVoiceDonations(prev => {
               const exists = prev.some(d => d.id === donation.id);
@@ -163,13 +167,15 @@ const AnkitVoiceAlerts = () => {
   }, [streamer?.id]);
 
   const playVoiceMessage = (donation: VoiceDonation) => {
-    if (!donation.voice_message_url || isMuted) return;
+    // Prefer TTS audio for emotional messages, fallback to regular voice
+    const audioUrl = donation.tts_audio_url || donation.voice_message_url;
+    if (!audioUrl || isMuted) return;
 
     if (audioRef.current) {
       audioRef.current.pause();
     }
 
-    audioRef.current = new Audio(donation.voice_message_url);
+    audioRef.current = new Audio(audioUrl);
     audioRef.current.volume = isMuted ? 0 : 1;
     
     audioRef.current.onplay = () => {
@@ -186,7 +192,7 @@ const AnkitVoiceAlerts = () => {
       // Auto-play next unplayed donation if enabled
       if (autoPlay) {
         const nextUnplayed = voiceDonations.find(d => 
-          d.voice_message_url && 
+          (d.voice_message_url || d.tts_audio_url) && 
           !playedDonations.has(d.id) && 
           d.id !== donation.id
         );
@@ -317,82 +323,131 @@ const AnkitVoiceAlerts = () => {
           </CardContent>
         </Card>
 
-        {/* Voice Donations List */}
         <Card>
           <CardHeader>
             <CardTitle>Voice Messages ({voiceDonations.length})</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Includes voice recordings and emotional TTS messages
+            </p>
           </CardHeader>
           <CardContent>
             {voiceDonations.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Volume2 className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <p>No voice message donations yet</p>
-                <p className="text-sm">Voice messages will appear here when donors send them</p>
+                <p>No voice messages yet</p>
+                <p className="text-sm">Voice messages and emotional TTS will appear here</p>
               </div>
             ) : (
               <div className="space-y-3">
-                {voiceDonations.map((donation) => (
-                  <div
-                    key={donation.id}
-                    className={`flex items-center justify-between p-4 rounded-lg border transition-all ${
-                      currentlyPlaying === donation.id ? 'border-primary bg-primary/5' : 'border-border'
-                    } ${playedDonations.has(donation.id) ? 'opacity-60' : ''}`}
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium">{donation.name}</span>
-                        <Badge 
-                          variant="secondary"
-                          style={{ 
-                            backgroundColor: `${streamer?.brand_color}20`, 
-                            color: streamer?.brand_color 
-                          }}
-                        >
-                          ₹{donation.amount}
-                        </Badge>
-                        {currentlyPlaying === donation.id && (
-                          <Badge variant="default" className="animate-pulse">
-                            Playing...
+                {voiceDonations.map((donation) => {
+                  const hasEmotions = donation.emotion_tags && donation.emotion_tags.length > 0;
+                  const audioUrl = donation.tts_audio_url || donation.voice_message_url;
+                  
+                  return (
+                    <div
+                      key={donation.id}
+                      className={`flex items-center justify-between p-4 rounded-lg border transition-all ${
+                        currentlyPlaying === donation.id ? 'border-primary bg-primary/5' : 'border-border'
+                      } ${playedDonations.has(donation.id) ? 'opacity-60' : ''}`}
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium">{donation.name}</span>
+                          <Badge 
+                            variant="secondary"
+                            style={{ 
+                              backgroundColor: `${streamer?.brand_color}20`, 
+                              color: streamer?.brand_color 
+                            }}
+                          >
+                            ₹{donation.amount}
                           </Badge>
+                          
+                          {/* Emotion badges */}
+                          {hasEmotions && (
+                            <Badge variant="outline" className="text-xs bg-gradient-to-r from-purple-100 to-pink-100 border-purple-200">
+                              🎭 Emotional TTS
+                            </Badge>
+                          )}
+                          
+                          {/* Processing status */}
+                          {donation.processing_status === 'processing' && (
+                            <Badge variant="secondary" className="animate-pulse">
+                              Processing TTS...
+                            </Badge>
+                          )}
+                          
+                          {/* Currently playing */}
+                          {currentlyPlaying === donation.id && (
+                            <Badge variant="default" className="animate-pulse">
+                              Playing...
+                            </Badge>
+                          )}
+                          
+                          {/* Played status */}
+                          {playedDonations.has(donation.id) && (
+                            <Badge variant="outline">
+                              Played
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        {/* Message */}
+                        {donation.message && (
+                          <p className="text-sm text-muted-foreground mb-2">
+                            "{donation.message}"
+                          </p>
                         )}
-                        {playedDonations.has(donation.id) && (
-                          <Badge variant="outline">
-                            Played
-                          </Badge>
+                        
+                        {/* Emotion tags display */}
+                        {hasEmotions && (
+                          <div className="flex flex-wrap gap-1 mb-2">
+                            {donation.emotion_tags!.map((emotion) => (
+                              <span
+                                key={emotion}
+                                className="text-xs px-2 py-1 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-full text-purple-700"
+                              >
+                                {emotion}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {/* Timestamp and type */}
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span>{new Date(donation.created_at).toLocaleString()}</span>
+                          {donation.tts_audio_url && (
+                            <span className="text-purple-500">• Emotional TTS</span>
+                          )}
+                          {donation.voice_message_url && !donation.tts_audio_url && (
+                            <span className="text-blue-500">• Voice Recording</span>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => playVoiceMessage(donation)}
+                          disabled={currentlyPlaying === donation.id || isMuted || !audioUrl || donation.processing_status === 'processing'}
+                        >
+                          <Play className="w-4 h-4 mr-1" />
+                          {donation.processing_status === 'processing' ? 'Processing...' : 'Play'}
+                        </Button>
+                        {!playedDonations.has(donation.id) && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => markAsPlayed(donation.id)}
+                          >
+                            Mark Played
+                          </Button>
                         )}
                       </div>
-                      {donation.message && (
-                        <p className="text-sm text-muted-foreground mb-2">
-                          "{donation.message}"
-                        </p>
-                      )}
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(donation.created_at).toLocaleString()}
-                      </p>
                     </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => playVoiceMessage(donation)}
-                        disabled={currentlyPlaying === donation.id || isMuted}
-                      >
-                        <Play className="w-4 h-4 mr-1" />
-                        Play
-                      </Button>
-                      {!playedDonations.has(donation.id) && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => markAsPlayed(donation.id)}
-                        >
-                          Mark Played
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
