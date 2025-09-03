@@ -48,6 +48,7 @@ const AnkitVoiceAlerts = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playedDonations, setPlayedDonations] = useState<Set<string>>(new Set());
   const autoPlayedRef = useRef<Set<string>>(new Set());
+  const playOriginRef = useRef<'user' | 'auto'>('user');
 
   // Validate OBS token and fetch streamer
   useEffect(() => {
@@ -133,7 +134,7 @@ const AnkitVoiceAlerts = () => {
                 !autoPlayedRef.current.has(donation.id) &&
                 (donation.voice_message_url || donation.tts_audio_url)
               ) {
-                playVoiceMessage(donation);
+                playVoiceMessage(donation, 'auto');
               }
             }, 100);
           }
@@ -166,7 +167,7 @@ const AnkitVoiceAlerts = () => {
                 !autoPlayedRef.current.has(donation.id) &&
                 (donation.voice_message_url || donation.tts_audio_url)
               ) {
-                playVoiceMessage(donation);
+                playVoiceMessage(donation, 'auto');
               }
             }, 100);
           }
@@ -191,7 +192,8 @@ const AnkitVoiceAlerts = () => {
     })();
   }, [streamer?.id]);
 
-  const playVoiceMessage = (donation: VoiceDonation) => {
+  const playVoiceMessage = (donation: VoiceDonation, origin: 'user' | 'auto' = 'user') => {
+    playOriginRef.current = origin;
     // Prefer TTS audio for emotional messages, fallback to regular voice
     const audioUrl = donation.tts_audio_url || donation.voice_message_url;
     if (!audioUrl || isMuted) return;
@@ -217,17 +219,18 @@ const AnkitVoiceAlerts = () => {
       setIsPlaying(false);
       setPlayedDonations(prev => new Set([...prev, donation.id]));
       
-      // Auto-play next unplayed donation if enabled
-      if (autoPlay) {
+      // Auto-play next unplayed donation if enabled and this was an auto-start
+      if (autoPlay && playOriginRef.current === 'auto') {
         const nextUnplayed = voiceDonations.find(d => 
           (d.voice_message_url || d.tts_audio_url) && 
           !playedDonations.has(d.id) && 
           d.id !== donation.id
         );
         if (nextUnplayed) {
-          setTimeout(() => playVoiceMessage(nextUnplayed), 1000);
+          setTimeout(() => playVoiceMessage(nextUnplayed, 'auto'), 1000);
         }
       }
+      playOriginRef.current = 'user';
     };
 
     audioRef.current.onerror = () => {
