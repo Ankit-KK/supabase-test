@@ -230,6 +230,13 @@ export type Database = {
             foreignKeyName: "chia_gaming_donations_streamer_id_fkey"
             columns: ["streamer_id"]
             isOneToOne: false
+            referencedRelation: "public_streamer_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chia_gaming_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
             referencedRelation: "streamers"
             referencedColumns: ["id"]
           },
@@ -562,6 +569,13 @@ export type Database = {
             foreignKeyName: "streamers_moderators_streamer_id_fkey"
             columns: ["streamer_id"]
             isOneToOne: false
+            referencedRelation: "public_streamer_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "streamers_moderators_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
             referencedRelation: "streamers"
             referencedColumns: ["id"]
           },
@@ -638,7 +652,42 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_streamer_view: {
+        Row: {
+          brand_color: string | null
+          brand_logo_url: string | null
+          created_at: string | null
+          hyperemotes_enabled: boolean | null
+          hyperemotes_min_amount: number | null
+          id: string | null
+          streamer_name: string | null
+          streamer_slug: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          brand_color?: string | null
+          brand_logo_url?: string | null
+          created_at?: string | null
+          hyperemotes_enabled?: boolean | null
+          hyperemotes_min_amount?: number | null
+          id?: string | null
+          streamer_name?: string | null
+          streamer_slug?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          brand_color?: string | null
+          brand_logo_url?: string | null
+          created_at?: string | null
+          hyperemotes_enabled?: boolean | null
+          hyperemotes_min_amount?: number | null
+          id?: string | null
+          streamer_name?: string | null
+          streamer_slug?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       authenticate_streamer: {
@@ -744,6 +793,10 @@ export type Database = {
           sanitized_message: string
         }[]
       }
+      get_safe_streamer_columns: {
+        Args: Record<PropertyKey, never>
+        Returns: string[]
+      }
       get_streamer_by_obs_token: {
         Args: { token: string }
         Returns: {
@@ -778,6 +831,18 @@ export type Database = {
           streamer_name: string
           streamer_slug: string
           user_id: string
+        }[]
+      }
+      get_streamer_for_donation: {
+        Args: { p_streamer_slug: string }
+        Returns: {
+          brand_color: string
+          brand_logo_url: string
+          hyperemotes_enabled: boolean
+          hyperemotes_min_amount: number
+          id: string
+          streamer_name: string
+          streamer_slug: string
         }[]
       }
       get_streamer_moderator_count: {
