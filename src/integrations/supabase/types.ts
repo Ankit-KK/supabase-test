@@ -230,13 +230,6 @@ export type Database = {
             foreignKeyName: "chia_gaming_donations_streamer_id_fkey"
             columns: ["streamer_id"]
             isOneToOne: false
-            referencedRelation: "public_streamers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "chia_gaming_donations_streamer_id_fkey"
-            columns: ["streamer_id"]
-            isOneToOne: false
             referencedRelation: "streamers"
             referencedColumns: ["id"]
           },
@@ -569,13 +562,6 @@ export type Database = {
             foreignKeyName: "streamers_moderators_streamer_id_fkey"
             columns: ["streamer_id"]
             isOneToOne: false
-            referencedRelation: "public_streamers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "streamers_moderators_streamer_id_fkey"
-            columns: ["streamer_id"]
-            isOneToOne: false
             referencedRelation: "streamers"
             referencedColumns: ["id"]
           },
@@ -652,42 +638,7 @@ export type Database = {
       }
     }
     Views: {
-      public_streamers: {
-        Row: {
-          brand_color: string | null
-          brand_logo_url: string | null
-          created_at: string | null
-          hyperemotes_enabled: boolean | null
-          hyperemotes_min_amount: number | null
-          id: string | null
-          streamer_name: string | null
-          streamer_slug: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          brand_color?: string | null
-          brand_logo_url?: string | null
-          created_at?: string | null
-          hyperemotes_enabled?: boolean | null
-          hyperemotes_min_amount?: number | null
-          id?: string | null
-          streamer_name?: string | null
-          streamer_slug?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          brand_color?: string | null
-          brand_logo_url?: string | null
-          created_at?: string | null
-          hyperemotes_enabled?: boolean | null
-          hyperemotes_min_amount?: number | null
-          id?: string | null
-          streamer_name?: string | null
-          streamer_slug?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       authenticate_streamer: {
@@ -701,6 +652,15 @@ export type Database = {
         }[]
       }
       check_rate_limit: {
+        Args: {
+          p_endpoint: string
+          p_ip_address: string
+          p_max_requests?: number
+          p_window_minutes?: number
+        }
+        Returns: boolean
+      }
+      check_server_rate_limit: {
         Args: {
           p_endpoint: string
           p_ip_address: string
@@ -856,6 +816,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      is_current_user_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       is_service_role: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -889,6 +853,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      log_security_violation: {
+        Args: { details?: string; user_email?: string; violation_type: string }
+        Returns: undefined
+      }
       log_sensitive_access: {
         Args: { action: string; record_id?: string; table_name: string }
         Returns: undefined
@@ -915,6 +883,10 @@ export type Database = {
         Args: { amount: number }
         Returns: boolean
       }
+      validate_donation_security: {
+        Args: { p_amount: number; p_message?: string; p_name: string }
+        Returns: boolean
+      }
       validate_obs_token: {
         Args: { token_to_check: string }
         Returns: {
@@ -936,6 +908,10 @@ export type Database = {
           streamer_name: string
           streamer_slug: string
         }[]
+      }
+      validate_streamer_ownership: {
+        Args: { p_streamer_id: string }
+        Returns: boolean
       }
       verify_moderator_access: {
         Args: { p_streamer_slug: string; p_telegram_user_id: string }
