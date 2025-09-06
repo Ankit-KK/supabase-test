@@ -793,6 +793,13 @@ export type Database = {
         Args: { streamer_id: string }
         Returns: boolean
       }
+      link_streamer_to_current_user: {
+        Args: { p_streamer_slug: string }
+        Returns: {
+          linked: boolean
+          streamer_id: string
+        }[]
+      }
       log_access_attempt: {
         Args: {
           p_action: string

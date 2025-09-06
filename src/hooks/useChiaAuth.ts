@@ -38,14 +38,28 @@ export const useChiaAuth = () => {
 
         // Check for authenticated Google OAuth user with chia_gaming streamer
         if (user && authSession && !authLoading) {
-          const { data: streamerData, error } = await supabase
+          // Try to find the linked streamer for this user
+          let { data: streamerData } = await supabase
             .from('streamers')
             .select('*')
             .eq('user_id', user.id)
             .eq('streamer_slug', 'chia_gaming')
             .single();
 
-          if (!error && streamerData) {
+          if (!streamerData) {
+            // Attempt to securely link this streamer to the current user (if unclaimed)
+            await supabase.rpc('link_streamer_to_current_user', { p_streamer_slug: 'chia_gaming' });
+            // Re-fetch after linking attempt
+            const retry = await supabase
+              .from('streamers')
+              .select('*')
+              .eq('user_id', user.id)
+              .eq('streamer_slug', 'chia_gaming')
+              .single();
+            streamerData = retry.data ?? null;
+          }
+
+          if (streamerData) {
             const authSession: ChiaSession = {
               streamerId: streamerData.id,
               streamerSlug: streamerData.streamer_slug,
