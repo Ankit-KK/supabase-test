@@ -475,13 +475,14 @@ export type Database = {
           hyperemotes_enabled: boolean | null
           hyperemotes_min_amount: number | null
           id: string
+          last_login_at: string | null
+          last_login_email: string | null
+          last_login_provider: string | null
           obs_token: string | null
-          password: string | null
           streamer_name: string
           streamer_slug: string
           updated_at: string | null
           user_id: string | null
-          username: string | null
         }
         Insert: {
           brand_color?: string | null
@@ -490,13 +491,14 @@ export type Database = {
           hyperemotes_enabled?: boolean | null
           hyperemotes_min_amount?: number | null
           id?: string
+          last_login_at?: string | null
+          last_login_email?: string | null
+          last_login_provider?: string | null
           obs_token?: string | null
-          password?: string | null
           streamer_name: string
           streamer_slug: string
           updated_at?: string | null
           user_id?: string | null
-          username?: string | null
         }
         Update: {
           brand_color?: string | null
@@ -505,13 +507,35 @@ export type Database = {
           hyperemotes_enabled?: boolean | null
           hyperemotes_min_amount?: number | null
           id?: string
+          last_login_at?: string | null
+          last_login_email?: string | null
+          last_login_provider?: string | null
           obs_token?: string | null
-          password?: string | null
           streamer_name?: string
           streamer_slug?: string
           updated_at?: string | null
           user_id?: string | null
-          username?: string | null
+        }
+        Relationships: []
+      }
+      streamers_auth_emails: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          streamer_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          streamer_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          streamer_id?: string
         }
         Relationships: []
       }
@@ -685,6 +709,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      check_streamer_email_allowed: {
+        Args: { p_email: string; p_streamer_slug: string }
+        Returns: boolean
+      }
       check_username_exists: {
         Args:
           | { exclude_user_id: string; username_to_check: string }
@@ -851,6 +879,10 @@ export type Database = {
       }
       log_sensitive_access: {
         Args: { action: string; record_id?: string; table_name: string }
+        Returns: undefined
+      }
+      record_streamer_login: {
+        Args: { p_email: string; p_provider: string; p_streamer_slug: string }
         Returns: undefined
       }
       regenerate_obs_token: {

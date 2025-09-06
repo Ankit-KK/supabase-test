@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { User } from 'lucide-react';
 
 const AnkitLogin = () => {
-  const { session, loading } = useAnkitAuth();
+  const { session, loading, error } = useAnkitAuth();
   const { toast } = useToast();
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
@@ -64,6 +64,18 @@ const AnkitLogin = () => {
         </CardHeader>
         
         <CardContent>
+          {/* Error Display */}
+          {error && (
+            <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+              <p className="text-sm text-destructive font-medium">{error.message}</p>
+              {error.type === 'unauthorized' && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Contact the administrator to get access to this dashboard.
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Google Sign In Button */}
           <div className="space-y-4">
             <Button 

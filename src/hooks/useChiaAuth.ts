@@ -11,16 +11,40 @@ interface ChiaSession {
   isAdmin?: boolean;
 }
 
+interface AuthError {
+  message: string;
+  type: 'unauthorized' | 'not_found' | 'general';
+}
+
 export const useChiaAuth = () => {
   const [session, setSession] = useState<ChiaSession | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<AuthError | null>(null);
   const { user, session: authSession, loading: authLoading } = useAuth();
 
   useEffect(() => {
     const checkSession = async () => {
       try {
+        setError(null);
+        
         // Only check for Google OAuth authenticated users
         if (user && authSession && !authLoading) {
+          // Check if this email is allowed to access the chia gaming dashboard
+          const { data: isAllowed } = await supabase.rpc('check_streamer_email_allowed', {
+            p_streamer_slug: 'chia_gaming',
+            p_email: user.email
+          });
+
+          if (!isAllowed) {
+            setError({
+              message: 'Your email is not authorized to access this dashboard. Please contact the administrator.',
+              type: 'unauthorized'
+            });
+            setSession(null);
+            setLoading(false);
+            return;
+          }
+
           // Check if user is admin (can access any dashboard)
           const { data: isAdminResult } = await supabase.rpc('is_admin_email', { 
             check_email: user.email 
@@ -35,6 +59,13 @@ export const useChiaAuth = () => {
               .single();
 
             if (streamerData) {
+              // Record login
+              await supabase.rpc('record_streamer_login', {
+                p_streamer_slug: 'chia_gaming',
+                p_email: user.email,
+                p_provider: 'google'
+              });
+
               const adminSession: ChiaSession = {
                 streamerId: streamerData.id,
                 streamerSlug: streamerData.streamer_slug,
@@ -44,6 +75,12 @@ export const useChiaAuth = () => {
                 isAdmin: true
               };
               setSession(adminSession);
+            } else {
+              setError({
+                message: 'Chia Gaming streamer configuration not found.',
+                type: 'not_found'
+              });
+              setSession(null);
             }
           } else {
             // Regular user - check if they own the chia gaming streamer
@@ -68,6 +105,13 @@ export const useChiaAuth = () => {
             }
 
             if (streamerData) {
+              // Record login
+              await supabase.rpc('record_streamer_login', {
+                p_streamer_slug: 'chia_gaming',
+                p_email: user.email,
+                p_provider: 'google'
+              });
+
               const userSession: ChiaSession = {
                 streamerId: streamerData.id,
                 streamerSlug: streamerData.streamer_slug,
@@ -78,14 +122,23 @@ export const useChiaAuth = () => {
               };
               setSession(userSession);
             } else {
+              setError({
+                message: 'You are not authorized to access this dashboard.',
+                type: 'unauthorized'
+              });
               setSession(null);
             }
           }
         } else if (!authLoading) {
           setSession(null);
+          setError(null);
         }
       } catch (error) {
         console.error('Error checking chia session:', error);
+        setError({
+          message: 'An error occurred while checking authentication.',
+          type: 'general'
+        });
         setSession(null);
       }
       setLoading(false);
@@ -107,6 +160,7 @@ export const useChiaAuth = () => {
   return {
     session,
     loading,
+    error,
     logout,
     isAuthenticated: !!session
   };
