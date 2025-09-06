@@ -8,6 +8,7 @@ interface ChiaSession {
   streamerName: string;
   brandColor: string;
   loginTime: number;
+  isAdmin?: boolean;
 }
 
 export const useChiaAuth = () => {
@@ -18,65 +19,73 @@ export const useChiaAuth = () => {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        // First check for traditional localStorage session
-        const stored = localStorage.getItem('chia_session');
-        if (stored) {
-          const localSession = JSON.parse(stored) as ChiaSession;
-          
-          // Check if session is less than 24 hours old and is chia_gaming
-          const isValid = Date.now() - localSession.loginTime < 24 * 60 * 60 * 1000;
-          const isChia = localSession.streamerSlug === 'chia_gaming';
-          
-          if (isValid && isChia) {
-            setSession(localSession);
-            setLoading(false);
-            return;
-          } else {
-            localStorage.removeItem('chia_session');
-          }
-        }
-
-        // Check for authenticated Google OAuth user with chia_gaming streamer
+        // Only check for Google OAuth authenticated users
         if (user && authSession && !authLoading) {
-          // Try to find the linked streamer for this user
-          let { data: streamerData } = await supabase
-            .from('streamers')
-            .select('*')
-            .eq('user_id', user.id)
-            .eq('streamer_slug', 'chia_gaming')
-            .single();
+          // Check if user is admin (can access any dashboard)
+          const { data: isAdminResult } = await supabase.rpc('is_admin_email', { 
+            check_email: user.email 
+          });
 
-          if (!streamerData) {
-            // Attempt to securely link this streamer to the current user (if unclaimed)
-            await supabase.rpc('link_streamer_to_current_user', { p_streamer_slug: 'chia_gaming' });
-            // Re-fetch after linking attempt
-            const retry = await supabase
+          if (isAdminResult) {
+            // Admin user - can access chia gaming dashboard
+            const { data: streamerData } = await supabase
+              .from('streamers')
+              .select('*')
+              .eq('streamer_slug', 'chia_gaming')
+              .single();
+
+            if (streamerData) {
+              const adminSession: ChiaSession = {
+                streamerId: streamerData.id,
+                streamerSlug: streamerData.streamer_slug,
+                streamerName: streamerData.streamer_name,
+                brandColor: streamerData.brand_color,
+                loginTime: Date.now(),
+                isAdmin: true
+              };
+              setSession(adminSession);
+            }
+          } else {
+            // Regular user - check if they own the chia gaming streamer
+            let { data: streamerData } = await supabase
               .from('streamers')
               .select('*')
               .eq('user_id', user.id)
               .eq('streamer_slug', 'chia_gaming')
               .single();
-            streamerData = retry.data ?? null;
-          }
 
-          if (streamerData) {
-            const authSession: ChiaSession = {
-              streamerId: streamerData.id,
-              streamerSlug: streamerData.streamer_slug,
-              streamerName: streamerData.streamer_name,
-              brandColor: streamerData.brand_color,
-              loginTime: Date.now()
-            };
-            setSession(authSession);
-          } else {
-            setSession(null);
+            if (!streamerData) {
+              // Attempt to securely link this streamer to the current user (if unclaimed)
+              await supabase.rpc('link_streamer_to_current_user', { p_streamer_slug: 'chia_gaming' });
+              // Re-fetch after linking attempt
+              const retry = await supabase
+                .from('streamers')
+                .select('*')
+                .eq('user_id', user.id)
+                .eq('streamer_slug', 'chia_gaming')
+                .single();
+              streamerData = retry.data ?? null;
+            }
+
+            if (streamerData) {
+              const userSession: ChiaSession = {
+                streamerId: streamerData.id,
+                streamerSlug: streamerData.streamer_slug,
+                streamerName: streamerData.streamer_name,
+                brandColor: streamerData.brand_color,
+                loginTime: Date.now(),
+                isAdmin: false
+              };
+              setSession(userSession);
+            } else {
+              setSession(null);
+            }
           }
         } else if (!authLoading) {
           setSession(null);
         }
       } catch (error) {
         console.error('Error checking chia session:', error);
-        localStorage.removeItem('chia_session');
         setSession(null);
       }
       setLoading(false);
@@ -88,14 +97,11 @@ export const useChiaAuth = () => {
   }, [user, authSession, authLoading]);
 
   const logout = async () => {
-    // Clear local session
-    localStorage.removeItem('chia_session');
+    // Clear session state
     setSession(null);
     
-    // If user is authenticated via Google OAuth, sign them out from Supabase
-    if (user && authSession) {
-      await supabase.auth.signOut();
-    }
+    // Sign out from Supabase (handles Google OAuth)
+    await supabase.auth.signOut();
   };
 
   return {

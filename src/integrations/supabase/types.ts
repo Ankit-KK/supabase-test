@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_emails: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+        }
+        Relationships: []
+      }
       ankit_donations: {
         Row: {
           amount: number
@@ -681,6 +699,15 @@ export type Database = {
         Args: { streamer_id: string }
         Returns: string
       }
+      get_admin_streamers: {
+        Args: { admin_email: string }
+        Returns: {
+          brand_color: string
+          id: string
+          streamer_name: string
+          streamer_slug: string
+        }[]
+      }
       get_my_moderators: {
         Args: { p_streamer_id: string }
         Returns: {
@@ -780,6 +807,10 @@ export type Database = {
           total_visits: number
           unique_visitors: number
         }[]
+      }
+      is_admin_email: {
+        Args: { check_email: string }
+        Returns: boolean
       }
       is_admin_user: {
         Args: Record<PropertyKey, never>
