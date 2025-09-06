@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AnkitSession {
   streamerId: string;
@@ -11,24 +13,52 @@ interface AnkitSession {
 export const useAnkitAuth = () => {
   const [session, setSession] = useState<AnkitSession | null>(null);
   const [loading, setLoading] = useState(true);
+  const { user, session: authSession, loading: authLoading } = useAuth();
 
   useEffect(() => {
-    const checkSession = () => {
+    const checkSession = async () => {
       try {
+        // First check for traditional localStorage session
         const stored = localStorage.getItem('ankit_session');
         if (stored) {
-          const session = JSON.parse(stored) as AnkitSession;
+          const localSession = JSON.parse(stored) as AnkitSession;
           
           // Check if session is less than 24 hours old and is ankit
-          const isValid = Date.now() - session.loginTime < 24 * 60 * 60 * 1000;
-          const isAnkit = session.streamerSlug === 'ankit';
+          const isValid = Date.now() - localSession.loginTime < 24 * 60 * 60 * 1000;
+          const isAnkit = localSession.streamerSlug === 'ankit';
           
           if (isValid && isAnkit) {
-            setSession(session);
+            setSession(localSession);
+            setLoading(false);
+            return;
           } else {
             localStorage.removeItem('ankit_session');
+          }
+        }
+
+        // Check for authenticated Google OAuth user with ankit streamer
+        if (user && authSession && !authLoading) {
+          const { data: streamerData, error } = await supabase
+            .from('streamers')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('streamer_slug', 'ankit')
+            .single();
+
+          if (!error && streamerData) {
+            const authSession: AnkitSession = {
+              streamerId: streamerData.id,
+              streamerSlug: streamerData.streamer_slug,
+              streamerName: streamerData.streamer_name,
+              brandColor: streamerData.brand_color,
+              loginTime: Date.now()
+            };
+            setSession(authSession);
+          } else {
             setSession(null);
           }
+        } else if (!authLoading) {
+          setSession(null);
         }
       } catch (error) {
         console.error('Error checking ankit session:', error);
@@ -38,8 +68,10 @@ export const useAnkitAuth = () => {
       setLoading(false);
     };
 
-    checkSession();
-  }, []);
+    if (!authLoading) {
+      checkSession();
+    }
+  }, [user, authSession, authLoading]);
 
   const logout = () => {
     localStorage.removeItem('ankit_session');

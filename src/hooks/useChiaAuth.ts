@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ChiaSession {
   streamerId: string;
@@ -11,24 +13,52 @@ interface ChiaSession {
 export const useChiaAuth = () => {
   const [session, setSession] = useState<ChiaSession | null>(null);
   const [loading, setLoading] = useState(true);
+  const { user, session: authSession, loading: authLoading } = useAuth();
 
   useEffect(() => {
-    const checkSession = () => {
+    const checkSession = async () => {
       try {
+        // First check for traditional localStorage session
         const stored = localStorage.getItem('chia_session');
         if (stored) {
-          const session = JSON.parse(stored) as ChiaSession;
+          const localSession = JSON.parse(stored) as ChiaSession;
           
           // Check if session is less than 24 hours old and is chia_gaming
-          const isValid = Date.now() - session.loginTime < 24 * 60 * 60 * 1000;
-          const isChia = session.streamerSlug === 'chia_gaming';
+          const isValid = Date.now() - localSession.loginTime < 24 * 60 * 60 * 1000;
+          const isChia = localSession.streamerSlug === 'chia_gaming';
           
           if (isValid && isChia) {
-            setSession(session);
+            setSession(localSession);
+            setLoading(false);
+            return;
           } else {
             localStorage.removeItem('chia_session');
+          }
+        }
+
+        // Check for authenticated Google OAuth user with chia_gaming streamer
+        if (user && authSession && !authLoading) {
+          const { data: streamerData, error } = await supabase
+            .from('streamers')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('streamer_slug', 'chia_gaming')
+            .single();
+
+          if (!error && streamerData) {
+            const authSession: ChiaSession = {
+              streamerId: streamerData.id,
+              streamerSlug: streamerData.streamer_slug,
+              streamerName: streamerData.streamer_name,
+              brandColor: streamerData.brand_color,
+              loginTime: Date.now()
+            };
+            setSession(authSession);
+          } else {
             setSession(null);
           }
+        } else if (!authLoading) {
+          setSession(null);
         }
       } catch (error) {
         console.error('Error checking chia session:', error);
@@ -38,8 +68,10 @@ export const useChiaAuth = () => {
       setLoading(false);
     };
 
-    checkSession();
-  }, []);
+    if (!authLoading) {
+      checkSession();
+    }
+  }, [user, authSession, authLoading]);
 
   const logout = () => {
     localStorage.removeItem('chia_session');

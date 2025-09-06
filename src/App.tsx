@@ -18,7 +18,6 @@ import FeatureShowcase from "./pages/FeatureShowcase";
 import ChiaaGaming from "./pages/ChiaaGaming";
 import Status from "./pages/Status";
 import UpiSecurityBestPractices from "./pages/blog/UpiSecurityBestPractices";
-import Auth from "./pages/Auth";
 import ChiaaGamingLogin from "./pages/ChiaaGamingLogin";
 import StreamerDashboard from "./pages/StreamerDashboard";
 import AlertsPage from "./pages/AlertsPage";
@@ -53,7 +52,6 @@ const App = () => (
             <Route path="/status" element={<Status />} />
             
             {/* Authentication */}
-            <Route path="/auth" element={<Auth />} />
             <Route path="/chiaa_gaming/login" element={<ChiaaGamingLogin />} />
             <Route path="/chiaa_gaming/dashboard" element={<StreamerDashboard />} />
             <Route path="/ankit/login" element={<AnkitLogin />} />
