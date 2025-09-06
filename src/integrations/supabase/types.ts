@@ -840,6 +840,10 @@ export type Database = {
           streamer_slug: string
         }[]
       }
+      verify_moderator_access: {
+        Args: { p_streamer_slug: string; p_telegram_user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
