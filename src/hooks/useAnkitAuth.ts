@@ -87,9 +87,15 @@ export const useAnkitAuth = () => {
     }
   }, [user, authSession, authLoading]);
 
-  const logout = () => {
+  const logout = async () => {
+    // Clear local session
     localStorage.removeItem('ankit_session');
     setSession(null);
+    
+    // If user is authenticated via Google OAuth, sign them out from Supabase
+    if (user && authSession) {
+      await supabase.auth.signOut();
+    }
   };
 
   return {

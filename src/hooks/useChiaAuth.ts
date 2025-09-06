@@ -87,9 +87,15 @@ export const useChiaAuth = () => {
     }
   }, [user, authSession, authLoading]);
 
-  const logout = () => {
+  const logout = async () => {
+    // Clear local session
     localStorage.removeItem('chia_session');
     setSession(null);
+    
+    // If user is authenticated via Google OAuth, sign them out from Supabase
+    if (user && authSession) {
+      await supabase.auth.signOut();
+    }
   };
 
   return {
