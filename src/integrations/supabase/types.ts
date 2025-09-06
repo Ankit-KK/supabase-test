@@ -770,6 +770,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      is_service_role: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_valid_streamer_operation: {
+        Args: { streamer_id: string }
+        Returns: boolean
+      }
       log_access_attempt: {
         Args: {
           p_action: string
@@ -788,6 +796,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      log_sensitive_access: {
+        Args: { action: string; record_id?: string; table_name: string }
+        Returns: undefined
+      }
       regenerate_obs_token: {
         Args: {
           p_expires_at?: string
@@ -801,6 +813,10 @@ export type Database = {
       update_user_profile: {
         Args: { new_username: string; user_id: string }
         Returns: undefined
+      }
+      validate_donation_amount: {
+        Args: { amount: number }
+        Returns: boolean
       }
       validate_obs_token: {
         Args: { token_to_check: string }
