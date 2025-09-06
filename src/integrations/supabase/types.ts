@@ -753,6 +753,18 @@ export type Database = {
           unique_visitors: number
         }[]
       }
+      get_public_streamer_data: {
+        Args: { p_streamer_slug: string }
+        Returns: {
+          brand_color: string
+          brand_logo_url: string
+          hyperemotes_enabled: boolean
+          hyperemotes_min_amount: number
+          id: string
+          streamer_name: string
+          streamer_slug: string
+        }[]
+      }
       get_public_streamer_info: {
         Args: { slug: string }
         Returns: {
