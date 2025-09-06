@@ -230,7 +230,7 @@ export type Database = {
             foreignKeyName: "chia_gaming_donations_streamer_id_fkey"
             columns: ["streamer_id"]
             isOneToOne: false
-            referencedRelation: "public_streamer_view"
+            referencedRelation: "safe_streamers_view"
             referencedColumns: ["id"]
           },
           {
@@ -569,7 +569,7 @@ export type Database = {
             foreignKeyName: "streamers_moderators_streamer_id_fkey"
             columns: ["streamer_id"]
             isOneToOne: false
-            referencedRelation: "public_streamer_view"
+            referencedRelation: "safe_streamers_view"
             referencedColumns: ["id"]
           },
           {
@@ -652,7 +652,7 @@ export type Database = {
       }
     }
     Views: {
-      public_streamer_view: {
+      safe_streamers_view: {
         Row: {
           brand_color: string | null
           brand_logo_url: string | null
@@ -760,6 +760,14 @@ export type Database = {
         Returns: {
           total_visits: number
           unique_visitors: number
+        }[]
+      }
+      get_public_streamer_basic_info: {
+        Args: { p_streamer_slug: string }
+        Returns: {
+          brand_color: string
+          id: string
+          streamer_name: string
         }[]
       }
       get_public_streamer_data: {
