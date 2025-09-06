@@ -702,6 +702,15 @@ export type Database = {
           streamer_slug: string
         }[]
       }
+      get_recent_donations_public: {
+        Args: { p_limit?: number; p_streamer_slug: string }
+        Returns: {
+          amount: number
+          created_at: string
+          donor_name: string
+          sanitized_message: string
+        }[]
+      }
       get_streamer_by_obs_token: {
         Args: { token: string }
         Returns: {
