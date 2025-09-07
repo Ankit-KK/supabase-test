@@ -31,6 +31,8 @@ serve(async (req) => {
     console.log('Request body received:', JSON.stringify(requestBody, null, 2));
     
     const { name, amount, message, streamer_slug, phone } = requestBody;
+    const tempVoiceData: string | null = typeof requestBody.temp_voice_data === 'string' ? requestBody.temp_voice_data : null;
+    const voiceDurationSeconds: number | null = Number.isFinite(requestBody.voice_duration_seconds) ? Number(requestBody.voice_duration_seconds) : null;
 
     // Validate input
     if (!name || !amount || amount <= 0 || amount > 100000) {
@@ -185,7 +187,9 @@ serve(async (req) => {
         message: message || '',
         is_hyperemote: isHyperemote,
         payment_status: 'pending',
-        moderation_status: 'pending'
+        moderation_status: 'pending',
+        temp_voice_data: tempVoiceData,
+        voice_duration_seconds: voiceDurationSeconds ?? undefined
       })
       .select()
       .single();

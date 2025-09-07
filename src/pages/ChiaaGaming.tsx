@@ -173,15 +173,31 @@ const ChiaGaming = () => {
     try {
       const amount = parseFloat(formData.amount);
 
-      // Create order via Supabase edge function
+      // Prepare optional voice data before creating order
+      let tempVoice: string | null = null;
+      if (donationType === 'voice' && voiceRecorder.audioBlob) {
+        console.log('Converting voice recording to base64 for temporary storage');
+        const reader = new FileReader();
+        tempVoice = await new Promise((resolve) => {
+          reader.onload = () => {
+            const base64 = (reader.result as string).split(',')[1];
+            resolve(base64);
+          };
+          reader.readAsDataURL(voiceRecorder.audioBlob!);
+        });
+      }
+
+      // Create order via Supabase edge function (also pass temp voice data)
       const response = await supabase.functions.invoke('create-payment-order', {
         body: {
           name: formData.name.trim(),
           amount: amount,
-          message: donationType === 'message' ? formData.message.trim() : 
-                  donationType === 'voice' ? 'Voice message donation' : '',
+          message: donationType === 'message' ? formData.message.trim() : donationType === 'voice' ? 'Voice message donation' : '',
           phone: phoneNumber?.trim() || undefined,
-          streamer_slug: 'chia_gaming'
+          streamer_slug: 'chia_gaming',
+          temp_voice_data: tempVoice,
+          voice_duration_seconds: donationType === 'voice' ? voiceDuration : undefined,
+          is_hyperemote: donationType === 'hyperemote' ? true : undefined
         }
       });
 
@@ -192,48 +208,8 @@ const ChiaGaming = () => {
         throw new Error(data?.error || 'Failed to create payment order');
       }
 
-      const orderId = data.order_id;
-
       // Streamer ID is stored by the edge function; no need to fetch here
-
-      // Convert voice data to base64 for temporary storage if needed
-      let voiceDataBase64: string | null = null;
-      if (donationType === 'voice' && voiceRecorder.audioBlob) {
-        console.log('Converting voice recording to base64 for temporary storage');
-        // Convert blob to base64 for temporary storage
-        const reader = new FileReader();
-        voiceDataBase64 = await new Promise((resolve) => {
-          reader.onload = () => {
-            const base64 = (reader.result as string).split(',')[1];
-            resolve(base64);
-          };
-          reader.readAsDataURL(voiceRecorder.audioBlob!);
-        });
-      }
-
-      // Attach optional data to the existing donation (created by edge function)
-      try {
-        const updates: any = {};
-        if (donationType === 'voice' && voiceDataBase64) {
-          updates.temp_voice_data = voiceDataBase64;
-          updates.voice_duration_seconds = voiceDuration;
-        }
-        if (donationType === 'hyperemote') {
-          updates.is_hyperemote = true;
-        }
-        if (Object.keys(updates).length > 0) {
-          const { error: updErr } = await supabase
-            .from('chia_gaming_donations')
-            .update(updates)
-            .eq('order_id', data.order_id);
-          if (updErr) {
-            console.error('Error updating donation extras:', updErr);
-          }
-        }
-      } catch (e) {
-        console.error('Failed to attach extras to donation:', e);
-      }
-
+      // Extras (voice/hyperemote) are passed to edge function at creation time.
       // Initialize Cashfree checkout
       const checkoutOptions = {
         paymentSessionId: data.payment_session_id,
@@ -254,28 +230,17 @@ const ChiaGaming = () => {
       setTimeout(async () => {
         const result = await cashfree.checkout(checkoutOptions);
         
-        // Update payment status and redirect based on result
-        const updatePaymentStatus = async (status: string) => {
-          await supabase
-            .from('chia_gaming_donations')
-            .update({ payment_status: status })
-            .eq('order_id', orderId);
-        };
-        
+        const orderId = data.order_id;
         if (result.error) {
           console.log("Payment cancelled or error:", result.error);
-          await updatePaymentStatus('cancelled');
           navigate(`/status?order_id=${orderId}&status=failure`);
         } else if (result.paymentDetails) {
           console.log("Payment completed:", result.paymentDetails);
-          await updatePaymentStatus('success');
           navigate(`/status?order_id=${orderId}&status=success`);
         } else if (result.redirect) {
           console.log("Payment will be redirected");
-          await updatePaymentStatus('pending');
           navigate(`/status?order_id=${orderId}&status=pending`);
         } else {
-          await updatePaymentStatus('failed');
           navigate(`/status?order_id=${orderId}&status=failure`);
         }
       }, 100);
@@ -283,15 +248,10 @@ const ChiaGaming = () => {
     } catch (error) {
       console.error('Payment error:', error);
       // Redirect to status page even on error, if we have an order ID
-       const orderId = data?.order_id;
-       if (orderId) {
-         // Update payment status to failed in database
-         await supabase
-           .from('chia_gaming_donations')
-           .update({ payment_status: 'failed' })
-           .eq('order_id', orderId);
-         navigate(`/status?order_id=${orderId}&status=error`);
-       } else {
+      const orderId = data?.order_id;
+      if (orderId) {
+        navigate(`/status?order_id=${orderId}&status=error`);
+      } else {
         toast({
           title: "Payment Failed",
           description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
