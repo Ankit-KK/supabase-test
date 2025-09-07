@@ -919,6 +919,15 @@ export type Database = {
         Args: { amount: number }
         Returns: boolean
       }
+      validate_donation_insert: {
+        Args: {
+          p_amount: number
+          p_message?: string
+          p_name: string
+          p_streamer_id?: string
+        }
+        Returns: boolean
+      }
       validate_donation_security: {
         Args: { p_amount: number; p_message?: string; p_name: string }
         Returns: boolean
