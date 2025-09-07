@@ -690,6 +690,10 @@ export type Database = {
       }
     }
     Functions: {
+      add_admin_email: {
+        Args: { new_admin_email: string }
+        Returns: undefined
+      }
       authenticate_streamer: {
         Args: { p_password: string; p_username: string }
         Returns: {
@@ -699,6 +703,10 @@ export type Database = {
           streamer_slug: string
           success: boolean
         }[]
+      }
+      can_access_admin_emails: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
       check_rate_limit: {
         Args: {
@@ -947,6 +955,10 @@ export type Database = {
         Returns: {
           token: string
         }[]
+      }
+      remove_admin_email: {
+        Args: { remove_email: string }
+        Returns: undefined
       }
       update_user_profile: {
         Args: { new_username: string; user_id: string }
