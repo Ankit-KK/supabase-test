@@ -677,6 +677,36 @@ export type Database = {
       }
     }
     Views: {
+      user_signups_masked: {
+        Row: {
+          created_at: string | null
+          email_masked: string | null
+          id: string | null
+          instagram_handle: string | null
+          mobile_masked: string | null
+          name: string | null
+          youtube_channel: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email_masked?: never
+          id?: string | null
+          instagram_handle?: string | null
+          mobile_masked?: never
+          name?: string | null
+          youtube_channel?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email_masked?: never
+          id?: string | null
+          instagram_handle?: string | null
+          mobile_masked?: never
+          name?: string | null
+          youtube_channel?: string | null
+        }
+        Relationships: []
+      }
       user_signups_secure: {
         Row: {
           created_at: string | null
@@ -863,6 +893,18 @@ export type Database = {
           total_accesses: number
           unauthorized_attempts: number
           unique_admins: number
+        }[]
+      }
+      get_signup_secure: {
+        Args: { access_reason: string; signup_id: string }
+        Returns: {
+          created_at: string
+          email: string
+          id: string
+          instagram_handle: string
+          mobile_number: string
+          name: string
+          youtube_channel: string
         }[]
       }
       get_streamer_by_obs_token: {
@@ -1082,6 +1124,10 @@ export type Database = {
       }
       verify_admin_access_with_audit: {
         Args: { access_reason?: string; table_name?: string }
+        Returns: boolean
+      }
+      verify_admin_with_audit: {
+        Args: { access_reason?: string }
         Returns: boolean
       }
       verify_moderator_access: {
