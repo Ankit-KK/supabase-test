@@ -460,6 +460,45 @@ export type Database = {
         }
         Relationships: []
       }
+      sensitive_data_access_log: {
+        Row: {
+          access_reason: string | null
+          access_type: string
+          accessed_by: string | null
+          created_at: string | null
+          id: string
+          ip_address: unknown | null
+          record_id: string | null
+          session_info: Json | null
+          table_name: string
+          user_agent: string | null
+        }
+        Insert: {
+          access_reason?: string | null
+          access_type: string
+          accessed_by?: string | null
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          record_id?: string | null
+          session_info?: Json | null
+          table_name: string
+          user_agent?: string | null
+        }
+        Update: {
+          access_reason?: string | null
+          access_type?: string
+          accessed_by?: string | null
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          record_id?: string | null
+          session_info?: Json | null
+          table_name?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       streamers: {
         Row: {
           brand_color: string | null
@@ -638,7 +677,42 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      user_signups_secure: {
+        Row: {
+          created_at: string | null
+          data_access_note: string | null
+          email_masked: string | null
+          id: string | null
+          instagram_handle: string | null
+          is_masked_data: boolean | null
+          mobile_masked: string | null
+          name: string | null
+          youtube_channel: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data_access_note?: never
+          email_masked?: never
+          id?: string | null
+          instagram_handle?: string | null
+          is_masked_data?: never
+          mobile_masked?: never
+          name?: string | null
+          youtube_channel?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data_access_note?: never
+          email_masked?: never
+          id?: string | null
+          instagram_handle?: string | null
+          is_masked_data?: never
+          mobile_masked?: never
+          name?: string | null
+          youtube_channel?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       add_admin_email: {
@@ -656,6 +730,10 @@ export type Database = {
         }[]
       }
       can_access_admin_emails: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      check_bulk_access_rate_limit: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
@@ -690,6 +768,19 @@ export type Database = {
       create_visits_table: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      export_user_signups_for_compliance: {
+        Args: { export_reason: string; requested_by?: string }
+        Returns: {
+          created_at: string
+          email_partial: string
+          export_id: string
+          export_timestamp: string
+          instagram_handle: string
+          mobile_partial: string
+          name: string
+          youtube_channel: string
+        }[]
       }
       get_active_obs_token: {
         Args: { streamer_id: string }
@@ -764,6 +855,16 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string[]
       }
+      get_sensitive_data_access_stats: {
+        Args: { days_back?: number }
+        Returns: {
+          access_date: string
+          bulk_operations: number
+          total_accesses: number
+          unauthorized_attempts: number
+          unique_admins: number
+        }[]
+      }
       get_streamer_by_obs_token: {
         Args: { token: string }
         Returns: {
@@ -833,6 +934,19 @@ export type Database = {
           username: string
         }[]
       }
+      get_user_signup_full: {
+        Args: { access_reason: string; signup_id: string }
+        Returns: {
+          access_logged_at: string
+          created_at: string
+          email: string
+          id: string
+          instagram_handle: string
+          mobile_number: string
+          name: string
+          youtube_channel: string
+        }[]
+      }
       get_visitor_stats: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -892,6 +1006,14 @@ export type Database = {
       log_sensitive_access: {
         Args: { action: string; record_id?: string; table_name: string }
         Returns: undefined
+      }
+      mask_email: {
+        Args: { email: string }
+        Returns: string
+      }
+      mask_mobile: {
+        Args: { mobile: string }
+        Returns: string
       }
       record_streamer_login: {
         Args: { p_email: string; p_provider: string; p_streamer_slug: string }
@@ -956,6 +1078,10 @@ export type Database = {
       }
       validate_streamer_ownership: {
         Args: { p_streamer_id: string }
+        Returns: boolean
+      }
+      verify_admin_access_with_audit: {
+        Args: { access_reason?: string; table_name?: string }
         Returns: boolean
       }
       verify_moderator_access: {
