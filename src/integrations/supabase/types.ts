@@ -989,6 +989,18 @@ export type Database = {
           youtube_channel: string
         }[]
       }
+      get_user_signup_with_reason: {
+        Args: { access_reason: string; signup_id: string }
+        Returns: {
+          created_at: string
+          email: string
+          id: string
+          instagram_handle: string
+          mobile_number: string
+          name: string
+          youtube_channel: string
+        }[]
+      }
       get_visitor_stats: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -1046,7 +1058,14 @@ export type Database = {
         Returns: undefined
       }
       log_sensitive_access: {
-        Args: { action: string; record_id?: string; table_name: string }
+        Args:
+          | {
+              access_reason: string
+              access_type: string
+              record_id?: string
+              table_name: string
+            }
+          | { action: string; record_id?: string; table_name: string }
         Returns: undefined
       }
       mask_email: {
@@ -1120,6 +1139,10 @@ export type Database = {
       }
       validate_streamer_ownership: {
         Args: { p_streamer_id: string }
+        Returns: boolean
+      }
+      verify_admin_access_secure: {
+        Args: { access_reason?: string }
         Returns: boolean
       }
       verify_admin_access_with_audit: {
