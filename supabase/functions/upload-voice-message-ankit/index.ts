@@ -25,13 +25,15 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Get the donation record with temp voice data
+    // Get the donation record with temp voice data (handle race conditions)
     const { data: donation, error: fetchError } = await supabaseAdmin
       .from('ankit_donations')
       .select('*')
       .eq('order_id', order_id)
       .eq('payment_status', 'success')
-      .single();
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
     if (fetchError || !donation) {
       throw new Error(`Donation not found or payment not successful: ${fetchError?.message}`);

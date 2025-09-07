@@ -280,15 +280,8 @@ const Ankit = () => {
           updates.processing_status = 'pending';
         }
 
-        if (Object.keys(updates).length > 0) {
-          const { error: updErr } = await supabase
-            .from('ankit_donations')
-            .update(updates)
-            .eq('order_id', data.order_id);
-          if (updErr) {
-            console.error('Error updating donation extras:', updErr);
-          }
-        }
+        // Note: Extras are now handled by the create-payment-order-ankit edge function
+        // No client-side updates needed to avoid RLS policy violations
       } catch (e) {
         console.error('Failed to attach extras to donation:', e);
       }
@@ -313,28 +306,19 @@ const Ankit = () => {
       setTimeout(async () => {
         const result = await cashfree.checkout(checkoutOptions);
         
-        // Update payment status and redirect based on result
-        const updatePaymentStatus = async (status: string) => {
-          await supabase
-            .from('ankit_donations')
-            .update({ payment_status: status })
-            .eq('order_id', orderId);
-        };
+        // Payment status updates are handled by edge functions via webhooks/verification
+        // No client-side updates needed to avoid RLS policy violations
         
         if (result.error) {
           console.log("Payment cancelled or error:", result.error);
-          await updatePaymentStatus('cancelled');
           navigate(`/status?order_id=${orderId}&status=failure`);
         } else if (result.paymentDetails) {
           console.log("Payment completed:", result.paymentDetails);
-          await updatePaymentStatus('success');
           navigate(`/status?order_id=${orderId}&status=success`);
         } else if (result.redirect) {
           console.log("Payment will be redirected");
-          await updatePaymentStatus('pending');
           navigate(`/status?order_id=${orderId}&status=pending`);
         } else {
-          await updatePaymentStatus('failed');
           navigate(`/status?order_id=${orderId}&status=failure`);
         }
       }, 100);
@@ -343,10 +327,7 @@ const Ankit = () => {
       console.error('Payment error:', error);
       const orderId = data?.order_id;
       if (orderId) {
-        await supabase
-          .from('ankit_donations')
-          .update({ payment_status: 'failed' })
-          .eq('order_id', orderId);
+        // Edge functions will handle status updates via verification
         navigate(`/status?order_id=${orderId}&status=error`);
       } else {
         toast({
