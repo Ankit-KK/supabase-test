@@ -230,13 +230,6 @@ export type Database = {
             foreignKeyName: "chia_gaming_donations_streamer_id_fkey"
             columns: ["streamer_id"]
             isOneToOne: false
-            referencedRelation: "safe_streamers_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "chia_gaming_donations_streamer_id_fkey"
-            columns: ["streamer_id"]
-            isOneToOne: false
             referencedRelation: "streamers"
             referencedColumns: ["id"]
           },
@@ -569,13 +562,6 @@ export type Database = {
             foreignKeyName: "streamers_moderators_streamer_id_fkey"
             columns: ["streamer_id"]
             isOneToOne: false
-            referencedRelation: "safe_streamers_view"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "streamers_moderators_streamer_id_fkey"
-            columns: ["streamer_id"]
-            isOneToOne: false
             referencedRelation: "streamers"
             referencedColumns: ["id"]
           },
@@ -652,42 +638,7 @@ export type Database = {
       }
     }
     Views: {
-      safe_streamers_view: {
-        Row: {
-          brand_color: string | null
-          brand_logo_url: string | null
-          created_at: string | null
-          hyperemotes_enabled: boolean | null
-          hyperemotes_min_amount: number | null
-          id: string | null
-          streamer_name: string | null
-          streamer_slug: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          brand_color?: string | null
-          brand_logo_url?: string | null
-          created_at?: string | null
-          hyperemotes_enabled?: boolean | null
-          hyperemotes_min_amount?: number | null
-          id?: string | null
-          streamer_name?: string | null
-          streamer_slug?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          brand_color?: string | null
-          brand_logo_url?: string | null
-          created_at?: string | null
-          hyperemotes_enabled?: boolean | null
-          hyperemotes_min_amount?: number | null
-          id?: string | null
-          streamer_name?: string | null
-          streamer_slug?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       add_admin_email: {
