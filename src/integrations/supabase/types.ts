@@ -168,6 +168,7 @@ export type Database = {
           last_verification_attempt: string | null
           message: string | null
           message_visible: boolean | null
+          mod_notified: boolean
           moderation_status: string | null
           name: string
           order_id: string | null
@@ -191,6 +192,7 @@ export type Database = {
           last_verification_attempt?: string | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean
           moderation_status?: string | null
           name: string
           order_id?: string | null
@@ -214,6 +216,7 @@ export type Database = {
           last_verification_attempt?: string | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean
           moderation_status?: string | null
           name?: string
           order_id?: string | null

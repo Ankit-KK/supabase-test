@@ -189,10 +189,17 @@ serve(async (req) => {
 
       const previousStatus = donationData.payment_status || 'pending';
       // Update our database with the latest status using the correct identifier
-      await supabase
+      console.log(`Updating payment status from ${previousStatus} to ${finalStatus} for donation ${donationData.id}`);
+      const { error: updateError } = await supabase
         .from('chia_gaming_donations')
         .update({ payment_status: finalStatus })
         .eq('id', donationData.id);
+      
+      if (updateError) {
+        console.error('Failed to update payment status:', updateError);
+      } else {
+        console.log('Payment status updated successfully');
+      }
 
       // If payment just transitioned to success, call notification service
       if (finalStatus === 'success' && previousStatus !== 'success' && donationData.moderation_status === 'pending' && donationData.is_hyperemote !== true) {

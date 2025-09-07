@@ -36,7 +36,9 @@ serve(async (req) => {
       .maybeSingle();
 
     if (fetchError || !donation) {
-      throw new Error(`Donation not found or payment not successful: ${fetchError?.message}`);
+      console.error(`Donation fetch error: ${fetchError?.message || 'Unknown error'}`);
+      console.log(`Query details: order_id=${order_id}, payment_status=success, found donation:`, donation);
+      throw new Error(`Donation not found or payment not successful: ${fetchError?.message || 'No donation found'}`);
     }
 
     if (!donation.temp_voice_data) {
