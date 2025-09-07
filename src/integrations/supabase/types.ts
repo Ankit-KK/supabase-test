@@ -337,54 +337,6 @@ export type Database = {
         }
         Relationships: []
       }
-      page_visits: {
-        Row: {
-          id: string
-          ip_address: string
-          page_path: string
-          user_agent: string | null
-          visited_at: string | null
-        }
-        Insert: {
-          id?: string
-          ip_address: string
-          page_path: string
-          user_agent?: string | null
-          visited_at?: string | null
-        }
-        Update: {
-          id?: string
-          ip_address?: string
-          page_path?: string
-          user_agent?: string | null
-          visited_at?: string | null
-        }
-        Relationships: []
-      }
-      predefined_queries: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          query_text: string
-          title: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          query_text: string
-          title: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          query_text?: string
-          title?: string
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           avatar_url: string | null
