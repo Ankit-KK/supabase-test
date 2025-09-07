@@ -88,11 +88,7 @@ serve(async (req) => {
   }
 
   try {
-    const { streamer_id } = await req.json();
-    
-    if (!streamer_id) {
-      throw new Error("Streamer ID is required");
-    }
+    console.log('Starting notification check for pending donations...');
 
     // Create Supabase client with service role key for admin access
     const supabaseAdmin = createClient(
@@ -100,83 +96,158 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    console.log('Fetching pending donations for streamer:', streamer_id);
-
-    // Get all pending donations for this streamer
-    const { data: pendingDonations, error: fetchError } = await supabaseAdmin
-      .from('ankit_donations')
-      .select('*')
-      .eq('streamer_id', streamer_id)
-      .eq('payment_status', 'success')
-      .eq('moderation_status', 'pending')
-      .order('created_at', { ascending: false });
-
-    if (fetchError) {
-      console.error('Error fetching pending donations:', fetchError);
-      throw fetchError;
-    }
-
-    if (!pendingDonations || pendingDonations.length === 0) {
-      return new Response(
-        JSON.stringify({
-          success: true,
-          message: 'No pending donations found',
-          count: 0
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    console.log(`Found ${pendingDonations.length} pending donations`);
-
-    let notificationResults = [];
-
-    // Send notification for each pending donation
-    for (const donation of pendingDonations) {
-      const notificationMessage = `
-🚨 <b>Pending Donation for Ankit!</b>
-
-💰 <b>Amount:</b> ₹${donation.amount}
-👤 <b>From:</b> ${donation.name}
-💬 <b>Message:</b> ${donation.message || 'No message'}
-📅 <b>Date:</b> ${new Date(donation.created_at).toLocaleString()}
-
-Please approve or reject this donation in the dashboard or use Telegram commands:
-/pending - See all pending donations
-      `.trim();
-      
-      console.log(`Sending notification for donation ${donation.id}`);
-      const result = await notifyTelegramModerators(donation.streamer_id, notificationMessage, supabaseAdmin);
-      
-      notificationResults.push({
-        donation_id: donation.id,
-        amount: donation.amount,
-        name: donation.name,
-        notification_result: result
+    // Get bot token
+    const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
+    if (!botToken) {
+      console.log('TELEGRAM_BOT_TOKEN not configured, skipping notifications');
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Telegram bot token not configured'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    return new Response(
-      JSON.stringify({
+    // Find donations that are successful, pending moderation, not hyperemotes, and not yet notified
+    const { data: donationsToNotify, error: fetchError } = await supabaseAdmin
+      .from('chia_gaming_donations')
+      .select('*')
+      .eq('payment_status', 'success')
+      .eq('moderation_status', 'pending')
+      .eq('is_hyperemote', false)
+      .eq('mod_notified', false)
+      .not('streamer_id', 'is', null);
+
+    if (fetchError) {
+      console.error('Error fetching donations to notify:', fetchError);
+      throw fetchError;
+    }
+
+    if (!donationsToNotify || donationsToNotify.length === 0) {
+      console.log('No donations need notification');
+      return new Response(JSON.stringify({
         success: true,
-        message: `Processed ${pendingDonations.length} pending donations`,
-        count: pendingDonations.length,
-        results: notificationResults
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+        message: 'No donations need notification',
+        notified: 0
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log(`Found ${donationsToNotify.length} donations that need moderator notification`);
+
+    let notifiedCount = 0;
+    let errorCount = 0;
+
+    for (const donation of donationsToNotify) {
+      try {
+        // Get moderators for this streamer
+        const { data: moderators, error: modError } = await supabaseAdmin
+          .from('streamers_moderators')
+          .select('telegram_user_id, mod_name')
+          .eq('streamer_id', donation.streamer_id)
+          .eq('is_active', true);
+
+        if (modError || !moderators || moderators.length === 0) {
+          console.log(`No active moderators found for streamer: ${donation.streamer_id}`);
+          // Mark as notified even if no moderators to avoid retry loops
+          await supabaseAdmin
+            .from('chia_gaming_donations')
+            .update({ mod_notified: true })
+            .eq('id', donation.id);
+          continue;
+        }
+
+        const messageText = `🚨 New Donation Needs Approval! 🚨\n\n` +
+          `💰 Amount: ₹${donation.amount}\n` +
+          `👤 From: ${donation.name}\n` +
+          `📅 Time: ${new Date(donation.created_at).toLocaleString()}\n` +
+          `${donation.message ? `💬 Message: ${donation.message}\n` : ''}` +
+          `${donation.voice_message_url ? `🎵 Has Voice Message\n` : ''}`;
+
+        const keyboard = {
+          inline_keyboard: [
+            [{ text: '🎵 Play Voice', callback_data: `play_${donation.id}` }],
+            [
+              { text: '✅ Approve', callback_data: `approve_${donation.id}` },
+              { text: '❌ Reject', callback_data: `reject_${donation.id}` }
+            ]
+          ]
+        };
+
+        let notificationSent = false;
+
+        for (const moderator of moderators) {
+          try {
+            const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+            const payload = {
+              chat_id: parseInt(moderator.telegram_user_id),
+              text: messageText,
+              parse_mode: 'Markdown',
+              disable_web_page_preview: true,
+              reply_markup: keyboard
+            };
+
+            console.log(`Sending notification to moderator ${moderator.mod_name} (${moderator.telegram_user_id}) for donation ${donation.id}`);
+
+            const resp = await fetch(url, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+
+            if (!resp.ok) {
+              const errText = await resp.text();
+              console.error(`Error sending Telegram message to ${moderator.mod_name}:`, errText);
+            } else {
+              console.log(`Successfully sent notification to ${moderator.mod_name}`);
+              notificationSent = true;
+            }
+          } catch (e) {
+            console.error(`Error notifying moderator ${moderator.mod_name}:`, e);
+          }
+        }
+
+        // Mark donation as notified
+        if (notificationSent) {
+          await supabaseAdmin
+            .from('chia_gaming_donations')
+            .update({ mod_notified: true })
+            .eq('id', donation.id);
+          notifiedCount++;
+        } else {
+          errorCount++;
+        }
+
+        // Add small delay to avoid overwhelming Telegram API
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+      } catch (error) {
+        console.error(`Error processing donation ${donation.id}:`, error);
+        errorCount++;
+      }
+    }
+
+    console.log(`Notification process completed: ${notifiedCount} notified, ${errorCount} errors`);
+
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'Notification process completed',
+      notified: notifiedCount,
+      errors: errorCount
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
 
   } catch (error) {
-    console.error('Error in notify pending donations:', error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message
-      }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
-      }
-    );
+    console.error('Error in notify-pending-donations function:', error);
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: error.message 
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });

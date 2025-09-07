@@ -112,67 +112,23 @@ serve(async (req) => {
             .eq('id', donationData.id);
         }
 
-        // If DB already shows success and moderation is pending, notify moderators here as well
+        // If DB already shows success and moderation is pending, call notification service
         if (statusToReturn === 'success' && donationData.moderation_status === 'pending' && donationData.streamer_id && donationData.is_hyperemote !== true) {
           try {
-            const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
-            if (!botToken) {
-              console.log('TELEGRAM_BOT_TOKEN not configured, skipping moderator notification');
+            console.log(`Payment already successful for donation ${donationData.id}, triggering notification service`);
+            
+            // Call the notification service
+            const notificationResponse = await supabase.functions.invoke('notify-pending-donations', {
+              body: {}
+            });
+            
+            if (notificationResponse.error) {
+              console.error('Error calling notification service (404 path):', notificationResponse.error);
             } else {
-              const { data: moderators, error: modError } = await supabase
-                .from('streamers_moderators')
-                .select('telegram_user_id, mod_name')
-                .eq('streamer_id', donationData.streamer_id)
-                .eq('is_active', true);
-
-              if (modError || !moderators || moderators.length === 0) {
-                console.log('No active moderators found for streamer:', donationData.streamer_id);
-              } else {
-                const messageText = `🚨 New Donation Needs Approval! 🚨\n\n` +
-                  `💰 Amount: ₹${donationData.amount}\n` +
-                  `👤 From: ${donationData.name}\n` +
-                  `📅 Time: ${new Date(donationData.created_at).toLocaleString()}\n` +
-                  `${donationData.message ? `💬 Message: ${donationData.message}\n` : ''}` +
-                  `${donationData.voice_message_url ? `🎵 Has Voice Message\n` : ''}`;
-
-                const keyboard = {
-                  inline_keyboard: [
-                    [{ text: '🎵 Play Voice', callback_data: `play_${donationData.id}` }],
-                    [
-                      { text: '✅ Approve', callback_data: `approve_${donationData.id}` },
-                      { text: '❌ Reject', callback_data: `reject_${donationData.id}` }
-                    ]
-                  ]
-                };
-
-                for (const moderator of moderators) {
-                  try {
-                    const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-                    const payload: any = {
-                      chat_id: parseInt(moderator.telegram_user_id),
-                      text: messageText,
-                      parse_mode: 'Markdown',
-                      disable_web_page_preview: true,
-                      reply_markup: keyboard
-                    };
-                    console.log('Sending Telegram moderation message (404 path):', JSON.stringify(payload));
-                    const resp = await fetch(url, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(payload)
-                    });
-                    if (!resp.ok) {
-                      const errText = await resp.text();
-                      console.error('Error sending Telegram message (404 path):', errText);
-                    }
-                  } catch (e) {
-                    console.error('Error notifying moderator (404 path):', e);
-                  }
-                }
-              }
+              console.log('Notification service called successfully (404 path):', notificationResponse.data);
             }
           } catch (notifyErr) {
-            console.error('Error during moderator notification after DB success (404 path):', notifyErr);
+            console.error('Error calling notification service (404 path):', notifyErr);
           }
         }
         
@@ -238,69 +194,23 @@ serve(async (req) => {
         .update({ payment_status: finalStatus })
         .eq('id', donationData.id);
 
-      // If payment just transitioned to success, notify moderators with inline buttons
+      // If payment just transitioned to success, call notification service
       if (finalStatus === 'success' && previousStatus !== 'success' && donationData.moderation_status === 'pending' && donationData.is_hyperemote !== true) {
         try {
-          const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
-          if (!botToken) {
-            console.log('TELEGRAM_BOT_TOKEN not configured, skipping moderator notification');
-          } else if (!donationData.streamer_id) {
-            console.log('Donation missing streamer_id, skipping moderator notification');
+          console.log(`Payment succeeded for donation ${donationData.id}, triggering notification service`);
+          
+          // Call the notification service
+          const notificationResponse = await supabase.functions.invoke('notify-pending-donations', {
+            body: {}
+          });
+          
+          if (notificationResponse.error) {
+            console.error('Error calling notification service:', notificationResponse.error);
           } else {
-            const { data: moderators, error: modError } = await supabase
-              .from('streamers_moderators')
-              .select('telegram_user_id, mod_name')
-              .eq('streamer_id', donationData.streamer_id)
-              .eq('is_active', true);
-
-            if (modError || !moderators || moderators.length === 0) {
-              console.log('No active moderators found for streamer:', donationData.streamer_id);
-            } else {
-              const messageText = `🚨 New Donation Needs Approval! 🚨\n\n` +
-                `💰 Amount: ₹${donationData.amount}\n` +
-                `👤 From: ${donationData.name}\n` +
-                `📅 Time: ${new Date(donationData.created_at).toLocaleString()}\n` +
-                `${donationData.message ? `💬 Message: ${donationData.message}\n` : ''}` +
-                `${donationData.voice_message_url ? `🎵 Has Voice Message\n` : ''}`;
-
-              const keyboard = {
-                inline_keyboard: [
-                  [{ text: '🎵 Play Voice', callback_data: `play_${donationData.id}` }],
-                  [
-                    { text: '✅ Approve', callback_data: `approve_${donationData.id}` },
-                    { text: '❌ Reject', callback_data: `reject_${donationData.id}` }
-                  ]
-                ]
-              };
-
-              for (const moderator of moderators) {
-                try {
-                  const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-                  const payload: any = {
-                    chat_id: parseInt(moderator.telegram_user_id),
-                    text: messageText,
-                    parse_mode: 'Markdown',
-                    disable_web_page_preview: true,
-                    reply_markup: keyboard
-                  };
-                  console.log('Sending Telegram moderation message (success path):', JSON.stringify(payload));
-                  const resp = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                  });
-                  if (!resp.ok) {
-                    const errText = await resp.text();
-                    console.error('Error sending Telegram message (success path):', errText);
-                  }
-                } catch (e) {
-                  console.error('Error notifying moderator:', e);
-                }
-              }
-            }
+            console.log('Notification service called successfully:', notificationResponse.data);
           }
         } catch (notifyErr) {
-          console.error('Error during moderator notification after payment success:', notifyErr);
+          console.error('Error calling notification service:', notifyErr);
         }
       }
     } else {
