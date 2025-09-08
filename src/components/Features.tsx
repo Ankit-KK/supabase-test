@@ -26,7 +26,7 @@ const Features: React.FC = () => {
     {
       icon: <CreditCard className="text-white" size={24} />,
       title: "UPI & Card Payments for Creators",
-      description: "Enable direct fan support via UPI, Rupay, and Master cards with instant payment processing. Visa cards coming soon! Perfect payment platform for creators in India.",
+      description: "Enable direct fan support via UPI, Rupay, Master and Visa cards with instant payment processing. Perfect payment platform for creators in India.",
       gradient: "bg-gradient-to-br from-hyperchat-purple to-hyperchat-blue",
     },
     {
@@ -44,7 +44,7 @@ const Features: React.FC = () => {
     {
       icon: <Zap className="text-white" size={24} />,
       title: "Get Paid by Fans Instantly",
-      description: "Earn money from streaming in India with instant UPI, Rupay & Master card transfers. Visa support coming soon! No delays, no hassle - just direct monetization.",
+      description: "Earn money from streaming in India with instant UPI, Rupay, Master & Visa card transfers. No delays, no hassle - just direct monetization.",
       gradient: "bg-gradient-to-br from-hyperchat-pink to-hyperchat-orange",
     },
     {
@@ -56,7 +56,7 @@ const Features: React.FC = () => {
     {
       icon: <Users className="text-white" size={24} />,
       title: "Indian Streaming Monetization",
-      description: "Built specifically for Indian creators with UPI, Rupay, Master card integration, and all major local payment methods. Visa cards coming soon!",
+      description: "Built specifically for Indian creators with UPI, Rupay, Master and Visa card integration, and all major local payment methods.",
       gradient: "bg-gradient-to-br from-hyperchat-purple to-hyperchat-pink",
     },
     {
@@ -75,7 +75,7 @@ const Features: React.FC = () => {
             Complete Live Streaming Platform for Content Monetization
           </h2>
           <p className="mt-4 text-muted-foreground md:text-xl">
-            Everything you need for fan engagement with UPI, Rupay, Master cards, and comprehensive payment solutions in India. Visa support coming soon!
+            Everything you need for fan engagement with UPI, Rupay, Master and Visa cards, and comprehensive payment solutions in India.
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
