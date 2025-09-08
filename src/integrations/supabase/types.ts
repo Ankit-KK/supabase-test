@@ -632,6 +632,48 @@ export type Database = {
       }
     }
     Views: {
+      user_signups_admin_view: {
+        Row: {
+          accessed_at: string | null
+          accessed_by: string | null
+          created_at: string | null
+          email: string | null
+          email_masked: string | null
+          id: string | null
+          instagram_handle: string | null
+          mobile_masked: string | null
+          mobile_number: string | null
+          name: string | null
+          youtube_channel: string | null
+        }
+        Insert: {
+          accessed_at?: never
+          accessed_by?: never
+          created_at?: string | null
+          email?: string | null
+          email_masked?: never
+          id?: string | null
+          instagram_handle?: string | null
+          mobile_masked?: never
+          mobile_number?: string | null
+          name?: string | null
+          youtube_channel?: string | null
+        }
+        Update: {
+          accessed_at?: never
+          accessed_by?: never
+          created_at?: string | null
+          email?: string | null
+          email_masked?: never
+          id?: string | null
+          instagram_handle?: string | null
+          mobile_masked?: never
+          mobile_number?: string | null
+          name?: string | null
+          youtube_channel?: string | null
+        }
+        Relationships: []
+      }
       user_signups_masked: {
         Row: {
           created_at: string | null
@@ -1048,6 +1090,19 @@ export type Database = {
       remove_admin_email: {
         Args: { remove_email: string }
         Returns: undefined
+      }
+      safe_export_user_signups: {
+        Args: { export_reason: string }
+        Returns: {
+          created_at: string
+          email_masked: string
+          export_id: string
+          export_metadata: Json
+          instagram_handle: string
+          mobile_masked: string
+          name: string
+          youtube_channel: string
+        }[]
       }
       update_user_profile: {
         Args: { new_username: string; user_id: string }
