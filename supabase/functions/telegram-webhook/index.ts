@@ -128,23 +128,23 @@ async function showModeratorStatus(chatId: number, userId: string, supabase: any
     }
 
     // Build status message
-    let statusMessage = '✅ **Moderator Status: VERIFIED**\n\n';
-    statusMessage += `👤 **Name:** ${moderatorData[0].mod_name}\n`;
-    statusMessage += `🆔 **Telegram ID:** ${userId}\n\n`;
-    statusMessage += '🎮 **Moderating for:**\n';
+    let statusMessage = '✅ <b>Moderator Status: VERIFIED</b>\n\n';
+    statusMessage += `👤 <b>Name:</b> ${escapeHtml(moderatorData[0].mod_name || 'Unknown')}\n`;
+    statusMessage += `🆔 <b>Telegram ID:</b> ${escapeHtml(userId)}\n\n`;
+    statusMessage += '🎮 <b>Moderating for:</b>\n';
 
     moderatorData.forEach((mod: any) => {
       const streamer = mod.streamers;
       if (streamer) {
-        statusMessage += `• ${streamer.streamer_name} (@${streamer.streamer_slug})\n`;
+        statusMessage += `• ${escapeHtml(streamer.streamer_name)} (@${escapeHtml(streamer.streamer_slug)})\n`;
       }
     });
 
-    statusMessage += '\n📋 **Available Commands:**\n';
+    statusMessage += '\n📋 <b>Available Commands:</b>\n';
     statusMessage += '• /pending - View donations awaiting approval\n';
     statusMessage += '• /status - Check this status again';
 
-    await sendMessage(chatId, statusMessage, botToken, { parse_mode: 'Markdown' });
+    await sendMessage(chatId, statusMessage, botToken);
 
   } catch (error) {
     console.error('Error in showModeratorStatus:', error);
@@ -206,12 +206,12 @@ async function showPendingDonations(chatId: number, userId: string, supabase: an
 
     // Send each donation as a separate message with approve/reject buttons
     for (const donation of donations) {
-      const messageText = `🎁 **New Donation**\n\n` +
-        `💰 **Amount:** ₹${donation.amount}\n` +
-        `👤 **From:** ${donation.name}\n` +
-        `📅 **Time:** ${new Date(donation.created_at).toLocaleString()}\n` +
-        `${donation.message ? `💬 **Message:** ${donation.message}\n` : ''}` +
-        `${donation.voice_message_url ? `🎵 **Voice Message:** ${donation.voice_duration_seconds}s\n` : ''}`;
+      const messageText = `🎁 <b>New Donation</b>\n\n` +
+        `💰 <b>Amount:</b> ₹${escapeHtml(String(donation.amount))}\n` +
+        `👤 <b>From:</b> ${escapeHtml(donation.name || 'Anonymous')}\n` +
+        `📅 <b>Time:</b> ${escapeHtml(new Date(donation.created_at).toLocaleString())}\n` +
+        `${donation.message ? `💬 <b>Message:</b> ${escapeHtml(donation.message)}\n` : ''}` +
+        `${donation.voice_message_url ? `🎵 <b>Voice Message:</b> ${escapeHtml(String(donation.voice_duration_seconds || 'available'))}\n` : ''}`;
 
       const keyboardRows: any[] = [];
       if (donation.voice_message_url) {
@@ -540,13 +540,22 @@ async function getStreamerName(streamerId: string, supabase: any): Promise<strin
   }
 }
 
+// Telegram HTML escaping helper
+function escapeHtml(input: string = ''): string {
+  return input
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 // Telegram API helper functions
 async function sendMessage(chatId: number, text: string, botToken: string, replyMarkup?: any) {
   const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
   const payload: any = {
     chat_id: chatId,
     text: text,
-    parse_mode: 'Markdown'
+    parse_mode: 'HTML'
   };
 
   if (replyMarkup) {
