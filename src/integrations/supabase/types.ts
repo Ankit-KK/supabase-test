@@ -238,30 +238,93 @@ export type Database = {
           },
         ]
       }
+      obs_token_audit: {
+        Row: {
+          access_ip: unknown | null
+          access_timestamp: string | null
+          access_type: string | null
+          id: string
+          streamer_id: string | null
+          success: boolean | null
+          token_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          access_ip?: unknown | null
+          access_timestamp?: string | null
+          access_type?: string | null
+          id?: string
+          streamer_id?: string | null
+          success?: boolean | null
+          token_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          access_ip?: unknown | null
+          access_timestamp?: string | null
+          access_type?: string | null
+          id?: string
+          streamer_id?: string | null
+          success?: boolean | null
+          token_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obs_token_audit_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obs_token_audit_token_id_fkey"
+            columns: ["token_id"]
+            isOneToOne: false
+            referencedRelation: "obs_tokens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       obs_tokens: {
         Row: {
           created_at: string
           expires_at: string | null
           id: string
           is_active: boolean
+          last_used_at: string | null
+          rotation_due_at: string | null
           streamer_id: string
           token: string
+          token_encrypted: string | null
+          token_hash: string | null
+          usage_count: number | null
         }
         Insert: {
           created_at?: string
           expires_at?: string | null
           id?: string
           is_active?: boolean
+          last_used_at?: string | null
+          rotation_due_at?: string | null
           streamer_id: string
           token: string
+          token_encrypted?: string | null
+          token_hash?: string | null
+          usage_count?: number | null
         }
         Update: {
           created_at?: string
           expires_at?: string | null
           id?: string
           is_active?: boolean
+          last_used_at?: string | null
+          rotation_due_at?: string | null
           streamer_id?: string
           token?: string
+          token_encrypted?: string | null
+          token_hash?: string | null
+          usage_count?: number | null
         }
         Relationships: []
       }
@@ -643,6 +706,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      check_and_rotate_expired_tokens: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       check_bulk_access_rate_limit: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -678,6 +745,10 @@ export type Database = {
       create_visits_table: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      encrypt_obs_token: {
+        Args: { token_text: string }
+        Returns: string
       }
       export_user_signups_for_compliance: {
         Args: { export_reason: string; requested_by?: string }
@@ -904,6 +975,10 @@ export type Database = {
           unique_visitors: number
         }[]
       }
+      hash_obs_token: {
+        Args: { token_text: string }
+        Returns: string
+      }
       is_admin_email: {
         Args: { check_email: string }
         Returns: boolean
@@ -1037,6 +1112,21 @@ export type Database = {
       }
       validate_obs_token_secure: {
         Args: { token_to_check: string }
+        Returns: {
+          brand_color: string
+          brand_logo_url: string
+          is_valid: boolean
+          streamer_id: string
+          streamer_name: string
+          streamer_slug: string
+        }[]
+      }
+      validate_obs_token_secure_with_audit: {
+        Args: {
+          client_ip?: string
+          client_user_agent?: string
+          token_to_check: string
+        }
         Returns: {
           brand_color: string
           brand_logo_url: string
