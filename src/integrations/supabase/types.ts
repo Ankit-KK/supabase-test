@@ -238,6 +238,96 @@ export type Database = {
           },
         ]
       }
+      demostreamer_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          auto_verified: boolean | null
+          cashfree_order_id: string | null
+          created_at: string
+          emotion_tags: string[] | null
+          emotion_tier: string | null
+          id: string
+          is_hyperemote: boolean | null
+          last_verification_attempt: string | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean
+          moderation_status: string | null
+          name: string
+          order_id: string | null
+          payment_status: string | null
+          processing_status: string | null
+          rejected_reason: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          tts_segments: Json | null
+          updated_at: string
+          voice_duration_seconds: number | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          auto_verified?: boolean | null
+          cashfree_order_id?: string | null
+          created_at?: string
+          emotion_tags?: string[] | null
+          emotion_tier?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          last_verification_attempt?: string | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean
+          moderation_status?: string | null
+          name: string
+          order_id?: string | null
+          payment_status?: string | null
+          processing_status?: string | null
+          rejected_reason?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          tts_segments?: Json | null
+          updated_at?: string
+          voice_duration_seconds?: number | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          auto_verified?: boolean | null
+          cashfree_order_id?: string | null
+          created_at?: string
+          emotion_tags?: string[] | null
+          emotion_tier?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          last_verification_attempt?: string | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean
+          moderation_status?: string | null
+          name?: string
+          order_id?: string | null
+          payment_status?: string | null
+          processing_status?: string | null
+          rejected_reason?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          tts_segments?: Json | null
+          updated_at?: string
+          voice_duration_seconds?: number | null
+          voice_message_url?: string | null
+        }
+        Relationships: []
+      }
       obs_token_audit: {
         Row: {
           access_ip: unknown | null
