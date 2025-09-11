@@ -29,11 +29,15 @@ export const useDemoStreamerAuth = () => {
         
         // Only check for Google OAuth authenticated users
         if (user && authSession && !authLoading) {
+          console.log('DemoStreamer Auth - Checking user:', user.email);
+          
           // Check if this email is allowed to access the demostreamer dashboard
           const { data: isAllowed } = await supabase.rpc('check_streamer_email_allowed', {
             p_streamer_slug: 'demostreamer',
             p_email: user.email
           });
+
+          console.log('DemoStreamer Auth - Is allowed:', isAllowed, 'for email:', user.email);
 
           if (!isAllowed) {
             setError({
