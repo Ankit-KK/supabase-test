@@ -27,6 +27,11 @@ import AnkitLogin from "./pages/AnkitLogin";
 import AnkitDashboard from "./pages/AnkitDashboard";
 import AnkitAlerts from "./pages/AnkitAlerts";
 import AnkitVoiceAlerts from "./pages/AnkitVoiceAlerts";
+import DemoStreamer from "./pages/DemoStreamer";
+import DemoStreamerLogin from "./pages/DemoStreamerLogin";
+import DemoStreamerDashboard from "./pages/DemoStreamerDashboard";
+import DemoStreamerAlerts from "./pages/DemoStreamerAlerts";
+import DemoStreamerVoiceAlerts from "./pages/DemoStreamerVoiceAlerts";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +54,7 @@ const App = () => (
             <Route path="/feature-showcase" element={<FeatureShowcase />} />
             <Route path="/chiaa_gaming" element={<ChiaaGaming />} />
             <Route path="/ankit" element={<Ankit />} />
+            <Route path="/demostreamer" element={<DemoStreamer />} />
             <Route path="/status" element={<Status />} />
             
             {/* Authentication */}
@@ -56,12 +62,16 @@ const App = () => (
             <Route path="/chiaa_gaming/dashboard" element={<StreamerDashboard />} />
             <Route path="/ankit/login" element={<AnkitLogin />} />
             <Route path="/ankit/dashboard" element={<AnkitDashboard />} />
+            <Route path="/demostreamer/login" element={<DemoStreamerLogin />} />
+            <Route path="/demostreamer/dashboard" element={<DemoStreamerDashboard />} />
             
             {/* OBS Alerts */}
             <Route path="/alerts/:token" element={<AlertsPage />} />
             <Route path="/voice-alerts/:token" element={<VoiceAlerts />} />
             <Route path="/ankit-alerts/:token" element={<AnkitAlerts />} />
             <Route path="/ankit-voice-alerts/:token" element={<AnkitVoiceAlerts />} />
+            <Route path="/demostreamer-alerts/:token" element={<DemoStreamerAlerts />} />
+            <Route path="/demostreamer-voice-alerts/:token" element={<DemoStreamerVoiceAlerts />} />
             
             {/* Blog posts */}
             <Route path="/blog/upi-security-best-practices" element={<UpiSecurityBestPractices />} />
