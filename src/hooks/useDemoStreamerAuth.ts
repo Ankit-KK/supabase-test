@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
 interface DemoStreamerSession {
@@ -12,186 +13,148 @@ interface DemoStreamerSession {
 
 interface AuthError {
   message: string;
-  type: string;
+  type: 'unauthorized' | 'not_found' | 'general';
 }
 
 export const useDemoStreamerAuth = () => {
   const [session, setSession] = useState<DemoStreamerSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<AuthError | null>(null);
+  const { user, session: authSession, loading: authLoading } = useAuth();
 
   useEffect(() => {
-    let mounted = true;
-
-    const checkAuth = async () => {
+    const checkSession = async () => {
       try {
-        setLoading(true);
-        
-        // Get current session
-        const { data: { session: authSession } } = await supabase.auth.getSession();
-        
-        if (!authSession?.user) {
-          setSession(null);
-          setError(null);
-          return;
-        }
-
-        const userEmail = authSession.user.email;
-        if (!userEmail) {
-          setError({
-            message: 'No email found in session',
-            type: 'AUTH_ERROR'
-          });
-          return;
-        }
-
-        // Check if user is allowed to access demostreamer dashboard
-        const { data: isAllowed, error: allowedError } = await supabase
-          .rpc('check_streamer_email_allowed', {
-            p_streamer_slug: 'demostreamer',
-            p_email: userEmail
-          });
-
-        if (allowedError) {
-          console.error('Error checking email permission:', allowedError);
-          setError({
-            message: 'Failed to verify access permissions',
-            type: 'PERMISSION_ERROR'
-          });
-          return;
-        }
-
-        if (!isAllowed) {
-          setError({
-            message: 'You are not authorized to access the Demo Streamer dashboard',
-            type: 'ACCESS_DENIED'
-          });
-          return;
-        }
-
-        // Check if user is admin
-        const { data: isAdmin, error: adminError } = await supabase
-          .rpc('is_admin_email', {
-            check_email: userEmail
-          });
-
-        if (adminError) {
-          console.error('Error checking admin status:', adminError);
-        }
-
-        let streamerData;
-
-        if (isAdmin) {
-          // Admin can access all streamers, get demostreamer specifically
-          const { data: adminStreamers, error: adminError } = await supabase
-            .rpc('get_admin_streamers', {
-              admin_email: userEmail
-            });
-
-          if (adminError) {
-            console.error('Error fetching admin streamers:', adminError);
-            setError({
-              message: 'Failed to fetch streamer data',
-              type: 'DATA_ERROR'
-            });
-            return;
-          }
-
-          streamerData = adminStreamers?.find((s: any) => s.streamer_slug === 'demostreamer');
-        } else {
-          // Regular user, check if they own the demostreamer
-          const { data: userStreamers, error: userError } = await supabase
-            .from('streamers')
-            .select('id, streamer_slug, streamer_name, brand_color')
-            .eq('user_id', authSession.user.id)
-            .eq('streamer_slug', 'demostreamer');
-
-          if (userError) {
-            console.error('Error fetching user streamers:', userError);
-            setError({
-              message: 'Failed to fetch streamer data',
-              type: 'DATA_ERROR'
-            });
-            return;
-          }
-
-          streamerData = userStreamers?.[0];
-        }
-
-        if (!streamerData) {
-          setError({
-            message: 'Demo Streamer dashboard not found or not accessible',
-            type: 'NOT_FOUND'
-          });
-          return;
-        }
-
-        // Record login
-        try {
-          await supabase.rpc('record_streamer_login', {
-            p_streamer_slug: 'demostreamer',
-            p_email: userEmail,
-            p_provider: 'google'
-          });
-        } catch (loginError) {
-          console.error('Error recording login:', loginError);
-        }
-
-        if (!mounted) return;
-
-        setSession({
-          streamerId: streamerData.id,
-          streamerSlug: streamerData.streamer_slug,
-          streamerName: streamerData.streamer_name,
-          brandColor: streamerData.brand_color,
-          loginTime: new Date().toISOString(),
-          isAdmin: isAdmin || false
-        });
         setError(null);
-
-      } catch (err) {
-        console.error('Authentication error:', err);
-        if (mounted) {
-          setError({
-            message: 'An unexpected error occurred during authentication',
-            type: 'UNKNOWN_ERROR'
+        
+        // Only check for Google OAuth authenticated users
+        if (user && authSession && !authLoading) {
+          // Check if this email is allowed to access the demostreamer dashboard
+          const { data: isAllowed } = await supabase.rpc('check_streamer_email_allowed', {
+            p_streamer_slug: 'demostreamer',
+            p_email: user.email
           });
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    };
 
-    checkAuth();
+          if (!isAllowed) {
+            setError({
+              message: 'Your email is not authorized to access this dashboard. Please contact the administrator.',
+              type: 'unauthorized'
+            });
+            setSession(null);
+            setLoading(false);
+            return;
+          }
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event) => {
-        if (event === 'SIGNED_OUT') {
+          // Check if user is admin (can access any dashboard)
+          const { data: isAdminResult } = await supabase.rpc('is_admin_email', { 
+            check_email: user.email 
+          });
+
+          if (isAdminResult) {
+            // Admin user - can access demostreamer dashboard
+            const { data: streamerData } = await supabase
+              .from('streamers')
+              .select('*')
+              .eq('streamer_slug', 'demostreamer')
+              .single();
+
+            if (streamerData) {
+              // Record login
+              await supabase.rpc('record_streamer_login', {
+                p_streamer_slug: 'demostreamer',
+                p_email: user.email,
+                p_provider: 'google'
+              });
+
+              const adminSession: DemoStreamerSession = {
+                streamerId: streamerData.id,
+                streamerSlug: streamerData.streamer_slug,
+                streamerName: streamerData.streamer_name,
+                brandColor: streamerData.brand_color,
+                loginTime: new Date().toISOString(),
+                isAdmin: true
+              };
+              setSession(adminSession);
+            } else {
+              setError({
+                message: 'Demo Streamer configuration not found.',
+                type: 'not_found'
+              });
+              setSession(null);
+            }
+          } else {
+            // Regular user - check if they own the demostreamer streamer
+            let { data: streamerData } = await supabase
+              .from('streamers')
+              .select('*')
+              .eq('user_id', user.id)
+              .eq('streamer_slug', 'demostreamer')
+              .single();
+
+            if (!streamerData) {
+              // Attempt to securely link this streamer to the current user (if unclaimed)
+              await supabase.rpc('link_streamer_to_current_user', { p_streamer_slug: 'demostreamer' });
+              // Re-fetch after linking attempt
+              const retry = await supabase
+                .from('streamers')
+                .select('*')
+                .eq('user_id', user.id)
+                .eq('streamer_slug', 'demostreamer')
+                .single();
+              streamerData = retry.data ?? null;
+            }
+
+            if (streamerData) {
+              // Record login
+              await supabase.rpc('record_streamer_login', {
+                p_streamer_slug: 'demostreamer',
+                p_email: user.email,
+                p_provider: 'google'
+              });
+
+              const userSession: DemoStreamerSession = {
+                streamerId: streamerData.id,
+                streamerSlug: streamerData.streamer_slug,
+                streamerName: streamerData.streamer_name,
+                brandColor: streamerData.brand_color,
+                loginTime: new Date().toISOString(),
+                isAdmin: false
+              };
+              setSession(userSession);
+            } else {
+              setError({
+                message: 'You are not authorized to access this dashboard.',
+                type: 'unauthorized'
+              });
+              setSession(null);
+            }
+          }
+        } else if (!authLoading) {
           setSession(null);
           setError(null);
-          setLoading(false);
-        } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          checkAuth();
         }
+      } catch (error) {
+        console.error('Error checking demostreamer session:', error);
+        setError({
+          message: 'An error occurred while checking authentication.',
+          type: 'general'
+        });
+        setSession(null);
       }
-    );
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
+      setLoading(false);
     };
-  }, []);
+
+    if (!authLoading) {
+      checkSession();
+    }
+  }, [user, authSession, authLoading]);
 
   const logout = async () => {
-    try {
-      setSession(null);
-      await supabase.auth.signOut();
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
+    // Clear session state
+    setSession(null);
+    
+    // Sign out from Supabase (handles Google OAuth)
+    await supabase.auth.signOut();
   };
 
   return {
