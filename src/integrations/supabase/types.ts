@@ -602,7 +602,15 @@ export type Database = {
           id?: string
           streamer_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "streamers_auth_emails_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       streamers_moderators: {
         Row: {
@@ -781,6 +789,10 @@ export type Database = {
       add_admin_email: {
         Args: { new_admin_email: string }
         Returns: undefined
+      }
+      add_streamer_auth_email: {
+        Args: { p_email: string; p_streamer_slug: string }
+        Returns: boolean
       }
       authenticate_streamer: {
         Args: { p_password: string; p_username: string }
@@ -1155,6 +1167,10 @@ export type Database = {
         Args: { remove_email: string }
         Returns: undefined
       }
+      remove_streamer_auth_email: {
+        Args: { p_email: string; p_streamer_slug: string }
+        Returns: boolean
+      }
       safe_export_user_signups: {
         Args: { export_reason: string }
         Returns: {
@@ -1167,6 +1183,14 @@ export type Database = {
           name: string
           youtube_channel: string
         }[]
+      }
+      update_streamer_auth_email: {
+        Args: {
+          p_new_email: string
+          p_old_email: string
+          p_streamer_slug: string
+        }
+        Returns: boolean
       }
       update_user_profile: {
         Args: { new_username: string; user_id: string }
