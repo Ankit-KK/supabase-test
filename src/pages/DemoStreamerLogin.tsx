@@ -22,14 +22,20 @@ export default function DemoStreamerLogin() {
     );
   }
 
+  // Redirect if already logged in and authorized
   if (session && session.streamerSlug === 'demostreamer') {
     return <Navigate to="/demostreamer/dashboard" replace />;
   }
 
+  // If user is logged in but not authorized, show on this page with error
+  // (error will be displayed from the auth hook)
+
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     
-    const redirectUrl = `${window.location.origin}/demostreamer/dashboard`;
+    // Instead of redirecting to dashboard, redirect back to login page
+    // so we can properly handle authorization errors
+    const redirectUrl = `${window.location.origin}/demostreamer/login`;
     
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
