@@ -186,7 +186,7 @@ export default function DemoStreamerVoiceAlerts() {
       )}
 
       {/* Custom CSS for animations */}
-      <style jsx>{`
+      <style>{`
         @keyframes slideInRight {
           from {
             opacity: 0;

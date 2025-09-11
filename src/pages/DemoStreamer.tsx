@@ -65,15 +65,15 @@ export default function DemoStreamer() {
     loadStreamerInfo();
   }, []);
 
-  const handleVoiceRecorded = (audioBlob: Blob, duration: number) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64data = reader.result as string;
-      const base64Audio = base64data.split(',')[1];
-      setVoiceData(base64Audio);
+  const handleVoiceRecorded = (hasRecording: boolean, duration: number) => {
+    if (hasRecording) {
       setVoiceDuration(duration);
-    };
-    reader.readAsDataURL(audioBlob);
+      // We'll get the actual audio blob from the VoiceRecorder component's internal state
+      // when we process the donation
+    } else {
+      setVoiceData(null);
+      setVoiceDuration(0);
+    }
   };
 
   const handleEmotionChange = (emotions: string[]) => {
@@ -260,7 +260,7 @@ export default function DemoStreamer() {
                 <div className="space-y-2">
                   <Label>Voice Message (Optional)</Label>
                   <VoiceRecorder onRecordingComplete={handleVoiceRecorded} />
-                  {voiceData && (
+                  {voiceDuration > 0 && (
                     <p className="text-xs text-green-600">
                       Voice message recorded ({voiceDuration}s)
                     </p>
@@ -268,12 +268,14 @@ export default function DemoStreamer() {
                 </div>
 
                 {/* Emotion Pack */}
-                {message && (
+                {amount && parseFloat(amount) >= 1 && (
                   <div className="space-y-2">
                     <Label>Add Emotions (Premium TTS)</Label>
                     <EmotionPack
-                      message={message}
-                      onEmotionChange={handleEmotionChange}
+                      donationAmount={parseFloat(amount) || 0}
+                      onEmotionSelect={(emotion) => {
+                        setMessage(prev => prev + ' ' + emotion);
+                      }}
                     />
                   </div>
                 )}

@@ -193,7 +193,7 @@ export default function DemoStreamerAlerts() {
       )}
 
       {/* Custom CSS for animations */}
-      <style jsx>{`
+      <style>{`
         @keyframes bounceIn {
           0% {
             transform: translateX(-50%) translateY(-100%) scale(0.3);
