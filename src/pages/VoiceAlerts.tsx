@@ -83,14 +83,10 @@ const VoiceAlerts = () => {
 
     const fetchVoiceDonations = async () => {
       const { data, error } = await supabase
-        .from('chia_gaming_donations')
-        .select('*')
-        .eq('streamer_id', streamer.id)
-        .eq('payment_status', 'success')
-        .eq('moderation_status', 'approved')
-        .not('voice_message_url', 'is', null)
-        .order('created_at', { ascending: false })
-        .limit(50);
+        .rpc('get_voice_donations', { 
+          p_obs_token: obsToken, 
+          p_table_name: 'chia_gaming_donations' 
+        });
 
       if (!error && data) {
         setVoiceDonations(data);

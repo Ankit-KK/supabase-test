@@ -106,13 +106,12 @@ const StreamerOBSSettings = () => {
           }
         }
 
-        // Fetch donations
+        // Fetch donations using secure function
         const { data: donationsData, error: donationsError } = await supabase
-          .from('chia_gaming_donations')
-          .select('*')
-          .eq('streamer_id', streamerInfo.id)
-          .order('created_at', { ascending: false })
-          .limit(20);
+          .rpc('get_streamer_donations', { 
+            p_streamer_id: streamerInfo.id, 
+            p_table_name: 'chia_gaming_donations' 
+          });
 
         if (donationsError) {
           console.error('Error fetching donations:', donationsError);
@@ -172,10 +171,12 @@ const StreamerOBSSettings = () => {
     setUpdatingVisibility(donationId);
     
     const { error } = await supabase
-      .from('chia_gaming_donations')
-      .update({ message_visible: !currentVisibility } as any)
-      .eq('id', donationId)
-      .eq('streamer_id', streamer.id);
+      .rpc('update_donation_visibility', {
+        p_donation_id: donationId,
+        p_streamer_id: streamer.id,
+        p_new_visibility: !currentVisibility,
+        p_table_name: 'chia_gaming_donations'
+      });
 
     if (error) {
       toast({

@@ -274,11 +274,8 @@ const AlertsPage = () => {
       console.log('Setting up connection heartbeat');
       heartbeatIntervalRef.current = setInterval(async () => {
         try {
-          // Perform a simple query to keep the connection alive
-          await supabase
-            .from('chia_gaming_donations')
-            .select('id')
-            .limit(1);
+          // Perform a simple auth check to keep the connection alive
+          await supabase.auth.getUser();
           console.log('Heartbeat successful');
         } catch (error) {
           console.error('Heartbeat failed:', error);

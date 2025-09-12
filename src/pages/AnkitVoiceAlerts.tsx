@@ -89,13 +89,10 @@ const AnkitVoiceAlerts = () => {
 
     const fetchVoiceDonations = async () => {
       const { data, error } = await supabase
-        .from('ankit_donations')
-        .select('*')
-        .eq('streamer_id', streamer.id)
-        .eq('payment_status', 'success')
-        .eq('moderation_status', 'approved')
-        .order('created_at', { ascending: false })
-        .limit(50);
+        .rpc('get_voice_donations', { 
+          p_obs_token: obsToken, 
+          p_table_name: 'ankit_donations' 
+        });
 
       if (!error && data) {
         const filtered = data.filter((d: VoiceDonation) =>

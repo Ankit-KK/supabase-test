@@ -878,6 +878,22 @@ export type Database = {
           streamer_slug: string
         }[]
       }
+      get_alerts_donations: {
+        Args: { p_obs_token: string; p_table_name?: string }
+        Returns: {
+          amount: number
+          created_at: string
+          id: string
+          is_hyperemote: boolean
+          message: string
+          message_visible: boolean
+          moderation_status: string
+          name: string
+          payment_status: string
+          streamer_id: string
+          voice_message_url: string
+        }[]
+      }
       get_my_moderators: {
         Args: { p_streamer_id: string }
         Returns: {
@@ -1113,6 +1129,22 @@ export type Database = {
         Returns: {
           total_visits: number
           unique_visitors: number
+        }[]
+      }
+      get_voice_donations: {
+        Args: { p_obs_token: string; p_table_name?: string }
+        Returns: {
+          amount: number
+          created_at: string
+          id: string
+          is_hyperemote: boolean
+          message: string
+          message_visible: boolean
+          moderation_status: string
+          name: string
+          payment_status: string
+          streamer_id: string
+          voice_message_url: string
         }[]
       }
       hash_obs_token: {
