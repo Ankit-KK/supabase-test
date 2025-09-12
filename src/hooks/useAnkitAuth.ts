@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -21,9 +21,13 @@ export const useAnkitAuth = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<AuthError | null>(null);
   const { user, session: authSession, loading: authLoading } = useAuth();
+  const isChecking = useRef(false);
 
   useEffect(() => {
     const checkSession = async () => {
+      if (isChecking.current) return;
+      isChecking.current = true;
+      
       try {
         setError(null);
         
@@ -140,6 +144,8 @@ export const useAnkitAuth = () => {
           type: 'general'
         });
         setSession(null);
+      } finally {
+        isChecking.current = false;
       }
       setLoading(false);
     };
