@@ -32,12 +32,12 @@ export const useDemoStreamerAuth = () => {
           console.log('DemoStreamer Auth - Checking user:', user.email);
           
           // Check if this email is allowed to access the demostreamer dashboard
-          const { data: isAllowed } = await supabase.rpc('check_streamer_email_allowed', {
+          const { data: isAllowed, error: emailCheckError } = await supabase.rpc('check_streamer_email_allowed', {
             p_streamer_slug: 'demostreamer',
             p_email: user.email
           });
 
-          console.log('DemoStreamer Auth - Is allowed:', isAllowed, 'for email:', user.email);
+          console.log('DemoStreamer Auth - Is allowed:', isAllowed, 'for email:', user.email, 'error:', emailCheckError);
 
           if (!isAllowed) {
             setError({
