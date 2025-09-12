@@ -62,12 +62,10 @@ const StreamerDashboard = () => {
     
     try {
       const { data: moderationData, error } = await supabase
-        .from('chia_gaming_donations')
-        .select('*')
-        .eq('streamer_id', streamer.id)
-        .eq('payment_status', 'success')
-        .neq('moderation_status', 'auto_approved')
-        .order('created_at', { ascending: false });
+        .rpc('get_streamer_moderation_donations', { 
+          p_streamer_id: streamer.id, 
+          p_table_name: 'chia_gaming_donations' 
+        });
 
       if (!error) {
         setModerationDonations(moderationData || []);
@@ -107,23 +105,19 @@ const StreamerDashboard = () => {
 
         setHasAccess(true);
 
-        // Fetch donations for this streamer (only approved or auto-approved)
+        // Fetch donations for this streamer using secure function
         const { data: donationsData, error: donationsError } = await supabase
-          .from('chia_gaming_donations')
-          .select('*, is_hyperemote')
-          .eq('streamer_id', streamerInfo.id)
-          .eq('payment_status', 'success')
-          .in('moderation_status', ['approved', 'auto_approved'])
-          .order('created_at', { ascending: false });
+          .rpc('get_streamer_donations', { 
+            p_streamer_id: streamerInfo.id, 
+            p_table_name: 'chia_gaming_donations' 
+          });
 
-        // Fetch donations for moderation (successful payments, not auto-approved)
+        // Fetch donations for moderation using secure function
         const { data: moderationData, error: moderationError } = await supabase
-          .from('chia_gaming_donations')
-          .select('*')
-          .eq('streamer_id', streamerInfo.id)
-          .eq('payment_status', 'success')
-          .neq('moderation_status', 'auto_approved')
-          .order('created_at', { ascending: false });
+          .rpc('get_streamer_moderation_donations', { 
+            p_streamer_id: streamerInfo.id, 
+            p_table_name: 'chia_gaming_donations' 
+          });
 
         if (donationsError) {
           console.error('Error fetching donations:', donationsError);

@@ -64,11 +64,15 @@ export default function DemoStreamerDashboard() {
     try {
       setLoadingDonations(true);
       
+      if (!session?.streamerId) {
+        throw new Error('No streamer ID available');
+      }
+
       const { data, error } = await supabase
-        .from('demostreamer_donations')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50);
+        .rpc('get_streamer_donations', { 
+          p_streamer_id: session.streamerId, 
+          p_table_name: 'demostreamer_donations' 
+        });
 
       if (error) throw error;
 

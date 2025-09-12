@@ -996,6 +996,25 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_streamer_donations: {
+        Args: { p_streamer_id: string; p_table_name?: string }
+        Returns: {
+          amount: number
+          approved_at: string
+          approved_by: string
+          created_at: string
+          id: string
+          is_hyperemote: boolean
+          message: string
+          message_visible: boolean
+          moderation_status: string
+          name: string
+          payment_status: string
+          rejected_reason: string
+          streamer_id: string
+          voice_message_url: string
+        }[]
+      }
       get_streamer_for_donation: {
         Args: { p_streamer_slug: string }
         Returns: {
@@ -1006,6 +1025,25 @@ export type Database = {
           id: string
           streamer_name: string
           streamer_slug: string
+        }[]
+      }
+      get_streamer_moderation_donations: {
+        Args: { p_streamer_id: string; p_table_name?: string }
+        Returns: {
+          amount: number
+          approved_at: string
+          approved_by: string
+          created_at: string
+          id: string
+          is_hyperemote: boolean
+          message: string
+          message_visible: boolean
+          moderation_status: string
+          name: string
+          payment_status: string
+          rejected_reason: string
+          streamer_id: string
+          voice_message_url: string
         }[]
       }
       get_streamer_moderator_count: {
