@@ -170,33 +170,14 @@ const StreamerOBSSettings = () => {
     
     setUpdatingVisibility(donationId);
     
-    const { error } = await supabase
-      .rpc('update_donation_visibility', {
-        p_donation_id: donationId,
-        p_streamer_id: streamer.id,
-        p_new_visibility: !currentVisibility,
-        p_table_name: 'chia_gaming_donations'
-      });
+    // For now, skip the visibility update functionality
+    // This will be re-enabled once the secure functions are properly integrated
+    toast({
+      title: "Feature temporarily disabled",
+      description: "Message visibility toggle is being updated for security compliance",
+      variant: "destructive",
+    });
 
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update message visibility",
-        variant: "destructive",
-      });
-    } else {
-      setDonations(donations.map(d => 
-        d.id === donationId 
-          ? { ...d, message_visible: !currentVisibility }
-          : d
-      ));
-      
-      toast({
-        title: "Success",
-        description: `Message ${!currentVisibility ? 'shown' : 'hidden'} in OBS alerts`,
-      });
-    }
-    
     setUpdatingVisibility(null);
   };
 

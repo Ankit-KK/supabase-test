@@ -1254,6 +1254,15 @@ export type Database = {
           youtube_channel: string
         }[]
       }
+      update_donation_visibility: {
+        Args: {
+          p_donation_id: string
+          p_new_visibility: boolean
+          p_streamer_id: string
+          p_table_name?: string
+        }
+        Returns: undefined
+      }
       update_streamer_auth_email: {
         Args: {
           p_new_email: string
