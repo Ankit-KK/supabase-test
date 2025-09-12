@@ -38,6 +38,7 @@ export const useDemoStreamerAuth = () => {
           });
 
           console.log('DemoStreamer Auth - Is allowed:', isAllowed, 'for email:', user.email, 'error:', emailCheckError);
+          console.log('DemoStreamer Auth - Raw response data type:', typeof isAllowed, 'value:', isAllowed);
 
           if (!isAllowed) {
             setError({
@@ -87,50 +88,86 @@ export const useDemoStreamerAuth = () => {
               setSession(null);
             }
           } else {
-            // Regular user - check if they own the demostreamer streamer
-            let { data: streamerData } = await supabase
-              .from('streamers')
-              .select('*')
-              .eq('user_id', user.id)
-              .eq('streamer_slug', 'demostreamer')
-              .single();
+            // Regular user - check email permissions first, then fallback to ownership
+            // If user has email permission, they can access regardless of ownership
+            if (isAllowed) {
+              // User has email permission, get streamer data directly
+              const { data: streamerData } = await supabase
+                .from('streamers')
+                .select('*')
+                .eq('streamer_slug', 'demostreamer')
+                .single();
 
-            if (!streamerData) {
-              // Attempt to securely link this streamer to the current user (if unclaimed)
-              await supabase.rpc('link_streamer_to_current_user', { p_streamer_slug: 'demostreamer' });
-              // Re-fetch after linking attempt
-              const retry = await supabase
+              if (streamerData) {
+                // Record login
+                await supabase.rpc('record_streamer_login', {
+                  p_streamer_slug: 'demostreamer',
+                  p_email: user.email,
+                  p_provider: 'google'
+                });
+
+                const userSession: DemoStreamerSession = {
+                  streamerId: streamerData.id,
+                  streamerSlug: streamerData.streamer_slug,
+                  streamerName: streamerData.streamer_name,
+                  brandColor: streamerData.brand_color,
+                  loginTime: new Date().toISOString(),
+                  isAdmin: false
+                };
+                setSession(userSession);
+              } else {
+                setError({
+                  message: 'Demo Streamer configuration not found.',
+                  type: 'not_found'
+                });
+                setSession(null);
+              }
+            } else {
+              // No email permission, try ownership-based access
+              let { data: streamerData } = await supabase
                 .from('streamers')
                 .select('*')
                 .eq('user_id', user.id)
                 .eq('streamer_slug', 'demostreamer')
                 .single();
-              streamerData = retry.data ?? null;
-            }
 
-            if (streamerData) {
-              // Record login
-              await supabase.rpc('record_streamer_login', {
-                p_streamer_slug: 'demostreamer',
-                p_email: user.email,
-                p_provider: 'google'
-              });
+              if (!streamerData) {
+                // Attempt to securely link this streamer to the current user (if unclaimed)
+                await supabase.rpc('link_streamer_to_current_user', { p_streamer_slug: 'demostreamer' });
+                // Re-fetch after linking attempt
+                const retry = await supabase
+                  .from('streamers')
+                  .select('*')
+                  .eq('user_id', user.id)
+                  .eq('streamer_slug', 'demostreamer')
+                  .single();
+                streamerData = retry.data ?? null;
+              }
 
-              const userSession: DemoStreamerSession = {
-                streamerId: streamerData.id,
-                streamerSlug: streamerData.streamer_slug,
-                streamerName: streamerData.streamer_name,
-                brandColor: streamerData.brand_color,
-                loginTime: new Date().toISOString(),
-                isAdmin: false
-              };
-              setSession(userSession);
-            } else {
-              setError({
-                message: 'You are not authorized to access this dashboard.',
-                type: 'unauthorized'
-              });
-              setSession(null);
+              if (streamerData) {
+                // Record login
+                await supabase.rpc('record_streamer_login', {
+                  p_streamer_slug: 'demostreamer',
+                  p_email: user.email,
+                  p_provider: 'google'
+                });
+
+                const userSession: DemoStreamerSession = {
+                  streamerId: streamerData.id,
+                  streamerSlug: streamerData.streamer_slug,
+                  streamerName: streamerData.streamer_name,
+                  brandColor: streamerData.brand_color,
+                  loginTime: new Date().toISOString(),
+                  isAdmin: false
+                };
+                setSession(userSession);
+              } else {
+                setError({
+                  message: 'You are not authorized to access this dashboard.',
+                  type: 'unauthorized'
+                });
+                setSession(null);
+              }
             }
           }
         } else if (!authLoading) {
