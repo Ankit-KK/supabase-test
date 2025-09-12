@@ -1013,7 +1013,7 @@ export type Database = {
         }[]
       }
       get_streamer_donations: {
-        Args: { p_streamer_id: string; p_table_name?: string }
+        Args: { p_streamer_id: string; p_table_name: string }
         Returns: {
           amount: number
           approved_at: string
@@ -1044,7 +1044,7 @@ export type Database = {
         }[]
       }
       get_streamer_moderation_donations: {
-        Args: { p_streamer_id: string; p_table_name?: string }
+        Args: { p_streamer_id: string; p_table_name: string }
         Returns: {
           amount: number
           approved_at: string
