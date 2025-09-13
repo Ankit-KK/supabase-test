@@ -63,8 +63,7 @@ const StreamerDashboard = () => {
     try {
       const { data: moderationData, error } = await supabase
         .rpc('get_streamer_moderation_donations', { 
-          p_streamer_id: streamer.id, 
-          p_table_name: 'chia_gaming_donations' 
+          p_streamer_id: streamer.id
         });
 
       if (!error) {
@@ -108,15 +107,13 @@ const StreamerDashboard = () => {
         // Fetch donations for this streamer using secure function
         const { data: donationsData, error: donationsError } = await supabase
           .rpc('get_streamer_donations', { 
-            p_streamer_id: streamerInfo.id, 
-            p_table_name: 'chia_gaming_donations' 
+            p_streamer_id: streamerInfo.id
           });
 
         // Fetch donations for moderation using secure function
         const { data: moderationData, error: moderationError } = await supabase
           .rpc('get_streamer_moderation_donations', { 
-            p_streamer_id: streamerInfo.id, 
-            p_table_name: 'chia_gaming_donations' 
+            p_streamer_id: streamerInfo.id
           });
 
         if (donationsError) {
