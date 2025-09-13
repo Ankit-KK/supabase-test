@@ -60,6 +60,7 @@ const StreamerDashboard = () => {
   const refreshModerationData = async () => {
     if (!streamer?.id) return;
     
+    console.log('Refreshing moderation data for streamer:', streamer.id);
     try {
       const { data: moderationData, error } = await supabase
         .rpc('get_streamer_moderation_donations', { 
@@ -67,7 +68,10 @@ const StreamerDashboard = () => {
         });
 
       if (!error) {
+        console.log('Fetched moderation data:', moderationData?.length, 'donations');
         setModerationDonations(moderationData || []);
+      } else {
+        console.error('Error fetching moderation data:', error);
       }
     } catch (error) {
       console.error('Error refreshing moderation data:', error);
@@ -489,8 +493,8 @@ const StreamerDashboard = () => {
             <MessagesModerationPage 
               donations={moderationDonations}
               onRefresh={refreshModerationData}
-              session={session ? {
-                streamerId: streamer?.id || '',
+              session={session && streamer?.id ? {
+                streamerId: streamer.id,
                 streamerSlug: session.streamerSlug,
                 streamerName: session.streamerName,
                 brandColor: session.brandColor,

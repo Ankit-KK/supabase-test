@@ -52,6 +52,7 @@ export const MessagesModerationPage = ({ donations: propDonations, onRefresh, se
   const fetchDonations = async () => {
     if (!session?.streamerId) return;
 
+    console.log('Fetching donations for streamer:', session.streamerId);
     try {
       // Use the unified moderation donations function
       const { data, error } = await supabase
@@ -59,7 +60,11 @@ export const MessagesModerationPage = ({ donations: propDonations, onRefresh, se
           p_streamer_id: session.streamerId
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+      console.log('Fetched donations data:', data);
       setDonations(data || []);
     } catch (error) {
       console.error('Error fetching donations:', error);
@@ -83,6 +88,8 @@ export const MessagesModerationPage = ({ donations: propDonations, onRefresh, se
   useEffect(() => {
     if (!session?.streamerId) return;
     fetchDonations();
+    
+    console.log('Setting up real-time subscription for streamer:', session.streamerId);
     
     // Set up real-time subscription for moderation updates
     const channel = supabase
@@ -126,9 +133,15 @@ export const MessagesModerationPage = ({ donations: propDonations, onRefresh, se
           fetchDonations(); // Refresh the moderation list
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Real-time subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('Successfully subscribed to moderation updates');
+        }
+      });
 
     return () => {
+      console.log('Cleaning up real-time subscription');
       supabase.removeChannel(channel);
     };
   }, [session?.streamerId]);

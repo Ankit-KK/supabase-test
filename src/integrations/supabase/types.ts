@@ -1043,14 +1043,17 @@ export type Database = {
         Args: { p_streamer_id: string }
         Returns: {
           amount: number
+          approved_at: string
+          approved_by: string
           created_at: string
           id: string
           is_hyperemote: boolean
           message: string
-          message_visible: boolean
           moderation_status: string
           name: string
           payment_status: string
+          rejected_reason: string
+          tts_audio_url: string
           voice_message_url: string
         }[]
       }
