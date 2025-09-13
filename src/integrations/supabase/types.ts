@@ -1013,23 +1013,17 @@ export type Database = {
         }[]
       }
       get_streamer_donations: {
-        Args:
-          | { p_streamer_id: string }
-          | { p_streamer_id: string; p_table_name: string }
+        Args: { p_streamer_id: string }
         Returns: {
-          amount: number
-          approved_at: string
-          approved_by: string
           created_at: string
-          id: string
+          donation_amount: number
+          donation_id: string
+          donation_message: string
+          donor_name: string
           is_hyperemote: boolean
-          message: string
           message_visible: boolean
           moderation_status: string
-          name: string
           payment_status: string
-          rejected_reason: string
-          streamer_id: string
           voice_message_url: string
         }[]
       }
@@ -1046,23 +1040,17 @@ export type Database = {
         }[]
       }
       get_streamer_moderation_donations: {
-        Args:
-          | { p_streamer_id: string }
-          | { p_streamer_id: string; p_table_name: string }
+        Args: { p_streamer_id: string }
         Returns: {
-          amount: number
-          approved_at: string
-          approved_by: string
           created_at: string
-          id: string
+          donation_amount: number
+          donation_id: string
+          donation_message: string
+          donor_name: string
           is_hyperemote: boolean
-          message: string
           message_visible: boolean
           moderation_status: string
-          name: string
           payment_status: string
-          rejected_reason: string
-          streamer_id: string
           voice_message_url: string
         }[]
       }
