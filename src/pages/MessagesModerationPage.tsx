@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -49,7 +49,7 @@ export const MessagesModerationPage = ({ donations: propDonations, onRefresh, se
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const fetchDonations = useCallback(async () => {
+  const fetchDonations = async () => {
     if (!session?.streamerId) return;
 
     console.log('Fetching donations for streamer:', session.streamerId);
@@ -76,7 +76,7 @@ export const MessagesModerationPage = ({ donations: propDonations, onRefresh, se
     } finally {
       setLoading(false);
     }
-  }, [session?.streamerId]);
+  };
 
   // Update donations when prop changes
   useEffect(() => {
@@ -90,9 +90,9 @@ export const MessagesModerationPage = ({ donations: propDonations, onRefresh, se
     if (session?.streamerId) {
       fetchDonations();
     }
-  }, [fetchDonations]);
+  }, [session?.streamerId]);
 
-  // Separate useEffect for real-time subscription with stable dependencies
+  // Separate useEffect for real-time subscription with stable streamerId
   useEffect(() => {
     const streamerId = session?.streamerId;
     if (!streamerId) return;
@@ -152,7 +152,7 @@ export const MessagesModerationPage = ({ donations: propDonations, onRefresh, se
       console.log('Cleaning up real-time subscription');
       supabase.removeChannel(channel);
     };
-  }, [session?.streamerId, fetchDonations]);
+  }, [session?.streamerId]);
 
   const handleApprove = async (donationId: string) => {
     setProcessingId(donationId);

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -493,13 +493,13 @@ const StreamerDashboard = () => {
             <MessagesModerationPage 
               donations={moderationDonations}
               onRefresh={refreshModerationData}
-              session={useMemo(() => session && streamer?.id ? {
+              session={session && streamer?.id ? {
                 streamerId: streamer.id,
                 streamerSlug: session.streamerSlug,
                 streamerName: session.streamerName,
                 brandColor: session.brandColor,
                 loginTime: session.loginTime || Date.now()
-              } : null, [session, streamer?.id])}
+              } : null}
             />
           </TabsContent>
 
