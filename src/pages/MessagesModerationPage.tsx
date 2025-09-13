@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -49,7 +49,7 @@ export const MessagesModerationPage = ({ donations: propDonations, onRefresh, se
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const fetchDonations = async () => {
+  const fetchDonations = useCallback(async () => {
     if (!session?.streamerId) return;
 
     console.log('Fetching donations for streamer:', session.streamerId);
@@ -76,7 +76,7 @@ export const MessagesModerationPage = ({ donations: propDonations, onRefresh, se
     } finally {
       setLoading(false);
     }
-  };
+  }, [session?.streamerId]);
 
   // Update donations when prop changes
   useEffect(() => {
@@ -85,22 +85,30 @@ export const MessagesModerationPage = ({ donations: propDonations, onRefresh, se
     }
   }, [propDonations]);
 
+  // Separate useEffect for initial data fetch
   useEffect(() => {
-    if (!session?.streamerId) return;
-    fetchDonations();
+    if (session?.streamerId) {
+      fetchDonations();
+    }
+  }, [fetchDonations]);
+
+  // Separate useEffect for real-time subscription with stable dependencies
+  useEffect(() => {
+    const streamerId = session?.streamerId;
+    if (!streamerId) return;
     
-    console.log('Setting up real-time subscription for streamer:', session.streamerId);
+    console.log('Setting up real-time subscription for streamer:', streamerId);
     
     // Set up real-time subscription for moderation updates
     const channel = supabase
-      .channel(`moderation-${session.streamerId}`)
+      .channel(`moderation-${streamerId}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'ankit_donations',
-          filter: `streamer_id=eq.${session.streamerId}`
+          filter: `streamer_id=eq.${streamerId}`
         },
         (payload) => {
           console.log('Ankit donation moderation update:', payload);
@@ -113,7 +121,7 @@ export const MessagesModerationPage = ({ donations: propDonations, onRefresh, se
           event: '*',
           schema: 'public',
           table: 'chia_gaming_donations',
-          filter: `streamer_id=eq.${session.streamerId}`
+          filter: `streamer_id=eq.${streamerId}`
         },
         (payload) => {
           console.log('Chia Gaming donation moderation update:', payload);
@@ -126,7 +134,7 @@ export const MessagesModerationPage = ({ donations: propDonations, onRefresh, se
           event: '*',
           schema: 'public',
           table: 'demostreamer_donations',
-          filter: `streamer_id=eq.${session.streamerId}`
+          filter: `streamer_id=eq.${streamerId}`
         },
         (payload) => {
           console.log('DemoStreamer donation moderation update:', payload);
@@ -144,7 +152,7 @@ export const MessagesModerationPage = ({ donations: propDonations, onRefresh, se
       console.log('Cleaning up real-time subscription');
       supabase.removeChannel(channel);
     };
-  }, [session?.streamerId]);
+  }, [session?.streamerId, fetchDonations]);
 
   const handleApprove = async (donationId: string) => {
     setProcessingId(donationId);
