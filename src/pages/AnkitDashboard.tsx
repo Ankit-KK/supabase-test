@@ -164,7 +164,13 @@ const AnkitDashboard = () => {
           filter: `streamer_id=eq.${streamer.id}`
         },
         (payload) => {
-          console.log('Realtime donation update:', payload);
+          console.log('🔔 Realtime donation update received:', {
+            eventType: payload.eventType,
+            oldStatus: (payload.old as any)?.moderation_status,
+            newStatus: (payload.new as any)?.moderation_status,
+            paymentStatus: (payload.new as any)?.payment_status,
+            donationId: (payload.new as any)?.id
+          });
           
           if (payload.eventType === 'INSERT' && payload.new.payment_status === 'success') {
             const newDonation = payload.new as Donation;
@@ -201,9 +207,18 @@ const AnkitDashboard = () => {
             const oldDonation = payload.old as Donation;
             
             // Handle approval/rejection updates for dashboard
+            console.log('📝 Processing UPDATE event:', {
+              oldStatus: oldDonation.moderation_status,
+              newStatus: updatedDonation.moderation_status,
+              donationId: updatedDonation.id,
+              willApprove: oldDonation.moderation_status === 'pending' && 
+                (updatedDonation.moderation_status === 'approved' || updatedDonation.moderation_status === 'auto_approved')
+            });
+            
             if (oldDonation.moderation_status === 'pending' && 
                 (updatedDonation.moderation_status === 'approved' || updatedDonation.moderation_status === 'auto_approved')) {
               // Donation was approved - add to dashboard
+              console.log('✅ Adding approved donation to dashboard:', updatedDonation.id);
               setDonations(prev => [updatedDonation, ...prev.filter(d => d.id !== updatedDonation.id)]);
               setTotalAmount(prev => prev + Number(updatedDonation.amount));
               setMonthlyAmount(prev => {
