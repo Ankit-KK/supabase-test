@@ -894,21 +894,6 @@ export type Database = {
           voice_message_url: string
         }[]
       }
-      get_ankit_donations_for_streamer: {
-        Args: { p_streamer_id: string }
-        Returns: {
-          amount: number
-          created_at: string
-          id: string
-          is_hyperemote: boolean
-          message: string
-          message_visible: boolean
-          moderation_status: string
-          name: string
-          payment_status: string
-          voice_message_url: string
-        }[]
-      }
       get_ankit_moderation_donations_for_streamer: {
         Args: { p_streamer_id: string }
         Returns: {
@@ -924,37 +909,7 @@ export type Database = {
           voice_message_url: string
         }[]
       }
-      get_chia_donations_for_streamer: {
-        Args: { p_streamer_id: string }
-        Returns: {
-          amount: number
-          created_at: string
-          id: string
-          is_hyperemote: boolean
-          message: string
-          message_visible: boolean
-          moderation_status: string
-          name: string
-          payment_status: string
-          voice_message_url: string
-        }[]
-      }
       get_chia_moderation_donations_for_streamer: {
-        Args: { p_streamer_id: string }
-        Returns: {
-          amount: number
-          created_at: string
-          id: string
-          is_hyperemote: boolean
-          message: string
-          message_visible: boolean
-          moderation_status: string
-          name: string
-          payment_status: string
-          voice_message_url: string
-        }[]
-      }
-      get_demo_donations_for_streamer: {
         Args: { p_streamer_id: string }
         Returns: {
           amount: number
