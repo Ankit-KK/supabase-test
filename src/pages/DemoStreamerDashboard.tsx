@@ -70,8 +70,7 @@ export default function DemoStreamerDashboard() {
 
       const { data, error } = await supabase
         .rpc('get_streamer_donations', { 
-          p_streamer_id: session.streamerId, 
-          p_table_name: 'demostreamer_donations' 
+          p_streamer_id: session.streamerId
         });
 
       if (error) throw error;

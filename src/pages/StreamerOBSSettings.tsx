@@ -109,8 +109,7 @@ const StreamerOBSSettings = () => {
         // Fetch donations using secure function
         const { data: donationsData, error: donationsError } = await supabase
           .rpc('get_streamer_donations', { 
-            p_streamer_id: streamerInfo.id, 
-            p_table_name: 'chia_gaming_donations' 
+            p_streamer_id: streamerInfo.id
           });
 
         if (donationsError) {

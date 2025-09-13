@@ -1015,14 +1015,14 @@ export type Database = {
       get_streamer_donations: {
         Args: { p_streamer_id: string }
         Returns: {
+          amount: number
           created_at: string
-          donation_amount: number
-          donation_id: string
-          donation_message: string
-          donor_name: string
+          id: string
           is_hyperemote: boolean
+          message: string
           message_visible: boolean
           moderation_status: string
+          name: string
           payment_status: string
           voice_message_url: string
         }[]
@@ -1042,14 +1042,14 @@ export type Database = {
       get_streamer_moderation_donations: {
         Args: { p_streamer_id: string }
         Returns: {
+          amount: number
           created_at: string
-          donation_amount: number
-          donation_id: string
-          donation_message: string
-          donor_name: string
+          id: string
           is_hyperemote: boolean
+          message: string
           message_visible: boolean
           moderation_status: string
+          name: string
           payment_status: string
           voice_message_url: string
         }[]
