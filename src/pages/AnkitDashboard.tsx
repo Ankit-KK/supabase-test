@@ -486,7 +486,13 @@ const AnkitDashboard = () => {
             <MessagesModerationPage 
               donations={moderationDonations}
               onRefresh={refreshModerationData}
-              session={session}
+              session={session ? {
+                streamerId: streamer?.id || '',
+                streamerSlug: session.streamerSlug,
+                streamerName: session.streamerName,
+                brandColor: session.brandColor,
+                loginTime: Date.now()
+              } : null}
               tableName="ankit_donations"
               approveFunctionName="approve-donation-ankit"
               rejectFunctionName="reject-donation-ankit"

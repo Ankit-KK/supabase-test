@@ -118,6 +118,8 @@ export default function DemoStreamerDashboard() {
   };
 
   const setupRealtimeSubscription = () => {
+    if (!session?.streamerId) return;
+
     const channel = supabase
       .channel('demostreamer_donations_realtime')
       .on(
@@ -125,10 +127,11 @@ export default function DemoStreamerDashboard() {
         {
           event: '*',
           schema: 'public',
-          table: 'demostreamer_donations'
+          table: 'demostreamer_donations',
+          filter: `streamer_id=eq.${session.streamerId}`
         },
         (payload) => {
-          console.log('Real-time update:', payload);
+          console.log('DemoStreamer real-time update:', payload);
           loadDonations();
         }
       )

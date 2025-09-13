@@ -186,8 +186,8 @@ const StreamerDashboard = () => {
               });
             }
 
-            // Update moderation donations if not auto-approved
-            if (newDonation.moderation_status !== 'auto_approved') {
+            // Update moderation donations if not auto-approved or if it's a new pending donation
+            if (newDonation.moderation_status === 'pending' && !newDonation.is_hyperemote) {
               setModerationDonations(prev => [newDonation, ...prev]);
             }
           }
@@ -239,7 +239,7 @@ const StreamerDashboard = () => {
                   ? prev.map(d => d.id === updatedDonation.id ? updatedDonation : d)
                   : [updatedDonation, ...prev];
               });
-            } else if (updatedDonation.moderation_status === 'auto_approved' || updatedDonation.payment_status !== 'success') {
+            } else if (updatedDonation.moderation_status === 'approved' || updatedDonation.moderation_status === 'rejected' || updatedDonation.payment_status !== 'success') {
               setModerationDonations(prev => prev.filter(d => d.id !== updatedDonation.id));
             }
             
@@ -489,7 +489,13 @@ const StreamerDashboard = () => {
             <MessagesModerationPage 
               donations={moderationDonations}
               onRefresh={refreshModerationData}
-              session={session}
+              session={session ? {
+                streamerId: streamer?.id || '',
+                streamerSlug: session.streamerSlug,
+                streamerName: session.streamerName,
+                brandColor: session.brandColor,
+                loginTime: Date.now()
+              } : null}
             />
           </TabsContent>
 

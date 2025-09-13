@@ -53,13 +53,11 @@ export const MessagesModerationPage = ({ donations: propDonations, onRefresh, se
     if (!session?.streamerId) return;
 
     try {
+      // Use the unified moderation donations function
       const { data, error } = await supabase
-        .from(tableName)
-        .select('*')
-        .eq('streamer_id', session.streamerId)
-        .eq('payment_status', 'success')
-        .neq('moderation_status', 'auto_approved') // Don't show hyperemotes
-        .order('created_at', { ascending: false });
+        .rpc('get_streamer_moderation_donations', { 
+          p_streamer_id: session.streamerId
+        });
 
       if (error) throw error;
       setDonations(data || []);
@@ -86,7 +84,53 @@ export const MessagesModerationPage = ({ donations: propDonations, onRefresh, se
     if (!session?.streamerId) return;
     fetchDonations();
     
-    // No realtime subscription here - parent component handles it
+    // Set up real-time subscription for moderation updates
+    const channel = supabase
+      .channel(`moderation-${session.streamerId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'ankit_donations',
+          filter: `streamer_id=eq.${session.streamerId}`
+        },
+        (payload) => {
+          console.log('Ankit donation moderation update:', payload);
+          fetchDonations(); // Refresh the moderation list
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'chia_gaming_donations',
+          filter: `streamer_id=eq.${session.streamerId}`
+        },
+        (payload) => {
+          console.log('Chia Gaming donation moderation update:', payload);
+          fetchDonations(); // Refresh the moderation list
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'demostreamer_donations',
+          filter: `streamer_id=eq.${session.streamerId}`
+        },
+        (payload) => {
+          console.log('DemoStreamer donation moderation update:', payload);
+          fetchDonations(); // Refresh the moderation list
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [session?.streamerId]);
 
   const handleApprove = async (donationId: string) => {
