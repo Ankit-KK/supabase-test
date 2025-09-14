@@ -161,18 +161,21 @@ const AnkitDashboard = () => {
     };
 
     const tableName = getTableName(streamer.streamer_slug);
-    console.log('🔗 Setting up real-time subscription for:', tableName, 'streamer:', streamer.id);
+    const streamerId = streamer.id;
+    const streamerSlug = streamer.streamer_slug;
+    
+    console.log('🔗 Setting up real-time subscription for:', tableName, 'streamer:', streamerId);
 
     // Set up realtime subscription for this streamer's donations
     const channel = supabase
-      .channel(`${streamer.streamer_slug}-donations-${streamer.id}`)
+      .channel(`${streamerSlug}-donations-${streamerId}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: tableName,
-          filter: `streamer_id=eq.${streamer.id}`
+          filter: `streamer_id=eq.${streamerId}`
         },
         (payload) => {
           console.log('🔔 Realtime donation update received:', {
@@ -314,9 +317,10 @@ const AnkitDashboard = () => {
       .subscribe();
 
     return () => {
+      console.log('🧹 Cleaning up real-time subscription for:', streamerId);
       supabase.removeChannel(channel);
     };
-  }, [streamer?.id]);
+  }, [streamer?.id, streamer?.streamer_slug]);
 
   // Show loading while auth is being determined
   if (loading) {
