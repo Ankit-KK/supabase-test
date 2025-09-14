@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -145,12 +145,36 @@ const AnkitDashboard = () => {
       setLoadingData(false);
     };
 
+    // Store the function reference
+    fetchDataRef.current = fetchStreamerAndData;
+    
     fetchStreamerAndData();
   }, [session]);
 
-  // Separate useEffect for realtime subscription to avoid dependency issues
+  // Stable subscription using useRef to prevent tab switching issues
+  const subscriptionRef = useRef<any>(null);
+  const currentStreamerId = useRef<string | null>(null);
+  const fetchDataRef = useRef<(() => Promise<void>) | null>(null);
+  
+  // Memoize streamer values to prevent unnecessary re-renders
+  const stableStreamerId = useMemo(() => streamer?.id || null, [streamer?.id]);
+  const stableStreamerSlug = useMemo(() => streamer?.streamer_slug || null, [streamer?.streamer_slug]);
+
   useEffect(() => {
-    if (!streamer?.id || !streamer?.streamer_slug) return;
+    if (!stableStreamerId || !stableStreamerSlug) return;
+
+    // If we already have a subscription for this streamer, don't recreate it
+    if (currentStreamerId.current === stableStreamerId && subscriptionRef.current) {
+      console.log('📌 Using existing subscription for streamer:', stableStreamerId);
+      return;
+    }
+
+    // Clean up previous subscription if exists
+    if (subscriptionRef.current) {
+      console.log('🧹 Cleaning up previous subscription');
+      supabase.removeChannel(subscriptionRef.current);
+      subscriptionRef.current = null;
+    }
 
     // Determine the correct table name based on streamer slug
     const getTableName = (slug: string) => {
@@ -160,167 +184,81 @@ const AnkitDashboard = () => {
       return 'ankit_donations'; // fallback
     };
 
-    const tableName = getTableName(streamer.streamer_slug);
-    const streamerId = streamer.id;
-    const streamerSlug = streamer.streamer_slug;
+    const tableName = getTableName(stableStreamerSlug);
     
-    console.log('🔗 Setting up real-time subscription for:', tableName, 'streamer:', streamerId);
+    console.log('🔗 Setting up NEW real-time subscription for:', tableName, 'streamer:', stableStreamerId);
 
     // Set up realtime subscription for this streamer's donations
     const channel = supabase
-      .channel(`${streamerSlug}-donations-${streamerId}`)
+      .channel(`${stableStreamerSlug}-donations-${stableStreamerId}-${Date.now()}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: tableName,
-          filter: `streamer_id=eq.${streamerId}`
+          filter: `streamer_id=eq.${stableStreamerId}`
         },
         (payload) => {
           console.log('🔔 Realtime donation update received:', {
-            eventType: payload.eventType,
-            oldStatus: (payload.old as any)?.moderation_status,
-            newStatus: (payload.new as any)?.moderation_status,
-            paymentStatus: (payload.new as any)?.payment_status,
-            donationId: (payload.new as any)?.id
+            event: payload.eventType,
+            table: payload.table,
+            new: payload.new,
+            old: payload.old
           });
-          
-          if (payload.eventType === 'INSERT' && payload.new.payment_status === 'success') {
-            const newDonation = payload.new as Donation;
+
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            const donation = payload.new as any;
             
-            // Update dashboard donations if approved/auto-approved
-            if (newDonation.moderation_status === 'approved' || newDonation.moderation_status === 'auto_approved') {
-              setDonations(prev => [newDonation, ...prev]);
-              setTotalAmount(prev => prev + Number(newDonation.amount));
-              setMonthlyAmount(prev => {
-                const donationDate = new Date(newDonation.created_at);
-                const now = new Date();
-                if (donationDate.getMonth() === now.getMonth() && donationDate.getFullYear() === now.getFullYear()) {
-                  return prev + Number(newDonation.amount);
-                }
-                return prev;
-              });
-              
-              // Show notification for new donation
+            // Show notification for new donations or newly approved donations
+            if (payload.eventType === 'INSERT' && donation.payment_status === 'success') {
               toast({
-                title: "New Donation! 🎉",
-                description: `${newDonation.name} donated ${formatCurrency(Number(newDonation.amount))}${newDonation.message ? `: ${newDonation.message}` : ''}`,
+                title: "💰 New Donation!",
+                description: `${donation.name} donated ₹${donation.amount}`,
                 duration: 5000,
               });
+              console.log('🆕 New donation notification shown');
+            } else if (
+              payload.eventType === 'UPDATE' && 
+              donation.moderation_status === 'approved' &&
+              payload.old?.moderation_status !== 'approved'
+            ) {
+              toast({
+                title: "✅ Donation Approved!",
+                description: `Donation from ${donation.name} (₹${donation.amount}) has been approved`,
+                duration: 5000,
+              });
+              console.log('✅ Donation approved notification shown');
             }
 
-            // Update moderation donations if not auto-approved
-            if (newDonation.moderation_status !== 'auto_approved') {
-              setModerationDonations(prev => [newDonation, ...prev]);
+            // Refresh donations data using the ref
+            if (fetchDataRef.current) {
+              fetchDataRef.current();
             }
-          }
-          
-          if (payload.eventType === 'UPDATE') {
-            const updatedDonation = payload.new as Donation;
-            const oldDonation = payload.old as Donation;
-            
-            // Handle approval/rejection updates for dashboard
-            console.log('📝 Processing UPDATE event:', {
-              oldStatus: oldDonation.moderation_status,
-              newStatus: updatedDonation.moderation_status,
-              donationId: updatedDonation.id,
-              willApprove: oldDonation.moderation_status === 'pending' && 
-                (updatedDonation.moderation_status === 'approved' || updatedDonation.moderation_status === 'auto_approved')
-            });
-            
-            if (oldDonation.moderation_status === 'pending' && 
-                (updatedDonation.moderation_status === 'approved' || updatedDonation.moderation_status === 'auto_approved')) {
-              // Donation was approved - add to dashboard
-              console.log('✅ Adding approved donation to dashboard:', updatedDonation.id);
-              setDonations(prev => [updatedDonation, ...prev.filter(d => d.id !== updatedDonation.id)]);
-              setTotalAmount(prev => prev + Number(updatedDonation.amount));
-              setMonthlyAmount(prev => {
-                const donationDate = new Date(updatedDonation.created_at);
-                const now = new Date();
-                if (donationDate.getMonth() === now.getMonth() && donationDate.getFullYear() === now.getFullYear()) {
-                  return prev + Number(updatedDonation.amount);
-                }
-                return prev;
-              });
-              
-              toast({
-                title: "Donation Approved! ✅",
-                description: `${updatedDonation.name}'s donation is now live`,
-                duration: 5000,
-              });
-            } else if ((oldDonation.moderation_status === 'approved' || oldDonation.moderation_status === 'auto_approved') && 
-                       updatedDonation.moderation_status === 'rejected') {
-              // Donation was rejected - remove from dashboard
-              setDonations(prev => prev.filter(d => d.id !== updatedDonation.id));
-              setTotalAmount(prev => prev - Number(updatedDonation.amount));
-              setMonthlyAmount(prev => {
-                const donationDate = new Date(updatedDonation.created_at);
-                const now = new Date();
-                if (donationDate.getMonth() === now.getMonth() && donationDate.getFullYear() === now.getFullYear()) {
-                  return prev - Number(updatedDonation.amount);
-                }
-                return prev;
-              });
-            }
-
-            // Update moderation donations for any successful payment that's not auto-approved
-            if (updatedDonation.payment_status === 'success' && updatedDonation.moderation_status !== 'auto_approved') {
-              setModerationDonations(prev => {
-                const exists = prev.some(d => d.id === updatedDonation.id);
-                return exists 
-                  ? prev.map(d => d.id === updatedDonation.id ? updatedDonation : d)
-                  : [updatedDonation, ...prev];
-              });
-            } else if (updatedDonation.moderation_status === 'auto_approved' || updatedDonation.payment_status !== 'success') {
-              setModerationDonations(prev => prev.filter(d => d.id !== updatedDonation.id));
-            }
-            
-            // Handle payment status updates
-            if (updatedDonation.payment_status === 'success' && oldDonation.payment_status !== 'success' &&
-                (updatedDonation.moderation_status === 'approved' || updatedDonation.moderation_status === 'auto_approved')) {
-              setDonations(prev => [updatedDonation, ...prev.filter(d => d.id !== updatedDonation.id)]);
-              setTotalAmount(prev => prev + Number(updatedDonation.amount));
-              setMonthlyAmount(prev => {
-                const donationDate = new Date(updatedDonation.created_at);
-                const now = new Date();
-                if (donationDate.getMonth() === now.getMonth() && donationDate.getFullYear() === now.getFullYear()) {
-                  return prev + Number(updatedDonation.amount);
-                }
-                return prev;
-              });
-              
-              toast({
-                title: "Payment Confirmed! ✅",
-                description: `${updatedDonation.name} donated ${formatCurrency(Number(updatedDonation.amount))}`,
-                duration: 5000,
-              });
-            }
-          }
-          
-          if (payload.eventType === 'DELETE') {
-            const deletedDonation = payload.old as Donation;
-            setDonations(prev => prev.filter(d => d.id !== deletedDonation.id));
-            setModerationDonations(prev => prev.filter(d => d.id !== deletedDonation.id));
-            setTotalAmount(prev => prev - Number(deletedDonation.amount));
-            setMonthlyAmount(prev => {
-              const donationDate = new Date(deletedDonation.created_at);
-              const now = new Date();
-              if (donationDate.getMonth() === now.getMonth() && donationDate.getFullYear() === now.getFullYear()) {
-                return prev - Number(deletedDonation.amount);
-              }
-              return prev;
-            });
+            console.log('🔄 Donations data refreshed after realtime update');
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Real-time subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('Successfully subscribed to moderation updates');
+        }
+      });
+
+    // Store the subscription and current streamer ID
+    subscriptionRef.current = channel;
+    currentStreamerId.current = stableStreamerId;
 
     return () => {
-      console.log('🧹 Cleaning up real-time subscription for:', streamerId);
-      supabase.removeChannel(channel);
+      if (subscriptionRef.current) {
+        console.log('🧹 Component cleanup - removing subscription');
+        supabase.removeChannel(subscriptionRef.current);
+        subscriptionRef.current = null;
+        currentStreamerId.current = null;
+      }
     };
-  }, [streamer?.id, streamer?.streamer_slug]);
+  }, [stableStreamerId, stableStreamerSlug]);
 
   // Show loading while auth is being determined
   if (loading) {
