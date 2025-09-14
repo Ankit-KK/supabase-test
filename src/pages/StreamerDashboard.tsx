@@ -150,17 +150,28 @@ const StreamerDashboard = () => {
 
   // Separate useEffect for realtime subscription to avoid dependency issues
   useEffect(() => {
-    if (!streamer?.id) return;
+    if (!streamer?.id || !streamer?.streamer_slug) return;
+
+    // Determine the correct table name based on streamer slug
+    const getTableName = (slug: string) => {
+      if (slug === 'ankit') return 'ankit_donations';
+      if (slug === 'chia_gaming') return 'chia_gaming_donations';
+      if (slug === 'demostreamer') return 'demostreamer_donations';
+      return 'chia_gaming_donations'; // fallback
+    };
+
+    const tableName = getTableName(streamer.streamer_slug);
+    console.log('🔗 Setting up real-time subscription for:', tableName, 'streamer:', streamer.id);
 
     // Set up realtime subscription for this streamer's donations
     const channel = supabase
-      .channel(`donations-${streamer.id}`)
+      .channel(`${streamer.streamer_slug}-donations-${streamer.id}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'chia_gaming_donations',
+          table: tableName,
           filter: `streamer_id=eq.${streamer.id}`
         },
         (payload) => {
