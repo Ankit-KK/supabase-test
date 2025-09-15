@@ -74,10 +74,10 @@ serve(async (req) => {
     const timestamp = Date.now();
     const orderId = `demostreamer_${timestamp}_${Math.random().toString(36).substr(2, 9)}`;
 
-    // Get payment gateway credentials
+    // Get payment gateway credentials (same as Ankit)
     const clientId = Deno.env.get('XClientId');
     const clientSecret = Deno.env.get('XClientSecret');
-    const apiUrl = Deno.env.get('api_url') || 'https://sandbox-api.cashfree.com/pg';
+    const apiUrl = Deno.env.get('api_url') || 'https://api.cashfree.com/pg';
 
     console.log('Payment gateway credentials check:', {
       hasClientId: !!clientId,
@@ -90,21 +90,16 @@ serve(async (req) => {
       throw new Error('Payment gateway not configured');
     }
 
-    // Create Cashfree order
-    const cashfreeOrderId = `CF_${orderId}`;
+    // Create Cashfree order (aligned with Ankit implementation)
     const orderData = {
-      order_id: cashfreeOrderId,
+      order_id: orderId,
       order_amount: parseFloat(amount),
       order_currency: 'INR',
       customer_details: {
-        customer_id: `donor_${timestamp}`,
+        customer_id: timestamp.toString(),
         customer_name: name,
-        customer_email: 'donor@example.com',
+        customer_email: 'donor@demostreamer.com',
         customer_phone: phone || '9999999999'
-      },
-      order_meta: {
-        return_url: `${req.headers.get('origin')}/demostreamer?status=success&order_id=${orderId}`,
-        notify_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/demostreamer-payment-webhook`
       },
       order_note: message || 'Demo Streamer Donation'
     };
@@ -115,7 +110,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
         'x-client-id': clientId,
         'x-client-secret': clientSecret,
-        'x-api-version': '2025-01-01'
+        'x-api-version': '2023-08-01'
       },
       body: JSON.stringify(orderData)
     });
@@ -135,7 +130,7 @@ serve(async (req) => {
       amount: parseFloat(amount),
       message,
       order_id: orderId,
-      cashfree_order_id: cashfreeOrderId,
+      cashfree_order_id: orderId,
       payment_status: 'pending',
       moderation_status: isHyperemoteFlag ? 'auto_approved' : 'pending',
       is_hyperemote: isHyperemoteFlag
@@ -172,7 +167,7 @@ serve(async (req) => {
         success: true,
         order_id: orderId,
         payment_session_id: paymentOrder.payment_session_id,
-        cashfreeOrderId
+        cashfreeOrderId: orderId
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
