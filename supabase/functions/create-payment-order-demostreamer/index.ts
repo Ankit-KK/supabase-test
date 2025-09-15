@@ -133,7 +133,7 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         orderId,
-        paymentSessionId: paymentOrder.payment_session_id,
+        payment_session_id: paymentOrder.payment_session_id,
         cashfreeOrderId
       }),
       {
