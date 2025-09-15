@@ -10,8 +10,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import VoiceRecorder from "@/components/VoiceRecorder";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
-import EmotionPack from "@/components/EmotionPack";
-import { parseEmotionalMessage, validateEmotionUsage } from "@/utils/emotionParser";
 
 const DemoStreamer = () => {
   const navigate = useNavigate();
@@ -39,11 +37,6 @@ const DemoStreamer = () => {
   
   // Voice recorder instance
   const voiceRecorder = useVoiceRecorder(60);
-
-  // Emotional TTS states
-  const [messageInputRef, setMessageInputRef] = useState<HTMLTextAreaElement | null>(null);
-  const [cursorPosition, setCursorPosition] = useState(0);
-  const [showEmotionalPreview, setShowEmotionalPreview] = useState(false);
   
   // Static emotes from chiaa-emotes bucket (for hyperemotes)
   const availableEmotes = [
@@ -122,29 +115,6 @@ const DemoStreamer = () => {
     }
   };
 
-  const handleEmotionSelect = (emotionTag: string) => {
-    if (!messageInputRef) return;
-
-    const currentMessage = formData.message;
-    const before = currentMessage.slice(0, cursorPosition);
-    const after = currentMessage.slice(cursorPosition);
-    const newMessage = before + emotionTag + ' ' + after;
-
-    setFormData(prev => ({
-      ...prev,
-      message: newMessage
-    }));
-
-    // Update cursor position to after the inserted emotion
-    setTimeout(() => {
-      if (messageInputRef) {
-        const newCursorPos = cursorPosition + emotionTag.length + 1;
-        messageInputRef.setSelectionRange(newCursorPos, newCursorPos);
-        messageInputRef.focus();
-        setCursorPosition(newCursorPos);
-      }
-    }, 0);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -179,22 +149,6 @@ const DemoStreamer = () => {
       return;
     }
 
-    // Validate emotional messages
-    if (donationType === 'message' && formData.message?.trim()) {
-      const parsed = parseEmotionalMessage(formData.message);
-      if (parsed.hasEmotions) {
-        const validation = validateEmotionUsage(parsed.emotions, amount);
-        if (!validation.valid) {
-          toast({
-            title: "Invalid Emotions",
-            description: `These emotions require a higher donation amount: ${validation.invalidEmotions.join(', ')}`,
-            variant: "destructive",
-          });
-          return;
-        }
-      }
-    }
-
     if (!amount || amount < 1) {
       toast({
         title: "Invalid Amount",
@@ -223,11 +177,6 @@ const DemoStreamer = () => {
 
     try {
       const amount = parseFloat(formData.amount);
-
-      // Parse emotions from message if applicable
-      const emotionData = donationType === 'message' && formData.message?.trim() 
-        ? parseEmotionalMessage(formData.message.trim())
-        : null;
 
       // Create order via Supabase edge function
       const response = await supabase.functions.invoke('create-payment-order-demostreamer', {
@@ -273,11 +222,6 @@ const DemoStreamer = () => {
         }
         if (donationType === 'hyperemote') {
           updates.is_hyperemote = true;
-        }
-        // Add emotional TTS data if applicable
-        if (emotionData?.hasEmotions) {
-          updates.emotion_tags = emotionData.emotions;
-          updates.processing_status = 'pending';
         }
 
         // Note: Extras are now handled by the create-payment-order-demostreamer edge function
@@ -523,12 +467,7 @@ const DemoStreamer = () => {
                   name="message"
                   placeholder="Write your message here..."
                   value={formData.message}
-                  onChange={handleInputChange}
-                  ref={setMessageInputRef}
-                  onSelect={(e) => {
-                    const target = e.target as HTMLTextAreaElement;
-                    setCursorPosition(target.selectionStart);
-                  }}
+                  onChange={handleChange}
                   rows={3}
                   maxLength={500}
                   className="w-full px-3 py-2 border border-purple-500/30 rounded-md focus:border-purple-500 focus:ring-purple-500/20 focus:ring-2 focus:outline-none resize-none"
@@ -589,15 +528,6 @@ const DemoStreamer = () => {
               </div>
             )}
 
-            {/* Emotional TTS for text messages */}
-            {donationType === 'message' && formData.message && parseFloat(formData.amount) >= 1 && (
-              <div className="space-y-2">
-                <EmotionPack
-                  donationAmount={parseFloat(formData.amount) || 0}
-                  onEmotionSelect={handleEmotionSelect}
-                />
-              </div>
-            )}
 
             {/* Submit Button */}
             <Button 

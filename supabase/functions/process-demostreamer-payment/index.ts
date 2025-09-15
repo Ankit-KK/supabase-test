@@ -38,42 +38,11 @@ serve(async (req) => {
 
     console.log(`Found donation: ${donation.name} - ₹${donation.amount} - Message: "${donation.message}"`);
 
-    // Check if this donation has emotions and needs TTS processing
-    const hasEmotions = donation.emotion_tags && donation.emotion_tags.length > 0;
-    const needsTTS = hasEmotions && donation.message && !donation.tts_audio_url && donation.processing_status !== 'completed';
-
-    if (needsTTS) {
-      console.log(`Triggering emotional TTS generation for donation ${donationId}`);
-      
-      // Trigger TTS generation in the background
-      const ttsResponse = await supabase.functions.invoke('generate-emotional-tts', {
-        body: {
-          donationId: donation.id,
-          message: donation.message,
-          donorName: donation.name,
-          amount: donation.amount
-        }
-      });
-
-      if (ttsResponse.error) {
-        console.error('Failed to generate TTS:', ttsResponse.error);
-        
-        // Update processing status to failed
-        await supabase
-          .from('demostreamer_donations')
-          .update({ processing_status: 'failed' })
-          .eq('id', donationId);
-      } else {
-        console.log('TTS generation triggered successfully');
-      }
-    } else {
-      console.log('No TTS processing needed for this donation');
-    }
+    console.log('Payment processing completed successfully');
 
     return new Response(
       JSON.stringify({
-        success: true,
-        ttsTriggered: needsTTS
+        success: true
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

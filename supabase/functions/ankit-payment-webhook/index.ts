@@ -12,57 +12,9 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Ankit payment webhook triggered');
+    console.log('Ankit payment webhook triggered - TTS processing disabled');
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Find donations that need TTS processing
-    const { data: donations, error } = await supabase
-      .from('ankit_donations')
-      .select('*')
-      .eq('payment_status', 'success')
-      .eq('processing_status', 'pending')
-      .not('emotion_tags', 'is', null)
-      .is('tts_audio_url', null)
-      .limit(10);
-
-    if (error || !donations?.length) {
-      console.log('No donations need TTS processing');
-      return new Response(JSON.stringify({ processed: 0 }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
-    let processed = 0;
-    
-    // Process each donation
-    for (const donation of donations) {
-      try {
-        console.log(`Processing TTS for donation ${donation.id}: ${donation.name}`);
-        
-        const ttsResponse = await supabase.functions.invoke('generate-emotional-tts', {
-          body: {
-            donationId: donation.id,
-            message: donation.message,
-            donorName: donation.name,
-            amount: donation.amount
-          }
-        });
-
-        if (ttsResponse.error) {
-          console.error(`TTS failed for ${donation.id}:`, ttsResponse.error);
-        } else {
-          processed++;
-          console.log(`TTS completed for donation ${donation.id}`);
-        }
-      } catch (e) {
-        console.error(`Error processing donation ${donation.id}:`, e);
-      }
-    }
-
-    return new Response(JSON.stringify({ processed }), {
+    return new Response(JSON.stringify({ processed: 0, message: 'TTS processing has been disabled' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 

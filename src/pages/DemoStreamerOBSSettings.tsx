@@ -14,8 +14,7 @@ import {
   Eye, 
   EyeOff, 
   ExternalLink, 
-  Monitor, 
-  Volume2,
+  Monitor,
   Settings,
   ArrowLeft,
   Sparkles
@@ -29,7 +28,6 @@ export default function DemoStreamerOBSSettings() {
   const [showToken, setShowToken] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [alertsUrl, setAlertsUrl] = useState('');
-  const [voiceAlertsUrl, setVoiceAlertsUrl] = useState('');
 
   useEffect(() => {
     if (!loading && !session) {
@@ -65,7 +63,6 @@ export default function DemoStreamerOBSSettings() {
   const updateUrls = (token: string) => {
     const baseUrl = window.location.origin;
     setAlertsUrl(`${baseUrl}/demostreamer-alerts/${token}`);
-    setVoiceAlertsUrl(`${baseUrl}/demostreamer-voice-alerts/${token}`);
   };
 
   const generateNewToken = async () => {
@@ -284,52 +281,6 @@ export default function DemoStreamerOBSSettings() {
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Volume2 className="w-5 h-5" />
-                    Voice Alerts
-                  </CardTitle>
-                  <CardDescription>
-                    Browser source URL for voice message alerts
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="voice-alerts-url">Browser Source URL</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="voice-alerts-url"
-                        value={voiceAlertsUrl}
-                        readOnly
-                        className="font-mono text-sm"
-                      />
-                      <Button
-                        onClick={() => copyToClipboard(voiceAlertsUrl, 'Voice Alerts URL')}
-                        variant="outline"
-                      >
-                        <Copy className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        onClick={() => window.open(voiceAlertsUrl, '_blank')}
-                        variant="outline"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                    <h4 className="font-medium text-green-900 mb-2">Voice Alerts Features:</h4>
-                    <ul className="text-sm text-green-800 space-y-1 list-disc list-inside">
-                      <li>Automatic playback of voice messages from donations</li>
-                      <li>Text-to-speech for messages with emotion tags</li>
-                      <li>Queue management for multiple voice messages</li>
-                      <li>Real-time updates when new voice donations arrive</li>
-                    </ul>
-                  </div>
-                </CardContent>
-              </Card>
             </>
           )}
         </div>

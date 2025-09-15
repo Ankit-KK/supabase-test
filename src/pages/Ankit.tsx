@@ -10,8 +10,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import VoiceRecorder from "@/components/VoiceRecorder";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
-import EmotionPack from "@/components/EmotionPack";
-import { parseEmotionalMessage, validateEmotionUsage } from "@/utils/emotionParser";
 
 const Ankit = () => {
   const navigate = useNavigate();
@@ -179,22 +177,6 @@ const Ankit = () => {
       return;
     }
 
-    // Validate emotional messages
-    if (donationType === 'message' && formData.message?.trim()) {
-      const parsed = parseEmotionalMessage(formData.message);
-      if (parsed.hasEmotions) {
-        const validation = validateEmotionUsage(parsed.emotions, amount);
-        if (!validation.valid) {
-          toast({
-            title: "Invalid Emotions",
-            description: `These emotions require a higher donation amount: ${validation.invalidEmotions.join(', ')}`,
-            variant: "destructive",
-          });
-          return;
-        }
-      }
-    }
-
     if (!amount || amount < 1) {
       toast({
         title: "Invalid Amount",
@@ -223,11 +205,6 @@ const Ankit = () => {
 
     try {
       const amount = parseFloat(formData.amount);
-
-      // Parse emotions from message if applicable
-      const emotionData = donationType === 'message' && formData.message?.trim() 
-        ? parseEmotionalMessage(formData.message.trim())
-        : null;
 
       // Create order via Supabase edge function
       const response = await supabase.functions.invoke('create-payment-order-ankit', {
@@ -273,11 +250,6 @@ const Ankit = () => {
         }
         if (donationType === 'hyperemote') {
           updates.is_hyperemote = true;
-        }
-        // Add emotional TTS data if applicable
-        if (emotionData?.hasEmotions) {
-          updates.emotion_tags = emotionData.emotions;
-          updates.processing_status = 'pending';
         }
 
         // Note: Extras are now handled by the create-payment-order-ankit edge function
@@ -528,33 +500,6 @@ const Ankit = () => {
               </div>
             )}
 
-            {/* Emotion Pack for Message Donations */}
-            {donationType === 'message' && formData.amount && parseFloat(formData.amount) >= 1 && (
-              <EmotionPack
-                donationAmount={parseFloat(formData.amount)}
-                onEmotionSelect={handleEmotionSelect}
-                className="mt-4"
-              />
-            )}
-
-            {/* Emotional TTS Preview */}
-            {donationType === 'message' && formData.message && parseEmotionalMessage(formData.message).hasEmotions && (
-              <div className="p-3 bg-muted/50 rounded-lg border border-primary/20">
-                <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-medium">Emotional TTS Preview</span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Your message will be spoken with these emotions: {' '}
-                  <span className="font-medium text-primary">
-                    {parseEmotionalMessage(formData.message).emotions.join(', ')}
-                  </span>
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  💡 After payment, your emotional message will be processed by our advanced TTS system!
-                </p>
-              </div>
-            )}
             {donationType === 'voice' && (
               <div className="space-y-3">
                 <label className="text-sm font-medium text-blue-500">
