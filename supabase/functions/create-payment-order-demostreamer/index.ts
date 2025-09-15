@@ -15,7 +15,17 @@ serve(async (req) => {
     const requestBody = await req.json();
     console.log('Request body:', JSON.stringify(requestBody, null, 2));
     
-    const { name, amount, message, voiceData, voiceDuration, emotionTags, phone } = requestBody;
+    const { 
+      name, 
+      amount, 
+      message, 
+      phone, 
+      streamer_slug, 
+      temp_voice_data, 
+      voice_duration_seconds, 
+      is_hyperemote,
+      emotion_tags
+    } = requestBody;
 
     if (!name || !amount) {
       console.error('Missing required fields - name:', name, 'amount:', amount);
@@ -30,25 +40,35 @@ serve(async (req) => {
 
     console.log(`Creating payment order for ${name}: ₹${amount}`);
 
-    // Initialize Supabase client
+    // Initialize Supabase clients
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const supabaseAnon = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
 
     // Get streamer info
-    const { data: streamer } = await supabase
-      .from('streamers')
-      .select('id, hyperemotes_enabled, hyperemotes_min_amount')
-      .eq('streamer_slug', 'demostreamer')
-      .single();
+    const { data: streamer } = await supabaseAnon
+      .rpc('get_public_streamer_data', { p_streamer_slug: 'demostreamer' });
 
-    if (!streamer) {
+    if (!streamer || streamer.length === 0) {
       throw new Error('Streamer not found');
     }
 
-    // Check if this is a hyperemote
-    const isHyperemote = streamer.hyperemotes_enabled && 
-                        amount >= streamer.hyperemotes_min_amount;
+    const streamerData = streamer[0];
+    console.log('Found streamer:', streamerData);
+
+    // Check if this is a hyperemote (either passed explicitly or based on amount)
+    const isHyperemoteFlag = is_hyperemote || (
+      streamerData.hyperemotes_enabled && 
+      amount >= (streamerData.hyperemotes_min_amount || 50)
+    );
 
     // Generate order ID
     const timestamp = Date.now();
@@ -109,22 +129,34 @@ serve(async (req) => {
     const paymentOrder = await response.json();
 
     // Store donation in database
+    const donationData: any = {
+      streamer_id: streamerData.id,
+      name,
+      amount: parseFloat(amount),
+      message,
+      order_id: orderId,
+      cashfree_order_id: cashfreeOrderId,
+      payment_status: 'pending',
+      moderation_status: isHyperemoteFlag ? 'auto_approved' : 'pending',
+      is_hyperemote: isHyperemoteFlag
+    };
+
+    // Add optional fields if provided
+    if (temp_voice_data) {
+      donationData.temp_voice_data = temp_voice_data;
+    }
+    if (voice_duration_seconds) {
+      donationData.voice_duration_seconds = voice_duration_seconds;
+    }
+    if (emotion_tags) {
+      donationData.emotion_tags = emotion_tags;
+    }
+
+    console.log('Inserting donation with data:', donationData);
+
     const { data: donation, error: insertError } = await supabase
       .from('demostreamer_donations')
-      .insert({
-        streamer_id: streamer.id,
-        name,
-        amount: parseFloat(amount),
-        message,
-        order_id: orderId,
-        cashfree_order_id: cashfreeOrderId,
-        payment_status: 'pending',
-        moderation_status: isHyperemote ? 'auto_approved' : 'pending',
-        is_hyperemote: isHyperemote,
-        temp_voice_data: voiceData,
-        voice_duration_seconds: voiceDuration,
-        emotion_tags: emotionTags
-      })
+      .insert(donationData)
       .select()
       .single();
 
@@ -138,7 +170,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        orderId,
+        order_id: orderId,
         payment_session_id: paymentOrder.payment_session_id,
         cashfreeOrderId
       }),

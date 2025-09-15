@@ -173,7 +173,21 @@ const DemoStreamer = () => {
     try {
       const amount = parseFloat(formData.amount);
 
-      // Create order via Supabase edge function
+      // Prepare optional voice data before creating order
+      let tempVoice: string | null = null;
+      if (donationType === 'voice' && voiceRecorder.audioBlob) {
+        console.log('Converting voice recording to base64 for temporary storage');
+        const reader = new FileReader();
+        tempVoice = await new Promise((resolve) => {
+          reader.onload = () => {
+            const base64 = (reader.result as string).split(',')[1];
+            resolve(base64);
+          };
+          reader.readAsDataURL(voiceRecorder.audioBlob!);
+        });
+      }
+
+      // Create order via Supabase edge function (pass all data including voice)
       const response = await supabase.functions.invoke('create-payment-order-demostreamer', {
         body: {
           name: formData.name.trim(),
@@ -181,7 +195,10 @@ const DemoStreamer = () => {
           message: donationType === 'message' ? formData.message.trim() : 
                   donationType === 'voice' ? 'Voice message donation' : '',
           phone: phoneNumber?.trim() || undefined,
-          streamer_slug: 'demostreamer'
+          streamer_slug: 'demostreamer',
+          temp_voice_data: tempVoice,
+          voice_duration_seconds: donationType === 'voice' ? voiceDuration : undefined,
+          is_hyperemote: donationType === 'hyperemote' ? true : undefined
         }
       });
 
@@ -194,36 +211,7 @@ const DemoStreamer = () => {
 
       const orderId = data.order_id;
 
-      // Convert voice data to base64 for temporary storage if needed
-      let voiceDataBase64: string | null = null;
-      if (donationType === 'voice' && voiceRecorder.audioBlob) {
-        console.log('Converting voice recording to base64 for temporary storage');
-        const reader = new FileReader();
-        voiceDataBase64 = await new Promise((resolve) => {
-          reader.onload = () => {
-            const base64 = (reader.result as string).split(',')[1];
-            resolve(base64);
-          };
-          reader.readAsDataURL(voiceRecorder.audioBlob!);
-        });
-      }
-
-      // Attach optional data to the existing donation (created by edge function)
-      try {
-        const updates: any = {};
-        if (donationType === 'voice' && voiceDataBase64) {
-          updates.temp_voice_data = voiceDataBase64;
-          updates.voice_duration_seconds = voiceDuration;
-        }
-        if (donationType === 'hyperemote') {
-          updates.is_hyperemote = true;
-        }
-
-        // Note: Extras are now handled by the create-payment-order-demostreamer edge function
-        // No client-side updates needed to avoid RLS policy violations
-      } catch (e) {
-        console.error('Failed to attach extras to donation:', e);
-      }
+      // All data (including voice and hyperemote status) is now handled by the edge function
 
       // Initialize Cashfree checkout
       const checkoutOptions = {
