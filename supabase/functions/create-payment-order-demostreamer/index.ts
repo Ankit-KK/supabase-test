@@ -12,9 +12,13 @@ serve(async (req) => {
   }
 
   try {
-    const { name, amount, message, voiceData, voiceDuration, emotionTags } = await req.json();
+    const requestBody = await req.json();
+    console.log('Request body:', JSON.stringify(requestBody, null, 2));
+    
+    const { name, amount, message, voiceData, voiceDuration, emotionTags } = requestBody;
 
     if (!name || !amount) {
+      console.error('Missing required fields - name:', name, 'amount:', amount);
       throw new Error('Missing required fields');
     }
 
@@ -49,7 +53,14 @@ serve(async (req) => {
     const clientSecret = Deno.env.get('CASHFREE_CLIENT_SECRET');
     const apiUrl = Deno.env.get('CASHFREE_API_URL') || 'https://sandbox-api.cashfree.com/pg';
 
+    console.log('Payment gateway credentials check:', {
+      hasClientId: !!clientId,
+      hasClientSecret: !!clientSecret,
+      apiUrl
+    });
+
     if (!clientId || !clientSecret) {
+      console.error('Missing payment gateway credentials:', { clientId: !!clientId, clientSecret: !!clientSecret });
       throw new Error('Payment gateway not configured');
     }
 
