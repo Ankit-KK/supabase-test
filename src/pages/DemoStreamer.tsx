@@ -108,11 +108,6 @@ const DemoStreamer = () => {
       ...prev,
       [name]: value
     }));
-
-    // Track cursor position for emotion insertion
-    if (name === 'message' && e.target instanceof HTMLTextAreaElement) {
-      setCursorPosition(e.target.selectionStart);
-    }
   };
 
 
@@ -467,7 +462,7 @@ const DemoStreamer = () => {
                   name="message"
                   placeholder="Write your message here..."
                   value={formData.message}
-                  onChange={handleChange}
+                  onChange={handleInputChange}
                   rows={3}
                   maxLength={500}
                   className="w-full px-3 py-2 border border-purple-500/30 rounded-md focus:border-purple-500 focus:ring-purple-500/20 focus:ring-2 focus:outline-none resize-none"
