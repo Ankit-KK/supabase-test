@@ -49,9 +49,9 @@ serve(async (req) => {
     const orderId = `demostreamer_${timestamp}_${Math.random().toString(36).substr(2, 9)}`;
 
     // Get payment gateway credentials
-    const clientId = Deno.env.get('CASHFREE_CLIENT_ID');
-    const clientSecret = Deno.env.get('CASHFREE_CLIENT_SECRET');
-    const apiUrl = Deno.env.get('CASHFREE_API_URL') || 'https://sandbox-api.cashfree.com/pg';
+    const clientId = Deno.env.get('XClientId');
+    const clientSecret = Deno.env.get('XClientSecret');
+    const apiUrl = Deno.env.get('api_url') || 'https://sandbox-api.cashfree.com/pg';
 
     console.log('Payment gateway credentials check:', {
       hasClientId: !!clientId,
