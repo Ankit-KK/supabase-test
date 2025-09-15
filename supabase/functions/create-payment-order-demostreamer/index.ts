@@ -15,11 +15,17 @@ serve(async (req) => {
     const requestBody = await req.json();
     console.log('Request body:', JSON.stringify(requestBody, null, 2));
     
-    const { name, amount, message, voiceData, voiceDuration, emotionTags } = requestBody;
+    const { name, amount, message, voiceData, voiceDuration, emotionTags, phone } = requestBody;
 
     if (!name || !amount) {
       console.error('Missing required fields - name:', name, 'amount:', amount);
       throw new Error('Missing required fields');
+    }
+
+    // Validate phone number if provided
+    if (phone && !/^[6-9]\d{9}$/.test(phone)) {
+      console.error('Invalid phone number format:', phone);
+      throw new Error('Invalid phone number format');
     }
 
     console.log(`Creating payment order for ${name}: ₹${amount}`);
@@ -74,7 +80,7 @@ serve(async (req) => {
         customer_id: `donor_${timestamp}`,
         customer_name: name,
         customer_email: 'donor@example.com',
-        customer_phone: '9999999999'
+        customer_phone: phone || '9999999999'
       },
       order_meta: {
         return_url: `${req.headers.get('origin')}/demostreamer?status=success&order_id=${orderId}`,
@@ -89,7 +95,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
         'x-client-id': clientId,
         'x-client-secret': clientSecret,
-        'x-api-version': '2023-08-01'
+        'x-api-version': '2025-01-01'
       },
       body: JSON.stringify(orderData)
     });
