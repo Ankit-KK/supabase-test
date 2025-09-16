@@ -27,6 +27,9 @@ export const useSimpleAlerts = ({ streamerId, tableName, enabled = true, obsToke
   const [connectionStatus, setConnectionStatus] = useState('connecting');
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const retryCountRef = useRef(0);
 
   const showAlert = useCallback((donation: Donation, reason: string) => {
     console.log('🚨 Showing alert:', donation.name, '₹' + donation.amount, 'Reason:', reason);
@@ -45,7 +48,7 @@ export const useSimpleAlerts = ({ streamerId, tableName, enabled = true, obsToke
     }, duration);
   }, []);
 
-  const fetchLatestDonation = useCallback(async () => {
+  const fetchLatestDonation = useCallback(async (forceShow = false) => {
     if (!enabled || !streamerId || !obsToken) {
       console.log(`⏸️ Alert system disabled - enabled: ${enabled}, streamerId: ${streamerId}, obsToken: ${!!obsToken}`);
       return;
@@ -82,33 +85,44 @@ export const useSimpleAlerts = ({ streamerId, tableName, enabled = true, obsToke
       });
       console.log('🔍 State check - lastShownId:', lastShownId, 'isFirstLoad:', isFirstLoad);
 
-      // On first load, always show the latest donation if it exists
-      if (isFirstLoad) {
-        console.log('🎬 First load - showing latest donation');
-        showAlert(latestDonation, 'First load');
+      // Show alert if first load, forced, or newer than last shown
+      const shouldShow = isFirstLoad || forceShow || latestDonation.id !== lastShownId;
+      
+      if (shouldShow) {
+        console.log('🎬 Showing alert - reason:', isFirstLoad ? 'First load' : forceShow ? 'Forced sync' : 'New donation');
+        showAlert(latestDonation, isFirstLoad ? 'First load' : forceShow ? 'Sync after reconnect' : 'Latest donation');
       }
 
     } catch (error) {
       console.error('❌ Fetch error:', error);
       setConnectionStatus('error');
     }
-  }, [streamerId, tableName, enabled, isFirstLoad, obsToken]);
+  }, [streamerId, tableName, enabled, isFirstLoad, lastShownId, obsToken, showAlert]);
 
-  // Set up real-time subscription
-  useEffect(() => {
-    if (!enabled || !streamerId) {
-      console.log(`⏸️ Real-time not started - enabled: ${enabled}, streamerId: ${streamerId}`);
-      return;
+  const startFallbackPolling = useCallback(() => {
+    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    
+    console.log('🔄 Starting fallback polling due to real-time issues');
+    pollIntervalRef.current = setInterval(() => {
+      fetchLatestDonation(false);
+    }, 5000); // Poll every 5 seconds
+  }, [fetchLatestDonation]);
+
+  const stopFallbackPolling = useCallback(() => {
+    if (pollIntervalRef.current) {
+      console.log('⏹️ Stopping fallback polling');
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
     }
+  }, []);
 
-    console.log(`🎯 Starting real-time alerts for ${tableName} with streamerId: ${streamerId}`);
+  const setupRealtimeSubscription = useCallback(() => {
+    if (!enabled || !streamerId) return;
+
+    console.log(`🎯 Setting up real-time subscription for ${tableName} (attempt ${retryCountRef.current + 1})`);
     
-    // Initial fetch for first load
-    fetchLatestDonation();
-    
-    // Set up real-time subscription
     const channel = supabase
-      .channel(`alerts-${tableName}-${streamerId}`)
+      .channel(`alerts-${tableName}-${streamerId}-${Date.now()}`)
       .on(
         'postgres_changes',
         {
@@ -120,11 +134,9 @@ export const useSimpleAlerts = ({ streamerId, tableName, enabled = true, obsToke
         async (payload) => {
           console.log('🔔 Real-time event:', payload.eventType, payload.new || payload.old);
           
-          // Handle INSERT (new donations) or UPDATE (status changes)
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
             const donation = payload.new as any;
             
-            // Check if this donation should trigger an alert
             const shouldAlert = 
               donation.payment_status === 'success' &&
               (donation.moderation_status === 'approved' || donation.moderation_status === 'auto_approved') &&
@@ -152,33 +164,92 @@ export const useSimpleAlerts = ({ streamerId, tableName, enabled = true, obsToke
               };
               
               showAlert(alertDonation, payload.eventType === 'INSERT' ? 'New donation' : 'Donation approved');
-            } else {
-              console.log('⏭️ Skipping real-time alert - conditions not met or already showing');
             }
           }
         }
       )
       .subscribe((status) => {
         console.log(`📡 Real-time subscription status for ${tableName}:`, status);
+        
         if (status === 'SUBSCRIBED') {
           setConnectionStatus('connected');
+          retryCountRef.current = 0;
+          stopFallbackPolling();
         } else if (status === 'CHANNEL_ERROR') {
+          console.log('❌ Channel error - will retry');
           setConnectionStatus('error');
+          handleRealtimeFailure();
         } else if (status === 'TIMED_OUT') {
+          console.log('⏱️ Connection timed out - resetting state and retrying');
           setConnectionStatus('error');
+          setLastShownId(null); // Reset state on timeout
+          handleRealtimeFailure();
         }
       });
 
     channelRef.current = channel;
+  }, [streamerId, tableName, enabled, lastShownId, showAlert, stopFallbackPolling]);
+
+  const handleRealtimeFailure = useCallback(() => {
+    retryCountRef.current++;
+    const maxRetries = 3;
+    const retryDelay = Math.min(1000 * Math.pow(2, retryCountRef.current - 1), 10000);
+
+    if (retryCountRef.current <= maxRetries) {
+      console.log(`🔄 Retrying real-time connection in ${retryDelay}ms (attempt ${retryCountRef.current}/${maxRetries})`);
+      
+      retryTimeoutRef.current = setTimeout(() => {
+        if (channelRef.current) {
+          supabase.removeChannel(channelRef.current);
+          channelRef.current = null;
+        }
+        setupRealtimeSubscription();
+      }, retryDelay);
+    } else {
+      console.log('🚨 Max retries exceeded, falling back to polling');
+      startFallbackPolling();
+      
+      // Force sync after switching to polling
+      setTimeout(() => fetchLatestDonation(true), 1000);
+    }
+  }, [setupRealtimeSubscription, startFallbackPolling, fetchLatestDonation]);
+
+  // Set up real-time subscription
+  useEffect(() => {
+    if (!enabled || !streamerId) {
+      console.log(`⏸️ Real-time not started - enabled: ${enabled}, streamerId: ${streamerId}`);
+      return;
+    }
+
+    console.log(`🎯 Starting alerts system for ${tableName} with streamerId: ${streamerId}`);
+    
+    // Initial fetch for first load
+    fetchLatestDonation(false);
+    
+    // Set up real-time subscription
+    setupRealtimeSubscription();
     
     return () => {
-      console.log(`🛑 Stopping real-time alerts for ${tableName}`);
+      console.log(`🛑 Stopping alerts system for ${tableName}`);
+      
+      // Clear all timeouts and intervals
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+        retryTimeoutRef.current = null;
+      }
+      
+      stopFallbackPolling();
+      
+      // Remove channel
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
+      
+      // Reset retry counter
+      retryCountRef.current = 0;
     };
-  }, [streamerId, tableName, enabled, fetchLatestDonation]);
+  }, [streamerId, tableName, enabled, fetchLatestDonation, setupRealtimeSubscription, stopFallbackPolling]);
 
   const triggerTestAlert = useCallback(() => {
     const testAlert: Donation = {
@@ -200,7 +271,15 @@ export const useSimpleAlerts = ({ streamerId, tableName, enabled = true, obsToke
     setLastShownId(null);
     setIsVisible(false);
     setIsFirstLoad(true);
-  }, []);
+    
+    // Clear timeouts and polling
+    if (retryTimeoutRef.current) {
+      clearTimeout(retryTimeoutRef.current);
+      retryTimeoutRef.current = null;
+    }
+    stopFallbackPolling();
+    retryCountRef.current = 0;
+  }, [stopFallbackPolling]);
 
   return {
     currentAlert,
