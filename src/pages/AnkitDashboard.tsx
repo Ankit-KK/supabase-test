@@ -190,7 +190,7 @@ const AnkitDashboard = () => {
 
     // Set up realtime subscription for this streamer's donations
     const channel = supabase
-      .channel(`${stableStreamerSlug}-donations-${stableStreamerId}-${Date.now()}`)
+      .channel(`${stableStreamerSlug}-donations-${stableStreamerId}`)
       .on(
         'postgres_changes',
         {
@@ -258,7 +258,7 @@ const AnkitDashboard = () => {
         currentStreamerId.current = null;
       }
     };
-  }, [stableStreamerId, stableStreamerSlug]);
+  }, [stableStreamerId]);
 
   // Show loading while auth is being determined
   if (loading) {

@@ -266,7 +266,7 @@ const StreamerDashboard = () => {
 
     // Set up realtime subscription for this streamer's donations
     const channel = supabase
-      .channel(`${stableStreamerSlug}-donations-${stableStreamerId}-${Date.now()}`)
+      .channel(`${stableStreamerSlug}-donations-${stableStreamerId}`)
       .on(
         'postgres_changes',
         {
@@ -307,7 +307,7 @@ const StreamerDashboard = () => {
               console.log('✅ Donation approved notification shown');
             }
 
-            // Refresh donations data
+            // Refresh donations data using the ref
             if (fetchDataRef.current) {
               fetchDataRef.current();
             }
@@ -334,7 +334,7 @@ const StreamerDashboard = () => {
         currentStreamerId.current = null;
       }
     };
-  }, [stableStreamerId, stableStreamerSlug]);
+  }, [stableStreamerId]);
 
   // Show loading while auth is being determined
   if (loading) {

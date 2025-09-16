@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -117,8 +117,8 @@ export default function DemoStreamerDashboard() {
     setStats(stats);
   };
 
-  const setupRealtimeSubscription = () => {
-    if (!session?.streamerId) return;
+  const setupRealtimeSubscription = useCallback(() => {
+    if (!session?.streamerId) return null;
 
     const channel = supabase
       .channel('demostreamer_donations_realtime')
@@ -137,10 +137,24 @@ export default function DemoStreamerDashboard() {
       )
       .subscribe();
 
+    return channel;
+  }, [session?.streamerId, loadDonations]);
+
+  useEffect(() => {
+    if (!session) {
+      navigate('/demostreamer/login');
+      return;
+    }
+
+    loadDonations();
+    const channel = setupRealtimeSubscription();
+
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
-  };
+  }, [session]);
 
   const handleApproveDonation = async (donationId: string) => {
     try {
