@@ -26,7 +26,7 @@ const TestAlerts = () => {
       }
 
       console.log('📤 Test alert response:', data);
-      toast.success(`Test alert sent! Active connections: ${data.activeConnections}`);
+      toast.success(`Test alert sent! Active connections: ${data.activeConnections || 0}`);
       
     } catch (error) {
       console.error('❌ Error sending test alert:', error);
@@ -66,7 +66,8 @@ const TestAlerts = () => {
             <div className="text-sm text-muted-foreground">
               <p>This will send a test alert to any connected OBS WebSocket connections.</p>
               <p>Open the OBS alerts page in another tab to see the alert.</p>
-              <p>URL: <code>/ankit-alerts/YOUR_OBS_TOKEN</code></p>
+              <p>URL: <code>https://hyperchat.space/ankit-alerts/YOUR_OBS_TOKEN</code></p>
+              <p className="mt-2 font-semibold">💡 Make sure to have the alerts page open in OBS Browser Source first!</p>
             </div>
           </CardContent>
         </Card>

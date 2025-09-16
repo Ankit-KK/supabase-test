@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 // In-memory store for active WebSocket connections
-const activeConnections = new Map<string, WebSocket>();
+const activeConnections = new Map<string, { socket: WebSocket, streamerData: any, lastPing?: number }>();
 
 // WebSocket message types
 interface WebSocketMessage {
@@ -35,10 +35,14 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Manual test endpoint for debugging
-  if (url.pathname.includes('/test-alert')) {
+  // Handle HTTP requests for broadcasting alerts
+  if (url.pathname === '/test-alert') {
+    console.log('🧪 Handling test alert request');
     return handleTestAlert(req);
   }
+  
+  console.log('📡 Handling broadcast request to:', url.pathname);
+  return handleBroadcastRequest(req);
 
   // Check if this is a WebSocket upgrade request or HTTP broadcast request
   if (upgradeHeader.toLowerCase() === "websocket") {
@@ -96,76 +100,78 @@ async function handleTestAlert(req: Request) {
   }
 }
 
+// Handle HTTP requests for broadcasting alerts
 async function handleBroadcastRequest(req: Request) {
   try {
+    console.log('📡 Processing broadcast request...');
     const body = await req.json();
     const { streamer_slug, donation, test } = body;
     
-    // Handle test alert
-    if (test) {
-      const testDonation = {
-        id: "test-" + Date.now(),
-        name: "Test Donor",
-        amount: 100,
-        message: "This is a test alert from the system! 🎉",
-        is_hyperemote: false,
-        voice_message_url: null,
-        created_at: new Date().toISOString(),
-        streamer_id: "test-streamer-id"
-      };
-      
-      const success = await broadcastAlert(streamer_slug || 'ankit', testDonation);
-      
-      return new Response(
-        JSON.stringify({
-          success,
-          message: success ? "Test alert broadcast successful" : "Test alert broadcast failed",
-          activeConnections: activeConnections.size,
-          connectionKeys: Array.from(activeConnections.keys()),
-          testData: testDonation
-        }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    
-    if (!streamer_slug || !donation) {
-      throw new Error("Missing required parameters");
-    }
-
-    console.log('📢 Alert broadcast request:', { 
+    console.log('📡 Broadcast request received:', { 
       streamer_slug, 
-      donationId: donation.id,
-      donationName: donation.name,
-      amount: donation.amount,
+      test, 
+      donation_id: donation?.id,
+      donation_amount: donation?.amount,
+      donation_name: donation?.name,
       activeConnections: activeConnections.size,
       connectionKeys: Array.from(activeConnections.keys())
     });
     
-    const success = await broadcastAlert(streamer_slug, donation);
-
-    return new Response(
-      JSON.stringify({
-        success,
-        message: success ? "Alert broadcast successful" : "Alert broadcast failed",
-        activeConnections: activeConnections.size,
-        connectionKeys: Array.from(activeConnections.keys())
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-
+    if (test) {
+      // Handle test alert
+      const testDonation = {
+        id: 'test-' + Date.now(),
+        name: 'Test Donor',
+        amount: 100,
+        message: 'This is a test alert!',
+        is_hyperemote: false,
+        created_at: new Date().toISOString()
+      };
+      
+      console.log('🧪 Broadcasting test alert:', testDonation);
+      const result = await broadcastAlert(streamer_slug, testDonation);
+      
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Test alert broadcasted',
+        ...result
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    if (!streamer_slug || !donation) {
+      console.error('❌ Missing required parameters:', { streamer_slug, donation: !!donation });
+      throw new Error('Missing required parameters: streamer_slug and donation');
+    }
+    
+    console.log('📤 Broadcasting real donation alert...');
+    const result = await broadcastAlert(streamer_slug, donation);
+    
+    return new Response(JSON.stringify({
+      success: true,
+      message: 'Alert broadcasted successfully',
+      ...result
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+    
   } catch (error) {
-    console.error('Error broadcasting alert:', error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message,
-        activeConnections: activeConnections.size
-      }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
-      }
-    );
+    console.error('❌ Broadcast request error:', error);
+    console.error('❌ Full error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+    
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message,
+      details: error.stack
+    }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
   }
 }
 
@@ -195,7 +201,7 @@ async function handleWebSocketConnection(req: Request) {
   }
 
   const streamerData = tokenValidation[0];
-  const connectionKey = `${streamerData.streamer_slug}-${streamerData.streamer_id}`;
+  const connectionKey = `${streamerData.streamer_slug}-${crypto.randomUUID()}`;
   
   console.log('✅ Valid token for streamer:', streamerData.streamer_name, 'Slug:', streamerData.streamer_slug, 'Connection Key:', connectionKey);
 
@@ -206,8 +212,12 @@ async function handleWebSocketConnection(req: Request) {
   let keepAliveInterval: number | null = null;
 
   socket.onopen = () => {
-    // Store the connection
-    activeConnections.set(connectionKey, socket);
+    // Store the connection with metadata
+    activeConnections.set(connectionKey, { 
+      socket, 
+      streamerData, 
+      lastPing: Date.now() 
+    });
     console.log('🚀 WebSocket connected for:', streamerData.streamer_name, 'Total connections:', activeConnections.size, 'Connection Key:', connectionKey);
 
     // Start keepalive to prevent Edge Function shutdown
@@ -270,78 +280,61 @@ async function handleWebSocketConnection(req: Request) {
   return response;
 }
 
-// Function to broadcast alerts to active connections
+// Broadcast alert to connected clients
 async function broadcastAlert(streamerSlug: string, donation: any) {
-  console.log('🔔 Broadcasting alert for:', streamerSlug, 'Donor:', donation.name, 'Donation Streamer ID:', donation.streamer_id);
-  console.log('🔍 Active connections:', Array.from(activeConnections.keys()));
+  console.log(`📡 Broadcasting alert for streamer: ${streamerSlug}`, donation);
+  console.log(`🔍 Current active connections:`, Array.from(activeConnections.keys()));
   
-  const connectionKey = `${streamerSlug}-${donation.streamer_id}`;
-  console.log('🔑 Looking for connection key:', connectionKey);
-  
-  const connection = activeConnections.get(connectionKey);
-  
-  if (!connection) {
-    console.log('📡 No active WebSocket connection for key:', connectionKey);
-    console.log('📋 Available connection keys:', Array.from(activeConnections.keys()));
-    
-    // Try to find connection by streamer slug only (fallback)
-    let fallbackConnection = null;
-    for (const [key, conn] of activeConnections.entries()) {
-      if (key.startsWith(streamerSlug + '-')) {
-        console.log('🔄 Found fallback connection:', key);
-        fallbackConnection = conn;
-        break;
-      }
+  // Find connections for this streamer
+  const connections = Array.from(activeConnections.entries()).filter(
+    ([key, conn]) => {
+      const isMatch = key.startsWith(`${streamerSlug}-`) && conn.socket.readyState === WebSocket.OPEN;
+      console.log(`🔍 Connection ${key}: streamer match=${key.startsWith(`${streamerSlug}-`)}, readyState=${conn.socket.readyState}, isOpen=${conn.socket.readyState === WebSocket.OPEN}`);
+      return isMatch;
     }
-    
-    if (!fallbackConnection) {
-      console.log('❌ No fallback connection found for streamer:', streamerSlug);
-      return false;
-    }
-    
-    connection = fallbackConnection;
+  );
+  
+  console.log(`🔍 Found ${connections.length} active connections for ${streamerSlug}`);
+  
+  if (connections.length === 0) {
+    console.log(`❌ No active WebSocket connections found for streamer: ${streamerSlug}`);
+    console.log(`📊 Total active connections: ${activeConnections.size}`);
+    return { success: false, activeConnections: 0, totalConnections: activeConnections.size };
   }
-
-  const alertMessage: WebSocketMessage = {
+  
+  const alertMessage = {
     type: 'donation_approved',
-    streamer_slug: streamerSlug,
     donation: {
       id: donation.id,
       name: donation.name,
       amount: donation.amount,
       message: donation.message,
-      is_hyperemote: donation.is_hyperemote || false,
-      voice_message_url: donation.voice_message_url,
+      is_hyperemote: donation.is_hyperemote,
       created_at: donation.created_at
-    }
+    },
+    timestamp: Date.now()
   };
-
-  try {
-    // Check if connection is still open
-    if (connection.readyState !== WebSocket.OPEN) {
-      console.log('⚠️ Connection not open, state:', connection.readyState);
-      // Clean up dead connections
-      for (const [key, conn] of activeConnections.entries()) {
-        if (conn.readyState !== WebSocket.OPEN) {
-          activeConnections.delete(key);
-          console.log('🧹 Cleaned up dead connection:', key);
-        }
+  
+  console.log(`📤 Sending alert message:`, alertMessage);
+  
+  let successCount = 0;
+  
+  for (const [key, conn] of connections) {
+    try {
+      if (conn.socket.readyState === WebSocket.OPEN) {
+        conn.socket.send(JSON.stringify(alertMessage));
+        console.log(`✅ Alert sent to connection: ${key}`);
+        successCount++;
+      } else {
+        console.log(`❌ Connection ${key} is not open (state: ${conn.socket.readyState}), removing`);
+        activeConnections.delete(key);
       }
-      return false;
+    } catch (error) {
+      console.error(`❌ Failed to send alert to connection ${key}:`, error);
+      activeConnections.delete(key);
     }
-
-    connection.send(JSON.stringify(alertMessage));
-    console.log('📤 Alert broadcast successfully to:', streamerSlug, 'Donor:', donation.name);
-    return true;
-  } catch (error) {
-    console.error('❌ Failed to broadcast alert to:', streamerSlug, error);
-    // Remove dead connection
-    const keyToDelete = Array.from(activeConnections.entries())
-      .find(([key, conn]) => conn === connection)?.[0];
-    if (keyToDelete) {
-      activeConnections.delete(keyToDelete);
-      console.log('🧹 Removed dead connection:', keyToDelete);
-    }
-    return false;
   }
+  
+  console.log(`📊 Broadcast complete: ${successCount}/${connections.length} successful`);
+  return { success: successCount > 0, activeConnections: successCount, totalConnections: activeConnections.size };
 }
