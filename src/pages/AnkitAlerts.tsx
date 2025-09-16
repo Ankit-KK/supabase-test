@@ -102,7 +102,8 @@ const AnkitAlertsRealtime = () => {
   }, [obsToken]);
 
   // Polling-based alert system for OBS compatibility
-  const [lastProcessedId, setLastProcessedId] = useState<string | null>(null);
+  const [shownDonationIds, setShownDonationIds] = useState<Set<string>>(new Set());
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   
   useEffect(() => {
     if (!enabled || !isValidToken || !streamer) return;
@@ -119,7 +120,7 @@ const AnkitAlertsRealtime = () => {
           .eq('payment_status', 'success')
           .in('moderation_status', ['approved', 'auto_approved'])
           .order('created_at', { ascending: false })
-          .limit(5);
+          .limit(10);
 
         if (error) {
           console.error('❌ Error polling for alerts:', error);
@@ -128,28 +129,41 @@ const AnkitAlertsRealtime = () => {
         }
 
         setConnectionState('connected');
+        console.log(`📊 Found ${data?.length || 0} approved donations, shown IDs: ${shownDonationIds.size}`);
 
         if (data && data.length > 0) {
-          // Find new donations since last processed
-          const newDonations = lastProcessedId 
-            ? data.filter(donation => donation.id !== lastProcessedId)
-            : [data[0]]; // Show only the most recent if first time
+          let donationsToShow: any[] = [];
 
-          if (newDonations.length > 0) {
+          if (isInitialLoad) {
+            // On first load: show last 3 recent donations for immediate feedback
+            donationsToShow = data.slice(0, 3);
+            console.log(`🚀 Initial load: showing ${donationsToShow.length} recent donations`);
+            setIsInitialLoad(false);
+          } else {
+            // On subsequent polls: only show donations we haven't seen before
+            donationsToShow = data.filter(donation => !shownDonationIds.has(donation.id));
+            console.log(`🔍 Polling: found ${donationsToShow.length} new donations out of ${data.length} total`);
+          }
+
+          if (donationsToShow.length > 0) {
             // Process donations in chronological order (oldest first)
-            const sortedNew = newDonations
+            const sortedNew = donationsToShow
               .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
             sortedNew.forEach(donation => {
-              console.log('🎉 New donation alert via polling:', donation.name, donation.amount);
+              console.log('🎉 Queuing donation alert:', donation.name, donation.amount, donation.id.slice(-8));
               setAlertQueue(prev => [...prev, { 
                 donation: donation as Donation,
                 timestamp: Date.now() 
               }]);
             });
 
-            // Update last processed ID to the most recent
-            setLastProcessedId(data[0].id);
+            // Track all shown donations
+            setShownDonationIds(prev => {
+              const newSet = new Set(prev);
+              donationsToShow.forEach(donation => newSet.add(donation.id));
+              return newSet;
+            });
           }
         }
       } catch (error) {
@@ -169,7 +183,7 @@ const AnkitAlertsRealtime = () => {
       clearInterval(interval);
       setConnectionState('disconnected');
     };
-  }, [enabled, isValidToken, streamer, lastProcessedId]);
+  }, [enabled, isValidToken, streamer, shownDonationIds.size, isInitialLoad]);
 
   // Initial setup
   useEffect(() => {
@@ -340,7 +354,7 @@ const AnkitAlertsRealtime = () => {
       <div className="min-h-screen bg-transparent overflow-hidden relative">
         {/* Connection Status Debug Info */}
         <div className="fixed top-4 right-4 text-xs text-white bg-black bg-opacity-50 p-2 rounded">
-          Polling: {connectionState} | Queue: {alertQueue.length} | Last: {lastProcessedId?.slice(-8)}
+          Polling: {connectionState} | Queue: {alertQueue.length} | Shown: {shownDonationIds.size} | Init: {isInitialLoad ? 'Y' : 'N'}
         </div>
 
         {currentAlert && currentAlert.donation.is_hyperemote && (

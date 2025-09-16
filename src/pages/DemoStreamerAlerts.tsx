@@ -57,7 +57,9 @@ export default function DemoStreamerAlerts() {
 
   // Polling-based alert system for OBS compatibility
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
-  const [lastProcessedId, setLastProcessedId] = useState<string | null>(null);
+  const [shownDonationIds, setShownDonationIds] = useState<Set<string>>(new Set());
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [alertQueue, setAlertQueue] = useState<Donation[]>([]);
 
   useEffect(() => {
     if (!streamerInfo?.streamer_id) {
@@ -77,7 +79,7 @@ export default function DemoStreamerAlerts() {
           .eq('payment_status', 'success')
           .in('moderation_status', ['approved', 'auto_approved'])
           .order('created_at', { ascending: false })
-          .limit(5);
+          .limit(10);
 
         if (error) {
           console.error('❌ Error polling for DemoStreamer alerts:', error);
@@ -86,25 +88,38 @@ export default function DemoStreamerAlerts() {
         }
 
         setConnectionStatus('connected');
+        console.log(`📊 DemoStreamer: Found ${data?.length || 0} approved donations, shown IDs: ${shownDonationIds.size}`);
 
         if (data && data.length > 0) {
-          // Find new donations since last processed
-          const newDonations = lastProcessedId 
-            ? data.filter(donation => donation.id !== lastProcessedId)
-            : [data[0]]; // Show only the most recent if first time
+          let donationsToShow: any[] = [];
 
-          if (newDonations.length > 0) {
+          if (isInitialLoad) {
+            // On first load: show last 3 recent donations for immediate feedback
+            donationsToShow = data.slice(0, 3);
+            console.log(`🚀 DemoStreamer initial load: showing ${donationsToShow.length} recent donations`);
+            setIsInitialLoad(false);
+          } else {
+            // On subsequent polls: only show donations we haven't seen before
+            donationsToShow = data.filter(donation => !shownDonationIds.has(donation.id));
+            console.log(`🔍 DemoStreamer polling: found ${donationsToShow.length} new donations out of ${data.length} total`);
+          }
+
+          if (donationsToShow.length > 0) {
             // Process donations in chronological order (oldest first)
-            const sortedNew = newDonations
+            const sortedNew = donationsToShow
               .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
             sortedNew.forEach(donation => {
-              console.log('🎉 New DemoStreamer donation alert via polling:', donation.name, donation.amount);
-              showAlert(donation as Donation);
+              console.log('🎉 Queuing DemoStreamer donation alert:', donation.name, donation.amount, donation.id.slice(-8));
+              setAlertQueue(prev => [...prev, donation as Donation]);
             });
 
-            // Update last processed ID to the most recent
-            setLastProcessedId(data[0].id);
+            // Track all shown donations
+            setShownDonationIds(prev => {
+              const newSet = new Set(prev);
+              donationsToShow.forEach(donation => newSet.add(donation.id));
+              return newSet;
+            });
           }
         }
       } catch (error) {
@@ -124,7 +139,17 @@ export default function DemoStreamerAlerts() {
       clearInterval(interval);
       setConnectionStatus('disconnected');
     };
-  }, [streamerInfo?.streamer_id, lastProcessedId]);
+  }, [streamerInfo?.streamer_id, shownDonationIds.size, isInitialLoad]);
+
+  // Process alert queue
+  useEffect(() => {
+    if (!currentAlert && alertQueue.length > 0) {
+      const nextAlert = alertQueue[0];
+      console.log('🎬 DemoStreamer: Processing next alert from queue:', nextAlert.name, nextAlert.amount);
+      showAlert(nextAlert);
+      setAlertQueue(prev => prev.slice(1));
+    }
+  }, [alertQueue, currentAlert]);
 
   const showAlert = (donation: Donation) => {
     setCurrentAlert(donation);
@@ -238,7 +263,7 @@ export default function DemoStreamerAlerts() {
 
       {/* Connection Status Debug */}
       <div className="fixed bottom-4 right-4 text-white text-xs bg-black/50 p-2 rounded">
-        Polling: {connectionStatus} | Streamer: {streamerInfo?.streamer_name} | Alert: {currentAlert ? 'Yes' : 'No'} | Last: {lastProcessedId?.slice(-8)}
+        Polling: {connectionStatus} | Queue: {alertQueue.length} | Shown: {shownDonationIds.size} | Alert: {currentAlert ? 'Yes' : 'No'} | Init: {isInitialLoad ? 'Y' : 'N'}
       </div>
 
       {/* Custom CSS for animations */}
