@@ -6,8 +6,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// In-memory store for active WebSocket connections
+// Hybrid approach: in-memory connections + database tracking
 const activeConnections = new Map<string, { socket: WebSocket, streamerData: any, lastPing?: number }>();
+
+const supabaseServiceRole = createClient(
+  Deno.env.get("SUPABASE_URL") ?? "",
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+);
 
 // WebSocket message types
 interface WebSocketMessage {
@@ -203,6 +208,22 @@ async function handleWebSocketConnection(req: Request) {
   
   console.log('✅ Valid token for streamer:', streamerData.streamer_name, 'Slug:', streamerData.streamer_slug, 'Connection Key:', connectionKey);
 
+  // Store connection in database for tracking
+  try {
+    await supabaseServiceRole
+      .from('active_websocket_connections')
+      .insert({
+        connection_key: connectionKey,
+        streamer_id: streamerData.streamer_id,
+        streamer_slug: streamerData.streamer_slug,
+        streamer_name: streamerData.streamer_name,
+        expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString() // 1 hour from now
+      });
+  } catch (dbError) {
+    console.log('⚠️ Warning: Could not track connection in database:', dbError);
+    // Continue anyway - database tracking is for monitoring only
+  }
+
   // Upgrade to WebSocket
   const { socket, response } = Deno.upgradeWebSocket(req);
 
@@ -219,9 +240,18 @@ async function handleWebSocketConnection(req: Request) {
     console.log('🚀 WebSocket connected for:', streamerData.streamer_name, 'Total connections:', activeConnections.size, 'Connection Key:', connectionKey);
 
     // Start keepalive to prevent Edge Function shutdown
-    keepAliveInterval = setInterval(() => {
+    keepAliveInterval = setInterval(async () => {
       if (socket.readyState === WebSocket.OPEN) {
         try {
+          // Update database tracking
+          await supabaseServiceRole
+            .from('active_websocket_connections')
+            .update({
+              last_ping_at: new Date().toISOString(),
+              expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString() // Extend for another hour
+            })
+            .eq('connection_key', connectionKey);
+
           socket.send(JSON.stringify({ type: 'ping', timestamp: Date.now() }));
         } catch (error) {
           console.error('❌ Keepalive ping failed:', error);
@@ -253,9 +283,19 @@ async function handleWebSocketConnection(req: Request) {
     }
   };
 
-  socket.onclose = (event) => {
+  socket.onclose = async (event) => {
     console.log('🔌 WebSocket disconnected for:', streamerData.streamer_name, 'Code:', event.code, 'Reason:', event.reason, 'Total connections:', activeConnections.size - 1);
     activeConnections.delete(connectionKey);
+    
+    // Remove from database tracking
+    try {
+      await supabaseServiceRole
+        .from('active_websocket_connections')
+        .delete()
+        .eq('connection_key', connectionKey);
+    } catch (error) {
+      console.log('⚠️ Warning: Could not remove connection from database:', error);
+    }
     
     // Clear keepalive
     if (keepAliveInterval) {
@@ -264,9 +304,19 @@ async function handleWebSocketConnection(req: Request) {
     }
   };
 
-  socket.onerror = (err) => {
+  socket.onerror = async (err) => {
     console.error('❌ WebSocket error for:', streamerData.streamer_name, err);
     activeConnections.delete(connectionKey);
+    
+    // Remove from database tracking
+    try {
+      await supabaseServiceRole
+        .from('active_websocket_connections')
+        .delete()
+        .eq('connection_key', connectionKey);
+    } catch (error) {
+      console.log('⚠️ Warning: Could not remove connection from database:', error);
+    }
     
     // Clear keepalive
     if (keepAliveInterval) {
@@ -283,7 +333,14 @@ async function broadcastAlert(streamerSlug: string, donation: any) {
   console.log(`📡 Broadcasting alert for streamer: ${streamerSlug}`, donation);
   console.log(`🔍 Current active connections:`, Array.from(activeConnections.keys()));
   
-  // Find connections for this streamer
+  // First cleanup expired connections from database
+  try {
+    await supabaseServiceRole.rpc('cleanup_expired_websocket_connections');
+  } catch (error) {
+    console.log('⚠️ Warning: Could not cleanup expired connections:', error);
+  }
+  
+  // Find connections for this streamer in memory
   const connections = Array.from(activeConnections.entries()).filter(
     ([key, conn]) => {
       const isMatch = key.startsWith(`${streamerSlug}-`) && conn.socket.readyState === WebSocket.OPEN;
@@ -297,6 +354,19 @@ async function broadcastAlert(streamerSlug: string, donation: any) {
   if (connections.length === 0) {
     console.log(`❌ No active WebSocket connections found for streamer: ${streamerSlug}`);
     console.log(`📊 Total active connections: ${activeConnections.size}`);
+    
+    // Also check database for monitoring
+    try {
+      const { count } = await supabaseServiceRole
+        .from('active_websocket_connections')
+        .select('*', { count: 'exact', head: true })
+        .eq('streamer_slug', streamerSlug)
+        .gte('expires_at', new Date().toISOString());
+      console.log(`📊 Database shows ${count || 0} connections for ${streamerSlug}`);
+    } catch (error) {
+      console.log('⚠️ Warning: Could not check database connections:', error);
+    }
+    
     return { success: false, activeConnections: 0, totalConnections: activeConnections.size };
   }
   

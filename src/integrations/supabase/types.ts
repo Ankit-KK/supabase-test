@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      active_websocket_connections: {
+        Row: {
+          connected_at: string
+          connection_key: string
+          created_at: string
+          expires_at: string
+          id: string
+          last_ping_at: string
+          streamer_id: string
+          streamer_name: string
+          streamer_slug: string
+        }
+        Insert: {
+          connected_at?: string
+          connection_key: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          last_ping_at?: string
+          streamer_id: string
+          streamer_name: string
+          streamer_slug: string
+        }
+        Update: {
+          connected_at?: string
+          connection_key?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          last_ping_at?: string
+          streamer_id?: string
+          streamer_name?: string
+          streamer_slug?: string
+        }
+        Relationships: []
+      }
       admin_emails: {
         Row: {
           created_at: string
@@ -843,6 +879,10 @@ export type Database = {
           | { exclude_user_id: string; username_to_check: string }
           | { username: string }
         Returns: boolean
+      }
+      cleanup_expired_websocket_connections: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       create_visits_table: {
         Args: Record<PropertyKey, never>
