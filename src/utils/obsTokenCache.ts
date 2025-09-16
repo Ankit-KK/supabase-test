@@ -83,7 +83,7 @@ class OBSTokenCache {
       // Generate new token via edge function
       console.log('🔑 No active token found, generating new one via edge function');
       const { data, error } = await supabase.functions.invoke('generate-obs-token', {
-        body: { streamerId }
+        body: { streamerId, forceRegenerate: false }
       });
 
       if (error) throw error;
@@ -116,9 +116,9 @@ class OBSTokenCache {
     this.cache.delete(streamerId);
     this.generatePromises.delete(streamerId);
     
-    // Generate new token
+    // Generate new token (force regeneration)
     const { data, error } = await supabase.functions.invoke('generate-obs-token', {
-      body: { streamerId }
+      body: { streamerId, forceRegenerate: true }
     });
 
     if (error) throw error;

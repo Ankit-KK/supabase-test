@@ -18,7 +18,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { streamerId } = await req.json();
+    const { streamerId, forceRegenerate = false } = await req.json();
 
     if (!streamerId) {
       return new Response(
@@ -46,6 +46,26 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
+    }
+
+    // Check for existing active token if not forcing regeneration
+    if (!forceRegenerate) {
+      const { data: existingToken, error: existingTokenError } = await supabase
+        .from('obs_tokens')
+        .select('token')
+        .eq('streamer_id', streamerId)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (existingToken && !existingTokenError) {
+        console.log(`Returning existing OBS token for streamer ${streamer.streamer_name}`);
+        return new Response(
+          JSON.stringify({ token: existingToken.token }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
     }
 
     // Generate secure token
@@ -82,7 +102,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Generated OBS token for streamer ${streamer.streamer_name}`);
+    console.log(`Generated new OBS token for streamer ${streamer.streamer_name}`);
 
     return new Response(
       JSON.stringify({ token: newToken.token }),
