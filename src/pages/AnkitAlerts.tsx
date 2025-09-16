@@ -71,7 +71,8 @@ const AnkitAlertsRealtime = () => {
     currentAlert,
     isVisible,
     connectionStatus,
-    triggerTestAlert
+    triggerTestAlert,
+    resetAlertState
   } = useSimpleAlerts({
     streamerId: streamerInfo?.id || '',
     tableName: 'ankit_donations',
@@ -116,10 +117,18 @@ const AnkitAlertsRealtime = () => {
           <div>Visible: {isVisible ? 'Yes' : 'No'}</div>
           <Button 
             onClick={triggerTestAlert}
-            className="mt-2 text-xs"
+            className="mt-2 text-xs mr-2"
             size="sm"
           >
             Test Alert
+          </Button>
+          <Button 
+            onClick={resetAlertState}
+            className="mt-2 text-xs"
+            size="sm"
+            variant="outline"
+          >
+            Reset State
           </Button>
         </div>
       )}

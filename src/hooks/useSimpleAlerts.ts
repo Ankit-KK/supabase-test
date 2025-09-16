@@ -23,6 +23,7 @@ export const useSimpleAlerts = ({ streamerId, tableName, pollInterval = 2000, en
   const [lastShownId, setLastShownId] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('connecting');
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
 
   const fetchLatestDonation = useCallback(async () => {
     // Don't fetch if disabled or no streamer ID
@@ -73,13 +74,17 @@ export const useSimpleAlerts = ({ streamerId, tableName, pollInterval = 2000, en
 
       const latestDonation = data[0] as Donation;
       console.log('📦 Latest donation:', latestDonation);
+      console.log('🔍 Debug state - lastShownId:', lastShownId, 'currentAlert:', !!currentAlert, 'isFirstLoad:', isFirstLoad);
 
-      // Show alert if this is a new donation we haven't shown
-      if (latestDonation.id !== lastShownId && !currentAlert) {
-        console.log('🚨 New alert to show:', latestDonation.name, latestDonation.amount);
+      // Show alert if this is a new donation OR if it's the first load and we haven't shown any alerts yet
+      const shouldShowAlert = isFirstLoad || (latestDonation.id !== lastShownId && !currentAlert);
+      
+      if (shouldShowAlert) {
+        console.log('🚨 Showing alert:', latestDonation.name, '₹' + latestDonation.amount, 'Reason:', isFirstLoad ? 'First load' : 'New donation');
         setCurrentAlert(latestDonation);
         setIsVisible(true);
         setLastShownId(latestDonation.id);
+        setIsFirstLoad(false);
 
         // Auto-hide after appropriate duration
         const duration = latestDonation.voice_message_url ? 10000 : 
@@ -89,13 +94,15 @@ export const useSimpleAlerts = ({ streamerId, tableName, pollInterval = 2000, en
           setIsVisible(false);
           setTimeout(() => setCurrentAlert(null), 500); // Allow fade out
         }, duration);
+      } else {
+        console.log('⏭️ Skipping alert - already shown or currently displaying');
       }
 
     } catch (error) {
       console.error('❌ Polling error:', error);
       setConnectionStatus('error');
     }
-  }, [streamerId, tableName, lastShownId, currentAlert, enabled]);
+  }, [streamerId, tableName, lastShownId, currentAlert, enabled, isFirstLoad]);
 
   // Start polling
   useEffect(() => {
@@ -138,10 +145,19 @@ export const useSimpleAlerts = ({ streamerId, tableName, pollInterval = 2000, en
     }, 5000);
   }, []);
 
+  const resetAlertState = useCallback(() => {
+    console.log('🔄 Resetting alert state');
+    setCurrentAlert(null);
+    setLastShownId(null);
+    setIsVisible(false);
+    setIsFirstLoad(true);
+  }, []);
+
   return {
     currentAlert,
     isVisible,
     connectionStatus,
-    triggerTestAlert
+    triggerTestAlert,
+    resetAlertState
   };
 };
