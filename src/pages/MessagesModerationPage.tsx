@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -92,67 +93,16 @@ export const MessagesModerationPage = ({ donations: propDonations, onRefresh, se
     }
   }, [session?.streamerId]);
 
-  // Separate useEffect for real-time subscription with stable streamerId
-  useEffect(() => {
-    const streamerId = session?.streamerId;
-    if (!streamerId) return;
-    
-    console.log('Setting up real-time subscription for streamer:', streamerId);
-    
-    // Set up real-time subscription for moderation updates
-    const channel = supabase
-      .channel(`moderation-${streamerId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'ankit_donations',
-          filter: `streamer_id=eq.${streamerId}`
-        },
-        (payload) => {
-          console.log('Ankit donation moderation update:', payload);
-          fetchDonations(); // Refresh the moderation list
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'chia_gaming_donations',
-          filter: `streamer_id=eq.${streamerId}`
-        },
-        (payload) => {
-          console.log('Chia Gaming donation moderation update:', payload);
-          fetchDonations(); // Refresh the moderation list
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'demostreamer_donations',
-          filter: `streamer_id=eq.${streamerId}`
-        },
-        (payload) => {
-          console.log('DemoStreamer donation moderation update:', payload);
-          fetchDonations(); // Refresh the moderation list
-        }
-      )
-      .subscribe((status) => {
-        console.log('Real-time subscription status:', status);
-        if (status === 'SUBSCRIBED') {
-          console.log('Successfully subscribed to moderation updates');
-        }
-      });
-
-    return () => {
-      console.log('Cleaning up real-time subscription');
-      supabase.removeChannel(channel);
-    };
-  }, [session?.streamerId]);
+  const connectionState = useRealtimeSubscription({
+    streamerId: session?.streamerId,
+    streamerSlug: session?.streamerSlug,
+    onDonationUpdate: (payload) => {
+      console.log('Moderation update received:', payload);
+      fetchDonations(); // Refresh the moderation list
+      onRefresh?.(); // Notify parent component
+    },
+    enabled: !!session?.streamerId
+  });
 
   const handleApprove = async (donationId: string) => {
     setProcessingId(donationId);

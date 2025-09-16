@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,7 +57,6 @@ export default function DemoStreamerDashboard() {
   useEffect(() => {
     if (session) {
       loadDonations();
-      setupRealtimeSubscription();
     }
   }, [session]);
 
@@ -117,28 +117,6 @@ export default function DemoStreamerDashboard() {
     setStats(stats);
   };
 
-  const setupRealtimeSubscription = useCallback(() => {
-    if (!session?.streamerId) return null;
-
-    const channel = supabase
-      .channel('demostreamer_donations_realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'demostreamer_donations',
-          filter: `streamer_id=eq.${session.streamerId}`
-        },
-        (payload) => {
-          console.log('DemoStreamer real-time update:', payload);
-          loadDonations();
-        }
-      )
-      .subscribe();
-
-    return channel;
-  }, [session?.streamerId, loadDonations]);
 
   useEffect(() => {
     if (!session) {
@@ -147,13 +125,6 @@ export default function DemoStreamerDashboard() {
     }
 
     loadDonations();
-    const channel = setupRealtimeSubscription();
-
-    return () => {
-      if (channel) {
-        supabase.removeChannel(channel);
-      }
-    };
   }, [session]);
 
   const handleApproveDonation = async (donationId: string) => {

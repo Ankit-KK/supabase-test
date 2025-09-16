@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { RealtimeChannel } from '@supabase/supabase-js';
@@ -155,95 +156,65 @@ const AnkitAlerts = () => {
     
     reconnectTimeoutRef.current = setTimeout(() => {
       console.log('Attempting to reconnect...');
-      if (streamer?.id) {
-        subscribeToUpdates();
-      }
+      // Reconnection is now handled by the centralized subscription hook
     }, delay);
   }, [streamer?.id]);
 
-  // Subscribe to real-time donations with reconnection logic
-  const subscribeToUpdates = useCallback(() => {
-    if (!streamer?.id) {
-      console.log('No streamer ID available for subscription');
-      return;
-    }
-
-    cleanup(); // Clean up any existing connections
-    
-    console.log('Subscribing to real-time updates for streamer:', streamer.streamer_name);
-    setConnectionStatus('connecting');
-
-    const channel = supabase
-      .channel(`alerts-${streamer.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'ankit_donations',
-          filter: `streamer_id=eq.${streamer.id}`
-        },
-        (payload) => {
-          const newDonation = payload.new as Donation;
-          console.log('Real-time event received:', payload.eventType, newDonation?.name);
-          
-          if (payload.eventType === 'INSERT' && newDonation.payment_status === 'success') {
-            const donation = newDonation;
-            console.log('New donation received:', { name: donation.name, amount: donation.amount, message: donation.message });
-            
-            // Only show approved donations or auto-approved hyperemotes
-            if (donation.moderation_status === 'approved' || donation.moderation_status === 'auto_approved') {
-              setAlertQueue(prev => [...prev, { 
-                donation, 
-                timestamp: Date.now() 
-              }]);
-            }
-          }
-          
-          if (payload.eventType === 'UPDATE' && newDonation.payment_status === 'success') {
-            const oldDonation = payload.old as Donation;
-            const donation = newDonation;
-            
-            // Show alert if payment was completed OR if donation was just approved
-            const paymentCompleted = oldDonation.payment_status !== 'success';
-            const justApproved = oldDonation.moderation_status !== 'approved' && 
-                               donation.moderation_status === 'approved';
-            
-            if (paymentCompleted || justApproved) {
-              console.log('Donation update triggered alert:', { 
-                name: donation.name, 
-                amount: donation.amount,
-                paymentCompleted,
-                justApproved
-              });
-              
-              // Only show approved donations or auto-approved hyperemotes
-              if (donation.moderation_status === 'approved' || donation.moderation_status === 'auto_approved') {
-                setAlertQueue(prev => [...prev, { 
-                  donation, 
-                  timestamp: Date.now() 
-                }]);
-              }
-            }
-          }
-        }
-      )
-      .subscribe((status) => {
-        console.log('Subscription status:', status);
+  // Use centralized subscription for alerts
+  const alertConnectionState = useRealtimeSubscription({
+    streamerId: streamer?.id,
+    streamerSlug: 'ankit',
+    onDonationUpdate: (payload) => {
+      const newDonation = payload.new as Donation;
+      console.log('Alert received real-time event:', payload.eventType, newDonation?.name);
+      
+      if (payload.eventType === 'INSERT' && newDonation.payment_status === 'success') {
+        const donation = newDonation;
+        console.log('New donation received:', { name: donation.name, amount: donation.amount, message: donation.message });
         
-        if (status === 'SUBSCRIBED') {
-          setConnectionStatus('connected');
-          reconnectAttemptsRef.current = 0;
-          console.log('Successfully connected to real-time updates');
-        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-          setConnectionStatus('disconnected');
-          console.log('Connection lost, attempting to reconnect...');
-          scheduleReconnect();
+        // Only show approved donations or auto-approved hyperemotes
+        if (donation.moderation_status === 'approved' || donation.moderation_status === 'auto_approved') {
+          setAlertQueue(prev => [...prev, { 
+            donation, 
+            timestamp: Date.now() 
+          }]);
         }
-      });
+      }
+      
+      if (payload.eventType === 'UPDATE' && newDonation.payment_status === 'success') {
+        const oldDonation = payload.old as Donation;
+        const donation = newDonation;
+        
+        // Show alert if payment was completed OR if donation was just approved
+        const paymentCompleted = oldDonation.payment_status !== 'success';
+        const justApproved = oldDonation.moderation_status !== 'approved' && 
+                           donation.moderation_status === 'approved';
+        
+        if (paymentCompleted || justApproved) {
+          console.log('Donation update triggered alert:', { 
+            name: donation.name, 
+            amount: donation.amount,
+            paymentCompleted,
+            justApproved
+          });
+          
+          // Only show approved donations or auto-approved hyperemotes
+          if (donation.moderation_status === 'approved' || donation.moderation_status === 'auto_approved') {
+            setAlertQueue(prev => [...prev, { 
+              donation, 
+              timestamp: Date.now() 
+            }]);
+          }
+        }
+      }
+    },
+    enabled: !!streamer?.id && enabled
+  });
 
-    channelRef.current = channel;
-  }, [streamer?.id, cleanup]);
+  // Update connection status based on centralized subscription
+  useEffect(() => {
+    setConnectionStatus(alertConnectionState.status);
+  }, [alertConnectionState.status]);
 
   // Initial token validation
   useEffect(() => {
@@ -268,39 +239,11 @@ const AnkitAlerts = () => {
     };
   }, [isValidToken, validateToken]);
 
-  // Subscribe to updates when streamer is available
+  // Cleanup effect
   useEffect(() => {
-    if (streamer?.id) {
-      subscribeToUpdates();
-    }
-
     return cleanup;
-  }, [streamer?.id, subscribeToUpdates, cleanup]);
+  }, [cleanup]);
 
-  // Set up heartbeat to keep connection alive
-  useEffect(() => {
-    if (connectionStatus === 'connected') {
-      console.log('Setting up connection heartbeat');
-      heartbeatIntervalRef.current = setInterval(async () => {
-        try {
-          // Perform a simple auth check to keep the connection alive
-          await supabase.auth.getUser();
-          console.log('Heartbeat successful');
-        } catch (error) {
-          console.error('Heartbeat failed:', error);
-          setConnectionStatus('disconnected');
-          scheduleReconnect();
-        }
-      }, HEARTBEAT_INTERVAL);
-    }
-
-    return () => {
-      if (heartbeatIntervalRef.current) {
-        clearInterval(heartbeatIntervalRef.current);
-        heartbeatIntervalRef.current = null;
-      }
-    };
-  }, [connectionStatus, scheduleReconnect]);
 
   // Process alert queue
   useEffect(() => {

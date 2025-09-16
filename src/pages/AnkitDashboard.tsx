@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { Navigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -160,105 +161,55 @@ const AnkitDashboard = () => {
   const stableStreamerId = useMemo(() => streamer?.id || null, [streamer?.id]);
   const stableStreamerSlug = useMemo(() => streamer?.streamer_slug || null, [streamer?.streamer_slug]);
 
-  useEffect(() => {
-    if (!stableStreamerId || !stableStreamerSlug) return;
+  const connectionState = useRealtimeSubscription({
+    streamerId: stableStreamerId,
+    streamerSlug: stableStreamerSlug,
+    onDonationUpdate: (payload) => {
+      const newDonation = payload.new as Donation;
+      
+      if (payload.eventType === 'INSERT' && newDonation.payment_status === 'success') {
+        toast({
+          title: "💰 New Donation!",
+          description: `${newDonation.name} donated ₹${newDonation.amount}`,
+          duration: 4000,
+        });
 
-    // If we already have a subscription for this streamer, don't recreate it
-    if (currentStreamerId.current === stableStreamerId && subscriptionRef.current) {
-      console.log('📌 Using existing subscription for streamer:', stableStreamerId);
-      return;
-    }
-
-    // Clean up previous subscription if exists
-    if (subscriptionRef.current) {
-      console.log('🧹 Cleaning up previous subscription');
-      supabase.removeChannel(subscriptionRef.current);
-      subscriptionRef.current = null;
-    }
-
-    // Determine the correct table name based on streamer slug
-    const getTableName = (slug: string) => {
-      if (slug === 'ankit') return 'ankit_donations';
-      if (slug === 'chia_gaming') return 'chia_gaming_donations';
-      if (slug === 'demostreamer') return 'demostreamer_donations';
-      return 'ankit_donations'; // fallback
-    };
-
-    const tableName = getTableName(stableStreamerSlug);
-    
-    console.log('🔗 Setting up NEW real-time subscription for:', tableName, 'streamer:', stableStreamerId);
-
-    // Set up realtime subscription for this streamer's donations
-    const channel = supabase
-      .channel(`${stableStreamerSlug}-donations-${stableStreamerId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: tableName,
-          filter: `streamer_id=eq.${stableStreamerId}`
-        },
-        (payload) => {
-          console.log('🔔 Realtime donation update received:', {
-            event: payload.eventType,
-            table: payload.table,
-            new: payload.new,
-            old: payload.old
-          });
-
-          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-            const donation = payload.new as any;
-            
-            // Show notification for new donations or newly approved donations
-            if (payload.eventType === 'INSERT' && donation.payment_status === 'success') {
-              toast({
-                title: "💰 New Donation!",
-                description: `${donation.name} donated ₹${donation.amount}`,
-                duration: 5000,
-              });
-              console.log('🆕 New donation notification shown');
-            } else if (
-              payload.eventType === 'UPDATE' && 
-              donation.moderation_status === 'approved' &&
-              payload.old?.moderation_status !== 'approved'
-            ) {
-              toast({
-                title: "✅ Donation Approved!",
-                description: `Donation from ${donation.name} (₹${donation.amount}) has been approved`,
-                duration: 5000,
-              });
-              console.log('✅ Donation approved notification shown');
-            }
-
-            // Refresh donations data using the ref
-            if (fetchDataRef.current) {
-              fetchDataRef.current();
-            }
-            console.log('🔄 Donations data refreshed after realtime update');
-          }
+        // Refresh data
+        if (fetchDataRef.current) {
+          fetchDataRef.current();
         }
-      )
-      .subscribe((status) => {
-        console.log('Real-time subscription status:', status);
-        if (status === 'SUBSCRIBED') {
-          console.log('Successfully subscribed to moderation updates');
-        }
-      });
-
-    // Store the subscription and current streamer ID
-    subscriptionRef.current = channel;
-    currentStreamerId.current = stableStreamerId;
-
-    return () => {
-      if (subscriptionRef.current) {
-        console.log('🧹 Component cleanup - removing subscription');
-        supabase.removeChannel(subscriptionRef.current);
-        subscriptionRef.current = null;
-        currentStreamerId.current = null;
       }
-    };
-  }, [stableStreamerId]);
+      
+      if (payload.eventType === 'UPDATE') {
+        const oldDonation = payload.old as Donation;
+        
+        // Check if payment was completed
+        if (oldDonation.payment_status !== 'success' && newDonation.payment_status === 'success') {
+          toast({
+            title: "💰 Payment Confirmed!",
+            description: `${newDonation.name} - ₹${newDonation.amount}`,
+            duration: 4000,
+          });
+        }
+        
+        // Check if donation was approved
+        if (oldDonation.moderation_status !== 'approved' && newDonation.moderation_status === 'approved') {
+          toast({
+            title: "✅ Donation Approved!",
+            description: `${newDonation.name}'s message is now live on OBS`,
+            duration: 4000,
+          });
+          console.log('✅ Donation approved notification shown');
+        }
+
+        // Refresh data
+        if (fetchDataRef.current) {
+          fetchDataRef.current();
+        }
+      }
+    },
+    enabled: !!stableStreamerId
+  });
 
   // Show loading while auth is being determined
   if (loading) {
