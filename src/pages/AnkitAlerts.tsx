@@ -101,53 +101,75 @@ const AnkitAlertsRealtime = () => {
     }
   }, [obsToken]);
 
-  // Direct Supabase Realtime subscription
+  // Polling-based alert system for OBS compatibility
+  const [lastProcessedId, setLastProcessedId] = useState<string | null>(null);
+  
   useEffect(() => {
     if (!enabled || !isValidToken || !streamer) return;
 
-    console.log('🔄 Setting up Realtime subscription for ankit_donations...');
+    console.log('🔄 Setting up polling-based alert system for ankit_donations...');
     setConnectionState('connecting');
 
-    const channel = supabase
-      .channel('ankit-alerts')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'ankit_donations',
-          filter: `streamer_id=eq.${streamer.id}`
-        },
-        (payload) => {
-          console.log('📡 Realtime event received:', payload.eventType, payload.new);
-          
-          if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
-            const donation = payload.new as Donation;
-            
-            // Only show alerts for approved donations
-            if (donation?.payment_status === 'success' && 
-                (donation?.moderation_status === 'approved' || donation?.moderation_status === 'auto_approved')) {
-              console.log('🎉 New donation alert via Realtime:', donation.name, donation.amount);
+    const pollForAlerts = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('ankit_donations')
+          .select('*')
+          .eq('streamer_id', streamer.id)
+          .eq('payment_status', 'success')
+          .in('moderation_status', ['approved', 'auto_approved'])
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        if (error) {
+          console.error('❌ Error polling for alerts:', error);
+          setConnectionState('disconnected');
+          return;
+        }
+
+        setConnectionState('connected');
+
+        if (data && data.length > 0) {
+          // Find new donations since last processed
+          const newDonations = lastProcessedId 
+            ? data.filter(donation => donation.id !== lastProcessedId)
+            : [data[0]]; // Show only the most recent if first time
+
+          if (newDonations.length > 0) {
+            // Process donations in chronological order (oldest first)
+            const sortedNew = newDonations
+              .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+            sortedNew.forEach(donation => {
+              console.log('🎉 New donation alert via polling:', donation.name, donation.amount);
               setAlertQueue(prev => [...prev, { 
-                donation: donation,
+                donation: donation as Donation,
                 timestamp: Date.now() 
               }]);
-            }
+            });
+
+            // Update last processed ID to the most recent
+            setLastProcessedId(data[0].id);
           }
         }
-      )
-      .subscribe((status) => {
-        console.log('📊 Realtime status:', status);
-        setConnectionState(status === 'SUBSCRIBED' ? 'connected' : 
-                         status === 'CHANNEL_ERROR' ? 'disconnected' : 'connecting');
-      });
+      } catch (error) {
+        console.error('❌ Error in polling:', error);
+        setConnectionState('disconnected');
+      }
+    };
+
+    // Initial poll
+    pollForAlerts();
+
+    // Set up polling interval (every 2 seconds)
+    const interval = setInterval(pollForAlerts, 2000);
 
     return () => {
-      console.log('🔌 Cleaning up Realtime subscription');
-      supabase.removeChannel(channel);
+      console.log('🔌 Cleaning up polling interval');
+      clearInterval(interval);
       setConnectionState('disconnected');
     };
-  }, [enabled, isValidToken, streamer]);
+  }, [enabled, isValidToken, streamer, lastProcessedId]);
 
   // Initial setup
   useEffect(() => {
@@ -318,7 +340,7 @@ const AnkitAlertsRealtime = () => {
       <div className="min-h-screen bg-transparent overflow-hidden relative">
         {/* Connection Status Debug Info */}
         <div className="fixed top-4 right-4 text-xs text-white bg-black bg-opacity-50 p-2 rounded">
-          Realtime: {connectionState} | Queue: {alertQueue.length}
+          Polling: {connectionState} | Queue: {alertQueue.length} | Last: {lastProcessedId?.slice(-8)}
         </div>
 
         {currentAlert && currentAlert.donation.is_hyperemote && (

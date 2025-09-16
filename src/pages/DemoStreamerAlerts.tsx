@@ -55,72 +55,76 @@ export default function DemoStreamerAlerts() {
     validateToken();
   }, [token]);
 
-  // Direct Supabase subscription for alerts
+  // Polling-based alert system for OBS compatibility
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
+  const [lastProcessedId, setLastProcessedId] = useState<string | null>(null);
 
-  const subscribeToAlerts = useCallback(() => {
+  useEffect(() => {
     if (!streamerInfo?.streamer_id) {
       setConnectionStatus('disconnected');
       return;
     }
 
-    console.log('🔗 Setting up direct Supabase subscription for DemoStreamer alerts');
+    console.log('🔄 Setting up polling-based alert system for DemoStreamer donations...');
     setConnectionStatus('connecting');
 
-    const channel = supabase
-      .channel(`demostreamer-alerts-${streamerInfo.streamer_id}`)
-      .on(
-        'postgres_changes', 
-        {
-          event: '*',
-          schema: 'public',
-          table: 'demostreamer_donations',
-          filter: `streamer_id=eq.${streamerInfo.streamer_id}`
-        },
-        (payload) => {
-          console.log('🚨 DemoStreamer Alert received:', payload.eventType, payload.new);
-          const donation = payload.new as Donation;
-          
-          // Show alert for successful payments that are approved or auto-approved
-          if (donation.payment_status === 'success' && 
-              (donation.moderation_status === 'approved' || donation.moderation_status === 'auto_approved')) {
-            console.log('✅ Showing DemoStreamer alert for donation:', donation.name, donation.amount);
-            showAlert(donation);
-          } else {
-            console.log('⏸️ DemoStreamer alert skipped - not approved or successful payment:', {
-              payment_status: donation.payment_status,
-              moderation_status: donation.moderation_status
+    const pollForAlerts = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('demostreamer_donations')
+          .select('*')
+          .eq('streamer_id', streamerInfo.streamer_id)
+          .eq('payment_status', 'success')
+          .in('moderation_status', ['approved', 'auto_approved'])
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        if (error) {
+          console.error('❌ Error polling for DemoStreamer alerts:', error);
+          setConnectionStatus('disconnected');
+          return;
+        }
+
+        setConnectionStatus('connected');
+
+        if (data && data.length > 0) {
+          // Find new donations since last processed
+          const newDonations = lastProcessedId 
+            ? data.filter(donation => donation.id !== lastProcessedId)
+            : [data[0]]; // Show only the most recent if first time
+
+          if (newDonations.length > 0) {
+            // Process donations in chronological order (oldest first)
+            const sortedNew = newDonations
+              .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+            sortedNew.forEach(donation => {
+              console.log('🎉 New DemoStreamer donation alert via polling:', donation.name, donation.amount);
+              showAlert(donation as Donation);
             });
+
+            // Update last processed ID to the most recent
+            setLastProcessedId(data[0].id);
           }
         }
-      )
-      .subscribe((status) => {
-        console.log('🔗 DemoStreamer Alerts subscription status:', status);
-        if (status === 'SUBSCRIBED') {
-          setConnectionStatus('connected');
-        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-          setConnectionStatus('disconnected');
-          // Retry connection after delay
-          setTimeout(() => {
-            subscribeToAlerts();
-          }, 5000);
-        }
-      });
+      } catch (error) {
+        console.error('❌ Error in DemoStreamer polling:', error);
+        setConnectionStatus('disconnected');
+      }
+    };
 
-    return channel;
-  }, [streamerInfo?.streamer_id]);
+    // Initial poll
+    pollForAlerts();
 
-  // Set up subscription when streamer info is available
-  useEffect(() => {
-    if (streamerInfo?.streamer_id) {
-      const channel = subscribeToAlerts();
-      return () => {
-        if (channel) {
-          supabase.removeChannel(channel);
-        }
-      };
-    }
-  }, [streamerInfo?.streamer_id, subscribeToAlerts]);
+    // Set up polling interval (every 2 seconds)
+    const interval = setInterval(pollForAlerts, 2000);
+
+    return () => {
+      console.log('🔌 Cleaning up DemoStreamer polling interval');
+      clearInterval(interval);
+      setConnectionStatus('disconnected');
+    };
+  }, [streamerInfo?.streamer_id, lastProcessedId]);
 
   const showAlert = (donation: Donation) => {
     setCurrentAlert(donation);
@@ -234,7 +238,7 @@ export default function DemoStreamerAlerts() {
 
       {/* Connection Status Debug */}
       <div className="fixed bottom-4 right-4 text-white text-xs bg-black/50 p-2 rounded">
-        Status: {connectionStatus} | Streamer: {streamerInfo?.streamer_name} | Alert: {currentAlert ? 'Yes' : 'No'}
+        Polling: {connectionStatus} | Streamer: {streamerInfo?.streamer_name} | Alert: {currentAlert ? 'Yes' : 'No'} | Last: {lastProcessedId?.slice(-8)}
       </div>
 
       {/* Custom CSS for animations */}
