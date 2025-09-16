@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useDemoStreamerAuth } from "@/hooks/useDemoStreamerAuth";
 import { obsTokenCache } from '@/utils/obsTokenCache';
+import { PendingDonationsBadge } from '@/components/PendingDonationsBadge';
 import { 
   DollarSign, 
   Users, 
@@ -315,8 +316,14 @@ export default function DemoStreamerDashboard() {
               <Sparkles className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
                 {session.streamerName} Dashboard
+                {streamer?.id && (
+                  <PendingDonationsBadge 
+                    streamerId={streamer.id} 
+                    tableName="demostreamer_donations" 
+                  />
+                )}
               </h1>
               <p className="text-gray-600">
                 Welcome back! {session.isAdmin && <span className="text-purple-600">(Admin)</span>}

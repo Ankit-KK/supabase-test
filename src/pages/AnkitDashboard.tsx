@@ -13,6 +13,7 @@ import { DollarSign, TrendingUp, Users, Calendar, LogOut, Settings } from 'lucid
 import AnkitOBSSettings from '@/components/AnkitOBSSettings';
 import { MessagesModerationPage } from '@/pages/MessagesModerationPage';
 import { ConnectionStatus } from '@/components/ConnectionStatus';
+import { PendingDonationsBadge } from '@/components/PendingDonationsBadge';
 import { obsTokenCache } from '@/utils/obsTokenCache';
 
 interface Donation {
@@ -315,6 +316,13 @@ const AnkitDashboard = () => {
             <TabsTrigger value="messages" className="flex items-center gap-2">
               <Settings className="w-4 h-4" />
               Messages
+              {streamer?.id && (
+                <PendingDonationsBadge 
+                  streamerId={streamer.id} 
+                  tableName="ankit_donations" 
+                  className="ml-1" 
+                />
+              )}
             </TabsTrigger>
             <TabsTrigger value="obs" className="flex items-center gap-2">
               <Settings className="w-4 h-4" />

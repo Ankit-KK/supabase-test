@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
+import { AlertDebugInfo } from '@/components/AlertDebugInfo';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { RealtimeChannel } from '@supabase/supabase-js';
@@ -458,6 +459,13 @@ const AnkitAlerts = () => {
             <source src={currentAlert.donation.voice_message_url} type="audio/mpeg" />
           </audio>
         )}
+
+        {/* Debug info for development */}
+        <AlertDebugInfo
+          streamerId={streamer?.id}
+          streamerSlug="ankit"
+          connectionState={{ status: connectionStatus }}
+        />
       </div>
     </>
   );

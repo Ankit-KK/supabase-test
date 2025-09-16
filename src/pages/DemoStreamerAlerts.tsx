@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
+import { AlertDebugInfo } from '@/components/AlertDebugInfo';
 import { Heart, Sparkles, Zap, Star, Music, Coffee, Gift, Flame } from "lucide-react";
 
 interface Donation {
@@ -37,50 +39,46 @@ export default function DemoStreamerAlerts() {
     // Validate token and get streamer info
     const validateToken = async () => {
       try {
+        console.log('🔑 Validating OBS token for DemoStreamer alerts...');
         const { data } = await supabase
           .rpc('validate_obs_token_secure', { token_to_check: token });
 
         if (data && data.length > 0 && data[0].is_valid) {
+          console.log('✅ DemoStreamer OBS token validated:', data[0].streamer_name);
           setStreamerInfo(data[0]);
-          setupRealtimeSubscription(data[0].streamer_id);
         } else {
-          console.error('Invalid OBS token');
+          console.error('❌ Invalid OBS token for DemoStreamer alerts');
         }
       } catch (error) {
-        console.error('Error validating token:', error);
+        console.error('❌ Error validating OBS token:', error);
       }
     };
 
     validateToken();
   }, [token]);
 
-  const setupRealtimeSubscription = (streamerId: string) => {
-    const channel = supabase
-      .channel('demostreamer_alerts_realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'demostreamer_donations',
-          filter: `streamer_id=eq.${streamerId}`
-        },
-        (payload) => {
-          const donation = payload.new as Donation;
-          
-          // Show alert for successful payments that are approved or auto-approved
-          if (donation.payment_status === 'success' && 
-              (donation.moderation_status === 'approved' || donation.moderation_status === 'auto_approved')) {
-            showAlert(donation);
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  };
+  // Use centralized real-time subscription
+  const connectionState = useRealtimeSubscription({
+    streamerId: streamerInfo?.streamer_id,
+    streamerSlug: 'demostreamer',
+    onDonationUpdate: (payload) => {
+      console.log('🎯 DemoStreamer Alert received donation update:', payload.eventType);
+      const donation = payload.new as Donation;
+      
+      // Show alert for successful payments that are approved or auto-approved
+      if (donation.payment_status === 'success' && 
+          (donation.moderation_status === 'approved' || donation.moderation_status === 'auto_approved')) {
+        console.log('🚨 Showing DemoStreamer alert for donation:', donation.name, donation.amount);
+        showAlert(donation);
+      } else {
+        console.log('⏸️ DemoStreamer alert skipped - not approved or not successful payment:', {
+          payment_status: donation.payment_status,
+          moderation_status: donation.moderation_status
+        });
+      }
+    },
+    enabled: !!streamerInfo?.streamer_id
+  });
 
   const showAlert = (donation: Donation) => {
     setCurrentAlert(donation);
@@ -191,6 +189,13 @@ export default function DemoStreamerAlerts() {
           )}
         </div>
       )}
+
+      {/* Debug info for development */}
+      <AlertDebugInfo
+        streamerId={streamerInfo?.streamer_id}
+        streamerSlug="demostreamer"
+        connectionState={connectionState}
+      />
 
       {/* Custom CSS for animations */}
       <style>{`

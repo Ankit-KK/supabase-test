@@ -74,7 +74,15 @@ export const useRealtimeSubscription = (options: RealtimeSubscriptionOptions) =>
             filter: `streamer_id=eq.${streamerId}`
           },
           (payload) => {
-            console.log('🔔 Global subscription received update:', payload.eventType, (payload.new as any)?.name);
+            const donationData = payload.new as any;
+            console.log('🔔 Global subscription received update:', {
+              event: payload.eventType,
+              table: tableName,
+              donor: donationData?.name,
+              amount: donationData?.amount,
+              status: donationData?.moderation_status,
+              payment: donationData?.payment_status
+            });
             
             // Notify all subscribers via a custom event
             window.dispatchEvent(new CustomEvent('donation-update', {
