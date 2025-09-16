@@ -30,14 +30,14 @@ interface Moderator {
 interface AnkitOBSSettingsProps {
   streamer: Streamer;
   onStreamerUpdate: (updatedStreamer: Streamer) => void;
+  obsToken: string;
+  onTokenRegenerate: () => Promise<string>;
 }
 
-const AnkitOBSSettings: React.FC<AnkitOBSSettingsProps> = ({ streamer, onStreamerUpdate }) => {
+const AnkitOBSSettings: React.FC<AnkitOBSSettingsProps> = ({ streamer, onStreamerUpdate, obsToken, onTokenRegenerate }) => {
   const { toast } = useToast();
   const [obsEnabled, setObsEnabled] = useState(true);
-  const [loading, setLoading] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
-  const [obsToken, setObsToken] = useState<string>('');
   const { session: streamerSession, isAuthenticated: isStreamerAuthed } = useAnkitAuth();
   
   // Moderator management state
@@ -72,16 +72,7 @@ const AnkitOBSSettings: React.FC<AnkitOBSSettingsProps> = ({ streamer, onStreame
   const handleRegenerateToken = async () => {
     setRegenerating(true);
     try {
-      // Generate new token via edge function
-      const { data, error } = await supabase.functions.invoke('generate-obs-token', {
-        body: { streamerId: streamer.id }
-      });
-      
-      if (error) throw error;
-      if (!data?.token) throw new Error('No token received');
-
-      setObsToken(data.token);
-      
+      await onTokenRegenerate();
       toast({
         title: "Token Regenerated",
         description: "New OBS alert URL generated successfully!",
@@ -96,54 +87,7 @@ const AnkitOBSSettings: React.FC<AnkitOBSSettingsProps> = ({ streamer, onStreame
     setRegenerating(false);
   };
 
-  const generateInitialToken = async () => {
-    if (!streamer?.id) return;
-    
-    // Don't regenerate if we already have a token
-    if (obsToken) {
-      console.log('Token already exists, skipping generation');
-      return;
-    }
-    
-    setLoading(true);
-    try {
-      // Check if active token exists
-      const { data: activeToken, error: tokenError } = await supabase
-        .from('obs_tokens')
-        .select('token')
-        .eq('streamer_id', streamer.id)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (!tokenError && activeToken?.token) {
-        console.log('Found existing active token, using it');
-        setObsToken(activeToken.token);
-        setLoading(false);
-        return;
-      }
-
-      // Only generate new token if no active token exists
-      console.log('No active token found, generating new one');
-      const { data, error } = await supabase.functions.invoke('generate-obs-token', {
-        body: { streamerId: streamer.id }
-      });
-
-      if (error) throw error;
-      if (!data?.token) throw new Error('No token received');
-
-      setObsToken(data.token);
-      console.log('New token generated successfully');
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error?.message || "Failed to generate OBS token",
-        variant: "destructive",
-      });
-    }
-    setLoading(false);
-  };
+  // Token is now managed by parent component - no need to generate here
 
   // Fetch moderators
   const fetchModerators = async () => {
@@ -234,20 +178,10 @@ const AnkitOBSSettings: React.FC<AnkitOBSSettingsProps> = ({ streamer, onStreame
     }
   };
 
-  // Generate token only once when streamer loads (prevent regeneration on every render)
-  const hasTokenBeenGenerated = useRef(false);
-  
   useEffect(() => {
     if (!streamer?.id) return;
-    
-    // Only generate token once per streamer
-    if (!hasTokenBeenGenerated.current) {
-      generateInitialToken();
-      hasTokenBeenGenerated.current = true;
-    }
-    
     fetchModerators();
-  }, [streamer?.id]);
+  }, [streamer.id]); // Use stable string value instead of object reference
 
   return (
     <div className="space-y-6">
@@ -328,7 +262,7 @@ const AnkitOBSSettings: React.FC<AnkitOBSSettingsProps> = ({ streamer, onStreame
           ) : (
             <div className="text-center py-4">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-              <p className="text-sm text-muted-foreground">Generating OBS token...</p>
+              <p className="text-sm text-muted-foreground">Loading OBS token...</p>
             </div>
           )}
         </CardContent>

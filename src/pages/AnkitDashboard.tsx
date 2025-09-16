@@ -13,6 +13,7 @@ import { DollarSign, TrendingUp, Users, Calendar, LogOut, Settings } from 'lucid
 import AnkitOBSSettings from '@/components/AnkitOBSSettings';
 import { MessagesModerationPage } from '@/pages/MessagesModerationPage';
 import { ConnectionStatus } from '@/components/ConnectionStatus';
+import { obsTokenCache } from '@/utils/obsTokenCache';
 
 interface Donation {
   id: string;
@@ -53,6 +54,7 @@ const AnkitDashboard = () => {
   const [monthlyAmount, setMonthlyAmount] = useState(0);
   const [hasAccess, setHasAccess] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [obsToken, setObsToken] = useState<string>('');
 
   const handleStreamerUpdate = (updatedStreamer: Streamer) => {
     setStreamer(updatedStreamer);
@@ -108,6 +110,14 @@ const AnkitDashboard = () => {
         }
 
         setHasAccess(true);
+
+        // Generate/get OBS token
+        try {
+          const token = await obsTokenCache.getOrGenerateToken(streamerInfo.id);
+          setObsToken(token);
+        } catch (error) {
+          console.error('Error getting OBS token:', error);
+        }
 
         // Fetch donations for this streamer using secure function
         const { data: donationsData, error: donationsError } = await supabase
@@ -441,6 +451,15 @@ const AnkitDashboard = () => {
               <AnkitOBSSettings 
                 streamer={streamer}
                 onStreamerUpdate={handleStreamerUpdate}
+                obsToken={obsToken}
+                onTokenRegenerate={async () => {
+                  if (streamer?.id) {
+                    const newToken = await obsTokenCache.regenerateToken(streamer.id);
+                    setObsToken(newToken);
+                    return newToken;
+                  }
+                  return '';
+                }}
               />
             </div>
           </TabsContent>
