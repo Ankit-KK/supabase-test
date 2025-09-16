@@ -128,35 +128,9 @@ This donation is now live on the stream!
     
     await notifyTelegramModerators(donation.streamer_id, notificationMessage, supabaseAdmin);
 
-    // Broadcast WebSocket alert for OBS
-    console.log('📡 Broadcasting WebSocket alert for approved donation:', {
-      donation_id: updatedDonation.id,
-      streamer_slug: 'ankit',
-      donation_amount: updatedDonation.amount
-    });
-    
-    try {
-      const { data: wsResponse, error: wsError } = await supabaseAdmin.functions.invoke('obs-alerts-ws', {
-        body: { 
-          streamer_slug: 'ankit',
-          donation: updatedDonation
-        }
-      });
-      
-      if (wsError) {
-        console.error('❌ WebSocket function invoke error:', wsError);
-      } else {
-        console.log('✅ WebSocket alert broadcast response:', wsResponse);
-      }
-    } catch (wsError) {
-      console.error('❌ WebSocket alert broadcast exception:', wsError);
-      // Log the full error details
-      console.error('❌ Error details:', {
-        message: wsError.message,
-        stack: wsError.stack,
-        name: wsError.name
-      });
-    }
+    // Note: Alert will be triggered automatically via Supabase Realtime
+    // when the donation moderation_status is updated above
+    console.log('✅ Donation approved, Realtime will handle alerts automatically');
 
     return new Response(
       JSON.stringify({

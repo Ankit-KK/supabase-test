@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 
 interface Donation {
   id: string;
@@ -26,15 +27,7 @@ interface AlertQueueItem {
   timestamp: number;
 }
 
-interface WebSocketMessage {
-  type: 'donation_approved' | 'connection_ack' | 'error' | 'ping' | 'pong';
-  streamer_slug?: string;
-  donation?: Donation;
-  message?: string;
-  timestamp?: number;
-}
-
-const AnkitAlertsWebSocket = () => {
+const AnkitAlertsRealtime = () => {
   const { token: pathToken } = useParams<{ token: string }>();
   const [searchParams] = useSearchParams();
   const obsToken = (pathToken && pathToken !== 'undefined' && pathToken !== 'null')
@@ -46,13 +39,6 @@ const AnkitAlertsWebSocket = () => {
   const [alertQueue, setAlertQueue] = useState<AlertQueueItem[]>([]);
   const [isValidToken, setIsValidToken] = useState<boolean | null>(null);
   const [displayedMessage, setDisplayedMessage] = useState("");
-  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
-  const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const reconnectAttemptsRef = useRef<number>(0);
-
-  const MAX_RECONNECT_ATTEMPTS = 10;
-  const RECONNECT_DELAY = 3000;
   
   // Hyperemote configurations
   const hyperemotes = [
@@ -105,7 +91,6 @@ const AnkitAlertsWebSocket = () => {
       console.log('✅ Token validation successful:', rows[0].streamer_name);
       setStreamer(rows[0]);
       setIsValidToken(true);
-      reconnectAttemptsRef.current = 0;
       return true;
     } catch (error) {
       console.error('❌ Error validating token:', error);
@@ -114,110 +99,33 @@ const AnkitAlertsWebSocket = () => {
     }
   }, [obsToken]);
 
-  // WebSocket connection management
-  const connectWebSocket = useCallback(() => {
-    if (!obsToken || !enabled) {
-      console.log('❌ Cannot connect WebSocket: missing token or disabled');
-      return;
+  // Handle realtime donation updates
+  const handleDonationUpdate = useCallback((payload: any) => {
+    const donation = payload.new;
+    
+    // Only show alerts for approved donations
+    if (donation?.payment_status === 'success' && 
+        (donation?.moderation_status === 'approved' || donation?.moderation_status === 'auto_approved')) {
+      console.log('🎉 New donation alert via Realtime:', donation.name, donation.amount);
+      setAlertQueue(prev => [...prev, { 
+        donation: donation,
+        timestamp: Date.now() 
+      }]);
     }
+  }, []);
 
-    setConnectionStatus('connecting');
-    console.log('🔌 Connecting to WebSocket...');
-
-    const wsUrl = `wss://vsevsjvtrshgeiudrnth.supabase.co/functions/v1/obs-alerts-ws?token=${obsToken}`;
-    const ws = new WebSocket(wsUrl);
-
-    ws.onopen = () => {
-      console.log('🚀 WebSocket connected successfully');
-      setConnectionStatus('connected');
-      reconnectAttemptsRef.current = 0;
-      wsRef.current = ws;
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const message: WebSocketMessage = JSON.parse(event.data);
-        console.log('📨 WebSocket message received:', message);
-
-        switch (message.type) {
-          case 'connection_ack':
-            console.log('✅ Connection acknowledged:', message.message);
-            break;
-          
-          case 'ping':
-            // Respond to ping with pong
-            if (ws.readyState === WebSocket.OPEN) {
-              ws.send(JSON.stringify({ type: 'pong', timestamp: Date.now() }));
-            }
-            break;
-          
-          case 'donation_approved':
-            if (message.donation) {
-              console.log('🎉 New donation alert:', message.donation.name, message.donation.amount);
-              setAlertQueue(prev => [...prev, { 
-                donation: message.donation!,
-                timestamp: Date.now() 
-              }]);
-            }
-            break;
-          
-          case 'error':
-            console.error('❌ WebSocket error message:', message.message);
-            break;
-        }
-      } catch (error) {
-        console.error('❌ Error parsing WebSocket message:', error);
-      }
-    };
-
-    ws.onclose = (event) => {
-      console.log('🔌 WebSocket disconnected:', event.code, event.reason);
-      setConnectionStatus('disconnected');
-      wsRef.current = null;
-      
-      // Attempt to reconnect if not too many attempts
-      if (reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
-        reconnectAttemptsRef.current++;
-        const delay = RECONNECT_DELAY * reconnectAttemptsRef.current;
-        console.log(`📡 Scheduling reconnection attempt ${reconnectAttemptsRef.current}/${MAX_RECONNECT_ATTEMPTS} in ${delay}ms`);
-        
-        reconnectTimeoutRef.current = setTimeout(() => {
-          connectWebSocket();
-        }, delay);
-      } else {
-        console.error('❌ Max reconnection attempts reached');
-      }
-    };
-
-    ws.onerror = (error) => {
-      console.error('❌ WebSocket error:', error);
-      setConnectionStatus('disconnected');
-    };
-
-  }, [obsToken, enabled]);
+  // Use Realtime subscription for alerts
+  const connectionState = useRealtimeSubscription({
+    streamerId: streamer?.id,
+    streamerSlug: 'ankit',
+    onDonationUpdate: handleDonationUpdate,
+    enabled: enabled && isValidToken && !!streamer
+  });
 
   // Initial setup
   useEffect(() => {
     validateToken();
   }, [validateToken]);
-
-  // Connect WebSocket when token is valid
-  useEffect(() => {
-    if (isValidToken && enabled) {
-      connectWebSocket();
-    }
-
-    return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
-        wsRef.current = null;
-      }
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-        reconnectTimeoutRef.current = null;
-      }
-    };
-  }, [isValidToken, enabled, connectWebSocket]);
 
   // Process alert queue
   useEffect(() => {
@@ -383,7 +291,7 @@ const AnkitAlertsWebSocket = () => {
       <div className="min-h-screen bg-transparent overflow-hidden relative">
         {/* Connection Status Debug Info */}
         <div className="fixed top-4 right-4 text-xs text-white bg-black bg-opacity-50 p-2 rounded">
-          WebSocket: {connectionStatus} | Queue: {alertQueue.length}
+          Realtime: {connectionState.status} | Queue: {alertQueue.length}
         </div>
 
         {currentAlert && currentAlert.donation.is_hyperemote && (
@@ -459,4 +367,4 @@ const AnkitAlertsWebSocket = () => {
   );
 };
 
-export default AnkitAlertsWebSocket;
+export default AnkitAlertsRealtime;
