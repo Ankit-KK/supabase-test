@@ -241,23 +241,8 @@ const AlertsPage = () => {
     validateToken();
   }, [validateToken]);
 
-  // Set up periodic token validation
-  useEffect(() => {
-    if (isValidToken) {
-      console.log('Setting up periodic token validation');
-      validationIntervalRef.current = setInterval(() => {
-        console.log('Performing periodic token validation');
-        validateToken();
-      }, VALIDATION_INTERVAL);
-    }
-
-    return () => {
-      if (validationIntervalRef.current) {
-        clearInterval(validationIntervalRef.current);
-        validationIntervalRef.current = null;
-      }
-    };
-  }, [isValidToken, validateToken]);
+  // Token validation only happens once on mount and on connection errors
+  // No periodic validation needed - use real-time connection status instead
 
   // Subscribe to updates when streamer is available
   useEffect(() => {

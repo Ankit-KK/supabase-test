@@ -6,6 +6,7 @@ interface TokenCacheEntry {
   streamerId: string;
   generatedAt: number;
   isGenerating: boolean;
+  expiresAt: number;
 }
 
 class OBSTokenCache {
@@ -13,19 +14,15 @@ class OBSTokenCache {
   private generatePromises = new Map<string, Promise<string>>();
 
   async getOrGenerateToken(streamerId: string): Promise<string> {
-    console.log('🔑 Getting token for streamer:', streamerId);
-    
-    // Check if we have a cached token
+    // Check if we have a valid cached token (not expired)
     const cached = this.cache.get(streamerId);
-    if (cached && !cached.isGenerating) {
-      console.log('🔑 Using cached token');
+    if (cached && !cached.isGenerating && cached.expiresAt > Date.now()) {
       return cached.token;
     }
 
-    // Check if we're already generating a token for this streamer
+    // Check if we're already generating a token for this streamer (prevent duplicates)
     const existingPromise = this.generatePromises.get(streamerId);
     if (existingPromise) {
-      console.log('🔑 Token generation in progress, waiting...');
       return existingPromise;
     }
 
@@ -44,14 +41,15 @@ class OBSTokenCache {
   }
 
   private async generateToken(streamerId: string): Promise<string> {
-    console.log('🔑 Starting token generation for streamer:', streamerId);
+    const now = Date.now();
     
     // Mark as generating
     this.cache.set(streamerId, {
       token: '',
       streamerId,
-      generatedAt: Date.now(),
-      isGenerating: true
+      generatedAt: now,
+      isGenerating: true,
+      expiresAt: now + (24 * 60 * 60 * 1000) // 24 hours
     });
 
     try {
@@ -66,22 +64,22 @@ class OBSTokenCache {
         .maybeSingle();
 
       if (!tokenError && activeToken?.token) {
-        console.log('🔑 Found existing active token in database');
         const token = activeToken.token;
+        const now = Date.now();
         
-        // Cache the existing token
+        // Cache the existing token with 24 hour expiration
         this.cache.set(streamerId, {
           token,
           streamerId,
-          generatedAt: Date.now(),
-          isGenerating: false
+          generatedAt: now,
+          isGenerating: false,
+          expiresAt: now + (24 * 60 * 60 * 1000)
         });
         
         return token;
       }
 
       // Generate new token via edge function
-      console.log('🔑 No active token found, generating new one via edge function');
       const { data, error } = await supabase.functions.invoke('generate-obs-token', {
         body: { streamerId, forceRegenerate: false }
       });
@@ -90,14 +88,15 @@ class OBSTokenCache {
       if (!data?.token) throw new Error('No token received');
 
       const token = data.token;
-      console.log('🔑 New token generated successfully');
+      const now = Date.now();
       
-      // Cache the new token
+      // Cache the new token with 24 hour expiration
       this.cache.set(streamerId, {
         token,
         streamerId,
-        generatedAt: Date.now(),
-        isGenerating: false
+        generatedAt: now,
+        isGenerating: false,
+        expiresAt: now + (24 * 60 * 60 * 1000)
       });
       
       return token;
@@ -110,8 +109,6 @@ class OBSTokenCache {
   }
 
   async regenerateToken(streamerId: string): Promise<string> {
-    console.log('🔑 Regenerating token for streamer:', streamerId);
-    
     // Clear cache
     this.cache.delete(streamerId);
     this.generatePromises.delete(streamerId);
@@ -125,13 +122,15 @@ class OBSTokenCache {
     if (!data?.token) throw new Error('No token received');
 
     const token = data.token;
+    const now = Date.now();
     
-    // Cache the new token
+    // Cache the new token with 24 hour expiration
     this.cache.set(streamerId, {
       token,
       streamerId,
-      generatedAt: Date.now(),
-      isGenerating: false
+      generatedAt: now,
+      isGenerating: false,
+      expiresAt: now + (24 * 60 * 60 * 1000)
     });
     
     return token;
@@ -149,7 +148,17 @@ class OBSTokenCache {
 
   getCachedToken(streamerId: string): string | null {
     const cached = this.cache.get(streamerId);
-    return (cached && !cached.isGenerating) ? cached.token : null;
+    return (cached && !cached.isGenerating && cached.expiresAt > Date.now()) ? cached.token : null;
+  }
+
+  // Cleanup expired tokens from cache
+  cleanupExpired() {
+    const now = Date.now();
+    for (const [streamerId, entry] of this.cache.entries()) {
+      if (entry.expiresAt <= now) {
+        this.cache.delete(streamerId);
+      }
+    }
   }
 }
 
