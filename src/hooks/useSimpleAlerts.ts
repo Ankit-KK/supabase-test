@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 interface Donation {
   id: string;
@@ -18,24 +19,40 @@ interface AlertSystemConfig {
   enabled?: boolean;
 }
 
-export const useSimpleAlerts = ({ streamerId, tableName, pollInterval = 2000, enabled = true }: AlertSystemConfig) => {
+export const useSimpleAlerts = ({ streamerId, tableName, enabled = true }: AlertSystemConfig) => {
   const [currentAlert, setCurrentAlert] = useState<Donation | null>(null);
   const [lastShownId, setLastShownId] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('connecting');
   const [isFirstLoad, setIsFirstLoad] = useState(true);
+  const channelRef = useRef<RealtimeChannel | null>(null);
+
+  const showAlert = useCallback((donation: Donation, reason: string) => {
+    console.log('🚨 Showing alert:', donation.name, '₹' + donation.amount, 'Reason:', reason);
+    setCurrentAlert(donation);
+    setIsVisible(true);
+    setLastShownId(donation.id);
+    setIsFirstLoad(false);
+
+    // Auto-hide after appropriate duration
+    const duration = donation.voice_message_url ? 10000 : 
+                    donation.is_hyperemote ? 6000 : 5000;
+    
+    setTimeout(() => {
+      setIsVisible(false);
+      setTimeout(() => setCurrentAlert(null), 500); // Allow fade out
+    }, duration);
+  }, []);
 
   const fetchLatestDonation = useCallback(async () => {
-    // Don't fetch if disabled or no streamer ID
     if (!enabled || !streamerId) {
       console.log(`⏸️ Alert system disabled - enabled: ${enabled}, streamerId: ${streamerId}`);
       return;
     }
 
     try {
-      console.log(`🔄 Polling ${tableName} for streamerId: ${streamerId}`);
+      console.log(`🔄 Fetching latest from ${tableName} for streamerId: ${streamerId}`);
       
-      // Use dynamic query based on table name to avoid TypeScript issues
       let query;
       if (tableName === 'ankit_donations') {
         query = supabase
@@ -76,54 +93,94 @@ export const useSimpleAlerts = ({ streamerId, tableName, pollInterval = 2000, en
       console.log('📦 Latest donation:', latestDonation);
       console.log('🔍 Debug state - lastShownId:', lastShownId, 'currentAlert:', !!currentAlert, 'isFirstLoad:', isFirstLoad);
 
-      // Show alert if this is a new donation OR if it's the first load and we haven't shown any alerts yet
-      const shouldShowAlert = isFirstLoad || (latestDonation.id !== lastShownId && !currentAlert);
-      
-      if (shouldShowAlert) {
-        console.log('🚨 Showing alert:', latestDonation.name, '₹' + latestDonation.amount, 'Reason:', isFirstLoad ? 'First load' : 'New donation');
-        setCurrentAlert(latestDonation);
-        setIsVisible(true);
-        setLastShownId(latestDonation.id);
-        setIsFirstLoad(false);
-
-        // Auto-hide after appropriate duration
-        const duration = latestDonation.voice_message_url ? 10000 : 
-                        latestDonation.is_hyperemote ? 6000 : 5000;
-        
-        setTimeout(() => {
-          setIsVisible(false);
-          setTimeout(() => setCurrentAlert(null), 500); // Allow fade out
-        }, duration);
-      } else {
-        console.log('⏭️ Skipping alert - already shown or currently displaying');
+      // On first load, show the latest donation if we haven't shown any alerts yet
+      if (isFirstLoad && !currentAlert) {
+        showAlert(latestDonation, 'First load');
       }
 
     } catch (error) {
-      console.error('❌ Polling error:', error);
+      console.error('❌ Fetch error:', error);
       setConnectionStatus('error');
     }
-  }, [streamerId, tableName, lastShownId, currentAlert, enabled, isFirstLoad]);
+  }, [streamerId, tableName, lastShownId, currentAlert, enabled, isFirstLoad, showAlert]);
 
-  // Start polling
+  // Set up real-time subscription
   useEffect(() => {
     if (!enabled || !streamerId) {
-      console.log(`⏸️ Alert system not started - enabled: ${enabled}, streamerId: ${streamerId}`);
+      console.log(`⏸️ Real-time not started - enabled: ${enabled}, streamerId: ${streamerId}`);
       return;
     }
 
-    console.log(`🎯 Starting alert system for ${tableName} with streamerId: ${streamerId}`);
+    console.log(`🎯 Starting real-time alerts for ${tableName} with streamerId: ${streamerId}`);
     
-    // Initial fetch
+    // Initial fetch for first load
     fetchLatestDonation();
     
-    // Setup polling
-    const interval = setInterval(fetchLatestDonation, pollInterval);
+    // Set up real-time subscription
+    const channel = supabase
+      .channel(`alerts-${tableName}-${streamerId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: tableName,
+          filter: `streamer_id=eq.${streamerId}`
+        },
+        async (payload) => {
+          console.log('🔔 Real-time event:', payload.eventType, payload.new || payload.old);
+          
+          // Handle INSERT (new donations) or UPDATE (status changes)
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            const donation = payload.new as any;
+            
+            // Check if this donation should trigger an alert
+            const shouldAlert = 
+              donation.payment_status === 'success' &&
+              (donation.moderation_status === 'approved' || donation.moderation_status === 'auto_approved') &&
+              donation.message_visible === true &&
+              donation.id !== lastShownId &&
+              !currentAlert;
+            
+            if (shouldAlert) {
+              const alertDonation: Donation = {
+                id: donation.id,
+                name: donation.name,
+                amount: donation.amount,
+                message: donation.message,
+                voice_message_url: donation.voice_message_url,
+                created_at: donation.created_at,
+                is_hyperemote: donation.is_hyperemote || false
+              };
+              
+              showAlert(alertDonation, payload.eventType === 'INSERT' ? 'New donation' : 'Donation approved');
+            } else {
+              console.log('⏭️ Skipping real-time alert - conditions not met or already showing');
+            }
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log(`📡 Real-time subscription status for ${tableName}:`, status);
+        if (status === 'SUBSCRIBED') {
+          setConnectionStatus('connected');
+        } else if (status === 'CHANNEL_ERROR') {
+          setConnectionStatus('error');
+        } else if (status === 'TIMED_OUT') {
+          setConnectionStatus('error');
+        }
+      });
+
+    channelRef.current = channel;
     
     return () => {
-      console.log(`🛑 Stopping alert system for ${tableName}`);
-      clearInterval(interval);
+      console.log(`🛑 Stopping real-time alerts for ${tableName}`);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
-  }, [fetchLatestDonation, pollInterval, enabled, streamerId]);
+  }, [streamerId, tableName, enabled, fetchLatestDonation, showAlert, lastShownId, currentAlert]);
 
   const triggerTestAlert = useCallback(() => {
     const testAlert: Donation = {
@@ -136,14 +193,8 @@ export const useSimpleAlerts = ({ streamerId, tableName, pollInterval = 2000, en
     };
     
     console.log('🧪 Triggering test alert');
-    setCurrentAlert(testAlert);
-    setIsVisible(true);
-    
-    setTimeout(() => {
-      setIsVisible(false);
-      setTimeout(() => setCurrentAlert(null), 500);
-    }, 5000);
-  }, []);
+    showAlert(testAlert, 'Test alert');
+  }, [showAlert]);
 
   const resetAlertState = useCallback(() => {
     console.log('🔄 Resetting alert state');
