@@ -17,3 +17,9 @@ verify_jwt = false
 
 [functions.notify-moderators-ankit]
 verify_jwt = false
+
+[functions.obs-alerts-ws]
+verify_jwt = false
+
+[functions.broadcast-alert]
+verify_jwt = false

@@ -145,6 +145,22 @@ serve(async (req) => {
               } catch (processError) {
                 console.error(`Post-payment processing error for ${donation.order_id}:`, processError);
               }
+
+              // If auto-approved (hyperemote), broadcast WebSocket alert immediately
+              if (donation.moderation_status === 'auto_approved' || donation.is_hyperemote) {
+                console.log('📡 Broadcasting WebSocket alert for auto-approved payment');
+                try {
+                  await supabaseAdmin.functions.invoke('broadcast-alert', {
+                    body: { 
+                      streamer_slug: 'ankit',
+                      donation: { ...donation, payment_status: finalStatus }
+                    }
+                  });
+                  console.log('✅ WebSocket alert broadcast successful for auto-approved donation');
+                } catch (wsError) {
+                  console.error('❌ WebSocket alert broadcast failed:', wsError);
+                }
+              }
             }
           }
         }

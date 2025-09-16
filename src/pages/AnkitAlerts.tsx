@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { RealtimeChannel } from '@supabase/supabase-js';
 
 interface Donation {
   id: string;
@@ -9,11 +8,8 @@ interface Donation {
   amount: number;
   message?: string;
   created_at: string;
-  payment_status: string;
-  message_visible?: boolean;
   is_hyperemote?: boolean;
   voice_message_url?: string;
-  moderation_status?: string;
 }
 
 interface Streamer {
@@ -30,31 +26,32 @@ interface AlertQueueItem {
   timestamp: number;
 }
 
-const AnkitAlerts = () => {
+interface WebSocketMessage {
+  type: 'donation_approved' | 'connection_ack' | 'error';
+  streamer_slug?: string;
+  donation?: Donation;
+  message?: string;
+}
+
+const AnkitAlertsWebSocket = () => {
   const { token: pathToken } = useParams<{ token: string }>();
   const [searchParams] = useSearchParams();
   const obsToken = (pathToken && pathToken !== 'undefined' && pathToken !== 'null')
     ? pathToken
     : (searchParams.get('token') || searchParams.get('t') || '');
   
-
   const [streamer, setStreamer] = useState<Streamer | null>(null);
   const [currentAlert, setCurrentAlert] = useState<AlertQueueItem | null>(null);
   const [alertQueue, setAlertQueue] = useState<AlertQueueItem[]>([]);
   const [isValidToken, setIsValidToken] = useState<boolean | null>(null);
   const [displayedMessage, setDisplayedMessage] = useState("");
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const channelRef = useRef<RealtimeChannel | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const validationIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef<number>(0);
 
   const MAX_RECONNECT_ATTEMPTS = 10;
-  const RECONNECT_DELAY = 5000; // 5 seconds
-  const VALIDATION_INTERVAL = 60000; // 1 minute
-  const HEARTBEAT_INTERVAL = 30000; // 30 seconds
+  const RECONNECT_DELAY = 3000;
   
   // Hyperemote configurations
   const hyperemotes = [
@@ -80,235 +77,141 @@ const AnkitAlerts = () => {
     }
 
     try {
-      console.log('Validating OBS token...');
+      console.log('🔍 Validating OBS token...');
       const { data, error } = await supabase
         .rpc('get_streamer_by_obs_token_v2', { token: obsToken });
 
       if (error || !data) {
-        console.error('Token validation failed:', error);
+        console.error('❌ Token validation failed:', error);
         setIsValidToken(false);
         return false;
       }
       
       const rows = Array.isArray(data) ? data : (data ? [data] : []);
       if (!rows || rows.length === 0) {
-        console.error('No streamer found for token');
+        console.error('❌ No streamer found for token');
         setIsValidToken(false);
         return false;
       }
 
       // Verify this is for ankit
       if (rows[0].streamer_slug !== 'ankit') {
-        console.error('This token is not valid for Ankit');
+        console.error('❌ This token is not valid for Ankit');
         setIsValidToken(false);
         return false;
       }
 
-      console.log('Token validation successful:', rows[0].streamer_name);
+      console.log('✅ Token validation successful:', rows[0].streamer_name);
       setStreamer(rows[0]);
       setIsValidToken(true);
-      reconnectAttemptsRef.current = 0; // Reset reconnect attempts on successful validation
+      reconnectAttemptsRef.current = 0;
       return true;
     } catch (error) {
-      console.error('Error validating token:', error);
+      console.error('❌ Error validating token:', error);
       setIsValidToken(false);
       return false;
     }
   }, [obsToken]);
 
-  // Cleanup function
-  const cleanup = useCallback(() => {
-    console.log('Cleaning up connections and timers...');
-    
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-    }
-    
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
-    }
-    
-    if (validationIntervalRef.current) {
-      clearInterval(validationIntervalRef.current);
-      validationIntervalRef.current = null;
-    }
-    
-    if (heartbeatIntervalRef.current) {
-      clearInterval(heartbeatIntervalRef.current);
-      heartbeatIntervalRef.current = null;
-    }
-  }, []);
-
-  // Schedule reconnection attempt
-  const scheduleReconnect = useCallback(() => {
-    if (reconnectAttemptsRef.current >= MAX_RECONNECT_ATTEMPTS) {
-      console.error('Max reconnection attempts reached. Stopping reconnection attempts.');
+  // WebSocket connection management
+  const connectWebSocket = useCallback(() => {
+    if (!obsToken || !enabled) {
+      console.log('❌ Cannot connect WebSocket: missing token or disabled');
       return;
     }
 
-    reconnectAttemptsRef.current += 1;
-    const delay = RECONNECT_DELAY * Math.pow(2, Math.min(reconnectAttemptsRef.current - 1, 3)); // Exponential backoff
-    
-    console.log(`Scheduling reconnection attempt ${reconnectAttemptsRef.current}/${MAX_RECONNECT_ATTEMPTS} in ${delay}ms`);
-    
-    reconnectTimeoutRef.current = setTimeout(() => {
-      console.log('Attempting to reconnect...');
-      // Reconnection is now handled by the centralized subscription hook
-    }, delay);
-  }, [streamer?.id]);
-
-
-  // Set up subscription when streamer is available - fix dependency loop
-  useEffect(() => {
-    if (!streamer?.id || !enabled) {
-      setConnectionStatus('disconnected');
-      return;
-    }
-
-    console.log('🔗 Setting up REAL-TIME ONLY Supabase subscription for Ankit alerts, streamer ID:', streamer.id);
     setConnectionStatus('connecting');
+    console.log('🔌 Connecting to WebSocket...');
 
-    const channel = supabase
-      .channel(`ankit-alerts-${streamer.id}`)
-      .on(
-        'postgres_changes', 
-        {
-          event: '*',
-          schema: 'public',
-          table: 'ankit_donations',
-          filter: `streamer_id=eq.${streamer.id}`
-        },
-        (payload) => {
-          console.log('🚨 ALERT UPDATE RECEIVED:', {
-            eventType: payload.eventType,
-            donationId: (payload.new as any)?.id,
-            donorName: (payload.new as any)?.name,
-            amount: (payload.new as any)?.amount,
-            paymentStatus: (payload.new as any)?.payment_status,
-            moderationStatus: (payload.new as any)?.moderation_status,
-            isHyperemote: (payload.new as any)?.is_hyperemote,
-            messageVisible: (payload.new as any)?.message_visible,
-            old: payload.old ? { 
-              paymentStatus: (payload.old as any).payment_status,
-              moderationStatus: (payload.old as any).moderation_status
-            } : null
-          });
+    const wsUrl = `wss://vsevsjvtrshgeiudrnth.supabase.co/functions/v1/obs-alerts-ws?token=${obsToken}`;
+    const ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+      console.log('🚀 WebSocket connected successfully');
+      setConnectionStatus('connected');
+      reconnectAttemptsRef.current = 0;
+      wsRef.current = ws;
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const message: WebSocketMessage = JSON.parse(event.data);
+        console.log('📨 WebSocket message received:', message);
+
+        switch (message.type) {
+          case 'connection_ack':
+            console.log('✅ Connection acknowledged:', message.message);
+            break;
           
-          const newDonation = payload.new as Donation;
-          
-          // Check if this donation should trigger an alert
-          const shouldShowAlert = (donation: Donation) => {
-            // Must have successful payment and be visible
-            if (donation.payment_status !== 'success' || donation.message_visible === false) {
-              console.log('❌ Alert blocked - payment/visibility:', { 
-                paymentStatus: donation.payment_status, 
-                messageVisible: donation.message_visible 
-              });
-              return false;
-            }
-            
-            // Must be approved or auto-approved
-            if (!['approved', 'auto_approved'].includes(donation.moderation_status || '')) {
-              console.log('❌ Alert blocked - moderation:', donation.moderation_status);
-              return false;
-            }
-            
-            console.log('✅ Alert conditions met for:', donation.name);
-            return true;
-          };
-          
-          if (payload.eventType === 'INSERT') {
-            console.log('➕ INSERT - New donation received:', newDonation.name, newDonation.amount);
-            
-            // Only show INSERT alerts for auto-approved donations (hyperemotes)
-            if (shouldShowAlert(newDonation)) {
-              console.log('🎉 INSERT - Adding auto-approved donation to alert queue!', {
-                name: newDonation.name,
-                amount: newDonation.amount,
-                isHyperemote: newDonation.is_hyperemote,
-                moderationStatus: newDonation.moderation_status
-              });
+          case 'donation_approved':
+            if (message.donation) {
+              console.log('🎉 New donation alert:', message.donation.name, message.donation.amount);
               setAlertQueue(prev => [...prev, { 
-                donation: newDonation, 
+                donation: message.donation!,
                 timestamp: Date.now() 
               }]);
-            } else {
-              console.log('❌ INSERT - Not showing alert (probably pending approval):', {
-                moderationStatus: newDonation.moderation_status,
-                paymentStatus: newDonation.payment_status
-              });
             }
-          }
+            break;
           
-          if (payload.eventType === 'UPDATE') {
-            const oldDonation = payload.old as Donation;
-            
-            // Only show UPDATE alerts when moderation status changes from pending to approved
-            const wasNotApproved = oldDonation.moderation_status === 'pending' || oldDonation.moderation_status === 'rejected' || !oldDonation.moderation_status;
-            const nowApproved = newDonation.moderation_status === 'approved' || newDonation.moderation_status === 'auto_approved';
-            const justApproved = wasNotApproved && nowApproved;
-            
-            console.log('🔄 UPDATE - Checking if manually approved:', { 
-              name: newDonation.name,
-              amount: newDonation.amount,
-              justApproved,
-              oldModerationStatus: oldDonation.moderation_status,
-              newModerationStatus: newDonation.moderation_status
-            });
-            
-            if (justApproved && shouldShowAlert(newDonation)) {
-              console.log('🎉 UPDATE - Manually approved donation, adding to alert queue!', {
-                name: newDonation.name,
-                amount: newDonation.amount
-              });
-              setAlertQueue(prev => [...prev, { 
-                donation: newDonation, 
-                timestamp: Date.now() 
-              }]);
-            } else {
-              console.log('❌ UPDATE - Not showing alert (not a manual approval)');
-            }
-          }
+          case 'error':
+            console.error('❌ WebSocket error message:', message.message);
+            break;
         }
-      )
-      .subscribe((status) => {
-        console.log('🔗 Ankit Alerts subscription status:', status);
-        if (status === 'SUBSCRIBED') {
-          setConnectionStatus('connected');
-          console.log('✅ Alerts real-time connection established!');
-        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-          console.error('❌ Alerts subscription failed:', status);
-          setConnectionStatus('disconnected');
-        }
-      });
-
-    channelRef.current = channel;
-    
-    return () => {
-      console.log('🔌 Cleaning up alerts subscription');
-      if (channel) {
-        supabase.removeChannel(channel);
+      } catch (error) {
+        console.error('❌ Error parsing WebSocket message:', error);
       }
     };
-  }, [streamer?.id, enabled]); // Only depend on streamer ID and enabled state
 
-  // Initial token validation
+    ws.onclose = (event) => {
+      console.log('🔌 WebSocket disconnected:', event.code, event.reason);
+      setConnectionStatus('disconnected');
+      wsRef.current = null;
+      
+      // Attempt to reconnect if not too many attempts
+      if (reconnectAttemptsRef.current < MAX_RECONNECT_ATTEMPTS) {
+        reconnectAttemptsRef.current++;
+        const delay = RECONNECT_DELAY * reconnectAttemptsRef.current;
+        console.log(`📡 Scheduling reconnection attempt ${reconnectAttemptsRef.current}/${MAX_RECONNECT_ATTEMPTS} in ${delay}ms`);
+        
+        reconnectTimeoutRef.current = setTimeout(() => {
+          connectWebSocket();
+        }, delay);
+      } else {
+        console.error('❌ Max reconnection attempts reached');
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error('❌ WebSocket error:', error);
+      setConnectionStatus('disconnected');
+    };
+
+  }, [obsToken, enabled]);
+
+  // Initial setup
   useEffect(() => {
     validateToken();
   }, [validateToken]);
 
-  // Token validation only happens once on mount and on connection errors
-  // No periodic validation needed - use real-time connection status instead
-
-  // Cleanup effect
+  // Connect WebSocket when token is valid
   useEffect(() => {
-    return cleanup;
-  }, [cleanup]);
+    if (isValidToken && enabled) {
+      connectWebSocket();
+    }
 
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+    };
+  }, [isValidToken, enabled, connectWebSocket]);
 
-  // Process alert queue with enhanced debugging
+  // Process alert queue
   useEffect(() => {
     if (!currentAlert && alertQueue.length > 0) {
       const nextAlert = alertQueue[0];
@@ -349,16 +252,13 @@ const AnkitAlerts = () => {
     
     let totalTime;
     if (currentAlert.donation.is_hyperemote) {
-      // Hyperemotes show for 10 seconds
-      totalTime = 10000;
+      totalTime = 10000; // 10 seconds for hyperemotes
     } else if (currentAlert.donation.voice_message_url) {
-      // Voice messages show for 4 seconds
-      totalTime = 4000;
+      totalTime = 4000; // 4 seconds for voice messages
     } else {
-      // Regular messages: typing time + display time
       const messageLength = currentAlert.donation.message?.length || 0;
-      const typingTime = messageLength * 100; // 100ms per character
-      const displayTime = 3000; // 3 seconds after typing completes
+      const typingTime = messageLength * 100;
+      const displayTime = 3000;
       totalTime = typingTime + displayTime;
     }
     
@@ -473,83 +373,82 @@ const AnkitAlerts = () => {
       `}</style>
       
       <div className="min-h-screen bg-transparent overflow-hidden relative">
+        {/* Connection Status Debug Info */}
+        <div className="fixed top-4 right-4 text-xs text-white bg-black bg-opacity-50 p-2 rounded">
+          WebSocket: {connectionStatus} | Queue: {alertQueue.length}
+        </div>
+
         {currentAlert && currentAlert.donation.is_hyperemote && (
           <div className="fixed inset-0 pointer-events-none">
-            {/* Generate multiple emotes with different animations */}
             {Array.from({ length: 12 }, (_, index) => {
               const emote = hyperemotes[index % hyperemotes.length];
               const animations = ['floatUp', 'floatUpLeft', 'floatUpRight', 'spiralUp'];
               const animationType = animations[index % animations.length];
-              const delay = (index % 4) * 1; // Stagger the start times more
-              const duration = 10; // Fixed 10 second duration for all emotes
-              const leftPosition = 10 + (index * 7) % 80; // Spread across screen width
-              
+              const duration = 8 + Math.random() * 4;
+              const delay = Math.random() * 2;
+              const horizontalOffset = (Math.random() - 0.5) * 200;
+
               return (
-                <img
-                  key={`${emote.id}-${index}-${currentAlert.timestamp}`}
-                  src={emote.src}
-                  alt={emote.name}
-                  className="absolute w-20 h-20"
+                <div
+                  key={`${currentAlert.timestamp}-${index}`}
+                  className="absolute"
                   style={{
-                    left: `${leftPosition}%`,
-                    animation: `${animationType} ${duration}s ease-in-out ${delay}s both`,
-                    zIndex: 10 + index
+                    left: `${20 + (index * 7)}%`,
+                    animationName: animationType,
+                    animationDuration: `${duration}s`,
+                    animationDelay: `${delay}s`,
+                    animationTimingFunction: 'ease-out',
+                    animationFillMode: 'both',
+                    transform: `translateX(${horizontalOffset}px)`
                   }}
-                />
+                >
+                  <img 
+                    src={emote.src} 
+                    alt={emote.name} 
+                    className="w-16 h-16 object-contain"
+                    style={{
+                      filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.3))'
+                    }}
+                  />
+                </div>
               );
             })}
           </div>
         )}
-        
+
         {currentAlert && !currentAlert.donation.is_hyperemote && (
-          // Regular Message Display
-          <div className="fixed inset-x-0 bottom-6 flex items-center justify-center bg-transparent">
-            <div 
-              className="p-4 rounded-xl shadow-xl text-center animate-fadeIn text-white"
-              style={{ 
-                background: currentAlert.donation.voice_message_url 
-                  ? "linear-gradient(135deg, #007BFF, #8A2BE2)" 
-                  : "linear-gradient(135deg, #1E90FF, #BF00FF)",
-                minWidth: "280px",
-                maxWidth: "400px"
-              }}
-            >
-              <div className="mb-2 text-lg font-bold">
-                🎉 {currentAlert.donation.name} donated ₹{currentAlert.donation.amount}!
+          <div className="fixed inset-0 flex items-center justify-center pointer-events-none">
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-8 rounded-lg shadow-2xl animate-fadeIn max-w-2xl mx-4">
+              <div className="text-center">
+                <h2 className="text-4xl font-bold mb-4">💰 New Donation!</h2>
+                <div className="text-2xl font-semibold mb-2">{currentAlert.donation.name}</div>
+                <div className="text-3xl font-bold text-yellow-300 mb-4">
+                  ₹{currentAlert.donation.amount}
+                </div>
+                
+                {currentAlert.donation.voice_message_url ? (
+                  <div className="text-lg">
+                    🎵 Voice Message
+                    <audio 
+                      src={currentAlert.donation.voice_message_url} 
+                      autoPlay 
+                      className="hidden"
+                    />
+                  </div>
+                ) : (
+                  currentAlert.donation.message && (
+                    <div className="text-lg italic min-h-[2rem]">
+                      "{displayedMessage}"
+                    </div>
+                  )
+                )}
               </div>
-              {currentAlert.donation.message && (
-                <div className="text-sm italic border-t border-white/20 pt-2 break-words whitespace-pre-wrap">
-                  "{displayedMessage}"
-                </div>
-              )}
-              {currentAlert.donation.voice_message_url && (
-                <div className="mt-2 text-xs bg-white/20 rounded-full px-3 py-1 inline-block">
-                  🎤 Voice Message
-                </div>
-              )}
             </div>
           </div>
         )}
-
-        {/* Voice Message Player */}
-        {currentAlert?.donation.voice_message_url && (
-          <audio
-            autoPlay
-            className="hidden"
-            onEnded={() => console.log('Voice message finished')}
-          >
-            <source src={currentAlert.donation.voice_message_url} type="audio/webm" />
-            <source src={currentAlert.donation.voice_message_url} type="audio/mpeg" />
-          </audio>
-        )}
-
-        {/* Connection Status Debug */}
-        <div className="fixed bottom-4 right-4 text-white text-xs bg-black/50 p-2 rounded">
-          Status: {connectionStatus} | Streamer: {streamer?.streamer_name} | Queue: {alertQueue.length}
-        </div>
       </div>
     </>
   );
 };
 
-export default AnkitAlerts;
+export default AnkitAlertsWebSocket;
