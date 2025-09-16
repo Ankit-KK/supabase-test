@@ -1,432 +1,148 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useSimpleAlerts } from '@/hooks/useSimpleAlerts';
+import { AlertDisplay } from '@/components/AlertDisplay';
+import { Button } from '@/components/ui/button';
 
-interface Donation {
+interface StreamerInfo {
   id: string;
-  name: string;
-  amount: number;
-  message?: string;
-  created_at: string;
-  is_hyperemote?: boolean;
-  voice_message_url?: string;
-  payment_status?: string;
-  moderation_status?: string;
-}
-
-interface Streamer {
-  id: string;
-  user_id: string;
   streamer_slug: string;
   streamer_name: string;
   brand_color: string;
-  obs_token: string;
-}
-
-interface AlertQueueItem {
-  donation: Donation;
-  timestamp: number;
+  brand_logo_url?: string;
 }
 
 const AnkitAlertsRealtime = () => {
-  const { token: pathToken } = useParams<{ token: string }>();
-  const [searchParams] = useSearchParams();
-  const obsToken = (pathToken && pathToken !== 'undefined' && pathToken !== 'null')
-    ? pathToken
-    : (searchParams.get('token') || searchParams.get('t') || '');
-  
-  const [streamer, setStreamer] = useState<Streamer | null>(null);
-  const [currentAlert, setCurrentAlert] = useState<AlertQueueItem | null>(null);
-  const [alertQueue, setAlertQueue] = useState<AlertQueueItem[]>([]);
+  const { token } = useParams<{ token: string }>();
+  const [streamerInfo, setStreamerInfo] = useState<StreamerInfo | null>(null);
   const [isValidToken, setIsValidToken] = useState<boolean | null>(null);
-  const [displayedMessage, setDisplayedMessage] = useState("");
-  const [connectionState, setConnectionState] = useState<'connecting' | 'connected' | 'disconnected'>('disconnected');
-  
-  // Hyperemote configurations
-  const hyperemotes = [
-    { id: 'happy', src: '/lovable-uploads/2f07c754-6bf7-40e6-8a98-f181f991614a.png', name: 'Happy' },
-    { id: 'peaceful', src: '/lovable-uploads/292d1bf8-f7af-4bf3-8540-9e79fda428c2.png', name: 'Peaceful' },
-    { id: 'disappointed', src: '/lovable-uploads/a62460bb-2981-4570-8bce-51472286d43f.png', name: 'Disappointed' },
-    { id: 'upset', src: '/lovable-uploads/2016b23f-1791-4159-b604-4ec5ecbf505e.png', name: 'Upset' },
-    { id: 'wink', src: '/lovable-uploads/2e0cb8ea-caa0-4039-a256-b14849269d25.png', name: 'Wink' },
-    { id: 'surprised', src: '/lovable-uploads/6c1ab8e8-8d6f-48bf-9111-059acae74a34.png', name: 'Surprised' },
-    { id: 'excited', src: '/lovable-uploads/5459b5bb-a628-4c02-a9ca-4b374fe1fe38.png', name: 'Excited' },
-    { id: 'love', src: '/lovable-uploads/33359350-7d33-4384-81d9-99fcf0220f60.png', name: 'Love' },
-    { id: 'sleepy', src: '/lovable-uploads/cd661d15-1109-41d5-9908-70531edc117c.png', name: 'Sleepy' },
-    { id: 'crying', src: '/lovable-uploads/2d18e120-71ab-48bf-8ead-36620a7546a8.png', name: 'Crying' },
-  ];
+  const [showDebug, setShowDebug] = useState(false);
 
-  const enabled = searchParams.get('enabled') !== 'false';
-
-  // Token validation function
-  const validateToken = useCallback(async () => {
-    if (!obsToken) {
-      setIsValidToken(false);
-      return false;
-    }
-
-    try {
-      console.log('🔍 Validating OBS token...');
-      const { data, error } = await supabase
-        .rpc('get_streamer_by_obs_token_v2', { token: obsToken });
-
-      if (error || !data) {
-        console.error('❌ Token validation failed:', error);
-        setIsValidToken(false);
-        return false;
-      }
-      
-      const rows = Array.isArray(data) ? data : (data ? [data] : []);
-      if (!rows || rows.length === 0) {
-        console.error('❌ No streamer found for token');
-        setIsValidToken(false);
-        return false;
-      }
-
-      // Verify this is for ankit
-      if (rows[0].streamer_slug !== 'ankit') {
-        console.error('❌ This token is not valid for Ankit');
-        setIsValidToken(false);
-        return false;
-      }
-
-      console.log('✅ Token validation successful:', rows[0].streamer_name);
-      setStreamer(rows[0]);
-      setIsValidToken(true);
-      return true;
-    } catch (error) {
-      console.error('❌ Error validating token:', error);
-      setIsValidToken(false);
-      return false;
-    }
-  }, [obsToken]);
-
-  // Polling-based alert system for OBS compatibility
-  const [shownDonationIds, setShownDonationIds] = useState<Set<string>>(new Set());
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-  
+  // Validate token and get streamer info
   useEffect(() => {
-    if (!enabled || !isValidToken || !streamer) return;
+    const validateToken = async () => {
+      if (!token) {
+        console.log('❌ No token provided');
+        setIsValidToken(false);
+        return;
+      }
 
-    console.log('🔄 Setting up polling-based alert system for ankit_donations...');
-    setConnectionState('connecting');
+      console.log('🔍 Validating OBS token...');
 
-    const pollForAlerts = async () => {
       try {
-        const { data, error } = await supabase
-          .from('ankit_donations')
-          .select('*')
-          .eq('streamer_id', streamer.id)
-          .eq('payment_status', 'success')
-          .in('moderation_status', ['approved', 'auto_approved'])
-          .order('created_at', { ascending: false })
-          .limit(10);
+        const { data, error } = await supabase.rpc('validate_obs_token_secure', {
+          token_to_check: token
+        });
 
         if (error) {
-          console.error('❌ Error polling for alerts:', error);
-          setConnectionState('disconnected');
+          console.error('❌ Token validation error:', error);
+          setIsValidToken(false);
           return;
         }
 
-        setConnectionState('connected');
-        console.log(`📊 Found ${data?.length || 0} approved donations, shown IDs: ${shownDonationIds.size}`);
-
-        if (data && data.length > 0) {
-          let donationsToShow: any[] = [];
-
-          if (isInitialLoad) {
-            // On first load: show last 3 recent donations for immediate feedback
-            donationsToShow = data.slice(0, 3);
-            console.log(`🚀 Initial load: showing ${donationsToShow.length} recent donations`);
-            setIsInitialLoad(false);
-          } else {
-            // On subsequent polls: only show donations we haven't seen before
-            donationsToShow = data.filter(donation => !shownDonationIds.has(donation.id));
-            console.log(`🔍 Polling: found ${donationsToShow.length} new donations out of ${data.length} total`);
-          }
-
-          if (donationsToShow.length > 0) {
-            // Process donations in chronological order (oldest first)
-            const sortedNew = donationsToShow
-              .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-
-            sortedNew.forEach(donation => {
-              console.log('🎉 Queuing donation alert:', donation.name, donation.amount, donation.id.slice(-8));
-              setAlertQueue(prev => [...prev, { 
-                donation: donation as Donation,
-                timestamp: Date.now() 
-              }]);
-            });
-
-            // Track all shown donations
-            setShownDonationIds(prev => {
-              const newSet = new Set(prev);
-              donationsToShow.forEach(donation => newSet.add(donation.id));
-              return newSet;
-            });
-          }
+        if (data && data.length > 0 && data[0].is_valid) {
+          console.log('✅ Token validation successful:', data[0].streamer_name);
+          setStreamerInfo({
+            id: data[0].streamer_id,
+            streamer_slug: data[0].streamer_slug,
+            streamer_name: data[0].streamer_name,
+            brand_color: data[0].brand_color,
+            brand_logo_url: data[0].brand_logo_url
+          });
+          setIsValidToken(true);
+        } else {
+          console.log('❌ Invalid token');
+          setIsValidToken(false);
         }
       } catch (error) {
-        console.error('❌ Error in polling:', error);
-        setConnectionState('disconnected');
+        console.error('❌ Token validation failed:', error);
+        setIsValidToken(false);
       }
     };
 
-    // Initial poll
-    pollForAlerts();
-
-    // Set up polling interval (every 2 seconds)
-    const interval = setInterval(pollForAlerts, 2000);
-
-    return () => {
-      console.log('🔌 Cleaning up polling interval');
-      clearInterval(interval);
-      setConnectionState('disconnected');
-    };
-  }, [enabled, isValidToken, streamer, shownDonationIds.size, isInitialLoad]);
-
-  // Initial setup
-  useEffect(() => {
     validateToken();
-  }, [validateToken]);
+  }, [token]);
 
-  // Process alert queue
-  useEffect(() => {
-    if (!currentAlert && alertQueue.length > 0) {
-      const nextAlert = alertQueue[0];
-      console.log('🎬 Processing next alert from queue:', {
-        donorName: nextAlert.donation.name,
-        amount: nextAlert.donation.amount,
-        queueLength: alertQueue.length,
-        isHyperemote: nextAlert.donation.is_hyperemote
-      });
-      setCurrentAlert(nextAlert);
-      setAlertQueue(prev => prev.slice(1));
-    }
-  }, [alertQueue, currentAlert]);
+  // Use the simple alerts system
+  const {
+    currentAlert,
+    isVisible,
+    connectionStatus,
+    triggerTestAlert
+  } = useSimpleAlerts({
+    streamerId: streamerInfo?.id || '',
+    tableName: 'ankit_donations',
+    pollInterval: 2000
+  });
 
-  // Typing effect for donation message
-  useEffect(() => {
-    if (!currentAlert?.donation.message) {
-      setDisplayedMessage("");
-      return;
-    }
-
-    const fullMessage = currentAlert.donation.message;
-    setDisplayedMessage("");
-    let index = 0;
-
-    const interval = setInterval(() => {
-      setDisplayedMessage(fullMessage.slice(0, index + 1));
-      index++;
-      if (index === fullMessage.length) clearInterval(interval);
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, [currentAlert]);
-
-  // Auto-clear current alert after display time
-  useEffect(() => {
-    if (!currentAlert) return;
-    
-    let totalTime;
-    if (currentAlert.donation.is_hyperemote) {
-      totalTime = 10000; // 10 seconds for hyperemotes
-    } else if (currentAlert.donation.voice_message_url) {
-      totalTime = 4000; // 4 seconds for voice messages
-    } else {
-      const messageLength = currentAlert.donation.message?.length || 0;
-      const typingTime = messageLength * 100;
-      const displayTime = 3000;
-      totalTime = typingTime + displayTime;
-    }
-    
-    const timer = setTimeout(() => {
-      setCurrentAlert(null);
-      setDisplayedMessage("");
-    }, totalTime);
-    return () => clearTimeout(timer);
-  }, [currentAlert]);
-
+  // Loading state
   if (isValidToken === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-transparent">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-      </div>
-    );
-  }
-
-  if (!isValidToken) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-transparent">
-        <div className="text-white text-center">
-          <h1 className="text-2xl font-bold mb-2">Invalid OBS Token</h1>
-          <p className="text-gray-300">Please check your OBS browser source URL</p>
+      <div className="flex items-center justify-center min-h-screen bg-black text-white">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-lg">Validating OBS token...</p>
         </div>
       </div>
     );
   }
 
-  if (!enabled) {
-    return <div className="min-h-screen bg-transparent"></div>;
+  // Invalid token
+  if (!isValidToken) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-red-900 text-white">
+        <div className="text-center">
+          <p className="text-2xl font-bold mb-4">❌ Invalid OBS Token</p>
+          <p className="text-lg">Please check your OBS browser source URL.</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <>
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes floatUp {
-          0% { 
-            opacity: 0; 
-            transform: translateY(100vh) scale(0.5) rotate(0deg); 
-          }
-          20% { 
-            opacity: 1; 
-            transform: translateY(80vh) scale(1) rotate(180deg); 
-          }
-          80% { 
-            opacity: 1; 
-            transform: translateY(20vh) scale(1.2) rotate(340deg); 
-          }
-          100% { 
-            opacity: 0; 
-            transform: translateY(-10vh) scale(0.8) rotate(360deg); 
-          }
-        }
-        @keyframes floatUpLeft {
-          0% { 
-            opacity: 0; 
-            transform: translateY(100vh) translateX(0) scale(0.5) rotate(0deg); 
-          }
-          50% { 
-            opacity: 1; 
-            transform: translateY(50vh) translateX(-100px) scale(1.1) rotate(180deg); 
-          }
-          100% { 
-            opacity: 0; 
-            transform: translateY(-10vh) translateX(-200px) scale(0.7) rotate(360deg); 
-          }
-        }
-        @keyframes floatUpRight {
-          0% { 
-            opacity: 0; 
-            transform: translateY(100vh) translateX(0) scale(0.5) rotate(0deg); 
-          }
-          50% { 
-            opacity: 1; 
-            transform: translateY(50vh) translateX(100px) scale(1.1) rotate(-180deg); 
-          }
-          100% { 
-            opacity: 0; 
-            transform: translateY(-10vh) translateX(200px) scale(0.7) rotate(-360deg); 
-          }
-        }
-        @keyframes spiralUp {
-          0% { 
-            opacity: 0; 
-            transform: translateY(100vh) rotateY(0deg) scale(0.5); 
-          }
-          25% { 
-            opacity: 1; 
-            transform: translateY(75vh) rotateY(90deg) scale(1); 
-          }
-          50% { 
-            opacity: 1; 
-            transform: translateY(50vh) rotateY(180deg) scale(1.2); 
-          }
-          75% { 
-            opacity: 1; 
-            transform: translateY(25vh) rotateY(270deg) scale(1); 
-          }
-          100% { 
-            opacity: 0; 
-            transform: translateY(-10vh) rotateY(360deg) scale(0.8); 
-          }
-        }
-        .animate-fadeIn {
-          animation: fadeIn 0.6s ease-out;
-        }
-      `}</style>
-      
-      <div className="min-h-screen bg-transparent overflow-hidden relative">
-        {/* Connection Status Debug Info */}
-        <div className="fixed top-4 right-4 text-xs text-white bg-black bg-opacity-50 p-2 rounded">
-          Polling: {connectionState} | Queue: {alertQueue.length} | Shown: {shownDonationIds.size} | Init: {isInitialLoad ? 'Y' : 'N'}
+    <div className="min-h-screen bg-black relative">
+      {/* Debug Info */}
+      {showDebug && (
+        <div className="fixed top-4 right-4 bg-black/80 text-white p-4 rounded-lg text-xs font-mono z-40">
+          <div>Status: {connectionStatus}</div>
+          <div>Streamer: {streamerInfo?.streamer_name}</div>
+          <div>Current Alert: {currentAlert?.name || 'None'}</div>
+          <div>Visible: {isVisible ? 'Yes' : 'No'}</div>
+          <Button 
+            onClick={triggerTestAlert}
+            className="mt-2 text-xs"
+            size="sm"
+          >
+            Test Alert
+          </Button>
         </div>
+      )}
 
-        {currentAlert && currentAlert.donation.is_hyperemote && (
-          <div className="fixed inset-0 pointer-events-none">
-            {Array.from({ length: 12 }, (_, index) => {
-              const emote = hyperemotes[index % hyperemotes.length];
-              const animations = ['floatUp', 'floatUpLeft', 'floatUpRight', 'spiralUp'];
-              const animationType = animations[index % animations.length];
-              const duration = 8 + Math.random() * 4;
-              const delay = Math.random() * 2;
-              const horizontalOffset = (Math.random() - 0.5) * 200;
+      {/* Debug Toggle */}
+      <button
+        onClick={() => setShowDebug(!showDebug)}
+        className="fixed bottom-4 right-4 bg-gray-800 text-white px-3 py-1 rounded text-xs z-40"
+      >
+        Debug
+      </button>
 
-              return (
-                <div
-                  key={`${currentAlert.timestamp}-${index}`}
-                  className="absolute"
-                  style={{
-                    left: `${20 + (index * 7)}%`,
-                    animationName: animationType,
-                    animationDuration: `${duration}s`,
-                    animationDelay: `${delay}s`,
-                    animationTimingFunction: 'ease-out',
-                    animationFillMode: 'both',
-                    transform: `translateX(${horizontalOffset}px)`
-                  }}
-                >
-                  <img 
-                    src={emote.src} 
-                    alt={emote.name} 
-                    className="w-16 h-16 object-contain"
-                    style={{
-                      filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.3))'
-                    }}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {currentAlert && !currentAlert.donation.is_hyperemote && (
-          <div className="fixed inset-0 flex items-center justify-center pointer-events-none">
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-8 rounded-lg shadow-2xl animate-fadeIn max-w-2xl mx-4">
-              <div className="text-center">
-                <h2 className="text-4xl font-bold mb-4">💰 New Donation!</h2>
-                <div className="text-2xl font-semibold mb-2">{currentAlert.donation.name}</div>
-                <div className="text-3xl font-bold text-yellow-300 mb-4">
-                  ₹{currentAlert.donation.amount}
-                </div>
-                
-                {currentAlert.donation.voice_message_url ? (
-                  <div className="text-lg">
-                    🎵 Voice Message
-                    <audio 
-                      src={currentAlert.donation.voice_message_url} 
-                      autoPlay 
-                      className="hidden"
-                    />
-                  </div>
-                ) : (
-                  currentAlert.donation.message && (
-                    <div className="text-lg italic min-h-[2rem]">
-                      "{displayedMessage}"
-                    </div>
-                  )
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+      {/* Connection Status Indicator */}
+      <div className="fixed top-4 left-4 z-40">
+        <div className={`w-3 h-3 rounded-full ${
+          connectionStatus === 'connected' ? 'bg-green-500' : 
+          connectionStatus === 'error' ? 'bg-red-500' : 'bg-yellow-500'
+        }`}></div>
       </div>
-    </>
+
+      {/* Alert Display */}
+      <AlertDisplay
+        donation={currentAlert}
+        isVisible={isVisible}
+        streamerBrandColor={streamerInfo?.brand_color}
+        streamerName={streamerInfo?.streamer_name}
+      />
+    </div>
   );
 };
 
