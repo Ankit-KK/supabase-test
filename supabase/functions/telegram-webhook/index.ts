@@ -352,6 +352,21 @@ async function approveDonation(donationId: string, userId: string, chatId: numbe
       if (chiaDonation.voice_message_url) {
         await sendAudioFile(chatId, chiaDonation.voice_message_url, botToken, `Voice from ${chiaDonation.name} (₹${chiaDonation.amount})`);
       }
+      
+      // Broadcast WebSocket alert for OBS
+      console.log('📡 Broadcasting WebSocket alert for approved Chia Gaming donation');
+      try {
+        await supabase.functions.invoke('broadcast-alert', {
+          body: { 
+            streamer_slug: 'chia_gaming',
+            donation: chiaDonation
+          }
+        });
+        console.log('✅ WebSocket alert broadcast successful');
+      } catch (wsError) {
+        console.error('❌ WebSocket alert broadcast failed:', wsError);
+      }
+      
       await notifyModerators(chiaDonation.streamers.id, `✅ Donation approved by moderator\n💰 ₹${chiaDonation.amount} from ${chiaDonation.name}` + (chiaDonation.message ? `\n💬 ${chiaDonation.message}` : ''), supabase, botToken, userId);
       return;
     }
@@ -410,6 +425,21 @@ async function approveDonation(donationId: string, userId: string, chatId: numbe
       `⏰ <b>Approved at:</b> ${new Date().toLocaleString()}\n\n` +
       `The donation will now appear in OBS alerts! 🎉`;
     await editMessage(chatId, messageId, successText, botToken, { inline_keyboard: [] });
+    
+    // Broadcast WebSocket alert for OBS
+    console.log('📡 Broadcasting WebSocket alert for approved Ankit donation');
+    try {
+      await supabase.functions.invoke('broadcast-alert', {
+        body: { 
+          streamer_slug: 'ankit',
+          donation: ankitDonation
+        }
+      });
+      console.log('✅ WebSocket alert broadcast successful');
+    } catch (wsError) {
+      console.error('❌ WebSocket alert broadcast failed:', wsError);
+    }
+    
     await notifyModerators(ankitDonation.streamer_id, `✅ Donation approved by moderator\n💰 ₹${ankitDonation.amount} from ${ankitDonation.name}`, supabase, botToken, userId);
 
   } catch (error) {
