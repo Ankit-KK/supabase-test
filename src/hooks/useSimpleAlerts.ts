@@ -85,16 +85,22 @@ export const useSimpleAlerts = ({ streamerId, tableName, enabled = true }: Alert
       setConnectionStatus('connected');
 
       if (!data || data.length === 0) {
-        console.log('📭 No donations found');
+        console.log('📭 No donations found matching criteria');
         return;
       }
 
       const latestDonation = data[0] as Donation;
-      console.log('📦 Latest donation:', latestDonation);
-      console.log('🔍 Debug state - lastShownId:', lastShownId, 'currentAlert:', !!currentAlert, 'isFirstLoad:', isFirstLoad);
+      console.log('📦 Latest donation found:', {
+        id: latestDonation.id,
+        name: latestDonation.name,
+        amount: latestDonation.amount,
+        created_at: latestDonation.created_at
+      });
+      console.log('🔍 State check - lastShownId:', lastShownId, 'isFirstLoad:', isFirstLoad);
 
-      // On first load, show the latest donation if we haven't shown any alerts yet
-      if (isFirstLoad && !currentAlert) {
+      // On first load, always show the latest donation if it exists
+      if (isFirstLoad) {
+        console.log('🎬 First load - showing latest donation');
         showAlert(latestDonation, 'First load');
       }
 
@@ -102,7 +108,7 @@ export const useSimpleAlerts = ({ streamerId, tableName, enabled = true }: Alert
       console.error('❌ Fetch error:', error);
       setConnectionStatus('error');
     }
-  }, [streamerId, tableName, lastShownId, currentAlert, enabled, isFirstLoad, showAlert]);
+  }, [streamerId, tableName, enabled, isFirstLoad]);
 
   // Set up real-time subscription
   useEffect(() => {
@@ -139,8 +145,16 @@ export const useSimpleAlerts = ({ streamerId, tableName, enabled = true }: Alert
               donation.payment_status === 'success' &&
               (donation.moderation_status === 'approved' || donation.moderation_status === 'auto_approved') &&
               donation.message_visible === true &&
-              donation.id !== lastShownId &&
-              !currentAlert;
+              donation.id !== lastShownId;
+            
+            console.log('🔍 Real-time alert check:', {
+              donationId: donation.id,
+              paymentStatus: donation.payment_status,
+              moderationStatus: donation.moderation_status,
+              messageVisible: donation.message_visible,
+              lastShownId: lastShownId,
+              shouldAlert: shouldAlert
+            });
             
             if (shouldAlert) {
               const alertDonation: Donation = {
@@ -180,7 +194,7 @@ export const useSimpleAlerts = ({ streamerId, tableName, enabled = true }: Alert
         channelRef.current = null;
       }
     };
-  }, [streamerId, tableName, enabled, fetchLatestDonation, showAlert, lastShownId, currentAlert]);
+  }, [streamerId, tableName, enabled, fetchLatestDonation]);
 
   const triggerTestAlert = useCallback(() => {
     const testAlert: Donation = {
