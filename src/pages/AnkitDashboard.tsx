@@ -13,6 +13,7 @@ import AnkitOBSSettings from '@/components/AnkitOBSSettings';
 import { MessagesModerationPage } from '@/pages/MessagesModerationPage';
 import { ConnectionStatus } from '@/components/ConnectionStatus';
 import { PendingDonationsBadge } from '@/components/PendingDonationsBadge';
+import { RealtimeDebugPanel } from '@/components/RealtimeDebugPanel';
 import { obsTokenCache } from '@/utils/obsTokenCache';
 
 interface Donation {
@@ -174,13 +175,14 @@ const AnkitDashboard = () => {
   // Direct Supabase subscription for dashboard updates
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
 
-  const subscribeToDashboardUpdates = useCallback(() => {
+  // Set up subscription when streamer ID is available - fix dependency loop
+  useEffect(() => {
     if (!stableStreamerId) {
       setConnectionStatus('disconnected');
       return;
     }
 
-    console.log('🔗 Setting up direct Supabase subscription for Ankit dashboard');
+    console.log('🔗 Setting up direct Supabase subscription for Ankit dashboard, streamer ID:', stableStreamerId);
     setConnectionStatus('connecting');
 
     const channel = supabase
@@ -194,28 +196,44 @@ const AnkitDashboard = () => {
           filter: `streamer_id=eq.${stableStreamerId}`
         },
         (payload) => {
-          console.log('📊 Ankit Dashboard received update:', payload.eventType, payload.new);
+          console.log('📊 DASHBOARD UPDATE RECEIVED:', {
+            eventType: payload.eventType,
+            donationId: (payload.new as any)?.id,
+            donorName: (payload.new as any)?.name,
+            amount: (payload.new as any)?.amount,
+            paymentStatus: (payload.new as any)?.payment_status,
+            moderationStatus: (payload.new as any)?.moderation_status,
+            old: payload.old ? { 
+              paymentStatus: (payload.old as any).payment_status,
+              moderationStatus: (payload.old as any).moderation_status
+            } : null
+          });
+          
           const newDonation = payload.new as Donation;
           
-          if (payload.eventType === 'INSERT' && newDonation.payment_status === 'success') {
-            toast({
-              title: "💰 New Donation!",
-              description: `${newDonation.name} donated ₹${newDonation.amount}`,
-              duration: 4000,
-            });
-
-            // Update local state directly instead of refetching
-            setDonations(prev => [newDonation, ...prev]);
-            setTotalAmount(prev => prev + Number(newDonation.amount));
+          if (payload.eventType === 'INSERT') {
+            console.log('➕ New donation inserted:', newDonation.name, newDonation.amount);
             
-            // Update monthly total if it's from this month
-            const donationDate = new Date(newDonation.created_at);
-            const now = new Date();
-            if (donationDate.getMonth() === now.getMonth() && donationDate.getFullYear() === now.getFullYear()) {
-              setMonthlyAmount(prev => prev + Number(newDonation.amount));
+            if (newDonation.payment_status === 'success') {
+              toast({
+                title: "💰 New Donation!",
+                description: `${newDonation.name} donated ₹${newDonation.amount}`,
+                duration: 4000,
+              });
+
+              // Update local state directly instead of refetching
+              setDonations(prev => [newDonation, ...prev]);
+              setTotalAmount(prev => prev + Number(newDonation.amount));
+              
+              // Update monthly total if it's from this month
+              const donationDate = new Date(newDonation.created_at);
+              const now = new Date();
+              if (donationDate.getMonth() === now.getMonth() && donationDate.getFullYear() === now.getFullYear()) {
+                setMonthlyAmount(prev => prev + Number(newDonation.amount));
+              }
             }
             
-            // Update moderation list if it needs moderation
+            // Update moderation list for any new donation
             if (newDonation.moderation_status === 'pending') {
               setModerationDonations(prev => [newDonation, ...prev]);
             }
@@ -223,6 +241,11 @@ const AnkitDashboard = () => {
           
           if (payload.eventType === 'UPDATE') {
             const oldDonation = payload.old as Donation;
+            console.log('🔄 Donation updated:', {
+              name: newDonation.name,
+              paymentChanged: oldDonation.payment_status !== newDonation.payment_status,
+              moderationChanged: oldDonation.moderation_status !== newDonation.moderation_status
+            });
             
             // Check if payment was completed
             if (oldDonation.payment_status !== 'success' && newDonation.payment_status === 'success') {
@@ -232,18 +255,30 @@ const AnkitDashboard = () => {
                 duration: 4000,
               });
               
-              // Update existing donation in state
-              setDonations(prev => prev.map(d => d.id === newDonation.id ? newDonation : d));
+              // Add to total amounts if just confirmed
+              setTotalAmount(prev => prev + Number(newDonation.amount));
+              const donationDate = new Date(newDonation.created_at);
+              const now = new Date();
+              if (donationDate.getMonth() === now.getMonth() && donationDate.getFullYear() === now.getFullYear()) {
+                setMonthlyAmount(prev => prev + Number(newDonation.amount));
+              }
             }
             
-            // Check if donation was approved
-            if (oldDonation.moderation_status !== 'approved' && newDonation.moderation_status === 'approved') {
-              toast({
-                title: "✅ Donation Approved!",
-                description: `${newDonation.name}'s message is now live on OBS`,
-                duration: 4000,
-              });
-              console.log('✅ Donation approved notification shown');
+            // Check if donation was approved/rejected
+            if (oldDonation.moderation_status !== newDonation.moderation_status) {
+              if (newDonation.moderation_status === 'approved' || newDonation.moderation_status === 'auto_approved') {
+                toast({
+                  title: "✅ Donation Approved!",
+                  description: `${newDonation.name}'s message is now live on OBS`,
+                  duration: 4000,
+                });
+              } else if (newDonation.moderation_status === 'rejected') {
+                toast({
+                  title: "❌ Donation Rejected",
+                  description: `${newDonation.name}'s message was rejected`,
+                  duration: 3000,
+                });
+              }
             }
 
             // Update both donation lists in real-time
@@ -256,29 +291,18 @@ const AnkitDashboard = () => {
         console.log('🔗 Ankit Dashboard subscription status:', status);
         if (status === 'SUBSCRIBED') {
           setConnectionStatus('connected');
+          console.log('✅ Dashboard real-time connection established!');
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          console.error('❌ Dashboard subscription failed:', status);
           setConnectionStatus('disconnected');
-          // Retry connection after delay
-          setTimeout(() => {
-            subscribeToDashboardUpdates();
-          }, 5000);
         }
       });
 
-    return channel;
-  }, [stableStreamerId]);
-
-  // Set up subscription when streamer ID is available
-  useEffect(() => {
-    if (stableStreamerId) {
-      const channel = subscribeToDashboardUpdates();
-      return () => {
-        if (channel) {
-          supabase.removeChannel(channel);
-        }
-      };
-    }
-  }, [stableStreamerId, subscribeToDashboardUpdates]);
+    return () => {
+      console.log('🔌 Cleaning up dashboard subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [stableStreamerId]); // Only depend on streamer ID
 
   // Show loading while auth is being determined
   if (loading) {

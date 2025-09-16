@@ -159,14 +159,14 @@ const AnkitAlerts = () => {
     }, delay);
   }, [streamer?.id]);
 
-  // Direct Supabase subscription for alerts
-  const subscribeToAlerts = useCallback(() => {
+  // Set up subscription when streamer is available - fix dependency loop
+  useEffect(() => {
     if (!streamer?.id || !enabled) {
       setConnectionStatus('disconnected');
       return;
     }
 
-    console.log('🔗 Setting up direct Supabase subscription for Ankit alerts');
+    console.log('🔗 Setting up direct Supabase subscription for Ankit alerts, streamer ID:', streamer.id);
     setConnectionStatus('connecting');
 
     const channel = supabase
@@ -180,14 +180,49 @@ const AnkitAlerts = () => {
           filter: `streamer_id=eq.${streamer.id}`
         },
         (payload) => {
-          console.log('🚨 Ankit Alert received:', payload.eventType, payload.new);
+          console.log('🚨 ALERT UPDATE RECEIVED:', {
+            eventType: payload.eventType,
+            donationId: (payload.new as any)?.id,
+            donorName: (payload.new as any)?.name,
+            amount: (payload.new as any)?.amount,
+            paymentStatus: (payload.new as any)?.payment_status,
+            moderationStatus: (payload.new as any)?.moderation_status,
+            isHyperemote: (payload.new as any)?.is_hyperemote,
+            messageVisible: (payload.new as any)?.message_visible,
+            old: payload.old ? { 
+              paymentStatus: (payload.old as any).payment_status,
+              moderationStatus: (payload.old as any).moderation_status
+            } : null
+          });
+          
           const newDonation = payload.new as Donation;
           
-          if (payload.eventType === 'INSERT' && newDonation.payment_status === 'success') {
-            console.log('✅ New donation for alerts:', { name: newDonation.name, amount: newDonation.amount });
+          // Check if this donation should trigger an alert
+          const shouldShowAlert = (donation: Donation) => {
+            // Must have successful payment and be visible
+            if (donation.payment_status !== 'success' || donation.message_visible === false) {
+              console.log('❌ Alert blocked - payment/visibility:', { 
+                paymentStatus: donation.payment_status, 
+                messageVisible: donation.message_visible 
+              });
+              return false;
+            }
             
-            // Only show approved donations or auto-approved hyperemotes
-            if (newDonation.moderation_status === 'approved' || newDonation.moderation_status === 'auto_approved') {
+            // Must be approved or auto-approved
+            if (!['approved', 'auto_approved'].includes(donation.moderation_status || '')) {
+              console.log('❌ Alert blocked - moderation:', donation.moderation_status);
+              return false;
+            }
+            
+            console.log('✅ Alert conditions met for:', donation.name);
+            return true;
+          };
+          
+          if (payload.eventType === 'INSERT') {
+            console.log('➕ New donation for alerts:', newDonation.name, newDonation.amount);
+            
+            if (shouldShowAlert(newDonation)) {
+              console.log('🎯 Adding new donation to alert queue');
               setAlertQueue(prev => [...prev, { 
                 donation: newDonation, 
                 timestamp: Date.now() 
@@ -195,29 +230,28 @@ const AnkitAlerts = () => {
             }
           }
           
-          if (payload.eventType === 'UPDATE' && newDonation.payment_status === 'success') {
+          if (payload.eventType === 'UPDATE') {
             const oldDonation = payload.old as Donation;
             
             // Show alert if payment was completed OR if donation was just approved
-            const paymentCompleted = oldDonation.payment_status !== 'success';
-            const justApproved = oldDonation.moderation_status !== 'approved' && 
-                               newDonation.moderation_status === 'approved';
+            const paymentCompleted = oldDonation.payment_status !== 'success' && newDonation.payment_status === 'success';
+            const justApproved = !['approved', 'auto_approved'].includes(oldDonation.moderation_status || '') && 
+                               ['approved', 'auto_approved'].includes(newDonation.moderation_status || '');
             
-            if (paymentCompleted || justApproved) {
-              console.log('✅ Updated donation triggers alert:', { 
-                name: newDonation.name, 
-                amount: newDonation.amount,
-                paymentCompleted,
-                justApproved
-              });
-              
-              // Only show approved donations or auto-approved hyperemotes
-              if (newDonation.moderation_status === 'approved' || newDonation.moderation_status === 'auto_approved') {
-                setAlertQueue(prev => [...prev, { 
-                  donation: newDonation, 
-                  timestamp: Date.now() 
-                }]);
-              }
+            console.log('🔄 Checking update conditions:', { 
+              name: newDonation.name,
+              paymentCompleted,
+              justApproved,
+              oldModerationStatus: oldDonation.moderation_status,
+              newModerationStatus: newDonation.moderation_status
+            });
+            
+            if ((paymentCompleted || justApproved) && shouldShowAlert(newDonation)) {
+              console.log('🎯 Adding updated donation to alert queue');
+              setAlertQueue(prev => [...prev, { 
+                donation: newDonation, 
+                timestamp: Date.now() 
+              }]);
             }
           }
         }
@@ -226,30 +260,22 @@ const AnkitAlerts = () => {
         console.log('🔗 Ankit Alerts subscription status:', status);
         if (status === 'SUBSCRIBED') {
           setConnectionStatus('connected');
+          console.log('✅ Alerts real-time connection established!');
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          console.error('❌ Alerts subscription failed:', status);
           setConnectionStatus('disconnected');
-          // Retry connection after delay
-          setTimeout(() => {
-            subscribeToAlerts();
-          }, 5000);
         }
       });
 
     channelRef.current = channel;
-    return channel;
-  }, [streamer?.id, enabled]);
-
-  // Set up subscription when streamer is available
-  useEffect(() => {
-    if (streamer?.id && enabled) {
-      const channel = subscribeToAlerts();
-      return () => {
-        if (channel) {
-          supabase.removeChannel(channel);
-        }
-      };
-    }
-  }, [streamer?.id, enabled, subscribeToAlerts]);
+    
+    return () => {
+      console.log('🔌 Cleaning up alerts subscription');
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
+  }, [streamer?.id, enabled]); // Only depend on streamer ID and enabled state
 
   // Initial token validation
   useEffect(() => {
@@ -265,10 +291,16 @@ const AnkitAlerts = () => {
   }, [cleanup]);
 
 
-  // Process alert queue
+  // Process alert queue with enhanced debugging
   useEffect(() => {
     if (!currentAlert && alertQueue.length > 0) {
       const nextAlert = alertQueue[0];
+      console.log('🎬 Processing next alert from queue:', {
+        donorName: nextAlert.donation.name,
+        amount: nextAlert.donation.amount,
+        queueLength: alertQueue.length,
+        isHyperemote: nextAlert.donation.is_hyperemote
+      });
       setCurrentAlert(nextAlert);
       setAlertQueue(prev => prev.slice(1));
     }
