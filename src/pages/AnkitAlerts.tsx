@@ -27,10 +27,11 @@ interface AlertQueueItem {
 }
 
 interface WebSocketMessage {
-  type: 'donation_approved' | 'connection_ack' | 'error';
+  type: 'donation_approved' | 'connection_ack' | 'error' | 'ping' | 'pong';
   streamer_slug?: string;
   donation?: Donation;
   message?: string;
+  timestamp?: number;
 }
 
 const AnkitAlertsWebSocket = () => {
@@ -141,6 +142,13 @@ const AnkitAlertsWebSocket = () => {
         switch (message.type) {
           case 'connection_ack':
             console.log('✅ Connection acknowledged:', message.message);
+            break;
+          
+          case 'ping':
+            // Respond to ping with pong
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify({ type: 'pong', timestamp: Date.now() }));
+            }
             break;
           
           case 'donation_approved':

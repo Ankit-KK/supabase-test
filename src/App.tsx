@@ -29,6 +29,7 @@ import DemoStreamer from "./pages/DemoStreamer";
 import DemoStreamerLogin from "./pages/DemoStreamerLogin";
 import DemoStreamerDashboard from "./pages/DemoStreamerDashboard";
 import DemoStreamerAlerts from "./pages/DemoStreamerAlerts";
+import TestAlerts from "./pages/TestAlerts";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +67,7 @@ const App = () => (
             <Route path="/alerts/:token" element={<AlertsPage />} />
             <Route path="/ankit-alerts/:token" element={<AnkitAlerts />} />
             <Route path="/demostreamer-alerts/:token" element={<DemoStreamerAlerts />} />
+            <Route path="/test-alerts" element={<TestAlerts />} />
             
             {/* Blog posts */}
             <Route path="/blog/upi-security-best-practices" element={<UpiSecurityBestPractices />} />
