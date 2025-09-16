@@ -934,6 +934,22 @@ export type Database = {
           voice_message_url: string
         }[]
       }
+      get_alerts_for_obs_token: {
+        Args: { p_obs_token: string; p_table_name?: string }
+        Returns: {
+          amount: number
+          created_at: string
+          id: string
+          is_hyperemote: boolean
+          message: string
+          message_visible: boolean
+          moderation_status: string
+          name: string
+          payment_status: string
+          streamer_id: string
+          voice_message_url: string
+        }[]
+      }
       get_my_moderators: {
         Args: { p_streamer_id: string }
         Returns: {

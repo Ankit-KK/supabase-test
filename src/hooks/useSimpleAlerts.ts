@@ -17,9 +17,10 @@ interface AlertSystemConfig {
   tableName: string;
   pollInterval?: number;
   enabled?: boolean;
+  obsToken?: string;
 }
 
-export const useSimpleAlerts = ({ streamerId, tableName, enabled = true }: AlertSystemConfig) => {
+export const useSimpleAlerts = ({ streamerId, tableName, enabled = true, obsToken }: AlertSystemConfig) => {
   const [currentAlert, setCurrentAlert] = useState<Donation | null>(null);
   const [lastShownId, setLastShownId] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -45,43 +46,26 @@ export const useSimpleAlerts = ({ streamerId, tableName, enabled = true }: Alert
   }, []);
 
   const fetchLatestDonation = useCallback(async () => {
-    if (!enabled || !streamerId) {
-      console.log(`⏸️ Alert system disabled - enabled: ${enabled}, streamerId: ${streamerId}`);
+    if (!enabled || !streamerId || !obsToken) {
+      console.log(`⏸️ Alert system disabled - enabled: ${enabled}, streamerId: ${streamerId}, obsToken: ${!!obsToken}`);
       return;
     }
 
     try {
-      console.log(`🔄 Fetching latest from ${tableName} for streamerId: ${streamerId}`);
+      console.log(`🔄 Fetching latest from ${tableName} using secure RPC for streamerId: ${streamerId}`);
       
-      let query;
-      if (tableName === 'ankit_donations') {
-        query = supabase
-          .from('ankit_donations')
-          .select('id, name, amount, message, voice_message_url, created_at, is_hyperemote');
-      } else if (tableName === 'chia_gaming_donations') {
-        query = supabase
-          .from('chia_gaming_donations')
-          .select('id, name, amount, message, voice_message_url, created_at, is_hyperemote');
-      } else {
-        query = supabase
-          .from('demostreamer_donations')
-          .select('id, name, amount, message, voice_message_url, created_at, is_hyperemote');
-      }
-
-      const { data, error } = await query
-        .eq('streamer_id', streamerId)
-        .eq('payment_status', 'success')
-        .in('moderation_status', ['approved', 'auto_approved'])
-        .eq('message_visible', true)
-        .order('created_at', { ascending: false })
-        .limit(1);
+      const { data, error } = await supabase.rpc('get_alerts_for_obs_token', {
+        p_obs_token: obsToken,
+        p_table_name: tableName
+      });
 
       if (error) {
-        console.error('❌ Error fetching donations:', error);
+        console.error('❌ RPC error:', error);
         setConnectionStatus('error');
         return;
       }
 
+      console.log('📊 RPC query result:', data);
       setConnectionStatus('connected');
 
       if (!data || data.length === 0) {
@@ -108,7 +92,7 @@ export const useSimpleAlerts = ({ streamerId, tableName, enabled = true }: Alert
       console.error('❌ Fetch error:', error);
       setConnectionStatus('error');
     }
-  }, [streamerId, tableName, enabled, isFirstLoad]);
+  }, [streamerId, tableName, enabled, isFirstLoad, obsToken]);
 
   // Set up real-time subscription
   useEffect(() => {

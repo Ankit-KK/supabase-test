@@ -77,7 +77,8 @@ const AnkitAlertsRealtime = () => {
     streamerId: streamerInfo?.id || '',
     tableName: 'ankit_donations',
     pollInterval: 2000,
-    enabled: alertSystemEnabled
+    enabled: alertSystemEnabled,
+    obsToken: token
   });
 
   // Loading state
