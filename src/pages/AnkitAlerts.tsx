@@ -159,41 +159,6 @@ const AnkitAlerts = () => {
     }, delay);
   }, [streamer?.id]);
 
-  // Load existing approved donations on startup
-  const loadExistingDonations = useCallback(async () => {
-    if (!streamer?.id) return;
-    
-    try {
-      console.log('📥 Loading existing approved donations for alerts');
-      const { data, error } = await supabase
-        .from('ankit_donations')
-        .select('*')
-        .eq('streamer_id', streamer.id)
-        .eq('payment_status', 'success')
-        .eq('message_visible', true)
-        .in('moderation_status', ['approved', 'auto_approved'])
-        .gte('approved_at', new Date(Date.now() - 30 * 60 * 1000).toISOString()) // Last 30 minutes
-        .order('approved_at', { ascending: false })
-        .limit(10);
-
-      if (error) {
-        console.error('❌ Failed to load existing donations:', error);
-        return;
-      }
-
-      if (data && data.length > 0) {
-        console.log('🎯 Found existing approved donations to show as alerts:', data.length);
-        data.forEach(donation => {
-          setAlertQueue(prev => [...prev, { 
-            donation: donation as Donation, 
-            timestamp: Date.now() 
-          }]);
-        });
-      }
-    } catch (error) {
-      console.error('❌ Error loading existing donations:', error);
-    }
-  }, [streamer?.id]);
 
   // Set up subscription when streamer is available - fix dependency loop
   useEffect(() => {
@@ -202,11 +167,8 @@ const AnkitAlerts = () => {
       return;
     }
 
-    console.log('🔗 Setting up direct Supabase subscription for Ankit alerts, streamer ID:', streamer.id);
+    console.log('🔗 Setting up REAL-TIME ONLY Supabase subscription for Ankit alerts, streamer ID:', streamer.id);
     setConnectionStatus('connecting');
-
-    // Load existing donations first
-    loadExistingDonations();
 
     const channel = supabase
       .channel(`ankit-alerts-${streamer.id}`)
@@ -258,56 +220,55 @@ const AnkitAlerts = () => {
           };
           
           if (payload.eventType === 'INSERT') {
-            console.log('➕ New donation for alerts:', newDonation.name, newDonation.amount);
+            console.log('➕ INSERT - New donation received:', newDonation.name, newDonation.amount);
             
+            // Only show INSERT alerts for auto-approved donations (hyperemotes)
             if (shouldShowAlert(newDonation)) {
-              console.log('🎯 Adding new donation to alert queue');
-              setAlertQueue(prev => [...prev, { 
-                donation: newDonation, 
-                timestamp: Date.now() 
-              }]);
-            }
-          }
-          
-          if (payload.eventType === 'UPDATE') {
-            const oldDonation = payload.old as Donation;
-            
-            // Show alert if payment was completed OR if donation was just approved
-            const paymentCompleted = oldDonation.payment_status !== 'success' && newDonation.payment_status === 'success';
-            const wasNotApproved = oldDonation.moderation_status === 'pending' || oldDonation.moderation_status === 'rejected' || !oldDonation.moderation_status;
-            const nowApproved = newDonation.moderation_status === 'approved' || newDonation.moderation_status === 'auto_approved';
-            const justApproved = wasNotApproved && nowApproved;
-            
-            console.log('🔄 UPDATE event detailed analysis:', { 
-              name: newDonation.name,
-              amount: newDonation.amount,
-              id: newDonation.id,
-              paymentCompleted,
-              justApproved,
-              wasNotApproved,
-              nowApproved,
-              oldModerationStatus: oldDonation.moderation_status,
-              newModerationStatus: newDonation.moderation_status,
-              oldPaymentStatus: oldDonation.payment_status,
-              newPaymentStatus: newDonation.payment_status,
-              messageVisible: newDonation.message_visible
-            });
-            
-            if ((paymentCompleted || justApproved) && shouldShowAlert(newDonation)) {
-              console.log('🎉 UPDATE - Adding donation to alert queue!', {
+              console.log('🎉 INSERT - Adding auto-approved donation to alert queue!', {
                 name: newDonation.name,
                 amount: newDonation.amount,
-                reason: paymentCompleted ? 'payment completed' : 'just approved'
+                isHyperemote: newDonation.is_hyperemote,
+                moderationStatus: newDonation.moderation_status
               });
               setAlertQueue(prev => [...prev, { 
                 donation: newDonation, 
                 timestamp: Date.now() 
               }]);
             } else {
-              console.log('❌ UPDATE - Not adding to alert queue:', {
-                paymentCompletedOrJustApproved: paymentCompleted || justApproved,
-                shouldShow: shouldShowAlert(newDonation)
+              console.log('❌ INSERT - Not showing alert (probably pending approval):', {
+                moderationStatus: newDonation.moderation_status,
+                paymentStatus: newDonation.payment_status
               });
+            }
+          }
+          
+          if (payload.eventType === 'UPDATE') {
+            const oldDonation = payload.old as Donation;
+            
+            // Only show UPDATE alerts when moderation status changes from pending to approved
+            const wasNotApproved = oldDonation.moderation_status === 'pending' || oldDonation.moderation_status === 'rejected' || !oldDonation.moderation_status;
+            const nowApproved = newDonation.moderation_status === 'approved' || newDonation.moderation_status === 'auto_approved';
+            const justApproved = wasNotApproved && nowApproved;
+            
+            console.log('🔄 UPDATE - Checking if manually approved:', { 
+              name: newDonation.name,
+              amount: newDonation.amount,
+              justApproved,
+              oldModerationStatus: oldDonation.moderation_status,
+              newModerationStatus: newDonation.moderation_status
+            });
+            
+            if (justApproved && shouldShowAlert(newDonation)) {
+              console.log('🎉 UPDATE - Manually approved donation, adding to alert queue!', {
+                name: newDonation.name,
+                amount: newDonation.amount
+              });
+              setAlertQueue(prev => [...prev, { 
+                donation: newDonation, 
+                timestamp: Date.now() 
+              }]);
+            } else {
+              console.log('❌ UPDATE - Not showing alert (not a manual approval)');
             }
           }
         }
