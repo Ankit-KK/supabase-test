@@ -159,6 +159,42 @@ const AnkitAlerts = () => {
     }, delay);
   }, [streamer?.id]);
 
+  // Load existing approved donations on startup
+  const loadExistingDonations = useCallback(async () => {
+    if (!streamer?.id) return;
+    
+    try {
+      console.log('📥 Loading existing approved donations for alerts');
+      const { data, error } = await supabase
+        .from('ankit_donations')
+        .select('*')
+        .eq('streamer_id', streamer.id)
+        .eq('payment_status', 'success')
+        .eq('message_visible', true)
+        .in('moderation_status', ['approved', 'auto_approved'])
+        .gte('created_at', new Date(Date.now() - 10 * 60 * 1000).toISOString()) // Last 10 minutes
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (error) {
+        console.error('❌ Failed to load existing donations:', error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        console.log('🎯 Found existing approved donations to show as alerts:', data.length);
+        data.forEach(donation => {
+          setAlertQueue(prev => [...prev, { 
+            donation: donation as Donation, 
+            timestamp: Date.now() 
+          }]);
+        });
+      }
+    } catch (error) {
+      console.error('❌ Error loading existing donations:', error);
+    }
+  }, [streamer?.id]);
+
   // Set up subscription when streamer is available - fix dependency loop
   useEffect(() => {
     if (!streamer?.id || !enabled) {
@@ -168,6 +204,9 @@ const AnkitAlerts = () => {
 
     console.log('🔗 Setting up direct Supabase subscription for Ankit alerts, streamer ID:', streamer.id);
     setConnectionStatus('connecting');
+
+    // Load existing donations first
+    loadExistingDonations();
 
     const channel = supabase
       .channel(`ankit-alerts-${streamer.id}`)
