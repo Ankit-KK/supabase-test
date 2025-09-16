@@ -172,9 +172,9 @@ const AnkitAlerts = () => {
         .eq('payment_status', 'success')
         .eq('message_visible', true)
         .in('moderation_status', ['approved', 'auto_approved'])
-        .gte('created_at', new Date(Date.now() - 10 * 60 * 1000).toISOString()) // Last 10 minutes
-        .order('created_at', { ascending: false })
-        .limit(5);
+        .gte('approved_at', new Date(Date.now() - 30 * 60 * 1000).toISOString()) // Last 30 minutes
+        .order('approved_at', { ascending: false })
+        .limit(10);
 
       if (error) {
         console.error('❌ Failed to load existing donations:', error);
@@ -274,23 +274,40 @@ const AnkitAlerts = () => {
             
             // Show alert if payment was completed OR if donation was just approved
             const paymentCompleted = oldDonation.payment_status !== 'success' && newDonation.payment_status === 'success';
-            const justApproved = !['approved', 'auto_approved'].includes(oldDonation.moderation_status || '') && 
-                               ['approved', 'auto_approved'].includes(newDonation.moderation_status || '');
+            const wasNotApproved = oldDonation.moderation_status === 'pending' || oldDonation.moderation_status === 'rejected' || !oldDonation.moderation_status;
+            const nowApproved = newDonation.moderation_status === 'approved' || newDonation.moderation_status === 'auto_approved';
+            const justApproved = wasNotApproved && nowApproved;
             
-            console.log('🔄 Checking update conditions:', { 
+            console.log('🔄 UPDATE event detailed analysis:', { 
               name: newDonation.name,
+              amount: newDonation.amount,
+              id: newDonation.id,
               paymentCompleted,
               justApproved,
+              wasNotApproved,
+              nowApproved,
               oldModerationStatus: oldDonation.moderation_status,
-              newModerationStatus: newDonation.moderation_status
+              newModerationStatus: newDonation.moderation_status,
+              oldPaymentStatus: oldDonation.payment_status,
+              newPaymentStatus: newDonation.payment_status,
+              messageVisible: newDonation.message_visible
             });
             
             if ((paymentCompleted || justApproved) && shouldShowAlert(newDonation)) {
-              console.log('🎯 Adding updated donation to alert queue');
+              console.log('🎉 UPDATE - Adding donation to alert queue!', {
+                name: newDonation.name,
+                amount: newDonation.amount,
+                reason: paymentCompleted ? 'payment completed' : 'just approved'
+              });
               setAlertQueue(prev => [...prev, { 
                 donation: newDonation, 
                 timestamp: Date.now() 
               }]);
+            } else {
+              console.log('❌ UPDATE - Not adding to alert queue:', {
+                paymentCompletedOrJustApproved: paymentCompleted || justApproved,
+                shouldShow: shouldShowAlert(newDonation)
+              });
             }
           }
         }
