@@ -1,6 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
-import { AlertDebugInfo } from '@/components/AlertDebugInfo';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { RealtimeChannel } from '@supabase/supabase-js';
@@ -161,61 +159,97 @@ const AnkitAlerts = () => {
     }, delay);
   }, [streamer?.id]);
 
-  // Use centralized subscription for alerts
-  const alertConnectionState = useRealtimeSubscription({
-    streamerId: streamer?.id,
-    streamerSlug: 'ankit',
-    onDonationUpdate: (payload) => {
-      const newDonation = payload.new as Donation;
-      console.log('Alert received real-time event:', payload.eventType, newDonation?.name);
-      
-      if (payload.eventType === 'INSERT' && newDonation.payment_status === 'success') {
-        const donation = newDonation;
-        console.log('New donation received:', { name: donation.name, amount: donation.amount, message: donation.message });
-        
-        // Only show approved donations or auto-approved hyperemotes
-        if (donation.moderation_status === 'approved' || donation.moderation_status === 'auto_approved') {
-          setAlertQueue(prev => [...prev, { 
-            donation, 
-            timestamp: Date.now() 
-          }]);
-        }
-      }
-      
-      if (payload.eventType === 'UPDATE' && newDonation.payment_status === 'success') {
-        const oldDonation = payload.old as Donation;
-        const donation = newDonation;
-        
-        // Show alert if payment was completed OR if donation was just approved
-        const paymentCompleted = oldDonation.payment_status !== 'success';
-        const justApproved = oldDonation.moderation_status !== 'approved' && 
-                           donation.moderation_status === 'approved';
-        
-        if (paymentCompleted || justApproved) {
-          console.log('Donation update triggered alert:', { 
-            name: donation.name, 
-            amount: donation.amount,
-            paymentCompleted,
-            justApproved
-          });
+  // Direct Supabase subscription for alerts
+  const subscribeToAlerts = useCallback(() => {
+    if (!streamer?.id || !enabled) {
+      setConnectionStatus('disconnected');
+      return;
+    }
+
+    console.log('🔗 Setting up direct Supabase subscription for Ankit alerts');
+    setConnectionStatus('connecting');
+
+    const channel = supabase
+      .channel(`ankit-alerts-${streamer.id}`)
+      .on(
+        'postgres_changes', 
+        {
+          event: '*',
+          schema: 'public',
+          table: 'ankit_donations',
+          filter: `streamer_id=eq.${streamer.id}`
+        },
+        (payload) => {
+          console.log('🚨 Ankit Alert received:', payload.eventType, payload.new);
+          const newDonation = payload.new as Donation;
           
-          // Only show approved donations or auto-approved hyperemotes
-          if (donation.moderation_status === 'approved' || donation.moderation_status === 'auto_approved') {
-            setAlertQueue(prev => [...prev, { 
-              donation, 
-              timestamp: Date.now() 
-            }]);
+          if (payload.eventType === 'INSERT' && newDonation.payment_status === 'success') {
+            console.log('✅ New donation for alerts:', { name: newDonation.name, amount: newDonation.amount });
+            
+            // Only show approved donations or auto-approved hyperemotes
+            if (newDonation.moderation_status === 'approved' || newDonation.moderation_status === 'auto_approved') {
+              setAlertQueue(prev => [...prev, { 
+                donation: newDonation, 
+                timestamp: Date.now() 
+              }]);
+            }
+          }
+          
+          if (payload.eventType === 'UPDATE' && newDonation.payment_status === 'success') {
+            const oldDonation = payload.old as Donation;
+            
+            // Show alert if payment was completed OR if donation was just approved
+            const paymentCompleted = oldDonation.payment_status !== 'success';
+            const justApproved = oldDonation.moderation_status !== 'approved' && 
+                               newDonation.moderation_status === 'approved';
+            
+            if (paymentCompleted || justApproved) {
+              console.log('✅ Updated donation triggers alert:', { 
+                name: newDonation.name, 
+                amount: newDonation.amount,
+                paymentCompleted,
+                justApproved
+              });
+              
+              // Only show approved donations or auto-approved hyperemotes
+              if (newDonation.moderation_status === 'approved' || newDonation.moderation_status === 'auto_approved') {
+                setAlertQueue(prev => [...prev, { 
+                  donation: newDonation, 
+                  timestamp: Date.now() 
+                }]);
+              }
+            }
           }
         }
-      }
-    },
-    enabled: !!streamer?.id && enabled
-  });
+      )
+      .subscribe((status) => {
+        console.log('🔗 Ankit Alerts subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          setConnectionStatus('connected');
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          setConnectionStatus('disconnected');
+          // Retry connection after delay
+          setTimeout(() => {
+            subscribeToAlerts();
+          }, 5000);
+        }
+      });
 
-  // Update connection status based on centralized subscription
+    channelRef.current = channel;
+    return channel;
+  }, [streamer?.id, enabled]);
+
+  // Set up subscription when streamer is available
   useEffect(() => {
-    setConnectionStatus(alertConnectionState.status);
-  }, [alertConnectionState.status]);
+    if (streamer?.id && enabled) {
+      const channel = subscribeToAlerts();
+      return () => {
+        if (channel) {
+          supabase.removeChannel(channel);
+        }
+      };
+    }
+  }, [streamer?.id, enabled, subscribeToAlerts]);
 
   // Initial token validation
   useEffect(() => {
@@ -460,12 +494,10 @@ const AnkitAlerts = () => {
           </audio>
         )}
 
-        {/* Debug info for development */}
-        <AlertDebugInfo
-          streamerId={streamer?.id}
-          streamerSlug="ankit"
-          connectionState={{ status: connectionStatus }}
-        />
+        {/* Connection Status Debug */}
+        <div className="fixed bottom-4 right-4 text-white text-xs bg-black/50 p-2 rounded">
+          Status: {connectionStatus} | Streamer: {streamer?.streamer_name} | Queue: {alertQueue.length}
+        </div>
       </div>
     </>
   );

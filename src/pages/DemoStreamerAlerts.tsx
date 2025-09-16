@@ -1,8 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
-import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
-import { AlertDebugInfo } from '@/components/AlertDebugInfo';
 import { Heart, Sparkles, Zap, Star, Music, Coffee, Gift, Flame } from "lucide-react";
 
 interface Donation {
@@ -57,28 +55,72 @@ export default function DemoStreamerAlerts() {
     validateToken();
   }, [token]);
 
-  // Use centralized real-time subscription
-  const connectionState = useRealtimeSubscription({
-    streamerId: streamerInfo?.streamer_id,
-    streamerSlug: 'demostreamer',
-    onDonationUpdate: (payload) => {
-      console.log('🎯 DemoStreamer Alert received donation update:', payload.eventType);
-      const donation = payload.new as Donation;
-      
-      // Show alert for successful payments that are approved or auto-approved
-      if (donation.payment_status === 'success' && 
-          (donation.moderation_status === 'approved' || donation.moderation_status === 'auto_approved')) {
-        console.log('🚨 Showing DemoStreamer alert for donation:', donation.name, donation.amount);
-        showAlert(donation);
-      } else {
-        console.log('⏸️ DemoStreamer alert skipped - not approved or not successful payment:', {
-          payment_status: donation.payment_status,
-          moderation_status: donation.moderation_status
-        });
-      }
-    },
-    enabled: !!streamerInfo?.streamer_id
-  });
+  // Direct Supabase subscription for alerts
+  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
+
+  const subscribeToAlerts = useCallback(() => {
+    if (!streamerInfo?.streamer_id) {
+      setConnectionStatus('disconnected');
+      return;
+    }
+
+    console.log('🔗 Setting up direct Supabase subscription for DemoStreamer alerts');
+    setConnectionStatus('connecting');
+
+    const channel = supabase
+      .channel(`demostreamer-alerts-${streamerInfo.streamer_id}`)
+      .on(
+        'postgres_changes', 
+        {
+          event: '*',
+          schema: 'public',
+          table: 'demostreamer_donations',
+          filter: `streamer_id=eq.${streamerInfo.streamer_id}`
+        },
+        (payload) => {
+          console.log('🚨 DemoStreamer Alert received:', payload.eventType, payload.new);
+          const donation = payload.new as Donation;
+          
+          // Show alert for successful payments that are approved or auto-approved
+          if (donation.payment_status === 'success' && 
+              (donation.moderation_status === 'approved' || donation.moderation_status === 'auto_approved')) {
+            console.log('✅ Showing DemoStreamer alert for donation:', donation.name, donation.amount);
+            showAlert(donation);
+          } else {
+            console.log('⏸️ DemoStreamer alert skipped - not approved or successful payment:', {
+              payment_status: donation.payment_status,
+              moderation_status: donation.moderation_status
+            });
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('🔗 DemoStreamer Alerts subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          setConnectionStatus('connected');
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          setConnectionStatus('disconnected');
+          // Retry connection after delay
+          setTimeout(() => {
+            subscribeToAlerts();
+          }, 5000);
+        }
+      });
+
+    return channel;
+  }, [streamerInfo?.streamer_id]);
+
+  // Set up subscription when streamer info is available
+  useEffect(() => {
+    if (streamerInfo?.streamer_id) {
+      const channel = subscribeToAlerts();
+      return () => {
+        if (channel) {
+          supabase.removeChannel(channel);
+        }
+      };
+    }
+  }, [streamerInfo?.streamer_id, subscribeToAlerts]);
 
   const showAlert = (donation: Donation) => {
     setCurrentAlert(donation);
@@ -190,12 +232,10 @@ export default function DemoStreamerAlerts() {
         </div>
       )}
 
-      {/* Debug info for development */}
-      <AlertDebugInfo
-        streamerId={streamerInfo?.streamer_id}
-        streamerSlug="demostreamer"
-        connectionState={connectionState}
-      />
+      {/* Connection Status Debug */}
+      <div className="fixed bottom-4 right-4 text-white text-xs bg-black/50 p-2 rounded">
+        Status: {connectionStatus} | Streamer: {streamerInfo?.streamer_name} | Alert: {currentAlert ? 'Yes' : 'No'}
+      </div>
 
       {/* Custom CSS for animations */}
       <style>{`

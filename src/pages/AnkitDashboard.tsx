@@ -1,5 +1,4 @@
-import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
+import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -172,68 +171,114 @@ const AnkitDashboard = () => {
   const stableStreamerId = useMemo(() => streamer?.id || null, [streamer?.id]);
   const stableStreamerSlug = useMemo(() => streamer?.streamer_slug || null, [streamer?.streamer_slug]);
 
-  const connectionState = useRealtimeSubscription({
-    streamerId: stableStreamerId,
-    streamerSlug: stableStreamerSlug,
-    onDonationUpdate: (payload) => {
-      const newDonation = payload.new as Donation;
-      
-      if (payload.eventType === 'INSERT' && newDonation.payment_status === 'success') {
-        toast({
-          title: "💰 New Donation!",
-          description: `${newDonation.name} donated ₹${newDonation.amount}`,
-          duration: 4000,
-        });
+  // Direct Supabase subscription for dashboard updates
+  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
 
-        // Update local state directly instead of refetching
-        setDonations(prev => [newDonation, ...prev]);
-        setTotalAmount(prev => prev + Number(newDonation.amount));
-        
-        // Update monthly total if it's from this month
-        const donationDate = new Date(newDonation.created_at);
-        const now = new Date();
-        if (donationDate.getMonth() === now.getMonth() && donationDate.getFullYear() === now.getFullYear()) {
-          setMonthlyAmount(prev => prev + Number(newDonation.amount));
-        }
-        
-        // Update moderation list if it needs moderation
-        if (newDonation.moderation_status === 'pending') {
-          setModerationDonations(prev => [newDonation, ...prev]);
-        }
-      }
-      
-      if (payload.eventType === 'UPDATE') {
-        const oldDonation = payload.old as Donation;
-        
-        // Check if payment was completed
-        if (oldDonation.payment_status !== 'success' && newDonation.payment_status === 'success') {
-          toast({
-            title: "💰 Payment Confirmed!",
-            description: `${newDonation.name} - ₹${newDonation.amount}`,
-            duration: 4000,
-          });
+  const subscribeToDashboardUpdates = useCallback(() => {
+    if (!stableStreamerId) {
+      setConnectionStatus('disconnected');
+      return;
+    }
+
+    console.log('🔗 Setting up direct Supabase subscription for Ankit dashboard');
+    setConnectionStatus('connecting');
+
+    const channel = supabase
+      .channel(`ankit-dashboard-${stableStreamerId}`)
+      .on(
+        'postgres_changes', 
+        {
+          event: '*',
+          schema: 'public',
+          table: 'ankit_donations',
+          filter: `streamer_id=eq.${stableStreamerId}`
+        },
+        (payload) => {
+          console.log('📊 Ankit Dashboard received update:', payload.eventType, payload.new);
+          const newDonation = payload.new as Donation;
           
-          // Update existing donation in state
-          setDonations(prev => prev.map(d => d.id === newDonation.id ? newDonation : d));
-        }
-        
-        // Check if donation was approved
-        if (oldDonation.moderation_status !== 'approved' && newDonation.moderation_status === 'approved') {
-          toast({
-            title: "✅ Donation Approved!",
-            description: `${newDonation.name}'s message is now live on OBS`,
-            duration: 4000,
-          });
-          console.log('✅ Donation approved notification shown');
-        }
+          if (payload.eventType === 'INSERT' && newDonation.payment_status === 'success') {
+            toast({
+              title: "💰 New Donation!",
+              description: `${newDonation.name} donated ₹${newDonation.amount}`,
+              duration: 4000,
+            });
 
-        // Update both donation lists in real-time
-        setDonations(prev => prev.map(d => d.id === newDonation.id ? newDonation : d));
-        setModerationDonations(prev => prev.map(d => d.id === newDonation.id ? newDonation : d));
-      }
-    },
-    enabled: !!stableStreamerId
-  });
+            // Update local state directly instead of refetching
+            setDonations(prev => [newDonation, ...prev]);
+            setTotalAmount(prev => prev + Number(newDonation.amount));
+            
+            // Update monthly total if it's from this month
+            const donationDate = new Date(newDonation.created_at);
+            const now = new Date();
+            if (donationDate.getMonth() === now.getMonth() && donationDate.getFullYear() === now.getFullYear()) {
+              setMonthlyAmount(prev => prev + Number(newDonation.amount));
+            }
+            
+            // Update moderation list if it needs moderation
+            if (newDonation.moderation_status === 'pending') {
+              setModerationDonations(prev => [newDonation, ...prev]);
+            }
+          }
+          
+          if (payload.eventType === 'UPDATE') {
+            const oldDonation = payload.old as Donation;
+            
+            // Check if payment was completed
+            if (oldDonation.payment_status !== 'success' && newDonation.payment_status === 'success') {
+              toast({
+                title: "💰 Payment Confirmed!",
+                description: `${newDonation.name} - ₹${newDonation.amount}`,
+                duration: 4000,
+              });
+              
+              // Update existing donation in state
+              setDonations(prev => prev.map(d => d.id === newDonation.id ? newDonation : d));
+            }
+            
+            // Check if donation was approved
+            if (oldDonation.moderation_status !== 'approved' && newDonation.moderation_status === 'approved') {
+              toast({
+                title: "✅ Donation Approved!",
+                description: `${newDonation.name}'s message is now live on OBS`,
+                duration: 4000,
+              });
+              console.log('✅ Donation approved notification shown');
+            }
+
+            // Update both donation lists in real-time
+            setDonations(prev => prev.map(d => d.id === newDonation.id ? newDonation : d));
+            setModerationDonations(prev => prev.map(d => d.id === newDonation.id ? newDonation : d));
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('🔗 Ankit Dashboard subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          setConnectionStatus('connected');
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          setConnectionStatus('disconnected');
+          // Retry connection after delay
+          setTimeout(() => {
+            subscribeToDashboardUpdates();
+          }, 5000);
+        }
+      });
+
+    return channel;
+  }, [stableStreamerId]);
+
+  // Set up subscription when streamer ID is available
+  useEffect(() => {
+    if (stableStreamerId) {
+      const channel = subscribeToDashboardUpdates();
+      return () => {
+        if (channel) {
+          supabase.removeChannel(channel);
+        }
+      };
+    }
+  }, [stableStreamerId, subscribeToDashboardUpdates]);
 
   // Show loading while auth is being determined
   if (loading) {
@@ -472,6 +517,11 @@ const AnkitDashboard = () => {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Connection Status Debug */}
+        <div className="fixed bottom-4 right-4 text-xs bg-white/90 p-2 rounded shadow">
+          Connection: {connectionStatus}
+        </div>
       </div>
     </div>
   );

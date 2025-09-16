@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -63,68 +62,113 @@ export default function DemoStreamerDashboard() {
     }
   }, [session]);
 
-  // Add real-time subscription
-  const connectionState = useRealtimeSubscription({
-    streamerId: streamer?.id,
-    streamerSlug: 'demostreamer',
-    onDonationUpdate: (payload) => {
-      const newDonation = payload.new as Donation;
-      
-      if (payload.eventType === 'INSERT' && newDonation.payment_status === 'success') {
-        toast({
-          title: "💰 New Donation!",
-          description: `${newDonation.name} donated ₹${newDonation.amount}`,
-          duration: 4000,
-        });
+  // Direct Supabase subscription for dashboard updates
+  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
 
-        // Update local state directly instead of refetching
-        setDonations(prev => [newDonation, ...prev]);
-        setStats(prev => ({
-          ...prev,
-          totalAmount: prev.totalAmount + Number(newDonation.amount),
-          totalDonations: prev.totalDonations + 1,
-          // Update today's earnings if it's from today
-          todayAmount: new Date(newDonation.created_at).toDateString() === new Date().toDateString() 
-            ? prev.todayAmount + Number(newDonation.amount)
-            : prev.todayAmount
-        }));
-      }
-      
-      if (payload.eventType === 'UPDATE') {
-        const oldDonation = payload.old as Donation;
-        
-        // Check if payment was completed
-        if (oldDonation.payment_status !== 'success' && newDonation.payment_status === 'success') {
-          toast({
-            title: "💰 Payment Confirmed!",
-            description: `${newDonation.name} - ₹${newDonation.amount}`,
-            duration: 4000,
-          });
-        }
-        
-        // Check if donation was approved
-        if (oldDonation.moderation_status !== 'approved' && newDonation.moderation_status === 'approved') {
-          toast({
-            title: "✅ Donation Approved!",
-            description: `${newDonation.name}'s message is now live on OBS`,
-            duration: 4000,
-          });
-        }
+  const subscribeToDashboardUpdates = useCallback(() => {
+    if (!streamer?.id) {
+      setConnectionStatus('disconnected');
+      return;
+    }
 
-        // Update donation in local state
-        setDonations(prev => prev.map(d => d.id === newDonation.id ? newDonation : d));
-        
-        // Update pending reviews count if moderation status changed
-        if (oldDonation.moderation_status === 'pending' && newDonation.moderation_status !== 'pending') {
-          setStats(prev => ({
-            ...prev,
-            pendingDonations: Math.max(0, prev.pendingDonations - 1)
-          }));
+    console.log('🔗 Setting up direct Supabase subscription for DemoStreamer dashboard');
+    setConnectionStatus('connecting');
+
+    const channel = supabase
+      .channel(`demostreamer-dashboard-${streamer.id}`)
+      .on(
+        'postgres_changes', 
+        {
+          event: '*',
+          schema: 'public',
+          table: 'demostreamer_donations',
+          filter: `streamer_id=eq.${streamer.id}`
+        },
+        (payload) => {
+          console.log('📊 DemoStreamer Dashboard received update:', payload.eventType, payload.new);
+          const newDonation = payload.new as Donation;
+          
+          if (payload.eventType === 'INSERT' && newDonation.payment_status === 'success') {
+            toast({
+              title: "💰 New Donation!",
+              description: `${newDonation.name} donated ₹${newDonation.amount}`,
+              duration: 4000,
+            });
+
+            // Update local state directly instead of refetching
+            setDonations(prev => [newDonation, ...prev]);
+            setStats(prev => ({
+              ...prev,
+              totalAmount: prev.totalAmount + Number(newDonation.amount),
+              totalDonations: prev.totalDonations + 1,
+              // Update today's earnings if it's from today
+              todayAmount: new Date(newDonation.created_at).toDateString() === new Date().toDateString() 
+                ? prev.todayAmount + Number(newDonation.amount)
+                : prev.todayAmount
+            }));
+          }
+          
+          if (payload.eventType === 'UPDATE') {
+            const oldDonation = payload.old as Donation;
+            
+            // Check if payment was completed
+            if (oldDonation.payment_status !== 'success' && newDonation.payment_status === 'success') {
+              toast({
+                title: "💰 Payment Confirmed!",
+                description: `${newDonation.name} - ₹${newDonation.amount}`,
+                duration: 4000,
+              });
+            }
+            
+            // Check if donation was approved
+            if (oldDonation.moderation_status !== 'approved' && newDonation.moderation_status === 'approved') {
+              toast({
+                title: "✅ Donation Approved!",
+                description: `${newDonation.name}'s message is now live on OBS`,
+                duration: 4000,
+              });
+            }
+
+            // Update donation in local state
+            setDonations(prev => prev.map(d => d.id === newDonation.id ? newDonation : d));
+            
+            // Update pending reviews count if moderation status changed
+            if (oldDonation.moderation_status === 'pending' && newDonation.moderation_status !== 'pending') {
+              setStats(prev => ({
+                ...prev,
+                pendingDonations: Math.max(0, prev.pendingDonations - 1)
+              }));
+            }
+          }
         }
-      }
-    },
-    enabled: !!streamer?.id
-  });
+      )
+      .subscribe((status) => {
+        console.log('🔗 DemoStreamer Dashboard subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          setConnectionStatus('connected');
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          setConnectionStatus('disconnected');
+          // Retry connection after delay
+          setTimeout(() => {
+            subscribeToDashboardUpdates();
+          }, 5000);
+        }
+      });
+
+    return channel;
+  }, [streamer?.id]);
+
+  // Set up subscription when streamer is available
+  useEffect(() => {
+    if (streamer?.id) {
+      const channel = subscribeToDashboardUpdates();
+      return () => {
+        if (channel) {
+          supabase.removeChannel(channel);
+        }
+      };
+    }
+  }, [streamer?.id, subscribeToDashboardUpdates]);
 
   useEffect(() => {
     if (!loading && !session) {
@@ -467,6 +511,11 @@ export default function DemoStreamerDashboard() {
             )}
           </CardContent>
         </Card>
+
+        {/* Connection Status */}
+        <div className="fixed bottom-4 right-4 text-xs bg-white/90 p-2 rounded shadow">
+          Connection: {connectionStatus}
+        </div>
       </div>
     </div>
   );
