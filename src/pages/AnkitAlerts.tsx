@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 
 interface Donation {
   id: string;
@@ -11,6 +10,8 @@ interface Donation {
   created_at: string;
   is_hyperemote?: boolean;
   voice_message_url?: string;
+  payment_status?: string;
+  moderation_status?: string;
 }
 
 interface Streamer {
@@ -39,6 +40,7 @@ const AnkitAlertsRealtime = () => {
   const [alertQueue, setAlertQueue] = useState<AlertQueueItem[]>([]);
   const [isValidToken, setIsValidToken] = useState<boolean | null>(null);
   const [displayedMessage, setDisplayedMessage] = useState("");
+  const [connectionState, setConnectionState] = useState<'connecting' | 'connected' | 'disconnected'>('disconnected');
   
   // Hyperemote configurations
   const hyperemotes = [
@@ -99,28 +101,53 @@ const AnkitAlertsRealtime = () => {
     }
   }, [obsToken]);
 
-  // Handle realtime donation updates
-  const handleDonationUpdate = useCallback((payload: any) => {
-    const donation = payload.new;
-    
-    // Only show alerts for approved donations
-    if (donation?.payment_status === 'success' && 
-        (donation?.moderation_status === 'approved' || donation?.moderation_status === 'auto_approved')) {
-      console.log('🎉 New donation alert via Realtime:', donation.name, donation.amount);
-      setAlertQueue(prev => [...prev, { 
-        donation: donation,
-        timestamp: Date.now() 
-      }]);
-    }
-  }, []);
+  // Direct Supabase Realtime subscription
+  useEffect(() => {
+    if (!enabled || !isValidToken || !streamer) return;
 
-  // Use Realtime subscription for alerts
-  const connectionState = useRealtimeSubscription({
-    streamerId: streamer?.id,
-    streamerSlug: 'ankit',
-    onDonationUpdate: handleDonationUpdate,
-    enabled: enabled && isValidToken && !!streamer
-  });
+    console.log('🔄 Setting up Realtime subscription for ankit_donations...');
+    setConnectionState('connecting');
+
+    const channel = supabase
+      .channel('ankit-alerts')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'ankit_donations',
+          filter: `streamer_id=eq.${streamer.id}`
+        },
+        (payload) => {
+          console.log('📡 Realtime event received:', payload.eventType, payload.new);
+          
+          if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
+            const donation = payload.new as Donation;
+            
+            // Only show alerts for approved donations
+            if (donation?.payment_status === 'success' && 
+                (donation?.moderation_status === 'approved' || donation?.moderation_status === 'auto_approved')) {
+              console.log('🎉 New donation alert via Realtime:', donation.name, donation.amount);
+              setAlertQueue(prev => [...prev, { 
+                donation: donation,
+                timestamp: Date.now() 
+              }]);
+            }
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('📊 Realtime status:', status);
+        setConnectionState(status === 'SUBSCRIBED' ? 'connected' : 
+                         status === 'CHANNEL_ERROR' ? 'disconnected' : 'connecting');
+      });
+
+    return () => {
+      console.log('🔌 Cleaning up Realtime subscription');
+      supabase.removeChannel(channel);
+      setConnectionState('disconnected');
+    };
+  }, [enabled, isValidToken, streamer]);
 
   // Initial setup
   useEffect(() => {
@@ -291,7 +318,7 @@ const AnkitAlertsRealtime = () => {
       <div className="min-h-screen bg-transparent overflow-hidden relative">
         {/* Connection Status Debug Info */}
         <div className="fixed top-4 right-4 text-xs text-white bg-black bg-opacity-50 p-2 rounded">
-          Realtime: {connectionState.status} | Queue: {alertQueue.length}
+          Realtime: {connectionState} | Queue: {alertQueue.length}
         </div>
 
         {currentAlert && currentAlert.donation.is_hyperemote && (
