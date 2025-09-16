@@ -15,17 +15,24 @@ interface AlertSystemConfig {
   streamerId: string;
   tableName: string;
   pollInterval?: number;
+  enabled?: boolean;
 }
 
-export const useSimpleAlerts = ({ streamerId, tableName, pollInterval = 2000 }: AlertSystemConfig) => {
+export const useSimpleAlerts = ({ streamerId, tableName, pollInterval = 2000, enabled = true }: AlertSystemConfig) => {
   const [currentAlert, setCurrentAlert] = useState<Donation | null>(null);
   const [lastShownId, setLastShownId] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('connecting');
 
   const fetchLatestDonation = useCallback(async () => {
+    // Don't fetch if disabled or no streamer ID
+    if (!enabled || !streamerId) {
+      console.log(`⏸️ Alert system disabled - enabled: ${enabled}, streamerId: ${streamerId}`);
+      return;
+    }
+
     try {
-      console.log(`🔄 Polling ${tableName} for new alerts...`);
+      console.log(`🔄 Polling ${tableName} for streamerId: ${streamerId}`);
       
       // Use dynamic query based on table name to avoid TypeScript issues
       let query;
@@ -46,7 +53,7 @@ export const useSimpleAlerts = ({ streamerId, tableName, pollInterval = 2000 }: 
       const { data, error } = await query
         .eq('streamer_id', streamerId)
         .eq('payment_status', 'success')
-        .eq('moderation_status', 'auto_approved')
+        .in('moderation_status', ['approved', 'auto_approved'])
         .eq('message_visible', true)
         .order('created_at', { ascending: false })
         .limit(1);
@@ -88,11 +95,16 @@ export const useSimpleAlerts = ({ streamerId, tableName, pollInterval = 2000 }: 
       console.error('❌ Polling error:', error);
       setConnectionStatus('error');
     }
-  }, [streamerId, tableName, lastShownId, currentAlert]);
+  }, [streamerId, tableName, lastShownId, currentAlert, enabled]);
 
   // Start polling
   useEffect(() => {
-    console.log(`🎯 Starting alert system for ${tableName}`);
+    if (!enabled || !streamerId) {
+      console.log(`⏸️ Alert system not started - enabled: ${enabled}, streamerId: ${streamerId}`);
+      return;
+    }
+
+    console.log(`🎯 Starting alert system for ${tableName} with streamerId: ${streamerId}`);
     
     // Initial fetch
     fetchLatestDonation();
@@ -104,7 +116,7 @@ export const useSimpleAlerts = ({ streamerId, tableName, pollInterval = 2000 }: 
       console.log(`🛑 Stopping alert system for ${tableName}`);
       clearInterval(interval);
     };
-  }, [fetchLatestDonation, pollInterval]);
+  }, [fetchLatestDonation, pollInterval, enabled, streamerId]);
 
   const triggerTestAlert = useCallback(() => {
     const testAlert: Donation = {

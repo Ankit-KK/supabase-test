@@ -64,7 +64,9 @@ const AnkitAlertsRealtime = () => {
     validateToken();
   }, [token]);
 
-  // Use the simple alerts system
+  // Use the simple alerts system (only when we have a valid streamer ID)
+  const alertSystemEnabled = streamerInfo?.id && isValidToken === true;
+  
   const {
     currentAlert,
     isVisible,
@@ -73,7 +75,8 @@ const AnkitAlertsRealtime = () => {
   } = useSimpleAlerts({
     streamerId: streamerInfo?.id || '',
     tableName: 'ankit_donations',
-    pollInterval: 2000
+    pollInterval: 2000,
+    enabled: alertSystemEnabled
   });
 
   // Loading state
@@ -107,6 +110,8 @@ const AnkitAlertsRealtime = () => {
         <div className="fixed top-4 right-4 bg-black/80 text-white p-4 rounded-lg text-xs font-mono z-40">
           <div>Status: {connectionStatus}</div>
           <div>Streamer: {streamerInfo?.streamer_name}</div>
+          <div>Streamer ID: {streamerInfo?.id || 'None'}</div>
+          <div>Alert System: {alertSystemEnabled ? 'Enabled' : 'Disabled'}</div>
           <div>Current Alert: {currentAlert?.name || 'None'}</div>
           <div>Visible: {isVisible ? 'Yes' : 'No'}</div>
           <Button 
