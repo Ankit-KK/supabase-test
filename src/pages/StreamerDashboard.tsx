@@ -250,9 +250,20 @@ const StreamerDashboard = () => {
           duration: 4000,
         });
 
-        // Refresh data using the ref
-        if (fetchDataRef.current) {
-          fetchDataRef.current();
+        // Update local state directly instead of refetching
+        setDonations(prev => [newDonation, ...prev]);
+        setTotalAmount(prev => prev + Number(newDonation.amount));
+        
+        // Update monthly total if it's from this month
+        const donationDate = new Date(newDonation.created_at);
+        const now = new Date();
+        if (donationDate.getMonth() === now.getMonth() && donationDate.getFullYear() === now.getFullYear()) {
+          setMonthlyAmount(prev => prev + Number(newDonation.amount));
+        }
+        
+        // Update moderation list if it needs moderation
+        if (newDonation.moderation_status === 'pending') {
+          setModerationDonations(prev => [newDonation, ...prev]);
         }
       }
       
@@ -278,10 +289,9 @@ const StreamerDashboard = () => {
           console.log('✅ Donation approved notification shown');
         }
 
-        // Refresh donations data using the ref
-        if (fetchDataRef.current) {
-          fetchDataRef.current();
-        }
+        // Update both donation lists in real-time
+        setDonations(prev => prev.map(d => d.id === newDonation.id ? newDonation : d));
+        setModerationDonations(prev => prev.map(d => d.id === newDonation.id ? newDonation : d));
       }
     },
     enabled: !!stableStreamerId

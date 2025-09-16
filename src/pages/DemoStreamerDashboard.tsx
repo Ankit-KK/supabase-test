@@ -46,7 +46,82 @@ export default function DemoStreamerDashboard() {
     pendingDonations: 0,
     todayAmount: 0
   });
+  const [streamer, setStreamer] = useState<{ id: string; streamer_slug: string; streamer_name: string; } | null>(null);
   const [loadingDonations, setLoadingDonations] = useState(true);
+
+  // Get streamer info for real-time subscription
+  useEffect(() => {
+    if (session?.streamerId) {
+      setStreamer({
+        id: session.streamerId,
+        streamer_slug: 'demostreamer',
+        streamer_name: session.streamerName || 'DemoStreamer'
+      });
+    }
+  }, [session]);
+
+  // Add real-time subscription
+  const connectionState = useRealtimeSubscription({
+    streamerId: streamer?.id,
+    streamerSlug: 'demostreamer',
+    onDonationUpdate: (payload) => {
+      const newDonation = payload.new as Donation;
+      
+      if (payload.eventType === 'INSERT' && newDonation.payment_status === 'success') {
+        toast({
+          title: "💰 New Donation!",
+          description: `${newDonation.name} donated ₹${newDonation.amount}`,
+          duration: 4000,
+        });
+
+        // Update local state directly instead of refetching
+        setDonations(prev => [newDonation, ...prev]);
+        setStats(prev => ({
+          ...prev,
+          totalAmount: prev.totalAmount + Number(newDonation.amount),
+          totalDonations: prev.totalDonations + 1,
+          // Update today's earnings if it's from today
+          todayAmount: new Date(newDonation.created_at).toDateString() === new Date().toDateString() 
+            ? prev.todayAmount + Number(newDonation.amount)
+            : prev.todayAmount
+        }));
+      }
+      
+      if (payload.eventType === 'UPDATE') {
+        const oldDonation = payload.old as Donation;
+        
+        // Check if payment was completed
+        if (oldDonation.payment_status !== 'success' && newDonation.payment_status === 'success') {
+          toast({
+            title: "💰 Payment Confirmed!",
+            description: `${newDonation.name} - ₹${newDonation.amount}`,
+            duration: 4000,
+          });
+        }
+        
+        // Check if donation was approved
+        if (oldDonation.moderation_status !== 'approved' && newDonation.moderation_status === 'approved') {
+          toast({
+            title: "✅ Donation Approved!",
+            description: `${newDonation.name}'s message is now live on OBS`,
+            duration: 4000,
+          });
+        }
+
+        // Update donation in local state
+        setDonations(prev => prev.map(d => d.id === newDonation.id ? newDonation : d));
+        
+        // Update pending reviews count if moderation status changed
+        if (oldDonation.moderation_status === 'pending' && newDonation.moderation_status !== 'pending') {
+          setStats(prev => ({
+            ...prev,
+            pendingDonations: Math.max(0, prev.pendingDonations - 1)
+          }));
+        }
+      }
+    },
+    enabled: !!streamer?.id
+  });
 
   useEffect(() => {
     if (!loading && !session) {

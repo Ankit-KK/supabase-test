@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -99,6 +99,12 @@ const AnkitOBSSettings: React.FC<AnkitOBSSettingsProps> = ({ streamer, onStreame
   const generateInitialToken = async () => {
     if (!streamer?.id) return;
     
+    // Don't regenerate if we already have a token
+    if (obsToken) {
+      console.log('Token already exists, skipping generation');
+      return;
+    }
+    
     setLoading(true);
     try {
       // Check if active token exists
@@ -112,12 +118,14 @@ const AnkitOBSSettings: React.FC<AnkitOBSSettingsProps> = ({ streamer, onStreame
         .maybeSingle();
 
       if (!tokenError && activeToken?.token) {
+        console.log('Found existing active token, using it');
         setObsToken(activeToken.token);
         setLoading(false);
         return;
       }
 
-      // Generate new token via edge function
+      // Only generate new token if no active token exists
+      console.log('No active token found, generating new one');
       const { data, error } = await supabase.functions.invoke('generate-obs-token', {
         body: { streamerId: streamer.id }
       });
@@ -126,6 +134,7 @@ const AnkitOBSSettings: React.FC<AnkitOBSSettingsProps> = ({ streamer, onStreame
       if (!data?.token) throw new Error('No token received');
 
       setObsToken(data.token);
+      console.log('New token generated successfully');
     } catch (error: any) {
       toast({
         title: "Error",
@@ -225,10 +234,18 @@ const AnkitOBSSettings: React.FC<AnkitOBSSettingsProps> = ({ streamer, onStreame
     }
   };
 
-  // Generate token when streamer loads
+  // Generate token only once when streamer loads (prevent regeneration on every render)
+  const hasTokenBeenGenerated = useRef(false);
+  
   useEffect(() => {
     if (!streamer?.id) return;
-    generateInitialToken();
+    
+    // Only generate token once per streamer
+    if (!hasTokenBeenGenerated.current) {
+      generateInitialToken();
+      hasTokenBeenGenerated.current = true;
+    }
+    
     fetchModerators();
   }, [streamer?.id]);
 
