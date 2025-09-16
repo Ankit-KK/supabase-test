@@ -35,23 +35,21 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Check for WebSocket upgrade FIRST
+  if (upgradeHeader.toLowerCase() === "websocket") {
+    console.log('🔌 Handling WebSocket connection request');
+    return handleWebSocketConnection(req);
+  }
+
   // Handle HTTP requests for broadcasting alerts
   if (url.pathname === '/test-alert') {
     console.log('🧪 Handling test alert request');
     return handleTestAlert(req);
   }
   
+  // Default to broadcast request
   console.log('📡 Handling broadcast request to:', url.pathname);
   return handleBroadcastRequest(req);
-
-  // Check if this is a WebSocket upgrade request or HTTP broadcast request
-  if (upgradeHeader.toLowerCase() === "websocket") {
-    // Handle WebSocket connection for OBS browser source
-    return handleWebSocketConnection(req);
-  } else {
-    // Handle HTTP broadcast request from approval functions
-    return handleBroadcastRequest(req);
-  }
 });
 
 async function handleTestAlert(req: Request) {
