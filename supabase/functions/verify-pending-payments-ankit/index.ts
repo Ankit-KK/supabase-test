@@ -150,7 +150,7 @@ serve(async (req) => {
               if (donation.moderation_status === 'auto_approved' || donation.is_hyperemote) {
                 console.log('📡 Broadcasting WebSocket alert for auto-approved payment');
                 try {
-                  await supabaseAdmin.functions.invoke('broadcast-alert', {
+                  await supabaseAdmin.functions.invoke('obs-alerts-ws', {
                     body: { 
                       streamer_slug: 'ankit',
                       donation: { ...donation, payment_status: finalStatus }

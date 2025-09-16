@@ -131,7 +131,7 @@ This donation is now live on the stream!
     // Broadcast WebSocket alert for OBS
     console.log('📡 Broadcasting WebSocket alert for approved donation');
     try {
-      await supabaseAdmin.functions.invoke('broadcast-alert', {
+      await supabaseAdmin.functions.invoke('obs-alerts-ws', {
         body: { 
           streamer_slug: 'ankit',
           donation: updatedDonation

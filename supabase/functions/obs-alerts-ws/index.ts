@@ -29,10 +29,57 @@ serve(async (req) => {
   const { headers } = req;
   const upgradeHeader = headers.get("upgrade") || "";
 
-  if (upgradeHeader.toLowerCase() !== "websocket") {
-    return new Response("Expected WebSocket connection", { status: 400 });
+  // Handle CORS preflight requests
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
   }
 
+  // Check if this is a WebSocket upgrade request or HTTP broadcast request
+  if (upgradeHeader.toLowerCase() === "websocket") {
+    // Handle WebSocket connection for OBS browser source
+    return handleWebSocketConnection(req);
+  } else {
+    // Handle HTTP broadcast request from approval functions
+    return handleBroadcastRequest(req);
+  }
+});
+
+async function handleBroadcastRequest(req: Request) {
+  try {
+    const { streamer_slug, donation } = await req.json();
+    
+    if (!streamer_slug || !donation) {
+      throw new Error("Missing required parameters");
+    }
+
+    console.log('📢 Alert broadcast request:', { streamer_slug, donationId: donation.id });
+    
+    const success = await broadcastAlert(streamer_slug, donation);
+
+    return new Response(
+      JSON.stringify({
+        success,
+        message: success ? "Alert broadcast successful" : "Alert broadcast failed"
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+
+  } catch (error) {
+    console.error('Error broadcasting alert:', error);
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error.message
+      }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      }
+    );
+  }
+}
+
+async function handleWebSocketConnection(req: Request) {
   // Get OBS token from URL parameters
   const url = new URL(req.url);
   const obsToken = url.searchParams.get("token");
@@ -90,10 +137,12 @@ serve(async (req) => {
   };
 
   return response;
-});
+}
 
-// Export function to broadcast alerts (called from other edge functions)
-export async function broadcastAlert(streamerSlug: string, donation: any) {
+// Function to broadcast alerts to active connections
+async function broadcastAlert(streamerSlug: string, donation: any) {
+  console.log('🔔 Broadcasting alert for:', streamerSlug, 'Donor:', donation.name);
+  
   const connectionKey = `${streamerSlug}-${donation.streamer_id}`;
   const connection = activeConnections.get(connectionKey);
   
@@ -127,6 +176,3 @@ export async function broadcastAlert(streamerSlug: string, donation: any) {
     return false;
   }
 }
-
-// Expose broadcast function globally for other edge functions to call
-(globalThis as any).broadcastAlert = broadcastAlert;

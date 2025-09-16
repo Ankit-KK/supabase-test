@@ -356,7 +356,7 @@ async function approveDonation(donationId: string, userId: string, chatId: numbe
       // Broadcast WebSocket alert for OBS
       console.log('📡 Broadcasting WebSocket alert for approved Chia Gaming donation');
       try {
-        await supabase.functions.invoke('broadcast-alert', {
+        await supabase.functions.invoke('obs-alerts-ws', {
           body: { 
             streamer_slug: 'chia_gaming',
             donation: chiaDonation
@@ -429,7 +429,7 @@ async function approveDonation(donationId: string, userId: string, chatId: numbe
     // Broadcast WebSocket alert for OBS
     console.log('📡 Broadcasting WebSocket alert for approved Ankit donation');
     try {
-      await supabase.functions.invoke('broadcast-alert', {
+      await supabase.functions.invoke('obs-alerts-ws', {
         body: { 
           streamer_slug: 'ankit',
           donation: ankitDonation
