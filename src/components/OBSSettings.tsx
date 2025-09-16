@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Copy, RefreshCw, ExternalLink, Users, Plus, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { generateObsToken } from '@/utils/secureIdGenerator';
 import { useChiaAuth } from '@/hooks/useChiaAuth';
 
 interface Streamer {
@@ -30,14 +29,14 @@ interface Moderator {
 interface OBSSettingsProps {
   streamer: Streamer;
   onStreamerUpdate: (updatedStreamer: Streamer) => void;
+  obsToken: string;
+  onTokenRegenerate: () => Promise<string>;
 }
 
-const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate }) => {
+const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate, obsToken, onTokenRegenerate }) => {
   const { toast } = useToast();
   const [obsEnabled, setObsEnabled] = useState(true);
-  const [loading, setLoading] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
-  const [obsToken, setObsToken] = useState<string>('');
   const { session: streamerSession, isAuthenticated: isStreamerAuthed } = useChiaAuth();
   
   // Moderator management state
@@ -49,7 +48,6 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
   const obsUrl = obsToken 
     ? `${window.location.origin}/alerts/${obsToken}`
     : '';
-
 
   const handleCopyLink = async () => {
     if (!obsUrl) return;
@@ -72,20 +70,7 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
   const handleRegenerateToken = async () => {
     setRegenerating(true);
     try {
-      // Generate new token
-      const newToken = generateObsToken();
-      
-      // Use secure RPC to regenerate token
-      const { data, error } = await supabase
-        .rpc('regenerate_obs_token', {
-          p_streamer_id: streamer.id,
-          p_new_token: newToken
-        });
-      
-      if (error) throw error;
-
-      setObsToken(newToken);
-      
+      await onTokenRegenerate();
       toast({
         title: "Token Regenerated",
         description: "New OBS alert URL generated successfully!",
@@ -100,46 +85,7 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
     setRegenerating(false);
   };
 
-
-  const generateInitialToken = async () => {
-    if (!streamer?.id) return;
-    
-    setLoading(true);
-    try {
-      // Check if active token exists
-      const { data: activeToken, error: tokenError } = await supabase
-        .from('obs_tokens')
-        .select('token')
-        .eq('streamer_id', streamer.id)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (!tokenError && activeToken?.token) {
-        setObsToken(activeToken.token);
-        setLoading(false);
-        return;
-      }
-
-      // Generate new token via edge function
-      const { data, error } = await supabase.functions.invoke('generate-obs-token', {
-        body: { streamerId: streamer.id }
-      });
-
-      if (error) throw error;
-      if (!data?.token) throw new Error('No token received');
-
-      setObsToken(data.token);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error?.message || "Failed to generate OBS token",
-        variant: "destructive",
-      });
-    }
-    setLoading(false);
-  };
+  // Token is now managed by parent component - no need to generate here
 
   // Fetch moderators
   const fetchModerators = async () => {
@@ -230,12 +176,10 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
     }
   };
 
-  // Generate token when streamer loads
   useEffect(() => {
     if (!streamer?.id) return;
-    generateInitialToken();
     fetchModerators();
-  }, [streamer?.id]);
+  }, [streamer.id]); // Use stable string value instead of object reference
 
   return (
     <div className="space-y-6">
@@ -317,7 +261,7 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
           ) : (
             <div className="text-center py-4">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-              <p className="text-sm text-muted-foreground">Generating OBS token...</p>
+              <p className="text-sm text-muted-foreground">Loading OBS token...</p>
             </div>
           )}
         </CardContent>
@@ -434,6 +378,4 @@ const OBSSettings: React.FC<OBSSettingsProps> = ({ streamer, onStreamerUpdate })
   );
 };
 
-// Export both as named and default exports to ensure compatibility
-export { OBSSettings };
 export default OBSSettings;

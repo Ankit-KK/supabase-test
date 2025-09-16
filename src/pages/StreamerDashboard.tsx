@@ -13,6 +13,7 @@ import { DollarSign, TrendingUp, Users, Calendar, LogOut, Settings } from 'lucid
 import OBSSettings from '@/components/OBSSettings';
 import { MessagesModerationPage } from './MessagesModerationPage';
 import { ConnectionStatus } from '@/components/ConnectionStatus';
+import { obsTokenCache } from '@/utils/obsTokenCache';
 
 interface Donation {
   id: string;
@@ -48,6 +49,7 @@ const StreamerDashboard = () => {
   const [streamer, setStreamer] = useState<Streamer | null>(null);
   const [donations, setDonations] = useState<Donation[]>([]);
   const [moderationDonations, setModerationDonations] = useState<Donation[]>([]);
+  const [obsToken, setObsToken] = useState<string>('');
   const [loadingData, setLoadingData] = useState(true);
   const [totalAmount, setTotalAmount] = useState(0);
   const [monthlyAmount, setMonthlyAmount] = useState(0);
@@ -134,10 +136,14 @@ const StreamerDashboard = () => {
           setMonthlyAmount(monthly);
         }
 
-        if (moderationError) {
-          console.error('Error fetching moderation donations:', moderationError);
-        } else {
-          setModerationDonations(moderationData || []);
+        // Generate OBS token using cache
+        if (streamerInfo.id) {
+          try {
+            const token = await obsTokenCache.getOrGenerateToken(streamerInfo.id);
+            setObsToken(token);
+          } catch (error) {
+            console.error('Error generating OBS token:', error);
+          }
         }
       } catch (error) {
         console.error('Error in fetchStreamerAndData:', error);
@@ -148,6 +154,19 @@ const StreamerDashboard = () => {
 
     fetchStreamerAndData();
   }, [session]);
+
+  const handleTokenRegenerate = async (): Promise<string> => {
+    if (!streamer?.id) throw new Error('No streamer selected');
+    
+    try {
+      const newToken = await obsTokenCache.regenerateToken(streamer.id);
+      setObsToken(newToken);
+      return newToken;
+    } catch (error) {
+      console.error('Error regenerating token:', error);
+      throw error;
+    }
+  };
 
   // Stable subscription using useRef to prevent tab switching issues
   const subscriptionRef = useRef<any>(null);
@@ -512,6 +531,8 @@ const StreamerDashboard = () => {
             <OBSSettings 
               streamer={streamer} 
               onStreamerUpdate={handleStreamerUpdate}
+              obsToken={obsToken}
+              onTokenRegenerate={handleTokenRegenerate}
             />
           </TabsContent>
         </Tabs>

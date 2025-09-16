@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useDemoStreamerAuth } from "@/hooks/useDemoStreamerAuth";
+import { obsTokenCache } from '@/utils/obsTokenCache';
 import { 
   DollarSign, 
   Users, 
@@ -48,6 +49,7 @@ export default function DemoStreamerDashboard() {
   });
   const [streamer, setStreamer] = useState<{ id: string; streamer_slug: string; streamer_name: string; } | null>(null);
   const [loadingDonations, setLoadingDonations] = useState(true);
+  const [obsToken, setObsToken] = useState<string>('');
 
   // Get streamer info for real-time subscription
   useEffect(() => {
