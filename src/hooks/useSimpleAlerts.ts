@@ -83,14 +83,21 @@ export const useSimpleAlerts = ({ streamerId, tableName, enabled = true, obsToke
         amount: latestDonation.amount,
         created_at: latestDonation.created_at
       });
-      console.log('🔍 State check - lastShownId:', lastShownId, 'isFirstLoad:', isFirstLoad);
 
-      // Show alert if first load, forced, or newer than last shown
-      const shouldShow = isFirstLoad || forceShow || latestDonation.id !== lastShownId;
+      // On first load, just set the baseline without showing alert
+      if (isFirstLoad) {
+        console.log('🎯 First load - setting baseline donation ID without showing alert');
+        setLastShownId(latestDonation.id);
+        setIsFirstLoad(false);
+        return;
+      }
+
+      // Show alert only if forced or genuinely new
+      const shouldShow = forceShow || latestDonation.id !== lastShownId;
       
       if (shouldShow) {
-        console.log('🎬 Showing alert - reason:', isFirstLoad ? 'First load' : forceShow ? 'Forced sync' : 'New donation');
-        showAlert(latestDonation, isFirstLoad ? 'First load' : forceShow ? 'Sync after reconnect' : 'Latest donation');
+        console.log('🎬 Showing alert - reason:', forceShow ? 'Forced sync' : 'New donation');
+        showAlert(latestDonation, forceShow ? 'Sync after reconnect' : 'New donation');
       }
 
     } catch (error) {
