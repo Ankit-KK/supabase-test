@@ -106,6 +106,32 @@ serve(async (req) => {
 
     console.log(`Donation ${donation_id} approved successfully`);
 
+    // Broadcast alert to OBS WebSocket connections
+    try {
+      console.log('📡 Broadcasting WebSocket alert for approved DemoStreamer donation');
+      const broadcastResponse = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/obs-alerts-ws`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`
+        },
+        body: JSON.stringify({
+          streamer_slug: streamer_session.streamerSlug,
+          donation_id: donation.id,
+          donation_amount: donation.amount,
+          donation_name: donation.name
+        })
+      });
+
+      if (broadcastResponse.ok) {
+        console.log('✅ WebSocket alert broadcast successful');
+      } else {
+        console.error('❌ WebSocket alert broadcast failed:', await broadcastResponse.text());
+      }
+    } catch (broadcastError) {
+      console.error('❌ Error broadcasting WebSocket alert:', broadcastError);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
