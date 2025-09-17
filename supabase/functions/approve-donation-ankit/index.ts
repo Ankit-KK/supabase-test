@@ -140,8 +140,7 @@ This donation is now live on the stream!
         body: JSON.stringify({
           streamer_slug: streamer_session.streamerSlug,
           donation_id: updatedDonation.id,
-          donation_amount: updatedDonation.amount,
-          donation_name: updatedDonation.name
+          donation: updatedDonation
         })
       });
 

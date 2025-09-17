@@ -16,7 +16,7 @@ const supabaseServiceRole = createClient(
 
 // WebSocket message types
 interface WebSocketMessage {
-  type: 'donation_approved' | 'connection_ack' | 'error';
+  type: 'donation_alert' | 'test_alert' | 'connection_ack' | 'error';
   streamer_slug?: string;
   donation?: {
     id: string;
@@ -143,13 +143,51 @@ async function handleBroadcastRequest(req: Request) {
       });
     }
     
-    if (!streamer_slug || !donation) {
-      console.error('❌ Missing required parameters:', { streamer_slug, donation: !!donation });
-      throw new Error('Missing required parameters: streamer_slug and donation');
+    if (!streamer_slug) {
+      console.error('❌ Missing required parameter: streamer_slug');
+      throw new Error('Missing required parameter: streamer_slug');
+    }
+    
+    // Handle both full donation objects and partial data from approval functions
+    let donationData = donation;
+    if (!donation || (!donation.message && body.donation_id)) {
+      console.log('🔍 Fetching complete donation data from database');
+      
+      // Determine which table to query based on streamer
+      let tableName = 'demostreamer_donations'; // default
+      if (streamer_slug === 'ankit') {
+        tableName = 'ankit_donations';
+      } else if (streamer_slug === 'chia_gaming') {
+        tableName = 'chia_gaming_donations';
+      }
+      
+      const { data: fullDonation, error: fetchError } = await supabaseServiceRole
+        .from(tableName)
+        .select('*')
+        .eq('id', body.donation_id)
+        .single();
+        
+      if (fetchError) {
+        console.error('❌ Failed to fetch donation data:', fetchError);
+        throw new Error('Failed to fetch donation data: ' + fetchError.message);
+      }
+      
+      donationData = fullDonation;
+      console.log('✅ Fetched complete donation data:', {
+        id: donationData.id,
+        name: donationData.name,
+        amount: donationData.amount,
+        message: donationData.message,
+        is_hyperemote: donationData.is_hyperemote
+      });
+    }
+    
+    if (!donationData) {
+      throw new Error('No donation data available');
     }
     
     console.log('📤 Broadcasting real donation alert...');
-    const result = await broadcastAlert(streamer_slug, donation);
+    const result = await broadcastAlert(streamer_slug, donationData);
     
     return new Response(JSON.stringify({
       success: true,
@@ -371,13 +409,14 @@ async function broadcastAlert(streamerSlug: string, donation: any) {
   }
   
   const alertMessage = {
-    type: 'donation_approved',
+    type: 'donation_alert',
     donation: {
       id: donation.id,
       name: donation.name,
       amount: donation.amount,
       message: donation.message,
-      is_hyperemote: donation.is_hyperemote,
+      is_hyperemote: donation.is_hyperemote || false,
+      voice_message_url: donation.voice_message_url || null,
       created_at: donation.created_at
     },
     timestamp: Date.now()

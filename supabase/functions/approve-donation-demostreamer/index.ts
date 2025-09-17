@@ -118,8 +118,7 @@ serve(async (req) => {
         body: JSON.stringify({
           streamer_slug: streamer_session.streamerSlug,
           donation_id: donation.id,
-          donation_amount: donation.amount,
-          donation_name: donation.name
+          donation: donation
         })
       });
 
