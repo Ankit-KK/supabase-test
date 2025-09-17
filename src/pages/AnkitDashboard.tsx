@@ -67,7 +67,7 @@ const AnkitDashboard = () => {
     console.log('Refreshing moderation data for streamer:', streamer.id);
     try {
       const { data: moderationData, error } = await supabase
-        .rpc('get_streamer_moderation_donations', { 
+        .rpc('get_ankit_moderation_donations', { 
           p_streamer_id: streamer.id
         });
 
