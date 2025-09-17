@@ -55,9 +55,13 @@ export const MessagesModerationPage = ({ donations: propDonations, onRefresh, se
 
     console.log('Fetching donations for streamer:', session.streamerId);
     try {
-      // Use the unified moderation donations function
+      // Use the appropriate function based on table name
+      const functionName = tableName === 'ankit_donations' 
+        ? 'get_ankit_moderation_donations' 
+        : 'get_streamer_moderation_donations';
+      
       const { data, error } = await supabase
-        .rpc('get_streamer_moderation_donations', { 
+        .rpc(functionName, { 
           p_streamer_id: session.streamerId
         });
 
