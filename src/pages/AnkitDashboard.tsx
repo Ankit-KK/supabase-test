@@ -122,13 +122,13 @@ const AnkitDashboard = () => {
 
         // Fetch donations for this streamer using secure function
         const { data: donationsData, error: donationsError } = await supabase
-          .rpc('get_streamer_donations', { 
+          .rpc('get_ankit_donations', { 
             p_streamer_id: streamerInfo.id
           });
 
         // Fetch donations for moderation using secure function
         const { data: moderationData, error: moderationError } = await supabase
-          .rpc('get_streamer_moderation_donations', { 
+          .rpc('get_ankit_moderation_donations', { 
             p_streamer_id: streamerInfo.id
           });
 

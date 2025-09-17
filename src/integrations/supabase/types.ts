@@ -970,6 +970,43 @@ export type Database = {
           voice_message_url: string
         }[]
       }
+      get_ankit_donations: {
+        Args: { p_streamer_id: string }
+        Returns: {
+          amount: number
+          approved_at: string
+          approved_by: string
+          created_at: string
+          id: string
+          is_hyperemote: boolean
+          message: string
+          message_visible: boolean
+          moderation_status: string
+          name: string
+          payment_status: string
+          voice_duration_seconds: number
+          voice_message_url: string
+        }[]
+      }
+      get_ankit_moderation_donations: {
+        Args: { p_streamer_id: string }
+        Returns: {
+          amount: number
+          approved_at: string
+          approved_by: string
+          created_at: string
+          id: string
+          is_hyperemote: boolean
+          message: string
+          message_visible: boolean
+          moderation_status: string
+          name: string
+          payment_status: string
+          rejected_reason: string
+          voice_duration_seconds: number
+          voice_message_url: string
+        }[]
+      }
       get_my_moderators: {
         Args: { p_streamer_id: string }
         Returns: {
