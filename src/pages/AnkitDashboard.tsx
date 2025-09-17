@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAnkitAuth } from '@/hooks/useAnkitAuth';
+import { useSimpleAnkitAuth } from '@/hooks/useSimpleAnkitAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency, calculateMonthlyTotal } from '@/utils/dashboardUtils';
 import { useToast } from '@/hooks/use-toast';
@@ -44,7 +44,7 @@ interface Streamer {
 }
 
 const AnkitDashboard = () => {
-  const { session, loading, logout } = useAnkitAuth();
+  const { session, loading, logout } = useSimpleAnkitAuth();
   const streamerSlug = 'ankit';
   const { toast } = useToast();
   const [streamer, setStreamer] = useState<Streamer | null>(null);

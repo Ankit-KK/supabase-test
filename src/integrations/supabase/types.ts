@@ -580,10 +580,12 @@ export type Database = {
           last_login_email: string | null
           last_login_provider: string | null
           obs_token: string | null
+          password_hash: string | null
           streamer_name: string
           streamer_slug: string
           updated_at: string | null
           user_id: string | null
+          username: string | null
         }
         Insert: {
           brand_color?: string | null
@@ -596,10 +598,12 @@ export type Database = {
           last_login_email?: string | null
           last_login_provider?: string | null
           obs_token?: string | null
+          password_hash?: string | null
           streamer_name: string
           streamer_slug: string
           updated_at?: string | null
           user_id?: string | null
+          username?: string | null
         }
         Update: {
           brand_color?: string | null
@@ -612,10 +616,12 @@ export type Database = {
           last_login_email?: string | null
           last_login_provider?: string | null
           obs_token?: string | null
+          password_hash?: string | null
           streamer_name?: string
           streamer_slug?: string
           updated_at?: string | null
           user_id?: string | null
+          username?: string | null
         }
         Relationships: []
       }
@@ -831,6 +837,16 @@ export type Database = {
         Returns: boolean
       }
       authenticate_streamer: {
+        Args: { p_password: string; p_username: string }
+        Returns: {
+          brand_color: string
+          id: string
+          streamer_name: string
+          streamer_slug: string
+          success: boolean
+        }[]
+      }
+      authenticate_streamer_simple: {
         Args: { p_password: string; p_username: string }
         Returns: {
           brand_color: string
