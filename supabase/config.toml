@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.obs-alerts-ws]
 verify_jwt = false
+
+[functions.ankit-obs-alerts]
+verify_jwt = false

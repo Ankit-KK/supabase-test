@@ -128,19 +128,16 @@ This donation is now live on the stream!
     
     await notifyTelegramModerators(donation.streamer_id, notificationMessage, supabaseAdmin);
 
-    // Broadcast alert to OBS WebSocket connections
+    // Broadcast alert to dedicated Ankit WebSocket
     try {
       console.log('📡 Broadcasting WebSocket alert for approved Ankit donation');
-      const broadcastResponse = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/obs-alerts-ws`, {
+      const broadcastResponse = await fetch('https://vsevsjvtrshgeiudrnth.functions.supabase.co/ankit-obs-alerts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`
         },
         body: JSON.stringify({
-          streamer_slug: streamer_session.streamerSlug,
-          donation_id: updatedDonation.id,
-          donation: updatedDonation
+          donation_id: updatedDonation.id
         })
       });
 

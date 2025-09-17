@@ -25,6 +25,7 @@ import Ankit from "./pages/Ankit";
 import AnkitLogin from "./pages/AnkitLogin";
 import AnkitDashboard from "./pages/AnkitDashboard";
 import AnkitAlerts from "./pages/AnkitAlerts";
+import AnkitOBSAlerts from "./pages/AnkitOBSAlerts";
 import DemoStreamer from "./pages/DemoStreamer";
 import DemoStreamerLogin from "./pages/DemoStreamerLogin";
 import DemoStreamerDashboard from "./pages/DemoStreamerDashboard";
@@ -66,6 +67,7 @@ const App = () => (
             {/* OBS Alerts */}
             <Route path="/alerts/:token" element={<AlertsPage />} />
             <Route path="/ankit-alerts/:token" element={<AnkitAlerts />} />
+            <Route path="/ankit/obs-alerts/:token" element={<AnkitOBSAlerts />} />
             <Route path="/demostreamer-alerts/:token" element={<DemoStreamerAlerts />} />
             <Route path="/test-alerts" element={<TestAlerts />} />
             
