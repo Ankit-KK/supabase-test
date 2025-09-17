@@ -13,7 +13,7 @@ const supabaseServiceRole = createClient(
   { auth: { persistSession: false } }
 )
 
-// Store active WebSocket connections
+// Store active WebSocket connections (now with database backup)
 const activeConnections = new Map<string, WebSocket>()
 
 interface DonationAlert {
@@ -58,6 +58,78 @@ function generateConnectionKey(): string {
   return `ankit-${crypto.randomUUID()}`
 }
 
+async function registerConnection(connectionKey: string, token: string) {
+  try {
+    const { error } = await supabaseServiceRole
+      .from('active_websocket_connections')
+      .insert({
+        connection_key: connectionKey,
+        streamer_slug: 'ankit',
+        token_hash: token.substring(0, 8) + '...' // Store partial token for debugging
+      })
+    
+    if (error) {
+      console.error('❌ Failed to register connection:', error)
+    } else {
+      console.log('✅ Connection registered in database:', connectionKey)
+    }
+  } catch (error) {
+    console.error('❌ Error registering connection:', error)
+  }
+}
+
+async function unregisterConnection(connectionKey: string) {
+  try {
+    const { error } = await supabaseServiceRole
+      .from('active_websocket_connections')
+      .delete()
+      .eq('connection_key', connectionKey)
+    
+    if (error) {
+      console.error('❌ Failed to unregister connection:', error)
+    } else {
+      console.log('✅ Connection unregistered from database:', connectionKey)
+    }
+  } catch (error) {
+    console.error('❌ Error unregistering connection:', error)
+  }
+}
+
+async function cleanupExpiredConnections() {
+  try {
+    const { error } = await supabaseServiceRole
+      .from('active_websocket_connections')
+      .delete()
+      .lt('expires_at', new Date().toISOString())
+    
+    if (error) {
+      console.error('❌ Failed to cleanup expired connections:', error)
+    }
+  } catch (error) {
+    console.error('❌ Error cleaning up connections:', error)
+  }
+}
+
+async function getActiveConnectionsCount(): Promise<number> {
+  try {
+    const { count, error } = await supabaseServiceRole
+      .from('active_websocket_connections')
+      .select('*', { count: 'exact', head: true })
+      .eq('streamer_slug', 'ankit')
+      .gt('expires_at', new Date().toISOString())
+    
+    if (error) {
+      console.error('❌ Failed to get active connections count:', error)
+      return activeConnections.size // Fallback to in-memory count
+    }
+    
+    return count || 0
+  } catch (error) {
+    console.error('❌ Error getting active connections count:', error)
+    return activeConnections.size // Fallback to in-memory count
+  }
+}
+
 function setupPingPong(socket: WebSocket, connectionKey: string) {
   const pingInterval = setInterval(() => {
     if (socket.readyState === WebSocket.OPEN) {
@@ -92,9 +164,12 @@ async function handleWebSocketConnection(request: Request): Promise<Response> {
   
   console.log(`🚀 New Ankit WebSocket connection: ${connectionKey}`)
   
-  socket.onopen = () => {
+  socket.onopen = async () => {
     activeConnections.set(connectionKey, socket)
-    console.log(`✅ Ankit WebSocket connected: ${connectionKey}. Total: ${activeConnections.size}`)
+    await registerConnection(connectionKey, token)
+    
+    const dbCount = await getActiveConnectionsCount()
+    console.log(`✅ Ankit WebSocket connected: ${connectionKey}. Memory: ${activeConnections.size}, DB: ${dbCount}`)
     
     // Send connection acknowledgment
     socket.send(JSON.stringify({
@@ -103,7 +178,7 @@ async function handleWebSocketConnection(request: Request): Promise<Response> {
       streamer_slug: 'ankit'
     }))
     
-    // Setup ping/pong
+    // Setup ping/pong with database heartbeat
     setupPingPong(socket, connectionKey)
   }
   
@@ -120,14 +195,18 @@ async function handleWebSocketConnection(request: Request): Promise<Response> {
     }
   }
   
-  socket.onclose = (event) => {
+  socket.onclose = async (event) => {
     activeConnections.delete(connectionKey)
-    console.log(`🔌 Ankit WebSocket closed: ${connectionKey}, Code: ${event.code}, Reason: ${event.reason}. Total: ${activeConnections.size}`)
+    await unregisterConnection(connectionKey)
+    
+    const dbCount = await getActiveConnectionsCount()
+    console.log(`🔌 Ankit WebSocket closed: ${connectionKey}, Code: ${event.code}, Reason: ${event.reason}. Memory: ${activeConnections.size}, DB: ${dbCount}`)
   }
   
-  socket.onerror = (error) => {
+  socket.onerror = async (error) => {
     console.error(`❌ Ankit WebSocket error for ${connectionKey}:`, error)
     activeConnections.delete(connectionKey)
+    await unregisterConnection(connectionKey)
   }
   
   return response
@@ -144,6 +223,9 @@ async function handleBroadcast(request: Request): Promise<Response> {
       console.error('❌ Missing donation_id in broadcast request')
       throw new Error('Missing donation_id')
     }
+    
+    // Clean up expired connections first
+    await cleanupExpiredConnections()
     
     // Fetch complete donation data from Ankit's table
     const { data: donation, error } = await supabaseServiceRole
@@ -164,14 +246,20 @@ async function handleBroadcast(request: Request): Promise<Response> {
       status: donation.moderation_status
     })
     
-    console.log('📊 Broadcasting to', activeConnections.size, 'Ankit connections')
+    // Get counts from both memory and database
+    const dbConnectionCount = await getActiveConnectionsCount()
+    const memoryConnectionCount = activeConnections.size
     
-    if (activeConnections.size === 0) {
-      console.log('⚠️ No active Ankit connections to broadcast to')
+    console.log('📊 Broadcasting to connections - Memory:', memoryConnectionCount, 'DB:', dbConnectionCount)
+    
+    if (memoryConnectionCount === 0 && dbConnectionCount === 0) {
+      console.log('⚠️ No active Ankit connections to broadcast to (checked both memory and database)')
       return new Response(JSON.stringify({
         success: true,
         message: 'No active connections',
-        connections: 0
+        connections: 0,
+        database_connections: dbConnectionCount,
+        memory_connections: memoryConnectionCount
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
@@ -203,11 +291,13 @@ async function handleBroadcast(request: Request): Promise<Response> {
         } else {
           console.log(`⚠️ Removing stale Ankit connection: ${connectionKey}`)
           activeConnections.delete(connectionKey)
+          await unregisterConnection(connectionKey)
           failureCount++
         }
       } catch (error) {
         console.error(`❌ Error sending to ${connectionKey}:`, error)
         activeConnections.delete(connectionKey)
+        await unregisterConnection(connectionKey)
         failureCount++
       }
     }
@@ -218,6 +308,8 @@ async function handleBroadcast(request: Request): Promise<Response> {
       success: true,
       message: 'Alert broadcasted to Ankit connections',
       connections: successCount,
+      database_connections: dbConnectionCount,
+      memory_connections: memoryConnectionCount,
       donation: {
         id: donation.id,
         name: donation.name,
