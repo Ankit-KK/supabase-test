@@ -257,8 +257,8 @@ const AnkitDashboardContent = () => {
           </TabsContent>
         </Tabs>
 
-        {/* Connection Status - Top Right */}
-        <div className="fixed top-4 right-4 z-50">
+        {/* Connection Status - Top Right, below header */}
+        <div className="fixed top-20 right-4 z-40">
           <div className={`
             px-3 py-1 rounded-full text-xs font-medium flex items-center gap-2
             ${connectionStatus === 'connected' ? 'bg-green-500/20 text-green-600 border border-green-200' :
