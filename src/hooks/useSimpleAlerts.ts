@@ -106,11 +106,20 @@ export const useSimpleAlerts = ({ streamerId, tableName, enabled = true, obsToke
       }
 
       // Show alert only if forced or genuinely new
+      console.log('🔍 Alert decision check:', {
+        latestDonationId: latestDonation.id,
+        lastShownId: lastShownId,
+        forceShow: forceShow,
+        isDifferent: latestDonation.id !== lastShownId
+      });
+      
       const shouldShow = forceShow || latestDonation.id !== lastShownId;
       
       if (shouldShow) {
         console.log('🎬 Showing alert - reason:', forceShow ? 'Forced sync' : 'New donation');
         showAlert(latestDonation, forceShow ? 'Sync after reconnect' : 'New donation');
+      } else {
+        console.log('❌ Not showing alert - donation already shown or no force flag');
       }
 
     } catch (error) {
