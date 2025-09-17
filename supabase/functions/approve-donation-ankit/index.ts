@@ -128,33 +128,60 @@ This donation is now live on the stream!
     
     await notifyTelegramModerators(donation.streamer_id, notificationMessage, supabaseAdmin);
 
-    // Broadcast alert to dedicated Ankit WebSocket
+    // Broadcast alert to dedicated Ankit WebSocket using Supabase client
+    console.log('📡 Broadcasting WebSocket alert for approved Ankit donation');
+    console.log('🔍 Environment check:', {
+      hasServiceRole: !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'),
+      hasAnonKey: !!Deno.env.get('SUPABASE_ANON_KEY'),
+      donationId: updatedDonation.id
+    });
+
     try {
-      console.log('📡 Broadcasting WebSocket alert for approved Ankit donation');
-      const broadcastResponse = await fetch('https://vsevsjvtrshgeiudrnth.supabase.co/functions/v1/ankit-obs-alerts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
-        },
-        body: JSON.stringify({
+      // Use Supabase client for better reliability
+      const { data: broadcastResult, error: broadcastError } = await supabaseAdmin.functions.invoke('ankit-obs-alerts', {
+        body: {
           donation_id: updatedDonation.id
-        })
+        }
       });
 
-      if (broadcastResponse.ok) {
-        const result = await broadcastResponse.json();
-        console.log('✅ WebSocket alert broadcast successful:', result);
-      } else {
-        const errorText = await broadcastResponse.text();
-        console.error('❌ WebSocket alert broadcast failed:', {
-          status: broadcastResponse.status,
-          statusText: broadcastResponse.statusText,
-          error: errorText
+      if (broadcastError) {
+        console.error('❌ Supabase function invoke error:', broadcastError);
+        
+        // Fallback to direct HTTP call with comprehensive logging
+        console.log('🔄 Attempting fallback HTTP broadcast...');
+        const fallbackResponse = await fetch('https://vsevsjvtrshgeiudrnth.supabase.co/functions/v1/ankit-obs-alerts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+          },
+          body: JSON.stringify({
+            donation_id: updatedDonation.id
+          })
         });
+
+        const fallbackText = await fallbackResponse.text();
+        console.log('🔄 Fallback response:', {
+          status: fallbackResponse.status,
+          statusText: fallbackResponse.statusText,
+          body: fallbackText
+        });
+
+        if (!fallbackResponse.ok) {
+          throw new Error(`Fallback broadcast failed: ${fallbackResponse.status} ${fallbackText}`);
+        }
+      } else {
+        console.log('✅ WebSocket alert broadcast successful via Supabase client:', broadcastResult);
       }
     } catch (broadcastError) {
-      console.error('❌ Error broadcasting WebSocket alert:', broadcastError);
+      console.error('❌ Critical error broadcasting WebSocket alert:', {
+        error: broadcastError.message,
+        stack: broadcastError.stack,
+        donationId: updatedDonation.id
+      });
+      
+      // Don't fail the approval process, but log extensively
+      console.log('⚠️ Donation approval succeeded but WebSocket broadcast failed');
     }
 
     return new Response(
