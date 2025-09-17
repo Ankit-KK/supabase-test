@@ -1,322 +1,64 @@
-import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSimpleAnkitAuth } from '@/hooks/useSimpleAnkitAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { formatCurrency, calculateMonthlyTotal } from '@/utils/dashboardUtils';
-import { useToast } from '@/hooks/use-toast';
+import { formatCurrency } from '@/utils/dashboardUtils';
 import { DollarSign, TrendingUp, Users, Calendar, LogOut, Settings } from 'lucide-react';
 import AnkitOBSSettings from '@/components/AnkitOBSSettings';
-import { MessagesModerationPage } from '@/pages/MessagesModerationPage';
 import { ConnectionStatus } from '@/components/ConnectionStatus';
-import { PendingDonationsBadge } from '@/components/PendingDonationsBadge';
 import { RealtimeDebugPanel } from '@/components/RealtimeDebugPanel';
+import { AnkitRealtimeProvider, useAnkitRealtime } from '@/contexts/AnkitRealtimeContext';
+import { AnkitMessagesModerationPage } from '@/pages/AnkitMessagesModerationPage';
 import { obsTokenCache } from '@/utils/obsTokenCache';
 
-interface Donation {
-  id: string;
-  name: string;
-  amount: number;
-  message?: string | null;
-  voice_message_url?: string | null;
-  moderation_status: string;
-  approved_by?: string | null;
-  approved_at?: string | null;
-  rejected_reason?: string | null;
-  created_at: string;
-  is_hyperemote?: boolean | null;
-  payment_status?: string | null;
-  streamer_id?: string;
-  message_visible?: boolean;
-}
-
-interface Streamer {
-  id: string;
-  streamer_slug: string;
-  streamer_name: string;
-  brand_color: string;
-  brand_logo_url?: string;
-  hyperemotes_enabled?: boolean;
-  hyperemotes_min_amount?: number;
-}
-
-const AnkitDashboard = () => {
+const AnkitDashboardContent = () => {
   const { session, loading, logout } = useSimpleAnkitAuth();
-  const streamerSlug = 'ankit';
-  const { toast } = useToast();
-  const [streamer, setStreamer] = useState<Streamer | null>(null);
-  const [donations, setDonations] = useState<Donation[]>([]);
-  const [moderationDonations, setModerationDonations] = useState<Donation[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
-  const [totalAmount, setTotalAmount] = useState(0);
-  const [monthlyAmount, setMonthlyAmount] = useState(0);
+  const { 
+    streamer, 
+    donations, 
+    moderationDonations, 
+    totalAmount, 
+    monthlyAmount, 
+    loading: loadingData, 
+    connectionStatus 
+  } = useAnkitRealtime();
+  
   const [hasAccess, setHasAccess] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [obsToken, setObsToken] = useState<string>('');
 
-  const handleStreamerUpdate = (updatedStreamer: Streamer) => {
-    setStreamer(updatedStreamer);
+  const handleStreamerUpdate = (updatedStreamer: any) => {
+    // Streamer updates are now handled by the context
+    console.log('Streamer update:', updatedStreamer);
   };
 
-  const refreshModerationData = async () => {
-    if (!streamer?.id) return;
-    
-    console.log('Refreshing moderation data for streamer:', streamer.id);
-    try {
-      const { data: moderationData, error } = await supabase
-        .rpc('get_ankit_moderation_donations', { 
-          p_streamer_id: streamer.id
-        });
-
-      if (!error) {
-        console.log('Fetched moderation data:', moderationData?.length, 'donations');
-        setModerationDonations(moderationData || []);
-      } else {
-        console.error('Error fetching moderation data:', error);
-      }
-    } catch (error) {
-      console.error('Error refreshing moderation data:', error);
-    }
-  };
-
-  // Move useEffect to top level - before any conditional logic
+  // Access control and OBS token setup
   useEffect(() => {
-    if (!session) return;
+    if (!session || !streamer) return;
 
-    const fetchStreamerAndData = async () => {
-      setLoadingData(true);
-      
-      try {
-        // First, get the streamer info using secure function to bypass RLS
-        const { data: streamerData, error: streamerError } = await supabase
-          .rpc('get_public_streamer_info', { slug: streamerSlug });
-
-        if (streamerError || !streamerData || streamerData.length === 0) {
-          console.error('Error fetching streamer:', streamerError);
-          setLoadingData(false);
-          return;
-        }
-
-        const streamerInfo = streamerData[0];
-        setStreamer(streamerInfo);
-
-        // Check if logged in user matches this streamer
-        if (session.streamerSlug !== streamerSlug) {
-          setHasAccess(false);
-          setLoadingData(false);
-          return;
-        }
-
-        setHasAccess(true);
-
-        // Generate/get OBS token
-        try {
-          const token = await obsTokenCache.getOrGenerateToken(streamerInfo.id);
-          setObsToken(token);
-        } catch (error) {
-          console.error('Error getting OBS token:', error);
-        }
-
-        // Fetch donations for this streamer using secure function
-        const { data: donationsData, error: donationsError } = await supabase
-          .rpc('get_ankit_donations', { 
-            p_streamer_id: streamerInfo.id
-          });
-
-        // Fetch donations for moderation using secure function
-        const { data: moderationData, error: moderationError } = await supabase
-          .rpc('get_ankit_moderation_donations', { 
-            p_streamer_id: streamerInfo.id
-          });
-
-        if (donationsError) {
-          console.error('Error fetching donations:', donationsError);
-        } else {
-          setDonations(donationsData || []);
-          
-          // Calculate totals
-          const total = donationsData?.reduce((sum, donation) => sum + Number(donation.amount), 0) || 0;
-          setTotalAmount(total);
-          
-          const monthly = calculateMonthlyTotal(donationsData || []);
-          setMonthlyAmount(monthly);
-        }
-
-        if (moderationError) {
-          console.error('Error fetching moderation donations:', moderationError);
-        } else {
-          setModerationDonations(moderationData || []);
-        }
-      } catch (error) {
-        console.error('Error in fetchStreamerAndData:', error);
-      }
-      
-      setLoadingData(false);
-    };
-
-    // Store the function reference (for manual refresh only, not automatic)
-    fetchDataRef.current = fetchStreamerAndData;
-    
-    fetchStreamerAndData();
-  }, [session]);
-
-  // Stable subscription using useRef to prevent tab switching issues
-  const subscriptionRef = useRef<any>(null);
-  const currentStreamerId = useRef<string | null>(null);
-  const fetchDataRef = useRef<(() => Promise<void>) | null>(null);
-  
-  // Memoize streamer values to prevent unnecessary re-renders
-  const stableStreamerId = useMemo(() => streamer?.id || null, [streamer?.id]);
-  const stableStreamerSlug = useMemo(() => streamer?.streamer_slug || null, [streamer?.streamer_slug]);
-
-  // Direct Supabase subscription for dashboard updates
-  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
-
-  // Set up subscription when streamer ID is available - fix dependency loop
-  useEffect(() => {
-    if (!stableStreamerId) {
-      setConnectionStatus('disconnected');
+    // Check if logged in user matches this streamer
+    if (session.streamerSlug !== 'ankit') {
+      setHasAccess(false);
       return;
     }
 
-    console.log('🔗 Setting up direct Supabase subscription for Ankit dashboard, streamer ID:', stableStreamerId);
-    setConnectionStatus('connecting');
+    setHasAccess(true);
 
-    const channel = supabase
-      .channel(`ankit-dashboard-${stableStreamerId}`)
-      .on(
-        'postgres_changes', 
-        {
-          event: '*',
-          schema: 'public',
-          table: 'ankit_donations',
-          filter: `streamer_id=eq.${stableStreamerId}`
-        },
-        (payload) => {
-          console.log('📊 DASHBOARD UPDATE RECEIVED:', {
-            eventType: payload.eventType,
-            donationId: (payload.new as any)?.id,
-            donorName: (payload.new as any)?.name,
-            amount: (payload.new as any)?.amount,
-            paymentStatus: (payload.new as any)?.payment_status,
-            moderationStatus: (payload.new as any)?.moderation_status,
-            old: payload.old ? { 
-              paymentStatus: (payload.old as any).payment_status,
-              moderationStatus: (payload.old as any).moderation_status
-            } : null
-          });
-          
-          const newDonation = payload.new as Donation;
-          
-          if (payload.eventType === 'INSERT') {
-            console.log('➕ New donation inserted:', newDonation.name, newDonation.amount);
-            
-            if (newDonation.payment_status === 'success') {
-              toast({
-                title: "💰 New Donation!",
-                description: `${newDonation.name} donated ₹${newDonation.amount}`,
-                duration: 4000,
-              });
-
-              // Update local state directly instead of refetching
-              setDonations(prev => [newDonation, ...prev]);
-              setTotalAmount(prev => prev + Number(newDonation.amount));
-              
-              // Update monthly total if it's from this month
-              const donationDate = new Date(newDonation.created_at);
-              const now = new Date();
-              if (donationDate.getMonth() === now.getMonth() && donationDate.getFullYear() === now.getFullYear()) {
-                setMonthlyAmount(prev => prev + Number(newDonation.amount));
-              }
-            }
-            
-            // Update moderation list for any new donation
-            if (newDonation.moderation_status === 'pending') {
-              setModerationDonations(prev => [newDonation, ...prev]);
-            }
-          }
-          
-          if (payload.eventType === 'UPDATE') {
-            const oldDonation = payload.old as Donation;
-            console.log('🔄 Donation updated:', {
-              name: newDonation.name,
-              paymentChanged: oldDonation.payment_status !== newDonation.payment_status,
-              moderationChanged: oldDonation.moderation_status !== newDonation.moderation_status
-            });
-            
-            // Check if payment was completed
-            if (oldDonation.payment_status !== 'success' && newDonation.payment_status === 'success') {
-              toast({
-                title: "💰 Payment Confirmed!",
-                description: `${newDonation.name} - ₹${newDonation.amount}`,
-                duration: 4000,
-              });
-              
-              // Add to total amounts if just confirmed
-              setTotalAmount(prev => prev + Number(newDonation.amount));
-              const donationDate = new Date(newDonation.created_at);
-              const now = new Date();
-              if (donationDate.getMonth() === now.getMonth() && donationDate.getFullYear() === now.getFullYear()) {
-                setMonthlyAmount(prev => prev + Number(newDonation.amount));
-              }
-            }
-            
-            // Check if donation was approved/rejected
-            if (oldDonation.moderation_status !== newDonation.moderation_status) {
-              if (newDonation.moderation_status === 'approved' || newDonation.moderation_status === 'auto_approved') {
-                toast({
-                  title: "✅ Donation Approved!",
-                  description: `${newDonation.name}'s message is now live on OBS`,
-                  duration: 4000,
-                });
-              } else if (newDonation.moderation_status === 'rejected') {
-                toast({
-                  title: "❌ Donation Rejected",
-                  description: `${newDonation.name}'s message was rejected`,
-                  duration: 3000,
-                });
-              }
-            }
-
-            // Update both donation lists in real-time
-            setDonations(prev => prev.map(d => d.id === newDonation.id ? newDonation : d));
-            setModerationDonations(prev => prev.map(d => d.id === newDonation.id ? newDonation : d));
-          }
-        }
-      )
-      .subscribe((status) => {
-        console.log('🔗 Ankit Dashboard subscription status:', status);
-        if (status === 'SUBSCRIBED') {
-          setConnectionStatus('connected');
-          console.log('✅ Dashboard real-time connection established!');
-        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-          console.error('❌ Dashboard subscription failed:', status);
-          setConnectionStatus('disconnected');
-        }
-      });
-
-    return () => {
-      console.log('🔌 Cleaning up dashboard subscription');
-      supabase.removeChannel(channel);
+    // Generate/get OBS token
+    const setupOBSToken = async () => {
+      try {
+        const token = await obsTokenCache.getOrGenerateToken(streamer.id);
+        setObsToken(token);
+      } catch (error) {
+        console.error('Error getting OBS token:', error);
+      }
     };
-  }, [stableStreamerId]); // Only depend on streamer ID
 
-  // Show loading while auth is being determined
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  // Redirect if not authenticated
-  if (!session) {
-    return <Navigate to="/ankit/login" replace />;
-  }
+    setupOBSToken();
+  }, [session, streamer]);
 
   if (loadingData) {
     return (
@@ -332,7 +74,7 @@ const AnkitDashboard = () => {
         <Card>
           <CardHeader>
             <CardTitle>Streamer Not Found</CardTitle>
-            <CardDescription>The streamer "{streamerSlug}" could not be found.</CardDescription>
+            <CardDescription>The streamer "ankit" could not be found.</CardDescription>
           </CardHeader>
         </Card>
       </div>
@@ -385,13 +127,9 @@ const AnkitDashboard = () => {
             <TabsTrigger value="messages" className="flex items-center gap-2">
               <Settings className="w-4 h-4" />
               Messages
-              {streamer?.id && (
-                <PendingDonationsBadge 
-                  streamerId={streamer.id} 
-                  tableName="ankit_donations" 
-                  className="ml-1" 
-                />
-              )}
+              <Badge variant="secondary" className="ml-1">
+                {moderationDonations.filter(d => d.moderation_status === 'pending').length}
+              </Badge>
             </TabsTrigger>
             <TabsTrigger value="obs" className="flex items-center gap-2">
               <Settings className="w-4 h-4" />
@@ -455,99 +193,123 @@ const AnkitDashboard = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Recent Donations</CardTitle>
-                <CardDescription>Latest approved donations from your supporters</CardDescription>
+                <CardDescription>Latest successful donations from your supporters</CardDescription>
               </CardHeader>
               <CardContent>
-                {donations.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No donations yet. Share your donation link to get started!
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {donations.slice(0, 10).map((donation) => (
-                      <div
-                        key={donation.id}
-                        className="flex items-center justify-between p-4 border rounded-lg"
-                      >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">{donation.name}</span>
-                            {donation.is_hyperemote && (
-                              <Badge variant="secondary" className="text-xs">🎉 Hyperemote</Badge>
-                            )}
-                            {donation.voice_message_url && (
-                              <Badge variant="outline" className="text-xs">🎤 Voice</Badge>
-                            )}
-                          </div>
-                          {donation.message && (
-                            <p className="text-sm text-muted-foreground mt-1">{donation.message}</p>
-                          )}
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(donation.created_at).toLocaleString()}
-                          </p>
+                <div className="space-y-4">
+                  {donations.slice(0, 10).map((donation) => (
+                    <div key={donation.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                          <span className="text-sm font-medium text-primary">
+                            {donation.name.charAt(0).toUpperCase()}
+                          </span>
                         </div>
-                        <div className="text-right">
-                          <div className="font-bold text-lg" style={{ color: streamer.brand_color }}>
-                            {formatCurrency(Number(donation.amount))}
-                          </div>
-                          <Badge
-                            variant={donation.moderation_status === 'approved' ? 'default' : 'secondary'}
-                            className="text-xs"
-                          >
-                            {donation.moderation_status === 'auto_approved' ? 'Auto Approved' : 'Approved'}
-                          </Badge>
+                        <div>
+                          <p className="font-medium">{donation.name}</p>
+                          {donation.message && (
+                            <p className="text-sm text-muted-foreground truncate max-w-md">
+                              {donation.message}
+                            </p>
+                          )}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
+                      <div className="text-right">
+                        <p className="font-bold" style={{ color: streamer.brand_color }}>
+                          {formatCurrency(donation.amount)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(donation.created_at).toLocaleDateString()}
+                        </p>
+                        {donation.is_hyperemote && (
+                          <Badge variant="secondary" className="text-xs">
+                            Hyperemote
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {donations.length === 0 && (
+                    <p className="text-center text-muted-foreground py-8">
+                      No donations yet. Share your donation link to get started!
+                    </p>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="messages" className="mt-6">
-            <MessagesModerationPage 
-              donations={moderationDonations}
-              onRefresh={refreshModerationData}
-              session={session && streamer?.id ? {
-                streamerId: streamer.id,
-                streamerSlug: session.streamerSlug,
-                streamerName: session.streamerName,
-                brandColor: session.brandColor,
-                loginTime: session.loginTime || Date.now()
-              } : null}
-              tableName="ankit_donations"
-              approveFunctionName="approve-donation-ankit"
-              rejectFunctionName="reject-donation-ankit"
-            />
+          <TabsContent value="messages" className="space-y-6 mt-6">
+            <AnkitMessagesModerationPage />
           </TabsContent>
 
-          <TabsContent value="obs" className="mt-6">
-            <div className="space-y-6">
-              <ConnectionStatus />
-              <AnkitOBSSettings 
-                streamer={streamer}
-                onStreamerUpdate={handleStreamerUpdate}
-                obsToken={obsToken}
-                onTokenRegenerate={async () => {
-                  if (streamer?.id) {
-                    const newToken = await obsTokenCache.regenerateToken(streamer.id);
-                    setObsToken(newToken);
-                    return newToken;
-                  }
-                  return '';
-                }}
-              />
-            </div>
+          <TabsContent value="obs" className="space-y-6 mt-6">
+            <AnkitOBSSettings 
+              streamer={streamer}
+              onStreamerUpdate={handleStreamerUpdate}
+              obsToken={obsToken}
+              onTokenRegenerate={async () => {
+                const newToken = await obsTokenCache.regenerateToken(streamer.id);
+                setObsToken(newToken);
+                return newToken;
+              }}
+            />
           </TabsContent>
         </Tabs>
 
-        {/* Connection Status Debug */}
-        <div className="fixed bottom-4 right-4 text-xs bg-white/90 p-2 rounded shadow">
-          Connection: {connectionStatus}
+        {/* Connection Status - Top Right */}
+        <div className="fixed top-4 right-4 z-50">
+          <div className={`
+            px-3 py-1 rounded-full text-xs font-medium flex items-center gap-2
+            ${connectionStatus === 'connected' ? 'bg-green-500/20 text-green-600 border border-green-200' :
+              connectionStatus === 'connecting' ? 'bg-yellow-500/20 text-yellow-600 border border-yellow-200' :
+              'bg-red-500/20 text-red-600 border border-red-200'}
+          `}>
+            <div className={`w-2 h-2 rounded-full ${
+              connectionStatus === 'connected' ? 'bg-green-500' :
+              connectionStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' :
+              'bg-red-500'
+            }`} />
+            {connectionStatus === 'connected' ? 'Live Updates' :
+             connectionStatus === 'connecting' ? 'Connecting...' :
+             'Disconnected'}
+          </div>
+        </div>
+
+        {/* Debug Panel - Bottom Left */}
+        <div className="fixed bottom-4 left-4 z-50">
+          <RealtimeDebugPanel 
+            streamerId={streamer?.id}
+            connectionStatus={connectionStatus}
+          />
         </div>
       </div>
     </div>
+  );
+};
+
+// Wrapper component with provider
+const AnkitDashboard = () => {
+  const { session, loading } = useSimpleAnkitAuth();
+
+  // Show loading while auth is being determined
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Redirect if not authenticated
+  if (!session) {
+    return <Navigate to="/ankit/login" replace />;
+  }
+
+  return (
+    <AnkitRealtimeProvider session={session}>
+      <AnkitDashboardContent />
+    </AnkitRealtimeProvider>
   );
 };
 
