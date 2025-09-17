@@ -31,6 +31,13 @@ export const useSimpleAlerts = ({ streamerId, tableName, enabled = true, obsToke
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const retryCountRef = useRef(0);
 
+  // Helper function to clear current alert state
+  const clearCurrentAlert = useCallback(() => {
+    console.log('🧹 Clearing current alert state');
+    setCurrentAlert(null);
+    setIsVisible(false);
+  }, []);
+
   const showAlert = useCallback((donation: Donation, reason: string) => {
     console.log('🚨 Showing alert:', donation.name, '₹' + donation.amount, 'Reason:', reason);
     setCurrentAlert(donation);
@@ -87,8 +94,14 @@ export const useSimpleAlerts = ({ streamerId, tableName, enabled = true, obsToke
       // On first load, just set the baseline without showing alert
       if (isFirstLoad) {
         console.log('🎯 First load - setting baseline donation ID without showing alert');
+        console.log('🧹 Clearing any existing alert state on first load');
+        
+        // Explicitly clear alert states to prevent old alerts from showing
+        clearCurrentAlert();
         setLastShownId(latestDonation.id);
         setIsFirstLoad(false);
+        
+        console.log('✅ First load complete - baseline set, states cleared');
         return;
       }
 
@@ -104,7 +117,7 @@ export const useSimpleAlerts = ({ streamerId, tableName, enabled = true, obsToke
       console.error('❌ Fetch error:', error);
       setConnectionStatus('error');
     }
-  }, [streamerId, tableName, enabled, isFirstLoad, lastShownId, obsToken, showAlert]);
+  }, [streamerId, tableName, enabled, isFirstLoad, lastShownId, obsToken, showAlert, clearCurrentAlert]);
 
   const startFallbackPolling = useCallback(() => {
     if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
@@ -229,6 +242,10 @@ export const useSimpleAlerts = ({ streamerId, tableName, enabled = true, obsToke
     }
 
     console.log(`🎯 Starting alerts system for ${tableName} with streamerId: ${streamerId}`);
+    console.log('🧹 Ensuring clean initial state');
+    
+    // Ensure clean initial state on component mount
+    clearCurrentAlert();
     
     // Initial fetch for first load
     fetchLatestDonation(false);
@@ -256,7 +273,7 @@ export const useSimpleAlerts = ({ streamerId, tableName, enabled = true, obsToke
       // Reset retry counter
       retryCountRef.current = 0;
     };
-  }, [streamerId, tableName, enabled, fetchLatestDonation, setupRealtimeSubscription, stopFallbackPolling]);
+  }, [streamerId, tableName, enabled, fetchLatestDonation, setupRealtimeSubscription, stopFallbackPolling, clearCurrentAlert]);
 
   const triggerTestAlert = useCallback(() => {
     const testAlert: Donation = {
