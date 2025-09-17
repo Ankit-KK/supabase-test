@@ -136,11 +136,12 @@ async function handleWebSocketConnection(request: Request): Promise<Response> {
 async function handleBroadcast(request: Request): Promise<Response> {
   try {
     const body = await request.json()
-    console.log('📡 Broadcast request received:', body)
+    console.log('📡 Ankit broadcast request received:', body)
     
     const { donation_id } = body
     
     if (!donation_id) {
+      console.error('❌ Missing donation_id in broadcast request')
       throw new Error('Missing donation_id')
     }
     
@@ -152,14 +153,21 @@ async function handleBroadcast(request: Request): Promise<Response> {
       .single()
     
     if (error || !donation) {
-      console.error('❌ Failed to fetch donation:', error)
+      console.error('❌ Failed to fetch Ankit donation:', error)
       throw new Error('Donation not found')
     }
     
-    console.log('📊 Broadcasting to', activeConnections.size, 'connections')
+    console.log('📊 Ankit donation found:', {
+      id: donation.id,
+      name: donation.name,
+      amount: donation.amount,
+      status: donation.moderation_status
+    })
+    
+    console.log('📊 Broadcasting to', activeConnections.size, 'Ankit connections')
     
     if (activeConnections.size === 0) {
-      console.log('⚠️ No active connections to broadcast to')
+      console.log('⚠️ No active Ankit connections to broadcast to')
       return new Response(JSON.stringify({
         success: true,
         message: 'No active connections',
@@ -191,9 +199,9 @@ async function handleBroadcast(request: Request): Promise<Response> {
         if (socket.readyState === WebSocket.OPEN) {
           socket.send(JSON.stringify(alertMessage))
           successCount++
-          console.log(`✅ Alert sent to ${connectionKey}`)
+          console.log(`✅ Ankit alert sent to ${connectionKey}`)
         } else {
-          console.log(`⚠️ Removing stale connection: ${connectionKey}`)
+          console.log(`⚠️ Removing stale Ankit connection: ${connectionKey}`)
           activeConnections.delete(connectionKey)
           failureCount++
         }
@@ -204,11 +212,11 @@ async function handleBroadcast(request: Request): Promise<Response> {
       }
     }
     
-    console.log(`📊 Broadcast complete: ${successCount} success, ${failureCount} failures`)
+    console.log(`📊 Ankit broadcast complete: ${successCount} success, ${failureCount} failures`)
     
     return new Response(JSON.stringify({
       success: true,
-      message: 'Alert broadcasted',
+      message: 'Alert broadcasted to Ankit connections',
       connections: successCount,
       donation: {
         id: donation.id,
@@ -220,7 +228,7 @@ async function handleBroadcast(request: Request): Promise<Response> {
     })
     
   } catch (error) {
-    console.error('❌ Broadcast error:', error)
+    console.error('❌ Ankit broadcast error:', error)
     return new Response(JSON.stringify({
       success: false,
       error: error.message

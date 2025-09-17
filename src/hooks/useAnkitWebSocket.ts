@@ -87,7 +87,7 @@ export const useAnkitWebSocket = (token: string) => {
     isConnecting.current = true
     setConnectionStatus('connecting')
 
-    const wsUrl = `wss://vsevsjvtrshgeiudrnth.functions.supabase.co/ankit-obs-alerts?token=${encodeURIComponent(token)}`
+    const wsUrl = `wss://vsevsjvtrshgeiudrnth.supabase.co/functions/v1/ankit-obs-alerts?token=${encodeURIComponent(token)}`
     const ws = new WebSocket(wsUrl)
     wsRef.current = ws
 
@@ -137,16 +137,22 @@ export const useAnkitWebSocket = (token: string) => {
       setConnectionStatus('disconnected')
       setConnectionCount(0)
       
-      // Attempt reconnection with exponential backoff
-      if (event.code !== 1000 && reconnectAttempts.current < maxReconnectAttempts) {
-        const delay = Math.min(1000 * Math.pow(1.5, reconnectAttempts.current), 30000)
-        console.log(`🔄 Reconnecting to Ankit in ${delay}ms (attempt ${reconnectAttempts.current + 1}/${maxReconnectAttempts})`)
+      // Don't reconnect if it was a clean close or if we're at max attempts
+      if (event.code === 1000) {
+        console.log('✅ Ankit WebSocket closed cleanly')
+        return
+      }
+      
+      // Attempt reconnection with exponential backoff for abnormal closures
+      if (reconnectAttempts.current < maxReconnectAttempts) {
+        const delay = Math.min(2000 * Math.pow(1.5, reconnectAttempts.current), 30000)
+        console.log(`🔄 Reconnecting to Ankit in ${delay}ms (attempt ${reconnectAttempts.current + 1}/${maxReconnectAttempts}) - Code: ${event.code}`)
         
         reconnectTimeoutRef.current = setTimeout(() => {
           reconnectAttempts.current++
           connectWebSocket()
         }, delay)
-      } else if (reconnectAttempts.current >= maxReconnectAttempts) {
+      } else {
         console.error('❌ Max Ankit reconnection attempts reached')
         setConnectionStatus('error')
       }

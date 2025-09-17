@@ -131,10 +131,11 @@ This donation is now live on the stream!
     // Broadcast alert to dedicated Ankit WebSocket
     try {
       console.log('📡 Broadcasting WebSocket alert for approved Ankit donation');
-      const broadcastResponse = await fetch('https://vsevsjvtrshgeiudrnth.functions.supabase.co/ankit-obs-alerts', {
+      const broadcastResponse = await fetch('https://vsevsjvtrshgeiudrnth.supabase.co/functions/v1/ankit-obs-alerts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`,
         },
         body: JSON.stringify({
           donation_id: updatedDonation.id
@@ -142,9 +143,15 @@ This donation is now live on the stream!
       });
 
       if (broadcastResponse.ok) {
-        console.log('✅ WebSocket alert broadcast successful');
+        const result = await broadcastResponse.json();
+        console.log('✅ WebSocket alert broadcast successful:', result);
       } else {
-        console.error('❌ WebSocket alert broadcast failed:', await broadcastResponse.text());
+        const errorText = await broadcastResponse.text();
+        console.error('❌ WebSocket alert broadcast failed:', {
+          status: broadcastResponse.status,
+          statusText: broadcastResponse.statusText,
+          error: errorText
+        });
       }
     } catch (broadcastError) {
       console.error('❌ Error broadcasting WebSocket alert:', broadcastError);
