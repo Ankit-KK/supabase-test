@@ -78,9 +78,9 @@ export const AnkitRealtimeProvider: React.FC<AnkitRealtimeProviderProps> = ({ ch
 
   // Initial data fetch
   const refreshData = useCallback(async () => {
-    if (!session?.streamerId) return;
+    if (!session?.id) return;
     
-    console.log('🔄 [AnkitRealtime] Refreshing data for streamer:', session.streamerId);
+    console.log('🔄 [AnkitRealtime] Refreshing data for streamer:', session.id);
     setLoading(true);
     
     try {
@@ -130,7 +130,7 @@ export const AnkitRealtimeProvider: React.FC<AnkitRealtimeProviderProps> = ({ ch
     } finally {
       setLoading(false);
     }
-  }, [session?.streamerId]);
+  }, [session?.id]);
 
   // Set up real-time subscription
   useEffect(() => {
@@ -257,11 +257,11 @@ export const AnkitRealtimeProvider: React.FC<AnkitRealtimeProviderProps> = ({ ch
 
   // Initialize data on session change
   useEffect(() => {
-    if (session?.streamerId && !isInitialized.current) {
+    if (session?.id && !isInitialized.current) {
       isInitialized.current = true;
       refreshData();
     }
-  }, [session?.streamerId, refreshData]);
+  }, [session?.id, refreshData]);
 
   // Moderation actions
   const approveDonation = useCallback(async (donationId: string) => {
