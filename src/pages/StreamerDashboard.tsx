@@ -65,6 +65,7 @@ const StreamerDashboard = () => {
     
     console.log('Refreshing moderation data for streamer:', streamer.id);
     try {
+      // Use generic function for chia_gaming dashboard
       const { data: moderationData, error } = await supabase
         .rpc('get_streamer_moderation_donations', { 
           p_streamer_id: streamer.id
@@ -117,7 +118,7 @@ const StreamerDashboard = () => {
             p_streamer_id: streamerInfo.id
           });
 
-        // Fetch donations for moderation using secure function
+        // Fetch donations for moderation using generic function for chia_gaming
         const { data: moderationData, error: moderationError } = await supabase
           .rpc('get_streamer_moderation_donations', { 
             p_streamer_id: streamerInfo.id
@@ -213,7 +214,7 @@ const StreamerDashboard = () => {
             p_streamer_id: streamerInfo.id
           });
 
-        // Fetch donations for moderation using secure function
+        // Fetch donations for moderation using generic function for chia_gaming
         const { data: moderationData, error: moderationError } = await supabase
           .rpc('get_streamer_moderation_donations', { 
             p_streamer_id: streamerInfo.id
