@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useSimpleAlerts } from '@/hooks/useSimpleAlerts';
+import { useWebSocketAlerts } from '@/hooks/useWebSocketAlerts';
 import { AlertDisplay } from '@/components/AlertDisplay';
 import { Button } from '@/components/ui/button';
 
@@ -64,21 +64,15 @@ const AnkitAlertsRealtime = () => {
     validateToken();
   }, [token]);
 
-  // Use the simple alerts system (only when we have a valid streamer ID)
-  const alertSystemEnabled = streamerInfo?.id && isValidToken === true;
-  
+  // Use WebSocket alerts system
   const {
     currentAlert,
     isVisible,
     connectionStatus,
-    triggerTestAlert,
-    resetAlertState
-  } = useSimpleAlerts({
-    streamerId: streamerInfo?.id || '',
-    tableName: 'ankit_donations',
-    pollInterval: 2000,
-    enabled: alertSystemEnabled,
-    obsToken: token
+    triggerTestAlert
+  } = useWebSocketAlerts({
+    token: token || '',
+    enabled: isValidToken === true
   });
 
   // Loading state
@@ -112,24 +106,14 @@ const AnkitAlertsRealtime = () => {
         <div className="fixed top-4 right-4 bg-black/80 text-white p-4 rounded-lg text-xs font-mono z-40">
           <div>Status: {connectionStatus}</div>
           <div>Streamer: {streamerInfo?.streamer_name}</div>
-          <div>Streamer ID: {streamerInfo?.id || 'None'}</div>
-          <div>Alert System: {alertSystemEnabled ? 'Enabled' : 'Disabled'}</div>
           <div>Current Alert: {currentAlert?.name || 'None'}</div>
           <div>Visible: {isVisible ? 'Yes' : 'No'}</div>
           <Button 
             onClick={triggerTestAlert}
-            className="mt-2 text-xs mr-2"
+            className="mt-2 text-xs"
             size="sm"
           >
             Test Alert
-          </Button>
-          <Button 
-            onClick={resetAlertState}
-            className="mt-2 text-xs"
-            size="sm"
-            variant="outline"
-          >
-            Reset State
           </Button>
         </div>
       )}

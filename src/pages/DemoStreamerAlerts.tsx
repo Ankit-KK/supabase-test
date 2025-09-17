@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useSimpleAlerts } from '@/hooks/useSimpleAlerts';
+import { useWebSocketAlerts } from '@/hooks/useWebSocketAlerts';
 import { AlertDisplay } from '@/components/AlertDisplay';
 import { Button } from '@/components/ui/button';
 
@@ -64,16 +64,15 @@ const DemoStreamerAlerts = () => {
     validateToken();
   }, [token]);
 
-  // Use the simple alerts system
+  // Use WebSocket alerts system
   const {
     currentAlert,
     isVisible,
     connectionStatus,
     triggerTestAlert
-  } = useSimpleAlerts({
-    streamerId: streamerInfo?.id || '',
-    tableName: 'demostreamer_donations',
-    pollInterval: 2000
+  } = useWebSocketAlerts({
+    token: token || '',
+    enabled: isValidToken === true
   });
 
   // Loading state
