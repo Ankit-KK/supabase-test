@@ -31,6 +31,7 @@ import FitnessFlow from "./pages/FitnessFlow";
 import AnkitDashboard from "./pages/dashboard/AnkitDashboard";
 import ChiaGamingDashboard from "./pages/dashboard/ChiaGamingDashboard";
 import DemoStreamerDashboard from "./pages/dashboard/DemoStreamerDashboard";
+import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +67,9 @@ const App = () => (
               <Route path="/codelive" element={<CodeLive />} />
               <Route path="/artcreate" element={<ArtCreate />} />
               <Route path="/fitnessflow" element={<FitnessFlow />} />
+              
+              {/* Authentication */}
+              <Route path="/auth" element={<Auth />} />
               
               {/* Dashboard pages */}
               <Route path="/dashboard/ankit" element={<AnkitDashboard />} />

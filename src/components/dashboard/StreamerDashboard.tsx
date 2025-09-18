@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { toast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 import { DollarSign, Users, TrendingUp, Settings, Eye, Clock, AlertCircle } from 'lucide-react';
 import DonationCard from './DonationCard';
 import RevenueChart from './RevenueChart';
@@ -52,6 +53,7 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
   tableName
 }) => {
   const { user, session } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [streamerData, setStreamerData] = useState<any>(null);
   const [stats, setStats] = useState<DashboardStats>({
@@ -220,11 +222,17 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
   if (!user || !session) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Card className="p-8 text-center">
+        <Card className="p-8 text-center max-w-md">
           <CardContent>
             <AlertCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <h2 className="text-xl font-semibold mb-2">Authentication Required</h2>
-            <p className="text-muted-foreground">Please log in to access your dashboard.</p>
+            <p className="text-muted-foreground mb-4">Please log in to access your dashboard.</p>
+            <Button 
+              onClick={() => navigate(`/auth?redirect=${encodeURIComponent(window.location.pathname)}`)}
+              className="w-full"
+            >
+              Sign In
+            </Button>
           </CardContent>
         </Card>
       </div>
