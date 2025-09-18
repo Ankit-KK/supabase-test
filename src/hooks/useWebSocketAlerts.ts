@@ -16,8 +16,10 @@ interface WebSocketAlertsConfig {
 }
 
 interface WebSocketMessage {
-  type: 'donation_alert' | 'test_alert';
-  donation: Donation;
+  type: 'donation_alert' | 'ping' | 'connection_ack';
+  donation?: Donation;
+  message?: string;
+  timestamp?: number;
 }
 
 export const useWebSocketAlerts = ({ token, enabled = true }: WebSocketAlertsConfig) => {
@@ -95,8 +97,16 @@ export const useWebSocketAlerts = ({ token, enabled = true }: WebSocketAlertsCon
         const message: WebSocketMessage = JSON.parse(event.data);
         console.log('📨 WebSocket message received:', message);
         
-        if (message.type === 'donation_alert' || message.type === 'test_alert') {
-          showAlert(message.donation, `WebSocket ${message.type}`);
+        if (message.type === 'donation_alert' && message.donation) {
+          console.log('🎬 Received donation alert:', message.donation);
+          showAlert(message.donation, 'WebSocket donation_alert');
+        } else if (message.type === 'ping') {
+          // Send pong response to keep connection alive
+          if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'pong', timestamp: Date.now() }));
+          }
+        } else if (message.type === 'connection_ack') {
+          console.log('✅ Connection acknowledged:', message.message);
         }
       } catch (error) {
         console.error('❌ Error parsing WebSocket message:', error);

@@ -46,62 +46,11 @@ serve(async (req) => {
     return handleWebSocketConnection(req);
   }
 
-  // Handle HTTP requests for broadcasting alerts
-  if (url.pathname === '/test-alert') {
-    console.log('🧪 Handling test alert request');
-    return handleTestAlert(req);
-  }
-  
-  // Default to broadcast request
+  // Handle HTTP requests for broadcasting alerts  
   console.log('📡 Handling broadcast request to:', url.pathname);
   return handleBroadcastRequest(req);
 });
 
-async function handleTestAlert(req: Request) {
-  try {
-    const { streamer_slug } = await req.json();
-    
-    // Create a test donation
-    const testDonation = {
-      id: "test-" + Date.now(),
-      name: "Test Donor",
-      amount: 10,
-      message: "This is a test alert!",
-      is_hyperemote: false,
-      voice_message_url: null,
-      created_at: new Date().toISOString(),
-      streamer_id: "test-streamer-id"
-    };
-
-    console.log('🧪 Test alert broadcast request:', { streamer_slug, donation: testDonation });
-    
-    const success = await broadcastAlert(streamer_slug || 'ankit', testDonation);
-
-    return new Response(
-      JSON.stringify({
-        success,
-        message: success ? "Test alert broadcast successful" : "Test alert broadcast failed",
-        activeConnections: activeConnections.size,
-        connectionKeys: Array.from(activeConnections.keys())
-      }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-
-  } catch (error) {
-    console.error('Error broadcasting test alert:', error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message,
-        activeConnections: activeConnections.size
-      }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
-      }
-    );
-  }
-}
 
 // Handle HTTP requests for broadcasting alerts
 async function handleBroadcastRequest(req: Request) {
@@ -126,18 +75,20 @@ async function handleBroadcastRequest(req: Request) {
         id: 'test-' + Date.now(),
         name: 'Test Donor',
         amount: 100,
-        message: 'This is a test alert!',
+        message: 'This is a test alert! 🎉',
         is_hyperemote: false,
         created_at: new Date().toISOString()
       };
       
-      console.log('🧪 Broadcasting test alert:', testDonation);
-      const result = await broadcastAlert(streamer_slug, testDonation);
+      console.log('🧪 Broadcasting test alert for streamer:', streamer_slug, testDonation);
+      const result = await broadcastAlert(streamer_slug || 'ankit', testDonation);
       
       return new Response(JSON.stringify({
-        success: true,
-        message: 'Test alert broadcasted',
-        ...result
+        success: result.success,
+        message: result.success ? 'Test alert sent successfully!' : 'No active connections found',
+        activeConnections: result.activeConnections,
+        totalConnections: result.totalConnections,
+        connectionKeys: Array.from(activeConnections.keys())
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
@@ -299,7 +250,7 @@ async function handleWebSocketConnection(req: Request) {
           }
         }
       }
-    }, 30000); // Send ping every 30 seconds
+    }, 15000); // Send ping every 15 seconds to maintain connection
 
     // Send connection acknowledgment
     const ackMessage: WebSocketMessage = {
