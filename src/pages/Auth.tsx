@@ -120,10 +120,9 @@ const Auth = () => {
       } else {
         toast({
           title: "Account Created!",
-          description: "Your account has been created successfully. You can now log in.",
+          description: "Your account has been created successfully and you are now logged in.",
         });
-        setActiveTab('login');
-        setFormData(prev => ({ ...prev, password: '', confirmPassword: '' }));
+        navigate(redirectTo);
       }
     } catch (error) {
       toast({
