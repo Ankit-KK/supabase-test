@@ -31,7 +31,7 @@ export const useUniversalAuth = (streamerSlug: string) => {
       try {
         setError(null);
         
-        // Only check for Google OAuth authenticated users
+        // Only check for authenticated users
         if (user && authSession && !authLoading) {
           // Check if this email is allowed to access the streamer dashboard
           const { data: isAllowed } = await supabase.rpc('check_streamer_email_allowed', {
@@ -61,7 +61,7 @@ export const useUniversalAuth = (streamerSlug: string) => {
               await supabase.rpc('record_streamer_login', {
                 p_streamer_slug: streamerSlug,
                 p_email: user.email,
-                p_provider: 'google'
+                p_provider: 'email'
               });
             } else {
               setError({ message: `Streamer "${streamerSlug}" not found` });
