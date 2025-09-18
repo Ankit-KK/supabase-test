@@ -11,18 +11,3 @@ verify_jwt = false
 
 [functions.telegram-webhook]
 verify_jwt = false
-
-[functions.generate-obs-token]
-verify_jwt = false
-
-[functions.notify-moderators-ankit]
-verify_jwt = false
-
-[functions.obs-alerts-ws]
-verify_jwt = false
-
-[functions.ankit-obs-alerts]
-verify_jwt = false
-
-[functions.validate-streamer-auth]
-verify_jwt = false
