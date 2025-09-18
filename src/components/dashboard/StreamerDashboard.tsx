@@ -31,6 +31,20 @@ interface DashboardStats {
   topDonation: number;
 }
 
+interface DonationRecord {
+  id: string;
+  name: string;
+  amount: number;
+  message?: string;
+  voice_message_url?: string;
+  is_hyperemote?: boolean;
+  moderation_status: string;
+  payment_status: string;
+  created_at: string;
+  message_visible?: boolean;
+  streamer_id: string;
+}
+
 const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
   streamerSlug,
   streamerName,
@@ -48,8 +62,8 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
     averageDonation: 0,
     topDonation: 0
   });
-  const [recentDonations, setRecentDonations] = useState<any[]>([]);
-  const [pendingDonations, setPendingDonations] = useState<any[]>([]);
+  const [recentDonations, setRecentDonations] = useState<DonationRecord[]>([]);
+  const [pendingDonations, setPendingDonations] = useState<DonationRecord[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Real-time subscription for live updates
@@ -122,7 +136,7 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
         const { data: donations, error } = await supabase
           .from(tableName as any)
           .select('amount, created_at, moderation_status, payment_status')
-          .eq('streamer_id', streamerData.id);
+          .eq('streamer_id', streamerData.id) as { data: DonationRecord[] | null, error: any };
 
         if (error) throw error;
 
@@ -134,9 +148,9 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
           new Date(d.created_at).toDateString() === today
         );
 
-        const totalRevenue = successfulDonations.reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
-        const todayRevenue = todayDonations.reduce((sum, d) => sum + (parseFloat(d.amount) || 0), 0);
-        const amounts = successfulDonations.map(d => parseFloat(d.amount) || 0);
+        const totalRevenue = successfulDonations.reduce((sum, d) => sum + (parseFloat(d.amount.toString()) || 0), 0);
+        const todayRevenue = todayDonations.reduce((sum, d) => sum + (parseFloat(d.amount.toString()) || 0), 0);
+        const amounts = successfulDonations.map(d => parseFloat(d.amount.toString()) || 0);
 
         setStats({
           totalRevenue,
@@ -167,7 +181,7 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
           .eq('streamer_id', streamerData.id)
           .eq('payment_status', 'success')
           .order('created_at', { ascending: false })
-          .limit(10);
+          .limit(10) as { data: DonationRecord[] | null, error: any };
 
         if (error) throw error;
         setRecentDonations(data || []);
@@ -191,7 +205,7 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
           .eq('streamer_id', streamerData.id)
           .eq('moderation_status', 'pending')
           .order('created_at', { ascending: false })
-          .limit(20);
+          .limit(20) as { data: DonationRecord[] | null, error: any };
 
         if (error) throw error;
         setPendingDonations(data || []);

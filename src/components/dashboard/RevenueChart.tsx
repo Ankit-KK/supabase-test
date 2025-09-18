@@ -19,6 +19,12 @@ interface ChartData {
   displayDate: string;
 }
 
+interface DonationRecord {
+  amount: number;
+  created_at: string;
+  payment_status: string;
+}
+
 const RevenueChart: React.FC<RevenueChartProps> = ({
   streamerId,
   tableName,
@@ -45,7 +51,7 @@ const RevenueChart: React.FC<RevenueChartProps> = ({
           .eq('streamer_id', streamerId)
           .eq('payment_status', 'success')
           .gte('created_at', startDate.toISOString())
-          .order('created_at', { ascending: true });
+          .order('created_at', { ascending: true }) as { data: DonationRecord[] | null, error: any };
 
         if (error) throw error;
 
@@ -63,7 +69,7 @@ const RevenueChart: React.FC<RevenueChartProps> = ({
         donations?.forEach(donation => {
           const dateKey = format(new Date(donation.created_at), 'yyyy-MM-dd');
           const existing = revenueByDay.get(dateKey) || { revenue: 0, donations: 0 };
-          const amount = parseFloat(donation.amount) || 0;
+          const amount = parseFloat(donation.amount.toString()) || 0;
           
           revenueByDay.set(dateKey, {
             revenue: existing.revenue + amount,
