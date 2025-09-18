@@ -1,10 +1,23 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
+interface CustomUser {
+  id: string;
+  email: string;
+  username?: string;
+  role: string;
+}
+
+interface CustomSession {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+  user: CustomUser;
+}
+
 interface AuthContextType {
-  user: User | null;
-  session: Session | null;
+  user: CustomUser | null;
+  session: CustomSession | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string) => Promise<{ error: any }>;
@@ -22,50 +35,96 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<CustomUser | null>(null);
+  const [session, setSession] = useState<CustomSession | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+    // Load session from localStorage on startup
+    const loadSession = () => {
+      const storedSession = localStorage.getItem('auth_session');
+      if (storedSession) {
+        try {
+          const parsedSession = JSON.parse(storedSession);
+          setSession(parsedSession);
+          setUser(parsedSession.user);
+        } catch (error) {
+          console.error('Error parsing stored session:', error);
+          localStorage.removeItem('auth_session');
+        }
       }
-    );
-
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
       setLoading(false);
-    });
-
-    return () => {
-      subscription.unsubscribe();
     };
+
+    loadSession();
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error };
+    try {
+      const { data, error } = await supabase.functions.invoke('authenticate-user', {
+        body: { action: 'login', email, password }
+      });
+
+      if (error) {
+        return { error };
+      }
+
+      if (data.error) {
+        return { error: { message: data.error } };
+      }
+
+      const customSession: CustomSession = {
+        access_token: data.session.access_token,
+        token_type: data.session.token_type,
+        expires_in: data.session.expires_in,
+        user: data.user
+      };
+
+      localStorage.setItem('auth_session', JSON.stringify(customSession));
+      setSession(customSession);
+      setUser(data.user);
+
+      return { error: null };
+    } catch (error) {
+      return { error };
+    }
   };
 
   const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password
-    });
-    return { error };
+    try {
+      const { data, error } = await supabase.functions.invoke('authenticate-user', {
+        body: { action: 'register', email, password }
+      });
+
+      if (error) {
+        return { error };
+      }
+
+      if (data.error) {
+        return { error: { message: data.error } };
+      }
+
+      const customSession: CustomSession = {
+        access_token: data.session.access_token,
+        token_type: data.session.token_type,
+        expires_in: data.session.expires_in,
+        user: data.user
+      };
+
+      localStorage.setItem('auth_session', JSON.stringify(customSession));
+      setSession(customSession);
+      setUser(data.user);
+
+      return { error: null };
+    } catch (error) {
+      return { error };
+    }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    localStorage.removeItem('auth_session');
+    setSession(null);
+    setUser(null);
   };
 
   const value = {

@@ -73,6 +73,82 @@ export type Database = {
           },
         ]
       }
+      auth_sessions: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auth_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "auth_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auth_users: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          is_active: boolean
+          password_hash: string
+          role: string
+          streamer_id: string | null
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          is_active?: boolean
+          password_hash: string
+          role?: string
+          streamer_id?: string | null
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          is_active?: boolean
+          password_hash?: string
+          role?: string
+          streamer_id?: string | null
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auth_users_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chia_gaming_donations: {
         Row: {
           amount: number
@@ -556,6 +632,10 @@ export type Database = {
         Args: { p_streamer_id: string }
         Returns: string
       }
+      generate_session_token: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_active_obs_token: {
         Args: { streamer_id: string }
         Returns: string
@@ -888,6 +968,10 @@ export type Database = {
         Args: { token_text: string }
         Returns: string
       }
+      hash_password: {
+        Args: { password: string }
+        Returns: string
+      }
       http: {
         Args: { request: Database["public"]["CompositeTypes"]["http_request"] }
         Returns: Database["public"]["CompositeTypes"]["http_response"]
@@ -1156,6 +1240,10 @@ export type Database = {
       }
       verify_moderator_access: {
         Args: { p_streamer_slug: string; p_telegram_user_id: string }
+        Returns: boolean
+      }
+      verify_password: {
+        Args: { hash: string; password: string }
         Returns: boolean
       }
     }
