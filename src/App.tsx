@@ -32,10 +32,14 @@ import DemoStreamerDashboard from "./pages/DemoStreamerDashboard";
 import DemoStreamerAlerts from "./pages/DemoStreamerAlerts";
 import TestAlerts from "./pages/TestAlerts";
 import TechGamer from "./pages/TechGamer";
+import TechGamerLogin from "./pages/TechGamerLogin";
+import TechGamerDashboard from "./pages/TechGamerDashboard";
+import TechGamerAlerts from "./pages/TechGamerAlerts";
 import MusicStream from "./pages/MusicStream";
 import CodeLive from "./pages/CodeLive";
 import ArtCreate from "./pages/ArtCreate";
 import FitnessFlow from "./pages/FitnessFlow";
+import AdminDashboard from "./pages/AdminDashboard";
 
 const queryClient = new QueryClient();
 

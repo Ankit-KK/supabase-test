@@ -15,7 +15,7 @@ const AdminDashboard = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [streamers, setStreamers] = useState([]);
-  const [stats, setStats] = useState({});
+  const [stats, setStats] = useState<Record<string, { total_donations: number }>>({});
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -257,7 +257,7 @@ const AdminDashboard = () => {
                     <div className="space-y-3">
                       <div className="flex justify-between text-sm">
                         <span className="text-slate-400">Donations:</span>
-                        <span className="text-white">{(stats[streamer.id] as any)?.total_donations || 0}</span>
+                        <span className="text-white">{stats[streamer.id]?.total_donations || 0}</span>
                       </div>
                       
                       <div className="flex gap-2 flex-wrap">
