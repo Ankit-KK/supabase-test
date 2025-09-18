@@ -1246,6 +1246,17 @@ export type Database = {
         Args: { hash: string; password: string }
         Returns: boolean
       }
+      verify_password_simple: {
+        Args: { input_password: string; stored_email: string }
+        Returns: {
+          email: string
+          is_valid: boolean
+          password_hash: string
+          role: string
+          user_id: string
+          username: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
