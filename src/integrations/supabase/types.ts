@@ -14,6 +14,221 @@ export type Database = {
   }
   public: {
     Tables: {
+      ankit_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          moderation_status: string | null
+          name: string
+          payment_status: string | null
+          streamer_id: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          moderation_status?: string | null
+          name: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ankit_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chia_gaming_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          moderation_status: string | null
+          name: string
+          payment_status: string | null
+          streamer_id: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          moderation_status?: string | null
+          name: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chia_gaming_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      demostreamer_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          moderation_status: string | null
+          name: string
+          payment_status: string | null
+          streamer_id: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          moderation_status?: string | null
+          name: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demostreamer_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      obs_tokens: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          streamer_id: string | null
+          token: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          streamer_id?: string | null
+          token: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          streamer_id?: string | null
+          token?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obs_tokens_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -59,6 +274,45 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      streamers: {
+        Row: {
+          brand_color: string | null
+          brand_logo_url: string | null
+          created_at: string | null
+          hyperemotes_enabled: boolean | null
+          hyperemotes_min_amount: number | null
+          id: string
+          streamer_name: string
+          streamer_slug: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          brand_color?: string | null
+          brand_logo_url?: string | null
+          created_at?: string | null
+          hyperemotes_enabled?: boolean | null
+          hyperemotes_min_amount?: number | null
+          id?: string
+          streamer_name: string
+          streamer_slug: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          brand_color?: string | null
+          brand_logo_url?: string | null
+          created_at?: string | null
+          hyperemotes_enabled?: boolean | null
+          hyperemotes_min_amount?: number | null
+          id?: string
+          streamer_name?: string
+          streamer_slug?: string
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -298,6 +552,10 @@ export type Database = {
           youtube_channel: string
         }[]
       }
+      generate_obs_token: {
+        Args: { p_streamer_id: string }
+        Returns: string
+      }
       get_active_obs_token: {
         Args: { streamer_id: string }
         Returns: string
@@ -484,6 +742,16 @@ export type Database = {
           streamer_name: string
           streamer_slug: string
           user_id: string
+        }[]
+      }
+      get_streamer_by_slug: {
+        Args: { slug: string }
+        Returns: {
+          brand_color: string
+          brand_logo_url: string
+          id: string
+          streamer_name: string
+          streamer_slug: string
         }[]
       }
       get_streamer_donations: {
@@ -675,6 +943,10 @@ export type Database = {
         Args: { check_email: string }
         Returns: boolean
       }
+      is_admin_user: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       is_current_user_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -803,6 +1075,10 @@ export type Database = {
         Args: { amount: number }
         Returns: boolean
       }
+      validate_donation_input: {
+        Args: { p_amount: number; p_message?: string; p_name: string }
+        Returns: boolean
+      }
       validate_donation_insert: {
         Args: {
           p_amount: number
@@ -815,6 +1091,16 @@ export type Database = {
       validate_donation_security: {
         Args: { p_amount: number; p_message?: string; p_name: string }
         Returns: boolean
+      }
+      validate_obs_token: {
+        Args: { token_to_check: string }
+        Returns: {
+          brand_color: string
+          is_valid: boolean
+          streamer_id: string
+          streamer_name: string
+          streamer_slug: string
+        }[]
       }
       validate_obs_token_secure: {
         Args: { token_to_check: string }
