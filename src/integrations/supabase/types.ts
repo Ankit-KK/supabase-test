@@ -486,18 +486,6 @@ export type Database = {
           user_id: string
         }[]
       }
-      get_streamer_by_slug: {
-        Args: { slug: string }
-        Returns: {
-          brand_color: string
-          brand_logo_url: string
-          id: string
-          obs_token: string
-          streamer_name: string
-          streamer_slug: string
-          user_id: string
-        }[]
-      }
       get_streamer_donations: {
         Args: { p_streamer_id: string }
         Returns: {
@@ -687,10 +675,6 @@ export type Database = {
         Args: { check_email: string }
         Returns: boolean
       }
-      is_admin_user: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
       is_current_user_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -831,17 +815,6 @@ export type Database = {
       validate_donation_security: {
         Args: { p_amount: number; p_message?: string; p_name: string }
         Returns: boolean
-      }
-      validate_obs_token: {
-        Args: { token_to_check: string }
-        Returns: {
-          brand_color: string
-          brand_logo_url: string
-          is_valid: boolean
-          streamer_id: string
-          streamer_name: string
-          streamer_slug: string
-        }[]
       }
       validate_obs_token_secure: {
         Args: { token_to_check: string }
