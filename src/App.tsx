@@ -31,6 +31,11 @@ import DemoStreamerLogin from "./pages/DemoStreamerLogin";
 import DemoStreamerDashboard from "./pages/DemoStreamerDashboard";
 import DemoStreamerAlerts from "./pages/DemoStreamerAlerts";
 import TestAlerts from "./pages/TestAlerts";
+import TechGamer from "./pages/TechGamer";
+import MusicStream from "./pages/MusicStream";
+import CodeLive from "./pages/CodeLive";
+import ArtCreate from "./pages/ArtCreate";
+import FitnessFlow from "./pages/FitnessFlow";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +59,11 @@ const App = () => (
             <Route path="/chiaa_gaming" element={<ChiaaGaming />} />
             <Route path="/ankit" element={<Ankit />} />
             <Route path="/demostreamer" element={<DemoStreamer />} />
+            <Route path="/techgamer" element={<TechGamer />} />
+            <Route path="/musicstream" element={<MusicStream />} />
+            <Route path="/codelive" element={<CodeLive />} />
+            <Route path="/artcreate" element={<ArtCreate />} />
+            <Route path="/fitnessflow" element={<FitnessFlow />} />
             <Route path="/status" element={<Status />} />
             
             {/* Authentication */}
@@ -69,6 +79,10 @@ const App = () => (
             <Route path="/ankit-alerts/:token" element={<AnkitAlerts />} />
             <Route path="/ankit/obs-alerts/:token" element={<AnkitOBSAlerts />} />
             <Route path="/demostreamer-alerts/:token" element={<DemoStreamerAlerts />} />
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/techgamer-alerts/:token" element={<TechGamerAlerts />} />
+            <Route path="/techgamer/login" element={<TechGamerLogin />} />
+            <Route path="/techgamer/dashboard" element={<TechGamerDashboard />} />
             <Route path="/test-alerts" element={<TestAlerts />} />
             
             {/* Blog posts */}
