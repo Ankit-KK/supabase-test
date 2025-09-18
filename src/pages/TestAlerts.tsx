@@ -65,9 +65,26 @@ const TestAlerts = () => {
 
             <div className="text-sm text-muted-foreground">
               <p>This will send a test alert to any connected OBS WebSocket connections.</p>
-              <p>Open the OBS alerts page in another tab to see the alert.</p>
-              <p>URL: <code>https://hyperchat.space/ankit-alerts/YOUR_OBS_TOKEN</code></p>
-              <p className="mt-2 font-semibold">💡 Make sure to have the alerts page open in OBS Browser Source first!</p>
+              <p className="mt-2 font-semibold">⚠️ To see alerts, you need to open the alerts page first:</p>
+              <ol className="list-decimal list-inside mt-2 space-y-1">
+                <li>Go to your Ankit Dashboard</li>
+                <li>Copy the OBS Alerts URL from the OBS Settings tab</li>
+                <li>Open that URL in a new tab (or add it as OBS Browser Source)</li>
+                <li>Then come back here and click "Send Test Alert"</li>
+              </ol>
+              <p className="mt-2 text-xs text-amber-600">💡 The alert will only show on the alerts page, not here!</p>
+              
+              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm font-medium text-blue-900 mb-2">Quick Access:</p>
+                <Button 
+                  onClick={() => window.open('/ankit/dashboard', '_blank')}
+                  variant="outline"
+                  size="sm"
+                  className="text-blue-700 border-blue-300 hover:bg-blue-100"
+                >
+                  Open Ankit Dashboard →
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
