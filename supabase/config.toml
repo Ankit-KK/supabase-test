@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.ankit-obs-alerts]
 verify_jwt = false
+
+[functions.validate-streamer-auth]
+verify_jwt = false

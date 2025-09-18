@@ -5,16 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuth } from '@/contexts/AuthContext';
-import { useUniversalAuth } from '@/hooks/useUniversalAuth';
+import { useCustomAuth } from '@/contexts/CustomAuthContext';
+import { useCustomUniversalAuth } from '@/hooks/useCustomUniversalAuth';
 import { useToast } from '@/hooks/use-toast';
 
 const UniversalLogin = () => {
   const { streamerSlug } = useParams();
   const navigate = useNavigate();
-  const { signIn, signUp } = useAuth();
+  const { signIn } = useCustomAuth();
   const { toast } = useToast();
-  const { session, loading, error } = useUniversalAuth(streamerSlug || '');
+  const { session, loading, error } = useCustomUniversalAuth(streamerSlug || '');
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -58,42 +58,14 @@ const UniversalLogin = () => {
     }
   };
 
+  // Remove sign up functionality since we're using predefined accounts
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      toast({
-        title: "Validation Error",
-        description: "Please enter both email and password",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const { error } = await signUp(email, password);
-      if (error) {
-        toast({
-          title: "Sign Up Error",
-          description: error.message || "Failed to create account",
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Account Created",
-          description: "Please check your email to verify your account",
-          variant: "default"
-        });
-      }
-    } catch (error: any) {
-      toast({
-        title: "Sign Up Error",
-        description: error.message || "An unexpected error occurred",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    toast({
+      title: "Sign Up Not Available",
+      description: "Please use your assigned login credentials to access the dashboard",
+      variant: "default"
+    });
   };
 
   if (loading) {
@@ -128,9 +100,8 @@ const UniversalLogin = () => {
           )}
           
           <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-slate-700">
+            <TabsList className="grid w-full grid-cols-1 bg-slate-700">
               <TabsTrigger value="signin" className="text-slate-300 data-[state=active]:text-white">Sign In</TabsTrigger>
-              <TabsTrigger value="signup" className="text-slate-300 data-[state=active]:text-white">Sign Up</TabsTrigger>
             </TabsList>
             
             <TabsContent value="signin" className="space-y-4">
@@ -169,40 +140,20 @@ const UniversalLogin = () => {
               </form>
             </TabsContent>
             
-            <TabsContent value="signup" className="space-y-4">
-              <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email" className="text-slate-300">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="bg-slate-700 border-slate-600 text-white"
-                    placeholder="Enter your email"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password" className="text-slate-300">Password</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="bg-slate-700 border-slate-600 text-white"
-                    placeholder="Create a password"
-                    required
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                >
-                  {isLoading ? "Creating Account..." : "Sign Up"}
-                </Button>
-              </form>
+            <TabsContent value="signin" className="mt-4">
+              <div className="bg-slate-700/50 rounded-lg p-4 mb-4">
+                <p className="text-slate-300 text-sm mb-2">Demo Credentials:</p>
+                <ul className="text-slate-400 text-xs space-y-1">
+                  <li>Ankit: ankit@streamer.com / admin123</li>
+                  <li>Demo: demo@streamer.com / admin123</li>
+                  <li>Chia Gaming: chia@streamer.com / admin123</li>
+                  <li>Tech Gamer: tech@streamer.com / admin123</li>
+                  <li>Code Live: code@streamer.com / admin123</li>
+                  <li>Music Stream: music@streamer.com / admin123</li>
+                  <li>Fitness Flow: fitness@streamer.com / admin123</li>
+                  <li>Art Create: art@streamer.com / admin123</li>
+                </ul>
+              </div>
             </TabsContent>
           </Tabs>
           

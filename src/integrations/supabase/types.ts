@@ -933,6 +933,7 @@ export type Database = {
           brand_color: string | null
           brand_logo_url: string | null
           created_at: string | null
+          email: string | null
           hyperemotes_enabled: boolean | null
           hyperemotes_min_amount: number | null
           id: string
@@ -951,6 +952,7 @@ export type Database = {
           brand_color?: string | null
           brand_logo_url?: string | null
           created_at?: string | null
+          email?: string | null
           hyperemotes_enabled?: boolean | null
           hyperemotes_min_amount?: number | null
           id?: string
@@ -969,6 +971,7 @@ export type Database = {
           brand_color?: string | null
           brand_logo_url?: string | null
           created_at?: string | null
+          email?: string | null
           hyperemotes_enabled?: boolean | null
           hyperemotes_min_amount?: number | null
           id?: string
@@ -1942,6 +1945,16 @@ export type Database = {
           brand_logo_url: string
           is_valid: boolean
           streamer_id: string
+          streamer_name: string
+          streamer_slug: string
+        }[]
+      }
+      validate_streamer_credentials: {
+        Args: { p_email: string; p_password: string }
+        Returns: {
+          brand_color: string
+          id: string
+          is_valid: boolean
           streamer_name: string
           streamer_slug: string
         }[]
