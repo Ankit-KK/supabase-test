@@ -119,15 +119,43 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
         description: "New OBS token has been created successfully.",
       });
 
-      // Refresh tokens list
-      const { data: updatedTokens, error: fetchError } = await supabase
-        .from('obs_tokens')
-        .select('*')
-        .eq('streamer_id', streamerId)
-        .order('created_at', { ascending: false });
+      // Refresh tokens list with retry logic
+      let retryCount = 0;
+      const maxRetries = 3;
+      
+      while (retryCount < maxRetries) {
+        try {
+          // Add a small delay to ensure database consistency
+          await new Promise(resolve => setTimeout(resolve, 500 * (retryCount + 1)));
+          
+          const { data: updatedTokens, error: fetchError } = await supabase
+            .from('obs_tokens')
+            .select('*')
+            .eq('streamer_id', streamerId)
+            .order('created_at', { ascending: false });
 
-      if (fetchError) throw fetchError;
-      setTokens(updatedTokens || []);
+          if (fetchError) {
+            console.error(`Token fetch attempt ${retryCount + 1} failed:`, fetchError);
+            if (retryCount === maxRetries - 1) throw fetchError;
+            retryCount++;
+            continue;
+          }
+
+          console.log('Fetched tokens after generation:', updatedTokens);
+          setTokens(updatedTokens || []);
+          
+          // Force re-render by updating a dummy state
+          setShowToken(null);
+          break;
+          
+        } catch (error) {
+          if (retryCount === maxRetries - 1) {
+            console.error('Failed to fetch tokens after all retries:', error);
+            throw error;
+          }
+          retryCount++;
+        }
+      }
 
     } catch (error) {
       console.error('Error generating OBS token:', error);
