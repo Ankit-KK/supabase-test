@@ -1,5 +1,8 @@
 project_id = "vsevsjvtrshgeiudrnth"
 
+[functions.manage-telegram-user]
+verify_jwt = false
+
 [functions.submit-contact]
 verify_jwt = false
 

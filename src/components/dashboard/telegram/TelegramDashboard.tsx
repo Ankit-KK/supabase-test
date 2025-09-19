@@ -69,23 +69,34 @@ const TelegramDashboard: React.FC<TelegramDashboardProps> = ({
 
     setLoading(true);
     try {
-      // Remove existing entry if any
-      await supabase
-        .from('streamers_moderators')
-        .delete()
-        .eq('streamer_id', streamerId);
-
-      // Add new entry
-      const { error } = await supabase
-        .from('streamers_moderators')
-        .insert({
-          streamer_id: streamerId,
-          telegram_user_id: inputValue.trim(),
-          mod_name: 'Streamer',
-          is_active: true
+      const authToken = localStorage.getItem('auth_token');
+      if (!authToken) {
+        toast({
+          title: "Error",
+          description: "Authentication required",
+          variant: "destructive",
         });
+        return;
+      }
 
-      if (error) throw error;
+      const { data, error } = await supabase.functions.invoke('manage-telegram-user', {
+        body: {
+          action: 'add',
+          streamerId,
+          telegramUserId: inputValue.trim(),
+          authToken
+        }
+      });
+
+      if (error || !data.success) {
+        console.error('Error adding telegram user:', error || data.error);
+        toast({
+          title: "Error",
+          description: data?.error || "Failed to add Telegram user ID",
+          variant: "destructive",
+        });
+        return;
+      }
 
       setTelegramUserId(inputValue.trim());
       setInputValue('');
@@ -108,12 +119,33 @@ const TelegramDashboard: React.FC<TelegramDashboardProps> = ({
   const handleRemoveTelegramUser = async () => {
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('streamers_moderators')
-        .delete()
-        .eq('streamer_id', streamerId);
+      const authToken = localStorage.getItem('auth_token');
+      if (!authToken) {
+        toast({
+          title: "Error",
+          description: "Authentication required",
+          variant: "destructive",
+        });
+        return;
+      }
 
-      if (error) throw error;
+      const { data, error } = await supabase.functions.invoke('manage-telegram-user', {
+        body: {
+          action: 'remove',
+          streamerId,
+          authToken
+        }
+      });
+
+      if (error || !data.success) {
+        console.error('Error removing telegram user:', error || data.error);
+        toast({
+          title: "Error",
+          description: data?.error || "Failed to remove Telegram user ID",
+          variant: "destructive",
+        });
+        return;
+      }
 
       setTelegramUserId('');
       toast({
