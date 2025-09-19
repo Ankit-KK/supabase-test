@@ -185,6 +185,7 @@ export type Database = {
           order_id: string | null
           payment_status: string | null
           streamer_id: string | null
+          temp_voice_data: string | null
           updated_at: string | null
           voice_message_url: string | null
         }
@@ -202,6 +203,7 @@ export type Database = {
           order_id?: string | null
           payment_status?: string | null
           streamer_id?: string | null
+          temp_voice_data?: string | null
           updated_at?: string | null
           voice_message_url?: string | null
         }
@@ -219,6 +221,7 @@ export type Database = {
           order_id?: string | null
           payment_status?: string | null
           streamer_id?: string | null
+          temp_voice_data?: string | null
           updated_at?: string | null
           voice_message_url?: string | null
         }
@@ -247,6 +250,7 @@ export type Database = {
           order_id: string | null
           payment_status: string | null
           streamer_id: string | null
+          temp_voice_data: string | null
           updated_at: string | null
           voice_message_url: string | null
         }
@@ -264,6 +268,7 @@ export type Database = {
           order_id?: string | null
           payment_status?: string | null
           streamer_id?: string | null
+          temp_voice_data?: string | null
           updated_at?: string | null
           voice_message_url?: string | null
         }
@@ -281,6 +286,7 @@ export type Database = {
           order_id?: string | null
           payment_status?: string | null
           streamer_id?: string | null
+          temp_voice_data?: string | null
           updated_at?: string | null
           voice_message_url?: string | null
         }
