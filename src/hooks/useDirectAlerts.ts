@@ -75,9 +75,11 @@ export const useDirectAlerts = ({ streamerId, tableName, enabled = true, obsToke
   }, []);
 
   // Setup direct real-time subscription
-  const setupDirectSubscription = useCallback(() => {
-    if (!enabled || !streamerId || !tokenValid) {
-      console.log(`⏸️ Direct subscription not started - enabled: ${enabled}, streamerId: ${streamerId}, tokenValid: ${tokenValid}`);
+  const setupDirectSubscription = useCallback((isTokenValid?: boolean) => {
+    const tokenIsValid = isTokenValid !== undefined ? isTokenValid : tokenValid === true;
+    
+    if (!enabled || !streamerId || !tokenIsValid) {
+      console.log(`⏸️ Direct subscription not started - enabled: ${enabled}, streamerId: ${streamerId}, tokenValid: ${tokenIsValid}`);
       return;
     }
 
@@ -165,7 +167,7 @@ export const useDirectAlerts = ({ streamerId, tableName, enabled = true, obsToke
       });
 
     channelRef.current = channel;
-  }, [streamerId, tableName, enabled, tokenValid, showAlert]);
+  }, [streamerId, tableName, enabled, showAlert]);
 
   // Handle connection failures with retry logic
   const handleConnectionFailure = useCallback(() => {
@@ -181,7 +183,7 @@ export const useDirectAlerts = ({ streamerId, tableName, enabled = true, obsToke
           supabase.removeChannel(channelRef.current);
           channelRef.current = null;
         }
-        setupDirectSubscription();
+        setupDirectSubscription(tokenValid === true);
       }, retryDelay);
     } else {
       console.log('🚨 Max retries exceeded for direct subscription');
@@ -203,7 +205,7 @@ export const useDirectAlerts = ({ streamerId, tableName, enabled = true, obsToke
     // First validate token, then setup subscription
     validateToken().then((isValid) => {
       if (isActive && isValid) {
-        setupDirectSubscription();
+        setupDirectSubscription(isValid);
       }
     });
 
