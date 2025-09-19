@@ -71,25 +71,24 @@ const ModeratorDropdown: React.FC<ModeratorDropdownProps> = ({ streamerId }) => 
     setAdding(true);
     try {
       const { data, error } = await supabase
-        .from('streamers_moderators')
-        .insert({
-          streamer_id: streamerId,
-          telegram_user_id: newTelegramId.trim(),
-          mod_name: newModeratorName.trim()
-        })
-        .select()
-        .single();
+        .rpc('add_streamer_moderator', {
+          p_streamer_id: streamerId,
+          p_mod_name: newModeratorName.trim(),
+          p_telegram_user_id: newTelegramId.trim()
+        });
 
       if (error) throw error;
 
-      setModerators(prev => [data, ...prev]);
-      setNewModeratorName('');
-      setNewTelegramId('');
-      
-      toast({
-        title: "Success",
-        description: "Moderator added successfully"
-      });
+      if (data && data.length > 0) {
+        setModerators(prev => [data[0], ...prev]);
+        setNewModeratorName('');
+        setNewTelegramId('');
+        
+        toast({
+          title: "Success",
+          description: "Moderator added successfully"
+        });
+      }
     } catch (error: any) {
       console.error('Error adding moderator:', error);
       toast({
@@ -104,24 +103,27 @@ const ModeratorDropdown: React.FC<ModeratorDropdownProps> = ({ streamerId }) => 
 
   const removeModerator = async (moderatorId: string) => {
     try {
-      const { error } = await supabase
-        .from('streamers_moderators')
-        .update({ is_active: false })
-        .eq('id', moderatorId);
+      const { data, error } = await supabase
+        .rpc('remove_streamer_moderator', {
+          p_streamer_id: streamerId,
+          p_moderator_id: moderatorId
+        });
 
       if (error) throw error;
 
-      setModerators(prev => prev.filter(mod => mod.id !== moderatorId));
+      if (data) {
+        setModerators(prev => prev.filter(mod => mod.id !== moderatorId));
 
-      toast({
-        title: "Success",
-        description: "Moderator removed successfully"
-      });
-    } catch (error) {
+        toast({
+          title: "Success",
+          description: "Moderator removed successfully"
+        });
+      }
+    } catch (error: any) {
       console.error('Error removing moderator:', error);
       toast({
         title: "Error",
-        description: "Failed to remove moderator",
+        description: error.message || "Failed to remove moderator",
         variant: "destructive"
       });
     }

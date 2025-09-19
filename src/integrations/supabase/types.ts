@@ -647,6 +647,20 @@ export type Database = {
         Args: { p_email: string; p_streamer_slug: string }
         Returns: boolean
       }
+      add_streamer_moderator: {
+        Args: {
+          p_mod_name: string
+          p_streamer_id: string
+          p_telegram_user_id: string
+        }
+        Returns: {
+          created_at: string
+          id: string
+          is_active: boolean
+          mod_name: string
+          telegram_user_id: string
+        }[]
+      }
       assign_email_to_streamer: {
         Args: { p_email: string; p_streamer_slug: string }
         Returns: boolean
@@ -1250,6 +1264,10 @@ export type Database = {
       }
       remove_streamer_auth_email: {
         Args: { p_email: string; p_streamer_slug: string }
+        Returns: boolean
+      }
+      remove_streamer_moderator: {
+        Args: { p_moderator_id: string; p_streamer_id: string }
         Returns: boolean
       }
       safe_export_user_signups: {
