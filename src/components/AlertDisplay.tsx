@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Gift, Heart, Star, Zap, Music } from 'lucide-react';
 
 interface Donation {
@@ -34,13 +34,28 @@ export const AlertDisplay: React.FC<AlertDisplayProps> = ({
 }) => {
   const [displayedMessage, setDisplayedMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const donationIdRef = useRef<string | null>(null);
 
   // Typing effect for messages
   useEffect(() => {
+    // Clear any existing interval
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
+    // Reset state immediately
+    setDisplayedMessage('');
+    setIsTyping(false);
+
     if (!donation?.message || !isVisible) {
-      setDisplayedMessage('');
-      setIsTyping(false);
       return;
+    }
+
+    // Check if this is a new donation
+    if (donationIdRef.current !== donation.id) {
+      donationIdRef.current = donation.id;
     }
 
     if (donation.voice_message_url) {
@@ -49,25 +64,51 @@ export const AlertDisplay: React.FC<AlertDisplayProps> = ({
       return;
     }
 
-    // Typing effect for text messages
+    // Start typing effect for text messages
     setIsTyping(true);
-    setDisplayedMessage('');
-    
     let index = 0;
     const message = donation.message;
     
-    const typeInterval = setInterval(() => {
+    intervalRef.current = setInterval(() => {
+      // Double check we're still on the same donation
+      if (donationIdRef.current !== donation.id) {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+        return;
+      }
+
       if (index < message.length) {
-        setDisplayedMessage(prev => (prev || '') + message[index]);
+        setDisplayedMessage(message.substring(0, index + 1));
         index++;
       } else {
         setIsTyping(false);
-        clearInterval(typeInterval);
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
       }
     }, 50);
 
-    return () => clearInterval(typeInterval);
-  }, [donation?.message, donation?.voice_message_url, isVisible]);
+    // Cleanup function
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [donation?.id, donation?.message, donation?.voice_message_url, isVisible]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, []);
 
   // Get appropriate hyperemote icon
   const getHyperemoteIcon = (amount: number) => {
