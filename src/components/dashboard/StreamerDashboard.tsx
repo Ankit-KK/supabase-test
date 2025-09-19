@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -354,10 +355,15 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
           </Card>
         </div>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Approved Donations - Main Section */}
-          <div className="lg:col-span-2">
+        {/* Main Content Tabs */}
+        <Tabs defaultValue="donations" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="donations">Approved Donations</TabsTrigger>
+            <TabsTrigger value="moderation">Moderation</TabsTrigger>
+            <TabsTrigger value="obs">OBS Setup</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="donations" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Approved Donations</CardTitle>
@@ -383,27 +389,24 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
                 </div>
               </CardContent>
             </Card>
-          </div>
+          </TabsContent>
 
-          {/* Sidebar - Moderation & OBS */}
-          <div className="space-y-6">
-            {/* Moderation Queue */}
-            {pendingDonations.length > 0 && (
-              <ModerationQueue 
-                donations={pendingDonations}
-                tableName={tableName}
-                onModerationAction={() => setRefreshKey(prev => prev + 1)}
-              />
-            )}
+          <TabsContent value="moderation" className="space-y-6">
+            <ModerationQueue 
+              donations={pendingDonations}
+              tableName={tableName}
+              onModerationAction={() => setRefreshKey(prev => prev + 1)}
+            />
+          </TabsContent>
 
-            {/* OBS Setup */}
+          <TabsContent value="obs" className="space-y-6">
             <OBSTokenManager 
               streamerId={streamerData.id}
               streamerSlug={streamerSlug}
               brandColor={brandColor}
             />
-          </div>
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
