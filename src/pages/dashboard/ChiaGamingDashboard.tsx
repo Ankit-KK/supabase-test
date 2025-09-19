@@ -23,7 +23,7 @@ const ChiaGamingDashboard = () => {
         });
 
         const hasChiaAccess = data?.some((item: any) => 
-          item.streamer_slug === 'chia_gaming' || item.is_admin === true
+          item.streamer_slug === 'chia_gaming' || item.streamer_slug === 'all' || item.is_admin === true
         );
 
         if (hasChiaAccess) {

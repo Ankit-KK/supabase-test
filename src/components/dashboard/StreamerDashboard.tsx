@@ -49,7 +49,7 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
   brandColor = '#3b82f6',
   tableName
 }) => {
-  const { user, session } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [streamerData, setStreamerData] = useState<any>(null);
@@ -223,7 +223,7 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
     fetchPendingDonations();
   }, [streamerData?.id, tableName, refreshKey]);
 
-  if (!user || !session) {
+  if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="p-8 text-center max-w-md">

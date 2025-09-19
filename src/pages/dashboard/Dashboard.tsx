@@ -8,10 +8,10 @@ import { Badge } from '@/components/ui/badge';
 const Dashboard = () => {
   const { user, loading, getUserStreamerAccess } = useAuth();
   const navigate = useNavigate();
-  const [streamerAccess, setStreamerAccess] = useState<{
+  const [streamerAccess, setStreamerAccess] = useState<Array<{
     streamer_slug?: string;
     is_admin?: boolean;
-  } | null>(null);
+  }>>([]);
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
@@ -25,9 +25,16 @@ const Dashboard = () => {
         const access = await getUserStreamerAccess();
         setStreamerAccess(access);
         
-        // Auto-redirect if user has only one streamer access
-        if (access && !access.is_admin) {
-          navigate(`/dashboard/${access.streamer_slug}`);
+        // Auto-redirect if user has only one streamer access and is not admin
+        if (access.length === 1 && !access[0].is_admin) {
+          const slug = access[0].streamer_slug;
+          if (slug === 'ankit') {
+            navigate('/dashboard/ankit');
+          } else if (slug === 'chia_gaming') {
+            navigate('/dashboard/chia-gaming');
+          } else if (slug === 'demostreamer') {
+            navigate('/dashboard/demostreamer');
+          }
           return;
         }
       } catch (error) {
@@ -57,7 +64,7 @@ const Dashboard = () => {
     return null; // Will redirect to auth
   }
 
-  if (!streamerAccess) {
+  if (streamerAccess.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
@@ -81,7 +88,8 @@ const Dashboard = () => {
   }
 
   // Admin dashboard - show all available streamers
-  if (streamerAccess.is_admin) {
+  const isAdmin = streamerAccess.some(access => access.is_admin);
+  if (isAdmin) {
     const availableStreamers = [
       { slug: 'ankit', name: 'Ankit', color: '#3b82f6' },
       { slug: 'chia_gaming', name: 'Chia Gaming', color: '#ec4899' },

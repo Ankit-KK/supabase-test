@@ -23,7 +23,7 @@ const AnkitDashboard = () => {
         });
 
         const hasAnkitAccess = data?.some((item: any) => 
-          item.streamer_slug === 'ankit' || item.is_admin === true
+          item.streamer_slug === 'ankit' || item.streamer_slug === 'all' || item.is_admin === true
         );
 
         if (hasAnkitAccess) {

@@ -1,15 +1,20 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import type { User, Session } from '@supabase/supabase-js';
+
+interface User {
+  id: string;
+  email: string;
+  username?: string;
+  role: string;
+}
 
 interface AuthContextType {
   user: User | null;
-  session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
-  getUserStreamerAccess: () => Promise<{ streamer_slug?: string; is_admin?: boolean } | null>;
+  getUserStreamerAccess: () => Promise<{ streamer_slug?: string; is_admin?: boolean }[]>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,36 +29,65 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+    // Check for existing session in localStorage on mount
+    const checkExistingSession = async () => {
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        try {
+          const { data, error } = await supabase.rpc('validate_session_token', { token });
+          if (!error && data && data.length > 0) {
+            const userData = data[0];
+            setUser({
+              id: userData.user_id,
+              email: userData.email,
+              username: userData.username,
+              role: userData.role
+            });
+          } else {
+            localStorage.removeItem('auth_token');
+          }
+        } catch (error) {
+          console.error('Session validation error:', error);
+          localStorage.removeItem('auth_token');
+        }
       }
-    );
-
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
       setLoading(false);
-    });
+    };
 
-    return () => subscription.unsubscribe();
+    checkExistingSession();
   }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const { data, error } = await supabase.functions.invoke('authenticate-user', {
+        body: {
+          action: 'login',
+          email,
+          password
+        }
       });
-      return { error };
+
+      if (error) {
+        return { error };
+      }
+
+      if (data.error) {
+        return { error: { message: data.error } };
+      }
+
+      // Store session token and user data
+      localStorage.setItem('auth_token', data.session.access_token);
+      setUser({
+        id: data.user.id,
+        email: data.user.email,
+        username: data.user.username,
+        role: data.user.role
+      });
+
+      return { error: null };
     } catch (error) {
       return { error };
     }
@@ -61,49 +95,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string) => {
     try {
-      const redirectUrl = `${window.location.origin}/dashboard`;
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectUrl
+      const { data, error } = await supabase.functions.invoke('authenticate-user', {
+        body: {
+          action: 'register',
+          email,
+          password
         }
       });
-      return { error };
+
+      if (error) {
+        return { error };
+      }
+
+      if (data.error) {
+        return { error: { message: data.error } };
+      }
+
+      // Store session token and user data
+      localStorage.setItem('auth_token', data.session.access_token);
+      setUser({
+        id: data.user.id,
+        email: data.user.email,
+        username: data.user.username,
+        role: data.user.role
+      });
+
+      return { error: null };
     } catch (error) {
       return { error };
     }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    localStorage.removeItem('auth_token');
+    setUser(null);
   };
 
   const getUserStreamerAccess = async () => {
-    if (!user?.email) return null;
+    if (!user?.email) return [];
     
     try {
       const { data, error } = await supabase.rpc('get_streamer_by_email', {
         user_email: user.email
       });
       
-      if (error || !data || data.length === 0) {
-        return null;
+      if (error || !data) {
+        return [];
       }
       
-      return {
-        streamer_slug: data[0].streamer_slug,
-        is_admin: data[0].is_admin
-      };
+      return data.map((item: any) => ({
+        streamer_slug: item.streamer_slug,
+        is_admin: item.is_admin
+      }));
     } catch (error) {
       console.error('Error getting user streamer access:', error);
-      return null;
+      return [];
     }
   };
 
   const value = {
     user,
-    session,
     loading,
     signIn,
     signUp,

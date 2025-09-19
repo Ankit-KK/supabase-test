@@ -862,10 +862,7 @@ export type Database = {
       get_streamer_by_email: {
         Args: { user_email: string }
         Returns: {
-          brand_color: string
           is_admin: boolean
-          streamer_id: string
-          streamer_name: string
           streamer_slug: string
         }[]
       }
@@ -1279,6 +1276,15 @@ export type Database = {
           streamer_id: string
           streamer_name: string
           streamer_slug: string
+        }[]
+      }
+      validate_session_token: {
+        Args: { token: string }
+        Returns: {
+          email: string
+          role: string
+          user_id: string
+          username: string
         }[]
       }
       validate_streamer_credentials: {

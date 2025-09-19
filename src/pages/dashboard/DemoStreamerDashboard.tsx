@@ -23,7 +23,7 @@ const DemoStreamerDashboard = () => {
         });
 
         const hasDemoAccess = data?.some((item: any) => 
-          item.streamer_slug === 'demostreamer' || item.is_admin === true
+          item.streamer_slug === 'demostreamer' || item.streamer_slug === 'all' || item.is_admin === true
         );
 
         if (hasDemoAccess) {
