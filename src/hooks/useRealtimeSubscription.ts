@@ -139,8 +139,10 @@ export const useRealtimeSubscription = (options: RealtimeSubscriptionOptions) =>
           unsubscribe();
         }
       };
+    } else {
+      cleanup();
     }
-  }, [streamerId, enabled, subscribe, cleanup]);
+  }, [streamerId, enabled]); // Remove subscribe and cleanup from dependencies
 
   // Cleanup on unmount
   useEffect(() => {

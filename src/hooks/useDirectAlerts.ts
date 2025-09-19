@@ -89,6 +89,13 @@ export const useDirectAlerts = ({ streamerId, tableName, enabled = true, obsToke
       return;
     }
 
+    // Clean up existing channel first
+    if (channelRef.current) {
+      console.log('🧹 Cleaning up existing channel before creating new one');
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
     console.log(`🎯 Setting up direct subscription to ${tableName} for streamerId: ${streamerId}`);
     
     const channel = supabase
@@ -173,7 +180,7 @@ export const useDirectAlerts = ({ streamerId, tableName, enabled = true, obsToke
       });
 
     channelRef.current = channel;
-  }, [streamerId, tableName, enabled, showAlert]);
+  }, [streamerId, tableName, enabled, tokenValid]);
 
   // Handle connection failures with retry logic
   const handleConnectionFailure = useCallback(() => {
@@ -236,7 +243,7 @@ export const useDirectAlerts = ({ streamerId, tableName, enabled = true, obsToke
       setConnectionStatus('connecting');
       setTokenValid(null);
     };
-  }, [streamerId, tableName, enabled, obsToken]); // Remove callback dependencies to prevent infinite loop
+  }, [streamerId, tableName, enabled, obsToken, validateToken, setupDirectSubscription]);
 
   // Test alert function
   const triggerTestAlert = useCallback(() => {
