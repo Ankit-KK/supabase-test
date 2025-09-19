@@ -18,12 +18,12 @@ const DemoStreamerDashboard = () => {
 
       try {
         // Check if user has access to demostreamer dashboard or is admin
-        const { data } = await supabase.rpc('get_streamer_by_email', {
-          user_email: user.email
+        const { data } = await supabase.rpc('get_user_streamers', {
+          p_user_id: user.id
         });
 
-        const hasDemoAccess = data?.some((item: any) => 
-          item.streamer_slug === 'demostreamer' || item.streamer_slug === 'all' || item.is_admin === true
+        const hasDemoAccess = data?.some((streamer: any) => 
+          streamer.streamer_slug === 'demostreamer' || streamer.is_admin === true
         );
 
         if (hasDemoAccess) {

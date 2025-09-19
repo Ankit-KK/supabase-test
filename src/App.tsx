@@ -33,7 +33,6 @@ import ChiaGamingDashboard from "./pages/dashboard/ChiaGamingDashboard";
 import DemoStreamerDashboard from "./pages/dashboard/DemoStreamerDashboard";
 import Dashboard from "./pages/dashboard/Dashboard";
 import Auth from "./pages/Auth";
-import EmailAssignments from "./pages/admin/EmailAssignments";
 import DemoStreamer from "./pages/DemoStreamer";
 
 const queryClient = new QueryClient();
@@ -81,8 +80,6 @@ const App = () => (
               <Route path="/dashboard/chia_gaming" element={<ChiaGamingDashboard />} />
               <Route path="/dashboard/demostreamer" element={<DemoStreamerDashboard />} />
               
-              {/* Admin routes */}
-              <Route path="/admin/email-assignments" element={<EmailAssignments />} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>

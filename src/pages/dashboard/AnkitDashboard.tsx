@@ -18,12 +18,12 @@ const AnkitDashboard = () => {
 
       try {
         // Check if user has access to ankit dashboard or is admin
-        const { data } = await supabase.rpc('get_streamer_by_email', {
-          user_email: user.email
+        const { data } = await supabase.rpc('get_user_streamers', {
+          p_user_id: user.id
         });
 
-        const hasAnkitAccess = data?.some((item: any) => 
-          item.streamer_slug === 'ankit' || item.streamer_slug === 'all' || item.is_admin === true
+        const hasAnkitAccess = data?.some((streamer: any) => 
+          streamer.streamer_slug === 'ankit' || streamer.is_admin === true
         );
 
         if (hasAnkitAccess) {

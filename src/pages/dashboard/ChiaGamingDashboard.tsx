@@ -18,12 +18,12 @@ const ChiaGamingDashboard = () => {
 
       try {
         // Check if user has access to chia_gaming dashboard or is admin
-        const { data } = await supabase.rpc('get_streamer_by_email', {
-          user_email: user.email
+        const { data } = await supabase.rpc('get_user_streamers', {
+          p_user_id: user.id
         });
 
-        const hasChiaAccess = data?.some((item: any) => 
-          item.streamer_slug === 'chia_gaming' || item.streamer_slug === 'all' || item.is_admin === true
+        const hasChiaAccess = data?.some((streamer: any) => 
+          streamer.streamer_slug === 'chia_gaming' || streamer.is_admin === true
         );
 
         if (hasChiaAccess) {

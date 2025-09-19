@@ -14,7 +14,6 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
-  getUserStreamerAccess: () => Promise<{ streamer_slug?: string; is_admin?: boolean }[]>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -131,35 +130,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
   };
 
-  const getUserStreamerAccess = async () => {
-    if (!user?.email) return [];
-    
-    try {
-      const { data, error } = await supabase.rpc('get_streamer_by_email', {
-        user_email: user.email
-      });
-      
-      if (error || !data) {
-        return [];
-      }
-      
-      return data.map((item: any) => ({
-        streamer_slug: item.streamer_slug,
-        is_admin: item.is_admin
-      }));
-    } catch (error) {
-      console.error('Error getting user streamer access:', error);
-      return [];
-    }
-  };
-
   const value = {
     user,
     loading,
     signIn,
     signUp,
     signOut,
-    getUserStreamerAccess,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

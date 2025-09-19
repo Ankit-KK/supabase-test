@@ -1022,6 +1022,17 @@ export type Database = {
           youtube_channel: string
         }[]
       }
+      get_user_streamers: {
+        Args: { p_user_id: string }
+        Returns: {
+          brand_color: string
+          id: string
+          is_admin: boolean
+          is_owner: boolean
+          streamer_name: string
+          streamer_slug: string
+        }[]
+      }
       get_visitor_stats: {
         Args: Record<PropertyKey, never>
         Returns: {
