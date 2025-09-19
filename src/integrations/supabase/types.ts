@@ -309,27 +309,33 @@ export type Database = {
           expires_at: string | null
           id: string
           is_active: boolean | null
+          last_used_at: string | null
           streamer_id: string | null
           token: string
           updated_at: string | null
+          usage_count: number | null
         }
         Insert: {
           created_at?: string | null
           expires_at?: string | null
           id?: string
           is_active?: boolean | null
+          last_used_at?: string | null
           streamer_id?: string | null
           token: string
           updated_at?: string | null
+          usage_count?: number | null
         }
         Update: {
           created_at?: string | null
           expires_at?: string | null
           id?: string
           is_active?: boolean | null
+          last_used_at?: string | null
           streamer_id?: string | null
           token?: string
           updated_at?: string | null
+          usage_count?: number | null
         }
         Relationships: [
           {
