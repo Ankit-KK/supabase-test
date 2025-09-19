@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AlertDisplay } from '@/components/AlertDisplay';
-import { useSimpleAlerts } from '@/hooks/useSimpleAlerts';
+import { useDirectAlerts } from '@/hooks/useDirectAlerts';
 
 const ChiaGamingObsAlerts = () => {
   const [searchParams] = useSearchParams();
@@ -11,28 +11,24 @@ const ChiaGamingObsAlerts = () => {
   const {
     currentAlert,
     isVisible,
-    connectionStatus
-  } = useSimpleAlerts({
+    connectionStatus,
+    tokenValid: directTokenValid
+  } = useDirectAlerts({
     streamerId: 'chia-gaming-id', // This will need to be updated with actual streamer ID
     tableName: 'chia_gaming_donations',
-    enabled: !!obsToken && tokenValid === true,
+    enabled: !!obsToken,
     obsToken: obsToken || undefined
   });
 
-  // Validate token on mount
+  // Update local token validation state based on direct alerts
   useEffect(() => {
-    if (!obsToken) {
-      setTokenValid(false);
-      return;
+    if (directTokenValid !== null) {
+      setTokenValid(directTokenValid);
     }
-
-    // Token validation will happen in useSimpleAlerts hook
-    // For now, assume valid if token exists
-    setTokenValid(true);
-  }, [obsToken]);
+  }, [directTokenValid]);
 
   // Show loading state while validating token
-  if (tokenValid === null) {
+  if (tokenValid === null || directTokenValid === null) {
     return (
       <div className="fixed inset-0 bg-transparent flex items-center justify-center">
         <div className="text-white text-center">
