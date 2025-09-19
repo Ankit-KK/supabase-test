@@ -465,6 +465,41 @@ export type Database = {
           },
         ]
       }
+      streamers_moderators: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          mod_name: string
+          streamer_id: string
+          telegram_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          mod_name: string
+          streamer_id: string
+          telegram_user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          mod_name?: string
+          streamer_id?: string
+          telegram_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamers_moderators_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_queries: {
         Row: {
           created_at: string
@@ -793,6 +828,15 @@ export type Database = {
           rejected_reason: string
           voice_duration_seconds: number
           voice_message_url: string
+        }[]
+      }
+      get_moderator_by_telegram_id: {
+        Args: { p_telegram_user_id: string }
+        Returns: {
+          is_active: boolean
+          mod_name: string
+          streamer_id: string
+          streamer_slug: string
         }[]
       }
       get_my_moderators: {

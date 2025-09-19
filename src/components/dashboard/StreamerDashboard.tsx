@@ -12,6 +12,7 @@ import { DollarSign, Users, TrendingUp, Clock, AlertCircle } from 'lucide-react'
 import DonationCard from './DonationCard';
 import ModerationQueue from './ModerationQueue';
 import OBSTokenManager from './OBSTokenManager';
+import { ModeratorManager } from './ModeratorManager';
 
 interface StreamerDashboardProps {
   streamerSlug: string;
@@ -357,9 +358,10 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="donations" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="donations">Approved Donations</TabsTrigger>
             <TabsTrigger value="moderation">Moderation</TabsTrigger>
+            <TabsTrigger value="moderators">Telegram Moderators</TabsTrigger>
             <TabsTrigger value="obs">OBS Setup</TabsTrigger>
           </TabsList>
 
@@ -397,6 +399,10 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
               tableName={tableName}
               onModerationAction={() => setRefreshKey(prev => prev + 1)}
             />
+          </TabsContent>
+
+          <TabsContent value="moderators" className="space-y-6">
+            <ModeratorManager streamerId={streamerData.id} />
           </TabsContent>
 
           <TabsContent value="obs" className="space-y-6">
