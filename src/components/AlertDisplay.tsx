@@ -226,7 +226,7 @@ export const AlertDisplay: React.FC<AlertDisplayProps> = ({
       `}>
         <div 
           className={`
-            alert-card alert-enter min-w-[200px] max-w-[400px] min-h-[150px] relative flex flex-col justify-center items-center p-4
+            alert-card alert-enter min-w-[180px] max-w-[320px] min-h-[120px] relative flex flex-col justify-center items-center p-3
             ${donation.is_hyperemote ? 'hyperemote-float hyperemote' : ''} 
           `}
         >
@@ -247,11 +247,11 @@ export const AlertDisplay: React.FC<AlertDisplayProps> = ({
           {/* Content Container with proper z-index */}
           <div className="relative z-10 text-center text-white w-full">
             {/* Alert Header */}
-            <div className="mb-3">
-              <h2 className="text-lg font-bold mb-1">
+            <div className="mb-2">
+              <h2 className="text-base font-bold mb-1">
                 {donation.is_hyperemote ? '🎉 HYPEREMOTE! 🎉' : 'New Donation!'}
               </h2>
-              <div className="flex flex-col items-center gap-1 text-sm font-semibold">
+              <div className="flex flex-col items-center gap-0.5 text-xs font-semibold">
                 <span>{donation.name}</span>
                 <span className="text-green-400">donated ₹{donation.amount}</span>
               </div>
@@ -259,24 +259,24 @@ export const AlertDisplay: React.FC<AlertDisplayProps> = ({
 
             {/* Voice Message */}
             {donation.voice_message_url && (
-              <div className="mb-3">
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-500/20 rounded-full text-blue-300 text-xs">
-                  <Music className="w-4 h-4" />
-                  <span className="font-medium">Voice Message</span>
+              <div className="mb-2">
+                <div className="inline-flex items-center gap-1 px-2 py-1 bg-blue-500/20 rounded-full text-blue-300 text-xs">
+                  <Music className="w-3 h-3" />
+                  <span className="font-medium">Voice</span>
                 </div>
                 <audio
                   src={donation.voice_message_url}
                   autoPlay
                   controls
-                  className="mt-2 mx-auto block max-w-full h-8"
+                  className="mt-1 mx-auto block max-w-full h-6"
                 />
               </div>
             )}
 
             {/* Message with Typing Effect */}
             {donation.message && (
-              <div className="mb-3">
-                <div className="text-sm leading-relaxed p-3 bg-white/10 rounded-lg backdrop-blur-sm min-h-[40px] flex items-center justify-center">
+              <div className="mb-2">
+                <div className="text-xs leading-relaxed p-2 bg-white/10 rounded-lg backdrop-blur-sm min-h-[30px] flex items-center justify-center">
                   <span className="break-words text-center">
                     {donation.voice_message_url ? donation.message : displayedMessage}
                     {isTyping && <span className="animate-pulse border-r-2 border-white ml-1">|</span>}
@@ -287,7 +287,7 @@ export const AlertDisplay: React.FC<AlertDisplayProps> = ({
 
             {/* Streamer Branding */}
             <div>
-              <div className="inline-block px-3 py-1 rounded-full text-white text-xs font-medium bg-white/20 backdrop-blur-sm">
+              <div className="inline-block px-2 py-0.5 rounded-full text-white text-xs font-medium bg-white/20 backdrop-blur-sm">
                 Thank you for supporting {streamerName}!
               </div>
             </div>
