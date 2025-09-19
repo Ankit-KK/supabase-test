@@ -6,6 +6,7 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Shield, Check, X, Eye, EyeOff, Volume2, AlertTriangle } from 'lucide-react';
 import DonationCard from './DonationCard';
+import ModeratorDropdown from './ModeratorDropdown';
 
 interface ModerationQueueProps {
   donations: Array<{
@@ -22,12 +23,14 @@ interface ModerationQueueProps {
   }>;
   tableName: string;
   onModerationAction: () => void;
+  streamerId: string;
 }
 
 const ModerationQueue: React.FC<ModerationQueueProps> = ({
   donations,
   tableName,
-  onModerationAction
+  onModerationAction,
+  streamerId
 }) => {
   const [processing, setProcessing] = useState<string | null>(null);
 
@@ -106,9 +109,12 @@ const ModerationQueue: React.FC<ModerationQueueProps> = ({
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Shield className="h-5 w-5" />
-            <span>Moderation Queue</span>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Shield className="h-5 w-5" />
+              <span>Moderation Queue</span>
+            </div>
+            <ModeratorDropdown streamerId={streamerId} />
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -132,9 +138,12 @@ const ModerationQueue: React.FC<ModerationQueueProps> = ({
             <Shield className="h-5 w-5" />
             <span>Moderation Queue</span>
           </div>
-          <Badge variant="secondary">
-            {donations.length} pending
-          </Badge>
+          <div className="flex items-center space-x-2">
+            <Badge variant="secondary">
+              {donations.length} pending
+            </Badge>
+            <ModeratorDropdown streamerId={streamerId} />
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
