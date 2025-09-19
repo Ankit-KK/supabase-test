@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Trash2, UserPlus, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Moderator {
   id: string;
@@ -22,6 +23,7 @@ interface ModeratorDropdownProps {
 }
 
 const ModeratorDropdown: React.FC<ModeratorDropdownProps> = ({ streamerId }) => {
+  const { user } = useAuth();
   const [moderators, setModerators] = useState<Moderator[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
@@ -68,13 +70,23 @@ const ModeratorDropdown: React.FC<ModeratorDropdownProps> = ({ streamerId }) => 
       return;
     }
 
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "User not authenticated",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setAdding(true);
     try {
       const { data, error } = await supabase
         .rpc('add_streamer_moderator', {
           p_streamer_id: streamerId,
           p_mod_name: newModeratorName.trim(),
-          p_telegram_user_id: newTelegramId.trim()
+          p_telegram_user_id: newTelegramId.trim(),
+          p_user_id: user.id
         });
 
       if (error) throw error;
@@ -102,11 +114,21 @@ const ModeratorDropdown: React.FC<ModeratorDropdownProps> = ({ streamerId }) => 
   };
 
   const removeModerator = async (moderatorId: string) => {
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "User not authenticated",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .rpc('remove_streamer_moderator', {
           p_streamer_id: streamerId,
-          p_moderator_id: moderatorId
+          p_moderator_id: moderatorId,
+          p_user_id: user.id
         });
 
       if (error) throw error;
