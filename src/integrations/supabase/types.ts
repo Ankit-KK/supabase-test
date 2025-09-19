@@ -1033,9 +1033,7 @@ export type Database = {
         Returns: number
       }
       get_streamer_obs_tokens: {
-        Args:
-          | { p_streamer_id: string }
-          | { p_streamer_id: string; p_user_id: string }
+        Args: { p_streamer_id: string; p_user_id: string }
         Returns: {
           created_at: string
           expires_at: string
