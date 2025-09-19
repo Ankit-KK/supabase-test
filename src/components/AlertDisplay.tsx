@@ -196,9 +196,9 @@ export const AlertDisplay: React.FC<AlertDisplayProps> = ({
         .alert-card::before {
           content: '';
           position: absolute;
-          width: 100px;
+          width: 200%;
           background-image: linear-gradient(180deg, rgb(0, 183, 255), rgb(255, 48, 255));
-          height: 130%;
+          height: 200%;
           animation: rotBGimg 3s linear infinite;
           transition: all 0.2s linear;
           left: 50%;
