@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,13 +7,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { DollarSign, Users, TrendingUp, Settings, Eye, Clock, AlertCircle } from 'lucide-react';
+import { DollarSign, Users, TrendingUp, Clock, AlertCircle } from 'lucide-react';
 import DonationCard from './DonationCard';
-import RevenueChart from './RevenueChart';
-import ActivityFeed from './ActivityFeed';
 import ModerationQueue from './ModerationQueue';
 import OBSTokenManager from './OBSTokenManager';
-import SettingsPanel from './SettingsPanel';
 
 interface StreamerDashboardProps {
   streamerSlug: string;
@@ -64,7 +60,7 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
     averageDonation: 0,
     topDonation: 0
   });
-  const [recentDonations, setRecentDonations] = useState<DonationRecord[]>([]);
+  const [approvedDonations, setApprovedDonations] = useState<DonationRecord[]>([]);
   const [pendingDonations, setPendingDonations] = useState<DonationRecord[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -177,9 +173,9 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
     fetchStats();
   }, [streamerData?.id, tableName, refreshKey]);
 
-  // Fetch recent donations
+  // Fetch approved donations
   useEffect(() => {
-    const fetchRecentDonations = async () => {
+    const fetchApprovedDonations = async () => {
       if (!streamerData?.id) return;
 
       try {
@@ -188,17 +184,18 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
           .select('*')
           .eq('streamer_id', streamerData.id)
           .eq('payment_status', 'success')
+          .in('moderation_status', ['approved', 'auto_approved'])
           .order('created_at', { ascending: false })
-          .limit(10) as { data: DonationRecord[] | null, error: any };
+          .limit(50) as { data: DonationRecord[] | null, error: any };
 
         if (error) throw error;
-        setRecentDonations(data || []);
+        setApprovedDonations(data || []);
       } catch (error) {
-        console.error('Error fetching recent donations:', error);
+        console.error('Error fetching approved donations:', error);
       }
     };
 
-    fetchRecentDonations();
+    fetchApprovedDonations();
   }, [streamerData?.id, tableName, refreshKey]);
 
   // Fetch pending donations
@@ -357,43 +354,25 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
           </Card>
         </div>
 
-        {/* Main Content Tabs */}
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="donations">Donations</TabsTrigger>
-            <TabsTrigger value="moderation">Moderation</TabsTrigger>
-            <TabsTrigger value="obs">OBS Setup</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <RevenueChart 
-                streamerId={streamerData.id} 
-                tableName={tableName}
-                brandColor={brandColor}
-              />
-              <ActivityFeed 
-                donations={recentDonations}
-                brandColor={brandColor}
-              />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="donations" className="space-y-6">
+        {/* Main Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Approved Donations - Main Section */}
+          <div className="lg:col-span-2">
             <Card>
               <CardHeader>
-                <CardTitle>Recent Donations</CardTitle>
+                <CardTitle>Approved Donations</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Donations that have been approved and are visible to viewers
+                </p>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {recentDonations.length === 0 ? (
+                <div className="space-y-4 max-h-[600px] overflow-y-auto">
+                  {approvedDonations.length === 0 ? (
                     <p className="text-muted-foreground text-center py-8">
-                      No donations yet. Share your donation link to get started!
+                      No approved donations yet. Donations will appear here once they're approved.
                     </p>
                   ) : (
-                    recentDonations.map((donation) => (
+                    approvedDonations.map((donation) => (
                       <DonationCard 
                         key={donation.id} 
                         donation={donation} 
@@ -404,31 +383,27 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+          </div>
 
-          <TabsContent value="moderation" className="space-y-6">
-            <ModerationQueue 
-              donations={pendingDonations}
-              tableName={tableName}
-              onModerationAction={() => setRefreshKey(prev => prev + 1)}
-            />
-          </TabsContent>
+          {/* Sidebar - Moderation & OBS */}
+          <div className="space-y-6">
+            {/* Moderation Queue */}
+            {pendingDonations.length > 0 && (
+              <ModerationQueue 
+                donations={pendingDonations}
+                tableName={tableName}
+                onModerationAction={() => setRefreshKey(prev => prev + 1)}
+              />
+            )}
 
-          <TabsContent value="obs" className="space-y-6">
+            {/* OBS Setup */}
             <OBSTokenManager 
               streamerId={streamerData.id}
               streamerSlug={streamerSlug}
               brandColor={brandColor}
             />
-          </TabsContent>
-
-          <TabsContent value="settings" className="space-y-6">
-            <SettingsPanel 
-              streamerData={streamerData}
-              onSettingsUpdate={() => setRefreshKey(prev => prev + 1)}
-            />
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       </div>
     </div>
   );
