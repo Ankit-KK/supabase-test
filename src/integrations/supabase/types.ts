@@ -1032,6 +1032,17 @@ export type Database = {
         Args: { p_streamer_id: string }
         Returns: number
       }
+      get_streamer_obs_tokens: {
+        Args: { p_streamer_id: string }
+        Returns: {
+          created_at: string
+          expires_at: string
+          id: string
+          is_active: boolean
+          last_used_at: string
+          token: string
+        }[]
+      }
       get_streamer_public_settings: {
         Args: { slug: string }
         Returns: {

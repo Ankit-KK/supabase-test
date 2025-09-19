@@ -46,22 +46,29 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
   const [showToken, setShowToken] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState<string | null>(null);
 
-  // Fetch existing tokens
+  // Fetch existing tokens using database function
   useEffect(() => {
     const fetchTokens = async () => {
       if (!user) {
+        console.log('No user authenticated, skipping token fetch');
         setLoading(false);
         return;
       }
 
+      console.log('Fetching OBS tokens for streamer:', streamerId);
+      
       try {
         const { data, error } = await supabase
-          .from('obs_tokens')
-          .select('*')
-          .eq('streamer_id', streamerId)
-          .order('created_at', { ascending: false });
+          .rpc('get_streamer_obs_tokens', {
+            p_streamer_id: streamerId
+          });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error fetching tokens:', error);
+          throw error;
+        }
+
+        console.log('Successfully fetched tokens:', data);
         setTokens(data || []);
       } catch (error) {
         console.error('Error fetching OBS tokens:', error);
@@ -119,7 +126,7 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
         description: "New OBS token has been created successfully.",
       });
 
-      // Refresh tokens list with retry logic
+      // Refresh tokens list using database function with retry logic
       let retryCount = 0;
       const maxRetries = 3;
       
@@ -129,10 +136,9 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
           await new Promise(resolve => setTimeout(resolve, 500 * (retryCount + 1)));
           
           const { data: updatedTokens, error: fetchError } = await supabase
-            .from('obs_tokens')
-            .select('*')
-            .eq('streamer_id', streamerId)
-            .order('created_at', { ascending: false });
+            .rpc('get_streamer_obs_tokens', {
+              p_streamer_id: streamerId
+            });
 
           if (fetchError) {
             console.error(`Token fetch attempt ${retryCount + 1} failed:`, fetchError);
@@ -144,7 +150,7 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
           console.log('Fetched tokens after generation:', updatedTokens);
           setTokens(updatedTokens || []);
           
-          // Force re-render by updating a dummy state
+          // Force re-render by clearing show token state
           setShowToken(null);
           break;
           
