@@ -275,7 +275,7 @@ export const AlertDisplay: React.FC<AlertDisplayProps> = ({
 
             {/* Message with Typing Effect */}
             {donation.message && (
-              <div className="mb-2">
+              <div>
                 <div className="text-xs leading-relaxed p-2 bg-white/10 rounded-lg backdrop-blur-sm min-h-[30px] flex items-center justify-center">
                   <span className="break-words text-center">
                     {donation.voice_message_url ? donation.message : displayedMessage}
@@ -284,13 +284,6 @@ export const AlertDisplay: React.FC<AlertDisplayProps> = ({
                 </div>
               </div>
             )}
-
-            {/* Streamer Branding */}
-            <div>
-              <div className="inline-block px-2 py-0.5 rounded-full text-white text-xs font-medium bg-white/20 backdrop-blur-sm">
-                Thank you for supporting {streamerName}!
-              </div>
-            </div>
           </div>
         </div>
       </div>
