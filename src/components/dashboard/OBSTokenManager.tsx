@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   Monitor, 
   Key, 
@@ -38,6 +39,7 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
   streamerSlug,
   brandColor = '#3b82f6'
 }) => {
+  const { user } = useAuth();
   const [tokens, setTokens] = useState<OBSToken[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -47,6 +49,11 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
   // Fetch existing tokens
   useEffect(() => {
     const fetchTokens = async () => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
       try {
         const { data, error } = await supabase
           .from('obs_tokens')
@@ -69,22 +76,43 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
     };
 
     fetchTokens();
-  }, [streamerId]);
+  }, [streamerId, user]);
 
   const generateNewToken = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to generate OBS tokens.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setGenerating(true);
     try {
       // Generate a random token
       const newToken = 'obs_' + Math.random().toString(36).substring(2, 15) + 
                       Math.random().toString(36).substring(2, 15);
 
-      const { data, error } = await supabase
-        .rpc('regenerate_obs_token', {
-          p_streamer_id: streamerId,
-          p_new_token: newToken
-        });
+      console.log('Generating OBS token for streamer:', streamerId, 'user:', user.id);
 
-      if (error) throw error;
+      // Use the service role approach via edge function
+      const { data, error } = await supabase.functions.invoke('generate-obs-token', {
+        body: {
+          streamer_id: streamerId,
+          new_token: newToken,
+          user_email: user.email
+        }
+      });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
 
       toast({
         title: "Token Generated",
@@ -105,7 +133,7 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
       console.error('Error generating OBS token:', error);
       toast({
         title: "Error",
-        description: "Failed to generate new OBS token.",
+        description: "Failed to generate new OBS token. " + (error instanceof Error ? error.message : 'Unknown error'),
         variant: "destructive",
       });
     } finally {
@@ -164,6 +192,27 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
   };
 
   const alertsUrl = `https://vsevsjvtrshgeiudrnth.supabase.co/functions/v1/get-alerts-for-obs-token`;
+
+  if (!user) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Monitor className="h-5 w-5" />
+            <span>OBS Integration</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Please log in to manage your OBS tokens.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (loading) {
     return (
