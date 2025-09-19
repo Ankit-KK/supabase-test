@@ -147,7 +147,7 @@ const TelegramBotStatus: React.FC<TelegramBotStatusProps> = ({
       {/* Setup Instructions */}
       <Card>
         <CardHeader>
-          <CardTitle>How to Use Telegram Moderation</CardTitle>
+          <CardTitle>How to Setup Telegram Notifications</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-3">
@@ -156,9 +156,9 @@ const TelegramBotStatus: React.FC<TelegramBotStatusProps> = ({
                 1
               </div>
               <div>
-                <p className="font-medium">Add Moderators</p>
+                <p className="font-medium">Get Your Telegram User ID</p>
                 <p className="text-sm text-muted-foreground">
-                  Go to the Moderators tab and add Telegram user IDs of people who can approve donations.
+                  Message @userinfobot on Telegram to get your user ID (it's a number like 123456789).
                 </p>
               </div>
             </div>
@@ -180,9 +180,9 @@ const TelegramBotStatus: React.FC<TelegramBotStatusProps> = ({
                 3
               </div>
               <div>
-                <p className="font-medium">Get Notifications on Mobile</p>
+                <p className="font-medium">Start Receiving Donation Alerts</p>
                 <p className="text-sm text-muted-foreground">
-                  Moderators will receive real-time donation notifications and can access the dashboard from Telegram.
+                  You'll receive real-time donation notifications directly on your phone via Telegram.
                 </p>
               </div>
             </div>
@@ -191,8 +191,8 @@ const TelegramBotStatus: React.FC<TelegramBotStatusProps> = ({
           <Alert>
             <CheckCircle className="h-4 w-4" />
             <AlertDescription>
-              <strong>Pro Tip:</strong> Add multiple moderators to get comprehensive donation notifications 
-              and analytics across your team!
+              <strong>Pro Tip:</strong> Keep Telegram notifications enabled to never miss a donation 
+              while streaming or away from your computer!
             </AlertDescription>
           </Alert>
         </CardContent>

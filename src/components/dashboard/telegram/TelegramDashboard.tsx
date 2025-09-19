@@ -7,20 +7,13 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   MessageCircle, 
-  Users, 
   Activity, 
-  Zap, 
-  CheckCircle, 
-  AlertCircle,
   Smartphone,
   Bot
 } from 'lucide-react';
 
 import TelegramBotStatus from './TelegramBotStatus';
-import PendingDonations from './PendingDonations';
 import TelegramActivity from './TelegramActivity';
-import QuickActions from './QuickActions';
-import { ModeratorManager } from '../ModeratorManager';
 
 interface TelegramDashboardProps {
   donations: Array<{
@@ -49,42 +42,37 @@ const TelegramDashboard: React.FC<TelegramDashboardProps> = ({
   streamerSlug
 }) => {
   const [botStatus, setBotStatus] = useState<'connected' | 'disconnected' | 'checking'>('checking');
-  const [moderatorCount, setModeratorCount] = useState(0);
-  const [recentActivity, setRecentActivity] = useState<any[]>([]);
+  const [streamerTelegramId, setStreamerTelegramId] = useState<string>('');
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
-  // Fetch moderator count
+  // Fetch streamer Telegram ID
   useEffect(() => {
-    const fetchModeratorCount = async () => {
+    const fetchStreamerTelegram = async () => {
       try {
         const { data, error } = await supabase
           .from('streamers_moderators')
-          .select('id')
+          .select('telegram_user_id')
           .eq('streamer_id', streamerId)
-          .eq('is_active', true);
+          .eq('is_active', true)
+          .single();
 
-        if (error) throw error;
-        setModeratorCount(data?.length || 0);
+        if (error && error.code !== 'PGRST116') throw error;
+        if (data) {
+          setStreamerTelegramId(data.telegram_user_id);
+          setNotificationsEnabled(true);
+          setBotStatus('connected');
+        } else {
+          setBotStatus('disconnected');
+        }
       } catch (error) {
-        console.error('Error fetching moderator count:', error);
+        console.error('Error fetching streamer telegram:', error);
+        setBotStatus('disconnected');
       }
     };
 
-    fetchModeratorCount();
+    fetchStreamerTelegram();
   }, [streamerId]);
 
-  // Mock bot status check (you can enhance this with actual webhook status checking)
-  useEffect(() => {
-    const checkBotStatus = async () => {
-      // Simulate checking bot status
-      setTimeout(() => {
-        setBotStatus(moderatorCount > 0 ? 'connected' : 'disconnected');
-      }, 1000);
-    };
-
-    checkBotStatus();
-  }, [moderatorCount]);
-
-  const pendingCount = donations.length;
   const totalDonationsToday = donations.filter(d => 
     new Date(d.created_at).toDateString() === new Date().toDateString()
   ).length;
@@ -100,9 +88,9 @@ const TelegramDashboard: React.FC<TelegramDashboardProps> = ({
                 <MessageCircle className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <CardTitle className="text-xl">Telegram Dashboard</CardTitle>
+                <CardTitle className="text-xl">Telegram Notifications</CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Manage donations on mobile via Telegram
+                  Get donation alerts on your phone via Telegram
                 </p>
               </div>
             </div>
@@ -115,33 +103,25 @@ const TelegramDashboard: React.FC<TelegramDashboardProps> = ({
       </Card>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="p-4">
-          <div className="flex items-center space-x-2">
-            <AlertCircle className="h-5 w-5 text-orange-500" />
-            <div>
-              <p className="text-2xl font-bold">{pendingCount}</p>
-              <p className="text-xs text-muted-foreground">Pending</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-4">
-          <div className="flex items-center space-x-2">
-            <Users className="h-5 w-5 text-blue-500" />
-            <div>
-              <p className="text-2xl font-bold">{moderatorCount}</p>
-              <p className="text-xs text-muted-foreground">Moderators</p>
-            </div>
-          </div>
-        </Card>
-
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <Card className="p-4">
           <div className="flex items-center space-x-2">
             <Activity className="h-5 w-5 text-green-500" />
             <div>
               <p className="text-2xl font-bold">{totalDonationsToday}</p>
               <p className="text-xs text-muted-foreground">Today</p>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-4">
+          <div className="flex items-center space-x-2">
+            <MessageCircle className="h-5 w-5 text-blue-500" />
+            <div>
+              <Badge variant={notificationsEnabled ? 'default' : 'secondary'}>
+                {notificationsEnabled ? '🔔 Enabled' : '🔕 Disabled'}
+              </Badge>
+              <p className="text-xs text-muted-foreground">Notifications</p>
             </div>
           </div>
         </Card>
@@ -160,49 +140,54 @@ const TelegramDashboard: React.FC<TelegramDashboardProps> = ({
       </div>
 
       {/* Main Tabs */}
-      <Tabs defaultValue="pending" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="pending" className="text-sm">
-            Pending ({pendingCount})
+      <Tabs defaultValue="recent" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="recent" className="text-sm">
+            Recent Donations
           </TabsTrigger>
-          <TabsTrigger value="moderators" className="text-sm">
-            Moderators
+          <TabsTrigger value="setup" className="text-sm">
+            Telegram Setup
           </TabsTrigger>
           <TabsTrigger value="activity" className="text-sm">
             Activity
           </TabsTrigger>
-          <TabsTrigger value="setup" className="text-sm">
-            Bot Setup
-          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="pending" className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <PendingDonations
-                donations={donations}
-                tableName={tableName}
-                onModerationAction={onModerationAction}
-              />
-            </div>
-            {pendingCount > 0 && (
-              <div className="sm:w-80">
-                <QuickActions
-                  donations={donations}
-                  tableName={tableName}
-                  onModerationAction={onModerationAction}
-                />
-              </div>
-            )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="moderators" className="space-y-4">
-          <ModeratorManager streamerId={streamerId} />
-        </TabsContent>
-
-        <TabsContent value="activity" className="space-y-4">
-          <TelegramActivity streamerId={streamerId} />
+        <TabsContent value="recent" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Recent Donations</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Latest donations for reference
+              </p>
+            </CardHeader>
+            <CardContent>
+              {donations.slice(0, 10).length > 0 ? (
+                <div className="space-y-3">
+                  {donations.slice(0, 10).map((donation) => (
+                    <div key={donation.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <div>
+                        <p className="font-medium">{donation.name}</p>
+                        {donation.message && (
+                          <p className="text-sm text-muted-foreground">{donation.message}</p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold">₹{donation.amount}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(donation.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No recent donations</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="setup" className="space-y-4">
@@ -211,6 +196,10 @@ const TelegramDashboard: React.FC<TelegramDashboardProps> = ({
             streamerSlug={streamerSlug}
             botStatus={botStatus}
           />
+        </TabsContent>
+
+        <TabsContent value="activity" className="space-y-4">
+          <TelegramActivity streamerId={streamerId} />
         </TabsContent>
       </Tabs>
     </div>
