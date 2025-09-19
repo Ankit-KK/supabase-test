@@ -99,11 +99,17 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
         if (streamerError) throw streamerError;
 
         // Check if user owns this streamer or is admin
-        const isOwner = streamer.user_id === user.id;
+        // For the custom auth system, check if streamer has no user_id (legacy) or matches current user
+        const isOwner = !streamer.user_id || streamer.user_id === user.id;
         // TODO: Add admin check here when admin system is implemented
-        const isAdmin = false;
+        const isAdmin = user?.role === 'admin';
 
         if (!isOwner && !isAdmin) {
+          console.log('Access check failed:', { 
+            streamerUserId: streamer.user_id, 
+            currentUserId: user.id, 
+            userRole: user?.role 
+          });
           toast({
             title: "Access Denied",
             description: "You don't have permission to view this dashboard.",
