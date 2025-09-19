@@ -93,7 +93,6 @@ serve(async (req) => {
         streamer_id: streamerData.id,
         payment_status: 'pending',
         moderation_status: 'pending',
-        temp_voice_data: voiceData || null,
         is_hyperemote: parseFloat(amount) >= 50
       })
       .select()
