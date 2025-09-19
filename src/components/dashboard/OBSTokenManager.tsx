@@ -60,7 +60,8 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
       try {
         const { data, error } = await supabase
           .rpc('get_streamer_obs_tokens', {
-            p_streamer_id: streamerId
+            p_streamer_id: streamerId,
+            p_user_id: user.id
           });
 
         if (error) {
@@ -137,7 +138,8 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
           
           const { data: updatedTokens, error: fetchError } = await supabase
             .rpc('get_streamer_obs_tokens', {
-              p_streamer_id: streamerId
+              p_streamer_id: streamerId,
+              p_user_id: user.id
             });
 
           if (fetchError) {
