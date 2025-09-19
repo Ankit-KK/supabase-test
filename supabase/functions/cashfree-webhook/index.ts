@@ -21,10 +21,14 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Extract order information from webhook
-    const { order_id, order_status, payment_status, order_amount } = webhookData
+    // Extract order information from webhook - Cashfree sends data nested under 'data'
+    const order_id = webhookData.data?.order?.order_id
+    const order_status = webhookData.data?.order?.order_status
+    const payment_status = webhookData.data?.payment?.payment_status
+    const order_amount = webhookData.data?.order?.order_amount
 
     if (!order_id) {
+      console.error('Webhook data structure:', JSON.stringify(webhookData, null, 2))
       throw new Error('Order ID not found in webhook data')
     }
 
