@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { DollarSign, Users, TrendingUp, Clock, AlertCircle } from 'lucide-react';
+import { DollarSign, Users, TrendingUp, Clock, AlertCircle, LogOut } from 'lucide-react';
 import DonationCard from './DonationCard';
 import ModerationQueue from './ModerationQueue';
 import OBSTokenManager from './OBSTokenManager';
@@ -50,7 +50,7 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
   brandColor = '#3b82f6',
   tableName
 }) => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [streamerData, setStreamerData] = useState<any>(null);
@@ -65,6 +65,24 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
   const [approvedDonations, setApprovedDonations] = useState<DonationRecord[]>([]);
   const [pendingDonations, setPendingDonations] = useState<DonationRecord[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
+  
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out of your dashboard.",
+      });
+      navigate('/');
+    } catch (error) {
+      toast({
+        title: "Logout Error",
+        description: "There was an error logging out. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Real-time subscription for live updates
   const connectionState = useRealtimeSubscription({
@@ -294,6 +312,10 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
             <div className="flex items-center space-x-2">
               <Button variant="outline" onClick={() => setRefreshKey(prev => prev + 1)}>
                 Refresh Data
+              </Button>
+              <Button variant="outline" onClick={handleLogout} className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
               </Button>
             </div>
           </div>

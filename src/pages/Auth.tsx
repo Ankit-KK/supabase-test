@@ -15,6 +15,7 @@ const Auth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get('redirect') || '/dashboard';
+  const isDashboardLogin = redirectTo.includes('dashboard');
 
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
   const [loading, setLoading] = useState(false);
@@ -185,10 +186,19 @@ const Auth = () => {
 
           <CardContent className="relative z-10">
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'login' | 'signup')}>
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              </TabsList>
+              {!isDashboardLogin && (
+                <TabsList className="grid w-full grid-cols-2 mb-6">
+                  <TabsTrigger value="login">Login</TabsTrigger>
+                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                </TabsList>
+              )}
+
+              {isDashboardLogin && (
+                <div className="mb-6 text-center">
+                  <h3 className="text-lg font-semibold text-primary">Streamer Dashboard Login</h3>
+                  <p className="text-sm text-muted-foreground">Enter your credentials to access your dashboard</p>
+                </div>
+              )}
 
               {/* Login Tab */}
               <TabsContent value="login">
@@ -244,85 +254,98 @@ const Auth = () => {
                 </form>
               </TabsContent>
 
-              {/* Signup Tab */}
-              <TabsContent value="signup">
-                <form onSubmit={handleSignup} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email" className="flex items-center space-x-2">
-                      <Mail className="h-4 w-4" />
-                      <span>Email</span>
-                    </Label>
-                    <Input
-                      id="signup-email"
-                      name="email"
-                      type="email"
-                      placeholder="your@email.com"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      className="border-primary/30 focus:border-primary focus:ring-primary/20"
-                      required
-                    />
-                  </div>
+              {/* Signup Tab - Hidden for dashboard login */}
+              {!isDashboardLogin && (
+                <TabsContent value="signup">
+                  <form onSubmit={handleSignup} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-email" className="flex items-center space-x-2">
+                        <Mail className="h-4 w-4" />
+                        <span>Email</span>
+                      </Label>
+                      <Input
+                        id="signup-email"
+                        name="email"
+                        type="email"
+                        placeholder="your@email.com"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        className="border-primary/30 focus:border-primary focus:ring-primary/20"
+                        required
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password" className="flex items-center space-x-2">
-                      <Lock className="h-4 w-4" />
-                      <span>Password</span>
-                    </Label>
-                    <Input
-                      id="signup-password"
-                      name="password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      className="border-primary/30 focus:border-primary focus:ring-primary/20"
-                      required
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-password" className="flex items-center space-x-2">
+                        <Lock className="h-4 w-4" />
+                        <span>Password</span>
+                      </Label>
+                      <Input
+                        id="signup-password"
+                        name="password"
+                        type="password"
+                        placeholder="••••••••"
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        className="border-primary/30 focus:border-primary focus:ring-primary/20"
+                        required
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="confirm-password" className="flex items-center space-x-2">
-                      <Lock className="h-4 w-4" />
-                      <span>Confirm Password</span>
-                    </Label>
-                    <Input
-                      id="confirm-password"
-                      name="confirmPassword"
-                      type="password"
-                      placeholder="••••••••"
-                      value={formData.confirmPassword}
-                      onChange={handleInputChange}
-                      className="border-primary/30 focus:border-primary focus:ring-primary/20"
-                      required
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="confirm-password" className="flex items-center space-x-2">
+                        <Lock className="h-4 w-4" />
+                        <span>Confirm Password</span>
+                      </Label>
+                      <Input
+                        id="confirm-password"
+                        name="confirmPassword"
+                        type="password"
+                        placeholder="••••••••"
+                        value={formData.confirmPassword}
+                        onChange={handleInputChange}
+                        className="border-primary/30 focus:border-primary focus:ring-primary/20"
+                        required
+                      />
+                    </div>
 
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Creating account...
-                      </>
-                    ) : (
-                      'Create Account'
-                    )}
-                  </Button>
-                </form>
-              </TabsContent>
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Creating account...
+                        </>
+                      ) : (
+                        'Create Account'
+                      )}
+                    </Button>
+                  </form>
+                </TabsContent>
+              )}
             </Tabs>
 
-            <Alert className="mt-6">
-              <User className="h-4 w-4" />
-              <AlertDescription>
-                <strong>For existing streamers:</strong> If you have an existing streamer account (Ankit, Chia Gaming, etc.), 
-                create an account with any email to access your dashboard. Account linking will be available soon.
-              </AlertDescription>
-            </Alert>
+            {!isDashboardLogin && (
+              <Alert className="mt-6">
+                <User className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>For existing streamers:</strong> If you have an existing streamer account (Ankit, Chia Gaming, etc.), 
+                  create an account with any email to access your dashboard. Account linking will be available soon.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {isDashboardLogin && (
+              <Alert className="mt-6">
+                <User className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Streamer Dashboard Access:</strong> Enter your dashboard credentials to manage your donations and settings.
+                </AlertDescription>
+              </Alert>
+            )}
           </CardContent>
         </Card>
       </div>
