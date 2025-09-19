@@ -10,7 +10,7 @@ import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { DollarSign, Users, TrendingUp, Clock, AlertCircle, LogOut } from 'lucide-react';
 import DonationCard from './DonationCard';
-import ModerationQueue from './ModerationQueue';
+import TelegramDashboard from './telegram/TelegramDashboard';
 import OBSTokenManager from './OBSTokenManager';
 
 
@@ -382,7 +382,7 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
         <Tabs defaultValue="donations" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="donations">Approved Donations</TabsTrigger>
-            <TabsTrigger value="moderation">Moderation</TabsTrigger>
+            <TabsTrigger value="telegram">Telegram Dashboard</TabsTrigger>
             <TabsTrigger value="obs">OBS Setup</TabsTrigger>
           </TabsList>
 
@@ -414,12 +414,13 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
             </Card>
           </TabsContent>
 
-          <TabsContent value="moderation" className="space-y-6">
-            <ModerationQueue 
+          <TabsContent value="telegram" className="space-y-6">
+            <TelegramDashboard 
               donations={pendingDonations}
               tableName={tableName}
               onModerationAction={() => setRefreshKey(prev => prev + 1)}
               streamerId={streamerData.id}
+              streamerSlug={streamerSlug}
             />
           </TabsContent>
 
