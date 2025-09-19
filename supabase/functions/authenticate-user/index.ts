@@ -62,8 +62,16 @@ serve(async (req) => {
       }
 
       // Generate session token
-      const { data: sessionToken } = await supabase
+      const { data: sessionToken, error: tokenError } = await supabase
         .rpc('generate_session_token');
+
+      if (tokenError || !sessionToken) {
+        console.error('Token generation error:', tokenError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to generate session token' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
       // Create session
       const { error: sessionError } = await supabase
@@ -124,8 +132,16 @@ serve(async (req) => {
       }
 
       // Generate new session token
-      const { data: sessionToken } = await supabase
+      const { data: sessionToken, error: tokenError } = await supabase
         .rpc('generate_session_token');
+
+      if (tokenError || !sessionToken) {
+        console.error('Token generation error:', tokenError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to generate session token' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
       // Clean up old sessions and create new one
       await supabase
