@@ -64,14 +64,20 @@ export const useDirectAlerts = ({ streamerId, tableName, enabled = true, obsToke
     setCurrentAlert(donation);
     setIsVisible(true);
 
-    // Auto-hide after appropriate duration
-    const duration = donation.voice_message_url ? 10000 : 
-                    donation.is_hyperemote ? 6000 : 5000;
+    // Calculate typing duration (50ms per character, only for text messages without voice)
+    const typingDuration = donation.voice_message_url ? 0 : 
+                          (donation.message?.length || 0) * 50;
+    
+    // Base duration + typing duration to ensure message completes
+    const baseDuration = donation.voice_message_url ? 10000 : 
+                        donation.is_hyperemote ? 6000 : 5000;
+    
+    const totalDuration = baseDuration + typingDuration;
     
     setTimeout(() => {
       setIsVisible(false);
       setTimeout(() => setCurrentAlert(null), 500); // Allow fade out
-    }, duration);
+    }, totalDuration);
   }, []);
 
   // Setup direct real-time subscription
