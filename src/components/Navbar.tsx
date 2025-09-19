@@ -40,7 +40,7 @@ const Navbar: React.FC = () => {
             Contact
           </Link>
           {user && (
-            <Link to="/dashboard/ankit" className="text-sm hover:text-hyperchat-purple transition-colors font-medium">
+            <Link to="/dashboard" className="text-sm hover:text-hyperchat-purple transition-colors font-medium">
               Dashboard
             </Link>
           )}
