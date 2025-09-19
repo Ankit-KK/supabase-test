@@ -1,27 +1,15 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-
-interface CustomUser {
-  id: string;
-  email: string;
-  username?: string;
-  role: string;
-}
-
-interface CustomSession {
-  access_token: string;
-  token_type: string;
-  expires_in: number;
-  user: CustomUser;
-}
+import type { User, Session } from '@supabase/supabase-js';
 
 interface AuthContextType {
-  user: CustomUser | null;
-  session: CustomSession | null;
+  user: User | null;
+  session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
+  getUserStreamerAccess: () => Promise<{ streamer_slug?: string; is_admin?: boolean } | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,56 +23,37 @@ export const useAuth = () => {
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<CustomUser | null>(null);
-  const [session, setSession] = useState<CustomSession | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load session from localStorage on startup
-    const loadSession = () => {
-      const storedSession = localStorage.getItem('auth_session');
-      if (storedSession) {
-        try {
-          const parsedSession = JSON.parse(storedSession);
-          setSession(parsedSession);
-          setUser(parsedSession.user);
-        } catch (error) {
-          console.error('Error parsing stored session:', error);
-          localStorage.removeItem('auth_session');
-        }
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
       }
-      setLoading(false);
-    };
+    );
 
-    loadSession();
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.functions.invoke('authenticate-user', {
-        body: { action: 'login', email, password }
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
-
-      if (error) {
-        return { error };
-      }
-
-      if (data.error) {
-        return { error: { message: data.error } };
-      }
-
-      const customSession: CustomSession = {
-        access_token: data.session.access_token,
-        token_type: data.session.token_type,
-        expires_in: data.session.expires_in,
-        user: data.user
-      };
-
-      localStorage.setItem('auth_session', JSON.stringify(customSession));
-      setSession(customSession);
-      setUser(data.user);
-
-      return { error: null };
+      return { error };
     } catch (error) {
       return { error };
     }
@@ -92,39 +61,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.functions.invoke('authenticate-user', {
-        body: { action: 'register', email, password }
+      const redirectUrl = `${window.location.origin}/dashboard`;
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl
+        }
       });
-
-      if (error) {
-        return { error };
-      }
-
-      if (data.error) {
-        return { error: { message: data.error } };
-      }
-
-      const customSession: CustomSession = {
-        access_token: data.session.access_token,
-        token_type: data.session.token_type,
-        expires_in: data.session.expires_in,
-        user: data.user
-      };
-
-      localStorage.setItem('auth_session', JSON.stringify(customSession));
-      setSession(customSession);
-      setUser(data.user);
-
-      return { error: null };
+      return { error };
     } catch (error) {
       return { error };
     }
   };
 
   const signOut = async () => {
-    localStorage.removeItem('auth_session');
-    setSession(null);
-    setUser(null);
+    await supabase.auth.signOut();
+  };
+
+  const getUserStreamerAccess = async () => {
+    if (!user?.email) return null;
+    
+    try {
+      const { data, error } = await supabase.rpc('get_streamer_by_email', {
+        user_email: user.email
+      });
+      
+      if (error || !data || data.length === 0) {
+        return null;
+      }
+      
+      return {
+        streamer_slug: data[0].streamer_slug,
+        is_admin: data[0].is_admin
+      };
+    } catch (error) {
+      console.error('Error getting user streamer access:', error);
+      return null;
+    }
   };
 
   const value = {
@@ -134,6 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signIn,
     signUp,
     signOut,
+    getUserStreamerAccess,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

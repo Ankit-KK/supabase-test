@@ -31,7 +31,10 @@ import FitnessFlow from "./pages/FitnessFlow";
 import AnkitDashboard from "./pages/dashboard/AnkitDashboard";
 import ChiaGamingDashboard from "./pages/dashboard/ChiaGamingDashboard";
 import DemoStreamerDashboard from "./pages/dashboard/DemoStreamerDashboard";
+import Dashboard from "./pages/dashboard/Dashboard";
 import Auth from "./pages/Auth";
+import EmailAssignments from "./pages/admin/EmailAssignments";
+import DemoStreamer from "./pages/DemoStreamer";
 
 const queryClient = new QueryClient();
 
@@ -67,14 +70,19 @@ const App = () => (
               <Route path="/codelive" element={<CodeLive />} />
               <Route path="/artcreate" element={<ArtCreate />} />
               <Route path="/fitnessflow" element={<FitnessFlow />} />
+              <Route path="/demostreamer" element={<DemoStreamer />} />
               
               {/* Authentication */}
               <Route path="/auth" element={<Auth />} />
               
-              {/* Dashboard pages */}
+              {/* Dashboard routes */}
+              <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/dashboard/ankit" element={<AnkitDashboard />} />
               <Route path="/dashboard/chia_gaming" element={<ChiaGamingDashboard />} />
               <Route path="/dashboard/demostreamer" element={<DemoStreamerDashboard />} />
+              
+              {/* Admin routes */}
+              <Route path="/admin/email-assignments" element={<EmailAssignments />} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>

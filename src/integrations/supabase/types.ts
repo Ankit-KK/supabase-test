@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_emails: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+        }
+        Relationships: []
+      }
       ankit_donations: {
         Row: {
           amount: number
@@ -400,6 +418,35 @@ export type Database = {
           },
         ]
       }
+      streamers_auth_emails: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          streamer_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          streamer_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          streamer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamers_auth_emails_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_queries: {
         Row: {
           created_at: string
@@ -540,10 +587,14 @@ export type Database = {
     }
     Functions: {
       add_admin_email: {
-        Args: { new_admin_email: string }
-        Returns: undefined
+        Args: { p_email: string }
+        Returns: boolean
       }
       add_streamer_auth_email: {
+        Args: { p_email: string; p_streamer_slug: string }
+        Returns: boolean
+      }
+      assign_email_to_streamer: {
         Args: { p_email: string; p_streamer_slug: string }
         Returns: boolean
       }
@@ -806,6 +857,16 @@ export type Database = {
           mobile_number: string
           name: string
           youtube_channel: string
+        }[]
+      }
+      get_streamer_by_email: {
+        Args: { user_email: string }
+        Returns: {
+          brand_color: string
+          is_admin: boolean
+          streamer_id: string
+          streamer_name: string
+          streamer_slug: string
         }[]
       }
       get_streamer_by_obs_token: {
@@ -1113,9 +1174,9 @@ export type Database = {
           token: string
         }[]
       }
-      remove_admin_email: {
-        Args: { remove_email: string }
-        Returns: undefined
+      remove_email_from_streamer: {
+        Args: { p_email: string; p_streamer_slug: string }
+        Returns: boolean
       }
       remove_streamer_auth_email: {
         Args: { p_email: string; p_streamer_slug: string }
