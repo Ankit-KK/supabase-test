@@ -209,7 +209,7 @@ export const AlertDisplay: React.FC<AlertDisplayProps> = ({
                 `}
               >
                 <span>
-                  {displayedMessage || donation.message}
+                  {donation.voice_message_url ? donation.message : displayedMessage}
                   {isTyping && <span className="animate-pulse">|</span>}
                 </span>
               </div>
