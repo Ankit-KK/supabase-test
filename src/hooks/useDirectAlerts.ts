@@ -198,15 +198,18 @@ export const useDirectAlerts = ({ streamerId, tableName, enabled = true, obsToke
 
     console.log(`🎯 Initializing direct alerts for ${tableName}`);
     
+    let isActive = true; // Prevent race conditions
+    
     // First validate token, then setup subscription
     validateToken().then((isValid) => {
-      if (isValid) {
+      if (isActive && isValid) {
         setupDirectSubscription();
       }
     });
 
     return () => {
       console.log(`🛑 Cleaning up direct alerts for ${tableName}`);
+      isActive = false;
       
       // Clear retry timeout
       if (retryTimeoutRef.current) {
@@ -225,7 +228,7 @@ export const useDirectAlerts = ({ streamerId, tableName, enabled = true, obsToke
       setConnectionStatus('connecting');
       setTokenValid(null);
     };
-  }, [streamerId, tableName, enabled, obsToken, validateToken, setupDirectSubscription]);
+  }, [streamerId, tableName, enabled, obsToken]); // Remove callback dependencies to prevent infinite loop
 
   // Test alert function
   const triggerTestAlert = useCallback(() => {
