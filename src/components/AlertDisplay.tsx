@@ -58,7 +58,7 @@ export const AlertDisplay: React.FC<AlertDisplayProps> = ({
     
     const typeInterval = setInterval(() => {
       if (index < message.length) {
-        setDisplayedMessage(prev => prev + message[index]);
+        setDisplayedMessage(prev => (prev || '') + message[index]);
         index++;
       } else {
         setIsTyping(false);
