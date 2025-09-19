@@ -180,9 +180,9 @@ const TelegramBotStatus: React.FC<TelegramBotStatusProps> = ({
                 3
               </div>
               <div>
-                <p className="font-medium">Moderate on Mobile</p>
+                <p className="font-medium">Get Notifications on Mobile</p>
                 <p className="text-sm text-muted-foreground">
-                  Moderators will receive notifications and can approve/reject donations directly in Telegram.
+                  Moderators will receive real-time donation notifications and can access the dashboard from Telegram.
                 </p>
               </div>
             </div>
@@ -191,8 +191,8 @@ const TelegramBotStatus: React.FC<TelegramBotStatusProps> = ({
           <Alert>
             <CheckCircle className="h-4 w-4" />
             <AlertDescription>
-              <strong>Pro Tip:</strong> Add multiple moderators to ensure donations are reviewed quickly, 
-              especially during live streams!
+              <strong>Pro Tip:</strong> Add multiple moderators to get comprehensive donation notifications 
+              and analytics across your team!
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -212,8 +212,8 @@ const TelegramBotStatus: React.FC<TelegramBotStatusProps> = ({
               </div>
               
               <div className="bg-muted/50 p-3 rounded-lg">
-                <code className="text-sm font-mono">/pending</code>
-                <p className="text-xs text-muted-foreground mt-1">View pending donations</p>
+                <code className="text-sm font-mono">/recent</code>
+                <p className="text-xs text-muted-foreground mt-1">View recent donations</p>
               </div>
             </div>
             
@@ -224,8 +224,8 @@ const TelegramBotStatus: React.FC<TelegramBotStatusProps> = ({
               </div>
               
               <div className="bg-muted/50 p-3 rounded-lg">
-                <code className="text-sm font-mono">Approve/Reject buttons</code>
-                <p className="text-xs text-muted-foreground mt-1">Use inline buttons on notifications</p>
+                <code className="text-sm font-mono">/stats</code>
+                <p className="text-xs text-muted-foreground mt-1">View donation statistics</p>
               </div>
             </div>
           </div>

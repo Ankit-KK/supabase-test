@@ -88,7 +88,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Starting notification check for pending donations...');
+    console.log('Starting notification check for new donations...');
 
     // Create Supabase client with service role key for admin access
     const supabaseAdmin = createClient(
@@ -109,13 +109,12 @@ serve(async (req) => {
       });
     }
 
-    // Find donations that are successful, pending moderation, not hyperemotes, and not yet notified
+    // Find successful donations that haven't been notified yet (since all are auto-approved now)
     const { data: donationsToNotify, error: fetchError } = await supabaseAdmin
       .from('chia_gaming_donations')
       .select('*')
       .eq('payment_status', 'success')
-      .eq('moderation_status', 'pending')
-      .eq('is_hyperemote', false)
+      .in('moderation_status', ['approved', 'auto_approved'])
       .eq('mod_notified', false)
       .not('streamer_id', 'is', null);
 
@@ -159,20 +158,18 @@ serve(async (req) => {
           continue;
         }
 
-        const messageText = `🚨 New Donation Needs Approval! 🚨\n\n` +
-          `💰 Amount: ₹${donation.amount}\n` +
-          `👤 From: ${donation.name}\n` +
-          `📅 Time: ${new Date(donation.created_at).toLocaleString()}\n` +
-          `${donation.message ? `💬 Message: ${donation.message}\n` : ''}` +
-          `${donation.voice_message_url ? `🎵 Has Voice Message\n` : ''}`;
+        const messageText = `🎁 <b>New Donation Received!</b> 🎁\n\n` +
+          `💰 <b>Amount:</b> ₹${donation.amount}\n` +
+          `👤 <b>From:</b> ${donation.name}\n` +
+          `📅 <b>Time:</b> ${new Date(donation.created_at).toLocaleString()}\n` +
+          `${donation.message ? `💬 <b>Message:</b> ${donation.message}\n` : ''}` +
+          `${donation.voice_message_url ? `🎵 <b>Voice Message:</b> Available\n` : ''}\n` +
+          `✅ <i>Auto-approved and visible on stream</i>`;
 
         const keyboard = {
           inline_keyboard: [
-            [{ text: '🎵 Play Voice', callback_data: `play_${donation.id}` }],
-            [
-              { text: '✅ Approve', callback_data: `approve_${donation.id}` },
-              { text: '❌ Reject', callback_data: `reject_${donation.id}` }
-            ]
+            ...(donation.voice_message_url ? [[{ text: '🎵 Play Voice', callback_data: `play_${donation.id}` }]] : []),
+            [{ text: '📊 Dashboard', callback_data: `dashboard_chia_gaming` }]
           ]
         };
 
@@ -184,7 +181,7 @@ serve(async (req) => {
             const payload = {
               chat_id: parseInt(moderator.telegram_user_id),
               text: messageText,
-              parse_mode: 'Markdown',
+              parse_mode: 'HTML',
               disable_web_page_preview: true,
               reply_markup: keyboard
             };
@@ -241,7 +238,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Error in notify-pending-donations function:', error);
+    console.error('Error in notify-new-donations function:', error);
     return new Response(JSON.stringify({ 
       success: false, 
       error: error.message 
