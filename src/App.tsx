@@ -35,6 +35,11 @@ import Dashboard from "./pages/dashboard/Dashboard";
 import Auth from "./pages/Auth";
 import DemoStreamer from "./pages/DemoStreamer";
 
+// OBS Alert pages
+import AnkitObsAlerts from "./pages/obs-alerts/AnkitObsAlerts";
+import ChiaGamingObsAlerts from "./pages/obs-alerts/ChiaGamingObsAlerts";
+import DemoStreamerObsAlerts from "./pages/obs-alerts/DemoStreamerObsAlerts";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -80,6 +85,10 @@ const App = () => (
               <Route path="/dashboard/chia_gaming" element={<ChiaGamingDashboard />} />
               <Route path="/dashboard/demostreamer" element={<DemoStreamerDashboard />} />
               
+              {/* OBS Alert routes */}
+              <Route path="/ankit/obs-alerts" element={<AnkitObsAlerts />} />
+              <Route path="/chiaa_gaming/obs-alerts" element={<ChiaGamingObsAlerts />} />
+              <Route path="/demostreamer/obs-alerts" element={<DemoStreamerObsAlerts />} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>

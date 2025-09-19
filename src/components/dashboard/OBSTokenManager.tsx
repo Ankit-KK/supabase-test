@@ -191,7 +191,7 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
     }
   };
 
-  const alertsUrl = `https://vsevsjvtrshgeiudrnth.supabase.co/functions/v1/get-alerts-for-obs-token`;
+  const alertsUrl = `${window.location.origin}/${streamerSlug}/obs-alerts`;
 
   if (!user) {
     return (
@@ -309,7 +309,7 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
                 <label className="text-sm font-medium mb-2 block">Browser Source URL</label>
                 <div className="flex items-center space-x-2">
                   <Input
-                    value={`${alertsUrl}?token=${activeToken.token}&table=${streamerSlug}_donations`}
+                    value={`${alertsUrl}?token=${activeToken.token}`}
                     readOnly
                     className="font-mono text-xs"
                   />
@@ -317,7 +317,7 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
                     variant="outline"
                     size="sm"
                     onClick={() => copyToClipboard(
-                      `${alertsUrl}?token=${activeToken.token}&table=${streamerSlug}_donations`,
+                      `${alertsUrl}?token=${activeToken.token}`,
                       `url_${activeToken.id}`
                     )}
                   >
