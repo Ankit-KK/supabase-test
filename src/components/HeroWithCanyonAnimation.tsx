@@ -1,12 +1,9 @@
 
-import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { ChevronRight, Mic, IndianRupee } from "lucide-react";
+import React from "react";
+import { Mic, IndianRupee } from "lucide-react";
 import CanyonAnimatedText from "@/components/CanyonAnimatedText";
-import SignupDialog from "@/components/SignupDialog";
 
 const HeroWithCanyonAnimation = () => {
-  const [showSignupDialog, setShowSignupDialog] = useState(false);
 
   return (
     <section id="hero" className="py-20 md:py-24 lg:py-32 relative overflow-hidden">
@@ -36,24 +33,6 @@ const HeroWithCanyonAnimation = () => {
               The world's first platform where fans send voice messages with UPI donations. Built for Indian creators, powered by Indian innovation.
             </p>
             
-            <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <Button 
-                size="lg" 
-                className="bg-gradient-to-r from-hyperchat-purple to-hyperchat-pink hover:opacity-90 rounded-full font-medium"
-                onClick={() => setShowSignupDialog(true)}
-              >
-                Get Started Now
-                <ChevronRight className="ml-1 h-4 w-4" />
-              </Button>
-              <Button 
-                size="lg" 
-                variant="outline"
-                className="border-hyperchat-purple text-hyperchat-purple hover:bg-hyperchat-purple hover:text-white rounded-full font-medium"
-                onClick={() => setShowSignupDialog(true)}
-              >
-                Upgrade with Voice Messages
-              </Button>
-            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12 text-sm max-w-2xl mx-auto">
               <div className="flex flex-col items-center space-y-3 p-4 rounded-lg bg-secondary/20 border border-white/10">
@@ -95,12 +74,6 @@ const HeroWithCanyonAnimation = () => {
         </div>
       </div>
 
-      {showSignupDialog && (
-        <SignupDialog 
-          open={showSignupDialog} 
-          onOpenChange={setShowSignupDialog} 
-        />
-      )}
     </section>
   );
 };

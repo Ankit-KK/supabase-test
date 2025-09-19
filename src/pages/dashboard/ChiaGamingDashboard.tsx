@@ -12,7 +12,7 @@ const ChiaGamingDashboard = () => {
   useEffect(() => {
     const checkAccess = async () => {
       if (!user) {
-        navigate('/auth');
+        navigate(`/auth?redirect=${window.location.pathname}`);
         return;
       }
 
