@@ -144,6 +144,11 @@ export const AlertDisplay: React.FC<AlertDisplayProps> = ({
           }
         }
         
+        @keyframes rotBGimg {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        
         @keyframes hyperemoteFloat {
           0%, 100% {
             transform: translateY(0px) rotate(0deg);
@@ -165,6 +170,11 @@ export const AlertDisplay: React.FC<AlertDisplayProps> = ({
           }
         }
         
+        @keyframes blink {
+          0%, 100% { border-color: transparent }
+          50% { border-color: white }
+        }
+        
         .alert-enter {
           animation: alertFadeIn 0.5s ease-out;
         }
@@ -176,29 +186,53 @@ export const AlertDisplay: React.FC<AlertDisplayProps> = ({
         .hyperemote-glow {
           animation: hyperemotePulse 2s ease-in-out infinite;
         }
+
+        .alert-card {
+          position: relative;
+          overflow: hidden;
+          border-radius: 20px;
+        }
+
+        .alert-card::before {
+          content: '';
+          position: absolute;
+          width: 100px;
+          background-image: linear-gradient(180deg, rgb(0, 183, 255), rgb(255, 48, 255));
+          height: 130%;
+          animation: rotBGimg 3s linear infinite;
+          transition: all 0.2s linear;
+          left: 50%;
+          top: 50%;
+          transform: translate(-50%, -50%);
+        }
+
+        .alert-card::after {
+          content: '';
+          position: absolute;
+          background: #07182E;
+          inset: 5px;
+          border-radius: 15px;
+        }
+
+        .alert-card.hyperemote::before {
+          background-image: linear-gradient(180deg, ${streamerBrandColor}, rgb(255, 48, 255));
+        }
       `}</style>
 
       <div className={`
-        alert-enter flex items-center justify-center min-h-screen p-4
+        fixed bottom-8 left-1/2 transform -translate-x-1/2 p-4 z-50
         ${isVisible ? 'opacity-100' : 'opacity-0'}
         transition-opacity duration-500
       `}>
         <div 
           className={`
-            relative max-w-2xl w-full mx-auto rounded-2xl border-2 p-8
-            ${donation.is_hyperemote 
-              ? 'hyperemote-glow hyperemote-float bg-gradient-to-br from-yellow-400/20 to-orange-500/20 border-yellow-400/50' 
-              : 'bg-white/95 border-gray-200/50 shadow-2xl'
-            }
-            backdrop-blur-sm
+            alert-card alert-enter min-w-[200px] max-w-[90vw] min-h-[300px] relative flex flex-col justify-center items-center p-5
+            ${donation.is_hyperemote ? 'hyperemote-float hyperemote' : ''} 
           `}
-          style={{
-            borderColor: donation.is_hyperemote ? `${streamerBrandColor}80` : undefined
-          }}
         >
           {/* Hyperemote Celebration Effects */}
           {donation.is_hyperemote && (
-            <div className="absolute -top-4 -right-4">
+            <div className="absolute -top-4 -right-4 z-10">
               {IconComponent && (
                 <div 
                   className="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl"
@@ -210,60 +244,54 @@ export const AlertDisplay: React.FC<AlertDisplayProps> = ({
             </div>
           )}
 
-          {/* Alert Header */}
-          <div className="text-center mb-6">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              {donation.is_hyperemote ? '🎉 HYPEREMOTE! 🎉' : 'New Donation!'}
-            </h2>
-            <div className="flex items-center justify-center gap-2 text-2xl font-semibold">
-              <span className="text-gray-800">{donation.name}</span>
-              <span className="text-green-600">donated ₹{donation.amount}</span>
-            </div>
-          </div>
-
-          {/* Voice Message */}
-          {donation.voice_message_url && (
-            <div className="mb-6 text-center">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 rounded-full text-blue-800">
-                <Music className="w-5 h-5" />
-                <span className="font-medium">Voice Message</span>
+          {/* Content Container with proper z-index */}
+          <div className="relative z-10 text-center text-white w-full">
+            {/* Alert Header */}
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold mb-2">
+                {donation.is_hyperemote ? '🎉 HYPEREMOTE! 🎉' : 'New Donation!'}
+              </h2>
+              <div className="flex flex-col items-center gap-1 text-lg font-semibold">
+                <span>{donation.name}</span>
+                <span className="text-green-400">donated ₹{donation.amount}</span>
               </div>
-              <audio
-                src={donation.voice_message_url}
-                autoPlay
-                controls
-                className="mt-3 mx-auto block max-w-full"
-              />
             </div>
-          )}
 
-          {/* Message with Typing Effect */}
-          {donation.message && (
-            <div className="text-center">
+            {/* Voice Message */}
+            {donation.voice_message_url && (
+              <div className="mb-6">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/20 rounded-full text-blue-300">
+                  <Music className="w-5 h-5" />
+                  <span className="font-medium">Voice Message</span>
+                </div>
+                <audio
+                  src={donation.voice_message_url}
+                  autoPlay
+                  controls
+                  className="mt-3 mx-auto block max-w-full"
+                />
+              </div>
+            )}
+
+            {/* Message with Typing Effect */}
+            {donation.message && (
+              <div className="mb-4">
+                <div className="text-lg leading-relaxed p-4 bg-white/10 rounded-lg backdrop-blur-sm min-h-[60px] flex items-center justify-center">
+                  <span className="break-words text-center">
+                    {donation.voice_message_url ? donation.message : displayedMessage}
+                    {isTyping && <span className="animate-pulse border-r-2 border-white ml-1">|</span>}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Streamer Branding */}
+            <div className="mt-4">
               <div 
-                className={`
-                  text-xl leading-relaxed p-4 rounded-lg min-h-[60px] flex items-center justify-center
-                  ${donation.is_hyperemote 
-                    ? 'bg-white/90 text-gray-800 border-2 border-yellow-400/30' 
-                    : 'bg-gray-50 text-gray-700'
-                  }
-                `}
+                className="inline-block px-4 py-1 rounded-full text-white text-sm font-medium bg-white/20 backdrop-blur-sm"
               >
-                <span>
-                  {donation.voice_message_url ? donation.message : displayedMessage}
-                  {isTyping && <span className="animate-pulse">|</span>}
-                </span>
+                Thank you for supporting {streamerName}!
               </div>
-            </div>
-          )}
-
-          {/* Streamer Branding */}
-          <div className="mt-6 text-center">
-            <div 
-              className="inline-block px-4 py-1 rounded-full text-white text-sm font-medium"
-              style={{ backgroundColor: streamerBrandColor }}
-            >
-              Thank you for supporting {streamerName}!
             </div>
           </div>
         </div>
