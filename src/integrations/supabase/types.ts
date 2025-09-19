@@ -44,6 +44,7 @@ export type Database = {
           message_visible: boolean | null
           moderation_status: string | null
           name: string
+          order_id: string | null
           payment_status: string | null
           streamer_id: string | null
           updated_at: string | null
@@ -60,6 +61,7 @@ export type Database = {
           message_visible?: boolean | null
           moderation_status?: string | null
           name: string
+          order_id?: string | null
           payment_status?: string | null
           streamer_id?: string | null
           updated_at?: string | null
@@ -76,6 +78,7 @@ export type Database = {
           message_visible?: boolean | null
           moderation_status?: string | null
           name?: string
+          order_id?: string | null
           payment_status?: string | null
           streamer_id?: string | null
           updated_at?: string | null
@@ -179,6 +182,7 @@ export type Database = {
           message_visible: boolean | null
           moderation_status: string | null
           name: string
+          order_id: string | null
           payment_status: string | null
           streamer_id: string | null
           updated_at: string | null
@@ -195,6 +199,7 @@ export type Database = {
           message_visible?: boolean | null
           moderation_status?: string | null
           name: string
+          order_id?: string | null
           payment_status?: string | null
           streamer_id?: string | null
           updated_at?: string | null
@@ -211,6 +216,7 @@ export type Database = {
           message_visible?: boolean | null
           moderation_status?: string | null
           name?: string
+          order_id?: string | null
           payment_status?: string | null
           streamer_id?: string | null
           updated_at?: string | null
@@ -238,6 +244,7 @@ export type Database = {
           message_visible: boolean | null
           moderation_status: string | null
           name: string
+          order_id: string | null
           payment_status: string | null
           streamer_id: string | null
           updated_at: string | null
@@ -254,6 +261,7 @@ export type Database = {
           message_visible?: boolean | null
           moderation_status?: string | null
           name: string
+          order_id?: string | null
           payment_status?: string | null
           streamer_id?: string | null
           updated_at?: string | null
@@ -270,6 +278,7 @@ export type Database = {
           message_visible?: boolean | null
           moderation_status?: string | null
           name?: string
+          order_id?: string | null
           payment_status?: string | null
           streamer_id?: string | null
           updated_at?: string | null

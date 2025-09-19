@@ -101,14 +101,13 @@ serve(async (req) => {
     const { data: donation, error: donationError } = await supabase
       .from('chia_gaming_donations')
       .insert({
-        id: orderId,
+        order_id: orderId,
         name: name.trim(),
         amount: parseFloat(amount),
         message: message ? message.trim() : null,
         streamer_id: streamerData.id,
         payment_status: 'pending',
         moderation_status: 'pending',
-        temp_voice_data: voiceData || null,
         is_hyperemote: parseFloat(amount) >= 50
       })
       .select()

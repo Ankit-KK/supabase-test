@@ -86,7 +86,7 @@ serve(async (req) => {
     const { data: donation, error: donationError } = await supabase
       .from('ankit_donations')
       .insert({
-        id: orderId,
+        order_id: orderId,
         name: name.trim(),
         amount: parseFloat(amount),
         message: message ? message.trim() : null,
