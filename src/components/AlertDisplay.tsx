@@ -257,19 +257,13 @@ export const AlertDisplay: React.FC<AlertDisplayProps> = ({
               </div>
             </div>
 
-            {/* Voice Message */}
+            {/* Voice Message Indicator */}
             {donation.voice_message_url && (
               <div className="mb-2">
-                <div className="inline-flex items-center gap-1 px-2 py-1 bg-blue-500/20 rounded-full text-blue-300 text-xs">
-                  <Music className="w-3 h-3" />
-                  <span className="font-medium">Voice</span>
+                <div className="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full text-white text-sm animate-pulse">
+                  <Music className="w-4 h-4" />
+                  <span className="font-medium">🎵 Voice Message</span>
                 </div>
-                <audio
-                  src={donation.voice_message_url}
-                  autoPlay
-                  controls
-                  className="mt-1 mx-auto block max-w-full h-6"
-                />
               </div>
             )}
 

@@ -40,6 +40,11 @@ import AnkitObsAlerts from "./pages/obs-alerts/AnkitObsAlerts";
 import ChiaGamingObsAlerts from "./pages/obs-alerts/ChiaGamingObsAlerts";
 import DemoStreamerObsAlerts from "./pages/obs-alerts/DemoStreamerObsAlerts";
 
+// Audio Player pages
+import AnkitAudioPlayer from "./pages/audio-player/AnkitAudioPlayer";
+import ChiaGamingAudioPlayer from "./pages/audio-player/ChiaGamingAudioPlayer";
+import DemoStreamerAudioPlayer from "./pages/audio-player/DemoStreamerAudioPlayer";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -89,6 +94,11 @@ const App = () => (
               <Route path="/ankit/obs-alerts" element={<AnkitObsAlerts />} />
               <Route path="/chiaa_gaming/obs-alerts" element={<ChiaGamingObsAlerts />} />
               <Route path="/demostreamer/obs-alerts" element={<DemoStreamerObsAlerts />} />
+              
+              {/* Audio Player routes */}
+              <Route path="/ankit/audio-player" element={<AnkitAudioPlayer />} />
+              <Route path="/chiaa_gaming/audio-player" element={<ChiaGamingAudioPlayer />} />
+              <Route path="/demostreamer/audio-player" element={<DemoStreamerAudioPlayer />} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>
