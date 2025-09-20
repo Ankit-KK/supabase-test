@@ -89,11 +89,10 @@ export const useDirectAlerts = ({ streamerId, tableName, enabled = true, obsToke
       return;
     }
 
-    // Clean up existing channel first
+    // Prevent multiple subscriptions
     if (channelRef.current) {
-      console.log('🧹 Cleaning up existing channel before creating new one');
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
+      console.log('🔄 Channel already exists, skipping duplicate subscription');
+      return;
     }
 
     console.log(`🎯 Setting up direct subscription to ${tableName} for streamerId: ${streamerId}`);
@@ -180,13 +179,13 @@ export const useDirectAlerts = ({ streamerId, tableName, enabled = true, obsToke
       });
 
     channelRef.current = channel;
-  }, [streamerId, tableName, enabled, tokenValid]);
+  }, [streamerId, tableName, enabled, tokenValid, showAlert]);
 
   // Handle connection failures with retry logic
   const handleConnectionFailure = useCallback(() => {
     retryCountRef.current++;
-    const maxRetries = 5;
-    const retryDelay = Math.min(1000 * Math.pow(2, retryCountRef.current - 1), 10000);
+    const maxRetries = 3; // Reduced retries to prevent excessive CPU usage
+    const retryDelay = Math.min(2000 * Math.pow(2, retryCountRef.current - 1), 15000); // Increased delays
 
     if (retryCountRef.current <= maxRetries) {
       console.log(`🔄 Retrying direct connection in ${retryDelay}ms (attempt ${retryCountRef.current}/${maxRetries})`);
@@ -202,7 +201,7 @@ export const useDirectAlerts = ({ streamerId, tableName, enabled = true, obsToke
       console.log('🚨 Max retries exceeded for direct subscription');
       setConnectionStatus('error');
     }
-  }, [setupDirectSubscription]);
+  }, [setupDirectSubscription, tokenValid]);
 
   // Main effect - validate token and setup subscription
   useEffect(() => {
@@ -214,13 +213,20 @@ export const useDirectAlerts = ({ streamerId, tableName, enabled = true, obsToke
     console.log(`🎯 Initializing direct alerts for ${tableName}`);
     
     let isActive = true; // Prevent race conditions
+    let initalized = false; // Prevent duplicate initialization
     
     // First validate token, then setup subscription
-    validateToken().then((isValid) => {
-      if (isActive && isValid) {
+    const initializeConnection = async () => {
+      if (initalized) return;
+      initalized = true;
+      
+      const isValid = await validateToken();
+      if (isActive && isValid && !channelRef.current) {
         setupDirectSubscription(isValid);
       }
-    });
+    };
+
+    initializeConnection();
 
     return () => {
       console.log(`🛑 Cleaning up direct alerts for ${tableName}`);
@@ -243,7 +249,7 @@ export const useDirectAlerts = ({ streamerId, tableName, enabled = true, obsToke
       setConnectionStatus('connecting');
       setTokenValid(null);
     };
-  }, [streamerId, tableName, enabled, obsToken, validateToken, setupDirectSubscription]);
+  }, [streamerId, tableName, enabled, obsToken]); // Removed function dependencies to prevent excessive rerenders
 
   // Test alert function
   const triggerTestAlert = useCallback(() => {
