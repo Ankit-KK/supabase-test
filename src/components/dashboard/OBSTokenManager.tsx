@@ -417,6 +417,33 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
             <li>Position and resize the source in your scene as desired</li>
           </ol>
 
+          {/* Audio Player Link */}
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+            <div className="flex items-start space-x-3">
+              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <ExternalLink className="h-4 w-4 text-white" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-1">
+                  🎵 Voice Message Audio Player
+                </h4>
+                <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                  Open this in a separate tab/window to control voice message playback. 
+                  The OBS overlay will show visual alerts only.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open(`/${streamerSlug}/audio-player`, '_blank')}
+                  className="border-blue-300 text-blue-700 hover:bg-blue-50 dark:border-blue-600 dark:text-blue-300 dark:hover:bg-blue-950/20"
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Open Audio Player
+                </Button>
+              </div>
+            </div>
+          </div>
+
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
