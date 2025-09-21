@@ -546,15 +546,7 @@ export type Database = {
           updated_at?: string | null
           user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "streamers_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "auth_users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       streamers_auth_emails: {
         Row: {
