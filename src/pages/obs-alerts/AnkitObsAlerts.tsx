@@ -12,6 +12,8 @@ const AnkitObsAlerts = () => {
     currentAlert,
     isVisible,
     connectionStatus,
+    triggerTestAlert,
+    triggerTestVoiceAlert,
     tokenValid: directTokenValid
   } = useDirectAlerts({
     streamerId: 'b111b82a-9fec-4e74-8a17-f81ee0e1c912', // Ankit's streamer ID
@@ -62,10 +64,22 @@ const AnkitObsAlerts = () => {
       
       {/* Debug info (only visible in development) */}
       {process.env.NODE_ENV === 'development' && (
-        <div className="fixed bottom-4 left-4 bg-black/80 text-white p-2 rounded text-xs">
+        <div className="fixed bottom-4 left-4 bg-black/80 text-white p-2 rounded text-xs space-y-1">
           <div>Status: {connectionStatus}</div>
           <div>Token: {obsToken?.substring(0, 8)}...</div>
           <div>Alert: {currentAlert ? 'Active' : 'None'}</div>
+          <button 
+            onClick={triggerTestAlert}
+            className="px-2 py-1 bg-blue-600 text-white rounded text-xs mr-1"
+          >
+            Test Alert
+          </button>
+          <button 
+            onClick={triggerTestVoiceAlert}
+            className="px-2 py-1 bg-purple-600 text-white rounded text-xs"
+          >
+            Test Voice
+          </button>
         </div>
       )}
     </div>

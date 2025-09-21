@@ -266,11 +266,28 @@ export const useDirectAlerts = ({ streamerId, tableName, enabled = true, obsToke
     showAlert(testAlert, 'Test alert');
   }, [showAlert]);
 
+  // Test voice alert function
+  const triggerTestVoiceAlert = useCallback(() => {
+    const testVoiceAlert: Donation = {
+      id: `test-voice-${Date.now()}`,
+      name: 'Voice Test',
+      amount: 50,
+      message: 'Send a Voice message',
+      voice_message_url: 'test-voice-url',
+      created_at: new Date().toISOString(),
+      is_hyperemote: false
+    };
+    
+    console.log('🧪 Triggering test voice alert');
+    showAlert(testVoiceAlert, 'Test voice alert');
+  }, [showAlert]);
+
   return {
     currentAlert,
     isVisible,
     connectionStatus,
     triggerTestAlert,
+    triggerTestVoiceAlert,
     tokenValid
   };
 };
