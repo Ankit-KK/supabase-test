@@ -206,27 +206,6 @@ const Ankit = () => {
     try {
       const amount = parseFloat(formData.amount);
 
-      // Create order via Supabase edge function
-      const response = await supabase.functions.invoke('create-payment-order-ankit', {
-        body: {
-          name: formData.name.trim(),
-          amount: amount,
-          message: donationType === 'message' ? formData.message.trim() : 
-                  donationType === 'voice' ? 'Voice message donation' : '',
-          phone: phoneNumber?.trim() || undefined,
-          streamer_slug: 'ankit'
-        }
-      });
-
-      data = response.data;
-      const error = response.error;
-
-      if (error || !data?.success) {
-        throw new Error(data?.error || 'Failed to create payment order');
-      }
-
-      const orderId = data.order_id;
-
       // Convert voice data to base64 for temporary storage if needed
       let voiceDataBase64: string | null = null;
       if (donationType === 'voice' && voiceRecorder.audioBlob) {
@@ -241,22 +220,29 @@ const Ankit = () => {
         });
       }
 
-      // Attach optional data to the existing donation (created by edge function)
-      try {
-        const updates: any = {};
-        if (donationType === 'voice' && voiceDataBase64) {
-          updates.temp_voice_data = voiceDataBase64;
-          updates.voice_duration_seconds = voiceDuration;
+      // Create order via Supabase edge function
+      const response = await supabase.functions.invoke('create-payment-order-ankit', {
+        body: {
+          name: formData.name.trim(),
+          amount: amount,
+          message: donationType === 'message' ? formData.message.trim() : 
+                  donationType === 'voice' ? 'Voice message donation' : '',
+          phone: phoneNumber?.trim() || undefined,
+          voiceData: voiceDataBase64
         }
-        if (donationType === 'hyperemote') {
-          updates.is_hyperemote = true;
-        }
+      });
 
-        // Note: Extras are now handled by the create-payment-order-ankit edge function
-        // No client-side updates needed to avoid RLS policy violations
-      } catch (e) {
-        console.error('Failed to attach extras to donation:', e);
+      data = response.data;
+      const error = response.error;
+
+      if (error || !data?.success) {
+        throw new Error(data?.error || 'Failed to create payment order');
       }
+
+      const orderId = data.order_id;
+
+      // Attach optional data to the existing donation (created by edge function)
+      // Note: Voice data and extras are now handled by the create-payment-order-ankit edge function
 
       // Initialize Cashfree checkout
       const checkoutOptions = {
