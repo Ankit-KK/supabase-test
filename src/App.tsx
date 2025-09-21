@@ -31,6 +31,11 @@ import FitnessFlow from "./pages/FitnessFlow";
 import AnkitDashboard from "./pages/dashboard/AnkitDashboard";
 import ChiaGamingDashboard from "./pages/dashboard/ChiaGamingDashboard";
 import DemoStreamerDashboard from "./pages/dashboard/DemoStreamerDashboard";
+import TechGamerDashboard from "./pages/dashboard/TechGamerDashboard";
+import MusicStreamDashboard from "./pages/dashboard/MusicStreamDashboard";
+import FitnessFlowDashboard from "./pages/dashboard/FitnessFlowDashboard";
+import CodeLiveDashboard from "./pages/dashboard/CodeLiveDashboard";
+import ArtCreateDashboard from "./pages/dashboard/ArtCreateDashboard";
 import Dashboard from "./pages/dashboard/Dashboard";
 import Auth from "./pages/Auth";
 import DemoStreamer from "./pages/DemoStreamer";
@@ -39,11 +44,21 @@ import DemoStreamer from "./pages/DemoStreamer";
 import AnkitObsAlerts from "./pages/obs-alerts/AnkitObsAlerts";
 import ChiaGamingObsAlerts from "./pages/obs-alerts/ChiaGamingObsAlerts";
 import DemoStreamerObsAlerts from "./pages/obs-alerts/DemoStreamerObsAlerts";
+import TechGamerObsAlerts from "./pages/obs-alerts/TechGamerObsAlerts";
+import MusicStreamObsAlerts from "./pages/obs-alerts/MusicStreamObsAlerts";
+import FitnessFlowObsAlerts from "./pages/obs-alerts/FitnessFlowObsAlerts";
+import CodeLiveObsAlerts from "./pages/obs-alerts/CodeLiveObsAlerts";
+import ArtCreateObsAlerts from "./pages/obs-alerts/ArtCreateObsAlerts";
 
 // Audio Player pages
 import AnkitAudioPlayer from "./pages/audio-player/AnkitAudioPlayer";
 import ChiaGamingAudioPlayer from "./pages/audio-player/ChiaGamingAudioPlayer";
 import DemoStreamerAudioPlayer from "./pages/audio-player/DemoStreamerAudioPlayer";
+import TechGamerAudioPlayer from "./pages/audio-player/TechGamerAudioPlayer";
+import MusicStreamAudioPlayer from "./pages/audio-player/MusicStreamAudioPlayer";
+import FitnessFlowAudioPlayer from "./pages/audio-player/FitnessFlowAudioPlayer";
+import CodeLiveAudioPlayer from "./pages/audio-player/CodeLiveAudioPlayer";
+import ArtCreateAudioPlayer from "./pages/audio-player/ArtCreateAudioPlayer";
 
 const queryClient = new QueryClient();
 
@@ -87,16 +102,31 @@ const App = () => (
               {/* Dashboard routes */}
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/dashboard/ankit" element={<AnkitDashboard />} />
+              <Route path="/dashboard/techgamer" element={<TechGamerDashboard />} />
+              <Route path="/dashboard/musicstream" element={<MusicStreamDashboard />} />
+              <Route path="/dashboard/fitnessflow" element={<FitnessFlowDashboard />} />
+              <Route path="/dashboard/codelive" element={<CodeLiveDashboard />} />
+              <Route path="/dashboard/artcreate" element={<ArtCreateDashboard />} />
               <Route path="/dashboard/chia_gaming" element={<ChiaGamingDashboard />} />
               <Route path="/dashboard/demostreamer" element={<DemoStreamerDashboard />} />
               
               {/* OBS Alert routes */}
               <Route path="/ankit/obs-alerts" element={<AnkitObsAlerts />} />
+              <Route path="/techgamer/obs-alerts" element={<TechGamerObsAlerts />} />
+              <Route path="/musicstream/obs-alerts" element={<MusicStreamObsAlerts />} />
+              <Route path="/fitnessflow/obs-alerts" element={<FitnessFlowObsAlerts />} />
+              <Route path="/codelive/obs-alerts" element={<CodeLiveObsAlerts />} />
+              <Route path="/artcreate/obs-alerts" element={<ArtCreateObsAlerts />} />
               <Route path="/chiaa_gaming/obs-alerts" element={<ChiaGamingObsAlerts />} />
               <Route path="/demostreamer/obs-alerts" element={<DemoStreamerObsAlerts />} />
               
               {/* Audio Player routes */}
               <Route path="/ankit/audio-player" element={<AnkitAudioPlayer />} />
+              <Route path="/techgamer/audio-player" element={<TechGamerAudioPlayer />} />
+              <Route path="/musicstream/audio-player" element={<MusicStreamAudioPlayer />} />
+              <Route path="/fitnessflow/audio-player" element={<FitnessFlowAudioPlayer />} />
+              <Route path="/codelive/audio-player" element={<CodeLiveAudioPlayer />} />
+              <Route path="/artcreate/audio-player" element={<ArtCreateAudioPlayer />} />
               <Route path="/chiaa_gaming/audio-player" element={<ChiaGamingAudioPlayer />} />
               <Route path="/demostreamer/audio-player" element={<DemoStreamerAudioPlayer />} />
               
