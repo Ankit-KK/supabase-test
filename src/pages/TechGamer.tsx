@@ -15,10 +15,11 @@ const TechGamer = () => {
   const [name, setName] = useState('');
   const [amount, setAmount] = useState('');
   const [message, setMessage] = useState('');
+  const [phone, setPhone] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [streamerInfo, setStreamerInfo] = useState(null);
   const [recentDonations, setRecentDonations] = useState([]);
-  const [voiceBlob, setVoiceBlob] = useState(null);
+  const [voiceData, setVoiceData] = useState(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -57,7 +58,7 @@ const TechGamer = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name.trim() || !amount || parseFloat(amount) <= 0) {
+    if (!name.trim() || !amount || parseFloat(amount) <= 0 || !phone.trim()) {
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields with valid values.",
@@ -74,16 +75,22 @@ const TechGamer = () => {
           name: name.trim(),
           amount: parseFloat(amount),
           message: message.trim() || null,
-          voice_blob: voiceBlob,
-          streamer_slug: 'techgamer'
+          phone: phone.trim(),
+          voiceData: voiceData
         }
       });
 
       if (error) throw error;
 
-      if (data.success && data.payment_session_id) {
-        // Redirect to Cashfree payment
-        window.location.href = data.payment_url;
+      if (data.payment_session_id) {
+        // Load Cashfree SDK and redirect
+        const { load } = await import('@cashfreepayments/cashfree-js');
+        const cashfree = await load({ mode: 'sandbox' });
+        
+        await cashfree.checkout({
+          paymentSessionId: data.payment_session_id,
+          redirectTarget: '_self',
+        });
       } else {
         throw new Error(data.error || 'Failed to create payment order');
       }
@@ -173,6 +180,20 @@ const TechGamer = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-blue-200 mb-2">
+                      Phone Number *
+                    </label>
+                    <Input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="9876543210"
+                      className="bg-slate-700/50 border-blue-500/30 text-white placeholder:text-slate-400"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-blue-200 mb-2">
                       Message (Optional)
                     </label>
                     <Textarea
@@ -194,7 +215,7 @@ const TechGamer = () => {
                     <label className="block text-sm font-medium text-blue-200 mb-2">
                       Voice Message (Optional)
                     </label>
-                    <SimpleVoiceRecorder onVoiceRecorded={setVoiceBlob} />
+                    <SimpleVoiceRecorder onVoiceRecorded={setVoiceData} />
                   </div>
 
                   <Button

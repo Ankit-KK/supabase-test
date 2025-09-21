@@ -12,7 +12,7 @@ interface Donation {
   payment_status: string;
 }
 
-type TableName = 'ankit_donations' | 'chia_gaming_donations' | 'demostreamer_donations';
+type TableName = 'ankit_donations' | 'chia_gaming_donations' | 'demostreamer_donations' | 'techgamer_donations' | 'musicstream_donations' | 'fitnessflow_donations';
 
 interface UseAudioPlayerProps {
   tableName: TableName;
