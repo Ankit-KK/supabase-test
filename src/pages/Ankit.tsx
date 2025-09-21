@@ -226,7 +226,7 @@ const Ankit = () => {
           name: formData.name.trim(),
           amount: amount,
           message: donationType === 'message' ? formData.message.trim() : 
-                  donationType === 'voice' ? 'Voice message donation' : '',
+                  donationType === 'voice' ? 'Send a Voice message' : '',
           phone: phoneNumber?.trim() || undefined,
           voiceData: voiceDataBase64
         }
