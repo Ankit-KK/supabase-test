@@ -24,6 +24,15 @@ verify_jwt = false
 [functions.create-payment-order-codelive]
 verify_jwt = false
 
+[functions.create-payment-order-fitnessflow]
+verify_jwt = false
+
+[functions.create-payment-order-musicstream]
+verify_jwt = false
+
+[functions.create-payment-order-techgamer]
+verify_jwt = false
+
 [functions.check-payment-status]
 verify_jwt = false
 
