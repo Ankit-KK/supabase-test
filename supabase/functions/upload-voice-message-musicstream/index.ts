@@ -24,6 +24,19 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
+    console.log(`Looking for donation with order_id: ${order_id}`)
+    
+    // First, check if donation exists at all
+    const { data: allDonations, error: allError } = await supabaseClient
+      .from('musicstream_donations')
+      .select('*')
+      .eq('order_id', order_id)
+    
+    console.log(`Found ${allDonations?.length || 0} donations for order_id: ${order_id}`)
+    if (allDonations && allDonations.length > 0) {
+      console.log('Donation details:', JSON.stringify(allDonations[0], null, 2))
+    }
+
     // Fetch the donation record
     const { data: donation, error: fetchError } = await supabaseClient
       .from('musicstream_donations')
@@ -31,7 +44,7 @@ serve(async (req) => {
       .eq('order_id', order_id)
       .eq('payment_status', 'success')
       .not('temp_voice_data', 'is', null)
-      .single()
+      .maybeSingle()
 
     if (fetchError || !donation) {
       console.error('Error fetching donation:', fetchError)

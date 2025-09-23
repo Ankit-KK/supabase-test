@@ -92,7 +92,7 @@ export default function Status() {
 
         // If payment is successful, upload voice message if it exists
         if (finalStatus === 'success') {
-          try {
+            try {
             console.log('Payment successful, checking for voice message upload...');
             const getVoiceUploadFunction = (orderId: string) => {
               if (orderId.startsWith('ankit_')) return 'upload-voice-message-ankit';
@@ -106,6 +106,11 @@ export default function Status() {
             };
             
             const voiceFunctionName = getVoiceUploadFunction(orderId);
+            console.log(`Voice upload function determined: ${voiceFunctionName} for order: ${orderId}`);
+            
+            // Add a small delay to ensure webhook has completed
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
             const { data: uploadResult, error: uploadError } = await supabase.functions.invoke(voiceFunctionName, {
               body: { order_id: orderId }
             });
