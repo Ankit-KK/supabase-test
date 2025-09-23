@@ -44,12 +44,18 @@ serve(async (req) => {
     }
 
     // Determine which table to update based on order_id prefix
-    let tableName = 'chia_gaming_donations' // default for artcreate, codelive
-    if (order_id.startsWith('ankit_')) {
-      tableName = 'ankit_donations'
-    } else if (order_id.startsWith('demostreamer_')) {
-      tableName = 'demostreamer_donations'
-    }
+    const getTableName = (orderId: string) => {
+      if (orderId.startsWith('ankit_')) return 'ankit_donations';
+      if (orderId.startsWith('musicstream_')) return 'musicstream_donations';
+      if (orderId.startsWith('techgamer_')) return 'techgamer_donations';
+      if (orderId.startsWith('fitnessflow_')) return 'fitnessflow_donations';
+      if (orderId.startsWith('artcreate_')) return 'chia_gaming_donations';
+      if (orderId.startsWith('codelive_')) return 'chia_gaming_donations';
+      if (orderId.startsWith('demostreamer_')) return 'demostreamer_donations';
+      return 'chia_gaming_donations'; // default for chia_gaming
+    };
+    
+    const tableName = getTableName(order_id);
 
     // Update the donation record
     const { data: updatedDonation, error: updateError } = await supabase
@@ -73,12 +79,18 @@ serve(async (req) => {
     // If payment was successful and there's voice data, trigger voice upload
     if (dbStatus === 'success' && updatedDonation?.temp_voice_data) {
       try {
-        let voiceUploadFunction = 'upload-voice-message'
-        if (order_id.startsWith('ankit_')) {
-          voiceUploadFunction = 'upload-voice-message-ankit'
-        } else if (order_id.startsWith('demostreamer_')) {
-          voiceUploadFunction = 'upload-voice-message-demostreamer'
-        }
+        const getVoiceUploadFunction = (orderId: string) => {
+          if (orderId.startsWith('ankit_')) return 'upload-voice-message-ankit';
+          if (orderId.startsWith('musicstream_')) return 'upload-voice-message-musicstream';
+          if (orderId.startsWith('techgamer_')) return 'upload-voice-message-techgamer';
+          if (orderId.startsWith('fitnessflow_')) return 'upload-voice-message-fitnessflow';
+          if (orderId.startsWith('artcreate_')) return 'upload-voice-message-artcreate';
+          if (orderId.startsWith('codelive_')) return 'upload-voice-message-codelive';
+          if (orderId.startsWith('demostreamer_')) return 'upload-voice-message-demostreamer';
+          return 'upload-voice-message'; // default for chia_gaming
+        };
+        
+        const voiceUploadFunction = getVoiceUploadFunction(order_id);
 
         // Trigger voice message upload
         const { error: voiceError } = await supabase.functions.invoke(voiceUploadFunction, {

@@ -22,7 +22,18 @@ export default function Status() {
 
       try {
         // Determine which function to call based on order ID prefix
-        const functionName = orderId.startsWith('ankit_') ? 'check-payment-status-ankit' : 'check-payment-status';
+        const getCheckPaymentFunction = (orderId: string) => {
+          if (orderId.startsWith('ankit_')) return 'check-payment-status-ankit';
+          if (orderId.startsWith('musicstream_')) return 'check-payment-status';
+          if (orderId.startsWith('techgamer_')) return 'check-payment-status';
+          if (orderId.startsWith('fitnessflow_')) return 'check-payment-status';
+          if (orderId.startsWith('artcreate_')) return 'check-payment-status';
+          if (orderId.startsWith('codelive_')) return 'check-payment-status';
+          if (orderId.startsWith('demostreamer_')) return 'check-payment-status';
+          return 'check-payment-status'; // default for chia_gaming
+        };
+        
+        const functionName = getCheckPaymentFunction(orderId);
         
         // Call the appropriate edge function to check payment status
         const { data, error } = await supabase.functions.invoke(functionName, {
@@ -83,7 +94,18 @@ export default function Status() {
         if (finalStatus === 'success') {
           try {
             console.log('Payment successful, checking for voice message upload...');
-            const voiceFunctionName = orderId.startsWith('ankit_') ? 'upload-voice-message-ankit' : 'upload-voice-message';
+            const getVoiceUploadFunction = (orderId: string) => {
+              if (orderId.startsWith('ankit_')) return 'upload-voice-message-ankit';
+              if (orderId.startsWith('musicstream_')) return 'upload-voice-message-musicstream';
+              if (orderId.startsWith('techgamer_')) return 'upload-voice-message-techgamer';
+              if (orderId.startsWith('fitnessflow_')) return 'upload-voice-message-fitnessflow';
+              if (orderId.startsWith('artcreate_')) return 'upload-voice-message-artcreate';
+              if (orderId.startsWith('codelive_')) return 'upload-voice-message-codelive';
+              if (orderId.startsWith('demostreamer_')) return 'upload-voice-message-demostreamer';
+              return 'upload-voice-message'; // default for chia_gaming
+            };
+            
+            const voiceFunctionName = getVoiceUploadFunction(orderId);
             const { data: uploadResult, error: uploadError } = await supabase.functions.invoke(voiceFunctionName, {
               body: { order_id: orderId }
             });
@@ -179,7 +201,17 @@ export default function Status() {
 
           <div className="flex flex-col gap-2">
             <Button asChild className="w-full">
-              <Link to={orderId?.startsWith('ankit_') ? "/ankit" : "/chiaa_gaming"}>
+              <Link to={(() => {
+                if (!orderId) return "/";
+                if (orderId.startsWith('ankit_')) return "/ankit";
+                if (orderId.startsWith('musicstream_')) return "/music_stream";
+                if (orderId.startsWith('techgamer_')) return "/tech_gamer";
+                if (orderId.startsWith('fitnessflow_')) return "/fitness_flow";
+                if (orderId.startsWith('artcreate_')) return "/art_create";
+                if (orderId.startsWith('codelive_')) return "/code_live";
+                if (orderId.startsWith('demostreamer_')) return "/demo_streamer";
+                return "/chiaa_gaming"; // default for chia_gaming
+              })()}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Donation Page
               </Link>
