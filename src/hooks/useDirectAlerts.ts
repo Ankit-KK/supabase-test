@@ -28,6 +28,7 @@ export const useDirectAlerts = ({ streamerId, tableName, enabled = true, obsToke
   const channelRef = useRef<RealtimeChannel | null>(null);
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const retryCountRef = useRef(0);
+  const alertedDonationsRef = useRef<Set<string>>(new Set());
 
   // Validate OBS token once
   const validateToken = useCallback(async () => {
@@ -111,6 +112,12 @@ export const useDirectAlerts = ({ streamerId, tableName, enabled = true, obsToke
           console.log('🔔 New donation INSERT:', payload.new);
           const donation = payload.new as any;
           
+          // Check if already alerted
+          if (alertedDonationsRef.current.has(donation.id)) {
+            console.log('⏭️ INSERT: Donation already alerted, skipping:', donation.id);
+            return;
+          }
+          
           // Check if donation should trigger alert
           if (donation.payment_status === 'success' && 
               (donation.moderation_status === 'approved' || donation.moderation_status === 'auto_approved') &&
@@ -126,7 +133,15 @@ export const useDirectAlerts = ({ streamerId, tableName, enabled = true, obsToke
               is_hyperemote: donation.is_hyperemote || false
             };
             
+            alertedDonationsRef.current.add(donation.id);
             showAlert(alertDonation, 'New donation');
+          } else {
+            console.log('🚫 INSERT: Donation filtered out:', {
+              id: donation.id,
+              payment_status: donation.payment_status,
+              moderation_status: donation.moderation_status,
+              message_visible: donation.message_visible
+            });
           }
         }
       )
@@ -143,10 +158,15 @@ export const useDirectAlerts = ({ streamerId, tableName, enabled = true, obsToke
           const donation = payload.new as any;
           const oldDonation = payload.old as any;
           
-          // Only alert if moderation status changed from pending to approved
+          // Check if already alerted
+          if (alertedDonationsRef.current.has(donation.id)) {
+            console.log('⏭️ UPDATE: Donation already alerted, skipping:', donation.id);
+            return;
+          }
+          
+          // Alert if donation becomes approved/auto_approved and meets all criteria
           if (donation.payment_status === 'success' && 
-              donation.moderation_status === 'approved' &&
-              oldDonation.moderation_status === 'pending' &&
+              (donation.moderation_status === 'approved' || donation.moderation_status === 'auto_approved') &&
               donation.message_visible === true) {
             
             const alertDonation: Donation = {
@@ -159,7 +179,17 @@ export const useDirectAlerts = ({ streamerId, tableName, enabled = true, obsToke
               is_hyperemote: donation.is_hyperemote || false
             };
             
+            alertedDonationsRef.current.add(donation.id);
             showAlert(alertDonation, 'Donation approved');
+          } else {
+            console.log('🚫 UPDATE: Donation filtered out:', {
+              id: donation.id,
+              payment_status: donation.payment_status,
+              moderation_status: donation.moderation_status,
+              old_moderation_status: oldDonation?.moderation_status,
+              message_visible: donation.message_visible,
+              already_alerted: alertedDonationsRef.current.has(donation.id)
+            });
           }
         }
       )
@@ -246,6 +276,7 @@ export const useDirectAlerts = ({ streamerId, tableName, enabled = true, obsToke
       
       // Reset state
       retryCountRef.current = 0;
+      alertedDonationsRef.current.clear();
       setConnectionStatus('connecting');
       setTokenValid(null);
     };
