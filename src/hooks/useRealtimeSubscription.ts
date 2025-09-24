@@ -34,7 +34,12 @@ export const useRealtimeSubscription = (options: RealtimeSubscriptionOptions) =>
     const tableMap: { [key: string]: string } = {
       'ankit': 'ankit_donations',
       'chia_gaming': 'chia_gaming_donations',
-      'demostreamer': 'demostreamer_donations'
+      'demostreamer': 'demostreamer_donations',
+      'musicstream': 'musicstream_donations',
+      'techgamer': 'techgamer_donations',
+      'fitnessflow': 'fitnessflow_donations',
+      'artcreate': 'artcreate_donations', // For future use
+      'codelive': 'codelive_donations'    // For future use
     };
     
     return tableMap[slug] || 'chia_gaming_donations';

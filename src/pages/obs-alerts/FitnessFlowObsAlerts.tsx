@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { AlertDisplay } from '@/components/AlertDisplay';
 import { useDirectAlerts } from '@/hooks/useDirectAlerts';
+import { useStreamerLookup } from '@/hooks/useStreamerLookup';
 
 const FitnessFlowObsAlerts = () => {
   const [obsToken, setObsToken] = useState<string | null>(null);
+  const { streamerData, loading: streamerLoading } = useStreamerLookup('fitnessflow');
 
   const {
     currentAlert,
@@ -13,7 +15,7 @@ const FitnessFlowObsAlerts = () => {
     triggerTestVoiceAlert,
     tokenValid: directTokenValid
   } = useDirectAlerts({
-    streamerId: 'fitnessflow',
+    streamerId: streamerData?.id,
     tableName: 'fitnessflow_donations',
     obsToken: obsToken || undefined
   });
@@ -26,6 +28,16 @@ const FitnessFlowObsAlerts = () => {
       setObsToken(token);
     }
   }, []);
+
+  if (streamerLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-black text-white">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Loading...</h2>
+        </div>
+      </div>
+    );
+  }
 
   if (!obsToken) {
     return (
