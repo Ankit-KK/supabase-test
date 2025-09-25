@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { name, amount, message, phone, voiceData } = await req.json()
+    const { name, amount, message, phone, voiceData, isHyperemote } = await req.json()
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -83,6 +83,7 @@ serve(async (req) => {
     const cashfreeOrder = await cashfreeResponse.json()
 
     // Store donation in database
+    const isHyperemoteValue = isHyperemote || parseFloat(amount) >= 50;
     const { data: donation, error: donationError } = await supabase
       .from('ankit_donations')
       .insert({
@@ -93,7 +94,7 @@ serve(async (req) => {
         streamer_id: streamerData.id,
         payment_status: 'pending',
         moderation_status: 'pending',
-        is_hyperemote: parseFloat(amount) >= 50,
+        is_hyperemote: isHyperemoteValue,
         temp_voice_data: voiceData || null
       })
       .select()

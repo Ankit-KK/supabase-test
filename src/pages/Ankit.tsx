@@ -27,9 +27,6 @@ const Ankit = () => {
   const [hasVoiceRecording, setHasVoiceRecording] = useState(false);
   const [voiceDuration, setVoiceDuration] = useState(0);
   const [showHyperemoteEffect, setShowHyperemoteEffect] = useState(false);
-  const [selectedEmoji, setSelectedEmoji] = useState<string>('');
-  const [selectedEmoteUrl, setSelectedEmoteUrl] = useState<string>('');
-  
   // Phone number dialog states
   const [showPhoneDialog, setShowPhoneDialog] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -43,21 +40,6 @@ const Ankit = () => {
   const [cursorPosition, setCursorPosition] = useState(0);
   const [showEmotionalPreview, setShowEmotionalPreview] = useState(false);
   
-  // Static emotes from chiaa-emotes bucket (for hyperemotes)
-  const availableEmotes = [
-    { name: "emojis1", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/emojis1-Photoroom.png" },
-    { name: "image-10", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(10).png" },
-    { name: "image-1", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(1).png" },
-    { name: "image-2", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(2).png" },
-    { name: "image-3", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(3).png" },
-    { name: "image-4", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(4).png" },
-    { name: "image-5", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(5).png" },
-    { name: "image-6", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(6).png" },
-    { name: "image-7", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(7).png" },
-    { name: "image-8", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(8).png" },
-    { name: "image-9", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(9).png" },
-    { name: "image", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom.png" }
-  ];
 
   // Initialize Cashfree SDK and fetch streamer settings
   useEffect(() => {
@@ -226,9 +208,11 @@ const Ankit = () => {
           name: formData.name.trim(),
           amount: amount,
           message: donationType === 'message' ? formData.message.trim() : 
-                  donationType === 'voice' ? 'Send a Voice message' : '',
+                  donationType === 'voice' ? 'Send a Voice message' : 
+                  donationType === 'hyperemote' ? formData.message.trim() : '',
           phone: phoneNumber?.trim() || undefined,
-          voiceData: voiceDataBase64
+          voiceData: voiceDataBase64,
+          isHyperemote: donationType === 'hyperemote' || amount >= 50
         }
       });
 
@@ -324,17 +308,12 @@ const Ankit = () => {
   const handleDonationTypeChange = (type: 'message' | 'voice' | 'hyperemote') => {
     setDonationType(type);
     if (type === 'hyperemote') {
-      setFormData(prev => ({ ...prev, amount: '1', message: '' }));
+      setFormData(prev => ({ ...prev, amount: '50', message: 'Hyperemote celebration! 🎉' }));
       setShowHyperemoteEffect(true);
       setTimeout(() => setShowHyperemoteEffect(false), 3000);
     } else {
       setFormData(prev => ({ ...prev, amount: '' }));
     }
-  };
-
-  const handleEmojiSelect = (emojiName: string, emoteUrl: string) => {
-    setSelectedEmoji(emojiName);
-    setSelectedEmoteUrl(emoteUrl);
   };
 
   return (
@@ -432,7 +411,7 @@ const Ankit = () => {
                     <div className="text-center">
                       <div className="text-base mb-1">🎉</div>
                       <div className="font-medium text-xs">Hyperemotes</div>
-                      <div className="text-xs text-muted-foreground">₹1 celebration</div>
+                      <div className="text-xs text-muted-foreground">₹50+ celebration</div>
                     </div>
                   </button>
                 </div>
@@ -457,7 +436,7 @@ const Ankit = () => {
                 required
               />
               {donationType === 'hyperemote' && (
-                <p className="text-xs text-muted-foreground">Hyperemotes are fixed at ₹1</p>
+                <p className="text-xs text-muted-foreground">Hyperemotes start at ₹50 with automatic celebration effects</p>
               )}
             </div>
 
@@ -502,31 +481,23 @@ const Ankit = () => {
               </div>
             )}
 
-            {/* Hyperemote Selection */}
+            {/* Hyperemote Info */}
             {donationType === 'hyperemote' && (
               <div className="space-y-3">
-                <label className="text-sm font-medium text-purple-500">
-                  Choose your celebration emote
-                </label>
-                <div className="grid grid-cols-4 gap-2 max-h-32 overflow-y-auto">
-                  {availableEmotes.map((emote) => (
-                    <button
-                      key={emote.name}
-                      type="button"
-                      onClick={() => handleEmojiSelect(emote.name, emote.url)}
-                      className={`p-2 rounded-lg border-2 transition-all ${
-                        selectedEmoji === emote.name
-                          ? 'border-purple-500 bg-purple-500/10'
-                          : 'border-purple-500/30 hover:border-purple-500/50'
-                      }`}
-                    >
-                      <img 
-                        src={emote.url} 
-                        alt={emote.name}
-                        className="w-8 h-8 mx-auto object-contain"
-                      />
-                    </button>
-                  ))}
+                <div className="p-4 rounded-lg border border-purple-500/30 bg-purple-500/5">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Sparkles className="h-5 w-5 text-purple-500" />
+                    <span className="font-medium text-purple-500">Hyperemote Celebration</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Your donation will trigger an epic celebration animation with special effects! 
+                    The bigger the amount, the more spectacular the celebration.
+                  </p>
+                  <div className="mt-3 flex items-center gap-2 text-xs text-purple-400">
+                    <span>🎯 ₹50-99: Basic celebration</span>
+                    <span>🔥 ₹100-499: Epic effects</span>
+                    <span>💫 ₹500+: Legendary show</span>
+                  </div>
                 </div>
               </div>
             )}
