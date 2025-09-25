@@ -34,7 +34,7 @@ serve(async (req) => {
     }
 
     // Get streamer info for CodeLive
-    const { data: streamerData, error: streamerError } = await supabase
+    let { data: streamerData, error: streamerError } = await supabase
       .from('streamers')
       .select('id')
       .eq('streamer_slug', 'codelive')
@@ -105,7 +105,7 @@ serve(async (req) => {
         name: name.trim(),
         amount: parseFloat(amount),
         message: message ? message.trim() : null,
-        streamer_id: streamerData.id,
+        streamer_id: streamerData!.id,
         payment_status: 'pending',
         moderation_status: 'pending',
         is_hyperemote: parseFloat(amount) >= 50
@@ -138,7 +138,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message 
+        error: error instanceof Error ? error.message : 'Unknown error'
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

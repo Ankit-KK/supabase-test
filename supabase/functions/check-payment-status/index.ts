@@ -61,9 +61,9 @@ serve(async (req) => {
 
     // Apply your status determination logic
     let orderStatus
-    if (getOrderResponse.filter && getOrderResponse.filter(transaction => transaction.payment_status === "SUCCESS").length > 0) {
+    if (getOrderResponse.filter && getOrderResponse.filter((transaction: any) => transaction.payment_status === "SUCCESS").length > 0) {
       orderStatus = "Success"
-    } else if (getOrderResponse.filter && getOrderResponse.filter(transaction => transaction.payment_status === "PENDING").length > 0) {
+    } else if (getOrderResponse.filter && getOrderResponse.filter((transaction: any) => transaction.payment_status === "PENDING").length > 0) {
       orderStatus = "Pending"
     } else {
       orderStatus = "Failure"
@@ -126,7 +126,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message 
+        error: error instanceof Error ? error.message : 'Unknown error'
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
