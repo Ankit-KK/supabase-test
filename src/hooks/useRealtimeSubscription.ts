@@ -14,8 +14,16 @@ interface ConnectionState {
   error?: string;
 }
 
+interface SubscriptionInfo {
+  channel: RealtimeChannel;
+  status: 'subscribing' | 'subscribed' | 'failed' | 'disposing';
+  retryCount: number;
+  lastAttempt: number;
+}
+
 // Global subscription registry to prevent duplicate subscriptions
-const globalSubscriptions = new Map<string, RealtimeChannel>();
+const globalSubscriptions = new Map<string, SubscriptionInfo>();
+const reconnectTimeouts = new Map<string, NodeJS.Timeout>();
 
 export const useRealtimeSubscription = (options: RealtimeSubscriptionOptions) => {
   const { streamerId, streamerSlug, onDonationUpdate, enabled = true } = options;
@@ -61,14 +69,28 @@ export const useRealtimeSubscription = (options: RealtimeSubscriptionOptions) =>
     const subscriptionKey = `${streamerId}-${streamerSlug}`;
     const tableName = getTableName(streamerSlug);
     
-    // Check if we already have a subscription for this streamer
-    let channel = globalSubscriptions.get(subscriptionKey);
+    // Clear any existing timeout for this key
+    const existingTimeout = reconnectTimeouts.get(subscriptionKey);
+    if (existingTimeout) {
+      clearTimeout(existingTimeout);
+      reconnectTimeouts.delete(subscriptionKey);
+    }
     
-    if (!channel) {
+    // Check if we already have an active subscription for this streamer
+    let subscriptionInfo = globalSubscriptions.get(subscriptionKey);
+    
+    if (!subscriptionInfo || subscriptionInfo.status === 'failed' || subscriptionInfo.status === 'disposing') {
+      // Prevent multiple rapid subscription attempts
+      if (subscriptionInfo?.status === 'subscribing') {
+        console.log('🔗 Subscription already in progress for:', tableName, 'streamer:', streamerId);
+        setConnectionState({ status: 'connecting' });
+        return;
+      }
+
       console.log('🔗 Creating NEW centralized subscription for:', tableName, 'streamer:', streamerId);
       setConnectionState({ status: 'connecting' });
 
-      channel = supabase
+      const channel = supabase
         .channel(`global-${subscriptionKey}`)
         .on(
           'postgres_changes',
@@ -97,24 +119,57 @@ export const useRealtimeSubscription = (options: RealtimeSubscriptionOptions) =>
         )
         .subscribe((status) => {
           console.log('🔗 Global subscription status:', status);
+          const currentSubscription = globalSubscriptions.get(subscriptionKey);
           
           if (status === 'SUBSCRIBED') {
             setConnectionState({ status: 'connected' });
             console.log('✅ Successfully connected to centralized real-time updates');
+            if (currentSubscription) {
+              currentSubscription.status = 'subscribed';
+              currentSubscription.retryCount = 0;
+            }
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
             setConnectionState({ status: 'disconnected', error: `Connection ${status}` });
             console.log('❌ Connection lost, will attempt to reconnect...');
             
-            // Remove failed channel and schedule reconnect
-            globalSubscriptions.delete(subscriptionKey);
-            reconnectTimeoutRef.current = setTimeout(() => {
-              subscribe();
-            }, 5000);
+            if (currentSubscription) {
+              currentSubscription.status = 'failed';
+              currentSubscription.retryCount++;
+              
+              // Properly dispose of the failed channel
+              supabase.removeChannel(currentSubscription.channel);
+              
+              // Implement exponential backoff with max retry limit
+              const maxRetries = 5;
+              const baseDelay = 2000;
+              const delay = Math.min(baseDelay * Math.pow(2, currentSubscription.retryCount), 30000);
+              
+              if (currentSubscription.retryCount < maxRetries) {
+                const timeout = setTimeout(() => {
+                  globalSubscriptions.delete(subscriptionKey);
+                  reconnectTimeouts.delete(subscriptionKey);
+                  subscribe();
+                }, delay);
+                
+                reconnectTimeouts.set(subscriptionKey, timeout);
+              } else {
+                console.log('❌ Max reconnection attempts reached, giving up');
+                globalSubscriptions.delete(subscriptionKey);
+              }
+            }
           }
         });
 
-      globalSubscriptions.set(subscriptionKey, channel);
-    } else {
+      // Create new subscription info
+      subscriptionInfo = {
+        channel,
+        status: 'subscribing',
+        retryCount: 0,
+        lastAttempt: Date.now()
+      };
+      
+      globalSubscriptions.set(subscriptionKey, subscriptionInfo);
+    } else if (subscriptionInfo.status === 'subscribed') {
       console.log('🔗 Reusing existing centralized subscription for:', tableName, 'streamer:', streamerId);
       setConnectionState({ status: 'connected' });
     }
@@ -160,8 +215,14 @@ export const useRealtimeSubscription = (options: RealtimeSubscriptionOptions) =>
 // Utility function to manually clean up all subscriptions (for app-level cleanup)
 export const cleanupAllRealtimeSubscriptions = () => {
   console.log('🧹 Cleaning up all global real-time subscriptions');
-  for (const [key, channel] of globalSubscriptions.entries()) {
-    supabase.removeChannel(channel);
+  for (const [key, subscriptionInfo] of globalSubscriptions.entries()) {
+    supabase.removeChannel(subscriptionInfo.channel);
     globalSubscriptions.delete(key);
+  }
+  
+  // Clear all reconnection timeouts
+  for (const [key, timeout] of reconnectTimeouts.entries()) {
+    clearTimeout(timeout);
+    reconnectTimeouts.delete(key);
   }
 };
