@@ -424,17 +424,17 @@ const DemoStreamer = () => {
                 id="amount"
                 name="amount"
                 type="number"
-                placeholder={donationType === 'hyperemote' ? 'Min ₹50' : 'Enter amount'}
+                placeholder={donationType === 'hyperemote' ? 'Min ₹1' : 'Enter amount'}
                 value={formData.amount}
                 onChange={handleInputChange}
-                min={donationType === 'hyperemote' ? '50' : '1'}
+                min={donationType === 'hyperemote' ? '1' : '1'}
                 max="100000"
                 className="border-purple-500/30 focus:border-purple-500 focus:ring-purple-500/20"
                 required
               />
               {donationType === 'hyperemote' && (
                 <p className="text-xs text-purple-400">
-                  ⚡ Hyperemotes start from ₹50 and trigger animated emotes on stream!
+                  ⚡ Hyperemotes start from ₹1 and trigger animated emotes on stream!
                 </p>
               )}
             </div>

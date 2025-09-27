@@ -42,7 +42,7 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     brand_color: streamerData.brand_color || '#3b82f6',
     brand_logo_url: streamerData.brand_logo_url || '',
     hyperemotes_enabled: streamerData.hyperemotes_enabled || false,
-    hyperemotes_min_amount: streamerData.hyperemotes_min_amount || 50
+    hyperemotes_min_amount: streamerData.hyperemotes_min_amount || 1
   });
   const [saving, setSaving] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
@@ -276,8 +276,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   min="1"
                   max="1000"
                   value={settings.hyperemotes_min_amount}
-                  onChange={(e) => handleInputChange('hyperemotes_min_amount', parseInt(e.target.value) || 50)}
-                  placeholder="50"
+                  onChange={(e) => handleInputChange('hyperemotes_min_amount', parseInt(e.target.value) || 1)}
+                  placeholder="1"
                 />
                 <span className="text-sm text-muted-foreground">INR</span>
               </div>

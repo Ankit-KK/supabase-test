@@ -212,7 +212,7 @@ const Ankit = () => {
                   donationType === 'hyperemote' ? formData.message.trim() : '',
           phone: phoneNumber?.trim() || undefined,
           voiceData: voiceDataBase64,
-          isHyperemote: donationType === 'hyperemote' || amount >= 50
+          isHyperemote: donationType === 'hyperemote' || amount >= 1
         }
       });
 
@@ -308,7 +308,7 @@ const Ankit = () => {
   const handleDonationTypeChange = (type: 'message' | 'voice' | 'hyperemote') => {
     setDonationType(type);
     if (type === 'hyperemote') {
-      setFormData(prev => ({ ...prev, amount: '50', message: 'Hyperemote celebration! 🎉' }));
+      setFormData(prev => ({ ...prev, amount: '1', message: 'Hyperemote celebration! 🎉' }));
       setShowHyperemoteEffect(true);
       setTimeout(() => setShowHyperemoteEffect(false), 3000);
     } else {
@@ -436,7 +436,7 @@ const Ankit = () => {
                 required
               />
               {donationType === 'hyperemote' && (
-                <p className="text-xs text-muted-foreground">Hyperemotes start at ₹50 with automatic celebration effects</p>
+                <p className="text-xs text-muted-foreground">Hyperemotes start at ₹1 with automatic celebration effects</p>
               )}
             </div>
 

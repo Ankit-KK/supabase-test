@@ -103,7 +103,7 @@ const ArtCreate = () => {
     setMessage(prev => prev + emoji);
   };
 
-  const isHyperemote = parseFloat(amount) >= 50;
+  const isHyperemote = parseFloat(amount) >= 1;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-950 via-slate-900 to-pink-800">
