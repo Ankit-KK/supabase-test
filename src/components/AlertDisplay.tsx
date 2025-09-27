@@ -249,23 +249,6 @@ export const AlertDisplay: React.FC<AlertDisplayProps> = ({
             </div>
           );
         })}
-
-        {/* Hyperemote celebration text overlay */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
-          <div className="text-center text-white animate-pulse">
-            <h1 className="text-4xl sm:text-6xl font-bold mb-2" style={{ color: streamerBrandColor }}>
-              🎉 HYPEREMOTE! 🎉
-            </h1>
-            <p className="text-xl sm:text-2xl font-semibold">
-              {donation.name} donated ₹{donation.amount}!
-            </p>
-            {donation.message && (
-              <p className="text-lg sm:text-xl mt-2 max-w-md mx-auto">
-                "{donation.message}"
-              </p>
-            )}
-          </div>
-        </div>
       </div>
     );
   }
