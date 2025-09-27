@@ -19,12 +19,26 @@ interface AlertDisplayProps {
 }
 
 const HYPEREMOTE_ICONS = {
-  50: Gift,
-  100: Heart,
-  200: Star,
-  500: Zap,
-  1000: Music
+  1: Gift,
+  50: Heart,
+  100: Star,
+  200: Zap,
+  500: Music
 };
+
+// Hyperemote emotes for rain effect
+const hyperemotes = [
+  { id: 'happy', src: '/lovable-uploads/2f07c754-6bf7-40e6-8a98-f181f991614a.png', name: 'Happy' },
+  { id: 'peaceful', src: '/lovable-uploads/292d1bf8-f7af-4bf3-8540-9e79fda428c2.png', name: 'Peaceful' },
+  { id: 'disappointed', src: '/lovable-uploads/a62460bb-2981-4570-8bce-51472286d43f.png', name: 'Disappointed' },
+  { id: 'upset', src: '/lovable-uploads/2016b23f-1791-4159-b604-4ec5ecbf505e.png', name: 'Upset' },
+  { id: 'wink', src: '/lovable-uploads/2e0cb8ea-caa0-4039-a256-b14849269d25.png', name: 'Wink' },
+  { id: 'surprised', src: '/lovable-uploads/6c1ab8e8-8d6f-48bf-9111-059acae74a34.png', name: 'Surprised' },
+  { id: 'excited', src: '/lovable-uploads/5459b5bb-a628-4c02-a9ca-4b374fe1fe38.png', name: 'Excited' },
+  { id: 'love', src: '/lovable-uploads/33359350-7d33-4384-81d9-99fcf0220f60.png', name: 'Love' },
+  { id: 'sleepy', src: '/lovable-uploads/cd661d15-1109-41d5-9908-70531edc117c.png', name: 'Sleepy' },
+  { id: 'crying', src: '/lovable-uploads/2d18e120-71ab-48bf-8ead-36620a7546a8.png', name: 'Crying' },
+];
 
 export const AlertDisplay: React.FC<AlertDisplayProps> = ({
   donation,
@@ -130,6 +144,133 @@ export const AlertDisplay: React.FC<AlertDisplayProps> = ({
 
   const IconComponent = donation.is_hyperemote ? getHyperemoteIcon(donation.amount) : null;
 
+  // For hyperemotes, show rain effect instead of alert box
+  if (donation.is_hyperemote) {
+    return (
+      <div className="fixed inset-0 pointer-events-none z-50">
+        <style>{`
+          @keyframes floatUp {
+            0% { 
+              opacity: 0; 
+              transform: translateY(100vh) scale(0.5) rotate(0deg); 
+            }
+            20% { 
+              opacity: 1; 
+              transform: translateY(80vh) scale(1) rotate(180deg); 
+            }
+            80% { 
+              opacity: 1; 
+              transform: translateY(20vh) scale(1.2) rotate(340deg); 
+            }
+            100% { 
+              opacity: 0; 
+              transform: translateY(-10vh) scale(0.8) rotate(360deg); 
+            }
+          }
+          @keyframes floatUpLeft {
+            0% { 
+              opacity: 0; 
+              transform: translateY(100vh) translateX(0) scale(0.5) rotate(0deg); 
+            }
+            50% { 
+              opacity: 1; 
+              transform: translateY(50vh) translateX(-100px) scale(1.1) rotate(180deg); 
+            }
+            100% { 
+              opacity: 0; 
+              transform: translateY(-10vh) translateX(-200px) scale(0.7) rotate(360deg); 
+            }
+          }
+          @keyframes floatUpRight {
+            0% { 
+              opacity: 0; 
+              transform: translateY(100vh) translateX(0) scale(0.5) rotate(0deg); 
+            }
+            50% { 
+              opacity: 1; 
+              transform: translateY(50vh) translateX(100px) scale(1.1) rotate(-180deg); 
+            }
+            100% { 
+              opacity: 0; 
+              transform: translateY(-10vh) translateX(200px) scale(0.7) rotate(-360deg); 
+            }
+          }
+          @keyframes spiralUp {
+            0% { 
+              opacity: 0; 
+              transform: translateY(100vh) rotateY(0deg) scale(0.5); 
+            }
+            25% { 
+              opacity: 1; 
+              transform: translateY(75vh) rotateY(90deg) scale(1); 
+            }
+            50% { 
+              opacity: 1; 
+              transform: translateY(50vh) rotateY(180deg) scale(1.2); 
+            }
+            75% { 
+              opacity: 1; 
+              transform: translateY(25vh) rotateY(270deg) scale(1); 
+            }
+            100% { 
+              opacity: 0; 
+              transform: translateY(-10vh) rotateY(360deg) scale(0.8); 
+            }
+          }
+        `}</style>
+        
+        {/* Hyperemote Rain Effect */}
+        {Array.from({ length: 12 }, (_, index) => {
+          const emote = hyperemotes[index % hyperemotes.length];
+          const animations = ['floatUp', 'floatUpLeft', 'floatUpRight', 'spiralUp'];
+          const animationType = animations[index % animations.length];
+          const delay = (index * 0.3);
+          const duration = 4 + (index % 3);
+          const leftPosition = 10 + (index * 7) % 80;
+          
+          return (
+            <div
+              key={`${donation.id}-${emote.id}-${index}`}
+              className="absolute pointer-events-none"
+              style={{
+                left: `${leftPosition}%`,
+                animation: `${animationType} ${duration}s ease-out ${delay}s infinite`,
+                zIndex: 40 + index
+              }}
+            >
+              <img
+                src={emote.src}
+                alt={emote.name}
+                className="w-12 h-12 sm:w-16 sm:h-16"
+                style={{
+                  filter: `hue-rotate(${index * 30}deg) brightness(1.2)`,
+                }}
+              />
+            </div>
+          );
+        })}
+
+        {/* Hyperemote celebration text overlay */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-50">
+          <div className="text-center text-white animate-pulse">
+            <h1 className="text-4xl sm:text-6xl font-bold mb-2" style={{ color: streamerBrandColor }}>
+              🎉 HYPEREMOTE! 🎉
+            </h1>
+            <p className="text-xl sm:text-2xl font-semibold">
+              {donation.name} donated ₹{donation.amount}!
+            </p>
+            {donation.message && (
+              <p className="text-lg sm:text-xl mt-2 max-w-md mx-auto">
+                "{donation.message}"
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Regular donation alert
   return (
     <div className="fixed inset-0 pointer-events-none z-50">
       <style>{`
@@ -149,27 +290,6 @@ export const AlertDisplay: React.FC<AlertDisplayProps> = ({
           to { transform: rotate(360deg); }
         }
         
-        @keyframes hyperemoteFloat {
-          0%, 100% {
-            transform: translateY(0px) rotate(0deg);
-          }
-          25% {
-            transform: translateY(-10px) rotate(5deg);
-          }
-          75% {
-            transform: translateY(5px) rotate(-3deg);
-          }
-        }
-        
-        @keyframes hyperemotePulse {
-          0%, 100% {
-            box-shadow: 0 0 20px ${streamerBrandColor}40;
-          }
-          50% {
-            box-shadow: 0 0 40px ${streamerBrandColor}80, 0 0 60px ${streamerBrandColor}40;
-          }
-        }
-        
         @keyframes blink {
           0%, 100% { border-color: transparent }
           50% { border-color: white }
@@ -177,14 +297,6 @@ export const AlertDisplay: React.FC<AlertDisplayProps> = ({
         
         .alert-enter {
           animation: alertFadeIn 0.5s ease-out;
-        }
-        
-        .hyperemote-float {
-          animation: hyperemoteFloat 3s ease-in-out infinite;
-        }
-        
-        .hyperemote-glow {
-          animation: hyperemotePulse 2s ease-in-out infinite;
         }
 
         .alert-card {
@@ -213,10 +325,6 @@ export const AlertDisplay: React.FC<AlertDisplayProps> = ({
           inset: 5px;
           border-radius: 15px;
         }
-
-        .alert-card.hyperemote::before {
-          background-image: linear-gradient(180deg, ${streamerBrandColor}, rgb(255, 48, 255));
-        }
       `}</style>
 
       <div className={`
@@ -224,33 +332,12 @@ export const AlertDisplay: React.FC<AlertDisplayProps> = ({
         ${isVisible ? 'opacity-100' : 'opacity-0'}
         transition-opacity duration-500
       `}>
-        <div 
-          className={`
-            alert-card alert-enter min-w-[180px] max-w-[320px] min-h-[120px] relative flex flex-col justify-center items-center p-3
-            ${donation.is_hyperemote ? 'hyperemote-float hyperemote' : ''} 
-          `}
-        >
-          {/* Hyperemote Celebration Effects */}
-          {donation.is_hyperemote && (
-            <div className="absolute -top-4 -right-4 z-10">
-              {IconComponent && (
-                <div 
-                  className="w-16 h-16 rounded-full flex items-center justify-center text-white text-2xl"
-                  style={{ backgroundColor: streamerBrandColor }}
-                >
-                  <IconComponent className="w-8 h-8" />
-                </div>
-              )}
-            </div>
-          )}
-
+        <div className="alert-card alert-enter min-w-[180px] max-w-[320px] min-h-[120px] relative flex flex-col justify-center items-center p-3">
           {/* Content Container with proper z-index */}
           <div className="relative z-10 text-center text-white w-full">
             {/* Alert Header */}
             <div className="mb-2">
-              <h2 className="text-base font-bold mb-1">
-                {donation.is_hyperemote ? '🎉 HYPEREMOTE! 🎉' : 'New Donation!'}
-              </h2>
+              <h2 className="text-base font-bold mb-1">New Donation!</h2>
               <div className="flex flex-col items-center gap-0.5 text-xs font-semibold">
                 <span>{donation.name}</span>
                 <span className="text-green-400">donated ₹{donation.amount}</span>
