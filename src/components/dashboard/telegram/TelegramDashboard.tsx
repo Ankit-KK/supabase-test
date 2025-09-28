@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { MessageCircle, Trash2 } from 'lucide-react';
 
 interface TelegramDashboardProps {
@@ -30,27 +31,55 @@ const TelegramDashboard: React.FC<TelegramDashboardProps> = ({
   streamerId,
   streamerSlug
 }) => {
+  const { user } = useAuth();
   const [telegramUserId, setTelegramUserId] = useState<string>('');
   const [inputValue, setInputValue] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [fetchingData, setFetchingData] = useState(true);
 
   // Fetch existing Telegram user ID
   useEffect(() => {
     const fetchTelegramUserId = async () => {
+      if (!streamerId) {
+        console.log('No streamer ID provided');
+        setFetchingData(false);
+        return;
+      }
+
+      console.log('Fetching Telegram user ID for streamer:', streamerId);
+      setFetchingData(true);
+      
       try {
         const { data, error } = await supabase
           .from('streamers_moderators')
-          .select('telegram_user_id')
+          .select('telegram_user_id, mod_name, is_active')
           .eq('streamer_id', streamerId)
           .eq('is_active', true)
           .maybeSingle();
 
-        if (error) throw error;
-        if (data) {
+        console.log('Fetch result:', { data, error });
+
+        if (error) {
+          console.error('Database error:', error);
+          throw error;
+        }
+        
+        if (data && data.telegram_user_id) {
+          console.log('Found existing Telegram user ID:', data.telegram_user_id);
           setTelegramUserId(data.telegram_user_id);
+        } else {
+          console.log('No Telegram user ID found for this streamer');
+          setTelegramUserId('');
         }
       } catch (error) {
         console.error('Error fetching telegram user ID:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load Telegram settings",
+          variant: "destructive",
+        });
+      } finally {
+        setFetchingData(false);
       }
     };
 
@@ -67,18 +96,32 @@ const TelegramDashboard: React.FC<TelegramDashboardProps> = ({
       return;
     }
 
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "Please log in to add Telegram notifications",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const authToken = localStorage.getItem('auth_token');
+      console.log('Auth token exists:', !!authToken);
+      console.log('User ID:', user.id);
+      console.log('Streamer ID:', streamerId);
+      
       if (!authToken) {
         toast({
           title: "Error",
-          description: "Authentication required",
+          description: "Authentication required. Please log in again.",
           variant: "destructive",
         });
         return;
       }
 
+      console.log('Invoking manage-telegram-user with action: add');
       const { data, error } = await supabase.functions.invoke('manage-telegram-user', {
         body: {
           action: 'add',
@@ -88,8 +131,20 @@ const TelegramDashboard: React.FC<TelegramDashboardProps> = ({
         }
       });
 
-      if (error || !data.success) {
-        console.error('Error adding telegram user:', error || data.error);
+      console.log('Edge function response:', { data, error });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        toast({
+          title: "Error",
+          description: "Network error occurred",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!data || !data.success) {
+        console.error('Operation failed:', data?.error);
         toast({
           title: "Error",
           description: data?.error || "Failed to add Telegram user ID",
@@ -117,18 +172,28 @@ const TelegramDashboard: React.FC<TelegramDashboardProps> = ({
   };
 
   const handleRemoveTelegramUser = async () => {
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "Please log in to remove Telegram notifications",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const authToken = localStorage.getItem('auth_token');
       if (!authToken) {
         toast({
           title: "Error",
-          description: "Authentication required",
+          description: "Authentication required. Please log in again.",
           variant: "destructive",
         });
         return;
       }
 
+      console.log('Invoking manage-telegram-user with action: remove');
       const { data, error } = await supabase.functions.invoke('manage-telegram-user', {
         body: {
           action: 'remove',
@@ -137,8 +202,20 @@ const TelegramDashboard: React.FC<TelegramDashboardProps> = ({
         }
       });
 
-      if (error || !data.success) {
-        console.error('Error removing telegram user:', error || data.error);
+      console.log('Edge function response:', { data, error });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        toast({
+          title: "Error",
+          description: "Network error occurred",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!data || !data.success) {
+        console.error('Operation failed:', data?.error);
         toast({
           title: "Error",
           description: data?.error || "Failed to remove Telegram user ID",
@@ -180,7 +257,11 @@ const TelegramDashboard: React.FC<TelegramDashboardProps> = ({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {telegramUserId ? (
+        {fetchingData ? (
+          <div className="flex items-center justify-center py-4">
+            <div className="text-sm text-muted-foreground">Loading...</div>
+          </div>
+        ) : telegramUserId ? (
           <div className="space-y-4">
             <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
               <p className="text-sm font-medium text-green-800 dark:text-green-200">
