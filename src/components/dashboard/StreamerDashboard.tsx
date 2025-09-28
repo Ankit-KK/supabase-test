@@ -12,6 +12,7 @@ import { DollarSign, Users, TrendingUp, Clock, AlertCircle, LogOut } from 'lucid
 import DonationCard from './DonationCard';
 import TelegramDashboard from './telegram/TelegramDashboard';
 import OBSTokenManager from './OBSTokenManager';
+import CSVExportButton from './CSVExportButton';
 
 
 interface StreamerDashboardProps {
@@ -389,10 +390,19 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
           <TabsContent value="donations" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Approved Donations</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Donations that have been approved and are visible to viewers
-                </p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Approved Donations</CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      Donations that have been approved and are visible to viewers
+                    </p>
+                  </div>
+                  <CSVExportButton 
+                    streamerId={streamerData.id}
+                    tableName={tableName}
+                    streamerName={streamerName}
+                  />
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4 max-h-[600px] overflow-y-auto">
