@@ -4,7 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
-import { DollarSign, MessageSquare, Mic, Heart, Play, Volume2 } from 'lucide-react';
+import { DollarSign, MessageSquare, Mic, Heart } from 'lucide-react';
+import { MiniAudioPlayer } from '@/components/MiniAudioPlayer';
 
 interface DonationCardProps {
   donation: {
@@ -57,12 +58,6 @@ const DonationCard: React.FC<DonationCardProps> = ({
     }
   };
 
-  const playVoiceMessage = () => {
-    if (donation.voice_message_url) {
-      const audio = new Audio(donation.voice_message_url);
-      audio.play().catch(console.error);
-    }
-  };
 
   const getDonationTypeIcon = () => {
     if (donation.is_hyperemote) {
@@ -122,15 +117,7 @@ const DonationCard: React.FC<DonationCardProps> = ({
             {/* Voice Message */}
             {donation.voice_message_url && (
               <div className="mb-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={playVoiceMessage}
-                  className="flex items-center space-x-2"
-                >
-                  <Volume2 className="h-3 w-3" />
-                  <span>Play Voice Message</span>
-                </Button>
+                <MiniAudioPlayer audioUrl={donation.voice_message_url} />
               </div>
             )}
 

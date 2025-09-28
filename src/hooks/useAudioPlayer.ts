@@ -61,21 +61,35 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
     fetchVoiceDonations();
 
     const channel = supabase
-      .channel(`audio-player-${tableName}`)
+      .channel(`audio-player-${tableName}-${Date.now()}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: tableName,
-          filter: 'voice_message_url=not.is.null'
         },
         (payload) => {
           console.log('Voice donation update:', payload);
-          fetchVoiceDonations();
+          // Check if the update involves a voice message
+          const hasVoiceMessage = (payload.new as any)?.voice_message_url || 
+                                  (payload.old as any)?.voice_message_url;
+          
+          if (hasVoiceMessage) {
+            console.log('Voice message donation detected, refreshing...');
+            // Small delay to ensure database consistency
+            setTimeout(fetchVoiceDonations, 500);
+          }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Audio player subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('Successfully subscribed to voice donations updates');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('Error subscribing to voice donations updates');
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);
