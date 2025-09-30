@@ -33,10 +33,10 @@ serve(async (req) => {
       throw new Error('Invalid amount: must be between 1 and 100000')
     }
 
-    // Get streamer info for ArtCreate
+    // Get streamer info for ArtCreate including hyperemote settings
     let { data: streamerData, error: streamerError } = await supabase
       .from('streamers')
-      .select('id')
+      .select('id, hyperemotes_enabled, hyperemotes_min_amount')
       .eq('streamer_slug', 'artcreate')
       .single()
 
@@ -97,6 +97,10 @@ serve(async (req) => {
 
     const cashfreeOrder = await cashfreeResponse.json()
 
+    // Determine if this is a hyperemote based on streamer settings
+    const minAmount = streamerData!.hyperemotes_min_amount || 50;
+    const isHyperemoteValue = streamerData!.hyperemotes_enabled && parseFloat(amount) >= minAmount;
+
     // Store donation in database (using chia_gaming_donations table structure)
     const { data: donation, error: donationError } = await supabase
       .from('chia_gaming_donations')
@@ -107,8 +111,9 @@ serve(async (req) => {
         message: message ? message.trim() : null,
         streamer_id: streamerData!.id,
         payment_status: 'pending',
-        moderation_status: 'pending',
-        is_hyperemote: parseFloat(amount) >= 50
+        moderation_status: isHyperemoteValue ? 'auto_approved' : 'pending',
+        is_hyperemote: isHyperemoteValue,
+        temp_voice_data: voiceData || null
       })
       .select()
       .single()

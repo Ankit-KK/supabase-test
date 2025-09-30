@@ -38,10 +38,10 @@ serve(async (req) => {
       throw new Error('Amount must be between ₹1 and ₹100,000')
     }
 
-    // Get streamer info
+    // Get streamer info including hyperemote settings
     const { data: streamerData, error: streamerError } = await supabaseClient
       .from('streamers')
-      .select('id')
+      .select('id, hyperemotes_enabled, hyperemotes_min_amount')
       .eq('streamer_slug', 'techgamer')
       .single()
 
@@ -87,8 +87,9 @@ serve(async (req) => {
 
     const cashfreeData = await cashfreeResponse.json()
 
-    // Determine if this is a hyperemote
-    const isHyperemote = amount >= 50
+    // Determine if this is a hyperemote based on streamer settings
+    const minAmount = streamerData.hyperemotes_min_amount || 50;
+    const isHyperemote = streamerData.hyperemotes_enabled && amount >= minAmount;
 
     // Store donation in database
     const { error: insertError } = await supabaseClient

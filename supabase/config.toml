@@ -21,7 +21,13 @@ verify_jwt = false
 [functions.create-payment-order-artcreate]
 verify_jwt = false
 
+[functions.create-payment-order-chiagaming]
+verify_jwt = false
+
 [functions.create-payment-order-codelive]
+verify_jwt = false
+
+[functions.create-payment-order-demostreamer]
 verify_jwt = false
 
 [functions.create-payment-order-fitnessflow]
