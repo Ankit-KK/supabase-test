@@ -212,7 +212,7 @@ const Ankit = () => {
                   donationType === 'hyperemote' ? formData.message.trim() : '',
           phone: phoneNumber?.trim() || undefined,
           voiceData: voiceDataBase64,
-          isHyperemote: donationType === 'hyperemote' || amount >= 1
+          isHyperemote: donationType === 'hyperemote'
         }
       });
 
@@ -411,7 +411,9 @@ const Ankit = () => {
                     <div className="text-center">
                       <div className="text-base mb-1">🎉</div>
                       <div className="font-medium text-xs">Hyperemotes</div>
-                      <div className="text-xs text-muted-foreground">₹50+ celebration</div>
+                      <div className="text-xs text-muted-foreground">
+                        ₹{streamerSettings?.hyperemotes_min_amount || 1}+ celebration
+                      </div>
                     </div>
                   </button>
                 </div>
@@ -436,7 +438,9 @@ const Ankit = () => {
                 required
               />
               {donationType === 'hyperemote' && (
-                <p className="text-xs text-muted-foreground">Hyperemotes start at ₹1 with automatic celebration effects</p>
+                <p className="text-xs text-muted-foreground">
+                  Hyperemotes start at ₹{streamerSettings?.hyperemotes_min_amount || 1} with automatic celebration effects
+                </p>
               )}
             </div>
 

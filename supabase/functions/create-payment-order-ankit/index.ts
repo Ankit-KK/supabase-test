@@ -34,10 +34,10 @@ serve(async (req) => {
       throw new Error('Invalid amount: must be between 1 and 100000')
     }
 
-    // Get streamer info
+    // Get streamer info including hyperemote settings
     const { data: streamerData, error: streamerError } = await supabase
       .from('streamers')
-      .select('id')
+      .select('id, hyperemotes_enabled, hyperemotes_min_amount')
       .eq('streamer_slug', 'ankit')
       .single()
 
@@ -83,8 +83,11 @@ serve(async (req) => {
 
     const cashfreeOrder = await cashfreeResponse.json()
 
+    // Determine if this is a hyperemote based on streamer settings
+    const minAmount = streamerData.hyperemotes_min_amount || 1
+    const isHyperemoteValue = isHyperemote || (streamerData.hyperemotes_enabled && parseFloat(amount) >= minAmount)
+    
     // Store donation in database
-    const isHyperemoteValue = isHyperemote || parseFloat(amount) >= 50;
     const { data: donation, error: donationError } = await supabase
       .from('ankit_donations')
       .insert({
