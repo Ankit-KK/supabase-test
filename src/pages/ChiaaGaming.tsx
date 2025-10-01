@@ -36,8 +36,17 @@ const ChiaGaming = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [phoneError, setPhoneError] = useState('');
   
-  // Voice recorder instance
-  const voiceRecorder = useVoiceRecorder(60);
+  // Calculate voice recording duration based on amount
+  const getVoiceDuration = (amount: number) => {
+    if (amount >= 500) return 30;
+    if (amount >= 200) return 20;
+    if (amount >= 100) return 15;
+    return 10;
+  };
+
+  // Voice recorder instance - dynamically update duration based on amount
+  const currentAmount = parseFloat(formData.amount) || 0;
+  const voiceRecorder = useVoiceRecorder(getVoiceDuration(currentAmount));
   
   // Static emotes from chiaa-emotes bucket (for hyperemotes)
   const availableEmotes = [
@@ -288,7 +297,8 @@ const ChiaGaming = () => {
   const handleDonationTypeChange = (type: 'message' | 'voice' | 'hyperemote') => {
     setDonationType(type);
     if (type === 'hyperemote') {
-      setFormData(prev => ({ ...prev, amount: '1', message: '' }));
+      const minAmount = streamerSettings?.hyperemotes_min_amount || 50;
+      setFormData(prev => ({ ...prev, amount: minAmount.toString(), message: '' }));
       // Trigger hyperemote effect
       setShowHyperemoteEffect(true);
       setTimeout(() => setShowHyperemoteEffect(false), 3000);
@@ -398,7 +408,7 @@ const ChiaGaming = () => {
                     <div className="text-center">
                       <div className="text-base mb-1">🎉</div>
                       <div className="font-medium text-xs">Hyperemotes</div>
-                      <div className="text-xs text-muted-foreground">₹1 celebration</div>
+                      <div className="text-xs text-muted-foreground">₹{streamerSettings?.hyperemotes_min_amount || 50}+ celebration</div>
                     </div>
                   </button>
                 </div>
@@ -417,8 +427,8 @@ const ChiaGaming = () => {
                   id="amount"
                   name="amount"
                   type="number"
-                  placeholder={donationType === 'hyperemote' ? '1' : '100'}
-                  min="1"
+                  placeholder={donationType === 'hyperemote' ? (streamerSettings?.hyperemotes_min_amount || 50).toString() : '100'}
+                  min={donationType === 'hyperemote' ? (streamerSettings?.hyperemotes_min_amount || 50).toString() : '1'}
                   max="100000"
                   value={formData.amount}
                   onChange={handleInputChange}

@@ -32,8 +32,17 @@ const Ankit = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [phoneError, setPhoneError] = useState('');
   
-  // Voice recorder instance
-  const voiceRecorder = useVoiceRecorder(60);
+  // Calculate voice recording duration based on amount
+  const getVoiceDuration = (amount: number) => {
+    if (amount >= 500) return 30;
+    if (amount >= 200) return 20;
+    if (amount >= 100) return 15;
+    return 10;
+  };
+
+  // Voice recorder instance - dynamically update duration based on amount
+  const currentAmount = parseFloat(formData.amount) || 0;
+  const voiceRecorder = useVoiceRecorder(getVoiceDuration(currentAmount));
 
   // Emotional TTS states
   const [messageInputRef, setMessageInputRef] = useState<HTMLTextAreaElement | null>(null);
@@ -308,7 +317,8 @@ const Ankit = () => {
   const handleDonationTypeChange = (type: 'message' | 'voice' | 'hyperemote') => {
     setDonationType(type);
     if (type === 'hyperemote') {
-      setFormData(prev => ({ ...prev, amount: '1', message: 'Hyperemote celebration! 🎉' }));
+      const minAmount = streamerSettings?.hyperemotes_min_amount || 1;
+      setFormData(prev => ({ ...prev, amount: minAmount.toString(), message: 'Hyperemote celebration! 🎉' }));
       setShowHyperemoteEffect(true);
       setTimeout(() => setShowHyperemoteEffect(false), 3000);
     } else {

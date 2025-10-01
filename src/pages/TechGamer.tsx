@@ -35,8 +35,17 @@ const TechGamer = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [phoneError, setPhoneError] = useState('');
   
-  // Voice recorder instance
-  const voiceRecorder = useVoiceRecorder(60);
+  // Calculate voice recording duration based on amount
+  const getVoiceDuration = (amount: number) => {
+    if (amount >= 500) return 30;
+    if (amount >= 200) return 20;
+    if (amount >= 100) return 15;
+    return 10;
+  };
+
+  // Voice recorder instance - dynamically update duration based on amount
+  const currentAmount = parseFloat(formData.amount) || 0;
+  const voiceRecorder = useVoiceRecorder(getVoiceDuration(currentAmount));
 
   // Emotional TTS states
   const [messageInputRef, setMessageInputRef] = useState<HTMLTextAreaElement | null>(null);
@@ -317,7 +326,8 @@ const TechGamer = () => {
   const handleDonationTypeChange = (type: 'message' | 'voice' | 'hyperemote') => {
     setDonationType(type);
     if (type === 'hyperemote') {
-      setFormData(prev => ({ ...prev, amount: '1', message: '' }));
+      const minAmount = streamerSettings?.hyperemotes_min_amount || 50;
+      setFormData(prev => ({ ...prev, amount: minAmount.toString(), message: '' }));
       setShowHyperemoteEffect(true);
       setTimeout(() => setShowHyperemoteEffect(false), 3000);
     } else {
@@ -425,7 +435,7 @@ const TechGamer = () => {
                     <div className="text-center">
                       <div className="text-base mb-1">🎉</div>
                       <div className="font-medium text-xs">Hyperemotes</div>
-                      <div className="text-xs text-muted-foreground">₹1 celebration</div>
+                      <div className="text-xs text-muted-foreground">₹{streamerSettings?.hyperemotes_min_amount || 50}+ celebration</div>
                     </div>
                   </button>
                 </div>
@@ -440,11 +450,11 @@ const TechGamer = () => {
                 id="amount"
                 name="amount"
                 type="number"
-                placeholder={donationType === 'hyperemote' ? '₹1 minimum' : 'Enter amount'}
+                placeholder={donationType === 'hyperemote' ? `₹${streamerSettings?.hyperemotes_min_amount || 50} minimum` : 'Enter amount'}
                 value={formData.amount}
                 onChange={handleInputChange}
                 className="border-green-500/30 focus:border-green-500 focus:ring-green-500/20"
-                min={donationType === 'hyperemote' ? '1' : '1'}
+                min={donationType === 'hyperemote' ? (streamerSettings?.hyperemotes_min_amount || 50).toString() : '1'}
                 max="100000"
                 disabled={donationType === 'hyperemote'}
                 required
