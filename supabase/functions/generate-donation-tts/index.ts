@@ -25,7 +25,7 @@ serve(async (req) => {
 
     // Format the donation announcement
     const donationText = message 
-      ? `🎉 New donation received! ${username} just donated ${amount} rupees! Message: "${message}"`
+      ? `🎉 New donation received! ${username} just donated ${amount} rupees! ${message}`
       : `🎉 New donation received! ${username} just donated ${amount} rupees!`;
 
     console.log('Generating TTS for:', donationText);
