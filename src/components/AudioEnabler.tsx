@@ -10,12 +10,38 @@ export const AudioEnabler: React.FC = () => {
   const [showOverlay, setShowOverlay] = useState(false);
 
   useEffect(() => {
-    // Check if audio has already been enabled in this session
-    const audioEnabled = sessionStorage.getItem('audio_enabled');
-    if (!audioEnabled) {
+    // Check if audio has already been enabled (persists across sessions)
+    const audioEnabled = localStorage.getItem('audio_enabled');
+    
+    if (audioEnabled) {
+      // Auto-enable audio using silent audio trick
+      tryAutoEnableAudio();
+    } else {
       setShowOverlay(true);
     }
   }, []);
+
+  const tryAutoEnableAudio = async () => {
+    try {
+      // Create a silent audio element to unlock AudioContext
+      const silentAudio = new Audio('data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAADhAC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAA4T8DeHGAAAAAAAAAAAAAAAAAAAAAP/7kGQAD/AAAGkAAAAIAAANIAAAAQAAAaQAAAAgAAA0gAAABExBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/7kGQAj/AAAGkAAAAIAAANIAAAAQAAAaQAAAAgAAA0gAAABFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVQ==');
+      silentAudio.volume = 0.01;
+      
+      // Play silent audio to unlock
+      await silentAudio.play();
+      
+      // Resume AudioContext
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
+      
+      console.log('✅ Audio auto-enabled via silent audio trick');
+    } catch (error) {
+      console.log('⚠️ Silent audio trick failed, showing overlay:', error);
+      setShowOverlay(true);
+    }
+  };
 
   const enableAudio = async () => {
     try {
@@ -26,8 +52,8 @@ export const AudioEnabler: React.FC = () => {
         console.log('✅ Audio enabled - AudioContext resumed');
       }
       
-      // Mark audio as enabled for this session
-      sessionStorage.setItem('audio_enabled', 'true');
+      // Mark audio as enabled permanently
+      localStorage.setItem('audio_enabled', 'true');
       
       // Hide the overlay
       setShowOverlay(false);
@@ -36,7 +62,7 @@ export const AudioEnabler: React.FC = () => {
     } catch (error) {
       console.error('❌ Failed to enable audio:', error);
       // Still hide the overlay even if there's an error
-      sessionStorage.setItem('audio_enabled', 'true');
+      localStorage.setItem('audio_enabled', 'true');
       setShowOverlay(false);
     }
   };
@@ -69,7 +95,7 @@ export const AudioEnabler: React.FC = () => {
         </button>
 
         <p className="text-xs text-gray-400">
-          You only need to do this once per session
+          You only need to do this once - it will remember your choice
         </p>
       </div>
     </div>
