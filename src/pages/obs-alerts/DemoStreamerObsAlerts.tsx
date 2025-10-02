@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AlertDisplay } from '@/components/AlertDisplay';
 import { useDirectAlerts } from '@/hooks/useDirectAlerts';
+import { AudioEnabler } from '@/components/AudioEnabler';
 
 const DemoStreamerObsAlerts = () => {
   const [searchParams] = useSearchParams();
@@ -53,6 +54,7 @@ const DemoStreamerObsAlerts = () => {
 
   return (
     <div className="fixed inset-0 bg-transparent">
+      <AudioEnabler />
       <AlertDisplay
         donation={currentAlert}
         isVisible={isVisible}

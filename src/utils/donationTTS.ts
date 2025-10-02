@@ -29,18 +29,7 @@ export const generateAndPlayTTS = async (
   voiceId: string = 'H6QPv2pQZDcGqLwDTIJQ' // Kanika voice
 ): Promise<void> => {
   try {
-    // Resume any suspended audio contexts before generating TTS
-    try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      if (audioContext.state === 'suspended') {
-        await audioContext.resume();
-        console.log('🔊 Resumed suspended AudioContext');
-      }
-    } catch (err) {
-      console.warn('⚠️ Could not resume AudioContext:', err);
-    }
-
-    console.log('Generating TTS for donation:', { username, amount, message });
+    console.log('🎤 Generating TTS for donation:', { username, amount, message });
 
     const { data, error } = await supabase.functions.invoke('generate-donation-tts', {
       body: { 

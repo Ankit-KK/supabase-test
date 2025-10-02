@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AlertDisplay } from '@/components/AlertDisplay';
 import { useDirectAlerts } from '@/hooks/useDirectAlerts';
+import { AudioEnabler } from '@/components/AudioEnabler';
 
 const ArtCreateObsAlerts = () => {
   const [obsToken, setObsToken] = useState<string | null>(null);
@@ -58,6 +59,7 @@ const ArtCreateObsAlerts = () => {
 
   return (
     <div className="min-h-screen bg-transparent relative overflow-hidden">
+      <AudioEnabler />
       <AlertDisplay
         donation={currentAlert}
         isVisible={isVisible}

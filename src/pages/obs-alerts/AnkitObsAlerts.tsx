@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { AlertDisplay } from '@/components/AlertDisplay';
 import { useDirectAlerts } from '@/hooks/useDirectAlerts';
 import { generateAndPlayTTS } from '@/utils/donationTTS';
+import { AudioEnabler } from '@/components/AudioEnabler';
 
 const AnkitObsAlerts = () => {
   const [searchParams] = useSearchParams();
@@ -67,6 +68,7 @@ const AnkitObsAlerts = () => {
 
   return (
     <div className="fixed inset-0 bg-transparent">
+      <AudioEnabler />
       <AlertDisplay
         donation={currentAlert}
         isVisible={isVisible}

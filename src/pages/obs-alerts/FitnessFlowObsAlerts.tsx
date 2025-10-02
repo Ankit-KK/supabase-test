@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AlertDisplay } from '@/components/AlertDisplay';
 import { useDirectAlerts } from '@/hooks/useDirectAlerts';
 import { useStreamerLookup } from '@/hooks/useStreamerLookup';
+import { AudioEnabler } from '@/components/AudioEnabler';
 
 const FitnessFlowObsAlerts = () => {
   const [obsToken, setObsToken] = useState<string | null>(null);
@@ -70,6 +71,7 @@ const FitnessFlowObsAlerts = () => {
 
   return (
     <div className="min-h-screen bg-transparent relative overflow-hidden">
+      <AudioEnabler />
       <AlertDisplay
         donation={currentAlert}
         isVisible={isVisible}
