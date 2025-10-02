@@ -29,6 +29,8 @@ export const useDirectAlerts = ({ streamerId, tableName, enabled = true, obsToke
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const retryCountRef = useRef(0);
   const alertedDonationsRef = useRef<Set<string>>(new Set());
+  const alertQueueRef = useRef<Donation[]>([]);
+  const isProcessingRef = useRef(false);
 
   // Validate OBS token once
   const validateToken = useCallback(async () => {
@@ -59,27 +61,45 @@ export const useDirectAlerts = ({ streamerId, tableName, enabled = true, obsToke
     }
   }, [obsToken]);
 
-  // Show alert with auto-hide
-  const showAlert = useCallback((donation: Donation, reason: string) => {
-    console.log('🚨 Direct alert:', donation.name, '₹' + donation.amount, 'Reason:', reason);
-    setCurrentAlert(donation);
+  // Process next alert in queue
+  const processNextAlert = useCallback(() => {
+    if (isProcessingRef.current || alertQueueRef.current.length === 0) {
+      return;
+    }
+    
+    isProcessingRef.current = true;
+    const nextDonation = alertQueueRef.current.shift()!;
+    
+    console.log('🎬 Processing alert from queue:', nextDonation.name, 'Queue length:', alertQueueRef.current.length);
+    setCurrentAlert(nextDonation);
     setIsVisible(true);
 
     // Calculate typing duration (50ms per character, only for text messages without voice)
-    const typingDuration = donation.voice_message_url ? 0 : 
-                          (donation.message?.length || 0) * 50;
+    const typingDuration = nextDonation.voice_message_url ? 0 : 
+                          (nextDonation.message?.length || 0) * 50;
     
     // Base duration + typing duration to ensure message completes
-    const baseDuration = donation.voice_message_url ? 10000 : 
-                        donation.is_hyperemote ? 6000 : 5000;
+    const baseDuration = nextDonation.voice_message_url ? 10000 : 
+                        nextDonation.is_hyperemote ? 6000 : 5000;
     
     const totalDuration = baseDuration + typingDuration;
     
     setTimeout(() => {
       setIsVisible(false);
-      setTimeout(() => setCurrentAlert(null), 500); // Allow fade out
+      setTimeout(() => {
+        setCurrentAlert(null);
+        isProcessingRef.current = false;
+        processNextAlert(); // Process next in queue
+      }, 500); // Allow fade out
     }, totalDuration);
   }, []);
+
+  // Show alert with auto-hide (now queues alerts)
+  const showAlert = useCallback((donation: Donation, reason: string) => {
+    console.log('📥 Adding to alert queue:', donation.name, '₹' + donation.amount, 'Reason:', reason);
+    alertQueueRef.current.push(donation);
+    processNextAlert(); // Try to process immediately if not already processing
+  }, [processNextAlert]);
 
   // Setup direct real-time subscription
   const setupDirectSubscription = useCallback((isTokenValid?: boolean) => {

@@ -8,6 +8,7 @@ const AnkitObsAlerts = () => {
   const [searchParams] = useSearchParams();
   const obsToken = searchParams.get('token');
   const [tokenValid, setTokenValid] = useState<boolean | null>(null);
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
 
   const {
     currentAlert,
@@ -23,26 +24,23 @@ const AnkitObsAlerts = () => {
     obsToken: obsToken || undefined
   });
 
-  // Unlock audio playback for OBS on component mount
-  useEffect(() => {
-    const unlockAudio = async () => {
-      try {
-        // Create silent audio context to unlock autoplay
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const buffer = audioContext.createBuffer(1, 1, 22050);
-        const source = audioContext.createBufferSource();
-        source.buffer = buffer;
-        source.connect(audioContext.destination);
-        source.start(0);
-        await audioContext.resume();
-        console.log('✅ Audio unlocked for OBS');
-      } catch (error) {
-        console.warn('⚠️ Could not unlock audio:', error);
-      }
-    };
-    
-    unlockAudio();
-  }, []);
+  // Handle audio unlock via user gesture
+  const handleUnlockAudio = async () => {
+    try {
+      // Create and resume audio context
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      await audioContext.resume();
+      
+      // Play silent audio to unlock
+      const audio = new Audio('data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAADhAC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7////////////////////////////////////////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABMYXZjNTguMTM0AAAAAAAAAAAAAAAAJAAAAAAAAAAAA4QAAAAAAAAAAAAAAAAAAA==');
+      await audio.play();
+      
+      setAudioUnlocked(true);
+      console.log('✅ Audio unlocked via user gesture');
+    } catch (error) {
+      console.error('❌ Audio unlock failed:', error);
+    }
+  };
 
   // Update local token validation state based on direct alerts
   useEffect(() => {
@@ -88,6 +86,18 @@ const AnkitObsAlerts = () => {
 
   return (
     <div className="fixed inset-0 bg-transparent">
+      {/* Audio unlock overlay */}
+      {!audioUnlocked && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <button
+            onClick={handleUnlockAudio}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors"
+          >
+            🔊 Enable Alerts Audio
+          </button>
+        </div>
+      )}
+      
       <AlertDisplay
         donation={currentAlert}
         isVisible={isVisible}
