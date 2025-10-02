@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AlertDisplay } from '@/components/AlertDisplay';
 import { useDirectAlerts } from '@/hooks/useDirectAlerts';
+import { generateAndPlayTTS } from '@/utils/donationTTS';
 
 const AnkitObsAlerts = () => {
   const [searchParams] = useSearchParams();
@@ -28,6 +29,17 @@ const AnkitObsAlerts = () => {
       setTokenValid(directTokenValid);
     }
   }, [directTokenValid]);
+
+  // Trigger TTS when a new alert appears
+  useEffect(() => {
+    if (isVisible && currentAlert) {
+      generateAndPlayTTS(
+        currentAlert.name,
+        currentAlert.amount,
+        currentAlert.message || ''
+      ).catch(err => console.error('TTS playback failed:', err));
+    }
+  }, [isVisible, currentAlert]);
 
   // Show loading state while validating token
   if (tokenValid === null || directTokenValid === null) {

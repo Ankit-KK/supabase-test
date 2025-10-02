@@ -1,5 +1,8 @@
 project_id = "vsevsjvtrshgeiudrnth"
 
+[functions.generate-donation-tts]
+verify_jwt = false
+
 [functions.manage-telegram-user]
 verify_jwt = false
 

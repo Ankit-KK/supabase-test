@@ -1,0 +1,77 @@
+import { supabase } from "@/integrations/supabase/client";
+
+/**
+ * Converts base64 string to Blob
+ */
+const base64ToBlob = (base64: string, mimeType: string): Blob => {
+  const byteCharacters = atob(base64);
+  const byteNumbers = new Array(byteCharacters.length);
+  
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteNumbers[i] = byteCharacters.charCodeAt(i);
+  }
+  
+  const byteArray = new Uint8Array(byteNumbers);
+  return new Blob([byteArray], { type: mimeType });
+};
+
+/**
+ * Generate and play TTS for donation announcement
+ * @param username - Name of the donor
+ * @param amount - Donation amount
+ * @param message - Optional donation message
+ * @param voiceId - ElevenLabs voice ID (defaults to Kanika voice)
+ */
+export const generateAndPlayTTS = async (
+  username: string,
+  amount: number,
+  message?: string,
+  voiceId: string = 'H6QPv2pQZDcGqLwDTIJQ' // Kanika voice
+): Promise<void> => {
+  try {
+    console.log('Generating TTS for donation:', { username, amount, message });
+
+    const { data, error } = await supabase.functions.invoke('generate-donation-tts', {
+      body: { 
+        username, 
+        amount, 
+        message: message || '',
+        voiceId 
+      }
+    });
+
+    if (error) {
+      console.error('Edge function error:', error);
+      throw error;
+    }
+
+    if (!data?.audioContent) {
+      throw new Error('No audio content received');
+    }
+
+    // Convert base64 to blob
+    const audioBlob = base64ToBlob(data.audioContent, 'audio/mpeg');
+    const audioUrl = URL.createObjectURL(audioBlob);
+
+    // Create and play audio
+    const audio = new Audio(audioUrl);
+    
+    // Cleanup after playback
+    audio.onended = () => {
+      URL.revokeObjectURL(audioUrl);
+      console.log('TTS playback completed');
+    };
+
+    audio.onerror = (err) => {
+      console.error('Audio playback error:', err);
+      URL.revokeObjectURL(audioUrl);
+    };
+
+    await audio.play();
+    console.log('TTS playback started');
+
+  } catch (error) {
+    console.error('TTS generation/playback failed:', error);
+    // Don't throw - we want alerts to work even if TTS fails
+  }
+};
