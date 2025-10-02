@@ -3,6 +3,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import StreamerDashboard from '@/components/dashboard/StreamerDashboard';
+import { DualAudioPlayer } from '@/components/dashboard/DualAudioPlayer';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const AnkitDashboard = () => {
   const { user, loading } = useAuth();
@@ -58,12 +60,28 @@ const AnkitDashboard = () => {
   }
 
   return (
-    <StreamerDashboard
-      streamerSlug="ankit"
-      streamerName="Ankit"
-      brandColor="#3b82f6"
-      tableName="ankit_donations"
-    />
+    <div className="space-y-6">
+      <StreamerDashboard
+        streamerSlug="ankit"
+        streamerName="Ankit"
+        brandColor="#3b82f6"
+        tableName="ankit_donations"
+      />
+      
+      <div className="container mx-auto px-4 pb-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Audio Management</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DualAudioPlayer 
+              tableName="ankit_donations"
+              streamerId={hasAccess ? undefined : undefined}
+            />
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 };
 
