@@ -23,6 +23,27 @@ const AnkitObsAlerts = () => {
     obsToken: obsToken || undefined
   });
 
+  // Unlock audio playback for OBS on component mount
+  useEffect(() => {
+    const unlockAudio = async () => {
+      try {
+        // Create silent audio context to unlock autoplay
+        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        const buffer = audioContext.createBuffer(1, 1, 22050);
+        const source = audioContext.createBufferSource();
+        source.buffer = buffer;
+        source.connect(audioContext.destination);
+        source.start(0);
+        await audioContext.resume();
+        console.log('✅ Audio unlocked for OBS');
+      } catch (error) {
+        console.warn('⚠️ Could not unlock audio:', error);
+      }
+    };
+    
+    unlockAudio();
+  }, []);
+
   // Update local token validation state based on direct alerts
   useEffect(() => {
     if (directTokenValid !== null) {

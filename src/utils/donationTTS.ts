@@ -53,8 +53,11 @@ export const generateAndPlayTTS = async (
     const audioBlob = base64ToBlob(data.audioContent, 'audio/mpeg');
     const audioUrl = URL.createObjectURL(audioBlob);
 
-    // Create and play audio
+    // Create and configure audio for OBS autoplay
     const audio = new Audio(audioUrl);
+    audio.volume = 1.0;
+    audio.autoplay = true;
+    audio.muted = false;
     
     // Cleanup after playback
     audio.onended = () => {
@@ -67,8 +70,23 @@ export const generateAndPlayTTS = async (
       URL.revokeObjectURL(audioUrl);
     };
 
-    await audio.play();
-    console.log('TTS playback started');
+    // Try to play with retry logic
+    try {
+      await audio.play();
+      console.log('TTS playback started');
+    } catch (playError) {
+      console.warn('First play attempt failed, retrying...', playError);
+      // Retry after brief delay
+      setTimeout(async () => {
+        try {
+          await audio.play();
+          console.log('TTS playback started (retry successful)');
+        } catch (retryError) {
+          console.error('Audio playback failed after retry:', retryError);
+          URL.revokeObjectURL(audioUrl);
+        }
+      }, 100);
+    }
 
   } catch (error) {
     console.error('TTS generation/playback failed:', error);
