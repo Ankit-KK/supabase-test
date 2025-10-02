@@ -21,6 +21,8 @@ interface SubscriptionInfo {
   lastAttempt: number;
   referenceCount: number;
   callbacks: Set<string>;
+  circuitBreakerResets: number;
+  isCleaningUp: boolean;
 }
 
 // Global subscription registry with reference counting
@@ -31,6 +33,9 @@ const subscriptionLocks = new Set<string>();
 
 // Debouncing for reconnection attempts
 const reconnectionDebounceTimeouts = new Map<string, NodeJS.Timeout>();
+
+// Global connection health tracking
+let lastSuccessfulConnection: number = 0;
 
 export const useRealtimeSubscription = (options: RealtimeSubscriptionOptions) => {
   const { streamerId, streamerSlug, onDonationUpdate, enabled = true } = options;
@@ -60,6 +65,16 @@ export const useRealtimeSubscription = (options: RealtimeSubscriptionOptions) =>
     return tableMap[slug] || 'chia_gaming_donations';
   }, []);
 
+  const checkSupabaseHealth = useCallback(async (): Promise<boolean> => {
+    try {
+      const { error } = await supabase.from('streamers').select('id').limit(1);
+      return !error;
+    } catch (error) {
+      console.error('🏥 Health check failed:', error);
+      return false;
+    }
+  }, []);
+
   const scheduleReconnect = useCallback((subscriptionKey: string, retryCount: number) => {
     // Clear any existing debounce timeout
     const existingDebounce = reconnectionDebounceTimeouts.get(subscriptionKey);
@@ -69,23 +84,61 @@ export const useRealtimeSubscription = (options: RealtimeSubscriptionOptions) =>
 
     // Implement circuit breaker pattern
     const maxRetries = 5;
+    const maxCircuitBreakerResets = 3;
     const baseDelay = 2000;
-    const jitter = Math.random() * 1000; // Add jitter to prevent thundering herd
+    const jitter = Math.random() * 1000;
     const delay = Math.min(baseDelay * Math.pow(2, retryCount), 30000) + jitter;
 
     if (retryCount >= maxRetries) {
-      console.log('❌ Max reconnection attempts reached, implementing circuit breaker');
+      const subscription = globalSubscriptions.get(subscriptionKey);
+      if (!subscription) return;
+
+      const currentResets = subscription.circuitBreakerResets || 0;
+      
+      if (currentResets >= maxCircuitBreakerResets) {
+        console.log('❌ Circuit breaker exhausted after 3 resets, stopping reconnection');
+        setConnectionState({ status: 'disconnected', error: 'Connection exhausted' });
+        return;
+      }
+
+      console.log(`❌ Max retries reached, circuit breaker reset ${currentResets + 1}/${maxCircuitBreakerResets}`);
       setConnectionState({ status: 'disconnected', error: 'Max retries exceeded' });
       
-      // Circuit breaker: try again after a longer delay
-      const circuitBreakerTimeout = setTimeout(() => {
-        const subscription = globalSubscriptions.get(subscriptionKey);
-        if (subscription && subscription.referenceCount > 0) {
-          console.log('🔄 Circuit breaker reset, attempting reconnection');
-          subscription.retryCount = 0; // Reset retry count
-          scheduleReconnect(subscriptionKey, 0);
+      // Progressive circuit breaker delays: 60s, 5min, 15min
+      const circuitBreakerDelays = [60000, 300000, 900000];
+      const cbDelay = circuitBreakerDelays[currentResets] || 900000;
+      
+      const circuitBreakerTimeout = setTimeout(async () => {
+        const sub = globalSubscriptions.get(subscriptionKey);
+        if (!sub || sub.referenceCount === 0 || sub.isCleaningUp) return;
+
+        // Health check before attempting reconnection
+        console.log('🏥 Checking Supabase health before circuit breaker reset...');
+        const isHealthy = await checkSupabaseHealth();
+        
+        if (!isHealthy) {
+          console.log('❌ Health check failed, skipping circuit breaker reset');
+          sub.circuitBreakerResets++;
+          scheduleReconnect(subscriptionKey, maxRetries); // Try again with circuit breaker
+          return;
         }
-      }, 60000); // 1 minute circuit breaker delay
+
+        console.log('✅ Health check passed, resetting circuit breaker');
+        sub.retryCount = 0;
+        sub.circuitBreakerResets++;
+        
+        // If ANY subscription succeeded recently, reset all circuit breakers
+        const timeSinceLastSuccess = Date.now() - lastSuccessfulConnection;
+        if (timeSinceLastSuccess < 120000) { // Within 2 minutes
+          console.log('🔄 Recent successful connection detected, resetting all circuit breakers');
+          for (const [_, s] of globalSubscriptions.entries()) {
+            s.circuitBreakerResets = 0;
+            s.retryCount = 0;
+          }
+        }
+        
+        createSubscription(subscriptionKey);
+      }, cbDelay);
       
       reconnectionDebounceTimeouts.set(subscriptionKey, circuitBreakerTimeout);
       return;
@@ -94,16 +147,15 @@ export const useRealtimeSubscription = (options: RealtimeSubscriptionOptions) =>
     const debounceTimeout = setTimeout(() => {
       reconnectionDebounceTimeouts.delete(subscriptionKey);
       
-      // Check if subscription still needed
       const subscription = globalSubscriptions.get(subscriptionKey);
-      if (subscription && subscription.referenceCount > 0) {
+      if (subscription && subscription.referenceCount > 0 && !subscription.isCleaningUp) {
         console.log(`🔄 Attempting reconnection #${retryCount + 1} for ${subscriptionKey}`);
         createSubscription(subscriptionKey);
       }
     }, delay);
 
     reconnectionDebounceTimeouts.set(subscriptionKey, debounceTimeout);
-  }, []);
+  }, [checkSupabaseHealth]);
 
   const createSubscription = useCallback((subscriptionKey: string) => {
     // Check subscription lock to prevent concurrent operations
@@ -143,7 +195,7 @@ export const useRealtimeSubscription = (options: RealtimeSubscriptionOptions) =>
           
           // Notify all registered callbacks
           const subscription = globalSubscriptions.get(subscriptionKey);
-          if (subscription) {
+          if (subscription && !subscription.isCleaningUp) {
             subscription.callbacks.forEach(callbackId => {
               const callback = componentCallbacks.get(callbackId);
               if (callback) {
@@ -157,16 +209,19 @@ export const useRealtimeSubscription = (options: RealtimeSubscriptionOptions) =>
           }
         }
       )
-      .subscribe((status) => {
+      .subscribe(async (status) => {
         console.log('🔗 Global subscription status:', status);
         const subscription = globalSubscriptions.get(subscriptionKey);
         
         if (status === 'SUBSCRIBED') {
           setConnectionState({ status: 'connected' });
           console.log('✅ Successfully connected to centralized real-time updates');
-          if (subscription) {
+          lastSuccessfulConnection = Date.now();
+          
+          if (subscription && !subscription.isCleaningUp) {
             subscription.status = 'subscribed';
             subscription.retryCount = 0;
+            subscription.circuitBreakerResets = 0;
           }
           // Release lock on successful subscription
           subscriptionLocks.delete(subscriptionKey);
@@ -177,16 +232,29 @@ export const useRealtimeSubscription = (options: RealtimeSubscriptionOptions) =>
           // Release lock on error
           subscriptionLocks.delete(subscriptionKey);
           
-          if (subscription) {
+          if (subscription && !subscription.isCleaningUp) {
             subscription.status = 'failed';
             subscription.retryCount++;
             
-            // Properly dispose of the failed channel
+            // Set cleanup flag to prevent callback recursion
+            subscription.isCleaningUp = true;
+            
+            // Unsubscribe before removing to prevent recursive callbacks
+            try {
+              await subscription.channel.unsubscribe();
+            } catch (error) {
+              console.error('Error unsubscribing failed channel:', error);
+            }
+            
+            // Now safely remove the channel
             try {
               supabase.removeChannel(subscription.channel);
             } catch (error) {
               console.error('Error removing failed channel:', error);
             }
+            
+            // Reset cleanup flag
+            subscription.isCleaningUp = false;
             
             // Schedule reconnection with debouncing and circuit breaker
             scheduleReconnect(subscriptionKey, subscription.retryCount);
@@ -203,7 +271,9 @@ export const useRealtimeSubscription = (options: RealtimeSubscriptionOptions) =>
         retryCount: 0,
         lastAttempt: Date.now(),
         referenceCount: 0,
-        callbacks: new Set()
+        callbacks: new Set(),
+        circuitBreakerResets: 0,
+        isCleaningUp: false
       };
       globalSubscriptions.set(subscriptionKey, subscriptionInfo);
     } else {
@@ -211,6 +281,7 @@ export const useRealtimeSubscription = (options: RealtimeSubscriptionOptions) =>
       subscriptionInfo.channel = channel;
       subscriptionInfo.status = 'subscribing';
       subscriptionInfo.lastAttempt = Date.now();
+      subscriptionInfo.isCleaningUp = false;
     }
   }, [streamerId, streamerSlug, getTableName, scheduleReconnect]);
 
@@ -253,7 +324,7 @@ export const useRealtimeSubscription = (options: RealtimeSubscriptionOptions) =>
     }
 
     // Return cleanup function for this component
-    return () => {
+    return async () => {
       const subscription = globalSubscriptions.get(subscriptionKey);
       if (subscription) {
         // Decrement reference count and remove callback
@@ -266,7 +337,17 @@ export const useRealtimeSubscription = (options: RealtimeSubscriptionOptions) =>
         if (subscription.referenceCount === 0) {
           console.log('🧹 No more references, cleaning up subscription:', subscriptionKey);
           
-          // Clean up channel
+          // Set cleanup flag to prevent recursive callbacks
+          subscription.isCleaningUp = true;
+          
+          // Unsubscribe before removing to prevent callback recursion
+          try {
+            await subscription.channel.unsubscribe();
+          } catch (error) {
+            console.error('Error unsubscribing during cleanup:', error);
+          }
+          
+          // Now safely remove the channel
           try {
             supabase.removeChannel(subscription.channel);
           } catch (error) {
@@ -318,7 +399,7 @@ export const useRealtimeSubscription = (options: RealtimeSubscriptionOptions) =>
 };
 
 // Utility function to manually clean up all subscriptions (for app-level cleanup)
-export const cleanupAllRealtimeSubscriptions = () => {
+export const cleanupAllRealtimeSubscriptions = async () => {
   console.log('🧹 Emergency cleanup of all global real-time subscriptions');
   
   // Clear all subscription locks
@@ -326,11 +407,20 @@ export const cleanupAllRealtimeSubscriptions = () => {
   
   // Clean up all subscriptions
   for (const [key, subscriptionInfo] of globalSubscriptions.entries()) {
+    subscriptionInfo.isCleaningUp = true;
+    
+    try {
+      await subscriptionInfo.channel.unsubscribe();
+    } catch (error) {
+      console.error('Error unsubscribing during emergency cleanup:', error);
+    }
+    
     try {
       supabase.removeChannel(subscriptionInfo.channel);
     } catch (error) {
       console.error('Error removing channel during emergency cleanup:', error);
     }
+    
     globalSubscriptions.delete(key);
   }
   
