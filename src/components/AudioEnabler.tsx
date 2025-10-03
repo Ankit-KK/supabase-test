@@ -1,38 +1,30 @@
 import React, { useEffect } from 'react';
-import { initializeAudioForOBS } from '@/utils/audioInitializer';
+import { initializeAudioForOBS, AudioStatus } from '@/utils/audioInitializer';
 
 /**
  * AudioEnabler component
- * Automatically enables audio playback in OBS without user interaction
- * Uses silent audio preload technique to unlock browser audio permissions
+ * Detects OBS audio status and logs appropriate messages
+ * Web Speech API works regardless of OBS audio control setting
  */
 export const AudioEnabler: React.FC = () => {
   useEffect(() => {
-    const enableAudioAutomatically = async () => {
-      try {
-        // Attempt automatic initialization
-        const success = await initializeAudioForOBS();
-        
-        if (!success) {
-          // Retry after 500ms if failed
-          console.log('Retrying audio initialization...');
-          setTimeout(async () => {
-            await initializeAudioForOBS();
-          }, 500);
-        }
-      } catch (error) {
-        console.error('Audio auto-enable error:', error);
+    const checkAudioStatus = async () => {
+      const status: AudioStatus = await initializeAudioForOBS();
+      
+      if (status === 'suspended') {
+        console.warn('⚠️ OBS SETUP REQUIRED: Enable "Control Audio via OBS" in Browser Source properties');
+        console.warn('📝 Right-click Browser Source → Properties → Check "Control Audio via OBS"');
+        console.log('ℹ️ Web Speech API will still work for TTS announcements');
+      } else if (status === 'ready') {
+        console.log('✅ Audio system ready - All TTS methods available');
       }
     };
 
-    // Run on component mount
-    enableAudioAutomatically();
-
-    // Also run on window load as fallback
-    window.addEventListener('load', enableAudioAutomatically);
+    checkAudioStatus();
+    window.addEventListener('load', checkAudioStatus);
     
     return () => {
-      window.removeEventListener('load', enableAudioAutomatically);
+      window.removeEventListener('load', checkAudioStatus);
     };
   }, []);
 

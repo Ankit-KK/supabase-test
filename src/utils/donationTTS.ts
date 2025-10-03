@@ -28,9 +28,29 @@ export const generateAndPlayTTS = async (
   message?: string,
   voiceId: string = 'H6QPv2pQZDcGqLwDTIJQ' // Kanika voice
 ): Promise<void> => {
-  try {
-    console.log('🎤 Generating TTS for donation:', { username, amount, message });
+  const donationText = message 
+    ? `${username} donated ${amount} rupees. ${message}`
+    : `${username} donated ${amount} rupees. Thank you!`;
 
+  console.log('🎤 Generating TTS for donation:', { username, amount, message });
+
+  // PRIMARY METHOD: Web Speech API (works without OBS audio control)
+  try {
+    console.log('🗣️ Using Web Speech API (primary method)');
+    const utterance = new SpeechSynthesisUtterance(donationText);
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+    
+    window.speechSynthesis.speak(utterance);
+    console.log('✅ Web Speech API TTS initiated');
+    return; // Success - exit early
+  } catch (webSpeechError) {
+    console.warn('⚠️ Web Speech API failed, trying ElevenLabs:', webSpeechError);
+  }
+
+  // FALLBACK METHOD: ElevenLabs TTS (requires "Control Audio via OBS" setting)
+  try {
     // Ensure AudioContext is resumed before generating TTS
     try {
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -66,14 +86,14 @@ export const generateAndPlayTTS = async (
 
     // Create and configure audio for OBS autoplay
     const audio = new Audio(audioUrl);
-    audio.muted = false;  // Explicitly unmuted
+    audio.muted = false;
     audio.volume = 1.0;
     audio.autoplay = true;
     
     // Cleanup after playback
     audio.onended = () => {
       URL.revokeObjectURL(audioUrl);
-      console.log('✅ TTS playback completed');
+      console.log('✅ ElevenLabs TTS playback completed');
     };
 
     audio.onerror = (err) => {
@@ -81,44 +101,10 @@ export const generateAndPlayTTS = async (
       URL.revokeObjectURL(audioUrl);
     };
 
-    // Enhanced retry logic with progressive delays
-    const playWithRetry = async (attempts = 3) => {
-      for (let i = 0; i < attempts; i++) {
-        try {
-          await audio.play();
-          console.log(`✅ TTS playing (attempt ${i + 1})`);
-          return;
-        } catch (err) {
-          console.warn(`Play attempt ${i + 1} failed:`, err);
-          if (i === attempts - 1) {
-            throw err;
-          }
-          // Progressive delay: 100ms, 200ms, 300ms
-          await new Promise(resolve => setTimeout(resolve, 100 * (i + 1)));
-        }
-      }
-    };
-
-    await playWithRetry();
+    await audio.play();
+    console.log('✅ ElevenLabs TTS playing');
 
   } catch (error) {
-    console.error('❌ TTS generation/playback failed:', error);
-    
-    // Fallback to Web Speech API (bypasses autoplay restrictions)
-    try {
-      const fallbackText = message 
-        ? `${username} donated ${amount} rupees. ${message}`
-        : `${username} donated ${amount} rupees. Thank you!`;
-      
-      console.log('🔄 Trying Web Speech API fallback');
-      const utterance = new SpeechSynthesisUtterance(fallbackText);
-      utterance.rate = 1.0;
-      utterance.pitch = 1.0;
-      utterance.volume = 1.0;
-      window.speechSynthesis.speak(utterance);
-      console.log('✅ Web Speech API fallback succeeded');
-    } catch (fallbackError) {
-      console.error('❌ Web Speech API fallback also failed:', fallbackError);
-    }
+    console.error('❌ All TTS methods failed:', error);
   }
 };

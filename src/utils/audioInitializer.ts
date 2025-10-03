@@ -1,24 +1,26 @@
 /**
  * Global Audio Initializer for OBS Browser Sources
- * Automatically enables audio playback without user interaction
+ * Detects if audio can play automatically (requires OBS "Control Audio via OBS")
  */
 
 let audioInitialized = false;
 
-export const initializeAudioForOBS = async (): Promise<boolean> => {
+export type AudioStatus = 'ready' | 'suspended' | 'blocked';
+
+export const initializeAudioForOBS = async (): Promise<AudioStatus> => {
   if (audioInitialized) {
     console.log('🔊 Audio already initialized');
-    return true;
+    return 'ready';
   }
   
   try {
     // Create AudioContext
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
     
-    // Resume AudioContext if suspended (unlocks audio)
+    // Check if audio is blocked by autoplay policy
     if (ctx.state === 'suspended') {
-      await ctx.resume();
-      console.log('✅ AudioContext resumed from suspended state');
+      console.warn('⚠️ AudioContext suspended - Enable "Control Audio via OBS" in Browser Source settings');
+      return 'suspended';
     }
     
     // Play a silent 1ms oscillator tone to warm up the audio system
@@ -32,16 +34,15 @@ export const initializeAudioForOBS = async (): Promise<boolean> => {
     oscillator.start(ctx.currentTime);
     oscillator.stop(ctx.currentTime + 0.001); // Stop after 1ms
     
-    console.log('✅ Silent oscillator warm-up completed');
+    console.log('✅ Audio system ready for OBS');
     
     audioInitialized = true;
     localStorage.setItem('audio_initialized', Date.now().toString());
     
-    console.log('🔊 Audio system initialized for OBS');
-    return true;
+    return 'ready';
   } catch (error) {
     console.error('❌ Audio initialization failed:', error);
-    return false;
+    return 'blocked';
   }
 };
 
