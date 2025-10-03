@@ -32,69 +32,8 @@ export const generateAndPlayTTS = async (
     ? `${username} donated ${amount} rupees. ${message}`
     : `${username} donated ${amount} rupees. Thank you!`;
 
-  console.log('🎤 Generating TTS for donation:', { username, amount, message });
+  console.log('🎤 Generating ElevenLabs TTS for donation:', { username, amount, message });
 
-  // PRIMARY METHOD: Web Speech API (works without OBS audio control)
-  try {
-    console.log('🗣️ Attempting Web Speech API (primary method)');
-    console.log('Browser:', navigator.userAgent.includes('OBS') ? 'OBS CEF' : 'Regular');
-    
-    // Wait for voices to be loaded
-    let voices = window.speechSynthesis.getVoices();
-    if (voices.length === 0) {
-      console.log('⏳ Waiting for voices to load...');
-      await new Promise<void>((resolve) => {
-        window.speechSynthesis.onvoiceschanged = () => resolve();
-        setTimeout(() => resolve(), 1000); // Timeout after 1s
-      });
-      voices = window.speechSynthesis.getVoices();
-    }
-    
-    console.log('Available voices:', voices.length);
-    
-    if (voices.length === 0) {
-      throw new Error('No voices available in Web Speech API');
-    }
-    
-    const utterance = new SpeechSynthesisUtterance(donationText);
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
-    utterance.volume = 1.0;
-    
-    // Wrap in Promise to detect actual success/failure
-    await new Promise<void>((resolve, reject) => {
-      utterance.onend = () => {
-        console.log('✅ Web Speech API completed successfully');
-        resolve();
-      };
-      
-      utterance.onerror = (event) => {
-        console.error('❌ Web Speech API error:', event);
-        reject(new Error(`Speech synthesis error: ${event.error}`));
-      };
-      
-      // Timeout if nothing happens in 2 seconds
-      const timeout = setTimeout(() => {
-        reject(new Error('Web Speech API timeout - no response after 2s'));
-      }, 2000);
-      
-      utterance.onend = () => {
-        clearTimeout(timeout);
-        console.log('✅ Web Speech API completed successfully');
-        resolve();
-      };
-      
-      window.speechSynthesis.speak(utterance);
-      console.log('🎤 Web Speech API utterance queued');
-    });
-    
-    // If we reach here, Web Speech API worked - exit early
-    return;
-  } catch (webSpeechError) {
-    console.warn('⚠️ Web Speech API failed, falling back to ElevenLabs:', webSpeechError);
-  }
-
-  // FALLBACK METHOD: ElevenLabs TTS (requires "Control Audio via OBS" setting)
   try {
     // Ensure AudioContext is resumed before generating TTS
     try {
@@ -150,6 +89,6 @@ export const generateAndPlayTTS = async (
     console.log('✅ ElevenLabs TTS playing');
 
   } catch (error) {
-    console.error('❌ All TTS methods failed:', error);
+    console.error('❌ ElevenLabs TTS failed:', error);
   }
 };
