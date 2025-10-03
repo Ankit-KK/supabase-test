@@ -5,9 +5,6 @@
 
 let audioInitialized = false;
 
-// Base64 encoded silent MP3 (1 second)
-const SILENT_AUDIO_BASE64 = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAADhAC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7v///////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAA4T/';
-
 export const initializeAudioForOBS = async (): Promise<boolean> => {
   if (audioInitialized) {
     console.log('🔊 Audio already initialized');
@@ -15,21 +12,27 @@ export const initializeAudioForOBS = async (): Promise<boolean> => {
   }
   
   try {
-    // Play MUTED silent audio (muted autoplay is always allowed)
-    const silent = new Audio(SILENT_AUDIO_BASE64);
-    silent.muted = true;
-    await silent.play();
-    console.log('✅ Muted warm-up audio played');
-    
-    // Unmute for future audio playback
-    silent.muted = false;
-    
-    // Resume AudioContext if suspended
+    // Create AudioContext
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    
+    // Resume AudioContext if suspended (unlocks audio)
     if (ctx.state === 'suspended') {
       await ctx.resume();
-      console.log('✅ AudioContext resumed');
+      console.log('✅ AudioContext resumed from suspended state');
     }
+    
+    // Play a silent 1ms oscillator tone to warm up the audio system
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    
+    gainNode.gain.value = 0.001; // Nearly silent
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    
+    oscillator.start(ctx.currentTime);
+    oscillator.stop(ctx.currentTime + 0.001); // Stop after 1ms
+    
+    console.log('✅ Silent oscillator warm-up completed');
     
     audioInitialized = true;
     localStorage.setItem('audio_initialized', Date.now().toString());
