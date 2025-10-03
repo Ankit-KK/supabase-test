@@ -66,9 +66,9 @@ export const generateAndPlayTTS = async (
 
     // Create and configure audio for OBS autoplay
     const audio = new Audio(audioUrl);
+    audio.muted = false;  // Explicitly unmuted
     audio.volume = 1.0;
     audio.autoplay = true;
-    audio.muted = false;
     
     // Cleanup after playback
     audio.onended = () => {
@@ -103,6 +103,22 @@ export const generateAndPlayTTS = async (
 
   } catch (error) {
     console.error('❌ TTS generation/playback failed:', error);
-    // Don't throw - we want alerts to work even if TTS fails
+    
+    // Fallback to Web Speech API (bypasses autoplay restrictions)
+    try {
+      const fallbackText = message 
+        ? `${username} donated ${amount} rupees. ${message}`
+        : `${username} donated ${amount} rupees. Thank you!`;
+      
+      console.log('🔄 Trying Web Speech API fallback');
+      const utterance = new SpeechSynthesisUtterance(fallbackText);
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+      window.speechSynthesis.speak(utterance);
+      console.log('✅ Web Speech API fallback succeeded');
+    } catch (fallbackError) {
+      console.error('❌ Web Speech API fallback also failed:', fallbackError);
+    }
   }
 };

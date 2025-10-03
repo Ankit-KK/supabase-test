@@ -15,10 +15,14 @@ export const initializeAudioForOBS = async (): Promise<boolean> => {
   }
   
   try {
-    // Play silent audio to unlock browser audio permissions
+    // Play MUTED silent audio (muted autoplay is always allowed)
     const silent = new Audio(SILENT_AUDIO_BASE64);
-    silent.volume = 0.01;
+    silent.muted = true;
     await silent.play();
+    console.log('✅ Muted warm-up audio played');
+    
+    // Unmute for future audio playback
+    silent.muted = false;
     
     // Resume AudioContext if suspended
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -37,6 +41,13 @@ export const initializeAudioForOBS = async (): Promise<boolean> => {
     return false;
   }
 };
+
+// Auto-initialize on window load (as recommended by Chrome docs)
+if (typeof window !== 'undefined') {
+  window.addEventListener('load', () => {
+    initializeAudioForOBS();
+  });
+}
 
 export const isAudioInitialized = (): boolean => {
   return audioInitialized || !!localStorage.getItem('audio_initialized');
