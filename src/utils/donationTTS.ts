@@ -31,6 +31,17 @@ export const generateAndPlayTTS = async (
   try {
     console.log('🎤 Generating TTS for donation:', { username, amount, message });
 
+    // Ensure AudioContext is resumed before generating TTS
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+        console.log('✅ AudioContext resumed before TTS');
+      }
+    } catch (ctxError) {
+      console.warn('AudioContext check failed:', ctxError);
+    }
+
     const { data, error } = await supabase.functions.invoke('generate-donation-tts', {
       body: { 
         username, 
@@ -62,34 +73,36 @@ export const generateAndPlayTTS = async (
     // Cleanup after playback
     audio.onended = () => {
       URL.revokeObjectURL(audioUrl);
-      console.log('TTS playback completed');
+      console.log('✅ TTS playback completed');
     };
 
     audio.onerror = (err) => {
-      console.error('Audio playback error:', err);
+      console.error('❌ Audio playback error:', err);
       URL.revokeObjectURL(audioUrl);
     };
 
-    // Try to play with retry logic
-    try {
-      await audio.play();
-      console.log('TTS playback started');
-    } catch (playError) {
-      console.warn('First play attempt failed, retrying...', playError);
-      // Retry after brief delay
-      setTimeout(async () => {
+    // Enhanced retry logic with progressive delays
+    const playWithRetry = async (attempts = 3) => {
+      for (let i = 0; i < attempts; i++) {
         try {
           await audio.play();
-          console.log('TTS playback started (retry successful)');
-        } catch (retryError) {
-          console.error('Audio playback failed after retry:', retryError);
-          URL.revokeObjectURL(audioUrl);
+          console.log(`✅ TTS playing (attempt ${i + 1})`);
+          return;
+        } catch (err) {
+          console.warn(`Play attempt ${i + 1} failed:`, err);
+          if (i === attempts - 1) {
+            throw err;
+          }
+          // Progressive delay: 100ms, 200ms, 300ms
+          await new Promise(resolve => setTimeout(resolve, 100 * (i + 1)));
         }
-      }, 100);
-    }
+      }
+    };
+
+    await playWithRetry();
 
   } catch (error) {
-    console.error('TTS generation/playback failed:', error);
+    console.error('❌ TTS generation/playback failed:', error);
     // Don't throw - we want alerts to work even if TTS fails
   }
 };
