@@ -23,6 +23,7 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
   const [donations, setDonations] = useState<Donation[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [autoPlay, setAutoPlay] = useState(false);
+  const [autoPlayEnabledAt, setAutoPlayEnabledAt] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchVoiceDonations = useCallback(async () => {
@@ -122,13 +123,19 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
     }
   }, [donations.length]);
 
+  const handleAutoPlayChange = useCallback((enabled: boolean) => {
+    setAutoPlay(enabled);
+    setAutoPlayEnabledAt(enabled ? Date.now() : null);
+  }, []);
+
   return {
     donations,
     currentDonation,
     currentIndex,
     totalDonations: donations.length,
     autoPlay,
-    setAutoPlay,
+    autoPlayEnabledAt,
+    setAutoPlay: handleAutoPlayChange,
     loading,
     goToNext,
     goToPrevious,

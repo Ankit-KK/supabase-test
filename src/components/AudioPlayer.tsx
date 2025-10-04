@@ -20,6 +20,7 @@ interface AudioPlayerProps {
   donation: Donation | null;
   onNext?: () => void;
   autoPlay?: boolean;
+  autoPlayEnabledAt?: number | null;
   onAutoPlayChange?: (enabled: boolean) => void;
 }
 
@@ -27,6 +28,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   donation,
   onNext,
   autoPlay = false,
+  autoPlayEnabledAt,
   onAutoPlayChange
 }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -81,7 +83,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
 
     // If has voice message, use it
     if (donation.voice_message_url) {
-      if (autoPlay) {
+      // Only autoplay if donation arrived after autoplay was enabled
+      const donationTime = new Date(donation.created_at).getTime();
+      if (autoPlay && autoPlayEnabledAt && donationTime >= autoPlayEnabledAt) {
         handlePlay();
       }
       return;
@@ -95,7 +99,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
           setIsGeneratingTTS(false);
           if (audioUrl) {
             setGeneratedTTSUrl(audioUrl);
-            if (autoPlay) {
+            // Only autoplay if donation arrived after autoplay was enabled
+            const donationTime = new Date(donation.created_at).getTime();
+            if (autoPlay && autoPlayEnabledAt && donationTime >= autoPlayEnabledAt) {
               setTimeout(() => handlePlay(), 100);
             }
           } else {
@@ -103,7 +109,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
           }
         });
     }
-  }, [donation?.id, autoPlay]);
+  }, [donation?.id]);
 
   // Cleanup blob URLs on unmount
   useEffect(() => {

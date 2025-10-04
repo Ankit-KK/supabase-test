@@ -13,6 +13,7 @@ const TechGamerAudioPlayer = () => {
     currentIndex,
     totalDonations,
     autoPlay,
+    autoPlayEnabledAt,
     setAutoPlay,
     loading,
     goToNext,
@@ -85,6 +86,7 @@ const TechGamerAudioPlayer = () => {
             donation={currentDonation}
             onNext={goToNext}
             autoPlay={autoPlay}
+            autoPlayEnabledAt={autoPlayEnabledAt}
             onAutoPlayChange={setAutoPlay}
           />
         </div>

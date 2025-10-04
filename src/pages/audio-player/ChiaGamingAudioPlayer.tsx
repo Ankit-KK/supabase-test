@@ -11,6 +11,7 @@ const ChiaGamingAudioPlayer = () => {
     currentIndex,
     totalDonations,
     autoPlay,
+    autoPlayEnabledAt,
     setAutoPlay,
     loading,
     goToNext,
@@ -88,6 +89,7 @@ const ChiaGamingAudioPlayer = () => {
           donation={currentDonation}
           onNext={goToNext}
           autoPlay={autoPlay}
+          autoPlayEnabledAt={autoPlayEnabledAt}
           onAutoPlayChange={setAutoPlay}
         />
 

@@ -11,6 +11,7 @@ const AnkitAudioPlayer = () => {
     currentIndex,
     totalDonations,
     autoPlay,
+    autoPlayEnabledAt,
     setAutoPlay,
     loading,
     goToNext,
@@ -88,6 +89,7 @@ const AnkitAudioPlayer = () => {
           donation={currentDonation}
           onNext={goToNext}
           autoPlay={autoPlay}
+          autoPlayEnabledAt={autoPlayEnabledAt}
           onAutoPlayChange={setAutoPlay}
         />
 

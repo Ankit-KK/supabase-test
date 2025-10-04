@@ -13,6 +13,7 @@ const MusicStreamAudioPlayer = () => {
     currentIndex,
     totalDonations,
     autoPlay,
+    autoPlayEnabledAt,
     setAutoPlay,
     loading,
     goToNext,
@@ -85,6 +86,7 @@ const MusicStreamAudioPlayer = () => {
             donation={currentDonation}
             onNext={goToNext}
             autoPlay={autoPlay}
+            autoPlayEnabledAt={autoPlayEnabledAt}
             onAutoPlayChange={setAutoPlay}
           />
         </div>
