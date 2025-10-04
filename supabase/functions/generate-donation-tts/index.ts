@@ -38,36 +38,63 @@ serve(async (req) => {
 
     console.log('Detected language:', targetLanguage);
 
-    // Call Sarvam AI API
+    // Test API key configuration
+    console.log('SARVAM_API_KEY configured:', SARVAM_API_KEY ? `Yes (length: ${SARVAM_API_KEY.length})` : 'No');
+
+    // Prepare request payload
+    const requestPayload = {
+      text: donationText,
+      target_language_code: targetLanguage,
+      speaker: "manisha",
+      pitch: 0,
+      pace: 1.1,
+      loudness: 1.2,
+      speech_sample_rate: 22050,
+      enable_preprocessing: true,
+      model: "bulbul:v2"
+    };
+    console.log('Sarvam AI request payload:', JSON.stringify(requestPayload));
+
+    // Call Sarvam AI API with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+    console.log('Calling Sarvam AI API...');
     const response = await fetch('https://api.sarvam.ai/text-to-speech', {
+      signal: controller.signal,
       method: 'POST',
       headers: {
         'API-Subscription-Key': SARVAM_API_KEY,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        text: donationText,
-        target_language_code: targetLanguage,
-        speaker: "manisha",
-        pitch: 0,
-        pace: 1.1,
-        loudness: 1.2,
-        speech_sample_rate: 22050,
-        enable_preprocessing: true,
-        model: "bulbul:v2"
-      }),
+      body: JSON.stringify(requestPayload),
+    });
+
+    clearTimeout(timeoutId);
+    console.log('Sarvam AI API response received:', {
+      status: response.status,
+      statusText: response.statusText,
+      contentType: response.headers.get('content-type')
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Sarvam AI API error:', response.status, errorText);
-      throw new Error(`Sarvam AI API error: ${response.status}`);
+      console.error('Sarvam AI API error details:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+      throw new Error(`Sarvam AI API error: ${response.status} - ${errorText}`);
     }
 
     // Get audio as array buffer
+    console.log('Reading audio buffer...');
     const audioBuffer = await response.arrayBuffer();
+    console.log('Audio buffer size:', audioBuffer.byteLength, 'bytes');
     
     // Convert to base64 using chunked approach to avoid stack overflow
+    console.log('Converting to base64...');
     const uint8Array = new Uint8Array(audioBuffer);
     let binary = '';
     const chunkSize = 8192;
@@ -76,7 +103,9 @@ serve(async (req) => {
       binary += String.fromCharCode.apply(null, Array.from(chunk));
     }
     const base64Audio = btoa(binary);
+    console.log('Base64 audio length:', base64Audio.length, 'characters');
 
+    console.log('TTS generation successful, returning audio content');
     return new Response(
       JSON.stringify({ audioContent: base64Audio }),
       {
@@ -85,6 +114,8 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('TTS generation error:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Error name:', error.name);
     return new Response(
       JSON.stringify({ error: error.message }),
       {
