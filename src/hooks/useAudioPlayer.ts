@@ -72,12 +72,17 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
         },
         (payload) => {
           console.log('Voice donation update:', payload);
-          // Check if the update involves a voice message
+          
+          // Check if the update involves a voice message OR text message
           const hasVoiceMessage = (payload.new as any)?.voice_message_url || 
                                   (payload.old as any)?.voice_message_url;
+          const hasTextMessage = (payload.new as any)?.message;
+          const isApproved = (payload.new as any)?.moderation_status === 'approved' ||
+                             (payload.new as any)?.moderation_status === 'auto_approved';
+          const isSuccessful = (payload.new as any)?.payment_status === 'success';
           
-          if (hasVoiceMessage) {
-            console.log('Voice message donation detected, refreshing...');
+          if ((hasVoiceMessage || hasTextMessage) && isApproved && isSuccessful) {
+            console.log('Donation with audio/text detected, refreshing...');
             // Small delay to ensure database consistency
             setTimeout(fetchVoiceDonations, 500);
           }
