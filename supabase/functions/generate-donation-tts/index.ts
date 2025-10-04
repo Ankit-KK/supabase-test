@@ -14,48 +14,54 @@ serve(async (req) => {
   }
 
   try {
-    const { username, amount, message, voiceId = 'H6QPv2pQZDcGqLwDTIJQ' } = await req.json();
+    const { username, amount, message } = await req.json();
 
     if (!username || !amount) {
       throw new Error('Username and amount are required');
     }
 
-    const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
-    if (!ELEVENLABS_API_KEY) {
-      throw new Error('ELEVENLABS_API_KEY is not configured');
+    const SARVAM_API_KEY = Deno.env.get('SARVAM_API_KEY');
+    if (!SARVAM_API_KEY) {
+      throw new Error('SARVAM_API_KEY is not configured');
     }
 
-    // Format the donation announcement (keep it short for faster TTS)
+    // Format the donation announcement
     const donationText = message 
       ? `${username} donated ${amount} rupees. ${message}`
       : `${username} donated ${amount} rupees. Thank you!`;
 
-    console.log('Generating TTS for:', donationText, 'Voice:', voiceId);
+    console.log('Generating TTS with Sarvam AI for:', donationText);
 
-    // Call ElevenLabs API with optimized settings
-    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+    // Detect Hindi text (Devanagari script)
+    const containsHindi = /[\u0900-\u097F]/.test(donationText);
+    const targetLanguage = containsHindi ? "hi-IN" : "en-IN";
+
+    console.log('Detected language:', targetLanguage);
+
+    // Call Sarvam AI API
+    const response = await fetch('https://api.sarvam.ai/text-to-speech', {
       method: 'POST',
       headers: {
-        'xi-api-key': ELEVENLABS_API_KEY,
+        'API-Subscription-Key': SARVAM_API_KEY,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         text: donationText,
-        model_id: 'eleven_turbo_v2_5', // Faster model for lower latency
-        voice_settings: {
-          stability: 0.6,
-          similarity_boost: 0.8,
-          style: 0.3, // More natural
-          use_speaker_boost: true
-        },
-        optimize_streaming_latency: 3, // Optimize for speed
+        target_language_code: targetLanguage,
+        speaker: "manisha",
+        pitch: 0,
+        pace: 1.1,
+        loudness: 1.2,
+        speech_sample_rate: 22050,
+        enable_preprocessing: true,
+        model: "bulbul:v2"
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('ElevenLabs API error:', response.status, errorText);
-      throw new Error(`ElevenLabs API error: ${response.status}`);
+      console.error('Sarvam AI API error:', response.status, errorText);
+      throw new Error(`Sarvam AI API error: ${response.status}`);
     }
 
     // Get audio as array buffer

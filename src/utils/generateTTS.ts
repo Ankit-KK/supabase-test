@@ -43,7 +43,7 @@ export async function generateTTS(
     }
 
     // Convert base64 to blob URL
-    const audioBlob = base64ToBlob(data.audioContent, 'audio/mpeg');
+    const audioBlob = base64ToBlob(data.audioContent, 'audio/wav');
     const blobUrl = URL.createObjectURL(audioBlob);
 
     // Cache the result
