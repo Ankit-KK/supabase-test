@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { resumeAudioContext } from "./audioInitializer";
 
 // TTS Queue to prevent overlapping audio
 let ttsQueue: Array<() => Promise<void>> = [];
@@ -108,16 +109,8 @@ const playTTSWithRetry = async (
     try {
       console.log(`🎤 TTS attempt ${attempt}/${retries + 1} for: ${username}`);
 
-      // Ensure AudioContext is ready
-      try {
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        if (audioContext.state === 'suspended') {
-          await audioContext.resume();
-          console.log('✅ AudioContext resumed');
-        }
-      } catch (ctxError) {
-        console.warn('⚠️ AudioContext check failed:', ctxError);
-      }
+      // Resume AudioContext before playing (handles OBS suspended state)
+      await resumeAudioContext();
 
       // Call edge function (ElevenLabs has built-in timeout)
       const { data, error } = await supabase.functions.invoke('generate-donation-tts', {
@@ -170,7 +163,7 @@ const playTTSWithRetry = async (
  * Play audio with multiple fallback methods
  */
 const playAudioWithFallback = async (audioUrl: string, text: string): Promise<void> => {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     const audio = new Audio(audioUrl);
     currentAudio = audio;
     
@@ -210,16 +203,28 @@ const playAudioWithFallback = async (audioUrl: string, text: string): Promise<vo
       }
     }, 30000);
 
+    // Resume AudioContext one more time right before playing
+    await resumeAudioContext();
+
     // Try to play
-    audio.play().catch((playError) => {
-      console.error('❌ Audio.play() failed:', playError);
-      if (!resolved) {
-        resolved = true;
-        URL.revokeObjectURL(audioUrl);
-        currentAudio = null;
-        reject(playError);
-      }
-    });
+    const playPromise = audio.play();
+    
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          console.log('✅ Audio started playing');
+        })
+        .catch((playError) => {
+          console.error('❌ Audio.play() blocked by browser:', playError);
+          console.warn('💡 Enable "Control Audio via OBS" in Browser Source properties');
+          if (!resolved) {
+            resolved = true;
+            URL.revokeObjectURL(audioUrl);
+            currentAudio = null;
+            reject(playError);
+          }
+        });
+    }
   });
 };
 

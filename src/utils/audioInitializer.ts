@@ -4,8 +4,39 @@
  */
 
 let audioInitialized = false;
+let globalAudioContext: AudioContext | null = null;
 
 export type AudioStatus = 'ready' | 'suspended' | 'blocked';
+
+/**
+ * Get or create the global AudioContext instance
+ */
+export const getAudioContext = (): AudioContext => {
+  if (!globalAudioContext) {
+    globalAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+  }
+  return globalAudioContext;
+};
+
+/**
+ * Resume the AudioContext if it's suspended
+ */
+export const resumeAudioContext = async (): Promise<boolean> => {
+  try {
+    const ctx = getAudioContext();
+    
+    if (ctx.state === 'suspended') {
+      await ctx.resume();
+      console.log('✅ AudioContext resumed successfully');
+      return true;
+    }
+    
+    return ctx.state === 'running';
+  } catch (error) {
+    console.error('❌ Failed to resume AudioContext:', error);
+    return false;
+  }
+};
 
 export const initializeAudioForOBS = async (): Promise<AudioStatus> => {
   if (audioInitialized) {
@@ -14,8 +45,8 @@ export const initializeAudioForOBS = async (): Promise<AudioStatus> => {
   }
   
   try {
-    // Create AudioContext
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    // Get or create AudioContext
+    const ctx = getAudioContext();
     
     // Check if audio is blocked by autoplay policy
     if (ctx.state === 'suspended') {

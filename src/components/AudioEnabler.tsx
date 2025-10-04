@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
-import { initializeAudioForOBS, AudioStatus } from '@/utils/audioInitializer';
+import { initializeAudioForOBS, AudioStatus, resumeAudioContext } from '@/utils/audioInitializer';
 
 /**
  * AudioEnabler component
  * Detects OBS audio status and logs appropriate messages
- * Web Speech API works regardless of OBS audio control setting
+ * Automatically attempts to resume AudioContext when alerts arrive
  */
 export const AudioEnabler: React.FC = () => {
   useEffect(() => {
@@ -12,19 +12,23 @@ export const AudioEnabler: React.FC = () => {
       const status: AudioStatus = await initializeAudioForOBS();
       
       if (status === 'suspended') {
-        console.warn('⚠️ OBS SETUP REQUIRED: Enable "Control Audio via OBS" in Browser Source properties');
+        console.warn('⚠️ OBS SETUP RECOMMENDED: Enable "Control Audio via OBS" in Browser Source properties');
         console.warn('📝 Right-click Browser Source → Properties → Check "Control Audio via OBS"');
-        console.log('ℹ️ Web Speech API will still work for TTS announcements');
+        console.log('ℹ️ Audio will auto-resume when alerts arrive, or use Web Speech API as fallback');
       } else if (status === 'ready') {
-        console.log('✅ Audio system ready - All TTS methods available');
+        console.log('✅ Audio system ready - ElevenLabs TTS available');
       }
     };
 
     checkAudioStatus();
-    window.addEventListener('load', checkAudioStatus);
+    
+    // Attempt to resume AudioContext periodically (helps with OBS)
+    const resumeInterval = setInterval(async () => {
+      await resumeAudioContext();
+    }, 5000);
     
     return () => {
-      window.removeEventListener('load', checkAudioStatus);
+      clearInterval(resumeInterval);
     };
   }, []);
 
