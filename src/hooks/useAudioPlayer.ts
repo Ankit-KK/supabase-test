@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Donation {
@@ -25,6 +25,7 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
   const [autoPlay, setAutoPlay] = useState(false);
   const [autoPlayEnabledAt, setAutoPlayEnabledAt] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchVoiceDonations = useCallback(async () => {
     try {
@@ -83,8 +84,14 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
           
           if ((hasVoiceMessage || hasTextMessage) && isApproved && isSuccessful) {
             console.log('Donation with audio/text detected, refreshing...');
-            // Small delay to ensure database consistency
-            setTimeout(fetchVoiceDonations, 500);
+            // Debounce: Clear previous timeout and set new one
+            if (refreshTimeoutRef.current) {
+              clearTimeout(refreshTimeoutRef.current);
+            }
+            refreshTimeoutRef.current = setTimeout(() => {
+              console.log('Executing debounced refresh');
+              fetchVoiceDonations();
+            }, 1000); // Wait 1 second after last update
           }
         }
       )
@@ -99,6 +106,9 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
 
     return () => {
       supabase.removeChannel(channel);
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
     };
   }, [fetchVoiceDonations, tableName]);
 

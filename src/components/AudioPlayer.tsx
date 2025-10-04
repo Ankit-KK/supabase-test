@@ -32,6 +32,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   onAutoPlayChange
 }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const previousDonationIdRef = useRef<string | null>(null);
+  const audioUrlRef = useRef<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -39,6 +41,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   const [isMuted, setIsMuted] = useState(false);
   const [generatedTTSUrl, setGeneratedTTSUrl] = useState<string | null>(null);
   const [isGeneratingTTS, setIsGeneratingTTS] = useState(false);
+  const [ttsRetryCount, setTtsRetryCount] = useState(0);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -75,29 +78,43 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   useEffect(() => {
     if (!donation) return;
 
-    // Reset TTS state
-    setGeneratedTTSUrl(null);
-    setIsGeneratingTTS(false);
+    // Check if this is the same donation (avoid regenerating during rapid updates)
+    if (donation.id === previousDonationIdRef.current && generatedTTSUrl) {
+      console.log('Same donation, preserving existing TTS');
+      return;
+    }
+
+    // New donation - update ref and reset state
+    previousDonationIdRef.current = donation.id;
     setIsPlaying(false);
     setCurrentTime(0);
+    setTtsRetryCount(0);
 
     // If has voice message, use it
     if (donation.voice_message_url) {
+      // Cleanup old TTS if exists
+      if (generatedTTSUrl) {
+        URL.revokeObjectURL(generatedTTSUrl);
+        setGeneratedTTSUrl(null);
+      }
+      audioUrlRef.current = donation.voice_message_url;
+      
       // Only autoplay if donation arrived after autoplay was enabled
       const donationTime = new Date(donation.created_at).getTime();
       if (autoPlay && autoPlayEnabledAt && donationTime >= autoPlayEnabledAt) {
-        handlePlay();
+        setTimeout(() => handlePlay(), 100);
       }
       return;
     }
 
     // If has text message but no voice, generate TTS
-    if (donation.message) {
+    if (donation.message && !generatedTTSUrl) {
       setIsGeneratingTTS(true);
       generateTTS(donation.name, donation.amount, donation.message)
         .then(({ audioUrl, error }) => {
           setIsGeneratingTTS(false);
           if (audioUrl) {
+            audioUrlRef.current = audioUrl;
             setGeneratedTTSUrl(audioUrl);
             // Only autoplay if donation arrived after autoplay was enabled
             const donationTime = new Date(donation.created_at).getTime();
@@ -128,6 +145,34 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
       setIsPlaying(true);
     } catch (error) {
       console.error('Error playing audio:', error);
+      
+      // Retry once if blob URL failed and we can regenerate TTS
+      if (error instanceof Error && 
+          error.message.includes('Not Found') && 
+          donation?.message && 
+          ttsRetryCount === 0) {
+        console.log('Blob URL failed, regenerating TTS...');
+        setTtsRetryCount(1);
+        setIsGeneratingTTS(true);
+        
+        // Cleanup old URL
+        if (generatedTTSUrl) {
+          URL.revokeObjectURL(generatedTTSUrl);
+        }
+        
+        // Regenerate TTS
+        generateTTS(donation.name, donation.amount, donation.message)
+          .then(({ audioUrl, error }) => {
+            setIsGeneratingTTS(false);
+            if (audioUrl) {
+              audioUrlRef.current = audioUrl;
+              setGeneratedTTSUrl(audioUrl);
+              setTimeout(() => handlePlay(), 100);
+            } else {
+              toast.error('Failed to regenerate speech: ' + (error || 'Unknown error'));
+            }
+          });
+      }
     }
   };
 
