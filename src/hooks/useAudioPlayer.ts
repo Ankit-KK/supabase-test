@@ -32,7 +32,7 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
       let query = supabase
         .from(tableName)
         .select('id, name, amount, message, voice_message_url, created_at, moderation_status, payment_status')
-        .not('voice_message_url', 'is', null)
+        .or('voice_message_url.not.is.null,message.not.is.null')
         .in('moderation_status', ['approved', 'auto_approved'])
         .eq('payment_status', 'success')
         .order('created_at', { ascending: true });

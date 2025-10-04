@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Play, Pause, SkipBack, Volume2, VolumeX } from 'lucide-react';
+import { Play, Pause, SkipBack, Volume2, VolumeX, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { generateTTS, cleanupTTSCache } from '@/utils/generateTTS';
+import { toast } from 'sonner';
 
 interface Donation {
   id: string;
@@ -33,6 +35,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(0.8);
   const [isMuted, setIsMuted] = useState(false);
+  const [generatedTTSUrl, setGeneratedTTSUrl] = useState<string | null>(null);
+  const [isGeneratingTTS, setIsGeneratingTTS] = useState(false);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -65,11 +69,50 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     }
   }, [volume, isMuted]);
 
+  // Generate TTS for text-only donations
   useEffect(() => {
-    if (donation?.voice_message_url && autoPlay) {
-      handlePlay();
+    if (!donation) return;
+
+    // Reset TTS state
+    setGeneratedTTSUrl(null);
+    setIsGeneratingTTS(false);
+    setIsPlaying(false);
+    setCurrentTime(0);
+
+    // If has voice message, use it
+    if (donation.voice_message_url) {
+      if (autoPlay) {
+        handlePlay();
+      }
+      return;
     }
-  }, [donation?.voice_message_url, autoPlay]);
+
+    // If has text message but no voice, generate TTS
+    if (donation.message) {
+      setIsGeneratingTTS(true);
+      generateTTS(donation.name, donation.amount, donation.message)
+        .then(({ audioUrl, error }) => {
+          setIsGeneratingTTS(false);
+          if (audioUrl) {
+            setGeneratedTTSUrl(audioUrl);
+            if (autoPlay) {
+              setTimeout(() => handlePlay(), 100);
+            }
+          } else {
+            toast.error('Failed to generate speech: ' + (error || 'Unknown error'));
+          }
+        });
+    }
+  }, [donation?.id, autoPlay]);
+
+  // Cleanup blob URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (generatedTTSUrl) {
+        URL.revokeObjectURL(generatedTTSUrl);
+      }
+    };
+  }, [generatedTTSUrl]);
 
   const handlePlay = async () => {
     if (!audioRef.current) return;
@@ -107,10 +150,47 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  if (!donation || !donation.voice_message_url) {
+  if (!donation) {
     return (
       <div className="bg-card rounded-lg p-6 text-center">
-        <p className="text-muted-foreground">No voice message to play</p>
+        <p className="text-muted-foreground">No message to play</p>
+      </div>
+    );
+  }
+
+  const audioUrl = donation.voice_message_url || generatedTTSUrl;
+
+  if (isGeneratingTTS) {
+    return (
+      <div className="bg-card rounded-lg p-6 space-y-4">
+        <div className="text-center">
+          <h3 className="font-semibold text-lg">{donation.name}</h3>
+          <p className="text-primary font-medium">₹{donation.amount}</p>
+          {donation.message && (
+            <p className="text-sm text-muted-foreground mt-1">{donation.message}</p>
+          )}
+        </div>
+        <div className="flex items-center justify-center gap-2 text-muted-foreground py-8">
+          <Loader2 className="w-5 h-5 animate-spin" />
+          <p>Generating speech...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!audioUrl) {
+    return (
+      <div className="bg-card rounded-lg p-6 space-y-4">
+        <div className="text-center">
+          <h3 className="font-semibold text-lg">{donation.name}</h3>
+          <p className="text-primary font-medium">₹{donation.amount}</p>
+          {donation.message && (
+            <p className="text-sm text-muted-foreground mt-1">{donation.message}</p>
+          )}
+        </div>
+        <div className="text-center text-muted-foreground py-4">
+          <p>No audio available</p>
+        </div>
       </div>
     );
   }
@@ -119,7 +199,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     <div className="bg-card rounded-lg p-6 space-y-4">
       <audio
         ref={audioRef}
-        src={donation.voice_message_url}
+        src={audioUrl}
         preload="metadata"
       />
       
