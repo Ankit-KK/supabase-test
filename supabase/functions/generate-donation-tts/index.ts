@@ -51,7 +51,8 @@ serve(async (req) => {
       loudness: 1.2,
       speech_sample_rate: 22050,
       enable_preprocessing: true,
-      model: "bulbul:v2"
+      model: "bulbul:v2",
+      output_audio_codec: "wav"
     };
     console.log('Sarvam AI request payload:', JSON.stringify(requestPayload));
 
@@ -88,21 +89,21 @@ serve(async (req) => {
       throw new Error(`Sarvam AI API error: ${response.status} - ${errorText}`);
     }
 
-    // Get audio as array buffer
-    console.log('Reading audio buffer...');
-    const audioBuffer = await response.arrayBuffer();
-    console.log('Audio buffer size:', audioBuffer.byteLength, 'bytes');
-    
-    // Convert to base64 using chunked approach to avoid stack overflow
-    console.log('Converting to base64...');
-    const uint8Array = new Uint8Array(audioBuffer);
-    let binary = '';
-    const chunkSize = 8192;
-    for (let i = 0; i < uint8Array.length; i += chunkSize) {
-      const chunk = uint8Array.subarray(i, i + chunkSize);
-      binary += String.fromCharCode.apply(null, Array.from(chunk));
+    // Sarvam AI returns JSON with base64-encoded audio in the 'audios' array
+    console.log('Parsing JSON response...');
+    const jsonResponse = await response.json();
+    console.log('JSON response structure:', {
+      hasRequestId: !!jsonResponse.request_id,
+      hasAudios: !!jsonResponse.audios,
+      audiosLength: jsonResponse.audios?.length
+    });
+
+    if (!jsonResponse.audios || jsonResponse.audios.length === 0) {
+      throw new Error('No audio data in response');
     }
-    const base64Audio = btoa(binary);
+
+    // The audio is already base64-encoded in the response
+    const base64Audio = jsonResponse.audios[0];
     console.log('Base64 audio length:', base64Audio.length, 'characters');
 
     console.log('TTS generation successful, returning audio content');
