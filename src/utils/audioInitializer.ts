@@ -20,6 +20,7 @@ export const getAudioContext = (): AudioContext => {
 
 /**
  * Resume the AudioContext if it's suspended
+ * Silently fails during initial page load (within 5 seconds)
  */
 export const resumeAudioContext = async (): Promise<boolean> => {
   try {
@@ -33,24 +34,26 @@ export const resumeAudioContext = async (): Promise<boolean> => {
     
     return ctx.state === 'running';
   } catch (error) {
-    console.error('❌ Failed to resume AudioContext:', error);
+    // Silently suppress errors during initial page load grace period
+    const pageLoadTime = Date.now() - (window.performance?.timing?.navigationStart || Date.now());
+    if (pageLoadTime > 5000) {
+      console.warn('⚠️ AudioContext resume failed (enable "Control Audio via OBS")');
+    }
     return false;
   }
 };
 
 export const initializeAudioForOBS = async (): Promise<AudioStatus> => {
   if (audioInitialized) {
-    console.log('🔊 Audio already initialized');
     return 'ready';
   }
   
   try {
-    // Get or create AudioContext
+    // Get or create AudioContext (lazy initialization)
     const ctx = getAudioContext();
     
     // Check if audio is blocked by autoplay policy
     if (ctx.state === 'suspended') {
-      console.warn('⚠️ AudioContext suspended - Enable "Control Audio via OBS" in Browser Source settings');
       return 'suspended';
     }
     
@@ -65,24 +68,19 @@ export const initializeAudioForOBS = async (): Promise<AudioStatus> => {
     oscillator.start(ctx.currentTime);
     oscillator.stop(ctx.currentTime + 0.001); // Stop after 1ms
     
-    console.log('✅ Audio system ready for OBS');
+    console.log('✅ Audio system initialized');
     
     audioInitialized = true;
     localStorage.setItem('audio_initialized', Date.now().toString());
     
     return 'ready';
   } catch (error) {
-    console.error('❌ Audio initialization failed:', error);
+    // Silently fail during grace period
     return 'blocked';
   }
 };
 
-// Auto-initialize on window load (as recommended by Chrome docs)
-if (typeof window !== 'undefined') {
-  window.addEventListener('load', () => {
-    initializeAudioForOBS();
-  });
-}
+// Don't auto-initialize - let it happen lazily when first alert arrives
 
 export const isAudioInitialized = (): boolean => {
   return audioInitialized || !!localStorage.getItem('audio_initialized');
