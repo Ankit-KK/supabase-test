@@ -25,14 +25,14 @@ serve(async (req) => {
       throw new Error('ELEVENLABS_API_KEY is not configured');
     }
 
-    // Format the donation announcement
+    // Format the donation announcement (keep it short for faster TTS)
     const donationText = message 
-      ? `🎉 New donation received! ${username} just donated ${amount} rupees! ${message}`
-      : `🎉 New donation received! ${username} just donated ${amount} rupees!`;
+      ? `${username} donated ${amount} rupees. ${message}`
+      : `${username} donated ${amount} rupees. Thank you!`;
 
-    console.log('Generating TTS for:', donationText);
+    console.log('Generating TTS for:', donationText, 'Voice:', voiceId);
 
-    // Call ElevenLabs API
+    // Call ElevenLabs API with optimized settings
     const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: 'POST',
       headers: {
@@ -41,12 +41,14 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         text: donationText,
-        model_id: 'eleven_multilingual_v2',
+        model_id: 'eleven_turbo_v2_5', // Faster model for lower latency
         voice_settings: {
-          stability: 0.5,
-          similarity_boost: 0.75,
-          speed: 0.8,
+          stability: 0.6,
+          similarity_boost: 0.8,
+          style: 0.3, // More natural
+          use_speaker_boost: true
         },
+        optimize_streaming_latency: 3, // Optimize for speed
       }),
     });
 
