@@ -177,39 +177,6 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   const handlePlay = async () => {
     if (!audioRef.current) return;
     
-    // Verify blob URL is still valid before playing
-    const audioUrl = audioUrlRef.current || generatedTTSUrl;
-    if (audioUrl && audioUrl.startsWith('blob:')) {
-      try {
-        // Quick check if blob is accessible
-        await fetch(audioUrl, { method: 'HEAD' });
-      } catch (blobError) {
-        console.warn('Blob URL revoked, regenerating TTS');
-        
-        if (donation?.message && ttsRetryCount === 0) {
-          setTtsRetryCount(1);
-          setIsGeneratingTTS(true);
-          
-          const { audioUrl: newUrl, error } = await generateTTS(
-            donation.name,
-            donation.amount,
-            donation.message
-          );
-          
-          setIsGeneratingTTS(false);
-          
-          if (newUrl) {
-            audioUrlRef.current = newUrl;
-            setGeneratedTTSUrl(newUrl);
-            setTimeout(() => handlePlay(), 100);
-          } else {
-            toast.error('Failed to regenerate speech: ' + (error || 'Unknown error'));
-          }
-          return;
-        }
-      }
-    }
-    
     try {
       await audioRef.current.play();
       setIsPlaying(true);
