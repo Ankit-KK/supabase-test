@@ -77,35 +77,42 @@ export class StreamingTTS {
       const projectRef = 'vsevsjvtrshgeiudrnth';
       this.ws = new WebSocket(`wss://${projectRef}.supabase.co/functions/v1/stream-donation-tts`);
 
-      this.ws.onopen = () => {
-        console.log('WebSocket connected');
-        
-        // Send configuration
-        this.ws!.send(JSON.stringify({
-          type: 'config',
-          data: {
-            speaker: this.config.speaker || 'manisha',
-            target_language_code: this.config.targetLanguageCode || 'en-IN',
-            pitch: this.config.pitch || 0,
-            pace: this.config.pace || 1.1,
-            loudness: this.config.loudness || 1.2,
-            speech_sample_rate: 24000,
-            enable_preprocessing: true,
-            model: 'bulbul:v2',
-            output_audio_codec: 'wav',
-            min_buffer_size: 50,
-            max_chunk_length: 200,
-          }
-        }));
+      const timeout = setTimeout(() => {
+        reject(new Error('Connection timeout'));
+      }, 5000);
 
-        resolve();
+      this.ws.onopen = () => {
+        console.log('WebSocket connected, waiting for ready signal');
       };
 
       this.ws.onmessage = async (event) => {
         try {
           const message = JSON.parse(event.data);
           
-          if (message.type === 'audio') {
+          if (message.type === 'ready') {
+            console.log('Sarvam AI ready, sending config');
+            clearTimeout(timeout);
+            
+            // Send configuration after ready signal
+            this.ws!.send(JSON.stringify({
+              type: 'config',
+              data: {
+                speaker: this.config.speaker || 'manisha',
+                target_language_code: this.config.targetLanguageCode || 'en-IN',
+                pitch: this.config.pitch || 0,
+                pace: this.config.pace || 1.1,
+                loudness: this.config.loudness || 1.2,
+                speech_sample_rate: 24000,
+                enable_preprocessing: true,
+                model: 'bulbul:v2',
+                output_audio_codec: 'wav',
+                min_buffer_size: 50,
+                max_chunk_length: 200,
+              }
+            }));
+            
+            resolve();
+          } else if (message.type === 'audio') {
             // Decode base64 audio chunk
             const audioData = Uint8Array.from(atob(message.data.audio), c => c.charCodeAt(0));
             
@@ -118,6 +125,7 @@ export class StreamingTTS {
             }
           } else if (message.type === 'error') {
             console.error('Streaming TTS error:', message.message);
+            clearTimeout(timeout);
             if (this.config.onError) {
               this.config.onError(message.message);
             }
@@ -134,6 +142,7 @@ export class StreamingTTS {
 
       this.ws.onerror = (error) => {
         console.error('WebSocket error:', error);
+        clearTimeout(timeout);
         reject(error);
       };
 

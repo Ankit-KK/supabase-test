@@ -29,8 +29,9 @@ serve(async (req) => {
 
   socket.onopen = () => {
     console.log("Client connected to edge function");
-    // Connect to Sarvam AI
-    sarvamSocket = new WebSocket("wss://api.sarvam.ai/text-to-speech-stream");
+    // Connect to Sarvam AI with API key in URL
+    const sarvamUrl = `wss://api.sarvam.ai/text-to-speech-stream?api_subscription_key=${SARVAM_API_KEY}`;
+    sarvamSocket = new WebSocket(sarvamUrl);
     
     sarvamSocket.onopen = () => {
       console.log("Edge function connected to Sarvam AI");
