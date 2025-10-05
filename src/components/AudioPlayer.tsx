@@ -107,39 +107,25 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
       return;
     }
 
-    // If has text message but no voice, generate TTS with streaming
+    // If has text message but no voice, generate TTS
     if (donation.message && !generatedTTSUrl) {
       setIsGeneratingTTS(true);
       
-      // Try streaming TTS first for lower latency
-      import('@/utils/streamingTTS').then(({ streamDonationTTS }) => {
-        return streamDonationTTS(donation.name, donation.amount, donation.message);
-      }).then(() => {
-        // Streaming TTS handles playback automatically
-        setIsGeneratingTTS(false);
-        toast('Audio streaming started', { 
-          description: 'Playing donation message with low-latency streaming' 
-        });
-      }).catch(error => {
-        console.warn('Streaming TTS failed, falling back to regular TTS:', error);
-        
-        // Fallback to regular TTS generation
-        return generateTTS(donation.name, donation.amount, donation.message)
-          .then(({ audioUrl, error }) => {
-            setIsGeneratingTTS(false);
-            if (audioUrl) {
-              audioUrlRef.current = audioUrl;
-              setGeneratedTTSUrl(audioUrl);
-              // Only autoplay if donation arrived after autoplay was enabled
-              const donationTime = new Date(donation.created_at).getTime();
-              if (autoPlay && autoPlayEnabledAt && donationTime >= autoPlayEnabledAt) {
-                setTimeout(() => handlePlay(), 100);
-              }
-            } else {
-              toast.error('Failed to generate speech: ' + (error || 'Unknown error'));
+      generateTTS(donation.name, donation.amount, donation.message)
+        .then(({ audioUrl, error }) => {
+          setIsGeneratingTTS(false);
+          if (audioUrl) {
+            audioUrlRef.current = audioUrl;
+            setGeneratedTTSUrl(audioUrl);
+            // Only autoplay if donation arrived after autoplay was enabled
+            const donationTime = new Date(donation.created_at).getTime();
+            if (autoPlay && autoPlayEnabledAt && donationTime >= autoPlayEnabledAt) {
+              setTimeout(() => handlePlay(), 100);
             }
-          });
-      });
+          } else {
+            toast.error('Failed to generate speech: ' + (error || 'Unknown error'));
+          }
+        });
     }
   }, [donation?.id]);
 
