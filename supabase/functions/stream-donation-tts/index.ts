@@ -29,9 +29,8 @@ serve(async (req) => {
 
   socket.onopen = () => {
     console.log("Client connected to edge function");
-    // Connect to Sarvam AI with API key in URL
-    const sarvamUrl = `wss://api.sarvam.ai/text-to-speech-stream?api_subscription_key=${SARVAM_API_KEY}`;
-    sarvamSocket = new WebSocket(sarvamUrl);
+    // Connect to Sarvam AI (API key will be sent in config message)
+    sarvamSocket = new WebSocket("wss://api.sarvam.ai/text-to-speech-stream");
     
     sarvamSocket.onopen = () => {
       console.log("Edge function connected to Sarvam AI");
@@ -75,21 +74,21 @@ serve(async (req) => {
           type: "config",
           data: {
             api_subscription_key: SARVAM_API_KEY,
-            speaker: message.data?.speaker || "anushka",
+            speaker: message.data?.speaker || "manisha",
             target_language_code: message.data?.target_language_code || "hi-IN",
             pitch: message.data?.pitch || 0,
-            pace: message.data?.pace || 1.0,
-            loudness: message.data?.loudness || 1.5,
-            output_audio_codec: message.data?.output_audio_codec || "mp3",
-            output_audio_bitrate: message.data?.output_audio_bitrate || "128k",
-            min_buffer_size: message.data?.min_buffer_size || 50,
-            max_chunk_length: message.data?.max_chunk_length || 200
+            pace: message.data?.pace || 1.1,
+            loudness: message.data?.loudness || 1.2,
+            speech_sample_rate: message.data?.speech_sample_rate || 22050,
+            enable_preprocessing: message.data?.enable_preprocessing !== false,
+            model: message.data?.model || "bulbul:v2",
+            output_audio_codec: message.data?.output_audio_codec || "wav"
           }
         };
         
         sarvamSocket.send(JSON.stringify(configMessage));
         configReceived = true;
-        console.log("Config sent to Sarvam with API key");
+        console.log("Config sent to Sarvam with API key in data");
       } else if (message.type === "text") {
         if (!configReceived) {
           console.error("Config not sent before text");
