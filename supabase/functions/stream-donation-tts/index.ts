@@ -6,7 +6,6 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -20,27 +19,32 @@ serve(async (req) => {
 
   const SARVAM_API_KEY = Deno.env.get('SARVAM_API_KEY');
   if (!SARVAM_API_KEY) {
+    console.error("SARVAM_API_KEY not configured");
     return new Response("SARVAM_API_KEY not configured", { status: 500 });
   }
 
   const { socket, response } = Deno.upgradeWebSocket(req);
-  
   let sarvamSocket: WebSocket | null = null;
+  let configReceived = false;
 
   socket.onopen = () => {
-    console.log("Client WebSocket connected");
-    
-    // Connect to Sarvam AI streaming endpoint
+    console.log("Client connected to edge function");
+    // Connect to Sarvam AI
     sarvamSocket = new WebSocket("wss://api.sarvam.ai/text-to-speech-stream");
     
     sarvamSocket.onopen = () => {
-      console.log("Connected to Sarvam AI");
+      console.log("Edge function connected to Sarvam AI");
       socket.send(JSON.stringify({ type: "ready" }));
     };
 
     sarvamSocket.onmessage = (event) => {
-      // Forward audio chunks from Sarvam to client
-      socket.send(event.data);
+      try {
+        const data = JSON.parse(event.data);
+        console.log("Received from Sarvam:", data.type);
+        socket.send(event.data);
+      } catch (e) {
+        console.error("Error parsing Sarvam message:", e);
+      }
     };
 
     sarvamSocket.onerror = (error) => {
@@ -48,8 +52,8 @@ serve(async (req) => {
       socket.send(JSON.stringify({ type: "error", message: "Sarvam connection error" }));
     };
 
-    sarvamSocket.onclose = () => {
-      console.log("Sarvam WebSocket closed");
+    sarvamSocket.onclose = (event) => {
+      console.log("Sarvam WebSocket closed:", event.code, event.reason);
       socket.close();
     };
   };
@@ -57,26 +61,51 @@ serve(async (req) => {
   socket.onmessage = (event) => {
     try {
       const message = JSON.parse(event.data);
+      console.log("Received from client:", message.type);
       
+      if (!sarvamSocket || sarvamSocket.readyState !== WebSocket.OPEN) {
+        console.error("Sarvam WebSocket not ready");
+        socket.send(JSON.stringify({ type: "error", message: "Connection not ready" }));
+        return;
+      }
+
       if (message.type === "config") {
-        // Forward config with API key
-        if (sarvamSocket && sarvamSocket.readyState === WebSocket.OPEN) {
-          const configMessage = {
-            type: "config",
-            data: {
-              ...message.data,
-              api_subscription_key: SARVAM_API_KEY,
-            }
-          };
-          sarvamSocket.send(JSON.stringify(configMessage));
-          console.log("Config sent to Sarvam AI");
+        const configMessage = {
+          type: "config",
+          data: {
+            api_subscription_key: SARVAM_API_KEY,
+            speaker: message.data?.speaker || "anushka",
+            target_language_code: message.data?.target_language_code || "hi-IN",
+            pitch: message.data?.pitch || 0,
+            pace: message.data?.pace || 1.0,
+            loudness: message.data?.loudness || 1.5,
+            output_audio_codec: message.data?.output_audio_codec || "mp3",
+            output_audio_bitrate: message.data?.output_audio_bitrate || "128k",
+            min_buffer_size: message.data?.min_buffer_size || 50,
+            max_chunk_length: message.data?.max_chunk_length || 200
+          }
+        };
+        
+        sarvamSocket.send(JSON.stringify(configMessage));
+        configReceived = true;
+        console.log("Config sent to Sarvam with API key");
+      } else if (message.type === "text") {
+        if (!configReceived) {
+          console.error("Config not sent before text");
+          socket.send(JSON.stringify({ type: "error", message: "Send config first" }));
+          return;
         }
-      } else if (message.type === "text" || message.type === "flush" || message.type === "ping") {
-        // Forward text/flush/ping messages
-        if (sarvamSocket && sarvamSocket.readyState === WebSocket.OPEN) {
-          sarvamSocket.send(JSON.stringify(message));
-          console.log(`${message.type} message forwarded to Sarvam AI`);
-        }
+        sarvamSocket.send(JSON.stringify({
+          type: "text",
+          data: { text: message.data?.text || "" }
+        }));
+        console.log("Text forwarded to Sarvam");
+      } else if (message.type === "flush") {
+        sarvamSocket.send(JSON.stringify({ type: "flush" }));
+        console.log("Flush sent to Sarvam");
+      } else if (message.type === "ping") {
+        sarvamSocket.send(JSON.stringify({ type: "ping" }));
+        console.log("Ping sent to Sarvam");
       }
     } catch (error) {
       console.error("Error processing client message:", error);
@@ -85,15 +114,15 @@ serve(async (req) => {
   };
 
   socket.onclose = () => {
-    console.log("Client WebSocket disconnected");
-    if (sarvamSocket) {
+    console.log("Client disconnected");
+    if (sarvamSocket && sarvamSocket.readyState === WebSocket.OPEN) {
       sarvamSocket.close();
     }
   };
 
   socket.onerror = (error) => {
     console.error("Client WebSocket error:", error);
-    if (sarvamSocket) {
+    if (sarvamSocket && sarvamSocket.readyState === WebSocket.OPEN) {
       sarvamSocket.close();
     }
   };
