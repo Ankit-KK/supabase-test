@@ -42,14 +42,13 @@ export async function generateTTS(
       return { audioUrl: null, error: 'No audio content returned' };
     }
 
-    // Convert base64 to blob URL
-    const audioBlob = base64ToBlob(data.audioContent, 'audio/x-wav');
-    const blobUrl = URL.createObjectURL(audioBlob);
+    // Convert base64 to data URL (no need for blob URL management)
+    const dataUrl = `data:audio/x-wav;base64,${data.audioContent}`;
 
     // Cache the result
-    ttsCache.set(cacheKey, blobUrl);
+    ttsCache.set(cacheKey, dataUrl);
 
-    return { audioUrl: blobUrl };
+    return { audioUrl: dataUrl };
   } catch (error) {
     console.error('Error generating TTS:', error);
     return { 
@@ -59,21 +58,7 @@ export async function generateTTS(
   }
 }
 
-function base64ToBlob(base64: string, contentType: string): Blob {
-  const byteCharacters = atob(base64);
-  const byteNumbers = new Array(byteCharacters.length);
-  
-  for (let i = 0; i < byteCharacters.length; i++) {
-    byteNumbers[i] = byteCharacters.charCodeAt(i);
-  }
-  
-  const byteArray = new Uint8Array(byteNumbers);
-  return new Blob([byteArray], { type: contentType });
-}
-
 export function cleanupTTSCache() {
-  ttsCache.forEach((url) => {
-    URL.revokeObjectURL(url);
-  });
+  // Data URLs don't need revocation, just clear the cache
   ttsCache.clear();
 }

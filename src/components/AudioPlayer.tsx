@@ -99,12 +99,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         setCurrentTime(0);
         setTtsRetryCount(0);
 
-        // Cleanup old TTS blob URL - delay revocation to avoid race condition
+        // Clear old TTS URL (data URLs don't need revocation)
         if (generatedTTSUrl) {
-          const oldUrl = generatedTTSUrl;
           setGeneratedTTSUrl(null);
-          // Revoke after a delay to allow any pending operations to complete
-          setTimeout(() => URL.revokeObjectURL(oldUrl), 1000);
         }
 
         // If has voice message, use it
@@ -131,11 +128,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         console.log('Message changed, regenerating TTS');
         previousMessageRef.current = donation.message || null;
         
-        // Cleanup old TTS - delay revocation
+        // Clear old TTS URL
         if (generatedTTSUrl) {
-          const oldUrl = generatedTTSUrl;
           setGeneratedTTSUrl(null);
-          setTimeout(() => URL.revokeObjectURL(oldUrl), 1000);
         }
       }
 
@@ -147,11 +142,6 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
           .then(({ audioUrl, error }) => {
             setIsGeneratingTTS(false);
             if (audioUrl) {
-              // Cleanup old blob URL before setting new one
-              if (audioUrlRef.current && audioUrlRef.current.startsWith('blob:')) {
-                URL.revokeObjectURL(audioUrlRef.current);
-              }
-              
               audioUrlRef.current = audioUrl;
               setGeneratedTTSUrl(audioUrl);
               
@@ -203,22 +193,11 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         setTtsRetryCount(1);
         setIsGeneratingTTS(true);
         
-        // Cleanup old URL if it's a blob
-        if (generatedTTSUrl && generatedTTSUrl.startsWith('blob:')) {
-          const oldUrl = generatedTTSUrl;
-          setTimeout(() => URL.revokeObjectURL(oldUrl), 1000);
-        }
-        
         // Regenerate TTS
         generateTTS(donation.name, donation.amount, donation.message)
           .then(({ audioUrl, error }) => {
             setIsGeneratingTTS(false);
             if (audioUrl) {
-              // Cleanup previous blob
-              if (audioUrlRef.current && audioUrlRef.current.startsWith('blob:')) {
-                URL.revokeObjectURL(audioUrlRef.current);
-              }
-              
               audioUrlRef.current = audioUrl;
               setGeneratedTTSUrl(audioUrl);
               
