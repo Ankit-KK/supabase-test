@@ -115,6 +115,34 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
           }
           return;
         }
+
+        // Generate TTS for new text-only donation
+        if (donation.message) {
+          setIsGeneratingTTS(true);
+          
+          generateTTS(donation.name, donation.amount, donation.message)
+            .then(({ audioUrl, error }) => {
+              setIsGeneratingTTS(false);
+              if (audioUrl) {
+                audioUrlRef.current = audioUrl;
+                setGeneratedTTSUrl(audioUrl);
+                
+                // Force audio element to reload the new source
+                if (audioRef.current) {
+                  audioRef.current.load();
+                }
+                
+                // Only autoplay if donation arrived after autoplay was enabled
+                const donationTime = new Date(donation.created_at).getTime();
+                if (autoPlay && autoPlayEnabledAt && donationTime >= autoPlayEnabledAt) {
+                  setTimeout(() => handlePlay(), 100);
+                }
+              } else {
+                toast.error('Failed to generate speech: ' + (error || 'Unknown error'));
+              }
+            });
+        }
+        return;
       }
 
       // Same donation, same message - preserve existing TTS
