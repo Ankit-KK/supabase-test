@@ -10,6 +10,8 @@ interface Donation {
   created_at: string;
   moderation_status: string;
   payment_status: string;
+  streamer_id?: string;
+  tts_audio_url?: string;
 }
 
 type TableName = 'ankit_donations' | 'chia_gaming_donations' | 'demostreamer_donations' | 'techgamer_donations' | 'musicstream_donations' | 'fitnessflow_donations';
@@ -31,19 +33,44 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
     try {
       setLoading(true);
       
-      let query = supabase
-        .from(tableName)
-        .select('id, name, amount, message, voice_message_url, created_at, moderation_status, payment_status')
-        .or('voice_message_url.not.is.null,message.not.is.null')
-        .in('moderation_status', ['approved', 'auto_approved'])
-        .eq('payment_status', 'success')
-        .order('created_at', { ascending: true });
+      let data: any = null;
+      let error: any = null;
 
-      if (streamerId) {
-        query = query.eq('streamer_id', streamerId);
+      if (tableName === 'ankit_donations') {
+        // For ankit_donations, include tts_audio_url
+        let query = supabase
+          .from(tableName)
+          .select('id, name, amount, message, voice_message_url, created_at, moderation_status, payment_status, streamer_id, tts_audio_url')
+          .or('voice_message_url.not.is.null,message.not.is.null')
+          .in('moderation_status', ['approved', 'auto_approved'])
+          .eq('payment_status', 'success')
+          .order('created_at', { ascending: true });
+
+        if (streamerId) {
+          query = query.eq('streamer_id', streamerId);
+        }
+
+        const result = await query;
+        data = result.data;
+        error = result.error;
+      } else {
+        // For other tables, use base fields only
+        let query = supabase
+          .from(tableName)
+          .select('id, name, amount, message, voice_message_url, created_at, moderation_status, payment_status, streamer_id')
+          .or('voice_message_url.not.is.null,message.not.is.null')
+          .in('moderation_status', ['approved', 'auto_approved'])
+          .eq('payment_status', 'success')
+          .order('created_at', { ascending: true });
+
+        if (streamerId) {
+          query = query.eq('streamer_id', streamerId);
+        }
+
+        const result = await query;
+        data = result.data;
+        error = result.error;
       }
-
-      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching voice donations:', error);

@@ -14,6 +14,8 @@ interface Donation {
   message?: string;
   voice_message_url?: string;
   created_at: string;
+  streamer_id?: string;
+  tts_audio_url?: string;
 }
 
 interface AudioPlayerProps {
@@ -104,11 +106,10 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
           setGeneratedTTSUrl(null);
         }
 
-        // If has voice message, use it
+        // Priority 1: Use existing voice message
         if (donation.voice_message_url) {
           audioUrlRef.current = donation.voice_message_url;
           
-          // Only autoplay if donation arrived after autoplay was enabled
           const donationTime = new Date(donation.created_at).getTime();
           if (autoPlay && autoPlayEnabledAt && donationTime >= autoPlayEnabledAt) {
             setTimeout(() => handlePlay(), 100);
@@ -116,31 +117,51 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
           return;
         }
 
-        // Generate TTS for new text-only donation
+        // Priority 2: Use cached TTS audio URL from database
+        if (donation.tts_audio_url) {
+          console.log('Using cached TTS audio URL:', donation.tts_audio_url);
+          audioUrlRef.current = donation.tts_audio_url;
+          setGeneratedTTSUrl(donation.tts_audio_url);
+          
+          if (audioRef.current) {
+            audioRef.current.load();
+          }
+          
+          const donationTime = new Date(donation.created_at).getTime();
+          if (autoPlay && autoPlayEnabledAt && donationTime >= autoPlayEnabledAt) {
+            setTimeout(() => handlePlay(), 100);
+          }
+          return;
+        }
+
+        // Priority 3: Generate new TTS for text-only donation
         if (donation.message) {
           setIsGeneratingTTS(true);
           
-          generateTTS(donation.name, donation.amount, donation.message)
-            .then(({ audioUrl, error }) => {
-              setIsGeneratingTTS(false);
-              if (audioUrl) {
-                audioUrlRef.current = audioUrl;
-                setGeneratedTTSUrl(audioUrl);
-                
-                // Force audio element to reload the new source
-                if (audioRef.current) {
-                  audioRef.current.load();
-                }
-                
-                // Only autoplay if donation arrived after autoplay was enabled
-                const donationTime = new Date(donation.created_at).getTime();
-                if (autoPlay && autoPlayEnabledAt && donationTime >= autoPlayEnabledAt) {
-                  setTimeout(() => handlePlay(), 100);
-                }
-              } else {
-                toast.error('Failed to generate speech: ' + (error || 'Unknown error'));
+          generateTTS(
+            donation.name, 
+            donation.amount, 
+            donation.message,
+            donation.id,
+            donation.streamer_id
+          ).then(({ audioUrl, error }) => {
+            setIsGeneratingTTS(false);
+            if (audioUrl) {
+              audioUrlRef.current = audioUrl;
+              setGeneratedTTSUrl(audioUrl);
+              
+              if (audioRef.current) {
+                audioRef.current.load();
               }
-            });
+              
+              const donationTime = new Date(donation.created_at).getTime();
+              if (autoPlay && autoPlayEnabledAt && donationTime >= autoPlayEnabledAt) {
+                setTimeout(() => handlePlay(), 100);
+              }
+            } else {
+              toast.error('Failed to generate speech: ' + (error || 'Unknown error'));
+            }
+          });
         }
         return;
       }
@@ -162,31 +183,34 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         }
       }
 
-      // Generate TTS if needed
-      if (donation.message && !generatedTTSUrl && !donation.voice_message_url) {
+      // Generate TTS if needed (no voice message, no cached TTS, but has text)
+      if (donation.message && !generatedTTSUrl && !donation.voice_message_url && !donation.tts_audio_url) {
         setIsGeneratingTTS(true);
         
-        generateTTS(donation.name, donation.amount, donation.message)
-          .then(({ audioUrl, error }) => {
-            setIsGeneratingTTS(false);
-            if (audioUrl) {
-              audioUrlRef.current = audioUrl;
-              setGeneratedTTSUrl(audioUrl);
-              
-              // Force audio element to reload the new source
-              if (audioRef.current) {
-                audioRef.current.load();
-              }
-              
-              // Only autoplay if donation arrived after autoplay was enabled
-              const donationTime = new Date(donation.created_at).getTime();
-              if (autoPlay && autoPlayEnabledAt && donationTime >= autoPlayEnabledAt) {
-                setTimeout(() => handlePlay(), 100);
-              }
-            } else {
-              toast.error('Failed to generate speech: ' + (error || 'Unknown error'));
+        generateTTS(
+          donation.name, 
+          donation.amount, 
+          donation.message,
+          donation.id,
+          donation.streamer_id
+        ).then(({ audioUrl, error }) => {
+          setIsGeneratingTTS(false);
+          if (audioUrl) {
+            audioUrlRef.current = audioUrl;
+            setGeneratedTTSUrl(audioUrl);
+            
+            if (audioRef.current) {
+              audioRef.current.load();
             }
-          });
+            
+            const donationTime = new Date(donation.created_at).getTime();
+            if (autoPlay && autoPlayEnabledAt && donationTime >= autoPlayEnabledAt) {
+              setTimeout(() => handlePlay(), 100);
+            }
+          } else {
+            toast.error('Failed to generate speech: ' + (error || 'Unknown error'));
+          }
+        });
       }
     }, 150); // 150ms debounce
 
@@ -197,14 +221,12 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     };
   }, [donation?.id, donation?.message]);
 
-  // Cleanup blob URLs on unmount
+  // Cleanup on unmount (storage URLs don't need revocation)
   useEffect(() => {
     return () => {
-      if (generatedTTSUrl) {
-        URL.revokeObjectURL(generatedTTSUrl);
-      }
+      cleanupTTSCache();
     };
-  }, [generatedTTSUrl]);
+  }, []);
 
   const handlePlay = async () => {
     if (!audioRef.current) return;
@@ -222,23 +244,28 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         setIsGeneratingTTS(true);
         
         // Regenerate TTS
-        generateTTS(donation.name, donation.amount, donation.message)
-          .then(({ audioUrl, error }) => {
-            setIsGeneratingTTS(false);
-            if (audioUrl) {
-              audioUrlRef.current = audioUrl;
-              setGeneratedTTSUrl(audioUrl);
-              
-              // Force reload
-              if (audioRef.current) {
-                audioRef.current.load();
-              }
-              
-              setTimeout(() => handlePlay(), 100);
-            } else {
-              toast.error('Failed to regenerate speech: ' + (error || 'Unknown error'));
+        generateTTS(
+          donation.name, 
+          donation.amount, 
+          donation.message,
+          donation.id,
+          donation.streamer_id
+        ).then(({ audioUrl, error }) => {
+          setIsGeneratingTTS(false);
+          if (audioUrl) {
+            audioUrlRef.current = audioUrl;
+            setGeneratedTTSUrl(audioUrl);
+            
+            // Force reload
+            if (audioRef.current) {
+              audioRef.current.load();
             }
-          });
+            
+            setTimeout(() => handlePlay(), 100);
+          } else {
+            toast.error('Failed to regenerate speech: ' + (error || 'Unknown error'));
+          }
+        });
       } else {
         toast.error('Failed to play audio');
       }
