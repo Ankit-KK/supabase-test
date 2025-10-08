@@ -101,20 +101,31 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
         (payload) => {
           console.log('Voice donation update:', payload);
           
+          // Check if donation already exists in our array
+          const donationId = (payload.new as any)?.id;
+          const donationExists = donations.some(d => d.id === donationId);
+          
           // Priority: Check for TTS audio URL generation (real-time TTS completion)
           const ttsJustGenerated = (payload.new as any)?.tts_audio_url && 
                                    !(payload.old as any)?.tts_audio_url;
           
           if (ttsJustGenerated) {
-            console.log('🎵 TTS audio URL just generated, refreshing immediately...', {
-              donationId: (payload.new as any)?.id,
-              ttsUrl: (payload.new as any)?.tts_audio_url
-            });
-            // Clear previous timeout and refresh immediately
-            if (refreshTimeoutRef.current) {
-              clearTimeout(refreshTimeoutRef.current);
+            console.log('🎵 TTS audio URL just generated for donation:', donationId);
+            
+            if (donationExists) {
+              // Update existing donation in-place
+              console.log('📝 Updating existing donation with TTS in-place');
+              setDonations(prev => prev.map(d => 
+                d.id === donationId ? { ...d, tts_audio_url: (payload.new as any).tts_audio_url } : d
+              ));
+            } else {
+              // New donation with TTS, fetch to add it
+              console.log('📥 New donation with TTS, fetching...');
+              if (refreshTimeoutRef.current) {
+                clearTimeout(refreshTimeoutRef.current);
+              }
+              fetchVoiceDonations();
             }
-            fetchVoiceDonations();
             return;
           }
           
@@ -127,15 +138,24 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
           const isSuccessful = (payload.new as any)?.payment_status === 'success';
           
           if ((hasVoiceMessage || hasTextMessage) && isApproved && isSuccessful) {
-            console.log('Donation with audio/text detected, refreshing...');
-            // Debounce: Clear previous timeout and set new one
-            if (refreshTimeoutRef.current) {
-              clearTimeout(refreshTimeoutRef.current);
+            if (donationExists) {
+              // Update existing donation in-place, don't refresh
+              console.log('📝 Updating existing donation in-place, not refreshing array');
+              setDonations(prev => prev.map(d => 
+                d.id === donationId ? { ...d, ...(payload.new as any) } : d
+              ));
+            } else {
+              // New donation, fetch to add it to array
+              console.log('📥 New donation detected, refreshing...');
+              // Debounce: Clear previous timeout and set new one
+              if (refreshTimeoutRef.current) {
+                clearTimeout(refreshTimeoutRef.current);
+              }
+              refreshTimeoutRef.current = setTimeout(() => {
+                console.log('Executing debounced refresh');
+                fetchVoiceDonations();
+              }, 1000); // Wait 1 second after last update
             }
-            refreshTimeoutRef.current = setTimeout(() => {
-              console.log('Executing debounced refresh');
-              fetchVoiceDonations();
-            }, 1000); // Wait 1 second after last update
           }
         }
       )
