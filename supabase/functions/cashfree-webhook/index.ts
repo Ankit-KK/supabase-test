@@ -76,32 +76,59 @@ serve(async (req) => {
       throw new Error('Failed to update donation record')
     }
 
-    // If payment was successful and there's voice data, trigger voice upload
-    if (dbStatus === 'success' && updatedDonation?.temp_voice_data) {
-      try {
-        const getVoiceUploadFunction = (orderId: string) => {
-          if (orderId.startsWith('ankit_')) return 'upload-voice-message-ankit';
-          if (orderId.startsWith('musicstream_')) return 'upload-voice-message-musicstream';
-          if (orderId.startsWith('techgamer_')) return 'upload-voice-message-techgamer';
-          if (orderId.startsWith('fitnessflow_')) return 'upload-voice-message-fitnessflow';
-          if (orderId.startsWith('artcreate_')) return 'upload-voice-message-artcreate';
-          if (orderId.startsWith('codelive_')) return 'upload-voice-message-codelive';
-          if (orderId.startsWith('demostreamer_')) return 'upload-voice-message-demostreamer';
-          return 'upload-voice-message'; // default for chia_gaming
-        };
-        
-        const voiceUploadFunction = getVoiceUploadFunction(order_id);
+    // If payment was successful, handle voice upload or TTS generation
+    if (dbStatus === 'success') {
+      // Handle voice message upload if voice data exists
+      if (updatedDonation?.temp_voice_data) {
+        try {
+          const getVoiceUploadFunction = (orderId: string) => {
+            if (orderId.startsWith('ankit_')) return 'upload-voice-message-ankit';
+            if (orderId.startsWith('musicstream_')) return 'upload-voice-message-musicstream';
+            if (orderId.startsWith('techgamer_')) return 'upload-voice-message-techgamer';
+            if (orderId.startsWith('fitnessflow_')) return 'upload-voice-message-fitnessflow';
+            if (orderId.startsWith('artcreate_')) return 'upload-voice-message-artcreate';
+            if (orderId.startsWith('codelive_')) return 'upload-voice-message-codelive';
+            if (orderId.startsWith('demostreamer_')) return 'upload-voice-message-demostreamer';
+            return 'upload-voice-message'; // default for chia_gaming
+          };
+          
+          const voiceUploadFunction = getVoiceUploadFunction(order_id);
 
-        // Trigger voice message upload
-        const { error: voiceError } = await supabase.functions.invoke(voiceUploadFunction, {
-          body: { order_id }
-        })
+          // Trigger voice message upload
+          const { error: voiceError } = await supabase.functions.invoke(voiceUploadFunction, {
+            body: { order_id }
+          })
 
-        if (voiceError) {
-          console.error('Voice upload error:', voiceError)
+          if (voiceError) {
+            console.error('Voice upload error:', voiceError)
+          }
+        } catch (voiceError) {
+          console.error('Voice upload trigger error:', voiceError)
         }
-      } catch (voiceError) {
-        console.error('Voice upload trigger error:', voiceError)
+      }
+      // Handle TTS generation for text-only donations
+      else if (updatedDonation?.message && !updatedDonation?.tts_audio_url) {
+        try {
+          console.log('Triggering TTS generation for text donation:', order_id)
+          
+          const { error: ttsError } = await supabase.functions.invoke('generate-donation-tts', {
+            body: {
+              username: updatedDonation.name,
+              amount: updatedDonation.amount,
+              message: updatedDonation.message,
+              donationId: updatedDonation.id,
+              streamerId: updatedDonation.streamer_id
+            }
+          })
+
+          if (ttsError) {
+            console.error('TTS generation error:', ttsError)
+          } else {
+            console.log('TTS generation triggered successfully for:', order_id)
+          }
+        } catch (ttsError) {
+          console.error('TTS generation trigger error:', ttsError)
+        }
       }
     }
 

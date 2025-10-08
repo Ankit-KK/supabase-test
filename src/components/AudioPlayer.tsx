@@ -4,8 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { generateTTS, cleanupTTSCache } from '@/utils/generateTTS';
-import { toast } from 'sonner';
 
 interface Donation {
   id: string;
@@ -34,18 +32,12 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   onAutoPlayChange
 }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
-  const previousDonationIdRef = useRef<string | null>(null);
-  const previousMessageRef = useRef<string | null>(null);
-  const audioUrlRef = useRef<string | null>(null);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(0.8);
   const [isMuted, setIsMuted] = useState(false);
-  const [generatedTTSUrl, setGeneratedTTSUrl] = useState<string | null>(null);
-  const [isGeneratingTTS, setIsGeneratingTTS] = useState(false);
-  const [ttsRetryCount, setTtsRetryCount] = useState(0);
+  const [lastDonationId, setLastDonationId] = useState<string | null>(null);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -78,232 +70,80 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     }
   }, [volume, isMuted]);
 
-  // Generate TTS for text-only donations with debouncing for rapid updates
+  // Process donation updates - only wait for backend TTS
   useEffect(() => {
-    if (!donation) return;
-
-    console.log('🎧 AudioPlayer: Processing donation update', {
-      id: donation.id,
-      hasVoiceMessage: !!donation.voice_message_url,
-      hasCachedTTS: !!donation.tts_audio_url,
-      hasTextMessage: !!donation.message,
-      generatedTTSUrl,
-      autoPlay,
-      autoPlayEnabledAt
-    });
-
-    // Clear any pending debounce timer
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
+    if (!donation?.id) {
+      console.log('🎧 AudioPlayer: No donation provided');
+      return;
     }
 
-    // Debounce to handle rapid database updates (approval workflow)
-    debounceTimerRef.current = setTimeout(() => {
-      const isNewDonation = donation.id !== previousDonationIdRef.current;
-      const messageChanged = donation.message !== previousMessageRef.current;
-      const ttsUrlAppeared = donation.tts_audio_url && !generatedTTSUrl;
-      
-      // Real-time TTS URL just appeared from database
-      if (ttsUrlAppeared) {
-        console.log('🎵 Real-time TTS URL detected from database:', donation.tts_audio_url);
-        audioUrlRef.current = donation.tts_audio_url;
-        setGeneratedTTSUrl(donation.tts_audio_url);
-        setIsGeneratingTTS(false);
-        
-        if (audioRef.current) {
-          audioRef.current.load();
-        }
-        
-        // Auto-play if enabled
-        if (autoPlay) {
-          console.log('🎬 Auto-playing newly available TTS');
-          setTimeout(() => handlePlay(), 100);
-        }
-        return;
+    const isNewDonation = lastDonationId !== donation.id;
+    
+    console.log('🎧 AudioPlayer: Processing donation', {
+      id: donation.id,
+      hasVoiceMessage: !!donation.voice_message_url,
+      hasTTS: !!donation.tts_audio_url,
+      hasTextMessage: !!donation.message,
+      isNewDonation
+    });
+
+    if (isNewDonation) {
+      console.log('📬 New donation detected');
+      setLastDonationId(donation.id);
+      setIsPlaying(false);
+      setCurrentTime(0);
+      setDuration(0);
+    }
+
+    // Priority 1: Voice message
+    if (donation.voice_message_url) {
+      console.log('🎤 Using voice message:', donation.voice_message_url);
+      if (audioRef.current) {
+        audioRef.current.src = donation.voice_message_url;
+        audioRef.current.load();
       }
       
-      // New donation detected
-      if (isNewDonation) {
-        console.log('📬 New donation detected, resetting state');
-        previousDonationIdRef.current = donation.id;
-        previousMessageRef.current = donation.message || null;
-        setIsPlaying(false);
-        setCurrentTime(0);
-        setTtsRetryCount(0);
-
-        // Clear old TTS URL (data URLs don't need revocation)
-        if (generatedTTSUrl) {
-          setGeneratedTTSUrl(null);
-        }
-
-        // Priority 1: Use existing voice message
-        if (donation.voice_message_url) {
-          console.log('🎤 Using voice message:', donation.voice_message_url);
-          audioUrlRef.current = donation.voice_message_url;
-          
-          const donationTime = new Date(donation.created_at).getTime();
-          if (autoPlay && autoPlayEnabledAt && donationTime >= autoPlayEnabledAt) {
-            setTimeout(() => handlePlay(), 100);
-          }
-          return;
-        }
-
-        // Priority 2: Use cached TTS audio URL from database
-        if (donation.tts_audio_url) {
-          console.log('💾 Using cached TTS audio URL:', donation.tts_audio_url);
-          audioUrlRef.current = donation.tts_audio_url;
-          setGeneratedTTSUrl(donation.tts_audio_url);
-          
-          if (audioRef.current) {
-            audioRef.current.load();
-          }
-          
-          const donationTime = new Date(donation.created_at).getTime();
-          if (autoPlay && autoPlayEnabledAt && donationTime >= autoPlayEnabledAt) {
-            setTimeout(() => handlePlay(), 100);
-          }
-          return;
-        }
-
-        // Priority 3: Generate new TTS for text-only donation
-        if (donation.message) {
-          console.log('🔊 Generating new TTS for text message...');
-          setIsGeneratingTTS(true);
-          
-          generateTTS(
-            donation.name, 
-            donation.amount, 
-            donation.message,
-            donation.id,
-            donation.streamer_id
-          ).then(({ audioUrl, error }) => {
-            setIsGeneratingTTS(false);
-            if (audioUrl) {
-              console.log('✅ TTS generation successful:', audioUrl);
-              audioUrlRef.current = audioUrl;
-              setGeneratedTTSUrl(audioUrl);
-              
-              if (audioRef.current) {
-                audioRef.current.load();
-              }
-              
-              const donationTime = new Date(donation.created_at).getTime();
-              if (autoPlay && autoPlayEnabledAt && donationTime >= autoPlayEnabledAt) {
-                setTimeout(() => handlePlay(), 100);
-              }
-            } else {
-              console.error('❌ TTS generation failed:', error);
-              toast.error('Failed to generate speech: ' + (error || 'Unknown error'));
-            }
-          });
-        }
-        return;
+      if (autoPlay && isNewDonation) {
+        setTimeout(() => handlePlay(), 100);
       }
+      return;
+    }
 
-      // Same donation, same message - preserve existing TTS
-      if (!isNewDonation && !messageChanged && generatedTTSUrl) {
-        console.log('♻️ Same donation and message, preserving TTS');
-        return;
+    // Priority 2: TTS audio (generated by backend)
+    if (donation.tts_audio_url) {
+      console.log('🎵 Using TTS audio from database:', donation.tts_audio_url);
+      if (audioRef.current) {
+        audioRef.current.src = donation.tts_audio_url;
+        audioRef.current.load();
       }
-
-      // Message changed for existing donation - regenerate
-      if (!isNewDonation && messageChanged) {
-        console.log('📝 Message changed, regenerating TTS');
-        previousMessageRef.current = donation.message || null;
-        
-        // Clear old TTS URL
-        if (generatedTTSUrl) {
-          setGeneratedTTSUrl(null);
-        }
+      
+      if (autoPlay && isNewDonation) {
+        setTimeout(() => handlePlay(), 100);
       }
+      return;
+    }
 
-      // Generate TTS if needed (no voice message, no cached TTS, but has text)
-      if (donation.message && !generatedTTSUrl && !donation.voice_message_url && !donation.tts_audio_url) {
-        console.log('🔄 Generating TTS (fallback path)...');
-        setIsGeneratingTTS(true);
-        
-        generateTTS(
-          donation.name, 
-          donation.amount, 
-          donation.message,
-          donation.id,
-          donation.streamer_id
-        ).then(({ audioUrl, error }) => {
-          setIsGeneratingTTS(false);
-          if (audioUrl) {
-            audioUrlRef.current = audioUrl;
-            setGeneratedTTSUrl(audioUrl);
-            
-            if (audioRef.current) {
-              audioRef.current.load();
-            }
-            
-            const donationTime = new Date(donation.created_at).getTime();
-            if (autoPlay && autoPlayEnabledAt && donationTime >= autoPlayEnabledAt) {
-              setTimeout(() => handlePlay(), 100);
-            }
-          } else {
-            toast.error('Failed to generate speech: ' + (error || 'Unknown error'));
-          }
-        });
-      }
-    }, 150); // 150ms debounce
+    // Priority 3: Text message waiting for TTS (backend is generating it)
+    if (donation.message) {
+      console.log('⏳ Text message detected, waiting for backend TTS generation...');
+      // Backend will generate TTS and update the database
+      // Real-time listener will trigger this effect when tts_audio_url appears
+    }
 
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, [donation, autoPlay, autoPlayEnabledAt, generatedTTSUrl]);
-
-  // Cleanup on unmount (storage URLs don't need revocation)
-  useEffect(() => {
-    return () => {
-      cleanupTTSCache();
-    };
-  }, []);
+  }, [donation, autoPlay, autoPlayEnabledAt]);
 
   const handlePlay = async () => {
-    if (!audioRef.current) return;
-    
+    if (!audioRef.current?.src) {
+      console.log('⚠️ No audio source available, waiting for backend TTS...');
+      return;
+    }
+
     try {
       await audioRef.current.play();
       setIsPlaying(true);
     } catch (error) {
       console.error('Error playing audio:', error);
-      
-      // Retry once if failed and we can regenerate TTS
-      if (donation?.message && ttsRetryCount === 0) {
-        console.log('Play failed, regenerating TTS...');
-        setTtsRetryCount(1);
-        setIsGeneratingTTS(true);
-        
-        // Regenerate TTS
-        generateTTS(
-          donation.name, 
-          donation.amount, 
-          donation.message,
-          donation.id,
-          donation.streamer_id
-        ).then(({ audioUrl, error }) => {
-          setIsGeneratingTTS(false);
-          if (audioUrl) {
-            audioUrlRef.current = audioUrl;
-            setGeneratedTTSUrl(audioUrl);
-            
-            // Force reload
-            if (audioRef.current) {
-              audioRef.current.load();
-            }
-            
-            setTimeout(() => handlePlay(), 100);
-          } else {
-            toast.error('Failed to regenerate speech: ' + (error || 'Unknown error'));
-          }
-        });
-      } else {
-        toast.error('Failed to play audio');
-      }
+      setIsPlaying(false);
     }
   };
 
@@ -340,9 +180,10 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     );
   }
 
-  const audioUrl = donation.voice_message_url || generatedTTSUrl;
+  const hasAudio = donation.voice_message_url || donation.tts_audio_url;
+  const isWaitingForTTS = donation.message && !hasAudio;
 
-  if (isGeneratingTTS) {
+  if (isWaitingForTTS) {
     return (
       <div className="bg-card rounded-lg p-6 space-y-4">
         <div className="text-center">
@@ -360,7 +201,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     );
   }
 
-  if (!audioUrl) {
+  if (!hasAudio) {
     return (
       <div className="bg-card rounded-lg p-6 space-y-4">
         <div className="text-center">
@@ -376,6 +217,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
       </div>
     );
   }
+
+  const audioUrl = donation.voice_message_url || donation.tts_audio_url;
 
   return (
     <div className="bg-card rounded-lg p-6 space-y-4">
