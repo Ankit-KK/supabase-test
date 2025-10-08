@@ -28,6 +28,7 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
   const [autoPlayEnabledAt, setAutoPlayEnabledAt] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const donationsRef = useRef<Donation[]>([]);
 
   const fetchVoiceDonations = useCallback(async () => {
     try {
@@ -85,6 +86,11 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
     }
   }, [tableName, streamerId]);
 
+  // Keep donationsRef in sync with donations state
+  useEffect(() => {
+    donationsRef.current = donations;
+  }, [donations]);
+
   // Subscribe to real-time updates
   useEffect(() => {
     fetchVoiceDonations();
@@ -101,9 +107,9 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
         (payload) => {
           console.log('Voice donation update:', payload);
           
-          // Check if donation already exists in our array
+          // Check if donation already exists in our array (use ref to avoid stale closure)
           const donationId = (payload.new as any)?.id;
-          const donationExists = donations.some(d => d.id === donationId);
+          const donationExists = donationsRef.current.some(d => d.id === donationId);
           
           // Priority: Check for TTS audio URL generation (real-time TTS completion)
           const ttsJustGenerated = (payload.new as any)?.tts_audio_url && 
