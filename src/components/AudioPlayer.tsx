@@ -78,23 +78,21 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
       return;
     }
 
-    // Check if this donation was already fully processed
-    const alreadyProcessed = processedDonationsRef.current.has(donation.id);
-    const isNewDonation = lastDonationId !== donation.id && !alreadyProcessed;
+    // EARLY RETURN: Skip if already processed and it's the same donation
+    if (processedDonationsRef.current.has(donation.id) && lastDonationId === donation.id) {
+      console.log('⏭️ Skipping already processed donation:', donation.id);
+      return;
+    }
+
+    const isNewDonation = lastDonationId !== donation.id;
     
     console.log('🎧 AudioPlayer: Processing donation', {
       id: donation.id,
       hasVoiceMessage: !!donation.voice_message_url,
       hasTTS: !!donation.tts_audio_url,
       hasTextMessage: !!donation.message,
-      isNewDonation,
-      alreadyProcessed
+      isNewDonation
     });
-
-    // Skip if already processed and nothing changed
-    if (alreadyProcessed && lastDonationId === donation.id) {
-      return;
-    }
 
     if (isNewDonation) {
       console.log('📬 New donation detected');
