@@ -101,6 +101,23 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
         (payload) => {
           console.log('Voice donation update:', payload);
           
+          // Priority: Check for TTS audio URL generation (real-time TTS completion)
+          const ttsJustGenerated = (payload.new as any)?.tts_audio_url && 
+                                   !(payload.old as any)?.tts_audio_url;
+          
+          if (ttsJustGenerated) {
+            console.log('🎵 TTS audio URL just generated, refreshing immediately...', {
+              donationId: (payload.new as any)?.id,
+              ttsUrl: (payload.new as any)?.tts_audio_url
+            });
+            // Clear previous timeout and refresh immediately
+            if (refreshTimeoutRef.current) {
+              clearTimeout(refreshTimeoutRef.current);
+            }
+            fetchVoiceDonations();
+            return;
+          }
+          
           // Check if the update involves a voice message OR text message
           const hasVoiceMessage = (payload.new as any)?.voice_message_url || 
                                   (payload.old as any)?.voice_message_url;
