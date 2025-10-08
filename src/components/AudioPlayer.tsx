@@ -32,6 +32,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   onAutoPlayChange
 }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const processedDonationsRef = useRef<Set<string>>(new Set());
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -77,15 +78,23 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
       return;
     }
 
-    const isNewDonation = lastDonationId !== donation.id;
+    // Check if this donation was already fully processed
+    const alreadyProcessed = processedDonationsRef.current.has(donation.id);
+    const isNewDonation = lastDonationId !== donation.id && !alreadyProcessed;
     
     console.log('🎧 AudioPlayer: Processing donation', {
       id: donation.id,
       hasVoiceMessage: !!donation.voice_message_url,
       hasTTS: !!donation.tts_audio_url,
       hasTextMessage: !!donation.message,
-      isNewDonation
+      isNewDonation,
+      alreadyProcessed
     });
+
+    // Skip if already processed and nothing changed
+    if (alreadyProcessed && lastDonationId === donation.id) {
+      return;
+    }
 
     if (isNewDonation) {
       console.log('📬 New donation detected');
@@ -103,6 +112,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         audioRef.current.load();
       }
       
+      // Mark as processed and autoplay if needed
+      processedDonationsRef.current.add(donation.id);
       if (autoPlay && isNewDonation) {
         setTimeout(() => handlePlay(), 100);
       }
@@ -117,6 +128,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         audioRef.current.load();
       }
       
+      // Mark as processed and autoplay if needed
+      processedDonationsRef.current.add(donation.id);
       if (autoPlay && isNewDonation) {
         setTimeout(() => handlePlay(), 100);
       }
@@ -130,7 +143,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
       // Real-time listener will trigger this effect when tts_audio_url appears
     }
 
-  }, [donation, autoPlay, autoPlayEnabledAt]);
+  }, [donation?.id, donation?.voice_message_url, donation?.tts_audio_url, autoPlay, autoPlayEnabledAt, lastDonationId]);
 
   const handlePlay = async () => {
     if (!audioRef.current?.src) {

@@ -28,6 +28,7 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
   const [autoPlayEnabledAt, setAutoPlayEnabledAt] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastFetchedDonationRef = useRef<string | null>(null);
 
   const fetchVoiceDonations = useCallback(async () => {
     try {
@@ -106,15 +107,20 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
                                    !(payload.old as any)?.tts_audio_url;
           
           if (ttsJustGenerated) {
-            console.log('🎵 TTS audio URL just generated, refreshing immediately...', {
-              donationId: (payload.new as any)?.id,
-              ttsUrl: (payload.new as any)?.tts_audio_url
-            });
-            // Clear previous timeout and refresh immediately
-            if (refreshTimeoutRef.current) {
-              clearTimeout(refreshTimeoutRef.current);
+            const donationId = (payload.new as any)?.id;
+            // Only refresh if this is a different donation or if it's the current one
+            if (lastFetchedDonationRef.current !== donationId) {
+              console.log('🎵 TTS audio URL just generated, refreshing immediately...', {
+                donationId,
+                ttsUrl: (payload.new as any)?.tts_audio_url
+              });
+              // Clear previous timeout and refresh immediately
+              if (refreshTimeoutRef.current) {
+                clearTimeout(refreshTimeoutRef.current);
+              }
+              lastFetchedDonationRef.current = donationId;
+              fetchVoiceDonations();
             }
-            fetchVoiceDonations();
             return;
           }
           
