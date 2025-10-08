@@ -107,61 +107,45 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
         (payload) => {
           console.log('Voice donation update:', payload);
           
-          // Check if donation already exists in our array (use ref to avoid stale closure)
           const donationId = (payload.new as any)?.id;
-          const donationExists = donationsRef.current.some(d => d.id === donationId);
+          const eventType = payload.eventType; // 'INSERT', 'UPDATE', or 'DELETE'
           
-          // Priority: Check for TTS audio URL generation (real-time TTS completion)
-          const ttsJustGenerated = (payload.new as any)?.tts_audio_url && 
-                                   !(payload.old as any)?.tts_audio_url;
-          
-          if (ttsJustGenerated) {
-            console.log('🎵 TTS audio URL just generated for donation:', donationId);
-            
-            if (donationExists) {
-              // Update existing donation in-place
-              console.log('📝 Updating existing donation with TTS in-place');
-              setDonations(prev => prev.map(d => 
-                d.id === donationId ? { ...d, tts_audio_url: (payload.new as any).tts_audio_url } : d
-              ));
-            } else {
-              // New donation with TTS, fetch to add it
-              console.log('📥 New donation with TTS, fetching...');
-              if (refreshTimeoutRef.current) {
-                clearTimeout(refreshTimeoutRef.current);
-              }
-              fetchVoiceDonations();
+          // ========================================
+          // HANDLE INSERT - New donation created
+          // ========================================
+          if (eventType === 'INSERT') {
+            console.log('➕ INSERT event detected, fetching to add new donation');
+            if (refreshTimeoutRef.current) {
+              clearTimeout(refreshTimeoutRef.current);
             }
+            refreshTimeoutRef.current = setTimeout(() => {
+              console.log('Executing debounced refresh for INSERT');
+              fetchVoiceDonations();
+            }, 1000);
             return;
           }
           
-          // Check if the update involves a voice message OR text message
-          const hasVoiceMessage = (payload.new as any)?.voice_message_url || 
-                                  (payload.old as any)?.voice_message_url;
-          const hasTextMessage = (payload.new as any)?.message;
-          const isApproved = (payload.new as any)?.moderation_status === 'approved' ||
-                             (payload.new as any)?.moderation_status === 'auto_approved';
-          const isSuccessful = (payload.new as any)?.payment_status === 'success';
+          // ========================================
+          // HANDLE UPDATE - Modify existing donation
+          // ========================================
+          if (eventType === 'UPDATE') {
+            console.log('📝 UPDATE event detected, updating in-place');
+            
+            // Always update in-place, never fetch
+            setDonations(prev => prev.map(d => 
+              d.id === donationId ? { ...d, ...(payload.new as any) } : d
+            ));
+            return;
+          }
           
-          if ((hasVoiceMessage || hasTextMessage) && isApproved && isSuccessful) {
-            if (donationExists) {
-              // Update existing donation in-place, don't refresh
-              console.log('📝 Updating existing donation in-place, not refreshing array');
-              setDonations(prev => prev.map(d => 
-                d.id === donationId ? { ...d, ...(payload.new as any) } : d
-              ));
-            } else {
-              // New donation, fetch to add it to array
-              console.log('📥 New donation detected, refreshing...');
-              // Debounce: Clear previous timeout and set new one
-              if (refreshTimeoutRef.current) {
-                clearTimeout(refreshTimeoutRef.current);
-              }
-              refreshTimeoutRef.current = setTimeout(() => {
-                console.log('Executing debounced refresh');
-                fetchVoiceDonations();
-              }, 1000); // Wait 1 second after last update
-            }
+          // ========================================
+          // HANDLE DELETE - Remove donation
+          // ========================================
+          if (eventType === 'DELETE') {
+            console.log('🗑️ DELETE event detected, removing donation');
+            const deletedId = (payload.old as any)?.id;
+            setDonations(prev => prev.filter(d => d.id !== deletedId));
+            return;
           }
         }
       )
