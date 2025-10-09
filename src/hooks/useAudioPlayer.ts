@@ -22,175 +22,89 @@ interface UseAudioPlayerProps {
 }
 
 export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) => {
-  const [donations, setDonations] = useState<Donation[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [queuedDonations, setQueuedDonations] = useState<Donation[]>([]);
+  const [currentDonation, setCurrentDonation] = useState<Donation | null>(null);
   const [autoPlay, setAutoPlay] = useState(false);
   const [autoPlayEnabledAt, setAutoPlayEnabledAt] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
-  const refreshTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const donationsRef = useRef<Donation[]>([]);
+  const MAX_QUEUE_SIZE = 10;
 
-  const fetchVoiceDonations = useCallback(async () => {
-    try {
-      setLoading(true);
-      
-      let data: any = null;
-      let error: any = null;
-
-      if (tableName === 'ankit_donations') {
-        // For ankit_donations, include tts_audio_url
-        let query = supabase
-          .from(tableName)
-          .select('id, name, amount, message, voice_message_url, created_at, moderation_status, payment_status, streamer_id, tts_audio_url')
-          .or('voice_message_url.not.is.null,message.not.is.null')
-          .in('moderation_status', ['approved', 'auto_approved'])
-          .eq('payment_status', 'success')
-          .order('created_at', { ascending: true });
-
-        if (streamerId) {
-          query = query.eq('streamer_id', streamerId);
-        }
-
-        const result = await query;
-        data = result.data;
-        error = result.error;
-      } else {
-        // For other tables, use base fields only
-        let query = supabase
-          .from(tableName)
-          .select('id, name, amount, message, voice_message_url, created_at, moderation_status, payment_status, streamer_id')
-          .or('voice_message_url.not.is.null,message.not.is.null')
-          .in('moderation_status', ['approved', 'auto_approved'])
-          .eq('payment_status', 'success')
-          .order('created_at', { ascending: true });
-
-        if (streamerId) {
-          query = query.eq('streamer_id', streamerId);
-        }
-
-        const result = await query;
-        data = result.data;
-        error = result.error;
-      }
-
-      if (error) {
-        console.error('Error fetching voice donations:', error);
-        return;
-      }
-
-      setDonations((data || []) as Donation[]);
-    } catch (error) {
-      console.error('Error in fetchVoiceDonations:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [tableName, streamerId]);
-
-  // Keep donationsRef in sync with donations state
+  // Subscribe to real-time updates (INSERT events only, no initial fetch)
   useEffect(() => {
-    donationsRef.current = donations;
-  }, [donations]);
-
-  // Subscribe to real-time updates
-  useEffect(() => {
-    fetchVoiceDonations();
 
     const channel = supabase
-      .channel(`audio-player-${tableName}-${Date.now()}`)
+      .channel(`audio-queue-${tableName}-${Date.now()}`)
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: tableName,
         },
         (payload) => {
-          console.log('Voice donation update:', payload);
+          const newDonation = payload.new as Donation;
           
-          const donationId = (payload.new as any)?.id;
-          const eventType = payload.eventType; // 'INSERT', 'UPDATE', or 'DELETE'
+          // Only add approved donations with voice/text message
+          const isApproved = newDonation.moderation_status === 'approved' || 
+                           newDonation.moderation_status === 'auto_approved';
+          const isSuccessful = newDonation.payment_status === 'success';
+          const hasContent = newDonation.voice_message_url || newDonation.message;
           
-          // ========================================
-          // HANDLE INSERT - New donation created
-          // ========================================
-          if (eventType === 'INSERT') {
-            console.log('➕ INSERT event detected, fetching to add new donation');
-            if (refreshTimeoutRef.current) {
-              clearTimeout(refreshTimeoutRef.current);
-            }
-            refreshTimeoutRef.current = setTimeout(() => {
-              console.log('Executing debounced refresh for INSERT');
-              fetchVoiceDonations();
-            }, 1000);
-            return;
-          }
-          
-          // ========================================
-          // HANDLE UPDATE - Modify existing donation
-          // ========================================
-          if (eventType === 'UPDATE') {
-            console.log('📝 UPDATE event detected, updating in-place');
+          if (isApproved && isSuccessful && hasContent) {
+            console.log('🆕 New donation INSERT, adding to queue:', newDonation.id);
             
-            // Always update in-place, never fetch
-            setDonations(prev => prev.map(d => 
-              d.id === donationId ? { ...d, ...(payload.new as any) } : d
-            ));
-            return;
-          }
-          
-          // ========================================
-          // HANDLE DELETE - Remove donation
-          // ========================================
-          if (eventType === 'DELETE') {
-            console.log('🗑️ DELETE event detected, removing donation');
-            const deletedId = (payload.old as any)?.id;
-            setDonations(prev => prev.filter(d => d.id !== deletedId));
-            return;
+            setQueuedDonations(prev => {
+              // Prevent duplicates
+              if (prev.some(d => d.id === newDonation.id)) {
+                console.log('⚠️ Donation already in queue, skipping');
+                return prev;
+              }
+              
+              // Add to queue
+              const updated = [...prev, newDonation];
+              
+              // Limit queue size (FIFO)
+              if (updated.length > MAX_QUEUE_SIZE) {
+                console.warn(`⚠️ Queue full (${MAX_QUEUE_SIZE}), dropping oldest donation`);
+                return updated.slice(1);
+              }
+              
+              console.log(`📊 Queue size: ${updated.length}/${MAX_QUEUE_SIZE}`);
+              return updated;
+            });
           }
         }
       )
       .subscribe((status) => {
-        console.log('Audio player subscription status:', status);
+        console.log('Audio queue subscription status:', status);
         if (status === 'SUBSCRIBED') {
-          console.log('Successfully subscribed to voice donations updates');
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error('Error subscribing to voice donations updates');
+          console.log('✅ Subscribed to new donations (INSERT only)');
         }
       });
 
     return () => {
       supabase.removeChannel(channel);
-      if (refreshTimeoutRef.current) {
-        clearTimeout(refreshTimeoutRef.current);
-      }
     };
-  }, [fetchVoiceDonations, tableName]);
+  }, [tableName, MAX_QUEUE_SIZE]);
 
-  const currentDonation = donations[currentIndex] || null;
-
-  const goToNext = useCallback(() => {
-    if (currentIndex < donations.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-    } else {
-      // If we're at the end, go back to the beginning
-      setCurrentIndex(0);
+  // Auto-set current donation from queue
+  useEffect(() => {
+    if (!currentDonation && queuedDonations.length > 0) {
+      console.log('🎯 Setting next donation from queue:', queuedDonations[0].id);
+      setCurrentDonation(queuedDonations[0]);
     }
-  }, [currentIndex, donations.length]);
+  }, [currentDonation, queuedDonations]);
 
-  const goToPrevious = useCallback(() => {
-    if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
-    } else {
-      // If we're at the beginning, go to the end
-      setCurrentIndex(donations.length - 1);
-    }
-  }, [currentIndex, donations.length]);
-
-  const goToIndex = useCallback((index: number) => {
-    if (index >= 0 && index < donations.length) {
-      setCurrentIndex(index);
-    }
-  }, [donations.length]);
+  const markAsPlayed = useCallback(() => {
+    if (!currentDonation) return;
+    
+    console.log('✅ Marking donation as played, removing from queue:', currentDonation.id);
+    
+    // Remove from queue
+    setQueuedDonations(prev => prev.filter(d => d.id !== currentDonation.id));
+    
+    // Clear current donation (next will be set by useEffect above)
+    setCurrentDonation(null);
+  }, [currentDonation]);
 
   const handleAutoPlayChange = useCallback((enabled: boolean) => {
     setAutoPlay(enabled);
@@ -198,17 +112,12 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
   }, []);
 
   return {
-    donations,
     currentDonation,
-    currentIndex,
-    totalDonations: donations.length,
+    queueSize: queuedDonations.length,
     autoPlay,
     autoPlayEnabledAt,
     setAutoPlay: handleAutoPlayChange,
-    loading,
-    goToNext,
-    goToPrevious,
-    goToIndex,
-    refresh: fetchVoiceDonations
+    markAsPlayed,
+    queuedDonations // For debugging
   };
 };
