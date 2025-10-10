@@ -141,8 +141,47 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
 
   if (!donation) {
     return (
-      <div className="bg-card rounded-lg p-6 text-center">
-        <p className="text-muted-foreground">No message to play</p>
+      <div className="bg-card rounded-lg p-6 space-y-4">
+        <div className="text-center">
+          <p className="text-muted-foreground">No message to play</p>
+        </div>
+
+        {/* Persistent Controls - Volume */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsMuted(!isMuted)}
+            className="w-8 h-8 p-0"
+          >
+            {isMuted ? (
+              <VolumeX className="w-4 h-4" />
+            ) : (
+              <Volume2 className="w-4 h-4" />
+            )}
+          </Button>
+          <Slider
+            value={[isMuted ? 0 : volume * 100]}
+            max={100}
+            step={1}
+            onValueChange={(value) => setVolume(value[0] / 100)}
+            className="flex-1"
+          />
+        </div>
+
+        {/* Persistent Controls - Auto-play Toggle */}
+        {onAutoPlayChange && (
+          <div className="flex items-center justify-center gap-2">
+            <Switch
+              id="autoplay"
+              checked={autoPlay}
+              onCheckedChange={onAutoPlayChange}
+            />
+            <Label htmlFor="autoplay" className="text-sm">
+              Auto-play new messages
+            </Label>
+          </div>
+        )}
       </div>
     );
   }

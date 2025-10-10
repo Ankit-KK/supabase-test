@@ -24,7 +24,10 @@ interface UseAudioPlayerProps {
 export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) => {
   const [queuedDonations, setQueuedDonations] = useState<Donation[]>([]);
   const [currentDonation, setCurrentDonation] = useState<Donation | null>(null);
-  const [autoPlay, setAutoPlay] = useState(false);
+  const [autoPlay, setAutoPlay] = useState(() => {
+    const saved = localStorage.getItem(`audio-player-autoplay-${tableName}`);
+    return saved === 'true';
+  });
   const [autoPlayEnabledAt, setAutoPlayEnabledAt] = useState<number | null>(null);
   const [pageOpenedAt] = useState(() => new Date().toISOString());
   const MAX_QUEUE_SIZE = 10;
@@ -159,7 +162,9 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
   const handleAutoPlayChange = useCallback((enabled: boolean) => {
     setAutoPlay(enabled);
     setAutoPlayEnabledAt(enabled ? Date.now() : null);
-  }, []);
+    localStorage.setItem(`audio-player-autoplay-${tableName}`, String(enabled));
+    console.log(`💾 Auto-play ${enabled ? 'enabled' : 'disabled'} (saved to localStorage)`);
+  }, [tableName]);
 
   return {
     currentDonation,
