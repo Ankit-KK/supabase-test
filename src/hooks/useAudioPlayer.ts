@@ -28,9 +28,34 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
   const [autoPlayEnabledAt, setAutoPlayEnabledAt] = useState<number | null>(null);
   const MAX_QUEUE_SIZE = 10;
 
-  // Subscribe to real-time updates (INSERT events only, no initial fetch)
+  // Fetch unplayed donations on mount
   useEffect(() => {
+    const fetchUnplayedDonations = async () => {
+      console.log('📥 Fetching unplayed donations on mount...');
+      
+      const { data, error } = await supabase
+        .from(tableName)
+        .select('*')
+        .is('audio_played_at', null)
+        .in('moderation_status', ['approved', 'auto_approved'])
+        .eq('payment_status', 'success')
+        .or('voice_message_url.not.is.null,message.not.is.null')
+        .order('created_at', { ascending: true })
+        .limit(MAX_QUEUE_SIZE);
 
+      if (data && !error) {
+        console.log(`📥 Loaded ${data.length} unplayed donations on mount`);
+        setQueuedDonations(data);
+      } else if (error) {
+        console.error('❌ Error fetching unplayed donations:', error);
+      }
+    };
+
+    fetchUnplayedDonations();
+  }, [tableName, MAX_QUEUE_SIZE]);
+
+  // Subscribe to real-time updates (INSERT events only)
+  useEffect(() => {
     const channel = supabase
       .channel(`audio-queue-${tableName}-${Date.now()}`)
       .on(
@@ -94,17 +119,29 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
     }
   }, [currentDonation, queuedDonations]);
 
-  const markAsPlayed = useCallback(() => {
+  const markAsPlayed = useCallback(async () => {
     if (!currentDonation) return;
     
-    console.log('✅ Marking donation as played, removing from queue:', currentDonation.id);
+    console.log('✅ Marking donation as played in database:', currentDonation.id);
+    
+    // Update database to mark as played
+    const { error } = await supabase
+      .from(tableName)
+      .update({ audio_played_at: new Date().toISOString() })
+      .eq('id', currentDonation.id);
+    
+    if (error) {
+      console.error('❌ Error marking donation as played:', error);
+    } else {
+      console.log('✅ Successfully marked as played, removing from queue');
+    }
     
     // Remove from queue
     setQueuedDonations(prev => prev.filter(d => d.id !== currentDonation.id));
     
     // Clear current donation (next will be set by useEffect above)
     setCurrentDonation(null);
-  }, [currentDonation]);
+  }, [currentDonation, tableName]);
 
   const handleAutoPlayChange = useCallback((enabled: boolean) => {
     setAutoPlay(enabled);

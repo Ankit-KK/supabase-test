@@ -37,6 +37,7 @@ export type Database = {
           amount: number
           approved_at: string | null
           approved_by: string | null
+          audio_played_at: string | null
           created_at: string | null
           id: string
           is_hyperemote: boolean | null
@@ -56,6 +57,7 @@ export type Database = {
           amount: number
           approved_at?: string | null
           approved_by?: string | null
+          audio_played_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -75,6 +77,7 @@ export type Database = {
           amount?: number
           approved_at?: string | null
           approved_by?: string | null
+          audio_played_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -105,6 +108,7 @@ export type Database = {
           amount: number
           approved_at: string | null
           approved_by: string | null
+          audio_played_at: string | null
           created_at: string | null
           id: string
           is_hyperemote: boolean | null
@@ -123,6 +127,7 @@ export type Database = {
           amount: number
           approved_at?: string | null
           approved_by?: string | null
+          audio_played_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -141,6 +146,7 @@ export type Database = {
           amount?: number
           approved_at?: string | null
           approved_by?: string | null
+          audio_played_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -246,6 +252,7 @@ export type Database = {
           amount: number
           approved_at: string | null
           approved_by: string | null
+          audio_played_at: string | null
           created_at: string | null
           id: string
           is_hyperemote: boolean | null
@@ -264,6 +271,7 @@ export type Database = {
           amount: number
           approved_at?: string | null
           approved_by?: string | null
+          audio_played_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -282,6 +290,7 @@ export type Database = {
           amount?: number
           approved_at?: string | null
           approved_by?: string | null
+          audio_played_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -311,6 +320,7 @@ export type Database = {
           amount: number
           approved_at: string | null
           approved_by: string | null
+          audio_played_at: string | null
           created_at: string | null
           id: string
           is_hyperemote: boolean | null
@@ -329,6 +339,7 @@ export type Database = {
           amount: number
           approved_at?: string | null
           approved_by?: string | null
+          audio_played_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -347,6 +358,7 @@ export type Database = {
           amount?: number
           approved_at?: string | null
           approved_by?: string | null
+          audio_played_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -376,6 +388,7 @@ export type Database = {
           amount: number
           approved_at: string | null
           approved_by: string | null
+          audio_played_at: string | null
           created_at: string | null
           id: string
           is_hyperemote: boolean | null
@@ -394,6 +407,7 @@ export type Database = {
           amount: number
           approved_at?: string | null
           approved_by?: string | null
+          audio_played_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -412,6 +426,7 @@ export type Database = {
           amount?: number
           approved_at?: string | null
           approved_by?: string | null
+          audio_played_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -441,6 +456,7 @@ export type Database = {
           amount: number
           approved_at: string | null
           approved_by: string | null
+          audio_played_at: string | null
           created_at: string | null
           id: string
           is_hyperemote: boolean | null
@@ -459,6 +475,7 @@ export type Database = {
           amount: number
           approved_at?: string | null
           approved_by?: string | null
+          audio_played_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -477,6 +494,7 @@ export type Database = {
           amount?: number
           approved_at?: string | null
           approved_by?: string | null
+          audio_played_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -498,6 +516,7 @@ export type Database = {
           amount: number
           approved_at: string | null
           approved_by: string | null
+          audio_played_at: string | null
           created_at: string | null
           id: string
           is_hyperemote: boolean | null
@@ -516,6 +535,7 @@ export type Database = {
           amount: number
           approved_at?: string | null
           approved_by?: string | null
+          audio_played_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -534,6 +554,7 @@ export type Database = {
           amount?: number
           approved_at?: string | null
           approved_by?: string | null
+          audio_played_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -750,6 +771,7 @@ export type Database = {
           amount: number
           approved_at: string | null
           approved_by: string | null
+          audio_played_at: string | null
           created_at: string | null
           id: string
           is_hyperemote: boolean | null
@@ -768,6 +790,7 @@ export type Database = {
           amount: number
           approved_at?: string | null
           approved_by?: string | null
+          audio_played_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -786,6 +809,7 @@ export type Database = {
           amount?: number
           approved_at?: string | null
           approved_by?: string | null
+          audio_played_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
