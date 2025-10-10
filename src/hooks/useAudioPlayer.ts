@@ -26,63 +26,74 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
   const [currentDonation, setCurrentDonation] = useState<Donation | null>(null);
   const [autoPlay, setAutoPlay] = useState(false);
   const [autoPlayEnabledAt, setAutoPlayEnabledAt] = useState<number | null>(null);
+  const [pageOpenedAt] = useState(() => new Date().toISOString());
   const MAX_QUEUE_SIZE = 10;
 
-  // Fetch unplayed donations on mount
+  // Fetch only very recent unplayed donations (last 2 minutes)
   useEffect(() => {
-    const fetchUnplayedDonations = async () => {
-      console.log('📥 Fetching unplayed donations on mount...');
+    const fetchRecentUnplayed = async () => {
+      const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+      console.log('📥 Fetching recent unplayed donations (last 2 minutes)...');
       
       const { data, error } = await supabase
         .from(tableName)
         .select('*')
         .is('audio_played_at', null)
+        .gte('created_at', twoMinutesAgo)
         .in('moderation_status', ['approved', 'auto_approved'])
         .eq('payment_status', 'success')
-        .or('voice_message_url.not.is.null,message.not.is.null')
+        .or('voice_message_url.not.is.null,tts_audio_url.not.is.null,message.not.is.null')
         .order('created_at', { ascending: true })
         .limit(MAX_QUEUE_SIZE);
 
-      if (data && !error) {
-        console.log(`📥 Loaded ${data.length} unplayed donations on mount`);
+      if (data && !error && data.length > 0) {
+        console.log(`📥 Loaded ${data.length} recent donations (last 2 min)`);
         setQueuedDonations(data);
       } else if (error) {
-        console.error('❌ Error fetching unplayed donations:', error);
+        console.error('❌ Error fetching recent donations:', error);
+      } else {
+        console.log('📥 No recent donations found');
       }
     };
 
-    fetchUnplayedDonations();
-  }, [tableName, MAX_QUEUE_SIZE]);
+    fetchRecentUnplayed();
+  }, [tableName]);
 
-  // Subscribe to real-time updates (INSERT events only)
+  // Subscribe to real-time updates (INSERT + UPDATE events)
   useEffect(() => {
     const channel = supabase
       .channel(`audio-queue-${tableName}-${Date.now()}`)
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
           table: tableName,
         },
         (payload) => {
           const newDonation = payload.new as Donation;
           
-          // Only add approved donations with voice/text message
-          const isApproved = newDonation.moderation_status === 'approved' || 
-                           newDonation.moderation_status === 'auto_approved';
-          const isSuccessful = newDonation.payment_status === 'success';
-          const hasContent = newDonation.voice_message_url || newDonation.message;
+          // Only process donations created AFTER this page was opened
+          if (newDonation.created_at <= pageOpenedAt) {
+            console.log('⏭️ Skipping old donation (created before page opened)');
+            return;
+          }
           
-          if (isApproved && isSuccessful && hasContent) {
-            console.log('🆕 New donation INSERT, adding to queue:', newDonation.id);
+          setQueuedDonations(prev => {
+            // Prevent duplicates
+            if (prev.some(d => d.id === newDonation.id)) {
+              console.log('⏭️ Donation already in queue, skipping');
+              return prev;
+            }
             
-            setQueuedDonations(prev => {
-              // Prevent duplicates
-              if (prev.some(d => d.id === newDonation.id)) {
-                console.log('⚠️ Donation already in queue, skipping');
-                return prev;
-              }
+            // Only add approved donations with audio ready
+            const isApproved = newDonation.moderation_status === 'approved' || 
+                             newDonation.moderation_status === 'auto_approved';
+            const isSuccessful = newDonation.payment_status === 'success';
+            const hasAudio = newDonation.voice_message_url || newDonation.tts_audio_url;
+            
+            if (isApproved && isSuccessful && hasAudio) {
+              console.log('🆕 New donation added to queue:', newDonation.id);
               
               // Add to queue
               const updated = [...prev, newDonation];
@@ -95,21 +106,23 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
               
               console.log(`📊 Queue size: ${updated.length}/${MAX_QUEUE_SIZE}`);
               return updated;
-            });
-          }
+            }
+            
+            return prev;
+          });
         }
       )
       .subscribe((status) => {
         console.log('Audio queue subscription status:', status);
         if (status === 'SUBSCRIBED') {
-          console.log('✅ Subscribed to new donations (INSERT only)');
+          console.log('✅ Subscribed to donation changes (INSERT + UPDATE)');
         }
       });
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [tableName, MAX_QUEUE_SIZE]);
+  }, [tableName, pageOpenedAt]);
 
   // Auto-set current donation from queue
   useEffect(() => {
