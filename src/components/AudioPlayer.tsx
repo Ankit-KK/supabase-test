@@ -92,7 +92,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     // Set audio source (priority: voice message > TTS audio)
     const audioUrl = donation.voice_message_url || donation.tts_audio_url;
     if (audioUrl && audioRef.current) {
-      console.log('🔊 Loading audio:', audioUrl);
+      const audioType = donation.voice_message_url ? 'voice message' : 'TTS audio';
+      console.log(`🔊 Loading ${audioType}:`, audioUrl);
       audioRef.current.src = audioUrl;
       audioRef.current.load();
 
@@ -100,7 +101,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
       if (autoPlay) {
         setTimeout(() => handlePlay(), 100);
       }
-    } else if (donation.message) {
+    } else if (donation.message && !donation.voice_message_url) {
+      // Only wait for TTS if it's a text message without voice recording
       console.log('⏳ Waiting for backend TTS generation...');
     }
   }, [donation?.id, donation?.voice_message_url, donation?.tts_audio_url, autoPlay]);
