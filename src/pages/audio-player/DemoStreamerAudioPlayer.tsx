@@ -37,6 +37,7 @@ const DemoStreamerAudioPlayer = () => {
           autoPlay={autoPlay}
           autoPlayEnabledAt={autoPlayEnabledAt}
           onAutoPlayChange={setAutoPlay}
+          tableName="demostreamer_donations"
         />
 
         {/* Queue indicator */}

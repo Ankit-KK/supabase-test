@@ -38,6 +38,7 @@ const FitnessFlowAudioPlayer = () => {
             autoPlay={autoPlay}
             autoPlayEnabledAt={autoPlayEnabledAt}
             onAutoPlayChange={setAutoPlay}
+            tableName="fitnessflow_donations"
           />
         </div>
 

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { toast } from '@/hooks/use-toast';
 
 interface Donation {
   id: string;
@@ -22,6 +23,7 @@ interface AudioPlayerProps {
   autoPlay?: boolean;
   autoPlayEnabledAt?: number | null;
   onAutoPlayChange?: (enabled: boolean) => void;
+  tableName: string;
 }
 
 export const AudioPlayer: React.FC<AudioPlayerProps> = ({
@@ -29,7 +31,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   onPlayComplete,
   autoPlay = false,
   autoPlayEnabledAt,
-  onAutoPlayChange
+  onAutoPlayChange,
+  tableName
 }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -37,6 +40,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(0.8);
   const [isMuted, setIsMuted] = useState(false);
+  const [audioUnlocked, setAudioUnlocked] = useState(() => {
+    return sessionStorage.getItem(`audio-unlocked-${tableName}`) === 'true';
+  });
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -99,6 +105,26 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     }
   }, [donation?.id, donation?.voice_message_url, donation?.tts_audio_url, autoPlay]);
 
+  const unlockAudio = async () => {
+    if (audioRef.current) {
+      try {
+        // Play and immediately pause to unlock audio context
+        await audioRef.current.play();
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        
+        sessionStorage.setItem(`audio-unlocked-${tableName}`, 'true');
+        setAudioUnlocked(true);
+        console.log('🔓 Audio unlocked successfully');
+        
+        toast({ title: 'Audio enabled!', description: 'Auto-play is now active.' });
+      } catch (error) {
+        console.error('Error unlocking audio:', error);
+        toast({ title: 'Error', description: 'Failed to enable audio. Please try again.', variant: 'destructive' });
+      }
+    }
+  };
+
   const handlePlay = async () => {
     if (!audioRef.current?.src) {
       console.log('⚠️ No audio source available, waiting for backend TTS...');
@@ -110,6 +136,12 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
       setIsPlaying(true);
     } catch (error) {
       console.error('Error playing audio:', error);
+      if (error instanceof Error && error.name === 'NotAllowedError') {
+        setAudioUnlocked(false);
+        toast({ title: 'Audio blocked', description: 'Click "Enable Audio" to allow playback', variant: 'destructive' });
+      } else {
+        toast({ title: 'Error', description: 'Failed to play audio', variant: 'destructive' });
+      }
       setIsPlaying(false);
     }
   };
@@ -138,6 +170,26 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
+
+  // Show unlock overlay if audio not unlocked
+  if (!audioUnlocked) {
+    return (
+      <div className="bg-card rounded-lg p-8 text-center space-y-4">
+        <div className="flex justify-center">
+          <Volume2 className="w-16 h-16 text-primary animate-pulse" />
+        </div>
+        <div className="space-y-2">
+          <h3 className="text-xl font-semibold">Enable Audio</h3>
+          <p className="text-sm text-muted-foreground">
+            Click the button below to enable audio playback and auto-play
+          </p>
+        </div>
+        <Button onClick={unlockAudio} size="lg" className="w-full">
+          🔊 Enable Audio
+        </Button>
+      </div>
+    );
+  }
 
   if (!donation) {
     return (

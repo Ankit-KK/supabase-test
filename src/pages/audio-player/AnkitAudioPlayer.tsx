@@ -35,6 +35,7 @@ const AnkitAudioPlayer = () => {
           autoPlay={autoPlay}
           autoPlayEnabledAt={autoPlayEnabledAt}
           onAutoPlayChange={setAutoPlay}
+          tableName="ankit_donations"
         />
 
         {/* Queue indicator */}

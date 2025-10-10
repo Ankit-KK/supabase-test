@@ -38,6 +38,7 @@ const MusicStreamAudioPlayer = () => {
             autoPlay={autoPlay}
             autoPlayEnabledAt={autoPlayEnabledAt}
             onAutoPlayChange={setAutoPlay}
+            tableName="musicstream_donations"
           />
         </div>
 

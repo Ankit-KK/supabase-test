@@ -38,6 +38,7 @@ const ArtCreateAudioPlayer = () => {
             autoPlay={autoPlay}
             autoPlayEnabledAt={autoPlayEnabledAt}
             onAutoPlayChange={setAutoPlay}
+            tableName="artcreate_donations"
           />
         </div>
 

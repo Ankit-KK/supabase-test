@@ -38,6 +38,7 @@ const CodeLiveAudioPlayer = () => {
             autoPlay={autoPlay}
             autoPlayEnabledAt={autoPlayEnabledAt}
             onAutoPlayChange={setAutoPlay}
+            tableName="codelive_donations"
           />
         </div>
 

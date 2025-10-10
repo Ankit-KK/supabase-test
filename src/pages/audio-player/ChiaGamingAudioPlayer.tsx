@@ -35,6 +35,7 @@ const ChiaGamingAudioPlayer = () => {
           autoPlay={autoPlay}
           autoPlayEnabledAt={autoPlayEnabledAt}
           onAutoPlayChange={setAutoPlay}
+          tableName="chia_gaming_donations"
         />
 
         {/* Queue indicator */}

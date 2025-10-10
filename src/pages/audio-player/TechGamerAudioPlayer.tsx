@@ -38,6 +38,7 @@ const TechGamerAudioPlayer = () => {
             autoPlay={autoPlay}
             autoPlayEnabledAt={autoPlayEnabledAt}
             onAutoPlayChange={setAutoPlay}
+            tableName="techgamer_donations"
           />
         </div>
 
