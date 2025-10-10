@@ -114,16 +114,21 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         await audioRef.current.play();
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
-        
-        sessionStorage.setItem(`audio-unlocked-${tableName}`, 'true');
-        setAudioUnlocked(true);
-        console.log('🔓 Audio unlocked successfully');
-        
-        toast({ title: 'Audio enabled!', description: 'Auto-play is now active.' });
+        console.log('🔓 Audio unlocked via play/pause');
       } catch (error) {
-        console.error('Error unlocking audio:', error);
-        toast({ title: 'Error', description: 'Failed to enable audio. Please try again.', variant: 'destructive' });
+        console.warn('Could not play audio to unlock:', error);
       }
+      
+      // Always mark as unlocked regardless of play success
+      try {
+        sessionStorage.setItem(`audio-unlocked-${tableName}`, 'true');
+      } catch (storageError) {
+        console.warn('SessionStorage blocked:', storageError);
+      }
+      
+      setAudioUnlocked(true);
+      console.log('✅ Audio state set to unlocked');
+      toast({ title: 'Audio enabled!', description: 'Controls are now available.' });
     }
   };
 
