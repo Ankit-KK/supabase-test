@@ -108,28 +108,17 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   }, [donation?.id, donation?.voice_message_url, donation?.tts_audio_url, autoPlay]);
 
   const unlockAudio = async () => {
-    if (audioRef.current) {
-      try {
-        // Play and immediately pause to unlock audio context
-        await audioRef.current.play();
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-        console.log('🔓 Audio unlocked via play/pause');
-      } catch (error) {
-        console.warn('Could not play audio to unlock:', error);
-      }
-      
-      // Always mark as unlocked regardless of play success
-      try {
-        sessionStorage.setItem(`audio-unlocked-${tableName}`, 'true');
-      } catch (storageError) {
-        console.warn('SessionStorage blocked:', storageError);
-      }
-      
-      setAudioUnlocked(true);
-      console.log('✅ Audio state set to unlocked');
-      toast({ title: 'Audio enabled!', description: 'Controls are now available.' });
+    // The button click itself is the user interaction needed to unlock audio
+    try {
+      sessionStorage.setItem(`audio-unlocked-${tableName}`, 'true');
+      console.log('💾 Saved unlock state to sessionStorage');
+    } catch (storageError) {
+      console.warn('SessionStorage blocked:', storageError);
     }
+    
+    setAudioUnlocked(true);
+    console.log('✅ Audio state set to unlocked');
+    toast({ title: 'Audio enabled!', description: 'Controls are now available.' });
   };
 
   const handlePlay = async () => {
