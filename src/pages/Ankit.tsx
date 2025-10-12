@@ -44,10 +44,6 @@ const Ankit = () => {
   const currentAmount = parseFloat(formData.amount) || 0;
   const voiceRecorder = useVoiceRecorder(getVoiceDuration(currentAmount));
 
-  // Emotional TTS states
-  const [messageInputRef, setMessageInputRef] = useState<HTMLTextAreaElement | null>(null);
-  const [cursorPosition, setCursorPosition] = useState(0);
-  const [showEmotionalPreview, setShowEmotionalPreview] = useState(false);
   
 
   // Initialize Cashfree SDK and fetch streamer settings
@@ -105,35 +101,8 @@ const Ankit = () => {
       [name]: value
     }));
 
-    // Track cursor position for emotion insertion
-    if (name === 'message' && e.target instanceof HTMLTextAreaElement) {
-      setCursorPosition(e.target.selectionStart);
-    }
   };
 
-  const handleEmotionSelect = (emotionTag: string) => {
-    if (!messageInputRef) return;
-
-    const currentMessage = formData.message;
-    const before = currentMessage.slice(0, cursorPosition);
-    const after = currentMessage.slice(cursorPosition);
-    const newMessage = before + emotionTag + ' ' + after;
-
-    setFormData(prev => ({
-      ...prev,
-      message: newMessage
-    }));
-
-    // Update cursor position to after the inserted emotion
-    setTimeout(() => {
-      if (messageInputRef) {
-        const newCursorPos = cursorPosition + emotionTag.length + 1;
-        messageInputRef.setSelectionRange(newCursorPos, newCursorPos);
-        messageInputRef.focus();
-        setCursorPosition(newCursorPos);
-      }
-    }, 0);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -463,11 +432,9 @@ const Ankit = () => {
                 <textarea
                   id="message"
                   name="message"
-                  placeholder="Enter your message (use [emotion] tags for expressive TTS)"
+                  placeholder="Enter your message"
                   value={formData.message}
                   onChange={handleInputChange}
-                  onSelect={(e) => setCursorPosition((e.target as HTMLTextAreaElement).selectionStart)}
-                  ref={(ref) => setMessageInputRef(ref)}
                   className="w-full p-3 border border-blue-500/30 rounded-lg bg-background/50 backdrop-blur-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none resize-none"
                   rows={3}
                   maxLength={500}

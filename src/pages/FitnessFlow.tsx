@@ -27,8 +27,6 @@ const FitnessFlow = () => {
   const [hasVoiceRecording, setHasVoiceRecording] = useState(false);
   const [voiceDuration, setVoiceDuration] = useState(0);
   const [showHyperemoteEffect, setShowHyperemoteEffect] = useState(false);
-  const [selectedEmoji, setSelectedEmoji] = useState<string>('');
-  const [selectedEmoteUrl, setSelectedEmoteUrl] = useState<string>('');
   
   // Phone number dialog states
   const [showPhoneDialog, setShowPhoneDialog] = useState(false);
@@ -47,26 +45,6 @@ const FitnessFlow = () => {
   const currentAmount = parseFloat(formData.amount) || 0;
   const voiceRecorder = useVoiceRecorder(getVoiceDuration(currentAmount));
 
-  // Emotional TTS states
-  const [messageInputRef, setMessageInputRef] = useState<HTMLTextAreaElement | null>(null);
-  const [cursorPosition, setCursorPosition] = useState(0);
-  const [showEmotionalPreview, setShowEmotionalPreview] = useState(false);
-  
-  // Static emotes from chiaa-emotes bucket (for hyperemotes)
-  const availableEmotes = [
-    { name: "emojis1", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/emojis1-Photoroom.png" },
-    { name: "image-10", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(10).png" },
-    { name: "image-1", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(1).png" },
-    { name: "image-2", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(2).png" },
-    { name: "image-3", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(3).png" },
-    { name: "image-4", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(4).png" },
-    { name: "image-5", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(5).png" },
-    { name: "image-6", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(6).png" },
-    { name: "image-7", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(7).png" },
-    { name: "image-8", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(8).png" },
-    { name: "image-9", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(9).png" },
-    { name: "image", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom.png" }
-  ];
 
   // Initialize Cashfree SDK and fetch streamer settings
   useEffect(() => {
@@ -123,35 +101,8 @@ const FitnessFlow = () => {
       [name]: value
     }));
 
-    // Track cursor position for emotion insertion
-    if (name === 'message' && e.target instanceof HTMLTextAreaElement) {
-      setCursorPosition(e.target.selectionStart);
-    }
   };
 
-  const handleEmotionSelect = (emotionTag: string) => {
-    if (!messageInputRef) return;
-
-    const currentMessage = formData.message;
-    const before = currentMessage.slice(0, cursorPosition);
-    const after = currentMessage.slice(cursorPosition);
-    const newMessage = before + emotionTag + ' ' + after;
-
-    setFormData(prev => ({
-      ...prev,
-      message: newMessage
-    }));
-
-    // Update cursor position to after the inserted emotion
-    setTimeout(() => {
-      if (messageInputRef) {
-        const newCursorPos = cursorPosition + emotionTag.length + 1;
-        messageInputRef.setSelectionRange(newCursorPos, newCursorPos);
-        messageInputRef.focus();
-        setCursorPosition(newCursorPos);
-      }
-    }, 0);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -335,10 +286,6 @@ const FitnessFlow = () => {
     }
   };
 
-  const handleEmojiSelect = (emojiName: string, emoteUrl: string) => {
-    setSelectedEmoji(emojiName);
-    setSelectedEmoteUrl(emoteUrl);
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
@@ -473,11 +420,9 @@ const FitnessFlow = () => {
                 <textarea
                   id="message"
                   name="message"
-                  placeholder="Enter your message (use [emotion] tags for expressive TTS)"
+                  placeholder="Enter your message"
                   value={formData.message}
                   onChange={handleInputChange}
-                  onSelect={(e) => setCursorPosition((e.target as HTMLTextAreaElement).selectionStart)}
-                  ref={(ref) => setMessageInputRef(ref)}
                   className="w-full p-3 border border-orange-500/30 rounded-lg bg-background/50 backdrop-blur-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 focus:outline-none resize-none"
                   rows={3}
                   maxLength={500}
@@ -505,31 +450,24 @@ const FitnessFlow = () => {
               </div>
             )}
 
-            {/* Hyperemote Selection */}
+            {/* Hyperemote Message */}
             {donationType === 'hyperemote' && (
               <div className="space-y-3">
                 <label className="text-sm font-medium text-purple-500">
-                  Choose your celebration emote
+                  Celebration Message (Optional)
                 </label>
-                <div className="grid grid-cols-4 gap-2 max-h-32 overflow-y-auto">
-                  {availableEmotes.map((emote) => (
-                    <button
-                      key={emote.name}
-                      type="button"
-                      onClick={() => handleEmojiSelect(emote.name, emote.url)}
-                      className={`p-2 rounded-lg border-2 transition-all ${
-                        selectedEmoji === emote.name
-                          ? 'border-purple-500 bg-purple-500/10'
-                          : 'border-purple-500/30 hover:border-purple-500/50'
-                      }`}
-                    >
-                      <img 
-                        src={emote.url} 
-                        alt={emote.name}
-                        className="w-8 h-8 mx-auto object-contain"
-                      />
-                    </button>
-                  ))}
+                <textarea
+                  id="message"
+                  name="message"
+                  placeholder="Add a message to your celebration!"
+                  value={formData.message}
+                  onChange={handleInputChange}
+                  className="w-full p-3 border border-purple-500/30 rounded-lg bg-background/50 backdrop-blur-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 focus:outline-none resize-none"
+                  rows={3}
+                  maxLength={500}
+                />
+                <div className="text-xs text-muted-foreground text-right">
+                  {formData.message.length}/500 characters
                 </div>
               </div>
             )}

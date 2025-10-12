@@ -1,262 +1,280 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "@/hooks/use-toast";
+import { Code, Heart, Sparkles } from "lucide-react";
+import { load } from '@cashfreepayments/cashfree-js';
 import { supabase } from "@/integrations/supabase/client";
-import { AlertDisplay } from "@/components/AlertDisplay";
-import SimpleVoiceRecorder from "@/components/SimpleVoiceRecorder";
-import SimpleEmojiSelector from "@/components/SimpleEmojiSelector";
-import { Code, Zap, Heart, Gift } from 'lucide-react';
+import { useNavigate } from "react-router-dom";
+import VoiceRecorder from "@/components/VoiceRecorder";
+import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 
 const CodeLive = () => {
-  const [name, setName] = useState('');
-  const [amount, setAmount] = useState('');
-  const [message, setMessage] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [streamerInfo, setStreamerInfo] = useState(null);
-  const [recentDonations, setRecentDonations] = useState([]);
-  const [voiceBlob, setVoiceBlob] = useState(null);
-  const { toast } = useToast();
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    name: '',
+    amount: '',
+    message: ''
+  });
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [cashfree, setCashfree] = useState<any>(null);
+  const [sdkLoading, setSdkLoading] = useState(true);
+  const [sdkError, setSdkError] = useState<string | null>(null);
+  const [donationType, setDonationType] = useState<'message' | 'voice' | 'hyperemote'>('message');
+  const [streamerSettings, setStreamerSettings] = useState<any>(null);
+  const [hasVoiceRecording, setHasVoiceRecording] = useState(false);
+  const [voiceDuration, setVoiceDuration] = useState(0);
+  const [showHyperemoteEffect, setShowHyperemoteEffect] = useState(false);
+  const [showPhoneDialog, setShowPhoneDialog] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+  
+  const getVoiceDuration = (amount: number) => {
+    if (amount >= 500) return 30;
+    if (amount >= 200) return 20;
+    if (amount >= 100) return 15;
+    return 10;
+  };
+
+  const currentAmount = parseFloat(formData.amount) || 0;
+  const voiceRecorder = useVoiceRecorder(getVoiceDuration(currentAmount));
 
   useEffect(() => {
-    fetchStreamerInfo();
-    fetchRecentDonations();
+    const initializeSDK = async () => {
+      try {
+        setSdkLoading(true);
+        const cf = await load({ mode: "production" });
+        setCashfree(cf);
+        toast({ title: "Payment System Ready", description: "You can now make donations safely." });
+      } catch (error) {
+        setSdkError('Failed to load payment system. Please refresh the page.');
+        toast({ title: "Payment System Error", description: "Failed to load payment system.", variant: "destructive" });
+      } finally {
+        setSdkLoading(false);
+      }
+    };
+
+    const fetchStreamerSettings = async () => {
+      try {
+        const { data, error } = await supabase.rpc('get_streamer_public_settings', { slug: 'codelive' });
+        if (error) throw error;
+        if (data && data.length > 0) setStreamerSettings(data[0]);
+      } catch (error) {
+        console.error('Failed to fetch streamer settings:', error);
+      }
+    };
+    
+    initializeSDK();
+    fetchStreamerSettings();
   }, []);
 
-  const fetchStreamerInfo = async () => {
-    try {
-      const { data, error } = await supabase.rpc('get_public_streamer_info', {
-        slug: 'codelive'
-      });
-      
-      if (error) throw error;
-      if (data && data.length > 0) {
-        setStreamerInfo(data[0]);
-      }
-    } catch (error) {
-      console.error('Error fetching streamer info:', error);
-    }
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const fetchRecentDonations = async () => {
-    try {
-      const { data, error } = await supabase.rpc('get_recent_donations_public', {
-        p_streamer_slug: 'codelive',
-        p_limit: 5
-      });
-      
-      if (error) throw error;
-      setRecentDonations(data || []);
-    } catch (error) {
-      console.error('Error fetching recent donations:', error);
-    }
-  };
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !amount || parseFloat(amount) <= 0) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields with valid values.",
-        variant: "destructive"
-      });
+    const amount = parseFloat(formData.amount);
+    
+    if (!formData.name?.trim()) {
+      toast({ title: "Name Required", description: "Please enter your name.", variant: "destructive" });
       return;
     }
+    if (donationType === 'voice' && !hasVoiceRecording) {
+      toast({ title: "Voice Message Required", description: "Please record a voice message.", variant: "destructive" });
+      return;
+    }
+    if (donationType === 'message' && !formData.message?.trim()) {
+      toast({ title: "Message Required", description: "Please enter a message.", variant: "destructive" });
+      return;
+    }
+    if (!amount || amount < 1) {
+      toast({ title: "Invalid Amount", description: "Please enter a valid donation amount.", variant: "destructive" });
+      return;
+    }
+    if (!cashfree) {
+      toast({ title: "Payment System Not Ready", description: "Please wait for the payment system to load.", variant: "destructive" });
+      return;
+    }
+    setShowPhoneDialog(true);
+  };
 
-    setIsSubmitting(true);
+  const handlePaymentAfterPhone = async () => {
+    setIsProcessing(true);
+    let data: any = null;
+
     try {
-      // Create payment order
-      const { data, error } = await supabase.functions.invoke('create-payment-order-codelive', {
+      const amount = parseFloat(formData.amount);
+      let voiceDataBase64: string | null = null;
+      
+      if (donationType === 'voice' && voiceRecorder.audioBlob) {
+        const reader = new FileReader();
+        voiceDataBase64 = await new Promise((resolve) => {
+          reader.onload = () => resolve((reader.result as string).split(',')[1]);
+          reader.readAsDataURL(voiceRecorder.audioBlob!);
+        });
+      }
+
+      const response = await supabase.functions.invoke('create-payment-order-codelive', {
         body: {
-          name: name.trim(),
-          amount: parseFloat(amount),
-          message: message.trim() || null,
-          voice_blob: voiceBlob,
-          streamer_slug: 'codelive'
+          name: formData.name.trim(),
+          amount: amount,
+          message: donationType === 'message' ? formData.message.trim() : donationType === 'voice' ? 'Send a Voice message' : '',
+          phone: phoneNumber?.trim() || undefined,
+          voiceData: voiceDataBase64
         }
       });
 
-      if (error) throw error;
-
-      if (data.success && data.payment_session_id) {
-        // Redirect to Cashfree payment
-        window.location.href = data.payment_url;
-      } else {
-        throw new Error(data.error || 'Failed to create payment order');
+      data = response.data;
+      if (response.error || !data?.payment_session_id) {
+        throw new Error(data?.error || 'Failed to create payment order');
       }
+
+      const orderId = data.order_id;
+      const checkoutOptions = {
+        paymentSessionId: data.payment_session_id,
+        redirectTarget: "_modal",
+        appearance: { width: "500px", height: "700px" }
+      };
+
+      setTimeout(async () => {
+        const result = await cashfree.checkout(checkoutOptions);
+        if (result.error) navigate(`/status?order_id=${orderId}&status=failure`);
+        else if (result.paymentDetails) navigate(`/status?order_id=${orderId}&status=success`);
+        else if (result.redirect) navigate(`/status?order_id=${orderId}&status=pending`);
+        else navigate(`/status?order_id=${orderId}&status=failure`);
+      }, 100);
+
     } catch (error) {
-      console.error('Error creating donation:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to process donation. Please try again.",
-        variant: "destructive"
-      });
+      const orderId = data?.order_id;
+      if (orderId) navigate(`/status?order_id=${orderId}&status=error`);
+      else toast({ title: "Payment Failed", description: error instanceof Error ? error.message : "Something went wrong.", variant: "destructive" });
     } finally {
-      setIsSubmitting(false);
+      setIsProcessing(false);
+      setShowPhoneDialog(false);
     }
   };
 
-  const handleEmojiSelect = (emoji) => {
-    setMessage(prev => prev + emoji);
+  const validatePhoneNumber = (phone: string): boolean => /^[6-9]\d{9}$/.test(phone);
+
+  const handlePhoneSubmit = () => {
+    setPhoneError('');
+    if (!phoneNumber.trim()) {
+      setPhoneError('Please enter your mobile number');
+      return;
+    }
+    if (!validatePhoneNumber(phoneNumber)) {
+      setPhoneError('Please enter a valid 10-digit mobile number');
+      return;
+    }
+    handlePaymentAfterPhone();
   };
 
-  const isHyperemote = parseFloat(amount) >= 1;
+  const handleDonationTypeChange = (type: 'message' | 'voice' | 'hyperemote') => {
+    setDonationType(type);
+    if (type === 'hyperemote') {
+      const minAmount = streamerSettings?.hyperemotes_min_amount || 50;
+      setFormData(prev => ({ ...prev, amount: minAmount.toString(), message: '' }));
+      setShowHyperemoteEffect(true);
+      setTimeout(() => setShowHyperemoteEffect(false), 3000);
+    } else {
+      setFormData(prev => ({ ...prev, amount: '' }));
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-950 via-slate-900 to-green-800">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Code className="h-12 w-12 text-green-400" />
-            <h1 className="text-4xl font-bold text-white">CodeLive</h1>
-          </div>
-          <p className="text-green-200 text-lg">Support live coding sessions and programming tutorials!</p>
-          <Badge variant="secondary" className="mt-2 bg-green-500/20 text-green-300 border-green-400">
-            <Zap className="h-4 w-4 mr-1" />
-            Live Coding
-          </Badge>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Donation Form */}
-          <div className="lg:col-span-2">
-            <Card className="bg-slate-800/50 border-green-500/20 backdrop-blur">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <Gift className="h-5 w-5 text-green-400" />
-                  Support CodeLive
-                </CardTitle>
-                <CardDescription className="text-green-200">
-                  Your support helps create amazing coding content and educational streams!
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-green-200 mb-2">
-                      Your Name *
-                    </label>
-                    <Input
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Enter your name"
-                      className="bg-slate-700/50 border-green-500/30 text-white placeholder:text-slate-400"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-green-200 mb-2">
-                      Amount (₹) *
-                    </label>
-                    <Input
-                      type="number"
-                      min="1"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      placeholder="10"
-                      className="bg-slate-700/50 border-green-500/30 text-white placeholder:text-slate-400"
-                      required
-                    />
-                    {isHyperemote && (
-                      <Badge className="mt-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white">
-                        <Zap className="h-3 w-3 mr-1" />
-                        Hyperemote Activated! Special effects included
-                      </Badge>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-green-200 mb-2">
-                      Message (Optional)
-                    </label>
-                    <Textarea
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
-                      placeholder="Leave a supportive message..."
-                      className="bg-slate-700/50 border-green-500/30 text-white placeholder:text-slate-400 min-h-[100px]"
-                      maxLength={500}
-                    />
-                    <div className="flex items-center justify-between mt-2">
-                      <SimpleEmojiSelector onEmojiSelect={handleEmojiSelect} />
-                      <span className="text-sm text-slate-400">
-                        {message.length}/500
-                      </span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-green-200 mb-2">
-                      Voice Message (Optional)
-                    </label>
-                    <SimpleVoiceRecorder onVoiceRecorded={setVoiceBlob} />
-                  </div>
-
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white font-semibold py-3"
-                  >
-                    {isSubmitting ? 'Processing...' : `Donate ₹${amount || '0'}`}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Recent Donations */}
-          <div>
-            <Card className="bg-slate-800/50 border-green-500/20 backdrop-blur">
-              <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <Heart className="h-5 w-5 text-red-400" />
-                  Recent Support
-                </CardTitle>
-                <CardDescription className="text-green-200">
-                  Latest donations from the community
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {recentDonations.length > 0 ? (
-                    recentDonations.map((donation, index) => (
-                      <div key={index} className="bg-slate-700/30 rounded-lg p-3 border border-green-500/10">
-                        <div className="flex justify-between items-start mb-1">
-                          <span className="font-medium text-green-300">
-                            {donation.donor_name}
-                          </span>
-                          <Badge variant="outline" className="text-xs border-green-400 text-green-300">
-                            ₹{donation.amount}
-                          </Badge>
-                        </div>
-                        {donation.sanitized_message && (
-                          <p className="text-sm text-slate-300 leading-relaxed">
-                            {donation.sanitized_message}
-                          </p>
-                        )}
-                        <span className="text-xs text-slate-500">
-                          {new Date(donation.created_at).toLocaleString()}
-                        </span>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-slate-400 text-center py-4">
-                      Be the first to support CodeLive!
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-20 w-32 h-32 bg-red-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-20 w-40 h-40 bg-red-600/10 rounded-full blur-3xl animate-pulse"></div>
       </div>
 
-      {/* AlertDisplay will be managed by the OBS alerts system */}
+      <Card className="w-full max-w-md mx-auto bg-card/95 backdrop-blur-sm border-red-500/20 shadow-2xl relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 via-red-600/20 to-red-400/20 opacity-50 blur-xl"></div>
+        
+        <CardHeader className="text-center relative z-10">
+          <div className="flex items-center justify-center mb-4">
+            <div className="flex items-center space-x-2 text-red-500">
+              <Code className="h-8 w-8" />
+              <Sparkles className="h-6 w-6 animate-pulse" />
+              <Heart className="h-6 w-6 text-red-400" />
+            </div>
+          </div>
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-red-500 to-red-600 bg-clip-text text-transparent">CodeLive</CardTitle>
+          <p className="text-muted-foreground text-sm">Support CodeLive with your donation</p>
+        </CardHeader>
+
+        <CardContent className="space-y-6 relative z-10">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="name" className="text-sm font-medium text-red-500">Your Name *</label>
+              <Input id="name" name="name" placeholder="Enter your name" value={formData.name} onChange={handleInputChange} className="border-red-500/30 focus:border-red-500 focus:ring-red-500/20" required />
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-red-500">Choose your donation type</label>
+              <div className="grid grid-cols-3 gap-2">
+                <button type="button" onClick={() => handleDonationTypeChange('message')} className={`p-3 rounded-lg border-2 transition-all ${donationType === 'message' ? 'border-red-500 bg-red-500/10' : 'border-red-500/30 hover:border-red-500/50'}`}>
+                  <div className="text-center"><div className="text-base mb-1">💬</div><div className="font-medium text-xs">Text Message</div></div>
+                </button>
+                <button type="button" onClick={() => handleDonationTypeChange('voice')} className={`p-3 rounded-lg border-2 transition-all ${donationType === 'voice' ? 'border-red-500 bg-red-500/10' : 'border-red-500/30 hover:border-red-500/50'}`}>
+                  <div className="text-center"><div className="text-base mb-1">🎤</div><div className="font-medium text-xs">Voice Message</div></div>
+                </button>
+                <button type="button" onClick={() => handleDonationTypeChange('hyperemote')} className={`p-3 rounded-lg border-2 transition-all ${donationType === 'hyperemote' ? 'border-purple-500 bg-purple-500/10' : 'border-purple-500/30 hover:border-purple-500/50'}`}>
+                  <div className="text-center"><div className="text-base mb-1">🎉</div><div className="font-medium text-xs">Hyperemotes</div><div className="text-xs text-muted-foreground">₹{streamerSettings?.hyperemotes_min_amount || 50}+</div></div>
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="amount" className="text-sm font-medium text-red-500">Amount (₹) *</label>
+              <Input id="amount" name="amount" type="number" min="1" placeholder="Enter amount" value={formData.amount} onChange={handleInputChange} className="border-red-500/30 focus:border-red-500 focus:ring-red-500/20" required disabled={donationType === 'hyperemote'} />
+            </div>
+
+            {donationType === 'message' && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-red-500">Message *</label>
+                <textarea id="message" name="message" placeholder="Enter your message" value={formData.message} onChange={handleInputChange} className="w-full p-3 border border-red-500/30 rounded-lg bg-background/50 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-none resize-none" rows={3} maxLength={500} required />
+              </div>
+            )}
+
+            {donationType === 'voice' && (
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-red-500">Record Voice Message *</label>
+                <VoiceRecorder onRecordingComplete={(hasRecording, duration) => { setHasVoiceRecording(hasRecording); setVoiceDuration(duration); }} maxDurationSeconds={getVoiceDuration(currentAmount)} controller={voiceRecorder} />
+              </div>
+            )}
+
+            {donationType === 'hyperemote' && (
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-purple-500">Celebration Message (Optional)</label>
+                <textarea id="message" name="message" placeholder="Add a message!" value={formData.message} onChange={handleInputChange} className="w-full p-3 border border-purple-500/30 rounded-lg bg-background/50 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 focus:outline-none resize-none" rows={3} maxLength={500} />
+              </div>
+            )}
+
+            <Button type="submit" disabled={isProcessing || sdkLoading} className="w-full bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white font-semibold py-3">
+              {isProcessing ? "Processing..." : "Continue to Payment"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Dialog open={showPhoneDialog} onOpenChange={setShowPhoneDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Enter Mobile Number</DialogTitle>
+            <DialogDescription>Please provide your mobile number for payment updates</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input placeholder="10-digit mobile number" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} maxLength={10} />
+            {phoneError && <p className="text-sm text-red-500">{phoneError}</p>}
+            <Button onClick={handlePhoneSubmit} className="w-full" disabled={isProcessing}>{isProcessing ? 'Processing...' : 'Continue to Payment'}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
