@@ -14,7 +14,7 @@ const ChiaGamingObsAlerts = () => {
     connectionStatus,
     tokenValid: directTokenValid
   } = useDirectAlerts({
-    streamerId: 'chia-gaming-id', // This will need to be updated with actual streamer ID
+    streamerId: undefined, // Let token validation handle streamer lookup
     tableName: 'chia_gaming_donations',
     enabled: !!obsToken,
     obsToken: obsToken || undefined

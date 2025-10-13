@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { name, amount, message, voiceData } = await req.json()
+    const { name, amount, message, phone, voiceData } = await req.json()
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -31,6 +31,10 @@ serve(async (req) => {
 
     if (amount < 1 || amount > 100000) {
       throw new Error('Invalid amount: must be between 1 and 100000')
+    }
+
+    if (!phone || !/^[6-9]\d{9}$/.test(phone)) {
+      throw new Error('Invalid phone number format')
     }
 
     // Get streamer info for CodeLive including hyperemote settings
@@ -70,7 +74,8 @@ serve(async (req) => {
       order_currency: 'INR',
       customer_details: {
         customer_id: `customer_${Date.now()}`,
-        customer_name: name
+        customer_name: name,
+        customer_phone: phone
       },
       order_meta: {
         return_url: `${req.headers.get('origin')}/codelive?order_id=${orderId}&status={order_status}`,
@@ -101,9 +106,9 @@ serve(async (req) => {
     const minAmount = streamerData!.hyperemotes_min_amount || 50;
     const isHyperemoteValue = streamerData!.hyperemotes_enabled && parseFloat(amount) >= minAmount;
 
-    // Store donation in database (using chia_gaming_donations table structure)
+    // Store donation in database
     const { data: donation, error: donationError } = await supabase
-      .from('chia_gaming_donations')
+      .from('codelive_donations')
       .insert({
         order_id: orderId,
         name: name.trim(),

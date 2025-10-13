@@ -19,10 +19,11 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const CASHFREE_APP_ID = Deno.env.get('CASHFREE_APP_ID');
-    const CASHFREE_SECRET_KEY = Deno.env.get('CASHFREE_SECRET_KEY');
+    const xClientId = Deno.env.get('XClientId');
+    const xClientSecret = Deno.env.get('XClientSecret');
+    const apiUrl = Deno.env.get('api_url');
 
-    if (!CASHFREE_APP_ID || !CASHFREE_SECRET_KEY) {
+    if (!xClientId || !xClientSecret || !apiUrl) {
       throw new Error('Cashfree credentials not configured');
     }
 
@@ -32,6 +33,10 @@ serve(async (req) => {
 
     if (parseFloat(amount) < 1 || parseFloat(amount) > 100000) {
       throw new Error('Invalid amount: must be between 1 and 100000');
+    }
+
+    if (!phone || !/^[6-9]\d{9}$/.test(phone)) {
+      throw new Error('Invalid phone number format');
     }
 
     // Get streamer info including hyperemote settings
@@ -46,30 +51,29 @@ serve(async (req) => {
       throw new Error('Streamer not found');
     }
 
-    const orderId = `ORDER_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+    const orderId = `chia_gaming_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     const cashfreePayload = {
       order_id: orderId,
       order_amount: parseFloat(amount),
       order_currency: 'INR',
       customer_details: {
-        customer_id: `CUST_${Date.now()}`,
+        customer_id: `customer_${Date.now()}`,
         customer_name: name,
-        customer_email: 'donor@example.com',
-        customer_phone: phone || '9999999999'
+        customer_phone: phone
       },
       order_meta: {
-        return_url: `https://vsevsjvtrshgeiudrnth.supabase.co/functions/v1/check-payment-status?order_id=${orderId}`,
-        notify_url: 'https://vsevsjvtrshgeiudrnth.supabase.co/functions/v1/cashfree-webhook'
+        return_url: `${req.headers.get('origin')}/chia_gaming?order_id=${orderId}&status={order_status}`,
+        notify_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/cashfree-webhook`
       }
     };
 
-    const cashfreeResponse = await fetch('https://api.cashfree.com/pg/orders', {
+    const cashfreeResponse = await fetch(`${apiUrl}/orders`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-client-id': CASHFREE_APP_ID,
-        'x-client-secret': CASHFREE_SECRET_KEY,
+        'x-client-id': xClientId,
+        'x-client-secret': xClientSecret,
         'x-api-version': '2023-08-01'
       },
       body: JSON.stringify(cashfreePayload)

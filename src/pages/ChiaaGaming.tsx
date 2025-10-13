@@ -196,17 +196,14 @@ const ChiaGaming = () => {
         });
       }
 
-      // Create order via Supabase edge function (also pass temp voice data)
-      const response = await supabase.functions.invoke('create-payment-order', {
+      // Create order via Supabase edge function
+      const response = await supabase.functions.invoke('create-payment-order-chiagaming', {
         body: {
           name: formData.name.trim(),
           amount: amount,
           message: donationType === 'message' ? formData.message.trim() : donationType === 'voice' ? 'Voice message donation' : '',
-          phone: phoneNumber?.trim() || undefined,
-          streamer_slug: 'chia_gaming',
-          temp_voice_data: tempVoice,
-          voice_duration_seconds: donationType === 'voice' ? voiceDuration : undefined,
-          is_hyperemote: donationType === 'hyperemote' ? true : undefined
+          phone: phoneNumber,
+          voiceData: tempVoice
         }
       });
 
