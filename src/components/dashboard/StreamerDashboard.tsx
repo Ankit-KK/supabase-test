@@ -75,7 +75,7 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
         title: "Logged out successfully",
         description: "You have been logged out of your dashboard.",
       });
-      navigate('/');
+      navigate('/auth');
     } catch (error) {
       toast({
         title: "Logout Error",
