@@ -11,7 +11,7 @@ const ChiaGamingAudioPlayer = () => {
     setAutoPlay,
     markAsPlayed
   } = useAudioPlayer({
-    tableName: 'chia_gaming_donations'
+    tableName: 'chiaa_gaming_donations'
   });
 
   return (
@@ -35,7 +35,7 @@ const ChiaGamingAudioPlayer = () => {
           autoPlay={autoPlay}
           autoPlayEnabledAt={autoPlayEnabledAt}
           onAutoPlayChange={setAutoPlay}
-          tableName="chia_gaming_donations"
+          tableName="chiaa_gaming_donations"
         />
 
         {/* Queue indicator */}

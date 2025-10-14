@@ -107,7 +107,7 @@ const App = () => (
               <Route path="/dashboard/fitnessflow" element={<FitnessFlowDashboard />} />
               <Route path="/dashboard/codelive" element={<CodeLiveDashboard />} />
               <Route path="/dashboard/artcreate" element={<ArtCreateDashboard />} />
-              <Route path="/dashboard/chia_gaming" element={<ChiaGamingDashboard />} />
+              <Route path="/dashboard/chiaa_gaming" element={<ChiaGamingDashboard />} />
               <Route path="/dashboard/demostreamer" element={<DemoStreamerDashboard />} />
               
               {/* OBS Alert routes */}

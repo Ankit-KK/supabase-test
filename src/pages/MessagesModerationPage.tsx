@@ -37,12 +37,12 @@ interface Props {
     brandColor: string;
     loginTime: number;
   } | null;
-  tableName?: 'chia_gaming_donations' | 'ankit_donations';
+  tableName?: 'chiaa_gaming_donations' | 'ankit_donations';
   approveFunctionName?: string;
   rejectFunctionName?: string;
 }
 
-export const MessagesModerationPage = ({ donations: propDonations, onRefresh, session: propSession, tableName = 'chia_gaming_donations', approveFunctionName = 'approve-donation', rejectFunctionName = 'reject-donation' }: Props = {}) => {
+export const MessagesModerationPage = ({ donations: propDonations, onRefresh, session: propSession, tableName = 'chiaa_gaming_donations', approveFunctionName = 'approve-donation', rejectFunctionName = 'reject-donation' }: Props = {}) => {
   const session = propSession;
   const [donations, setDonations] = useState<Donation[]>(propDonations || []);
   const [loading, setLoading] = useState(true);

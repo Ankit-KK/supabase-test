@@ -250,7 +250,7 @@ export type Database = {
           },
         ]
       }
-      chia_gaming_donations: {
+      chiaa_gaming_donations: {
         Row: {
           amount: number
           approved_at: string | null

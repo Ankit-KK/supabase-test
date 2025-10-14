@@ -14,7 +14,7 @@ const CodeLiveAudioPlayer = () => {
     autoPlayEnabledAt,
     setAutoPlay,
     markAsPlayed
-  } = useAudioPlayer({ tableName: 'chia_gaming_donations' });
+  } = useAudioPlayer({ tableName: 'codelive_donations' });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-950 via-slate-900 to-red-800">

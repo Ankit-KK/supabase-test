@@ -43,7 +43,7 @@ serve(async (req) => {
     const { data: streamerData, error: streamerError } = await supabase
       .from('streamers')
       .select('id, hyperemotes_enabled, hyperemotes_min_amount')
-      .eq('streamer_slug', 'chia_gaming')
+      .eq('streamer_slug', 'chiaa_gaming')
       .single();
 
     if (streamerError || !streamerData) {
@@ -93,7 +93,7 @@ serve(async (req) => {
     
     // Store donation in database
     const { data: donation, error: donationError } = await supabase
-      .from('chia_gaming_donations')
+      .from('chiaa_gaming_donations')
       .insert({
         name: name,
         amount: parseFloat(amount),

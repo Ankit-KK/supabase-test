@@ -14,7 +14,7 @@ const ArtCreateAudioPlayer = () => {
     autoPlayEnabledAt,
     setAutoPlay,
     markAsPlayed
-  } = useAudioPlayer({ tableName: 'chia_gaming_donations' });
+  } = useAudioPlayer({ tableName: 'artcreate_donations' });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-950 via-slate-900 to-pink-800">

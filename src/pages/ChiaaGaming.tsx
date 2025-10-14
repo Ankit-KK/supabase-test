@@ -99,7 +99,7 @@ const ChiaGaming = () => {
     const fetchStreamerSettings = async () => {
       try {
         const { data, error } = await supabase
-          .rpc('get_streamer_public_settings', { slug: 'chia_gaming' });
+          .rpc('get_streamer_public_settings', { slug: 'chiaa_gaming' });
 
         if (error) throw error;
         if (data && data.length > 0) setStreamerSettings(data[0]);

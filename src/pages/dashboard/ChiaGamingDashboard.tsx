@@ -23,7 +23,7 @@ const ChiaGamingDashboard = () => {
         });
 
         const hasChiaAccess = data?.some((streamer: any) => 
-          streamer.streamer_slug === 'chia_gaming' || streamer.is_admin === true
+          streamer.streamer_slug === 'chiaa_gaming' || streamer.is_admin === true
         );
 
         if (hasChiaAccess) {
@@ -59,10 +59,10 @@ const ChiaGamingDashboard = () => {
 
   return (
     <StreamerDashboard
-      streamerSlug="chia_gaming"
-      streamerName="Chia Gaming"
+      streamerSlug="chiaa_gaming"
+      streamerName="Chiaa Gaming"
       brandColor="#ec4899"
-      tableName="chia_gaming_donations"
+      tableName="chiaa_gaming_donations"
     />
   );
 };

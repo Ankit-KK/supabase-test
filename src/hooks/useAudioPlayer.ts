@@ -14,7 +14,7 @@ interface Donation {
   tts_audio_url?: string;
 }
 
-type TableName = 'ankit_donations' | 'chia_gaming_donations' | 'demostreamer_donations' | 'techgamer_donations' | 'musicstream_donations' | 'fitnessflow_donations';
+type TableName = 'ankit_donations' | 'chiaa_gaming_donations' | 'demostreamer_donations' | 'techgamer_donations' | 'musicstream_donations' | 'fitnessflow_donations' | 'artcreate_donations' | 'codelive_donations';
 
 interface UseAudioPlayerProps {
   tableName: TableName;

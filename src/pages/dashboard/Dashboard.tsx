@@ -41,8 +41,8 @@ const Dashboard = () => {
           const slug = streamers[0].streamer_slug;
           if (slug === 'ankit') {
             navigate('/dashboard/ankit');
-          } else if (slug === 'chia_gaming') {
-            navigate('/dashboard/chia_gaming');
+          } else if (slug === 'chiaa_gaming') {
+            navigate('/dashboard/chiaa_gaming');
           } else if (slug === 'demostreamer') {
             navigate('/dashboard/demostreamer');
           }
