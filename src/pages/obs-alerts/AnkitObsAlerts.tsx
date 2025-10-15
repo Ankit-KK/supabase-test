@@ -3,6 +3,7 @@ import { AlertDisplay } from '@/components/AlertDisplay';
 import { usePusherAlerts } from '@/hooks/usePusherAlerts';
 
 const AnkitObsAlerts = () => {
+  // Real-time alerts via Pusher
   const {
     currentAlert,
     isVisible,
