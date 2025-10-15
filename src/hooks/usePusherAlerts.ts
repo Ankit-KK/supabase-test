@@ -41,6 +41,7 @@ export function usePusherAlerts(config: PusherAlertsConfig) {
   const alertQueueRef = useRef<Donation[]>([]);
   const displayTimeoutRef = useRef<NodeJS.Timeout>();
   const isProcessingRef = useRef(false);
+  const addToQueueRef = useRef<(donation: Donation) => void>(() => {});
 
   // Process next alert from queue
   const processNextAlert = useCallback(() => {
@@ -99,6 +100,11 @@ export function usePusherAlerts(config: PusherAlertsConfig) {
     processNextAlert();
   }, [processNextAlert]);
 
+  // Update ref when addToQueue changes
+  useEffect(() => {
+    addToQueueRef.current = addToQueue;
+  }, [addToQueue]);
+
   // Initialize Pusher connection
   useEffect(() => {
     console.log('[PusherAlerts] Initializing Pusher connection...');
@@ -150,7 +156,7 @@ export function usePusherAlerts(config: PusherAlertsConfig) {
     // Bind to new-donation event
     channel.bind('new-donation', (data: Donation) => {
       console.log('[PusherAlerts] New donation received:', data);
-      addToQueue(data);
+      addToQueueRef.current(data);
     });
 
     // Cleanup
@@ -168,7 +174,7 @@ export function usePusherAlerts(config: PusherAlertsConfig) {
         clearTimeout(displayTimeoutRef.current);
       }
     };
-  }, [channelName, pusherKey, pusherCluster, addToQueue]);
+  }, [channelName, pusherKey, pusherCluster]);
 
   // Manual trigger for testing
   const triggerTestAlert = useCallback(() => {
