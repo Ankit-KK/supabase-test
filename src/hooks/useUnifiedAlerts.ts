@@ -12,15 +12,26 @@ interface UnifiedAlertsConfig {
 type ConnectionStatus = 'connecting' | 'connected' | 'polling' | 'disconnected';
 
 const CONFIG = {
-  REALTIME_RECONNECT_DELAYS: [1000, 2000, 5000, 10000, 20000, 30000],
-  REALTIME_HEALTH_CHECK_INTERVAL: 30000,
-  POLLING_INTERVAL: 5000,
-  STARTUP_SYNC_WINDOW: 300000, // 5 minutes
+  // Realtime (primary)
+  REALTIME_RECONNECT_DELAYS: [2000, 5000, 10000, 20000, 30000], // Start slower
+  REALTIME_HEALTH_CHECK_INTERVAL: 60000, // 60s - less aggressive
+  
+  // Polling (fallback)
+  POLLING_INTERVAL: 10000, // 10s - reduce load
+  
+  // Recovery
+  STARTUP_SYNC_WINDOW: 180000, // 3 minutes
+  
+  // Display
   ALERT_DURATION: {
     TEXT: 5000,
     HYPEREMOTE: 8000,
     VOICE: 15000,
   },
+  
+  // Connection stability
+  MIN_CONNECTION_INTERVAL: 2000, // Minimum 2s between reconnections
+  VISIBILITY_DEBOUNCE: 1000, // Wait 1s before syncing on visibility change
 };
 
 export function useUnifiedAlerts(config: UnifiedAlertsConfig) {
@@ -39,6 +50,9 @@ export function useUnifiedAlerts(config: UnifiedAlertsConfig) {
   const lastRealtimeMessageRef = useRef<number>(0);
   const isProcessingQueueRef = useRef(false);
   const displayTimeoutRef = useRef<NodeJS.Timeout>();
+  const isConnectingRef = useRef<boolean>(false);
+  const visibilityTimeoutRef = useRef<NodeJS.Timeout>();
+  const lastConnectionAttemptRef = useRef<number>(0);
 
   // Validate OBS token
   const validateToken = useCallback(async () => {
@@ -177,60 +191,107 @@ export function useUnifiedAlerts(config: UnifiedAlertsConfig) {
     }
   }, [streamerId, tableName, addToQueue]);
 
-  // Setup Supabase Realtime subscription
+  // Stop polling
+  const stopPolling = useCallback(() => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = undefined;
+    }
+  }, []);
+
+  // Start polling fallback
+  const startPolling = useCallback(() => {
+    if (pollingIntervalRef.current) return;
+
+    console.log('Starting polling fallback...');
+    setConnectionStatus('polling');
+
+    pollingIntervalRef.current = setInterval(() => {
+      pollForAlerts();
+    }, CONFIG.POLLING_INTERVAL);
+
+    // Immediate poll
+    pollForAlerts();
+  }, [pollForAlerts]);
+
+  // Setup Supabase Realtime subscription with connection lock
   const setupRealtimeSubscription = useCallback(async () => {
     if (!enabled || !streamerId) return;
-
-    console.log('Setting up realtime subscription...');
-
-    // Clean up existing channel
-    if (channelRef.current) {
-      await supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
+    
+    // Prevent rapid reconnections
+    const timeSinceLastAttempt = Date.now() - lastConnectionAttemptRef.current;
+    if (isConnectingRef.current || timeSinceLastAttempt < CONFIG.MIN_CONNECTION_INTERVAL) {
+      console.log('Connection in progress or too soon, skipping...');
+      return;
     }
+    
+    isConnectingRef.current = true;
+    lastConnectionAttemptRef.current = Date.now();
+    
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] 🔌 Setting up realtime subscription...`);
 
-    const channel = supabase
-      .channel(`alerts-${streamerId}-${Date.now()}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: tableName,
-          filter: `streamer_id=eq.${streamerId}`,
-        },
-        async (payload) => {
-          console.log('Realtime event received:', payload);
-          lastRealtimeMessageRef.current = Date.now();
+    try {
+      // Clean up existing channel
+      if (channelRef.current) {
+        await supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
 
-          const donation = payload.new as unknown as Donation;
+      const channel = supabase
+        .channel(`alerts-${streamerId}-${Date.now()}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: tableName,
+            filter: `streamer_id=eq.${streamerId}`,
+          },
+          async (payload) => {
+            const ts = new Date().toISOString();
+            console.log(`[${ts}] 🎁 Realtime event received:`, payload.eventType);
+            lastRealtimeMessageRef.current = Date.now();
 
-          // Filter for approved and successful payments
-          if (
-            donation.payment_status === 'success' &&
-            (donation.moderation_status === 'approved' || 
-             donation.moderation_status === 'auto_approved') &&
-            donation.message_visible !== false
-          ) {
-            await addToQueue(donation);
+            const donation = payload.new as unknown as Donation;
+
+            // Filter for approved and successful payments
+            if (
+              donation.payment_status === 'success' &&
+              (donation.moderation_status === 'approved' || 
+               donation.moderation_status === 'auto_approved') &&
+              donation.message_visible !== false
+            ) {
+              await addToQueue(donation);
+            }
           }
-        }
-      )
-      .subscribe(async (status) => {
-        console.log('Subscription status:', status);
+        )
+        .subscribe(async (status) => {
+          const ts = new Date().toISOString();
+          console.log(`[${ts}] 📡 Subscription status: ${status}`);
 
-        if (status === 'SUBSCRIBED') {
-          setConnectionStatus('connected');
-          reconnectAttemptRef.current = 0;
-          lastRealtimeMessageRef.current = Date.now();
-        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          setConnectionStatus('disconnected');
-          scheduleReconnect();
-        }
-      });
+          if (status === 'SUBSCRIBED') {
+            console.log(`[${ts}] ✅ Realtime CONNECTED`);
+            setConnectionStatus('connected');
+            reconnectAttemptRef.current = 0;
+            lastRealtimeMessageRef.current = Date.now();
+            stopPolling();
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            console.error(`[${ts}] ❌ Realtime ERROR - will retry`);
+            setConnectionStatus('disconnected');
+            scheduleReconnect();
+          }
+          // Ignore 'CLOSED' status - it's normal during cleanup
+        });
 
-    channelRef.current = channel;
-  }, [enabled, streamerId, tableName, addToQueue]);
+      channelRef.current = channel;
+    } finally {
+      // Release connection lock after cooldown
+      setTimeout(() => {
+        isConnectingRef.current = false;
+      }, CONFIG.MIN_CONNECTION_INTERVAL);
+    }
+  }, [enabled, streamerId, tableName, addToQueue, stopPolling]);
 
   // Schedule reconnection with exponential backoff
   const scheduleReconnect = useCallback(() => {
@@ -250,31 +311,13 @@ export function useUnifiedAlerts(config: UnifiedAlertsConfig) {
     }, delay);
   }, [setupRealtimeSubscription]);
 
-  // Start polling fallback
-  const startPolling = useCallback(() => {
-    if (pollingIntervalRef.current) return;
-
-    console.log('Starting polling fallback...');
-    setConnectionStatus('polling');
-
-    pollingIntervalRef.current = setInterval(() => {
-      pollForAlerts();
-    }, CONFIG.POLLING_INTERVAL);
-
-    // Immediate poll
-    pollForAlerts();
-  }, [pollForAlerts]);
-
-  // Stop polling
-  const stopPolling = useCallback(() => {
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
-      pollingIntervalRef.current = undefined;
-    }
-  }, []);
-
-  // Health check for realtime connection
+  // Health check for realtime connection - only if we've received at least one message
   const checkRealtimeHealth = useCallback(() => {
+    // Don't check health if we haven't received any messages yet
+    if (lastRealtimeMessageRef.current === 0) {
+      return;
+    }
+
     const timeSinceLastMessage = Date.now() - lastRealtimeMessageRef.current;
 
     if (timeSinceLastMessage > CONFIG.REALTIME_HEALTH_CHECK_INTERVAL) {
@@ -337,19 +380,31 @@ export function useUnifiedAlerts(config: UnifiedAlertsConfig) {
         clearTimeout(displayTimeoutRef.current);
       }
     };
-  }, [enabled, obsToken, validateToken, performStartupSync, setupRealtimeSubscription, checkRealtimeHealth]);
+  }, [enabled, obsToken, streamerId, tableName]); // Only stable dependencies
 
-  // Handle visibility change (tab active/inactive)
+  // Handle visibility change with debounce
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        console.log('Tab became visible, triggering sync...');
-        triggerSync();
+        // Debounce: only sync if needed
+        if (visibilityTimeoutRef.current) {
+          clearTimeout(visibilityTimeoutRef.current);
+        }
+        
+        visibilityTimeoutRef.current = setTimeout(() => {
+          console.log('Tab became visible, triggering sync...');
+          triggerSync();
+        }, CONFIG.VISIBILITY_DEBOUNCE);
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (visibilityTimeoutRef.current) {
+        clearTimeout(visibilityTimeoutRef.current);
+      }
+    };
   }, [triggerSync]);
 
   // Handle network changes

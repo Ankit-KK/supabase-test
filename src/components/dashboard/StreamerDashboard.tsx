@@ -85,7 +85,9 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
     }
   };
 
-  // Real-time subscription for live updates
+  // TEMPORARY: Disabled old realtime to test new unified system
+  // Will re-enable after OBS browser source testing is complete
+  /*
   const connectionState = useRealtimeSubscription({
     streamerId: streamerData?.id,
     streamerSlug,
@@ -99,6 +101,16 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
     },
     enabled: !!streamerData?.id
   });
+  */
+
+  // Fallback: Poll for updates every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRefreshKey(prev => prev + 1);
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   // Fetch streamer data and verify access
   useEffect(() => {
@@ -302,11 +314,11 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
                 Manage your donations and settings
               </p>
               <div className="flex items-center mt-2 space-x-2">
-                <Badge variant={connectionState.status === 'connected' ? 'default' : 'secondary'}>
-                  {connectionState.status === 'connected' ? '🟢 Live' : '🟡 Connecting'}
+                <Badge variant="secondary">
+                  🔄 Auto-refresh (30s)
                 </Badge>
                 <span className="text-sm text-muted-foreground">
-                  Real-time updates {connectionState.status}
+                  Updates every 30 seconds
                 </span>
               </div>
             </div>
