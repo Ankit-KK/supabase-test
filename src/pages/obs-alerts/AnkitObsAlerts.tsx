@@ -1,37 +1,28 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AlertDisplay } from '@/components/AlertDisplay';
-import { useDirectAlerts } from '@/hooks/useDirectAlerts';
+import { useUnifiedAlerts } from '@/hooks/useUnifiedAlerts';
 
 const AnkitObsAlerts = () => {
   const [searchParams] = useSearchParams();
   const obsToken = searchParams.get('token');
-  const [tokenValid, setTokenValid] = useState<boolean | null>(null);
 
   const {
     currentAlert,
     isVisible,
     connectionStatus,
-    triggerTestAlert,
-    triggerTestVoiceAlert,
-    tokenValid: directTokenValid
-  } = useDirectAlerts({
-    streamerId: 'b111b82a-9fec-4e74-8a17-f81ee0e1c912', // Ankit's streamer ID
+    tokenValid,
+    triggerSync
+  } = useUnifiedAlerts({
+    streamerId: 'b111b82a-9fec-4e74-8a17-f81ee0e1c912',
     tableName: 'ankit_donations',
     enabled: !!obsToken,
     obsToken: obsToken || undefined
   });
 
-  // Update local token validation state based on direct alerts
-  useEffect(() => {
-    if (directTokenValid !== null) {
-      setTokenValid(directTokenValid);
-    }
-  }, [directTokenValid]);
-
 
   // Show loading state while validating token
-  if (tokenValid === null || directTokenValid === null) {
+  if (tokenValid === null) {
     return (
       <div className="fixed inset-0 bg-transparent flex items-center justify-center">
         <div className="text-white text-center">
@@ -65,21 +56,26 @@ const AnkitObsAlerts = () => {
       
       {/* Debug info (only visible in development) */}
       {process.env.NODE_ENV === 'development' && (
-        <div className="fixed bottom-4 left-4 bg-black/80 text-white p-2 rounded text-xs space-y-1">
-          <div>Status: {connectionStatus}</div>
+        <div className="fixed bottom-4 left-4 bg-black/80 text-white p-3 rounded-lg text-xs space-y-2 max-w-xs">
+          <div className="font-bold text-blue-400">🔧 Debug Panel</div>
+          <div className="flex items-center gap-2">
+            <span className="font-semibold">Status:</span>
+            <span className={`px-2 py-0.5 rounded ${
+              connectionStatus === 'connected' ? 'bg-green-600' :
+              connectionStatus === 'polling' ? 'bg-yellow-600' :
+              connectionStatus === 'connecting' ? 'bg-blue-600' :
+              'bg-red-600'
+            }`}>
+              {connectionStatus.toUpperCase()}
+            </span>
+          </div>
           <div>Token: {obsToken?.substring(0, 8)}...</div>
-          <div>Alert: {currentAlert ? 'Active' : 'None'}</div>
+          <div>Alert: {currentAlert ? `🔔 ${currentAlert.name}` : '⏸️ None'}</div>
           <button 
-            onClick={triggerTestAlert}
-            className="px-2 py-1 bg-blue-600 text-white rounded text-xs mr-1"
+            onClick={triggerSync}
+            className="w-full px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-medium transition-colors"
           >
-            Test Alert
-          </button>
-          <button 
-            onClick={triggerTestVoiceAlert}
-            className="px-2 py-1 bg-purple-600 text-white rounded text-xs"
-          >
-            Test Voice
+            🔄 Force Sync
           </button>
         </div>
       )}
