@@ -6,6 +6,73 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Pusher client for Deno
+class PusherClient {
+  private appId: string;
+  private key: string;
+  private secret: string;
+  private cluster: string;
+
+  constructor(appId: string, key: string, secret: string, cluster: string) {
+    this.appId = appId;
+    this.key = key;
+    this.secret = secret;
+    this.cluster = cluster;
+  }
+
+  async trigger(channel: string, event: string, data: any) {
+    const body = JSON.stringify({ name: event, data: JSON.stringify(data), channel });
+    const timestamp = Math.floor(Date.now() / 1000);
+    const bodyMd5 = await this.md5(body);
+    
+    const authString = `POST\n/apps/${this.appId}/events\nauth_key=${this.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${bodyMd5}`;
+    const authSignature = await this.hmacSha256(authString, this.secret);
+    
+    const url = `https://api-${this.cluster}.pusher.com/apps/${this.appId}/events?auth_key=${this.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${bodyMd5}&auth_signature=${authSignature}`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Pusher trigger failed: ${error}`);
+    }
+
+    return response.json();
+  }
+
+  private async md5(str: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(str);
+    const hashBuffer = await crypto.subtle.digest('MD5', data);
+    return Array.from(new Uint8Array(hashBuffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  private async hmacSha256(message: string, secret: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(secret);
+    const messageData = encoder.encode(message);
+    
+    const key = await crypto.subtle.importKey(
+      'raw',
+      keyData,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    
+    const signature = await crypto.subtle.sign('HMAC', key, messageData);
+    return Array.from(new Uint8Array(signature))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -20,6 +87,14 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+    // Initialize Pusher client
+    const pusher = new PusherClient(
+      Deno.env.get('PUSHER_APP_ID') || '2064489',
+      Deno.env.get('PUSHER_KEY') || '5adfbac388b9dfa055c0',
+      Deno.env.get('PUSHER_SECRET') || 'de2c5b68db09285c0dba',
+      Deno.env.get('PUSHER_CLUSTER') || 'ap2'
+    );
 
     // Extract order information from webhook - Cashfree sends data nested under 'data'
     const order_id = webhookData.data?.order?.order_id
@@ -76,8 +151,30 @@ serve(async (req) => {
       throw new Error('Failed to update donation record')
     }
 
-    // If payment was successful, handle voice upload or TTS generation
-    if (dbStatus === 'success') {
+    // If payment was successful, trigger Pusher event and handle voice/TTS
+    if (dbStatus === 'success' && updatedDonation) {
+      // Trigger Pusher event for real-time alerts
+      try {
+        const channelName = order_id.startsWith('ankit_') ? 'ankit-alerts' : 'donation-alerts';
+        
+        await pusher.trigger(channelName, 'new-donation', {
+          id: updatedDonation.id,
+          name: updatedDonation.name,
+          amount: updatedDonation.amount,
+          message: updatedDonation.message,
+          voice_message_url: updatedDonation.voice_message_url,
+          tts_audio_url: updatedDonation.tts_audio_url,
+          is_hyperemote: updatedDonation.is_hyperemote,
+          created_at: updatedDonation.created_at,
+          streamer_id: updatedDonation.streamer_id,
+        });
+        
+        console.log(`Pusher event triggered for ${order_id} on channel ${channelName}`);
+      } catch (pusherError) {
+        console.error('Pusher trigger error:', pusherError);
+        // Don't fail the webhook if Pusher fails
+      }
+
       // Handle voice message upload if voice data exists
       if (updatedDonation?.temp_voice_data) {
         try {
