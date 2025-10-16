@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import Pusher from 'https://esm.sh/pusher@5.1.3';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -89,6 +90,44 @@ serve(async (req) => {
     }
 
     console.log('Voice message uploaded successfully for order:', order_id, 'URL:', publicUrl);
+
+    // Re-query to get complete updated donation record
+    const { data: finalDonation } = await supabaseAdmin
+      .from('ankit_donations')
+      .select('*')
+      .eq('order_id', order_id)
+      .single();
+
+    if (finalDonation) {
+      // Initialize Pusher and trigger audio event
+      try {
+        const pusher = new Pusher({
+          appId: Deno.env.get('PUSHER_APP_ID')!,
+          key: '5adfbac388b9dfa055c0',
+          secret: Deno.env.get('PUSHER_SECRET')!,
+          cluster: 'ap2',
+          useTLS: true,
+        });
+
+        const audioChannel = 'ankit-audio';
+        await pusher.trigger(audioChannel, 'new-audio-message', {
+          id: finalDonation.id,
+          name: finalDonation.name,
+          amount: finalDonation.amount,
+          message: finalDonation.message,
+          voice_message_url: finalDonation.voice_message_url,
+          tts_audio_url: finalDonation.tts_audio_url,
+          created_at: finalDonation.created_at,
+          is_hyperemote: finalDonation.is_hyperemote,
+          moderation_status: finalDonation.moderation_status,
+          payment_status: finalDonation.payment_status,
+          streamer_id: finalDonation.streamer_id,
+        });
+        console.log(`Pusher audio event triggered for ${order_id} on channel ${audioChannel}`);
+      } catch (pusherError) {
+        console.error('Pusher audio trigger error:', pusherError);
+      }
+    }
 
     return new Response(
       JSON.stringify({ 

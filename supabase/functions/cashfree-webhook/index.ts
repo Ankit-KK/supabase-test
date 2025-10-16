@@ -235,27 +235,6 @@ serve(async (req) => {
 
           if (voiceError) {
             console.error('Voice upload error:', voiceError)
-          } else {
-            // After voice upload succeeds, trigger audio channel
-            try {
-              const audioChannel = `${streamerSlug}-audio`;
-              await pusher.trigger(audioChannel, 'new-audio-message', {
-                id: updatedDonation.id,
-                name: updatedDonation.name,
-                amount: updatedDonation.amount,
-                message: updatedDonation.message,
-                voice_message_url: updatedDonation.voice_message_url,
-                tts_audio_url: null,
-                created_at: updatedDonation.created_at,
-                is_hyperemote: updatedDonation.is_hyperemote,
-                moderation_status: updatedDonation.moderation_status,
-                payment_status: updatedDonation.payment_status,
-                streamer_id: updatedDonation.streamer_id,
-              });
-              console.log(`Pusher audio event triggered for ${order_id} (voice) on channel ${audioChannel}`);
-            } catch (pusherError) {
-              console.error('Pusher (audio) trigger error:', pusherError);
-            }
           }
         } catch (voiceError) {
           console.error('Voice upload trigger error:', voiceError)
@@ -280,26 +259,6 @@ serve(async (req) => {
             console.error('TTS generation error:', ttsError)
           } else {
             console.log('TTS generation triggered successfully for:', order_id)
-            // After TTS generation succeeds, trigger audio channel
-            try {
-              const audioChannel = `${streamerSlug}-audio`;
-              await pusher.trigger(audioChannel, 'new-audio-message', {
-                id: updatedDonation.id,
-                name: updatedDonation.name,
-                amount: updatedDonation.amount,
-                message: updatedDonation.message,
-                voice_message_url: null,
-                tts_audio_url: updatedDonation.tts_audio_url,
-                created_at: updatedDonation.created_at,
-                is_hyperemote: updatedDonation.is_hyperemote,
-                moderation_status: updatedDonation.moderation_status,
-                payment_status: updatedDonation.payment_status,
-                streamer_id: updatedDonation.streamer_id,
-              });
-              console.log(`Pusher audio event triggered for ${order_id} (TTS) on channel ${audioChannel}`);
-            } catch (pusherError) {
-              console.error('Pusher (audio) trigger error:', pusherError);
-            }
           }
         } catch (ttsError) {
           console.error('TTS generation trigger error:', ttsError)
