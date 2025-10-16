@@ -28,7 +28,7 @@ class PusherClient {
     const authString = `POST\n/apps/${this.appId}/events\nauth_key=${this.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_sha256=${bodySha256}`;
     const authSignature = await this.hmacSha256(authString, this.secret);
     
-    const url = `https://api-${this.cluster}.pusher.com/apps/${this.appId}/events?auth_key=${this.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_sha256=${bodySha256}&auth_signature=${authSignature}`;
+    const url = `https://api-${this.cluster}.pusher.com/apps/${this.appId}/events?auth_key=${this.key}&auth_timestamp=${timestamp}&auth_version=1.0&auth_signature=${authSignature}`;
     
     const response = await fetch(url, {
       method: 'POST',
