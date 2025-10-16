@@ -142,10 +142,10 @@ const CodeLive = () => {
 
       setTimeout(async () => {
         const result = await cashfree.checkout(checkoutOptions);
-        if (result.error) navigate(`/status?order_id=${orderId}&status=failure`);
+        if (result.error) navigate(`/status?order_id=${orderId}&status=pending`);
         else if (result.paymentDetails) navigate(`/status?order_id=${orderId}&status=success`);
         else if (result.redirect) navigate(`/status?order_id=${orderId}&status=pending`);
-        else navigate(`/status?order_id=${orderId}&status=failure`);
+        else navigate(`/status?order_id=${orderId}&status=pending`);
       }, 100);
 
     } catch (error) {

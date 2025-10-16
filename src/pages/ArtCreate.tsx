@@ -220,7 +220,7 @@ const ArtCreate = () => {
         
         if (result.error) {
           console.log("Payment cancelled or error:", result.error);
-          navigate(`/status?order_id=${orderId}&status=failure`);
+          navigate(`/status?order_id=${orderId}&status=pending`);
         } else if (result.paymentDetails) {
           console.log("Payment completed:", result.paymentDetails);
           navigate(`/status?order_id=${orderId}&status=success`);
@@ -228,7 +228,7 @@ const ArtCreate = () => {
           console.log("Payment will be redirected");
           navigate(`/status?order_id=${orderId}&status=pending`);
         } else {
-          navigate(`/status?order_id=${orderId}&status=failure`);
+          navigate(`/status?order_id=${orderId}&status=pending`);
         }
       }, 100);
 

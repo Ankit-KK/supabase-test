@@ -79,19 +79,11 @@ export default function Status() {
           else backendStatus = 'pending';
         }
 
-        // Merge rule: never downgrade success; if URL says failure, prefer it over pending
-        const urlStatus = (status || '').toLowerCase();
-        let finalStatus: 'success' | 'pending' | 'failure' = backendStatus;
-        if (urlStatus === 'success') {
-          finalStatus = 'success';
-        } else if (urlStatus === 'failure' || urlStatus === 'failed' || urlStatus === 'cancelled') {
-          if (backendStatus !== 'success') finalStatus = 'failure';
-        }
-
-        setPaymentStatus(finalStatus as any);
+        // ALWAYS trust backend status over URL parameter
+        setPaymentStatus(backendStatus as any);
 
         // If payment is successful, upload voice message if it exists
-        if (finalStatus === 'success') {
+        if (backendStatus === 'success') {
             try {
             console.log('Payment successful, checking for voice message upload...');
             const getVoiceUploadFunction = (orderId: string) => {
@@ -134,10 +126,16 @@ export default function Status() {
     checkPaymentStatus();
   }, [orderId, status]);
 
-  // Derive effective status: if URL indicates failure/cancelled, show failure unless backend says success
-  const urlStatusLower = (status || '').toLowerCase();
-  const failureFromUrl = urlStatusLower === 'failure' || urlStatusLower === 'failed' || urlStatusLower === 'cancelled';
-  const effectiveStatus = failureFromUrl ? (paymentStatus === 'success' ? 'success' : 'failure') : paymentStatus;
+  // Auto-refresh for pending payments
+  useEffect(() => {
+    if (paymentStatus === 'pending') {
+      const timer = setTimeout(() => {
+        window.location.reload();
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [paymentStatus]);
 
   const getStatusContent = (st: typeof paymentStatus) => {
     switch (st) {
@@ -172,7 +170,7 @@ export default function Status() {
     }
   };
 
-  const statusContent = getStatusContent(effectiveStatus);
+  const statusContent = getStatusContent(paymentStatus);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
@@ -222,7 +220,7 @@ export default function Status() {
               </Link>
             </Button>
             
-            {effectiveStatus === 'pending' && (
+            {paymentStatus === 'pending' && (
               <Button 
                 variant="outline" 
                 onClick={() => window.location.reload()}
