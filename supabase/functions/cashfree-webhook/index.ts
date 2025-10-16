@@ -169,13 +169,15 @@ serve(async (req) => {
 
     console.log(`Idempotency check: order_id=${order_id}, dbStatus=${dbStatus}, isFirstSuccess=${isFirstSuccess}, updatedRecord=${updatedDonation !== null}`);
 
-    // If payment was successful AND this is the first success, trigger Pusher event and handle voice/TTS
+    // If payment was successful AND this is the first success, trigger Pusher events and handle voice/TTS
     if (isFirstSuccess && updatedDonation) {
-      // Trigger Pusher event for real-time alerts
+      const streamerSlug = order_id.split('_')[0]; // e.g., 'ankit', 'musicstream', etc.
+      
+      // 1. Trigger OBS alerts channel
       try {
-        const channelName = order_id.startsWith('ankit_') ? 'ankit-alerts' : 'donation-alerts';
+        const alertsChannel = `${streamerSlug}-alerts`;
         
-        await pusher.trigger(channelName, 'new-donation', {
+        await pusher.trigger(alertsChannel, 'new-donation', {
           id: updatedDonation.id,
           name: updatedDonation.name,
           amount: updatedDonation.amount,
@@ -187,10 +189,27 @@ serve(async (req) => {
           streamer_id: updatedDonation.streamer_id,
         });
         
-        console.log(`Pusher event triggered for ${order_id} on channel ${channelName}`);
+        console.log(`Pusher event triggered for ${order_id} on channel ${alertsChannel}`);
       } catch (pusherError) {
-        console.error('Pusher trigger error:', pusherError);
-        // Don't fail the webhook if Pusher fails
+        console.error('Pusher (alerts) trigger error:', pusherError);
+      }
+      
+      // 2. Trigger dashboard channel
+      try {
+        const dashboardChannel = `${streamerSlug}-dashboard`;
+        
+        await pusher.trigger(dashboardChannel, 'new-donation', {
+          id: updatedDonation.id,
+          name: updatedDonation.name,
+          amount: updatedDonation.amount,
+          message: updatedDonation.message,
+          created_at: updatedDonation.created_at,
+          moderation_status: updatedDonation.moderation_status,
+        });
+        
+        console.log(`Pusher dashboard event triggered for ${order_id} on channel ${dashboardChannel}`);
+      } catch (pusherError) {
+        console.error('Pusher (dashboard) trigger error:', pusherError);
       }
 
       // Handle voice message upload if voice data exists
@@ -216,6 +235,27 @@ serve(async (req) => {
 
           if (voiceError) {
             console.error('Voice upload error:', voiceError)
+          } else {
+            // After voice upload succeeds, trigger audio channel
+            try {
+              const audioChannel = `${streamerSlug}-audio`;
+              await pusher.trigger(audioChannel, 'new-audio-message', {
+                id: updatedDonation.id,
+                name: updatedDonation.name,
+                amount: updatedDonation.amount,
+                message: updatedDonation.message,
+                voice_message_url: updatedDonation.voice_message_url,
+                tts_audio_url: null,
+                created_at: updatedDonation.created_at,
+                is_hyperemote: updatedDonation.is_hyperemote,
+                moderation_status: updatedDonation.moderation_status,
+                payment_status: updatedDonation.payment_status,
+                streamer_id: updatedDonation.streamer_id,
+              });
+              console.log(`Pusher audio event triggered for ${order_id} (voice) on channel ${audioChannel}`);
+            } catch (pusherError) {
+              console.error('Pusher (audio) trigger error:', pusherError);
+            }
           }
         } catch (voiceError) {
           console.error('Voice upload trigger error:', voiceError)
@@ -240,6 +280,26 @@ serve(async (req) => {
             console.error('TTS generation error:', ttsError)
           } else {
             console.log('TTS generation triggered successfully for:', order_id)
+            // After TTS generation succeeds, trigger audio channel
+            try {
+              const audioChannel = `${streamerSlug}-audio`;
+              await pusher.trigger(audioChannel, 'new-audio-message', {
+                id: updatedDonation.id,
+                name: updatedDonation.name,
+                amount: updatedDonation.amount,
+                message: updatedDonation.message,
+                voice_message_url: null,
+                tts_audio_url: updatedDonation.tts_audio_url,
+                created_at: updatedDonation.created_at,
+                is_hyperemote: updatedDonation.is_hyperemote,
+                moderation_status: updatedDonation.moderation_status,
+                payment_status: updatedDonation.payment_status,
+                streamer_id: updatedDonation.streamer_id,
+              });
+              console.log(`Pusher audio event triggered for ${order_id} (TTS) on channel ${audioChannel}`);
+            } catch (pusherError) {
+              console.error('Pusher (audio) trigger error:', pusherError);
+            }
           }
         } catch (ttsError) {
           console.error('TTS generation trigger error:', ttsError)

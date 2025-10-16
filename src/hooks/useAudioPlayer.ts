@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { usePusherAudioQueue } from './usePusherAudioQueue';
 
 interface Donation {
   id: string;
@@ -32,6 +33,35 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
   const [pageOpenedAt] = useState(() => new Date().toISOString());
   const MAX_QUEUE_SIZE = 10;
 
+  // Get streamer slug from table name
+  const streamerSlug = tableName.replace('_donations', '').replace('chiaa_gaming', 'chia_gaming');
+
+  // Real-time audio queue via Pusher (primary source)
+  const { connectionStatus: pusherStatus } = usePusherAudioQueue({
+    streamerSlug,
+    pusherKey: '5adfbac388b9dfa055c0',
+    pusherCluster: 'ap2',
+    onNewAudioMessage: (donation) => {
+      console.log('[AudioPlayer] New audio message via Pusher:', donation);
+      setQueuedDonations(prev => {
+        // Prevent duplicates
+        if (prev.some(d => d.id === donation.id)) {
+          console.log('⏭️ Donation already in queue, skipping');
+          return prev;
+        }
+        
+        const updated = [...prev, donation];
+        if (updated.length > MAX_QUEUE_SIZE) {
+          console.warn(`⚠️ Queue full (${MAX_QUEUE_SIZE}), dropping oldest donation`);
+          return updated.slice(1);
+        }
+        
+        console.log(`📊 Queue size: ${updated.length}/${MAX_QUEUE_SIZE}`);
+        return updated;
+      });
+    }
+  });
+
   // Fetch only very recent unplayed donations (last 2 minutes)
   useEffect(() => {
     const fetchRecentUnplayed = async () => {
@@ -62,10 +92,11 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
     fetchRecentUnplayed();
   }, [tableName]);
 
-  // Subscribe to real-time updates (INSERT + UPDATE events)
+  // Keep Supabase Realtime as fallback (in case Pusher is down)
   useEffect(() => {
+    console.log('[AudioPlayer] Setting up Supabase Realtime fallback...');
     const channel = supabase
-      .channel(`audio-queue-${tableName}-${Date.now()}`)
+      .channel(`audio-queue-fallback-${tableName}-${Date.now()}`)
       .on(
         'postgres_changes',
         {
@@ -74,6 +105,13 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
           table: tableName,
         },
         (payload) => {
+          // Only use this if Pusher is disconnected
+          if (pusherStatus === 'connected') {
+            console.log('⏭️ Pusher is connected, ignoring Supabase fallback event');
+            return;
+          }
+          
+          console.log('[AudioPlayer] Using Supabase Realtime fallback (Pusher disconnected)');
           const newDonation = payload.new as Donation;
           
           // Only process donations created AFTER this page was opened
@@ -96,12 +134,9 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
             const hasAudio = newDonation.voice_message_url || newDonation.tts_audio_url;
             
             if (isApproved && isSuccessful && hasAudio) {
-              console.log('🆕 New donation added to queue:', newDonation.id);
+              console.log('🆕 New donation added to queue (fallback):', newDonation.id);
               
-              // Add to queue
               const updated = [...prev, newDonation];
-              
-              // Limit queue size (FIFO)
               if (updated.length > MAX_QUEUE_SIZE) {
                 console.warn(`⚠️ Queue full (${MAX_QUEUE_SIZE}), dropping oldest donation`);
                 return updated.slice(1);
@@ -116,16 +151,13 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
         }
       )
       .subscribe((status) => {
-        console.log('Audio queue subscription status:', status);
-        if (status === 'SUBSCRIBED') {
-          console.log('✅ Subscribed to donation changes (INSERT + UPDATE)');
-        }
+        console.log('[AudioPlayer] Supabase fallback subscription status:', status);
       });
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [tableName, pageOpenedAt]);
+  }, [tableName, pageOpenedAt, pusherStatus]);
 
   // Auto-set current donation from queue
   useEffect(() => {

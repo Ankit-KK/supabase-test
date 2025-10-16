@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { DollarSign, Users, TrendingUp, Clock, AlertCircle, LogOut } from 'lucide-react';
@@ -13,6 +12,7 @@ import DonationCard from './DonationCard';
 import TelegramDashboard from './telegram/TelegramDashboard';
 import OBSTokenManager from './OBSTokenManager';
 import CSVExportButton from './CSVExportButton';
+import { usePusherDashboard } from '@/hooks/usePusherDashboard';
 
 
 interface StreamerDashboardProps {
@@ -67,6 +67,34 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
   const [pendingDonations, setPendingDonations] = useState<DonationRecord[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   
+  // Real-time dashboard updates via Pusher
+  const { connectionStatus: pusherStatus, stats: pusherStats } = usePusherDashboard({
+    streamerSlug,
+    pusherKey: '5adfbac388b9dfa055c0',
+    pusherCluster: 'ap2',
+    onNewDonation: (donation) => {
+      console.log('[Dashboard] New donation via Pusher:', donation);
+      // Refresh dashboard data
+      setRefreshKey(prev => prev + 1);
+      toast({
+        title: "New Donation!",
+        description: `${donation.name} donated ₹${donation.amount}`,
+      });
+    },
+    onDonationApproved: (donationId) => {
+      console.log('[Dashboard] Donation approved via Pusher:', donationId);
+      setRefreshKey(prev => prev + 1);
+    },
+    onDonationRejected: (donationId) => {
+      console.log('[Dashboard] Donation rejected via Pusher:', donationId);
+      setRefreshKey(prev => prev + 1);
+    },
+    onStatsUpdate: (newStats) => {
+      console.log('[Dashboard] Stats update via Pusher:', newStats);
+      setStats(prev => ({ ...prev, ...newStats }));
+    }
+  });
+  
   // Handle logout
   const handleLogout = async () => {
     try {
@@ -85,32 +113,8 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
     }
   };
 
-  // TEMPORARY: Disabled old realtime to test new unified system
-  // Will re-enable after OBS browser source testing is complete
-  /*
-  const connectionState = useRealtimeSubscription({
-    streamerId: streamerData?.id,
-    streamerSlug,
-    onDonationUpdate: (payload) => {
-      console.log('Dashboard received real-time update:', payload);
-      setRefreshKey(prev => prev + 1);
-      toast({
-        title: "New Activity",
-        description: `${payload.new?.name || 'Someone'} donated ₹${payload.new?.amount || 0}`,
-      });
-    },
-    enabled: !!streamerData?.id
-  });
-  */
-
-  // Fallback: Poll for updates every 30 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setRefreshKey(prev => prev + 1);
-    }, 30000);
-    
-    return () => clearInterval(interval);
-  }, []);
+  // Real-time updates now handled by Pusher (usePusherDashboard hook above)
+  // Removed 30-second polling - Pusher provides instant updates
 
   // Fetch streamer data and verify access
   useEffect(() => {
