@@ -141,14 +141,14 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
 
   // Auto-play when audio becomes unlocked (user clicks "Enable Audio")
   useEffect(() => {
-    if (audioUnlocked && autoPlay && donation?.id && !isPlaying) {
+    if (audioUnlocked && autoPlay && donation?.id && !isPlaying && !hasCompleted) {
       const audioUrl = donation.voice_message_url || donation.tts_audio_url;
       if (audioUrl && audioRef.current?.src) {
         console.log('🔓 Audio unlocked, attempting autoplay...');
         setTimeout(() => handlePlay(), 100);
       }
     }
-  }, [audioUnlocked, autoPlay, donation?.id, isPlaying]);
+  }, [audioUnlocked, autoPlay, donation?.id, isPlaying, hasCompleted]);
 
   const unlockAudio = async () => {
     // The button click itself is the user interaction needed to unlock audio
