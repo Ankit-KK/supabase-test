@@ -40,23 +40,54 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(0.8);
   const [isMuted, setIsMuted] = useState(false);
+  const [hasCompleted, setHasCompleted] = useState(false);
   const [audioUnlocked, setAudioUnlocked] = useState(() => {
     return sessionStorage.getItem(`audio-unlocked-${tableName}`) === 'true';
   });
 
+  // Reset completion guard when donation changes
+  useEffect(() => {
+    setHasCompleted(false);
+  }, [donation?.id]);
+
+  // Set up audio event listeners with multiple safety nets
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    const updateTime = () => setCurrentTime(audio.currentTime);
-    const updateDuration = () => setDuration(audio.duration);
+    const updateTime = () => {
+      const audio = audioRef.current;
+      if (!audio) return;
+      
+      setCurrentTime(audio.currentTime);
+      
+      // Safety net: Manual completion check during timeupdate
+      if (!hasCompleted && audio.duration > 0 && audio.currentTime >= audio.duration - 0.1) {
+        if (onPlayComplete && isPlaying) {
+          console.log('🏁 Audio reached end via timeupdate check');
+          setHasCompleted(true);
+          setIsPlaying(false);
+          setCurrentTime(0);
+          setTimeout(onPlayComplete, 500);
+        }
+      }
+    };
+    
+    const updateDuration = () => {
+      if (audioRef.current) {
+        setDuration(audioRef.current.duration);
+      }
+    };
+
     const handleEnded = () => {
+      if (hasCompleted) return;
+      
+      console.log('🏁 Audio playback complete via ended event');
+      setHasCompleted(true);
       setIsPlaying(false);
       setCurrentTime(0);
       
-      // Notify parent that playback is complete
       if (onPlayComplete) {
-        console.log('🏁 Audio playback complete, notifying parent');
         setTimeout(onPlayComplete, 500);
       }
     };
@@ -70,7 +101,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
       audio.removeEventListener('loadedmetadata', updateDuration);
       audio.removeEventListener('ended', handleEnded);
     };
-  }, [onPlayComplete]);
+  }, [onPlayComplete, isPlaying, hasCompleted, donation?.id]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -88,6 +119,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     setIsPlaying(false);
     setCurrentTime(0);
     setDuration(0);
+    setHasCompleted(false);
 
     // Set audio source (priority: voice message > TTS audio)
     const audioUrl = donation.voice_message_url || donation.tts_audio_url;
