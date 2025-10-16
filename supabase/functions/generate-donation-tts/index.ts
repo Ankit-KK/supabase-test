@@ -119,7 +119,7 @@ serve(async (req) => {
       target_language_code: targetLanguage,
       speaker: "manisha",
       pitch: 0,
-      pace: 1.1,
+      pace: 0.85,
       loudness: 1.2,
       speech_sample_rate: 22050,
       enable_preprocessing: true,
