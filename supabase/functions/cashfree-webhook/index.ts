@@ -1,6 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0'
-import { createHash } from 'https://deno.land/std@0.168.0/hash/mod.ts'
+import { Hash } from 'https://deno.land/x/checksum@1.4.0/mod.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -25,8 +25,9 @@ class PusherClient {
     const body = JSON.stringify({ name: event, data: JSON.stringify(data), channel });
     const timestamp = Math.floor(Date.now() / 1000);
     
-    // Calculate MD5 hash of body using Deno's standard hash module
-    const bodyMd5 = createHash("md5").update(body).toString();
+    // Calculate MD5 hash of body using checksum library
+    const hash = new Hash("md5");
+    const bodyMd5 = hash.digest(new TextEncoder().encode(body)).hex();
     
     const authString = `POST\n/apps/${this.appId}/events\nauth_key=${this.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${bodyMd5}`;
     const authSignature = await this.hmacSha256(authString, this.secret);
