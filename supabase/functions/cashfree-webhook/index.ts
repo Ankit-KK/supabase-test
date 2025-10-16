@@ -23,12 +23,11 @@ class PusherClient {
   async trigger(channel: string, event: string, data: any) {
     const body = JSON.stringify({ name: event, data: JSON.stringify(data), channel });
     const timestamp = Math.floor(Date.now() / 1000);
-    const bodyMd5 = await this.md5(body);
     
-    const authString = `POST\n/apps/${this.appId}/events\nauth_key=${this.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${bodyMd5}`;
+    const authString = `POST\n/apps/${this.appId}/events\nauth_key=${this.key}&auth_timestamp=${timestamp}&auth_version=1.0`;
     const authSignature = await this.hmacSha256(authString, this.secret);
     
-    const url = `https://api-${this.cluster}.pusher.com/apps/${this.appId}/events?auth_key=${this.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${bodyMd5}&auth_signature=${authSignature}`;
+    const url = `https://api-${this.cluster}.pusher.com/apps/${this.appId}/events?auth_key=${this.key}&auth_timestamp=${timestamp}&auth_version=1.0&auth_signature=${authSignature}`;
     
     const response = await fetch(url, {
       method: 'POST',
@@ -42,15 +41,6 @@ class PusherClient {
     }
 
     return response.json();
-  }
-
-  private async md5(str: string): Promise<string> {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(str);
-    const hashBuffer = await crypto.subtle.digest('MD5', data);
-    return Array.from(new Uint8Array(hashBuffer))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
   }
 
   private async hmacSha256(message: string, secret: string): Promise<string> {
