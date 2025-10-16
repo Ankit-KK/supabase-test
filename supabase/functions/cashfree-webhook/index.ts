@@ -142,6 +142,13 @@ serve(async (req) => {
     
     const tableName = getTableName(order_id);
 
+    // First, get the current state to check for idempotency
+    const { data: existingDonation } = await supabase
+      .from(tableName)
+      .select('payment_status, moderation_status')
+      .eq('order_id', order_id)
+      .single();
+
     // Update the donation record
     const { data: updatedDonation, error: updateError } = await supabase
       .from(tableName)
@@ -161,8 +168,16 @@ serve(async (req) => {
       throw new Error('Failed to update donation record')
     }
 
-    // If payment was successful, trigger Pusher event and handle voice/TTS
-    if (dbStatus === 'success' && updatedDonation) {
+    // Only trigger Pusher if this is the FIRST time the payment succeeds
+    // (prevents duplicate triggers from webhook retries)
+    const isFirstSuccess = existingDonation && 
+      existingDonation.payment_status !== 'success' && 
+      dbStatus === 'success';
+
+    console.log(`Idempotency check: existing status=${existingDonation?.payment_status}, new status=${dbStatus}, isFirstSuccess=${isFirstSuccess}`);
+
+    // If payment was successful AND this is the first success, trigger Pusher event and handle voice/TTS
+    if (isFirstSuccess && updatedDonation) {
       // Trigger Pusher event for real-time alerts
       try {
         const channelName = order_id.startsWith('ankit_') ? 'ankit-alerts' : 'donation-alerts';
