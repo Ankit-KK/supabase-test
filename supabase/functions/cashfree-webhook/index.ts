@@ -73,6 +73,21 @@ serve(async (req) => {
     
     console.log('Cashfree webhook received:', JSON.stringify(webhookData, null, 2))
 
+    // Handle Cashfree test webhooks
+    if (webhookData.data?.test_object) {
+      console.log('Test webhook received from Cashfree - responding with success')
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'Test webhook received successfully'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200
+        }
+      )
+    }
+
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
