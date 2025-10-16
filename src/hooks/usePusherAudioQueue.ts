@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import Pusher from 'pusher-js';
 
 interface AudioDonation {
@@ -30,6 +30,14 @@ export const usePusherAudioQueue = ({
 }: UsePusherAudioQueueConfig) => {
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('connecting');
   const [queueSize, setQueueSize] = useState(0);
+
+  // Store callback in ref to prevent reconnection loop
+  const onNewAudioMessageRef = useRef(onNewAudioMessage);
+
+  // Update ref when callback changes
+  useEffect(() => {
+    onNewAudioMessageRef.current = onNewAudioMessage;
+  }, [onNewAudioMessage]);
 
   useEffect(() => {
     console.log('[PusherAudioQueue] Initializing Pusher connection...');
@@ -69,8 +77,8 @@ export const usePusherAudioQueue = ({
     // New audio message ready
     channel.bind('new-audio-message', (data: AudioDonation) => {
       console.log('[PusherAudioQueue] New audio message received:', data);
-      if (onNewAudioMessage) {
-        onNewAudioMessage(data);
+      if (onNewAudioMessageRef.current) {
+        onNewAudioMessageRef.current(data);
       }
       setQueueSize(prev => prev + 1);
     });
@@ -81,7 +89,7 @@ export const usePusherAudioQueue = ({
       pusher.unsubscribe(channelName);
       pusher.disconnect();
     };
-  }, [streamerSlug, pusherKey, pusherCluster, onNewAudioMessage]);
+  }, [streamerSlug, pusherKey, pusherCluster]);
 
   const decrementQueue = useCallback(() => {
     setQueueSize(prev => Math.max(0, prev - 1));

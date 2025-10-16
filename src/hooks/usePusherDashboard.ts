@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Pusher from 'pusher-js';
 
 interface DashboardStats {
@@ -39,6 +39,20 @@ export const usePusherDashboard = ({
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('connecting');
   const [stats, setStats] = useState<Partial<DashboardStats>>({});
 
+  // Store callbacks in refs to prevent reconnection loop
+  const onNewDonationRef = useRef(onNewDonation);
+  const onDonationApprovedRef = useRef(onDonationApproved);
+  const onDonationRejectedRef = useRef(onDonationRejected);
+  const onStatsUpdateRef = useRef(onStatsUpdate);
+
+  // Update refs when callbacks change
+  useEffect(() => {
+    onNewDonationRef.current = onNewDonation;
+    onDonationApprovedRef.current = onDonationApproved;
+    onDonationRejectedRef.current = onDonationRejected;
+    onStatsUpdateRef.current = onStatsUpdate;
+  }, [onNewDonation, onDonationApproved, onDonationRejected, onStatsUpdate]);
+
   useEffect(() => {
     console.log('[PusherDashboard] Initializing Pusher connection...');
     
@@ -77,8 +91,8 @@ export const usePusherDashboard = ({
     // New donation received
     channel.bind('new-donation', (data: DonationUpdate) => {
       console.log('[PusherDashboard] New donation received:', data);
-      if (onNewDonation) {
-        onNewDonation(data);
+      if (onNewDonationRef.current) {
+        onNewDonationRef.current(data);
       }
       // Update stats locally
       setStats(prev => ({
@@ -92,8 +106,8 @@ export const usePusherDashboard = ({
     // Donation approved
     channel.bind('donation-approved', (data: { id: string }) => {
       console.log('[PusherDashboard] Donation approved:', data.id);
-      if (onDonationApproved) {
-        onDonationApproved(data.id);
+      if (onDonationApprovedRef.current) {
+        onDonationApprovedRef.current(data.id);
       }
       setStats(prev => ({
         ...prev,
@@ -104,8 +118,8 @@ export const usePusherDashboard = ({
     // Donation rejected
     channel.bind('donation-rejected', (data: { id: string }) => {
       console.log('[PusherDashboard] Donation rejected:', data.id);
-      if (onDonationRejected) {
-        onDonationRejected(data.id);
+      if (onDonationRejectedRef.current) {
+        onDonationRejectedRef.current(data.id);
       }
       setStats(prev => ({
         ...prev,
@@ -117,8 +131,8 @@ export const usePusherDashboard = ({
     channel.bind('stats-update', (data: Partial<DashboardStats>) => {
       console.log('[PusherDashboard] Stats update received:', data);
       setStats(prev => ({ ...prev, ...data }));
-      if (onStatsUpdate) {
-        onStatsUpdate(data);
+      if (onStatsUpdateRef.current) {
+        onStatsUpdateRef.current(data);
       }
     });
 
@@ -128,7 +142,7 @@ export const usePusherDashboard = ({
       pusher.unsubscribe(channelName);
       pusher.disconnect();
     };
-  }, [streamerSlug, pusherKey, pusherCluster, onNewDonation, onDonationApproved, onDonationRejected, onStatsUpdate]);
+  }, [streamerSlug, pusherKey, pusherCluster]);
 
   return {
     connectionStatus,
