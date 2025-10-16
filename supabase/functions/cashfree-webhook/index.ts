@@ -142,14 +142,8 @@ serve(async (req) => {
     
     const tableName = getTableName(order_id);
 
-    // First, get the current state to check for idempotency
-    const { data: existingDonation } = await supabase
-      .from(tableName)
-      .select('payment_status, moderation_status')
-      .eq('order_id', order_id)
-      .single();
-
-    // Update the donation record
+    // Atomic update with conditional check: only update if payment_status is NOT already 'success'
+    // This prevents race conditions when multiple webhooks arrive simultaneously
     const { data: updatedDonation, error: updateError } = await supabase
       .from(tableName)
       .update({ 
@@ -160,21 +154,20 @@ serve(async (req) => {
         updated_at: new Date().toISOString()
       })
       .eq('order_id', order_id)
+      .neq('payment_status', 'success')  // Only update if NOT already success (race condition guard)
       .select()
-      .single()
+      .maybeSingle()  // Use maybeSingle instead of single to handle case where no rows match
 
     if (updateError) {
       console.error('Database update error:', updateError)
       throw new Error('Failed to update donation record')
     }
 
-    // Only trigger Pusher if this is the FIRST time the payment succeeds
-    // (prevents duplicate triggers from webhook retries)
-    const isFirstSuccess = existingDonation && 
-      existingDonation.payment_status !== 'success' && 
-      dbStatus === 'success';
+    // If updatedDonation is null, it means the status was already 'success' (another webhook got there first)
+    // Only the FIRST webhook that successfully updates the status will trigger Pusher
+    const isFirstSuccess = updatedDonation !== null && dbStatus === 'success';
 
-    console.log(`Idempotency check: existing status=${existingDonation?.payment_status}, new status=${dbStatus}, isFirstSuccess=${isFirstSuccess}`);
+    console.log(`Idempotency check: order_id=${order_id}, dbStatus=${dbStatus}, isFirstSuccess=${isFirstSuccess}, updatedRecord=${updatedDonation !== null}`);
 
     // If payment was successful AND this is the first success, trigger Pusher event and handle voice/TTS
     if (isFirstSuccess && updatedDonation) {
