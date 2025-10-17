@@ -97,6 +97,40 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Get streamer slug to determine correct table and Pusher channel
+    const { data: streamerData, error: streamerError } = await supabase
+      .from('streamers')
+      .select('streamer_slug')
+      .eq('id', streamerId)
+      .single();
+
+    if (streamerError || !streamerData) {
+      console.error('Failed to fetch streamer data:', streamerError);
+      throw new Error('Streamer not found');
+    }
+
+    const streamerSlug = streamerData.streamer_slug;
+    console.log('Processing TTS for streamer:', streamerSlug);
+
+    // Determine donation table name based on streamer slug
+    const donationTableMap: Record<string, string> = {
+      'ankit': 'ankit_donations',
+      'chia_gaming': 'chiaa_gaming_donations',
+      'techgamer': 'techgamer_donations',
+      'musicstream': 'musicstream_donations',
+      'artcreate': 'artcreate_donations',
+      'codelive': 'codelive_donations',
+      'demostreamer': 'demostreamer_donations',
+      'fitnessflow': 'fitnessflow_donations',
+    };
+
+    const donationTable = donationTableMap[streamerSlug];
+    if (!donationTable) {
+      throw new Error(`No donation table configured for streamer: ${streamerSlug}`);
+    }
+
+    console.log('Using donation table:', donationTable);
+
     // Format the donation announcement
     const donationText = message 
       ? `${username} donated ${amount} rupees. ${message}`
@@ -209,7 +243,7 @@ serve(async (req) => {
 
     // Update donation record with TTS audio URL
     const { error: updateError } = await supabase
-      .from('ankit_donations')
+      .from(donationTable)
       .update({ tts_audio_url: publicUrl })
       .eq('id', donationId);
 
@@ -222,7 +256,7 @@ serve(async (req) => {
 
     // Re-query to get complete updated donation record
     const { data: finalDonation } = await supabase
-      .from('ankit_donations')
+      .from(donationTable)
       .select('*')
       .eq('id', donationId)
       .single();
@@ -237,7 +271,8 @@ serve(async (req) => {
           Deno.env.get('PUSHER_CLUSTER') || 'ap2'
         );
 
-        const audioChannel = 'ankit-audio';
+        // Use dynamic audio channel based on streamer slug
+        const audioChannel = `${streamerSlug}-audio`;
         await pusher.trigger(audioChannel, 'new-audio-message', {
           id: finalDonation.id,
           name: finalDonation.name,
