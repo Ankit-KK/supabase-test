@@ -1,5 +1,8 @@
 project_id = "vsevsjvtrshgeiudrnth"
 
+[functions.get-pusher-config]
+verify_jwt = false
+
 [functions.generate-donation-tts]
 verify_jwt = false
 

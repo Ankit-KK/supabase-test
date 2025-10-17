@@ -264,11 +264,22 @@ serve(async (req) => {
     if (finalDonation) {
       // Initialize Pusher and trigger audio event
       try {
+        // Get Pusher credentials from Supabase secrets (required)
+        const pusherAppId = Deno.env.get('PUSHER_APP_ID');
+        const pusherKey = Deno.env.get('PUSHER_KEY');
+        const pusherSecret = Deno.env.get('PUSHER_SECRET');
+        const pusherCluster = Deno.env.get('PUSHER_CLUSTER');
+
+        if (!pusherAppId || !pusherKey || !pusherSecret || !pusherCluster) {
+          console.error('Missing Pusher credentials in environment variables');
+          throw new Error('Pusher configuration incomplete - check Supabase secrets');
+        }
+
         const pusher = new PusherClient(
-          Deno.env.get('PUSHER_APP_ID') || '2064489',
-          Deno.env.get('PUSHER_KEY') || '5adfbac388b9dfa055c0',
-          Deno.env.get('PUSHER_SECRET') || 'de2c5b68db09285c0dba',
-          Deno.env.get('PUSHER_CLUSTER') || 'ap2'
+          pusherAppId,
+          pusherKey,
+          pusherSecret,
+          pusherCluster
         );
 
         // Use dynamic audio channel based on streamer slug

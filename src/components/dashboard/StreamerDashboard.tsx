@@ -13,6 +13,7 @@ import TelegramDashboard from './telegram/TelegramDashboard';
 import OBSTokenManager from './OBSTokenManager';
 import CSVExportButton from './CSVExportButton';
 import { usePusherDashboard } from '@/hooks/usePusherDashboard';
+import { usePusherConfig } from '@/hooks/usePusherConfig';
 
 
 interface StreamerDashboardProps {
@@ -67,11 +68,14 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
   const [pendingDonations, setPendingDonations] = useState<DonationRecord[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   
+  // Get Pusher config from backend
+  const { config: pusherConfig } = usePusherConfig();
+  
   // Real-time dashboard updates via Pusher
   const { connectionStatus: pusherStatus, stats: pusherStats } = usePusherDashboard({
     streamerSlug,
-    pusherKey: '5adfbac388b9dfa055c0',
-    pusherCluster: 'ap2',
+    pusherKey: pusherConfig?.key,
+    pusherCluster: pusherConfig?.cluster,
     onNewDonation: (donation) => {
       console.log('[Dashboard] New donation via Pusher:', donation);
       // Refresh dashboard data

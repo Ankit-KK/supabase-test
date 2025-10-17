@@ -19,8 +19,8 @@ interface DonationUpdate {
 
 interface UsePusherDashboardConfig {
   streamerSlug: string;
-  pusherKey: string;
-  pusherCluster: string;
+  pusherKey?: string;
+  pusherCluster?: string;
   onNewDonation?: (donation: DonationUpdate) => void;
   onDonationApproved?: (donationId: string) => void;
   onDonationRejected?: (donationId: string) => void;
@@ -54,6 +54,12 @@ export const usePusherDashboard = ({
   }, [onNewDonation, onDonationApproved, onDonationRejected, onStatsUpdate]);
 
   useEffect(() => {
+    // Wait for pusher config to be available
+    if (!pusherKey || !pusherCluster) {
+      console.log('[PusherDashboard] Waiting for Pusher config...');
+      return;
+    }
+
     console.log('[PusherDashboard] Initializing Pusher connection...');
     
     const pusher = new Pusher(pusherKey, {

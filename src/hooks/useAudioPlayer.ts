@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { usePusherAudioQueue } from './usePusherAudioQueue';
+import { usePusherConfig } from './usePusherConfig';
 
 interface Donation {
   id: string;
@@ -36,11 +37,14 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
   // Get streamer slug from table name
   const streamerSlug = tableName.replace('_donations', '').replace('chiaa_gaming', 'chia_gaming');
 
+  // Get Pusher config from backend
+  const { config: pusherConfig } = usePusherConfig();
+
   // Real-time audio queue via Pusher (primary source)
   const { connectionStatus: pusherStatus } = usePusherAudioQueue({
     streamerSlug,
-    pusherKey: '5adfbac388b9dfa055c0',
-    pusherCluster: 'ap2',
+    pusherKey: pusherConfig?.key,
+    pusherCluster: pusherConfig?.cluster,
     onNewAudioMessage: (donation) => {
       console.log('[AudioPlayer] New audio message via Pusher:', donation);
       setQueuedDonations(prev => {

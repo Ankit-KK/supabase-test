@@ -17,8 +17,8 @@ interface AudioDonation {
 
 interface UsePusherAudioQueueConfig {
   streamerSlug: string;
-  pusherKey: string;
-  pusherCluster: string;
+  pusherKey?: string;
+  pusherCluster?: string;
   onNewAudioMessage?: (donation: AudioDonation) => void;
 }
 
@@ -40,6 +40,12 @@ export const usePusherAudioQueue = ({
   }, [onNewAudioMessage]);
 
   useEffect(() => {
+    // Wait for pusher config to be available
+    if (!pusherKey || !pusherCluster) {
+      console.log('[PusherAudioQueue] Waiting for Pusher config...');
+      return;
+    }
+
     console.log('[PusherAudioQueue] Initializing Pusher connection...');
     
     const pusher = new Pusher(pusherKey, {

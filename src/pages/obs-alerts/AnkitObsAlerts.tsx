@@ -1,8 +1,12 @@
 import React from 'react';
 import { AlertDisplay } from '@/components/AlertDisplay';
 import { usePusherAlerts } from '@/hooks/usePusherAlerts';
+import { usePusherConfig } from '@/hooks/usePusherConfig';
 
 const AnkitObsAlerts = () => {
+  // Get Pusher config from backend
+  const { config: pusherConfig, loading: configLoading } = usePusherConfig();
+  
   // Real-time alerts via Pusher
   const {
     currentAlert,
@@ -12,9 +16,21 @@ const AnkitObsAlerts = () => {
     queueSize
   } = usePusherAlerts({
     channelName: 'ankit-alerts',
-    pusherKey: '5adfbac388b9dfa055c0',
-    pusherCluster: 'ap2',
+    pusherKey: pusherConfig?.key || '',
+    pusherCluster: pusherConfig?.cluster || '',
   });
+
+  // Show loading while config is being fetched
+  if (configLoading || !pusherConfig) {
+    return (
+      <div className="fixed inset-0 bg-transparent flex items-center justify-center">
+        <div className="text-white text-center">
+          <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+          <p>Loading alerts...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-transparent">
