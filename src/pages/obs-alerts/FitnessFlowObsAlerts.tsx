@@ -1,68 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { AlertDisplay } from '@/components/AlertDisplay';
-import { useDirectAlerts } from '@/hooks/useDirectAlerts';
-import { useStreamerLookup } from '@/hooks/useStreamerLookup';
+import { usePusherAlerts } from '@/hooks/usePusherAlerts';
+import { usePusherConfig } from '@/hooks/usePusherConfig';
 
 const FitnessFlowObsAlerts = () => {
-  const [obsToken, setObsToken] = useState<string | null>(null);
-  const { streamerData, loading: streamerLoading } = useStreamerLookup('fitnessflow');
-
+  const { config: pusherConfig, loading: configLoading } = usePusherConfig();
+  
   const {
     currentAlert,
     isVisible,
     connectionStatus,
     triggerTestAlert,
-    triggerTestVoiceAlert,
-    tokenValid: directTokenValid
-  } = useDirectAlerts({
-    streamerId: streamerData?.id,
-    tableName: 'fitnessflow_donations',
-    obsToken: obsToken || undefined
+  } = usePusherAlerts({
+    channelName: 'fitnessflow-alerts',
+    pusherKey: pusherConfig?.key || '',
+    pusherCluster: pusherConfig?.cluster || '',
   });
 
-  useEffect(() => {
-    // Get OBS token from URL parameters
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
-    if (token) {
-      setObsToken(token);
-    }
-  }, []);
-
-  if (streamerLoading) {
+  if (configLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black text-white">
         <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Loading...</h2>
-        </div>
-      </div>
-    );
-  }
-
-  if (!obsToken) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-black text-white">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">FitnessFlow Alerts</h2>
-          <p className="text-gray-400">
-            Please provide a valid OBS token in the URL parameters.
-          </p>
-          <p className="text-sm text-gray-500 mt-2">
-            Format: ?token=your_obs_token
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!directTokenValid) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-black text-white">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">FitnessFlow Alerts</h2>
-          <p className="text-red-400">
-            Invalid or expired OBS token. Please check your token and try again.
-          </p>
+          <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p>Loading Pusher configuration...</p>
         </div>
       </div>
     );
@@ -81,19 +41,13 @@ const FitnessFlowObsAlerts = () => {
       {process.env.NODE_ENV === 'development' && (
         <div className="fixed bottom-4 left-4 bg-black/80 text-white p-2 rounded text-xs space-y-1">
           <div>Status: {connectionStatus}</div>
-          <div>Token: {obsToken?.substring(0, 8)}...</div>
+          <div>Channel: fitnessflow-alerts</div>
           <div>Alert: {currentAlert ? 'Active' : 'None'}</div>
           <button 
             onClick={triggerTestAlert}
-            className="px-2 py-1 bg-orange-600 text-white rounded text-xs mr-1"
+            className="px-2 py-1 bg-orange-600 text-white rounded text-xs"
           >
             Test Alert
-          </button>
-          <button 
-            onClick={triggerTestVoiceAlert}
-            className="px-2 py-1 bg-red-600 text-white rounded text-xs"
-          >
-            Test Voice
           </button>
         </div>
       )}
