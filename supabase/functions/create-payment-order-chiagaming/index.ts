@@ -116,8 +116,10 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
+        order_id: orderId,
         payment_session_id: cashfreeOrder.payment_session_id,
-        order_id: orderId
+        order_token: cashfreeOrder.order_token,
+        cashfree_order_id: cashfreeOrder.cf_order_id
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
