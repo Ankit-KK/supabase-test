@@ -1,73 +1,58 @@
-# Welcome to your Lovable project
+Hype Chat
+Hype Chatis a cutting-edge real-time chat and donation overlay built for streamers and content creators. Designed for seamless integration and exceptional performance, it enhances live streams with interactive overlays, instant donations, and a modern, customizable UI.
 
-## Project info
+🌟 Key Features
+Real-Time Chat: Instant messaging overlay that keeps your audience engaged.
 
-**URL**: https://lovable.dev/projects/854a7833-ea4b-49d4-a1e0-c38c31892630
+Donation Alerts: Support for live, instant notifications when viewers donate.
 
-## How can I edit this code?
+Easy Integration: One-click setup with OBS, Streamlabs, or any browser source.
 
-There are several ways of editing your application.
+Modern UI: Beautiful, responsive design powered by shadcn-ui and Tailwind CSS.
 
-**Use Lovable**
+Fast & Reliable: Built with React, Vite, and Pusher for speed and scalability.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/854a7833-ea4b-49d4-a1e0-c38c31892630) and start prompting.
+Open Source: Fully extensible—adapt it to your unique streaming needs.
 
-Changes made via Lovable will be committed automatically to this repo.
+🏗️ Technology Stack
+Frontend: React, Vite, TypeScript
 
-**Use your preferred IDE**
+UI Components: shadcn-ui, Tailwind CSS
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+Backend Services: Supabase, Pusher
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Deployment: Vercel (recommended) or any Node-compatible platform
 
-Follow these steps:
+⚡ Quick Start
+Clone the Repository
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+bash
+git clone https://github.com/Ankitak-ai/hype-chat-spark.git
+cd hype-chat-spark
+Install Dependencies
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+bash
+npm install
+Start the Development Server
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+bash
 npm run dev
-```
+Deploy
+Deploy to Vercel with a single click or follow the hosting instructions in /docs/deployment.md.
 
-**Edit a file directly in GitHub**
+🖥️ Usage
+Register your streamer account (instructions in the app UI).
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Copy your unique widget URL.
 
-**Use GitHub Codespaces**
+Paste the URL into your streaming software (OBS/Streamlabs) as a browser source.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Go live and watch chat and donations appear in real time!
 
-## What technologies are used for this project?
+🤝 Contributions
+Contributions are welcome!
+If you have suggestions, bug reports, or feature requests, please open an issue or submit a pull request.
 
-This project is built with:
+📄 License
+This project is released under the MIT License.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/854a7833-ea4b-49d4-a1e0-c38c31892630) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
