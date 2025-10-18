@@ -203,11 +203,8 @@ const DemoStreamer = () => {
           amount: amount,
           message: donationType === 'message' ? formData.message.trim() : 
                   donationType === 'voice' ? 'Voice message donation' : '',
-          phone: phoneNumber?.trim() || undefined,
-          streamer_slug: 'demostreamer',
-          temp_voice_data: tempVoice,
-          voice_duration_seconds: donationType === 'voice' ? voiceDuration : undefined,
-          is_hyperemote: donationType === 'hyperemote' ? true : undefined
+          phone: phoneNumber,
+          voiceData: tempVoice
         }
       });
 
