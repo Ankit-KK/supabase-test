@@ -6,7 +6,7 @@ const CodeLiveDashboard = () => {
     <StreamerDashboard
       streamerSlug="codelive"
       streamerName="CodeLive"
-      tableName="chia_gaming_donations"
+      tableName="codelive_donations"
       brandColor="#ef4444"
     />
   );

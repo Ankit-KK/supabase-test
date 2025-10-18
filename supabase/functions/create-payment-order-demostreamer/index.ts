@@ -19,10 +19,11 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const CASHFREE_APP_ID = Deno.env.get('CASHFREE_APP_ID');
-    const CASHFREE_SECRET_KEY = Deno.env.get('CASHFREE_SECRET_KEY');
+    const XClientId = Deno.env.get('XClientId');
+    const XClientSecret = Deno.env.get('XClientSecret');
+    const apiUrl = Deno.env.get('api_url') || 'https://api.cashfree.com/pg';
 
-    if (!CASHFREE_APP_ID || !CASHFREE_SECRET_KEY) {
+    if (!XClientId || !XClientSecret) {
       throw new Error('Cashfree credentials not configured');
     }
 
@@ -46,7 +47,7 @@ serve(async (req) => {
       throw new Error('Streamer not found');
     }
 
-    const orderId = `ORDER_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+    const orderId = `demostreamer_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
 
     const cashfreePayload = {
       order_id: orderId,
@@ -64,12 +65,12 @@ serve(async (req) => {
       }
     };
 
-    const cashfreeResponse = await fetch('https://sandbox.cashfree.com/pg/orders', {
+    const cashfreeResponse = await fetch(`${apiUrl}/orders`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-client-id': CASHFREE_APP_ID,
-        'x-client-secret': CASHFREE_SECRET_KEY,
+        'x-client-id': XClientId,
+        'x-client-secret': XClientSecret,
         'x-api-version': '2023-08-01'
       },
       body: JSON.stringify(cashfreePayload)

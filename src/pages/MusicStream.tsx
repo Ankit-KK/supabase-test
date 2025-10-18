@@ -421,6 +421,8 @@ const MusicStream = () => {
                   id="message"
                   name="message"
                   placeholder="Enter your message"
+                  value={formData.message}
+                  onChange={handleInputChange}
                   className="w-full p-3 border border-purple-500/30 rounded-lg bg-background/50 backdrop-blur-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 focus:outline-none resize-none"
                   rows={3}
                   maxLength={500}

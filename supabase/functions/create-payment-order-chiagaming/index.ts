@@ -51,7 +51,7 @@ serve(async (req) => {
       throw new Error('Streamer not found');
     }
 
-    const orderId = `chia_gaming_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const orderId = `chiagaming_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     const cashfreePayload = {
       order_id: orderId,
@@ -63,7 +63,7 @@ serve(async (req) => {
         customer_phone: phone
       },
       order_meta: {
-        return_url: `${req.headers.get('origin')}/chia_gaming?order_id=${orderId}&status={order_status}`,
+        return_url: `${req.headers.get('origin')}/chiaa-gaming?order_id=${orderId}&status={order_status}`,
         notify_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/cashfree-webhook`
       }
     };

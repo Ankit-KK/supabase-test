@@ -6,7 +6,7 @@ const ArtCreateDashboard = () => {
     <StreamerDashboard
       streamerSlug="artcreate"
       streamerName="ArtCreate"
-      tableName="chia_gaming_donations"
+      tableName="artcreate_donations"
       brandColor="#ec4899"
     />
   );
