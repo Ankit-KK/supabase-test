@@ -1,5 +1,8 @@
 project_id = "vsevsjvtrshgeiudrnth"
 
+[functions.get-video-url]
+verify_jwt = false
+
 [functions.get-pusher-config]
 verify_jwt = false
 
