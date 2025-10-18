@@ -26,7 +26,7 @@ serve(async (req) => {
 
     // Fetch the donation record
     const { data: donation, error: fetchError } = await supabaseClient
-      .from('chia_gaming_donations')
+      .from('chiaa_gaming_donations')
       .select('*')
       .eq('order_id', order_id)
       .eq('payment_status', 'success')
@@ -71,7 +71,7 @@ serve(async (req) => {
 
     // Update donation record with voice message URL and clear temp data
     const { error: updateError } = await supabaseClient
-      .from('chia_gaming_donations')
+      .from('chiaa_gaming_donations')
       .update({
         voice_message_url: urlData.publicUrl,
         temp_voice_data: null,
