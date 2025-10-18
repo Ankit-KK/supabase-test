@@ -145,10 +145,12 @@ serve(async (req) => {
       if (orderId.startsWith('musicstream_')) return 'musicstream_donations';
       if (orderId.startsWith('techgamer_')) return 'techgamer_donations';
       if (orderId.startsWith('fitnessflow_')) return 'fitnessflow_donations';
-      if (orderId.startsWith('artcreate_')) return 'chia_gaming_donations';
-      if (orderId.startsWith('codelive_')) return 'chia_gaming_donations';
+      if (orderId.startsWith('artcreate_')) return 'artcreate_donations';
+      if (orderId.startsWith('codelive_')) return 'codelive_donations';
       if (orderId.startsWith('demostreamer_')) return 'demostreamer_donations';
-      return 'chia_gaming_donations'; // default for chia_gaming
+      if (orderId.startsWith('chia_')) return 'chiaa_gaming_donations';
+      if (orderId.startsWith('chiagaming_')) return 'chiaa_gaming_donations';
+      return 'chiaa_gaming_donations'; // default for chia_gaming
     };
     
     const tableName = getTableName(order_id);
