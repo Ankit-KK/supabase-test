@@ -72,7 +72,7 @@ const DemoStreamer = () => {
         console.log('Initializing Cashfree SDK...');
         
         const cf = await load({
-          mode: "sandbox"
+          mode: "production"
         });
         
         setCashfree(cf);
