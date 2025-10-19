@@ -27,7 +27,7 @@ serve(async (req) => {
 
     // Get the donation record with temp voice data (handle race conditions)
     const { data: donation, error: fetchError } = await supabaseAdmin
-      .from('chia_gaming_donations')
+      .from('chiaa_gaming_donations')
       .select('*')
       .eq('order_id', order_id)
       .eq('payment_status', 'success')
@@ -79,7 +79,7 @@ serve(async (req) => {
 
     // Update donation record with voice URL and clear temp data
     const { error: updateError } = await supabaseAdmin
-      .from('chia_gaming_donations')
+      .from('chiaa_gaming_donations')
       .update({ 
         voice_message_url: publicUrl,
         temp_voice_data: null // Clear temp data to save space
