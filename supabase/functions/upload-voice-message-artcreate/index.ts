@@ -24,9 +24,9 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Fetch the donation record from chia_gaming_donations (ArtCreate currently uses this table)
+    // Fetch the donation record from artcreate_donations
     const { data: donation, error: fetchError } = await supabaseClient
-      .from('chia_gaming_donations')
+      .from('artcreate_donations')
       .select('*')
       .eq('order_id', order_id)
       .eq('payment_status', 'success')
@@ -71,7 +71,7 @@ serve(async (req) => {
 
     // Update donation record with voice message URL and clear temp data
     const { error: updateError } = await supabaseClient
-      .from('chia_gaming_donations')
+      .from('artcreate_donations')
       .update({
         voice_message_url: urlData.publicUrl,
         temp_voice_data: null,

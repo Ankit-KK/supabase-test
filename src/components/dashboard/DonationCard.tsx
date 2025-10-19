@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
-import { DollarSign, MessageSquare, Mic, Heart } from 'lucide-react';
+import { DollarSign, MessageSquare, Mic, Heart, Volume2 } from 'lucide-react';
 import { MiniAudioPlayer } from '@/components/MiniAudioPlayer';
 
 interface DonationCardProps {
@@ -14,6 +14,7 @@ interface DonationCardProps {
     amount: number;
     message?: string;
     voice_message_url?: string;
+    tts_audio_url?: string;
     is_hyperemote?: boolean;
     moderation_status: string;
     payment_status: string;
@@ -117,7 +118,22 @@ const DonationCard: React.FC<DonationCardProps> = ({
             {/* Voice Message */}
             {donation.voice_message_url && (
               <div className="mb-3">
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground mb-2">
+                  <Mic className="h-4 w-4" />
+                  <span>Voice Message</span>
+                </div>
                 <MiniAudioPlayer audioUrl={donation.voice_message_url} />
+              </div>
+            )}
+
+            {/* TTS Audio Player */}
+            {donation.tts_audio_url && !donation.voice_message_url && (
+              <div className="mb-3">
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground mb-2">
+                  <Volume2 className="h-4 w-4" />
+                  <span>Text-to-Speech</span>
+                </div>
+                <MiniAudioPlayer audioUrl={donation.tts_audio_url} />
               </div>
             )}
 
