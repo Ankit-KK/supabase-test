@@ -115,7 +115,7 @@ serve(async (req) => {
     // Determine donation table name based on streamer slug
     const donationTableMap: Record<string, string> = {
       'ankit': 'ankit_donations',
-      'chia_gaming': 'chiaa_gaming_donations',
+      'chiaa_gaming': 'chiaa_gaming_donations',
       'techgamer': 'techgamer_donations',
       'musicstream': 'musicstream_donations',
       'artcreate': 'artcreate_donations',
