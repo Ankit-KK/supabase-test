@@ -1,3 +1,4 @@
+// Updated: 2025-10-19 22:45 - Force redeploy to apply ChiaGaming channel mapping fixes
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0'
 import { Hash } from 'https://deno.land/x/checksum@1.4.0/mod.ts'
