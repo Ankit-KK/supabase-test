@@ -182,13 +182,32 @@ serve(async (req) => {
 
     console.log(`Idempotency check: order_id=${order_id}, dbStatus=${dbStatus}, isFirstSuccess=${isFirstSuccess}, updatedRecord=${updatedDonation !== null}`);
 
+    // Map order_id prefix to correct streamer slug for Pusher channels
+    const getStreamerSlug = (orderId: string): string => {
+      if (orderId.startsWith('ankit_')) return 'ankit';
+      if (orderId.startsWith('musicstream_')) return 'musicstream';
+      if (orderId.startsWith('techgamer_')) return 'techgamer';
+      if (orderId.startsWith('fitnessflow_')) return 'fitnessflow';
+      if (orderId.startsWith('artcreate_')) return 'artcreate';
+      if (orderId.startsWith('codelive_')) return 'codelive';
+      if (orderId.startsWith('demostreamer_')) return 'demostreamer';
+      if (orderId.startsWith('chia_')) return 'chiaa_gaming';
+      if (orderId.startsWith('chiagaming_')) return 'chiaa_gaming';  // Fix for ChiaGaming
+      return 'chiaa_gaming'; // default
+    };
+
     // If payment was successful AND this is the first success, trigger Pusher events and handle voice/TTS
     if (isFirstSuccess && updatedDonation) {
-      const streamerSlug = order_id.split('_')[0]; // e.g., 'ankit', 'musicstream', etc.
+      const streamerSlug = getStreamerSlug(order_id);
+      
+      console.log(`Processing order: ${order_id}`);
+      console.log(`Extracted streamer slug: ${streamerSlug}`);
+      console.log(`Table name: ${tableName}`);
       
       // 1. Trigger OBS alerts channel
       try {
         const alertsChannel = `${streamerSlug}-alerts`;
+        console.log(`Publishing to alerts channel: ${alertsChannel}`);
         
         await pusher.trigger(alertsChannel, 'new-donation', {
           id: updatedDonation.id,
@@ -202,14 +221,15 @@ serve(async (req) => {
           streamer_id: updatedDonation.streamer_id,
         });
         
-        console.log(`Pusher event triggered for ${order_id} on channel ${alertsChannel}`);
+        console.log(`✅ Pusher alerts event sent to ${alertsChannel}`);
       } catch (pusherError) {
-        console.error('Pusher (alerts) trigger error:', pusherError);
+        console.error('❌ Pusher (alerts) trigger error:', pusherError);
       }
       
       // 2. Trigger dashboard channel
       try {
         const dashboardChannel = `${streamerSlug}-dashboard`;
+        console.log(`Publishing to dashboard channel: ${dashboardChannel}`);
         
         await pusher.trigger(dashboardChannel, 'new-donation', {
           id: updatedDonation.id,
@@ -220,9 +240,31 @@ serve(async (req) => {
           moderation_status: updatedDonation.moderation_status,
         });
         
-        console.log(`Pusher dashboard event triggered for ${order_id} on channel ${dashboardChannel}`);
+        console.log(`✅ Pusher dashboard event sent to ${dashboardChannel}`);
       } catch (pusherError) {
-        console.error('Pusher (dashboard) trigger error:', pusherError);
+        console.error('❌ Pusher (dashboard) trigger error:', pusherError);
+      }
+
+      // 3. Trigger audio player channel (special handling for ChiaGaming)
+      try {
+        // For ChiaGaming, audio player expects 'chia_gaming' (without double 'a')
+        const audioSlug = streamerSlug === 'chiaa_gaming' ? 'chia_gaming' : streamerSlug;
+        const audioChannel = `${audioSlug}-audio`;
+        console.log(`Publishing to audio channel: ${audioChannel}`);
+        
+        await pusher.trigger(audioChannel, 'new-audio-message', {
+          id: updatedDonation.id,
+          name: updatedDonation.name,
+          amount: updatedDonation.amount,
+          message: updatedDonation.message,
+          voice_message_url: updatedDonation.voice_message_url,
+          tts_audio_url: updatedDonation.tts_audio_url,
+          created_at: updatedDonation.created_at,
+        });
+        
+        console.log(`✅ Pusher audio event sent to ${audioChannel}`);
+      } catch (pusherError) {
+        console.error('❌ Pusher (audio) trigger error:', pusherError);
       }
 
       // Handle voice message upload if voice data exists
