@@ -255,55 +255,6 @@ serve(async (req) => {
 
     console.log('TTS generation and storage successful');
 
-    // Re-query to get complete updated donation record
-    const { data: finalDonation } = await supabase
-      .from(donationTable)
-      .select('*')
-      .eq('id', donationId)
-      .single();
-
-    if (finalDonation) {
-      // Initialize Pusher and trigger audio event
-      try {
-        // Get Pusher credentials from Supabase secrets (required)
-        const pusherAppId = Deno.env.get('PUSHER_APP_ID');
-        const pusherKey = Deno.env.get('PUSHER_KEY');
-        const pusherSecret = Deno.env.get('PUSHER_SECRET');
-        const pusherCluster = Deno.env.get('PUSHER_CLUSTER');
-
-        if (!pusherAppId || !pusherKey || !pusherSecret || !pusherCluster) {
-          console.error('Missing Pusher credentials in environment variables');
-          throw new Error('Pusher configuration incomplete - check Supabase secrets');
-        }
-
-        const pusher = new PusherClient(
-          pusherAppId,
-          pusherKey,
-          pusherSecret,
-          pusherCluster
-        );
-
-        // Use dynamic audio channel based on streamer slug
-        const audioChannel = `${streamerSlug}-audio`;
-        await pusher.trigger(audioChannel, 'new-audio-message', {
-          id: finalDonation.id,
-          name: finalDonation.name,
-          amount: finalDonation.amount,
-          message: finalDonation.message,
-          voice_message_url: finalDonation.voice_message_url,
-          tts_audio_url: finalDonation.tts_audio_url,
-          created_at: finalDonation.created_at,
-          is_hyperemote: finalDonation.is_hyperemote,
-          moderation_status: finalDonation.moderation_status,
-          payment_status: finalDonation.payment_status,
-          streamer_id: finalDonation.streamer_id,
-        });
-        console.log(`Pusher audio event triggered for donation ${donationId} on channel ${audioChannel}`);
-      } catch (pusherError) {
-        console.error('Pusher audio trigger error:', pusherError);
-      }
-    }
-
     return new Response(
       JSON.stringify({ audioUrl: publicUrl }),
       {

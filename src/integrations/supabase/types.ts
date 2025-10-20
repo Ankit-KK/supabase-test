@@ -409,6 +409,7 @@ export type Database = {
           payment_status: string | null
           streamer_id: string | null
           temp_voice_data: string | null
+          tts_audio_url: string | null
           updated_at: string | null
           voice_message_url: string | null
         }
@@ -428,6 +429,7 @@ export type Database = {
           payment_status?: string | null
           streamer_id?: string | null
           temp_voice_data?: string | null
+          tts_audio_url?: string | null
           updated_at?: string | null
           voice_message_url?: string | null
         }
@@ -447,6 +449,7 @@ export type Database = {
           payment_status?: string | null
           streamer_id?: string | null
           temp_voice_data?: string | null
+          tts_audio_url?: string | null
           updated_at?: string | null
           voice_message_url?: string | null
         }
