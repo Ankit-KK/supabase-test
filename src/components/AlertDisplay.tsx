@@ -253,103 +253,48 @@ export const AlertDisplay: React.FC<AlertDisplayProps> = ({
     );
   }
 
-  // Regular donation alert
+  // Regular donation alert with HyperChat gradient
   return (
     <div className="fixed inset-0 pointer-events-none z-50">
-      <style>{`
-        @keyframes alertFadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(30px) scale(0.9);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-        
-        @keyframes rotBGimg {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-        
-        @keyframes blink {
-          0%, 100% { border-color: transparent }
-          50% { border-color: white }
-        }
-        
-        .alert-enter {
-          animation: alertFadeIn 0.5s ease-out;
-        }
-
-        .alert-card {
-          position: relative;
-          overflow: hidden;
-          border-radius: 20px;
-        }
-
-        .alert-card::before {
-          content: '';
-          position: absolute;
-          width: 200%;
-          background-image: linear-gradient(180deg, rgb(0, 183, 255), rgb(255, 48, 255));
-          height: 200%;
-          animation: rotBGimg 3s linear infinite;
-          transition: all 0.2s linear;
-          left: 50%;
-          top: 50%;
-          transform: translate(-50%, -50%);
-        }
-
-        .alert-card::after {
-          content: '';
-          position: absolute;
-          background: #07182E;
-          inset: 5px;
-          border-radius: 15px;
-        }
-      `}</style>
-
-      <div className={`
-        fixed bottom-8 left-1/2 transform -translate-x-1/2 p-4 z-50
-        ${isVisible ? 'opacity-100' : 'opacity-0'}
-        transition-opacity duration-500
-      `}>
-        <div className="alert-card alert-enter min-w-[180px] max-w-[320px] min-h-[120px] relative flex flex-col justify-center items-center p-3">
-          {/* Content Container with proper z-index */}
-          <div className="relative z-10 text-center text-white w-full">
-            {/* Alert Header */}
-            <div className="mb-2">
-              <h2 className="text-base font-bold mb-1">New Donation!</h2>
-              <div className="flex flex-col items-center gap-0.5 text-xs font-semibold">
-                <span>{donation.name}</span>
-                <span className="text-green-400">donated ₹{donation.amount}</span>
-              </div>
-            </div>
-
-            {/* Voice Message Indicator */}
-            {donation.voice_message_url && (
-              <div className="mb-2">
-                <div className="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full text-white text-sm animate-pulse">
-                  <Music className="w-4 h-4" />
-                  <span className="font-medium">🎵 Voice Message</span>
-                </div>
-              </div>
-            )}
-
-            {/* Message with Typing Effect */}
-            {donation.message && (
-              <div>
-                <div className="text-xs leading-relaxed p-2 bg-white/10 rounded-lg backdrop-blur-sm min-h-[30px] flex items-center justify-center">
-                  <span className="break-words text-center">
-                    {donation.voice_message_url ? donation.message : displayedMessage}
-                    {isTyping && <span className="animate-pulse border-r-2 border-white ml-1">|</span>}
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
+      <div 
+        className={`
+          absolute bottom-[10%] left-1/2 -translate-x-1/2
+          text-white text-center
+          flex flex-col items-center gap-1.5
+          px-8 py-4 rounded-xl
+          ${isVisible ? 'opacity-100' : 'opacity-0'}
+          transition-opacity duration-600
+        `}
+        style={{
+          background: 'linear-gradient(90deg, rgba(0, 122, 255, 0.6), rgba(144, 0, 255, 0.6))',
+          boxShadow: '0 0 25px rgba(144, 0, 255, 0.4)',
+          letterSpacing: '0.4px',
+        }}
+      >
+        {/* Name and Amount */}
+        <div className="text-[1.2rem]">
+          <span className="font-bold">{donation.name}</span> donated{' '}
+          <span className="font-bold">₹{donation.amount}</span>
         </div>
+
+        {/* Voice Message Indicator */}
+        {donation.voice_message_url && (
+          <div className="inline-flex items-center gap-2 text-sm">
+            <Music className="w-4 h-4" />
+            <span>🎵 Voice Message</span>
+          </div>
+        )}
+
+        {/* Message with Typing Effect */}
+        {donation.message && (
+          <div 
+            className="text-base font-normal min-h-[1.2em]"
+            style={{ opacity: 0.9, color: '#f9f9f9' }}
+          >
+            "{donation.voice_message_url ? donation.message : displayedMessage}"
+            {isTyping && <span className="animate-pulse ml-1">|</span>}
+          </div>
+        )}
       </div>
     </div>
   );
