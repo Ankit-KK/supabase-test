@@ -94,7 +94,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        voiceMessageUrl
+        voice_message_url: voiceMessageUrl
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

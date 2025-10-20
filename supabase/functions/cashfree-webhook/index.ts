@@ -246,27 +246,7 @@ serve(async (req) => {
         console.error('❌ Pusher (dashboard) trigger error:', pusherError);
       }
 
-      // 3. Trigger audio player channel (special handling for ChiaGaming)
-      try {
-        // For ChiaGaming, audio player expects 'chia_gaming' (without double 'a')
-        const audioSlug = streamerSlug === 'chiaa_gaming' ? 'chia_gaming' : streamerSlug;
-        const audioChannel = `${audioSlug}-audio`;
-        console.log(`Publishing to audio channel: ${audioChannel}`);
-        
-        await pusher.trigger(audioChannel, 'new-audio-message', {
-          id: updatedDonation.id,
-          name: updatedDonation.name,
-          amount: updatedDonation.amount,
-          message: updatedDonation.message,
-          voice_message_url: updatedDonation.voice_message_url,
-          tts_audio_url: updatedDonation.tts_audio_url,
-          created_at: updatedDonation.created_at,
-        });
-        
-        console.log(`✅ Pusher audio event sent to ${audioChannel}`);
-      } catch (pusherError) {
-        console.error('❌ Pusher (audio) trigger error:', pusherError);
-      }
+      // Audio channel events are now sent AFTER voice/TTS processing completes below
 
       // Handle voice message upload if voice data exists
       if (updatedDonation?.temp_voice_data) {
@@ -284,13 +264,34 @@ serve(async (req) => {
           
           const voiceUploadFunction = getVoiceUploadFunction(order_id);
 
-          // Trigger voice message upload
-          const { error: voiceError } = await supabase.functions.invoke(voiceUploadFunction, {
+          // Wait for voice message upload to complete
+          const { data: voiceData, error: voiceError } = await supabase.functions.invoke(voiceUploadFunction, {
             body: { order_id }
           })
 
           if (voiceError) {
             console.error('Voice upload error:', voiceError)
+          } else if (voiceData?.voice_message_url) {
+            // Send audio event now that voice URL is ready
+            try {
+              const audioSlug = streamerSlug === 'chiaa_gaming' ? 'chia_gaming' : streamerSlug;
+              const audioChannel = `${audioSlug}-audio`;
+              console.log(`Publishing voice audio to channel: ${audioChannel}`);
+              
+              await pusher.trigger(audioChannel, 'new-audio-message', {
+                id: updatedDonation.id,
+                name: updatedDonation.name,
+                amount: updatedDonation.amount,
+                message: updatedDonation.message,
+                voice_message_url: voiceData.voice_message_url,
+                tts_audio_url: null,
+                created_at: updatedDonation.created_at,
+              });
+              
+              console.log(`✅ Pusher voice audio event sent to ${audioChannel}`);
+            } catch (pusherError) {
+              console.error('❌ Pusher (voice audio) trigger error:', pusherError);
+            }
           }
         } catch (voiceError) {
           console.error('Voice upload trigger error:', voiceError)
@@ -301,7 +302,8 @@ serve(async (req) => {
         try {
           console.log('Triggering TTS generation for text donation:', order_id)
           
-          const { error: ttsError } = await supabase.functions.invoke('generate-donation-tts', {
+          // Wait for TTS generation to complete
+          const { data: ttsData, error: ttsError } = await supabase.functions.invoke('generate-donation-tts', {
             body: {
               username: updatedDonation.name,
               amount: updatedDonation.amount,
@@ -313,8 +315,29 @@ serve(async (req) => {
 
           if (ttsError) {
             console.error('TTS generation error:', ttsError)
-          } else {
-            console.log('TTS generation triggered successfully for:', order_id)
+          } else if (ttsData?.audioUrl) {
+            console.log('TTS generation completed successfully for:', order_id)
+            
+            // Send audio event now that TTS URL is ready
+            try {
+              const audioSlug = streamerSlug === 'chiaa_gaming' ? 'chia_gaming' : streamerSlug;
+              const audioChannel = `${audioSlug}-audio`;
+              console.log(`Publishing TTS audio to channel: ${audioChannel}`);
+              
+              await pusher.trigger(audioChannel, 'new-audio-message', {
+                id: updatedDonation.id,
+                name: updatedDonation.name,
+                amount: updatedDonation.amount,
+                message: updatedDonation.message,
+                voice_message_url: null,
+                tts_audio_url: ttsData.audioUrl,
+                created_at: updatedDonation.created_at,
+              });
+              
+              console.log(`✅ Pusher TTS audio event sent to ${audioChannel}`);
+            } catch (pusherError) {
+              console.error('❌ Pusher (TTS audio) trigger error:', pusherError);
+            }
           }
         } catch (ttsError) {
           console.error('TTS generation trigger error:', ttsError)
