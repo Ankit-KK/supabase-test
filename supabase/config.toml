@@ -39,6 +39,15 @@ verify_jwt = false
 [functions.create-payment-order-demostreamer]
 verify_jwt = false
 
+[functions.create-payment-order-demo2]
+verify_jwt = false
+
+[functions.create-payment-order-demo3]
+verify_jwt = false
+
+[functions.create-payment-order-demo4]
+verify_jwt = false
+
 [functions.create-payment-order-fitnessflow]
 verify_jwt = false
 
@@ -55,4 +64,40 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.authenticate-user]
+verify_jwt = false
+
+[functions.upload-voice-message-ankit]
+verify_jwt = false
+
+[functions.upload-voice-message-artcreate]
+verify_jwt = false
+
+[functions.upload-voice-message-chiagaming]
+verify_jwt = false
+
+[functions.upload-voice-message-codelive]
+verify_jwt = false
+
+[functions.upload-voice-message-demostreamer]
+verify_jwt = false
+
+[functions.upload-voice-message-demo2]
+verify_jwt = false
+
+[functions.upload-voice-message-demo3]
+verify_jwt = false
+
+[functions.upload-voice-message-demo4]
+verify_jwt = false
+
+[functions.upload-voice-message-fitnessflow]
+verify_jwt = false
+
+[functions.upload-voice-message-musicstream]
+verify_jwt = false
+
+[functions.upload-voice-message-techgamer]
+verify_jwt = false
+
+[functions.upload-voice-message]
 verify_jwt = false

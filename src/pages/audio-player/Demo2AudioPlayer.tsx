@@ -3,7 +3,7 @@ import { AudioPlayer } from '@/components/AudioPlayer';
 import { useAudioPlayer } from '@/hooks/useAudioPlayer';
 
 const Demo2AudioPlayer = () => {
-  const { currentDonation, queueSize, autoPlay, autoPlayEnabledAt, setAutoPlay, markAsPlayed } = useAudioPlayer({ tableName: 'demo2_donations' });
+  const { currentDonation, queueSize, autoPlay, autoPlayEnabledAt, setAutoPlay, markAsPlayed } = useAudioPlayer({ tableName: 'demo2_donations' as any });
 
   return (
     <div className="min-h-screen bg-background p-4">

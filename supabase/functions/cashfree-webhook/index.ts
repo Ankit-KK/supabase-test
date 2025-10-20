@@ -149,6 +149,9 @@ serve(async (req) => {
       if (orderId.startsWith('artcreate_')) return 'artcreate_donations';
       if (orderId.startsWith('codelive_')) return 'codelive_donations';
       if (orderId.startsWith('demostreamer_')) return 'demostreamer_donations';
+      if (orderId.startsWith('demo2_')) return 'demo2_donations';
+      if (orderId.startsWith('demo3_')) return 'demo3_donations';
+      if (orderId.startsWith('demo4_')) return 'demo4_donations';
       if (orderId.startsWith('chia_')) return 'chiaa_gaming_donations';
       if (orderId.startsWith('chiagaming_')) return 'chiaa_gaming_donations';
       return 'chiaa_gaming_donations'; // default for chia_gaming
@@ -192,6 +195,9 @@ serve(async (req) => {
       if (orderId.startsWith('artcreate_')) return 'artcreate';
       if (orderId.startsWith('codelive_')) return 'codelive';
       if (orderId.startsWith('demostreamer_')) return 'demostreamer';
+      if (orderId.startsWith('demo2_')) return 'demo2';
+      if (orderId.startsWith('demo3_')) return 'demo3';
+      if (orderId.startsWith('demo4_')) return 'demo4';
       if (orderId.startsWith('chia_')) return 'chiaa_gaming';
       if (orderId.startsWith('chiagaming_')) return 'chiaa_gaming';  // Fix for ChiaGaming
       return 'chiaa_gaming'; // default
@@ -259,6 +265,9 @@ serve(async (req) => {
             if (orderId.startsWith('artcreate_')) return 'upload-voice-message-artcreate';
             if (orderId.startsWith('codelive_')) return 'upload-voice-message-codelive';
             if (orderId.startsWith('demostreamer_')) return 'upload-voice-message-demostreamer';
+            if (orderId.startsWith('demo2_')) return 'upload-voice-message-demo2';
+            if (orderId.startsWith('demo3_')) return 'upload-voice-message-demo3';
+            if (orderId.startsWith('demo4_')) return 'upload-voice-message-demo4';
             return 'upload-voice-message'; // default for chia_gaming
           };
           
