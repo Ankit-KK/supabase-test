@@ -12,9 +12,13 @@ serve(async (req) => {
   }
 
   try {
-    console.log('Demo2 payment order request received');
+    console.log('=== Demo2 payment order request received ===');
+    console.log('Request method:', req.method);
+    console.log('Request headers:', Object.fromEntries(req.headers.entries()));
     
-    const { name, amount, message, phone, voiceData } = await req.json();
+    const requestBody = await req.json();
+    const { name, amount, message, phone, voiceData } = requestBody;
+    console.log('Parsed request data:', { name, amount, hasMessage: !!message, hasPhone: !!phone, hasVoiceData: !!voiceData });
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -24,7 +28,15 @@ serve(async (req) => {
     const xClientSecret = Deno.env.get('XClientSecret');
     const apiUrl = Deno.env.get('api_url');
     
+    console.log('Environment check:', {
+      hasXClientId: !!xClientId,
+      hasXClientSecret: !!xClientSecret,
+      hasApiUrl: !!apiUrl,
+      apiUrl: apiUrl
+    });
+    
     if (!xClientId || !xClientSecret || !apiUrl) {
+      console.error('Missing Cashfree credentials');
       throw new Error('Cashfree credentials not configured');
     }
 
