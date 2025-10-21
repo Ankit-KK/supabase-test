@@ -20,10 +20,11 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    const cashfreeAppId = Deno.env.get('CASHFREE_APP_ID');
-    const cashfreeSecretKey = Deno.env.get('CASHFREE_SECRET_KEY');
+    const xClientId = Deno.env.get('XClientId');
+    const xClientSecret = Deno.env.get('XClientSecret');
+    const apiUrl = Deno.env.get('api_url');
     
-    if (!cashfreeAppId || !cashfreeSecretKey) {
+    if (!xClientId || !xClientSecret || !apiUrl) {
       throw new Error('Cashfree credentials not configured');
     }
 
@@ -60,12 +61,12 @@ serve(async (req) => {
 
     console.log('Creating Cashfree order:', orderId);
     
-    const cashfreeResponse = await fetch('https://sandbox.cashfree.com/pg/orders', {
+    const cashfreeResponse = await fetch(`${apiUrl}/orders`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-client-id': cashfreeAppId,
-        'x-client-secret': cashfreeSecretKey,
+        'x-client-id': xClientId,
+        'x-client-secret': xClientSecret,
         'x-api-version': '2023-08-01',
       },
       body: JSON.stringify(cashfreeOrderData),
