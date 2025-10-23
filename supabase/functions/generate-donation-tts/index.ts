@@ -123,6 +123,9 @@ serve(async (req) => {
       'codelive': 'codelive_donations',
       'demostreamer': 'demostreamer_donations',
       'fitnessflow': 'fitnessflow_donations',
+      'demo2': 'demo2_donations',
+      'demo3': 'demo3_donations',
+      'demo4': 'demo4_donations',
     };
 
     const donationTable = donationTableMap[streamerSlug];
