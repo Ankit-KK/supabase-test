@@ -137,16 +137,8 @@ const DonationCard: React.FC<DonationCardProps> = ({
               </div>
             )}
 
-            {/* Status and timestamp */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Badge className={getStatusColor(donation.moderation_status)}>
-                  {donation.moderation_status}
-                </Badge>
-                <Badge className={getPaymentStatusColor(donation.payment_status)}>
-                  {donation.payment_status}
-                </Badge>
-              </div>
+            {/* Timestamp */}
+            <div className="flex items-center justify-end">
               <span className="text-xs text-muted-foreground">
                 {formatDistanceToNow(new Date(donation.created_at), { addSuffix: true })}
               </span>
