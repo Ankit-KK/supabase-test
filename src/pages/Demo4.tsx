@@ -29,8 +29,8 @@ const Demo4 = () => {
   
   const getVoiceDuration = (amount: number) => {
     if (amount >= 500) return 30;
-    if (amount >= 200) return 20;
-    if (amount >= 100) return 15;
+    if (amount >= 250) return 20;
+    if (amount >= 150) return 15;
     return 10;
   };
 
@@ -89,6 +89,25 @@ const Demo4 = () => {
     }
     if (!amount || amount < 1) {
       toast({ title: "Invalid Amount", description: "Please enter a valid amount.", variant: "destructive" });
+      return;
+    }
+
+    // Validate minimum amounts based on donation type
+    if (donationType === 'message' && amount < 70) {
+      toast({
+        title: "Insufficient Amount",
+        description: "Text messages with TTS require a minimum donation of ₹70.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (donationType === 'voice' && amount < 150) {
+      toast({
+        title: "Insufficient Amount",
+        description: "Voice messages require a minimum donation of ₹150.",
+        variant: "destructive",
+      });
       return;
     }
     if (!cashfree) {
@@ -226,11 +245,11 @@ const Demo4 = () => {
               <div className="grid grid-cols-3 gap-2">
                 <button type="button" onClick={() => handleDonationTypeChange('message')}
                   className={`p-3 rounded-lg border-2 transition-all ${donationType === 'message' ? 'border-rose-500 bg-rose-500/10' : 'border-rose-500/30'}`}>
-                  <div className="text-center"><div className="text-base mb-1">💬</div><div className="font-medium text-xs">Text</div></div>
+                  <div className="text-center"><div className="text-base mb-1">💬</div><div className="font-medium text-xs">Text</div><div className="text-xs text-muted-foreground">Min: ₹70</div></div>
                 </button>
                 <button type="button" onClick={() => handleDonationTypeChange('voice')}
                   className={`p-3 rounded-lg border-2 transition-all ${donationType === 'voice' ? 'border-rose-500 bg-rose-500/10' : 'border-rose-500/30'}`}>
-                  <div className="text-center"><div className="text-base mb-1">🎤</div><div className="font-medium text-xs">Voice</div></div>
+                  <div className="text-center"><div className="text-base mb-1">🎤</div><div className="font-medium text-xs">Voice</div><div className="text-xs text-muted-foreground">Min: ₹150</div></div>
                 </button>
                 <button type="button" onClick={() => handleDonationTypeChange('hyperemote')}
                   className={`p-3 rounded-lg border-2 transition-all ${donationType === 'hyperemote' ? 'border-rose-500 bg-rose-500/10' : 'border-rose-500/30'}`}>
@@ -241,7 +260,11 @@ const Demo4 = () => {
 
             <div className="space-y-2">
               <label htmlFor="amount" className="text-sm font-medium text-rose-500">Amount (₹) *</label>
-              <Input id="amount" name="amount" type="number" placeholder="Enter amount" value={formData.amount}
+              <Input id="amount" name="amount" type="number" placeholder={
+                donationType === 'message' ? 'Min: ₹70' : 
+                donationType === 'voice' ? 'Min: ₹150' : 
+                'Enter amount'
+              } value={formData.amount}
                 onChange={handleInputChange} className="border-rose-500/30 focus:border-rose-500" required />
             </div>
 

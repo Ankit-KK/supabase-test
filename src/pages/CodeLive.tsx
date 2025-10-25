@@ -33,8 +33,8 @@ const CodeLive = () => {
   
   const getVoiceDuration = (amount: number) => {
     if (amount >= 500) return 30;
-    if (amount >= 200) return 20;
-    if (amount >= 100) return 15;
+    if (amount >= 250) return 20;
+    if (amount >= 150) return 15;
     return 10;
   };
 
@@ -93,6 +93,25 @@ const CodeLive = () => {
     }
     if (!amount || amount < 1) {
       toast({ title: "Invalid Amount", description: "Please enter a valid donation amount.", variant: "destructive" });
+      return;
+    }
+
+    // Validate minimum amounts based on donation type
+    if (donationType === 'message' && amount < 70) {
+      toast({
+        title: "Insufficient Amount",
+        description: "Text messages with TTS require a minimum donation of ₹70.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (donationType === 'voice' && amount < 150) {
+      toast({
+        title: "Insufficient Amount",
+        description: "Voice messages require a minimum donation of ₹150.",
+        variant: "destructive",
+      });
       return;
     }
     if (!cashfree) {
@@ -217,11 +236,11 @@ const CodeLive = () => {
             <div className="space-y-3">
               <label className="text-sm font-medium text-red-500">Choose your donation type</label>
               <div className="grid grid-cols-3 gap-2">
-                <button type="button" onClick={() => handleDonationTypeChange('message')} className={`p-3 rounded-lg border-2 transition-all ${donationType === 'message' ? 'border-red-500 bg-red-500/10' : 'border-red-500/30 hover:border-red-500/50'}`}>
-                  <div className="text-center"><div className="text-base mb-1">💬</div><div className="font-medium text-xs">Text Message</div></div>
+                  <button type="button" onClick={() => handleDonationTypeChange('message')} className={`p-3 rounded-lg border-2 transition-all ${donationType === 'message' ? 'border-red-500 bg-red-500/10' : 'border-red-500/30 hover:border-red-500/50'}`}>
+                  <div className="text-center"><div className="text-base mb-1">💬</div><div className="font-medium text-xs">Text Message</div><div className="text-xs text-muted-foreground">Min: ₹70</div></div>
                 </button>
                 <button type="button" onClick={() => handleDonationTypeChange('voice')} className={`p-3 rounded-lg border-2 transition-all ${donationType === 'voice' ? 'border-red-500 bg-red-500/10' : 'border-red-500/30 hover:border-red-500/50'}`}>
-                  <div className="text-center"><div className="text-base mb-1">🎤</div><div className="font-medium text-xs">Voice Message</div></div>
+                  <div className="text-center"><div className="text-base mb-1">🎤</div><div className="font-medium text-xs">Voice Message</div><div className="text-xs text-muted-foreground">Min: ₹150</div></div>
                 </button>
                 <button type="button" onClick={() => handleDonationTypeChange('hyperemote')} className={`p-3 rounded-lg border-2 transition-all ${donationType === 'hyperemote' ? 'border-purple-500 bg-purple-500/10' : 'border-purple-500/30 hover:border-purple-500/50'}`}>
                   <div className="text-center"><div className="text-base mb-1">🎉</div><div className="font-medium text-xs">Hyperemotes</div><div className="text-xs text-muted-foreground">₹{streamerSettings?.hyperemotes_min_amount || 50}+</div></div>
@@ -231,7 +250,11 @@ const CodeLive = () => {
 
             <div className="space-y-2">
               <label htmlFor="amount" className="text-sm font-medium text-red-500">Amount (₹) *</label>
-              <Input id="amount" name="amount" type="number" min="1" placeholder="Enter amount" value={formData.amount} onChange={handleInputChange} className="border-red-500/30 focus:border-red-500 focus:ring-red-500/20" required disabled={donationType === 'hyperemote'} />
+              <Input id="amount" name="amount" type="number" min="1" placeholder={
+                donationType === 'message' ? 'Min: ₹70' : 
+                donationType === 'voice' ? 'Min: ₹150' : 
+                'Enter amount'
+              } value={formData.amount} onChange={handleInputChange} className="border-red-500/30 focus:border-red-500 focus:ring-red-500/20" required disabled={donationType === 'hyperemote'} />
             </div>
 
             {donationType === 'message' && (

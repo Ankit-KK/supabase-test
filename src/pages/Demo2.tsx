@@ -36,8 +36,8 @@ const Demo2 = () => {
   
   const getVoiceDuration = (amount: number) => {
     if (amount >= 500) return 30;
-    if (amount >= 200) return 20;
-    if (amount >= 100) return 15;
+    if (amount >= 250) return 20;
+    if (amount >= 150) return 15;
     return 10;
   };
 
@@ -117,6 +117,25 @@ const Demo2 = () => {
 
     if (!amount || amount < 1) {
       toast({ title: "Invalid Amount", description: "Please enter a valid donation amount.", variant: "destructive" });
+      return;
+    }
+
+    // Validate minimum amounts based on donation type
+    if (donationType === 'message' && amount < 70) {
+      toast({
+        title: "Insufficient Amount",
+        description: "Text messages with TTS require a minimum donation of ₹70.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (donationType === 'voice' && amount < 150) {
+      toast({
+        title: "Insufficient Amount",
+        description: "Voice messages require a minimum donation of ₹150.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -292,6 +311,7 @@ const Demo2 = () => {
                   <div className="text-center">
                     <div className="text-base mb-1">💬</div>
                     <div className="font-medium text-xs">Text Message</div>
+                    <div className="text-xs text-muted-foreground">Min: ₹70</div>
                   </div>
                 </button>
                 <button type="button" onClick={() => handleDonationTypeChange('voice')}
@@ -301,6 +321,7 @@ const Demo2 = () => {
                   <div className="text-center">
                     <div className="text-base mb-1">🎤</div>
                     <div className="font-medium text-xs">Voice Message</div>
+                    <div className="text-xs text-muted-foreground">Min: ₹150</div>
                   </div>
                 </button>
                 <button type="button" onClick={() => handleDonationTypeChange('hyperemote')}
@@ -321,7 +342,11 @@ const Demo2 = () => {
                 id="amount"
                 name="amount"
                 type="number"
-                placeholder="Enter amount"
+                placeholder={
+                  donationType === 'message' ? 'Min: ₹70' : 
+                  donationType === 'voice' ? 'Min: ₹150' : 
+                  'Enter amount'
+                }
                 value={formData.amount}
                 onChange={handleInputChange}
                 className="border-cyan-500/30 focus:border-cyan-500 focus:ring-cyan-500/20"

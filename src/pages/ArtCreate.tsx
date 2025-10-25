@@ -36,8 +36,8 @@ const ArtCreate = () => {
   // Calculate voice recording duration based on amount
   const getVoiceDuration = (amount: number) => {
     if (amount >= 500) return 30;
-    if (amount >= 200) return 20;
-    if (amount >= 100) return 15;
+    if (amount >= 250) return 20;
+    if (amount >= 150) return 15;
     return 10;
   };
 
@@ -138,6 +138,25 @@ const ArtCreate = () => {
       toast({
         title: "Invalid Amount",
         description: "Please enter a valid donation amount.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate minimum amounts based on donation type
+    if (donationType === 'message' && amount < 70) {
+      toast({
+        title: "Insufficient Amount",
+        description: "Text messages with TTS require a minimum donation of ₹70.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (donationType === 'voice' && amount < 150) {
+      toast({
+        title: "Insufficient Amount",
+        description: "Voice messages require a minimum donation of ₹150.",
         variant: "destructive",
       });
       return;
@@ -348,7 +367,7 @@ const ArtCreate = () => {
                     <div className="text-center">
                       <div className="text-base mb-1">💬</div>
                       <div className="font-medium text-xs">Text Message</div>
-                      <div className="text-xs text-muted-foreground">Type message</div>
+                      <div className="text-xs text-muted-foreground">Min: ₹70</div>
                     </div>
                   </button>
                   <button
@@ -363,7 +382,7 @@ const ArtCreate = () => {
                     <div className="text-center">
                       <div className="text-base mb-1">🎤</div>
                       <div className="font-medium text-xs">Voice Message</div>
-                      <div className="text-xs text-muted-foreground">Record voice</div>
+                      <div className="text-xs text-muted-foreground">Min: ₹150</div>
                     </div>
                   </button>
                   <button
@@ -394,7 +413,11 @@ const ArtCreate = () => {
                 name="amount"
                 type="number"
                 min="1"
-                placeholder="Enter amount"
+                placeholder={
+                  donationType === 'message' ? 'Min: ₹70' : 
+                  donationType === 'voice' ? 'Min: ₹150' : 
+                  'Enter amount'
+                }
                 value={formData.amount}
                 onChange={handleInputChange}
                 className="border-pink-500/30 focus:border-pink-500 focus:ring-pink-500/20"
