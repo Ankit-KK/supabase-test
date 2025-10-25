@@ -32,6 +32,14 @@ const DonationCard: React.FC<DonationCardProps> = ({
   showModerationActions = false,
   onModerationAction
 }) => {
+  // Check if donation is less than 2 minutes old
+  const isNew = () => {
+    const now = new Date();
+    const createdAt = new Date(donation.created_at);
+    const diffInMinutes = (now.getTime() - createdAt.getTime()) / (1000 * 60);
+    return diffInMinutes < 2;
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'approved':
@@ -74,7 +82,7 @@ const DonationCard: React.FC<DonationCardProps> = ({
   };
 
   return (
-    <Card className="transition-all duration-200 hover:shadow-md">
+    <Card className={`transition-all duration-200 hover:shadow-md ${isNew() ? 'ring-2 ring-primary ring-offset-2 bg-primary/5' : ''}`}>
       <CardContent className="p-4">
         <div className="flex items-start space-x-4">
           {/* Avatar */}
