@@ -345,7 +345,7 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
 
       {/* Stats Cards */}
       <div className="container mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
@@ -385,18 +385,6 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Review</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.pendingModeration}</div>
-              <p className="text-xs text-muted-foreground">
-                Awaiting moderation
-              </p>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Main Content Tabs */}
