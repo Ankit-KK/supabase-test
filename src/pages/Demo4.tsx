@@ -93,10 +93,10 @@ const Demo4 = () => {
     }
 
     // Validate minimum amounts based on donation type
-    if (donationType === 'message' && amount < 70) {
+    if (donationType === 'message' && amount < 40) {
       toast({
         title: "Insufficient Amount",
-        description: "Text messages with TTS require a minimum donation of ₹70.",
+        description: "Text messages require a minimum donation of ₹40.",
         variant: "destructive",
       });
       return;
@@ -245,7 +245,7 @@ const Demo4 = () => {
               <div className="grid grid-cols-3 gap-2">
                 <button type="button" onClick={() => handleDonationTypeChange('message')}
                   className={`p-3 rounded-lg border-2 transition-all ${donationType === 'message' ? 'border-rose-500 bg-rose-500/10' : 'border-rose-500/30'}`}>
-                  <div className="text-center"><div className="text-base mb-1">💬</div><div className="font-medium text-xs">Text</div><div className="text-xs text-muted-foreground">Min: ₹70</div></div>
+                  <div className="text-center"><div className="text-base mb-1">💬</div><div className="font-medium text-xs">Text</div><div className="text-xs text-muted-foreground">Min: ₹40</div></div>
                 </button>
                 <button type="button" onClick={() => handleDonationTypeChange('voice')}
                   className={`p-3 rounded-lg border-2 transition-all ${donationType === 'voice' ? 'border-rose-500 bg-rose-500/10' : 'border-rose-500/30'}`}>
@@ -261,11 +261,16 @@ const Demo4 = () => {
             <div className="space-y-2">
               <label htmlFor="amount" className="text-sm font-medium text-rose-500">Amount (₹) *</label>
               <Input id="amount" name="amount" type="number" placeholder={
-                donationType === 'message' ? 'Min: ₹70' : 
+                donationType === 'message' ? 'Min: ₹40' : 
                 donationType === 'voice' ? 'Min: ₹150' : 
                 'Enter amount'
               } value={formData.amount}
                 onChange={handleInputChange} className="border-rose-500/30 focus:border-rose-500" required />
+              {donationType === 'message' && (
+                <p className="text-xs text-muted-foreground">
+                  TTS available for donations above ₹70
+                </p>
+              )}
             </div>
 
             {donationType === 'message' && (

@@ -163,10 +163,10 @@ const DemoStreamer = () => {
     }
 
     // Validate minimum amounts based on donation type
-    if (donationType === 'message' && amount < 70) {
+    if (donationType === 'message' && amount < 40) {
       toast({
         title: "Insufficient Amount",
-        description: "Text messages with TTS require a minimum donation of ₹70.",
+        description: "Text messages require a minimum donation of ₹40.",
         variant: "destructive",
       });
       return;
@@ -402,7 +402,7 @@ const DemoStreamer = () => {
                     <div className="text-center">
                       <div className="text-base mb-1">💬</div>
                       <div className="font-medium text-xs">Text Message</div>
-                      <div className="text-xs text-muted-foreground">Min: ₹70</div>
+                      <div className="text-xs text-muted-foreground">Min: ₹40</div>
                     </div>
                   </button>
                   <button
@@ -451,21 +451,27 @@ const DemoStreamer = () => {
                 name="amount"
                 type="number"
                 placeholder={
-                  donationType === 'message' ? 'Min: ₹70' : 
+                  donationType === 'message' ? 'Min: ₹40' : 
                   donationType === 'voice' ? 'Min: ₹150' : 
                   donationType === 'hyperemote' ? `₹${streamerSettings?.hyperemotes_min_amount || 50} minimum` : 
                   'Enter amount'
                 }
                 value={formData.amount}
                 onChange={handleInputChange}
+                className="border-purple-500/30 focus:border-purple-500 focus:ring-purple-500/20"
                 min={donationType === 'hyperemote' ? (streamerSettings?.hyperemotes_min_amount || 50).toString() : '1'}
                 max="100000"
-                className="border-purple-500/30 focus:border-purple-500 focus:ring-purple-500/20"
+                disabled={donationType === 'hyperemote'}
                 required
               />
+              {donationType === 'message' && (
+                <p className="text-xs text-muted-foreground">
+                  TTS available for donations above ₹70
+                </p>
+              )}
               {donationType === 'hyperemote' && (
-                <p className="text-xs text-purple-400">
-                  ⚡ Hyperemotes start from ₹1 and trigger animated emotes on stream!
+                <p className="text-xs text-muted-foreground">
+                  Fixed amount for celebration effects
                 </p>
               )}
             </div>

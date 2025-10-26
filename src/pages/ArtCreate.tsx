@@ -144,10 +144,10 @@ const ArtCreate = () => {
     }
 
     // Validate minimum amounts based on donation type
-    if (donationType === 'message' && amount < 70) {
+    if (donationType === 'message' && amount < 40) {
       toast({
         title: "Insufficient Amount",
-        description: "Text messages with TTS require a minimum donation of ₹70.",
+        description: "Text messages require a minimum donation of ₹40.",
         variant: "destructive",
       });
       return;
@@ -367,7 +367,7 @@ const ArtCreate = () => {
                     <div className="text-center">
                       <div className="text-base mb-1">💬</div>
                       <div className="font-medium text-xs">Text Message</div>
-                      <div className="text-xs text-muted-foreground">Min: ₹70</div>
+                      <div className="text-xs text-muted-foreground">Min: ₹40</div>
                     </div>
                   </button>
                   <button
@@ -414,7 +414,7 @@ const ArtCreate = () => {
                 type="number"
                 min="1"
                 placeholder={
-                  donationType === 'message' ? 'Min: ₹70' : 
+                  donationType === 'message' ? 'Min: ₹40' : 
                   donationType === 'voice' ? 'Min: ₹150' : 
                   'Enter amount'
                 }
@@ -424,6 +424,11 @@ const ArtCreate = () => {
                 required
                 disabled={donationType === 'hyperemote'}
               />
+              {donationType === 'message' && (
+                <p className="text-xs text-muted-foreground">
+                  TTS available for donations above ₹70
+                </p>
+              )}
               {donationType === 'voice' && currentAmount > 0 && (
                 <p className="text-xs text-muted-foreground">
                   Voice duration: {getVoiceDuration(currentAmount)} seconds

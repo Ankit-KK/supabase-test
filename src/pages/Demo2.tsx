@@ -121,10 +121,10 @@ const Demo2 = () => {
     }
 
     // Validate minimum amounts based on donation type
-    if (donationType === 'message' && amount < 70) {
+    if (donationType === 'message' && amount < 40) {
       toast({
         title: "Insufficient Amount",
-        description: "Text messages with TTS require a minimum donation of ₹70.",
+        description: "Text messages require a minimum donation of ₹40.",
         variant: "destructive",
       });
       return;
@@ -308,11 +308,11 @@ const Demo2 = () => {
                   className={`p-3 rounded-lg border-2 transition-all ${
                     donationType === 'message' ? 'border-cyan-500 bg-cyan-500/10' : 'border-cyan-500/30 hover:border-cyan-500/50'
                   }`}>
-                  <div className="text-center">
-                    <div className="text-base mb-1">💬</div>
-                    <div className="font-medium text-xs">Text Message</div>
-                    <div className="text-xs text-muted-foreground">Min: ₹70</div>
-                  </div>
+                    <div className="text-center">
+                      <div className="text-base mb-1">💬</div>
+                      <div className="font-medium text-xs">Text Message</div>
+                      <div className="text-xs text-muted-foreground">Min: ₹40</div>
+                    </div>
                 </button>
                 <button type="button" onClick={() => handleDonationTypeChange('voice')}
                   className={`p-3 rounded-lg border-2 transition-all ${
@@ -343,7 +343,7 @@ const Demo2 = () => {
                 name="amount"
                 type="number"
                 placeholder={
-                  donationType === 'message' ? 'Min: ₹70' : 
+                  donationType === 'message' ? 'Min: ₹40' : 
                   donationType === 'voice' ? 'Min: ₹150' : 
                   'Enter amount'
                 }
@@ -352,6 +352,11 @@ const Demo2 = () => {
                 className="border-cyan-500/30 focus:border-cyan-500 focus:ring-cyan-500/20"
                 required
               />
+              {donationType === 'message' && (
+                <p className="text-xs text-muted-foreground">
+                  TTS available for donations above ₹70
+                </p>
+              )}
             </div>
 
             {donationType === 'message' && (
