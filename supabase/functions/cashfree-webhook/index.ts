@@ -306,10 +306,10 @@ serve(async (req) => {
           console.error('Voice upload trigger error:', voiceError)
         }
       }
-      // Handle TTS generation for text-only donations
-      else if (updatedDonation?.message && !updatedDonation?.tts_audio_url) {
+      // Handle TTS generation for text-only donations (₹70+)
+      else if (updatedDonation?.message && !updatedDonation?.tts_audio_url && updatedDonation.amount >= 70) {
         try {
-          console.log('Triggering TTS generation for text donation:', order_id)
+          console.log('Triggering TTS generation for text donation (₹70+):', order_id)
           
           // Wait for TTS generation to complete
           const { data: ttsData, error: ttsError } = await supabase.functions.invoke('generate-donation-tts', {
@@ -351,6 +351,11 @@ serve(async (req) => {
         } catch (ttsError) {
           console.error('TTS generation trigger error:', ttsError)
         }
+      }
+      // Handle text-only donations below ₹70 (no TTS)
+      else if (updatedDonation?.message && updatedDonation.amount < 70) {
+        console.log('Text donation below ₹70 - skipping TTS generation:', order_id)
+        // Donation is already sent to dashboard via line 241, no additional processing needed
       }
     }
 
