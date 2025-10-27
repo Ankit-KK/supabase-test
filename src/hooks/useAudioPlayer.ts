@@ -26,11 +26,16 @@ interface UseAudioPlayerProps {
 export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) => {
   const [queuedDonations, setQueuedDonations] = useState<Donation[]>([]);
   const [currentDonation, setCurrentDonation] = useState<Donation | null>(null);
-  const [autoPlay, setAutoPlay] = useState(() => {
-    const saved = localStorage.getItem(`audio-player-autoplay-${tableName}`);
+  const [autoPlayTTS, setAutoPlayTTS] = useState(() => {
+    const saved = localStorage.getItem(`audio-player-autoplay-tts-${tableName}`);
     return saved === 'true';
   });
-  const [autoPlayEnabledAt, setAutoPlayEnabledAt] = useState<number | null>(null);
+  const [autoPlayVoice, setAutoPlayVoice] = useState(() => {
+    const saved = localStorage.getItem(`audio-player-autoplay-voice-${tableName}`);
+    return saved === 'true';
+  });
+  const [autoPlayTTSEnabledAt, setAutoPlayTTSEnabledAt] = useState<number | null>(null);
+  const [autoPlayVoiceEnabledAt, setAutoPlayVoiceEnabledAt] = useState<number | null>(null);
   const [pageOpenedAt] = useState(() => new Date().toISOString());
   const MAX_QUEUE_SIZE = 10;
 
@@ -129,19 +134,29 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
     setCurrentDonation(null);
   }, [currentDonation, tableName]);
 
-  const handleAutoPlayChange = useCallback((enabled: boolean) => {
-    setAutoPlay(enabled);
-    setAutoPlayEnabledAt(enabled ? Date.now() : null);
-    localStorage.setItem(`audio-player-autoplay-${tableName}`, String(enabled));
-    console.log(`💾 Auto-play ${enabled ? 'enabled' : 'disabled'} (saved to localStorage)`);
+  const handleAutoPlayTTSChange = useCallback((enabled: boolean) => {
+    setAutoPlayTTS(enabled);
+    setAutoPlayTTSEnabledAt(enabled ? Date.now() : null);
+    localStorage.setItem(`audio-player-autoplay-tts-${tableName}`, String(enabled));
+    console.log(`💾 Auto-play TTS ${enabled ? 'enabled' : 'disabled'} (saved to localStorage)`);
+  }, [tableName]);
+
+  const handleAutoPlayVoiceChange = useCallback((enabled: boolean) => {
+    setAutoPlayVoice(enabled);
+    setAutoPlayVoiceEnabledAt(enabled ? Date.now() : null);
+    localStorage.setItem(`audio-player-autoplay-voice-${tableName}`, String(enabled));
+    console.log(`💾 Auto-play Voice ${enabled ? 'enabled' : 'disabled'} (saved to localStorage)`);
   }, [tableName]);
 
   return {
     currentDonation,
     queueSize: queuedDonations.length,
-    autoPlay,
-    autoPlayEnabledAt,
-    setAutoPlay: handleAutoPlayChange,
+    autoPlayTTS,
+    autoPlayVoice,
+    autoPlayTTSEnabledAt,
+    autoPlayVoiceEnabledAt,
+    setAutoPlayTTS: handleAutoPlayTTSChange,
+    setAutoPlayVoice: handleAutoPlayVoiceChange,
     markAsPlayed,
     queuedDonations // For debugging
   };

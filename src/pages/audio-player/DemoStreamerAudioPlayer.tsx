@@ -8,9 +8,12 @@ const DemoStreamerAudioPlayer = () => {
   const {
     currentDonation,
     queueSize,
-    autoPlay,
-    autoPlayEnabledAt,
-    setAutoPlay,
+    autoPlayTTS,
+    autoPlayVoice,
+    autoPlayTTSEnabledAt,
+    autoPlayVoiceEnabledAt,
+    setAutoPlayTTS,
+    setAutoPlayVoice,
     markAsPlayed
   } = useAudioPlayer({
     tableName: 'demostreamer_donations'
@@ -34,9 +37,12 @@ const DemoStreamerAudioPlayer = () => {
         <AudioPlayer
           donation={currentDonation}
           onPlayComplete={markAsPlayed}
-          autoPlay={autoPlay}
-          autoPlayEnabledAt={autoPlayEnabledAt}
-          onAutoPlayChange={setAutoPlay}
+          autoPlayTTS={autoPlayTTS}
+          autoPlayVoice={autoPlayVoice}
+          autoPlayTTSEnabledAt={autoPlayTTSEnabledAt}
+          autoPlayVoiceEnabledAt={autoPlayVoiceEnabledAt}
+          onAutoPlayTTSChange={setAutoPlayTTS}
+          onAutoPlayVoiceChange={setAutoPlayVoice}
           tableName="demostreamer_donations"
         />
 

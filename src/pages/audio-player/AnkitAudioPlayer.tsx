@@ -6,9 +6,12 @@ const AnkitAudioPlayer = () => {
   const {
     currentDonation,
     queueSize,
-    autoPlay,
-    autoPlayEnabledAt,
-    setAutoPlay,
+    autoPlayTTS,
+    autoPlayVoice,
+    autoPlayTTSEnabledAt,
+    autoPlayVoiceEnabledAt,
+    setAutoPlayTTS,
+    setAutoPlayVoice,
     markAsPlayed
   } = useAudioPlayer({
     tableName: 'ankit_donations'
@@ -32,9 +35,12 @@ const AnkitAudioPlayer = () => {
         <AudioPlayer
           donation={currentDonation}
           onPlayComplete={markAsPlayed}
-          autoPlay={autoPlay}
-          autoPlayEnabledAt={autoPlayEnabledAt}
-          onAutoPlayChange={setAutoPlay}
+          autoPlayTTS={autoPlayTTS}
+          autoPlayVoice={autoPlayVoice}
+          autoPlayTTSEnabledAt={autoPlayTTSEnabledAt}
+          autoPlayVoiceEnabledAt={autoPlayVoiceEnabledAt}
+          onAutoPlayTTSChange={setAutoPlayTTS}
+          onAutoPlayVoiceChange={setAutoPlayVoice}
           tableName="ankit_donations"
         />
 

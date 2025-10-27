@@ -10,9 +10,12 @@ const TechGamerAudioPlayer = () => {
   const {
     currentDonation,
     queueSize,
-    autoPlay,
-    autoPlayEnabledAt,
-    setAutoPlay,
+    autoPlayTTS,
+    autoPlayVoice,
+    autoPlayTTSEnabledAt,
+    autoPlayVoiceEnabledAt,
+    setAutoPlayTTS,
+    setAutoPlayVoice,
     markAsPlayed
   } = useAudioPlayer({ tableName: 'techgamer_donations' });
 
@@ -35,9 +38,12 @@ const TechGamerAudioPlayer = () => {
           <AudioPlayer
             donation={currentDonation}
             onPlayComplete={markAsPlayed}
-            autoPlay={autoPlay}
-            autoPlayEnabledAt={autoPlayEnabledAt}
-            onAutoPlayChange={setAutoPlay}
+            autoPlayTTS={autoPlayTTS}
+            autoPlayVoice={autoPlayVoice}
+            autoPlayTTSEnabledAt={autoPlayTTSEnabledAt}
+            autoPlayVoiceEnabledAt={autoPlayVoiceEnabledAt}
+            onAutoPlayTTSChange={setAutoPlayTTS}
+            onAutoPlayVoiceChange={setAutoPlayVoice}
             tableName="techgamer_donations"
           />
         </div>

@@ -10,9 +10,12 @@ const ArtCreateAudioPlayer = () => {
   const {
     currentDonation,
     queueSize,
-    autoPlay,
-    autoPlayEnabledAt,
-    setAutoPlay,
+    autoPlayTTS,
+    autoPlayVoice,
+    autoPlayTTSEnabledAt,
+    autoPlayVoiceEnabledAt,
+    setAutoPlayTTS,
+    setAutoPlayVoice,
     markAsPlayed
   } = useAudioPlayer({ tableName: 'artcreate_donations' });
 
@@ -35,9 +38,12 @@ const ArtCreateAudioPlayer = () => {
           <AudioPlayer
             donation={currentDonation}
             onPlayComplete={markAsPlayed}
-            autoPlay={autoPlay}
-            autoPlayEnabledAt={autoPlayEnabledAt}
-            onAutoPlayChange={setAutoPlay}
+            autoPlayTTS={autoPlayTTS}
+            autoPlayVoice={autoPlayVoice}
+            autoPlayTTSEnabledAt={autoPlayTTSEnabledAt}
+            autoPlayVoiceEnabledAt={autoPlayVoiceEnabledAt}
+            onAutoPlayTTSChange={setAutoPlayTTS}
+            onAutoPlayVoiceChange={setAutoPlayVoice}
             tableName="artcreate_donations"
           />
         </div>

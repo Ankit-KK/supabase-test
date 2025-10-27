@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Play, Pause, SkipBack, Volume2, VolumeX, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
+import { CustomSwitch } from '@/components/ui/custom-switch';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 
@@ -20,18 +20,24 @@ interface Donation {
 interface AudioPlayerProps {
   donation: Donation | null;
   onPlayComplete?: () => void;
-  autoPlay?: boolean;
-  autoPlayEnabledAt?: number | null;
-  onAutoPlayChange?: (enabled: boolean) => void;
+  autoPlayTTS?: boolean;
+  autoPlayVoice?: boolean;
+  autoPlayTTSEnabledAt?: number | null;
+  autoPlayVoiceEnabledAt?: number | null;
+  onAutoPlayTTSChange?: (enabled: boolean) => void;
+  onAutoPlayVoiceChange?: (enabled: boolean) => void;
   tableName: string;
 }
 
 export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   donation,
   onPlayComplete,
-  autoPlay = false,
-  autoPlayEnabledAt,
-  onAutoPlayChange,
+  autoPlayTTS = false,
+  autoPlayVoice = false,
+  autoPlayTTSEnabledAt,
+  autoPlayVoiceEnabledAt,
+  onAutoPlayTTSChange,
+  onAutoPlayVoiceChange,
   tableName
 }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -109,6 +115,23 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     }
   }, [volume, isMuted]);
 
+  // Determine if this donation should auto-play based on type
+  const shouldAutoPlay = () => {
+    if (!donation) return false;
+    
+    // Voice message - check autoPlayVoice setting
+    if (donation.voice_message_url) {
+      return autoPlayVoice;
+    }
+    
+    // TTS message - check autoPlayTTS setting
+    if (donation.tts_audio_url) {
+      return autoPlayTTS;
+    }
+    
+    return false;
+  };
+
   // Process new donation
   useEffect(() => {
     if (!donation?.id) {
@@ -123,32 +146,34 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
 
     // Set audio source (priority: voice message > TTS audio)
     const audioUrl = donation.voice_message_url || donation.tts_audio_url;
+    const audioType = donation.voice_message_url ? 'voice message' : 'TTS audio';
+    
     if (audioUrl && audioRef.current) {
-      const audioType = donation.voice_message_url ? 'voice message' : 'TTS audio';
       console.log(`🔊 Loading ${audioType}:`, audioUrl);
       audioRef.current.src = audioUrl;
       audioRef.current.load();
 
-      // Auto-play if enabled
-      if (autoPlay) {
+      // Auto-play based on message type
+      if (shouldAutoPlay()) {
+        console.log(`▶️ Auto-playing ${audioType}`);
         setTimeout(() => handlePlay(), 100);
       }
     } else if (donation.message && !donation.voice_message_url) {
       // Only wait for TTS if it's a text message without voice recording
       console.log('⏳ Waiting for backend TTS generation...');
     }
-  }, [donation?.id, donation?.voice_message_url, donation?.tts_audio_url, autoPlay]);
+  }, [donation?.id, donation?.voice_message_url, donation?.tts_audio_url, autoPlayTTS, autoPlayVoice]);
 
   // Auto-play when audio becomes unlocked (user clicks "Enable Audio")
   useEffect(() => {
-    if (audioUnlocked && autoPlay && donation?.id && !isPlaying && !hasCompleted) {
+    if (audioUnlocked && shouldAutoPlay() && donation?.id && !isPlaying && !hasCompleted) {
       const audioUrl = donation.voice_message_url || donation.tts_audio_url;
       if (audioUrl && audioRef.current?.src) {
         console.log('🔓 Audio unlocked, attempting autoplay...');
         setTimeout(() => handlePlay(), 100);
       }
     }
-  }, [audioUnlocked, autoPlay, donation?.id, isPlaying, hasCompleted]);
+  }, [audioUnlocked, autoPlayTTS, autoPlayVoice, donation?.id, isPlaying, hasCompleted]);
 
   const unlockAudio = async () => {
     // The button click itself is the user interaction needed to unlock audio
@@ -260,17 +285,50 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
           />
         </div>
 
-        {/* Persistent Controls - Auto-play Toggle */}
-        {onAutoPlayChange && (
-          <div className="flex items-center justify-center gap-2">
-            <Switch
-              id="autoplay"
-              checked={autoPlay}
-              onCheckedChange={onAutoPlayChange}
-            />
-            <Label htmlFor="autoplay" className="text-sm">
-              Auto-play new messages
-            </Label>
+        {/* Persistent Controls - Auto-play Toggles */}
+        {(onAutoPlayTTSChange || onAutoPlayVoiceChange) && (
+          <div className="space-y-3 border-t pt-4">
+            <p className="text-xs font-semibold text-center text-muted-foreground">
+              Auto-Play Settings
+            </p>
+            
+            {/* TTS Auto-play */}
+            {onAutoPlayTTSChange && (
+              <div className="flex items-center justify-between gap-3 px-2">
+                <div className="flex-1">
+                  <Label htmlFor="autoplay-tts" className="text-sm font-medium cursor-pointer">
+                    Auto-play TTS Messages
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Text donations ₹70+
+                  </p>
+                </div>
+                <CustomSwitch
+                  id="autoplay-tts"
+                  checked={autoPlayTTS}
+                  onCheckedChange={onAutoPlayTTSChange}
+                />
+              </div>
+            )}
+            
+            {/* Voice Auto-play */}
+            {onAutoPlayVoiceChange && (
+              <div className="flex items-center justify-between gap-3 px-2">
+                <div className="flex-1">
+                  <Label htmlFor="autoplay-voice" className="text-sm font-medium cursor-pointer">
+                    Auto-play Voice Messages
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Voice donations ₹150+
+                  </p>
+                </div>
+                <CustomSwitch
+                  id="autoplay-voice"
+                  checked={autoPlayVoice}
+                  onCheckedChange={onAutoPlayVoiceChange}
+                />
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -397,17 +455,50 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         />
       </div>
 
-      {/* Auto-play Toggle */}
-      {onAutoPlayChange && (
-        <div className="flex items-center justify-center gap-2">
-          <Switch
-            id="autoplay"
-            checked={autoPlay}
-            onCheckedChange={onAutoPlayChange}
-          />
-          <Label htmlFor="autoplay" className="text-sm">
-            Auto-play new messages
-          </Label>
+      {/* Auto-play Toggles */}
+      {(onAutoPlayTTSChange || onAutoPlayVoiceChange) && (
+        <div className="space-y-3 border-t pt-4">
+          <p className="text-xs font-semibold text-center text-muted-foreground">
+            Auto-Play Settings
+          </p>
+          
+          {/* TTS Auto-play */}
+          {onAutoPlayTTSChange && (
+            <div className="flex items-center justify-between gap-3 px-2">
+              <div className="flex-1">
+                <Label htmlFor="autoplay-tts" className="text-sm font-medium cursor-pointer">
+                  Auto-play TTS Messages
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Text donations ₹70+
+                </p>
+              </div>
+              <CustomSwitch
+                id="autoplay-tts"
+                checked={autoPlayTTS}
+                onCheckedChange={onAutoPlayTTSChange}
+              />
+            </div>
+          )}
+          
+          {/* Voice Auto-play */}
+          {onAutoPlayVoiceChange && (
+            <div className="flex items-center justify-between gap-3 px-2">
+              <div className="flex-1">
+                <Label htmlFor="autoplay-voice" className="text-sm font-medium cursor-pointer">
+                  Auto-play Voice Messages
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Voice donations ₹150+
+                </p>
+              </div>
+              <CustomSwitch
+                id="autoplay-voice"
+                checked={autoPlayVoice}
+                onCheckedChange={onAutoPlayVoiceChange}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>
