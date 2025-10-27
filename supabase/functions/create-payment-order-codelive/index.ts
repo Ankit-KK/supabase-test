@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { name, amount, message, phone, voiceData } = await req.json()
+    const { name, amount, message, phone, voiceData, isHyperemote } = await req.json()
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -102,9 +102,8 @@ serve(async (req) => {
 
     const cashfreeOrder = await cashfreeResponse.json()
 
-    // Determine if this is a hyperemote based on streamer settings
-    const minAmount = streamerData!.hyperemotes_min_amount || 50;
-    const isHyperemoteValue = streamerData!.hyperemotes_enabled && parseFloat(amount) >= minAmount;
+    // Only set hyperemote if explicitly requested by user
+    const isHyperemoteValue = isHyperemote === true;
 
     // Store donation in database
     const { data: donation, error: donationError } = await supabase

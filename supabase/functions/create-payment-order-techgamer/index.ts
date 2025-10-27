@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { name, amount, message, phone, voiceData } = await req.json()
+    const { name, amount, message, phone, voiceData, isHyperemote } = await req.json()
 
     // Initialize Supabase client
     const supabaseClient = createClient(
@@ -87,9 +87,8 @@ serve(async (req) => {
 
     const cashfreeData = await cashfreeResponse.json()
 
-    // Determine if this is a hyperemote based on streamer settings
-    const minAmount = streamerData.hyperemotes_min_amount || 50;
-    const isHyperemote = streamerData.hyperemotes_enabled && amount >= minAmount;
+    // Only set hyperemote if explicitly requested by user
+    const isHyperemoteValue = isHyperemote === true;
 
     // Store donation in database
     const { error: insertError } = await supabaseClient
@@ -102,8 +101,8 @@ serve(async (req) => {
         message: message || null,
         temp_voice_data: voiceData || null,
         payment_status: 'pending',
-        moderation_status: isHyperemote ? 'auto_approved' : 'pending',
-        is_hyperemote: isHyperemote,
+        moderation_status: isHyperemoteValue ? 'auto_approved' : 'pending',
+        is_hyperemote: isHyperemoteValue,
       })
 
     if (insertError) {

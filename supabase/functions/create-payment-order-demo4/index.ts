@@ -16,8 +16,7 @@ serve(async (req) => {
     console.log('Request method:', req.method);
     console.log('Request headers:', Object.fromEntries(req.headers.entries()));
     
-    const requestBody = await req.json();
-    const { name, amount, message, phone, voiceData } = requestBody;
+    const { name, amount, message, phone, voiceData, isHyperemote } = await req.json();
     console.log('Parsed request data:', { name, amount, hasMessage: !!message, hasPhone: !!phone, hasVoiceData: !!voiceData });
     
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -91,8 +90,8 @@ serve(async (req) => {
       throw new Error('Failed to create payment order');
     }
 
-    const isHyperemote = streamerData.hyperemotes_enabled && 
-                        amount >= (streamerData.hyperemotes_min_amount || 50);
+    // Only set hyperemote if explicitly requested by user
+    const isHyperemoteValue = isHyperemote === true;
 
     const moderationStatus = amount >= 100 ? 'pending' : 'auto_approved';
     
@@ -107,7 +106,7 @@ serve(async (req) => {
         payment_status: 'pending',
         moderation_status: moderationStatus,
         streamer_id: streamerData.id,
-        is_hyperemote: isHyperemote,
+        is_hyperemote: isHyperemoteValue,
       });
 
     if (insertError) {
