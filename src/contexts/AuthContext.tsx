@@ -6,6 +6,7 @@ interface User {
   email: string;
   username?: string;
   role: string;
+  isAdmin: boolean;
 }
 
 interface AuthContextType {
@@ -30,6 +31,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const checkAdminStatus = async (email: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase
+        .from('admin_emails')
+        .select('email')
+        .eq('email', email.toLowerCase())
+        .single();
+      
+      return !error && !!data;
+    } catch {
+      return false;
+    }
+  };
+
   useEffect(() => {
     // Check for existing session in localStorage on mount
     const checkExistingSession = async () => {
@@ -39,11 +54,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const { data, error } = await supabase.rpc('validate_session_token', { token });
           if (!error && data && data.length > 0) {
             const userData = data[0];
+            const adminStatus = await checkAdminStatus(userData.email);
             setUser({
               id: userData.user_id,
               email: userData.email,
               username: userData.username,
-              role: userData.role
+              role: userData.role,
+              isAdmin: adminStatus
             });
           } else {
             localStorage.removeItem('auth_token');
@@ -78,12 +95,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       // Store session token and user data
+      const adminStatus = await checkAdminStatus(data.user.email);
       localStorage.setItem('auth_token', data.session.access_token);
       setUser({
         id: data.user.id,
         email: data.user.email,
         username: data.user.username,
-        role: data.user.role
+        role: data.user.role,
+        isAdmin: adminStatus
       });
 
       return { error: null };
@@ -111,12 +130,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       // Store session token and user data
+      const adminStatus = await checkAdminStatus(data.user.email);
       localStorage.setItem('auth_token', data.session.access_token);
       setUser({
         id: data.user.id,
         email: data.user.email,
         username: data.user.username,
-        role: data.user.role
+        role: data.user.role,
+        isAdmin: adminStatus
       });
 
       return { error: null };

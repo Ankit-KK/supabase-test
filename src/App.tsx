@@ -44,6 +44,8 @@ import Demo3Dashboard from "./pages/dashboard/Demo3Dashboard";
 import Demo4Dashboard from "./pages/dashboard/Demo4Dashboard";
 import Dashboard from "./pages/dashboard/Dashboard";
 import Auth from "./pages/Auth";
+import Admin from "./pages/Admin";
+import { AdminGuard } from "./components/admin/AdminGuard";
 import DemoStreamer from "./pages/DemoStreamer";
 
 // OBS Alert pages
@@ -113,6 +115,9 @@ const App = () => (
               
               {/* Authentication */}
               <Route path="/auth" element={<Auth />} />
+              
+              {/* Admin routes */}
+              <Route path="/admin" element={<AdminGuard><Admin /></AdminGuard>} />
               
               {/* Dashboard routes */}
               <Route path="/dashboard" element={<Dashboard />} />
