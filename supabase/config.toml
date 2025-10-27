@@ -101,6 +101,3 @@ verify_jwt = false
 
 [functions.upload-voice-message]
 verify_jwt = false
-
-[functions.admin-trigger-alert]
-verify_jwt = false
