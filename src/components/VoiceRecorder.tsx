@@ -9,14 +9,19 @@ interface VoiceRecorderProps {
   maxDurationSeconds?: number;
   disabled?: boolean;
   controller?: ReturnType<typeof useVoiceRecorder>;
+  requiredAmount?: number;
+  currentAmount?: number;
 }
 
 const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ 
   onRecordingComplete, 
   maxDurationSeconds = 60,
   disabled = false,
-  controller
+  controller,
+  requiredAmount = 150,
+  currentAmount = 0
 }) => {
+  const canRecord = currentAmount >= requiredAmount;
   const internalRecorder = useVoiceRecorder(maxDurationSeconds);
   const {
     isRecording,
@@ -106,9 +111,10 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
               type="button"
               onClick={startRecording}
               className="bg-gaming-pink-primary hover:bg-gaming-pink-secondary text-white gap-2"
+              disabled={!canRecord}
             >
               <Mic className="h-4 w-4" />
-              Start Recording
+              {canRecord ? 'Start Recording' : `Enter ₹${requiredAmount}+ first`}
             </Button>
           )}
 
@@ -152,8 +158,20 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
         {/* Instructions */}
         {!isRecording && !audioBlob && (
           <div className="text-center text-xs text-muted-foreground bg-muted/30 rounded-lg p-3">
-            💡 Click "Start Recording" and speak your message clearly. 
-            Your voice message will be played on stream with your donation!
+            {!canRecord ? (
+              <span className="text-yellow-600">
+                ⚠️ Enter donation amount (₹{requiredAmount}+) to start recording
+              </span>
+            ) : (
+              <>
+                💡 Click "Start Recording" and speak your message clearly. 
+                Your voice message will be played on stream with your donation!
+                <br />
+                <span className="text-blue-600 font-medium">
+                  You can record up to {maxDurationSeconds} seconds
+                </span>
+              </>
+            )}
           </div>
         )}
 

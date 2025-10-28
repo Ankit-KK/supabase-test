@@ -27,22 +27,41 @@ const Ankit = () => {
   const [hasVoiceRecording, setHasVoiceRecording] = useState(false);
   const [voiceDuration, setVoiceDuration] = useState(0);
   const [showHyperemoteEffect, setShowHyperemoteEffect] = useState(false);
+  const [isAmountLocked, setIsAmountLocked] = useState(false);
   // Phone number dialog states
   const [showPhoneDialog, setShowPhoneDialog] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [phoneError, setPhoneError] = useState('');
   
+  // Calculate character limit based on amount
+  const getCharacterLimit = (amount: number): number => {
+    if (amount >= 200) return 250;
+    if (amount >= 100) return 200;
+    if (amount >= 40) return 100;
+    return 100;
+  };
+  
   // Calculate voice recording duration based on amount
-  const getVoiceDuration = (amount: number) => {
-    if (amount >= 500) return 30;
-    if (amount >= 250) return 20;
+  const getVoiceDuration = (amount: number): number => {
+    if (amount >= 250) return 30;
+    if (amount >= 200) return 20;
     if (amount >= 150) return 15;
-    return 10;
+    return 15;
   };
 
   // Voice recorder instance - dynamically update duration based on amount
   const currentAmount = parseFloat(formData.amount) || 0;
-  const voiceRecorder = useVoiceRecorder(getVoiceDuration(currentAmount));
+  const maxVoiceDuration = getVoiceDuration(currentAmount);
+  const voiceRecorder = useVoiceRecorder(maxVoiceDuration);
+  
+  // Lock amount when recording starts
+  useEffect(() => {
+    if (voiceRecorder.isRecording) {
+      setIsAmountLocked(true);
+    } else if (!voiceRecorder.audioBlob) {
+      setIsAmountLocked(false);
+    }
+  }, [voiceRecorder.isRecording, voiceRecorder.audioBlob]);
 
   
 
@@ -96,11 +115,30 @@ const Ankit = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    
+    // If amount changes and message exceeds new limit, truncate message
+    if (name === 'amount' && donationType === 'message') {
+      const newAmount = parseFloat(value) || 40;
+      const newCharLimit = getCharacterLimit(newAmount);
+      
+      if (formData.message.length > newCharLimit) {
+        toast({
+          title: "Message Shortened",
+          description: `Donation amount reduced. Message limited to ${newCharLimit} characters.`,
+        });
+        setFormData(prev => ({
+          ...prev,
+          [name]: value,
+          message: prev.message.substring(0, newCharLimit)
+        }));
+        return;
+      }
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-
   };
 
 
@@ -135,6 +173,19 @@ const Ankit = () => {
         variant: "destructive",
       });
       return;
+    }
+    
+    // Validate character limits for text messages
+    if (donationType === 'message' && formData.message?.trim()) {
+      const charLimit = getCharacterLimit(amount);
+      if (formData.message.length > charLimit) {
+        toast({
+          title: "Message Too Long",
+          description: `Your donation amount allows up to ${charLimit} characters. Increase donation or shorten message.`,
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     if (!amount || amount < 1) {
@@ -436,12 +487,23 @@ const Ankit = () => {
                 className="border-blue-500/30 focus:border-blue-500 focus:ring-blue-500/20"
                 min="1"
                 max="100000"
-                disabled={donationType === 'hyperemote'}
+                disabled={donationType === 'hyperemote' || isAmountLocked}
                 required
               />
+              {isAmountLocked && (
+                <p className="text-xs text-yellow-600 flex items-center gap-1">
+                  🔒 Amount locked during voice recording
+                </p>
+              )}
               {donationType === 'message' && (
                 <p className="text-xs text-muted-foreground">
                   TTS available for donations above ₹70
+                </p>
+              )}
+              {donationType === 'voice' && currentAmount >= 150 && (
+                <p className="text-xs text-muted-foreground">
+                  Voice duration: {getVoiceDuration(currentAmount)}s
+                  {currentAmount < 200 && ' (Donate ₹200+ for 20s, ₹250+ for 30s)'}
                 </p>
               )}
               {donationType === 'hyperemote' && (
@@ -465,11 +527,16 @@ const Ankit = () => {
                   onChange={handleInputChange}
                   className="w-full p-3 border border-blue-500/30 rounded-lg bg-background/50 backdrop-blur-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none resize-none"
                   rows={3}
-                  maxLength={500}
+                  maxLength={getCharacterLimit(currentAmount)}
                   required
                 />
                 <div className="text-xs text-muted-foreground text-right">
-                  {formData.message.length}/500 characters
+                  {formData.message.length}/{getCharacterLimit(currentAmount)} characters
+                  {currentAmount < 100 && (
+                    <span className="text-yellow-600 ml-2">
+                      💡 Donate ₹100+ for 200 chars, ₹200+ for 250 chars
+                    </span>
+                  )}
                 </div>
               </div>
             )}
@@ -484,8 +551,10 @@ const Ankit = () => {
                     setHasVoiceRecording(hasRecording);
                     setVoiceDuration(duration);
                   }}
-                  maxDurationSeconds={60}
+                  maxDurationSeconds={maxVoiceDuration}
                   controller={voiceRecorder}
+                  requiredAmount={150}
+                  currentAmount={currentAmount}
                 />
               </div>
             )}
