@@ -532,11 +532,6 @@ const Ankit = () => {
                 />
                 <div className="text-xs text-muted-foreground text-right">
                   {formData.message.length}/{getCharacterLimit(currentAmount)} characters
-                  {currentAmount < 100 && (
-                    <span className="text-yellow-600 ml-2">
-                      💡 Donate ₹100+ for 200 chars, ₹200+ for 250 chars
-                    </span>
-                  )}
                 </div>
               </div>
             )}
