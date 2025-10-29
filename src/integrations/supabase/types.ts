@@ -103,6 +103,74 @@ export type Database = {
           },
         ]
       }
+      apexlegend_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string | null
+          gif_url: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          gif_url?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          gif_url?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apexlegend_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       artcreate_donations: {
         Row: {
           amount: number
@@ -385,6 +453,74 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "codelive_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      craftmaster_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string | null
+          gif_url: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          gif_url?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          gif_url?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "craftmaster_donations_streamer_id_fkey"
             columns: ["streamer_id"]
             isOneToOne: false
             referencedRelation: "streamers"
@@ -714,6 +850,74 @@ export type Database = {
           voice_message_url?: string | null
         }
         Relationships: []
+      }
+      lofibeats_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string | null
+          gif_url: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          gif_url?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          gif_url?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lofibeats_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       musicstream_donations: {
         Row: {
@@ -1087,6 +1291,74 @@ export type Database = {
         }
         Relationships: []
       }
+      valorantpro_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string | null
+          gif_url: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          gif_url?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          gif_url?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "valorantpro_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       visits: {
         Row: {
           id: string
@@ -1104,6 +1376,74 @@ export type Database = {
           visited_at?: string | null
         }
         Relationships: []
+      }
+      yogatime_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string | null
+          gif_url: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          gif_url?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          gif_url?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "yogatime_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -1175,35 +1515,41 @@ export type Database = {
       }
     }
     Functions: {
-      add_admin_email: {
-        Args: { p_email: string }
-        Returns: boolean
-      }
+      add_admin_email: { Args: { p_email: string }; Returns: boolean }
       add_streamer_auth_email: {
         Args: { p_email: string; p_streamer_slug: string }
         Returns: boolean
       }
-      add_streamer_moderator: {
-        Args:
-          | {
-              p_mod_name: string
-              p_streamer_id: string
-              p_telegram_user_id: string
-            }
-          | {
+      add_streamer_moderator:
+        | {
+            Args: {
               p_mod_name: string
               p_streamer_id: string
               p_telegram_user_id: string
               p_user_id: string
             }
-        Returns: {
-          created_at: string
-          id: string
-          is_active: boolean
-          mod_name: string
-          telegram_user_id: string
-        }[]
-      }
+            Returns: {
+              created_at: string
+              id: string
+              is_active: boolean
+              mod_name: string
+              telegram_user_id: string
+            }[]
+          }
+        | {
+            Args: {
+              p_mod_name: string
+              p_streamer_id: string
+              p_telegram_user_id: string
+            }
+            Returns: {
+              created_at: string
+              id: string
+              is_active: boolean
+              mod_name: string
+              telegram_user_id: string
+            }[]
+          }
       assign_email_to_streamer: {
         Args: { p_email: string; p_streamer_slug: string }
         Returns: boolean
@@ -1228,22 +1574,10 @@ export type Database = {
           success: boolean
         }[]
       }
-      bytea_to_text: {
-        Args: { data: string }
-        Returns: string
-      }
-      can_access_admin_emails: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      check_and_rotate_expired_tokens: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      check_bulk_access_rate_limit: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      bytea_to_text: { Args: { data: string }; Returns: string }
+      can_access_admin_emails: { Args: never; Returns: boolean }
+      check_and_rotate_expired_tokens: { Args: never; Returns: undefined }
+      check_bulk_access_rate_limit: { Args: never; Returns: boolean }
       check_rate_limit: {
         Args: {
           p_endpoint: string
@@ -1266,24 +1600,17 @@ export type Database = {
         Args: { p_email: string; p_streamer_slug: string }
         Returns: boolean
       }
-      check_username_exists: {
-        Args:
-          | { exclude_user_id: string; username_to_check: string }
-          | { username: string }
-        Returns: boolean
-      }
-      cleanup_expired_websocket_connections: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      create_visits_table: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      encrypt_obs_token: {
-        Args: { token_text: string }
-        Returns: string
-      }
+      check_username_exists:
+        | { Args: { username: string }; Returns: boolean }
+        | {
+            Args: { exclude_user_id: string; username_to_check: string }
+            Returns: {
+              username_exists: boolean
+            }[]
+          }
+      cleanup_expired_websocket_connections: { Args: never; Returns: undefined }
+      create_visits_table: { Args: never; Returns: boolean }
+      encrypt_obs_token: { Args: { token_text: string }; Returns: string }
       export_user_signups_for_compliance: {
         Args: { export_reason: string; requested_by?: string }
         Returns: {
@@ -1297,18 +1624,9 @@ export type Database = {
           youtube_channel: string
         }[]
       }
-      generate_obs_token: {
-        Args: { p_streamer_id: string }
-        Returns: string
-      }
-      generate_session_token: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      get_active_obs_token: {
-        Args: { streamer_id: string }
-        Returns: string
-      }
+      generate_obs_token: { Args: { p_streamer_id: string }; Returns: string }
+      generate_session_token: { Args: never; Returns: string }
+      get_active_obs_token: { Args: { streamer_id: string }; Returns: string }
       get_admin_streamers: {
         Args: { admin_email: string }
         Returns: {
@@ -1452,10 +1770,7 @@ export type Database = {
           sanitized_message: string
         }[]
       }
-      get_safe_streamer_columns: {
-        Args: Record<PropertyKey, never>
-        Returns: string[]
-      }
+      get_safe_streamer_columns: { Args: never; Returns: string[] }
       get_sensitive_data_access_stats: {
         Args: { days_back?: number }
         Returns: {
@@ -1649,7 +1964,7 @@ export type Database = {
         }[]
       }
       get_visitor_stats: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           total_visits: number
           unique_visitors: number
@@ -1671,38 +1986,82 @@ export type Database = {
           voice_message_url: string
         }[]
       }
-      hash_obs_token: {
-        Args: { token_text: string }
-        Returns: string
-      }
-      hash_password: {
-        Args: { password: string }
-        Returns: string
-      }
+      hash_obs_token: { Args: { token_text: string }; Returns: string }
+      hash_password: { Args: { password: string }; Returns: string }
       http: {
         Args: { request: Database["public"]["CompositeTypes"]["http_request"] }
         Returns: Database["public"]["CompositeTypes"]["http_response"]
+        SetofOptions: {
+          from: "http_request"
+          to: "http_response"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
-      http_delete: {
-        Args:
-          | { content: string; content_type: string; uri: string }
-          | { uri: string }
-        Returns: Database["public"]["CompositeTypes"]["http_response"]
-      }
-      http_get: {
-        Args: { data: Json; uri: string } | { uri: string }
-        Returns: Database["public"]["CompositeTypes"]["http_response"]
-      }
+      http_delete:
+        | {
+            Args: { uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: { content: string; content_type: string; uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+      http_get:
+        | {
+            Args: { uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: { data: Json; uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
       http_head: {
         Args: { uri: string }
         Returns: Database["public"]["CompositeTypes"]["http_response"]
+        SetofOptions: {
+          from: "*"
+          to: "http_response"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       http_header: {
         Args: { field: string; value: string }
         Returns: Database["public"]["CompositeTypes"]["http_header"]
+        SetofOptions: {
+          from: "*"
+          to: "http_header"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       http_list_curlopt: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           curlopt: string
           value: string
@@ -1711,41 +2070,53 @@ export type Database = {
       http_patch: {
         Args: { content: string; content_type: string; uri: string }
         Returns: Database["public"]["CompositeTypes"]["http_response"]
+        SetofOptions: {
+          from: "*"
+          to: "http_response"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
-      http_post: {
-        Args:
-          | { content: string; content_type: string; uri: string }
-          | { data: Json; uri: string }
-        Returns: Database["public"]["CompositeTypes"]["http_response"]
-      }
+      http_post:
+        | {
+            Args: { content: string; content_type: string; uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: { data: Json; uri: string }
+            Returns: Database["public"]["CompositeTypes"]["http_response"]
+            SetofOptions: {
+              from: "*"
+              to: "http_response"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
       http_put: {
         Args: { content: string; content_type: string; uri: string }
         Returns: Database["public"]["CompositeTypes"]["http_response"]
+        SetofOptions: {
+          from: "*"
+          to: "http_response"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
-      http_reset_curlopt: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      http_reset_curlopt: { Args: never; Returns: boolean }
       http_set_curlopt: {
         Args: { curlopt: string; value: string }
         Returns: boolean
       }
-      is_admin_email: {
-        Args: { check_email: string }
-        Returns: boolean
-      }
-      is_admin_user: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_current_user_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_service_role: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_admin_email: { Args: { check_email: string }; Returns: boolean }
+      is_admin_user: { Args: never; Returns: boolean }
+      is_current_user_admin: { Args: never; Returns: boolean }
+      is_service_role: { Args: never; Returns: boolean }
       is_valid_streamer_operation: {
         Args: { streamer_id: string }
         Returns: boolean
@@ -1779,25 +2150,22 @@ export type Database = {
         Args: { details?: string; user_email?: string; violation_type: string }
         Returns: undefined
       }
-      log_sensitive_access: {
-        Args:
-          | {
+      log_sensitive_access:
+        | {
+            Args: { action: string; record_id?: string; table_name: string }
+            Returns: undefined
+          }
+        | {
+            Args: {
               access_reason: string
               access_type: string
               record_id?: string
               table_name: string
             }
-          | { action: string; record_id?: string; table_name: string }
-        Returns: undefined
-      }
-      mask_email: {
-        Args: { email: string }
-        Returns: string
-      }
-      mask_mobile: {
-        Args: { mobile: string }
-        Returns: string
-      }
+            Returns: undefined
+          }
+      mask_email: { Args: { email: string }; Returns: string }
+      mask_mobile: { Args: { mobile: string }; Returns: string }
       record_streamer_login: {
         Args: { p_email: string; p_provider: string; p_streamer_slug: string }
         Returns: undefined
@@ -1820,12 +2188,19 @@ export type Database = {
         Args: { p_email: string; p_streamer_slug: string }
         Returns: boolean
       }
-      remove_streamer_moderator: {
-        Args:
-          | { p_moderator_id: string; p_streamer_id: string }
-          | { p_moderator_id: string; p_streamer_id: string; p_user_id: string }
-        Returns: boolean
-      }
+      remove_streamer_moderator:
+        | {
+            Args: { p_moderator_id: string; p_streamer_id: string }
+            Returns: boolean
+          }
+        | {
+            Args: {
+              p_moderator_id: string
+              p_streamer_id: string
+              p_user_id: string
+            }
+            Returns: boolean
+          }
       safe_export_user_signups: {
         Args: { export_reason: string }
         Returns: {
@@ -1839,10 +2214,7 @@ export type Database = {
           youtube_channel: string
         }[]
       }
-      text_to_bytea: {
-        Args: { data: string }
-        Returns: string
-      }
+      text_to_bytea: { Args: { data: string }; Returns: string }
       update_donation_visibility: {
         Args: {
           p_donation_id: string
@@ -1864,14 +2236,21 @@ export type Database = {
         Args: { new_username: string; user_id: string }
         Returns: undefined
       }
-      urlencode: {
-        Args: { data: Json } | { string: string } | { string: string }
-        Returns: string
-      }
-      validate_donation_amount: {
-        Args: { amount: number }
-        Returns: boolean
-      }
+      urlencode:
+        | { Args: { data: Json }; Returns: string }
+        | {
+            Args: { string: string }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.urlencode(string => bytea), public.urlencode(string => varchar). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
+          }
+        | {
+            Args: { string: string }
+            Returns: {
+              error: true
+            } & "Could not choose the best candidate function between: public.urlencode(string => bytea), public.urlencode(string => varchar). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
+          }
+      validate_donation_amount: { Args: { amount: number }; Returns: boolean }
       validate_donation_input: {
         Args: { p_amount: number; p_message?: string; p_name: string }
         Returns: boolean
@@ -1989,7 +2368,7 @@ export type Database = {
         value: string | null
       }
       http_request: {
-        method: unknown | null
+        method: unknown
         uri: string | null
         headers: Database["public"]["CompositeTypes"]["http_header"][] | null
         content_type: string | null
