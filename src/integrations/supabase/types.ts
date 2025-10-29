@@ -43,6 +43,7 @@ export type Database = {
           is_hyperemote: boolean | null
           message: string | null
           message_visible: boolean | null
+          mod_notified: boolean | null
           moderation_status: string | null
           name: string
           order_id: string | null
@@ -63,6 +64,7 @@ export type Database = {
           is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean | null
           moderation_status?: string | null
           name: string
           order_id?: string | null
@@ -83,6 +85,7 @@ export type Database = {
           is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean | null
           moderation_status?: string | null
           name?: string
           order_id?: string | null
@@ -114,6 +117,7 @@ export type Database = {
           is_hyperemote: boolean | null
           message: string | null
           message_visible: boolean | null
+          mod_notified: boolean | null
           moderation_status: string | null
           name: string
           order_id: string
@@ -133,6 +137,7 @@ export type Database = {
           is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean | null
           moderation_status?: string | null
           name: string
           order_id: string
@@ -152,6 +157,7 @@ export type Database = {
           is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean | null
           moderation_status?: string | null
           name?: string
           order_id?: string
@@ -182,6 +188,7 @@ export type Database = {
           is_hyperemote: boolean | null
           message: string | null
           message_visible: boolean | null
+          mod_notified: boolean | null
           moderation_status: string | null
           name: string
           order_id: string | null
@@ -202,6 +209,7 @@ export type Database = {
           is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean | null
           moderation_status?: string | null
           name: string
           order_id?: string | null
@@ -222,6 +230,7 @@ export type Database = {
           is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean | null
           moderation_status?: string | null
           name?: string
           order_id?: string | null
@@ -329,6 +338,7 @@ export type Database = {
           is_hyperemote: boolean | null
           message: string | null
           message_visible: boolean | null
+          mod_notified: boolean | null
           moderation_status: string | null
           name: string
           order_id: string | null
@@ -349,6 +359,7 @@ export type Database = {
           is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean | null
           moderation_status?: string | null
           name: string
           order_id?: string | null
@@ -369,6 +380,7 @@ export type Database = {
           is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean | null
           moderation_status?: string | null
           name?: string
           order_id?: string | null
@@ -400,6 +412,7 @@ export type Database = {
           is_hyperemote: boolean | null
           message: string | null
           message_visible: boolean | null
+          mod_notified: boolean | null
           moderation_status: string | null
           name: string
           order_id: string | null
@@ -420,6 +433,7 @@ export type Database = {
           is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean | null
           moderation_status?: string | null
           name: string
           order_id?: string | null
@@ -440,6 +454,7 @@ export type Database = {
           is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean | null
           moderation_status?: string | null
           name?: string
           order_id?: string | null
@@ -471,6 +486,7 @@ export type Database = {
           is_hyperemote: boolean | null
           message: string | null
           message_visible: boolean | null
+          mod_notified: boolean | null
           moderation_status: string | null
           name: string
           order_id: string
@@ -490,6 +506,7 @@ export type Database = {
           is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean | null
           moderation_status?: string | null
           name: string
           order_id: string
@@ -509,6 +526,7 @@ export type Database = {
           is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean | null
           moderation_status?: string | null
           name?: string
           order_id?: string
@@ -539,6 +557,7 @@ export type Database = {
           is_hyperemote: boolean | null
           message: string | null
           message_visible: boolean | null
+          mod_notified: boolean | null
           moderation_status: string | null
           name: string
           order_id: string | null
@@ -559,6 +578,7 @@ export type Database = {
           is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean | null
           moderation_status?: string | null
           name: string
           order_id?: string | null
@@ -579,6 +599,7 @@ export type Database = {
           is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean | null
           moderation_status?: string | null
           name?: string
           order_id?: string | null
@@ -602,6 +623,7 @@ export type Database = {
           is_hyperemote: boolean | null
           message: string | null
           message_visible: boolean | null
+          mod_notified: boolean | null
           moderation_status: string | null
           name: string
           order_id: string | null
@@ -622,6 +644,7 @@ export type Database = {
           is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean | null
           moderation_status?: string | null
           name: string
           order_id?: string | null
@@ -642,6 +665,7 @@ export type Database = {
           is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean | null
           moderation_status?: string | null
           name?: string
           order_id?: string | null
@@ -665,6 +689,7 @@ export type Database = {
           is_hyperemote: boolean | null
           message: string | null
           message_visible: boolean | null
+          mod_notified: boolean | null
           moderation_status: string | null
           name: string
           order_id: string | null
@@ -685,6 +710,7 @@ export type Database = {
           is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean | null
           moderation_status?: string | null
           name: string
           order_id?: string | null
@@ -705,6 +731,7 @@ export type Database = {
           is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean | null
           moderation_status?: string | null
           name?: string
           order_id?: string | null
@@ -728,6 +755,7 @@ export type Database = {
           is_hyperemote: boolean | null
           message: string | null
           message_visible: boolean | null
+          mod_notified: boolean | null
           moderation_status: string | null
           name: string
           order_id: string | null
@@ -748,6 +776,7 @@ export type Database = {
           is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean | null
           moderation_status?: string | null
           name: string
           order_id?: string | null
@@ -768,6 +797,7 @@ export type Database = {
           is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean | null
           moderation_status?: string | null
           name?: string
           order_id?: string | null
@@ -799,6 +829,7 @@ export type Database = {
           is_hyperemote: boolean | null
           message: string | null
           message_visible: boolean | null
+          mod_notified: boolean | null
           moderation_status: string | null
           name: string
           order_id: string | null
@@ -819,6 +850,7 @@ export type Database = {
           is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean | null
           moderation_status?: string | null
           name: string
           order_id?: string | null
@@ -839,6 +871,7 @@ export type Database = {
           is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean | null
           moderation_status?: string | null
           name?: string
           order_id?: string | null
@@ -862,6 +895,7 @@ export type Database = {
           is_hyperemote: boolean | null
           message: string | null
           message_visible: boolean | null
+          mod_notified: boolean | null
           moderation_status: string | null
           name: string
           order_id: string
@@ -881,6 +915,7 @@ export type Database = {
           is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean | null
           moderation_status?: string | null
           name: string
           order_id: string
@@ -900,6 +935,7 @@ export type Database = {
           is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean | null
           moderation_status?: string | null
           name?: string
           order_id?: string
@@ -930,6 +966,7 @@ export type Database = {
           is_hyperemote: boolean | null
           message: string | null
           message_visible: boolean | null
+          mod_notified: boolean | null
           moderation_status: string | null
           name: string
           order_id: string | null
@@ -950,6 +987,7 @@ export type Database = {
           is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean | null
           moderation_status?: string | null
           name: string
           order_id?: string | null
@@ -970,6 +1008,7 @@ export type Database = {
           is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean | null
           moderation_status?: string | null
           name?: string
           order_id?: string | null
@@ -1188,6 +1227,7 @@ export type Database = {
           is_hyperemote: boolean | null
           message: string | null
           message_visible: boolean | null
+          mod_notified: boolean | null
           moderation_status: string | null
           name: string
           order_id: string | null
@@ -1208,6 +1248,7 @@ export type Database = {
           is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean | null
           moderation_status?: string | null
           name: string
           order_id?: string | null
@@ -1228,6 +1269,7 @@ export type Database = {
           is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean | null
           moderation_status?: string | null
           name?: string
           order_id?: string | null
@@ -1302,6 +1344,7 @@ export type Database = {
           is_hyperemote: boolean | null
           message: string | null
           message_visible: boolean | null
+          mod_notified: boolean | null
           moderation_status: string | null
           name: string
           order_id: string
@@ -1321,6 +1364,7 @@ export type Database = {
           is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean | null
           moderation_status?: string | null
           name: string
           order_id: string
@@ -1340,6 +1384,7 @@ export type Database = {
           is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean | null
           moderation_status?: string | null
           name?: string
           order_id?: string
@@ -1388,6 +1433,7 @@ export type Database = {
           is_hyperemote: boolean | null
           message: string | null
           message_visible: boolean | null
+          mod_notified: boolean | null
           moderation_status: string | null
           name: string
           order_id: string
@@ -1407,6 +1453,7 @@ export type Database = {
           is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean | null
           moderation_status?: string | null
           name: string
           order_id: string
@@ -1426,6 +1473,7 @@ export type Database = {
           is_hyperemote?: boolean | null
           message?: string | null
           message_visible?: boolean | null
+          mod_notified?: boolean | null
           moderation_status?: string | null
           name?: string
           order_id?: string

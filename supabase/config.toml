@@ -131,3 +131,6 @@ verify_jwt = false
 
 [functions.upload-voice-message-yogatime]
 verify_jwt = false
+
+[functions.notify-new-donations]
+verify_jwt = false
