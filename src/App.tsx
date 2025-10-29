@@ -29,6 +29,11 @@ import FitnessFlow from "./pages/FitnessFlow";
 import Demo2 from "./pages/Demo2";
 import Demo3 from "./pages/Demo3";
 import Demo4 from "./pages/Demo4";
+import ValorantPro from "./pages/ValorantPro";
+import CraftMaster from "./pages/CraftMaster";
+import ApexLegend from "./pages/ApexLegend";
+import LofiBeats from "./pages/LofiBeats";
+import YogaTime from "./pages/YogaTime";
 
 // Dashboard pages
 import AnkitDashboard from "./pages/dashboard/AnkitDashboard";
@@ -42,6 +47,11 @@ import ArtCreateDashboard from "./pages/dashboard/ArtCreateDashboard";
 import Demo2Dashboard from "./pages/dashboard/Demo2Dashboard";
 import Demo3Dashboard from "./pages/dashboard/Demo3Dashboard";
 import Demo4Dashboard from "./pages/dashboard/Demo4Dashboard";
+import ValorantProDashboard from "./pages/dashboard/ValorantProDashboard";
+import CraftMasterDashboard from "./pages/dashboard/CraftMasterDashboard";
+import ApexLegendDashboard from "./pages/dashboard/ApexLegendDashboard";
+import LofiBeatsDashboard from "./pages/dashboard/LofiBeatsDashboard";
+import YogaTimeDashboard from "./pages/dashboard/YogaTimeDashboard";
 import Dashboard from "./pages/dashboard/Dashboard";
 import Auth from "./pages/Auth";
 import DemoStreamer from "./pages/DemoStreamer";
@@ -58,6 +68,11 @@ import ArtCreateObsAlerts from "./pages/obs-alerts/ArtCreateObsAlerts";
 import Demo2ObsAlerts from "./pages/obs-alerts/Demo2ObsAlerts";
 import Demo3ObsAlerts from "./pages/obs-alerts/Demo3ObsAlerts";
 import Demo4ObsAlerts from "./pages/obs-alerts/Demo4ObsAlerts";
+import ValorantProObsAlerts from "./pages/obs-alerts/ValorantProObsAlerts";
+import CraftMasterObsAlerts from "./pages/obs-alerts/CraftMasterObsAlerts";
+import ApexLegendObsAlerts from "./pages/obs-alerts/ApexLegendObsAlerts";
+import LofiBeatsObsAlerts from "./pages/obs-alerts/LofiBeatsObsAlerts";
+import YogaTimeObsAlerts from "./pages/obs-alerts/YogaTimeObsAlerts";
 
 // Audio Player pages
 import AnkitAudioPlayer from "./pages/audio-player/AnkitAudioPlayer";
@@ -71,6 +86,11 @@ import ArtCreateAudioPlayer from "./pages/audio-player/ArtCreateAudioPlayer";
 import Demo2AudioPlayer from "./pages/audio-player/Demo2AudioPlayer";
 import Demo3AudioPlayer from "./pages/audio-player/Demo3AudioPlayer";
 import Demo4AudioPlayer from "./pages/audio-player/Demo4AudioPlayer";
+import ValorantProAudioPlayer from "./pages/audio-player/ValorantProAudioPlayer";
+import CraftMasterAudioPlayer from "./pages/audio-player/CraftMasterAudioPlayer";
+import ApexLegendAudioPlayer from "./pages/audio-player/ApexLegendAudioPlayer";
+import LofiBeatsAudioPlayer from "./pages/audio-player/LofiBeatsAudioPlayer";
+import YogaTimeAudioPlayer from "./pages/audio-player/YogaTimeAudioPlayer";
 
 const queryClient = new QueryClient();
 
@@ -110,6 +130,11 @@ const App = () => (
               <Route path="/demo2" element={<Demo2 />} />
               <Route path="/demo3" element={<Demo3 />} />
               <Route path="/demo4" element={<Demo4 />} />
+              <Route path="/valorantpro" element={<ValorantPro />} />
+              <Route path="/craftmaster" element={<CraftMaster />} />
+              <Route path="/apexlegend" element={<ApexLegend />} />
+              <Route path="/lofibeats" element={<LofiBeats />} />
+              <Route path="/yogatime" element={<YogaTime />} />
               
               {/* Authentication */}
               <Route path="/auth" element={<Auth />} />
@@ -127,6 +152,11 @@ const App = () => (
               <Route path="/dashboard/demo2" element={<Demo2Dashboard />} />
               <Route path="/dashboard/demo3" element={<Demo3Dashboard />} />
               <Route path="/dashboard/demo4" element={<Demo4Dashboard />} />
+              <Route path="/dashboard/valorantpro" element={<ValorantProDashboard />} />
+              <Route path="/dashboard/craftmaster" element={<CraftMasterDashboard />} />
+              <Route path="/dashboard/apexlegend" element={<ApexLegendDashboard />} />
+              <Route path="/dashboard/lofibeats" element={<LofiBeatsDashboard />} />
+              <Route path="/dashboard/yogatime" element={<YogaTimeDashboard />} />
               
               {/* OBS Alert routes */}
               <Route path="/ankit/obs-alerts" element={<AnkitObsAlerts />} />
@@ -140,6 +170,11 @@ const App = () => (
               <Route path="/demo2/obs-alerts" element={<Demo2ObsAlerts />} />
               <Route path="/demo3/obs-alerts" element={<Demo3ObsAlerts />} />
               <Route path="/demo4/obs-alerts" element={<Demo4ObsAlerts />} />
+              <Route path="/valorantpro/obs-alerts" element={<ValorantProObsAlerts />} />
+              <Route path="/craftmaster/obs-alerts" element={<CraftMasterObsAlerts />} />
+              <Route path="/apexlegend/obs-alerts" element={<ApexLegendObsAlerts />} />
+              <Route path="/lofibeats/obs-alerts" element={<LofiBeatsObsAlerts />} />
+              <Route path="/yogatime/obs-alerts" element={<YogaTimeObsAlerts />} />
               
               {/* Audio Player routes */}
               <Route path="/ankit/audio-player" element={<AnkitAudioPlayer />} />
@@ -153,6 +188,11 @@ const App = () => (
               <Route path="/demo2/audio-player" element={<Demo2AudioPlayer />} />
               <Route path="/demo3/audio-player" element={<Demo3AudioPlayer />} />
               <Route path="/demo4/audio-player" element={<Demo4AudioPlayer />} />
+              <Route path="/valorantpro/audio-player" element={<ValorantProAudioPlayer />} />
+              <Route path="/craftmaster/audio-player" element={<CraftMasterAudioPlayer />} />
+              <Route path="/apexlegend/audio-player" element={<ApexLegendAudioPlayer />} />
+              <Route path="/lofibeats/audio-player" element={<LofiBeatsAudioPlayer />} />
+              <Route path="/yogatime/audio-player" element={<YogaTimeAudioPlayer />} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>

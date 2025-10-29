@@ -101,3 +101,33 @@ verify_jwt = false
 
 [functions.upload-voice-message]
 verify_jwt = false
+
+[functions.create-payment-order-valorantpro]
+verify_jwt = false
+
+[functions.create-payment-order-craftmaster]
+verify_jwt = false
+
+[functions.create-payment-order-apexlegend]
+verify_jwt = false
+
+[functions.create-payment-order-lofibeats]
+verify_jwt = false
+
+[functions.create-payment-order-yogatime]
+verify_jwt = false
+
+[functions.upload-voice-message-valorantpro]
+verify_jwt = false
+
+[functions.upload-voice-message-craftmaster]
+verify_jwt = false
+
+[functions.upload-voice-message-apexlegend]
+verify_jwt = false
+
+[functions.upload-voice-message-lofibeats]
+verify_jwt = false
+
+[functions.upload-voice-message-yogatime]
+verify_jwt = false
