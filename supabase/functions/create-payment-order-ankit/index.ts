@@ -20,8 +20,8 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // Get Cashfree credentials
-    const xClientId = Deno.env.get('XClientId-Test')!
-    const xClientSecret = Deno.env.get('XClientSecret-Key')!
+    const xClientId = Deno.env.get('XClientId')!
+    const xClientSecret = Deno.env.get('XClientSecret')!
     const apiUrl = Deno.env.get('api_url')!
 
     // Validate input
