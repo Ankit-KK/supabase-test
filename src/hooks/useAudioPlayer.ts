@@ -42,28 +42,8 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
   // Get streamer slug from table name
   const streamerSlug = tableName.replace('_donations', '').replace('chiaa_gaming', 'chia_gaming');
 
-  // Map tableName to streamerSlug
-  const getStreamerSlugFromTable = (table: string): string => {
-    const mapping: Record<string, string> = {
-      'ankit_donations': 'ankit',
-      'chiaa_gaming_donations': 'chiaa_gaming',
-      'demostreamer_donations': 'demostreamer',
-      'techgamer_donations': 'techgamer',
-      'musicstream_donations': 'musicstream',
-      'fitnessflow_donations': 'fitnessflow',
-      'artcreate_donations': 'artcreate',
-      'codelive_donations': 'codelive',
-      'valorantpro_donations': 'valorantpro',
-      'craftmaster_donations': 'craftmaster',
-      'apexlegend_donations': 'apexlegend',
-      'lofibeats_donations': 'lofibeats',
-      'yogatime_donations': 'yogatime'
-    };
-    return mapping[table] || 'chiaa_gaming';
-  };
-
   // Get Pusher config from backend
-  const { config: pusherConfig } = usePusherConfig(getStreamerSlugFromTable(tableName));
+  const { config: pusherConfig } = usePusherConfig(streamerSlug);
 
   // Real-time audio queue via Pusher (primary source)
   const { connectionStatus: pusherStatus } = usePusherAudioQueue({
