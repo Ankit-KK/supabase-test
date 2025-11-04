@@ -4,7 +4,7 @@ import { usePusherAlerts } from '@/hooks/usePusherAlerts';
 import { usePusherConfig } from '@/hooks/usePusherConfig';
 
 const ArtCreateObsAlerts = () => {
-  const { config: pusherConfig, loading: configLoading } = usePusherConfig();
+  const { config: pusherConfig, loading: configLoading } = usePusherConfig('artcreate');
   
   const {
     currentAlert,

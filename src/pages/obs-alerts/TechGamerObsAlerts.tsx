@@ -4,7 +4,7 @@ import { usePusherAlerts } from '@/hooks/usePusherAlerts';
 import { usePusherConfig } from '@/hooks/usePusherConfig';
 
 const TechGamerObsAlerts = () => {
-  const { config: pusherConfig, loading: configLoading } = usePusherConfig();
+  const { config: pusherConfig, loading: configLoading } = usePusherConfig('techgamer');
   
   const {
     currentAlert,

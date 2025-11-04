@@ -1122,6 +1122,2226 @@ export type Database = {
         }
         Relationships: []
       }
+      streamer17_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamer17_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streamer18_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamer18_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streamer19_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamer19_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streamer20_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamer20_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streamer21_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamer21_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streamer22_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamer22_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streamer23_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamer23_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streamer24_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamer24_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streamer25_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamer25_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streamer26_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamer26_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streamer27_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamer27_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streamer28_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamer28_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streamer29_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamer29_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streamer30_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamer30_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streamer31_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamer31_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streamer32_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamer32_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streamer33_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamer33_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streamer34_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamer34_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streamer35_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamer35_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streamer36_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamer36_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streamer37_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamer37_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streamer38_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamer38_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streamer39_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamer39_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streamer40_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamer40_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streamer41_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamer41_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streamer42_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamer42_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streamer43_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamer43_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streamer44_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamer44_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streamer45_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamer45_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      streamer46_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          created_at: string | null
+          id: string
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string
+          payment_status: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          created_at?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string
+          payment_status?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streamer46_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       streamers: {
         Row: {
           brand_color: string | null
@@ -1130,6 +3350,7 @@ export type Database = {
           hyperemotes_enabled: boolean | null
           hyperemotes_min_amount: number | null
           id: string
+          pusher_group: number | null
           streamer_name: string
           streamer_slug: string
           updated_at: string | null
@@ -1142,6 +3363,7 @@ export type Database = {
           hyperemotes_enabled?: boolean | null
           hyperemotes_min_amount?: number | null
           id?: string
+          pusher_group?: number | null
           streamer_name: string
           streamer_slug: string
           updated_at?: string | null
@@ -1154,6 +3376,7 @@ export type Database = {
           hyperemotes_enabled?: boolean | null
           hyperemotes_min_amount?: number | null
           id?: string
+          pusher_group?: number | null
           streamer_name?: string
           streamer_slug?: string
           updated_at?: string | null

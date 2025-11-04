@@ -69,7 +69,7 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
   const [refreshKey, setRefreshKey] = useState(0);
   
   // Get Pusher config from backend
-  const { config: pusherConfig } = usePusherConfig();
+  const { config: pusherConfig } = usePusherConfig(streamerSlug);
   
   // Real-time dashboard updates via Pusher
   const { connectionStatus: pusherStatus, stats: pusherStats } = usePusherDashboard({

@@ -4,19 +4,29 @@ import { supabase } from '@/integrations/supabase/client';
 interface PusherConfig {
   key: string;
   cluster: string;
+  group?: number;
+  streamer?: string;
 }
 
-export const usePusherConfig = () => {
+export const usePusherConfig = (streamerSlug: string) => {
   const [config, setConfig] = useState<PusherConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!streamerSlug) {
+      setError('streamerSlug is required');
+      setLoading(false);
+      return;
+    }
+
     const fetchConfig = async () => {
       try {
-        console.log('[PusherConfig] Fetching Pusher configuration from backend...');
+        console.log(`[usePusherConfig] Fetching config for: ${streamerSlug}`);
         
-        const { data, error } = await supabase.functions.invoke('get-pusher-config');
+        const { data, error } = await supabase.functions.invoke('get-pusher-config', {
+          body: { streamer_slug: streamerSlug }
+        });
         
         if (error) throw error;
         
@@ -24,10 +34,10 @@ export const usePusherConfig = () => {
           throw new Error('Invalid Pusher configuration received');
         }
         
-        console.log('[PusherConfig] Configuration loaded successfully');
+        console.log(`[usePusherConfig] Loaded Group ${data.group} config for ${streamerSlug}`);
         setConfig(data);
       } catch (err) {
-        console.error('[PusherConfig] Failed to fetch Pusher config:', err);
+        console.error('[usePusherConfig] Error:', err);
         setError(err instanceof Error ? err.message : 'Failed to load config');
       } finally {
         setLoading(false);
@@ -35,7 +45,7 @@ export const usePusherConfig = () => {
     };
 
     fetchConfig();
-  }, []);
+  }, [streamerSlug]);
 
   return { config, loading, error };
 };

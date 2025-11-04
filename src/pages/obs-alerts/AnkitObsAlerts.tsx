@@ -5,7 +5,7 @@ import { usePusherConfig } from '@/hooks/usePusherConfig';
 
 const AnkitObsAlerts = () => {
   // Get Pusher config from backend
-  const { config: pusherConfig, loading: configLoading } = usePusherConfig();
+  const { config: pusherConfig, loading: configLoading } = usePusherConfig('ankit');
   
   // Real-time alerts via Pusher
   const {

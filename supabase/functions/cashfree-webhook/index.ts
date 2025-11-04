@@ -69,6 +69,49 @@ class PusherClient {
   }
 }
 
+// Helper function to get Pusher credentials based on streamer_slug
+async function getPusherCredentials(streamerSlug: string, supabase: any) {
+  try {
+    const { data: streamer, error } = await supabase
+      .from('streamers')
+      .select('pusher_group, streamer_name')
+      .eq('streamer_slug', streamerSlug)
+      .single();
+
+    if (error || !streamer) {
+      console.error(`[Pusher] Failed to fetch pusher_group for ${streamerSlug}:`, error);
+      return {
+        appId: Deno.env.get('PUSHER_APP_ID_1') || Deno.env.get('PUSHER_APP_ID'),
+        key: Deno.env.get('PUSHER_KEY_1') || Deno.env.get('PUSHER_KEY'),
+        secret: Deno.env.get('PUSHER_SECRET_1') || Deno.env.get('PUSHER_SECRET'),
+        cluster: Deno.env.get('PUSHER_CLUSTER_1') || Deno.env.get('PUSHER_CLUSTER'),
+        group: 1
+      };
+    }
+
+    const group = streamer.pusher_group || 1;
+    
+    const credentials = {
+      appId: Deno.env.get(`PUSHER_APP_ID_${group}`),
+      key: Deno.env.get(`PUSHER_KEY_${group}`),
+      secret: Deno.env.get(`PUSHER_SECRET_${group}`),
+      cluster: Deno.env.get(`PUSHER_CLUSTER_${group}`),
+      group
+    };
+
+    if (!credentials.appId || !credentials.key || !credentials.secret || !credentials.cluster) {
+      console.error(`[Pusher] Missing credentials for Group ${group}`);
+      throw new Error(`Pusher Group ${group} credentials not configured`);
+    }
+
+    console.log(`[Pusher] Using Group ${group} for streamer: ${streamerSlug} (${streamer.streamer_name})`);
+    return credentials;
+  } catch (error) {
+    console.error('[Pusher] Error fetching credentials:', error);
+    throw error;
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -99,26 +142,7 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Get Pusher credentials from Supabase secrets (required)
-    const pusherAppId = Deno.env.get('PUSHER_APP_ID');
-    const pusherKey = Deno.env.get('PUSHER_KEY');
-    const pusherSecret = Deno.env.get('PUSHER_SECRET');
-    const pusherCluster = Deno.env.get('PUSHER_CLUSTER');
-
-    if (!pusherAppId || !pusherKey || !pusherSecret || !pusherCluster) {
-      console.error('Missing Pusher credentials in environment variables');
-      throw new Error('Pusher configuration incomplete - check Supabase secrets');
-    }
-
-    // Initialize Pusher client
-    const pusher = new PusherClient(
-      pusherAppId,
-      pusherKey,
-      pusherSecret,
-      pusherCluster
-    );
-
-    // Extract order information from webhook - Cashfree sends data nested under 'data'
+    // Extract order information early to determine streamer
     const order_id = webhookData.data?.order?.order_id
     const order_status = webhookData.data?.order?.order_status
     const payment_status = webhookData.data?.payment?.payment_status
@@ -142,6 +166,7 @@ serve(async (req) => {
 
     // Determine which table to update based on order_id prefix
     const getTableName = (orderId: string) => {
+      // Existing 16 streamers
       if (orderId.startsWith('ankit_')) return 'ankit_donations';
       if (orderId.startsWith('musicstream_')) return 'musicstream_donations';
       if (orderId.startsWith('techgamer_')) return 'techgamer_donations';
@@ -154,6 +179,42 @@ serve(async (req) => {
       if (orderId.startsWith('demo4_')) return 'demo4_donations';
       if (orderId.startsWith('chia_')) return 'chiaa_gaming_donations';
       if (orderId.startsWith('chiagaming_')) return 'chiaa_gaming_donations';
+      if (orderId.startsWith('apexlegend_')) return 'apexlegend_donations';
+      if (orderId.startsWith('craftmaster_')) return 'craftmaster_donations';
+      if (orderId.startsWith('lofibeats_')) return 'lofibeats_donations';
+      if (orderId.startsWith('valorantpro_')) return 'valorantpro_donations';
+      if (orderId.startsWith('yogatime_')) return 'yogatime_donations';
+      // New streamers (17-46)
+      if (orderId.startsWith('streamer17_')) return 'streamer17_donations';
+      if (orderId.startsWith('streamer18_')) return 'streamer18_donations';
+      if (orderId.startsWith('streamer19_')) return 'streamer19_donations';
+      if (orderId.startsWith('streamer20_')) return 'streamer20_donations';
+      if (orderId.startsWith('streamer21_')) return 'streamer21_donations';
+      if (orderId.startsWith('streamer22_')) return 'streamer22_donations';
+      if (orderId.startsWith('streamer23_')) return 'streamer23_donations';
+      if (orderId.startsWith('streamer24_')) return 'streamer24_donations';
+      if (orderId.startsWith('streamer25_')) return 'streamer25_donations';
+      if (orderId.startsWith('streamer26_')) return 'streamer26_donations';
+      if (orderId.startsWith('streamer27_')) return 'streamer27_donations';
+      if (orderId.startsWith('streamer28_')) return 'streamer28_donations';
+      if (orderId.startsWith('streamer29_')) return 'streamer29_donations';
+      if (orderId.startsWith('streamer30_')) return 'streamer30_donations';
+      if (orderId.startsWith('streamer31_')) return 'streamer31_donations';
+      if (orderId.startsWith('streamer32_')) return 'streamer32_donations';
+      if (orderId.startsWith('streamer33_')) return 'streamer33_donations';
+      if (orderId.startsWith('streamer34_')) return 'streamer34_donations';
+      if (orderId.startsWith('streamer35_')) return 'streamer35_donations';
+      if (orderId.startsWith('streamer36_')) return 'streamer36_donations';
+      if (orderId.startsWith('streamer37_')) return 'streamer37_donations';
+      if (orderId.startsWith('streamer38_')) return 'streamer38_donations';
+      if (orderId.startsWith('streamer39_')) return 'streamer39_donations';
+      if (orderId.startsWith('streamer40_')) return 'streamer40_donations';
+      if (orderId.startsWith('streamer41_')) return 'streamer41_donations';
+      if (orderId.startsWith('streamer42_')) return 'streamer42_donations';
+      if (orderId.startsWith('streamer43_')) return 'streamer43_donations';
+      if (orderId.startsWith('streamer44_')) return 'streamer44_donations';
+      if (orderId.startsWith('streamer45_')) return 'streamer45_donations';
+      if (orderId.startsWith('streamer46_')) return 'streamer46_donations';
       return 'chiaa_gaming_donations'; // default for chia_gaming
     };
     
@@ -188,6 +249,7 @@ serve(async (req) => {
 
     // Map order_id prefix to correct streamer slug for Pusher channels
     const getStreamerSlug = (orderId: string): string => {
+      // Existing 16 streamers
       if (orderId.startsWith('ankit_')) return 'ankit';
       if (orderId.startsWith('musicstream_')) return 'musicstream';
       if (orderId.startsWith('techgamer_')) return 'techgamer';
@@ -199,7 +261,43 @@ serve(async (req) => {
       if (orderId.startsWith('demo3_')) return 'demo3';
       if (orderId.startsWith('demo4_')) return 'demo4';
       if (orderId.startsWith('chia_')) return 'chiaa_gaming';
-      if (orderId.startsWith('chiagaming_')) return 'chiaa_gaming';  // Fix for ChiaGaming
+      if (orderId.startsWith('chiagaming_')) return 'chiaa_gaming';
+      if (orderId.startsWith('apexlegend_')) return 'apexlegend';
+      if (orderId.startsWith('craftmaster_')) return 'craftmaster';
+      if (orderId.startsWith('lofibeats_')) return 'lofibeats';
+      if (orderId.startsWith('valorantpro_')) return 'valorantpro';
+      if (orderId.startsWith('yogatime_')) return 'yogatime';
+      // New streamers (17-46)
+      if (orderId.startsWith('streamer17_')) return 'streamer17';
+      if (orderId.startsWith('streamer18_')) return 'streamer18';
+      if (orderId.startsWith('streamer19_')) return 'streamer19';
+      if (orderId.startsWith('streamer20_')) return 'streamer20';
+      if (orderId.startsWith('streamer21_')) return 'streamer21';
+      if (orderId.startsWith('streamer22_')) return 'streamer22';
+      if (orderId.startsWith('streamer23_')) return 'streamer23';
+      if (orderId.startsWith('streamer24_')) return 'streamer24';
+      if (orderId.startsWith('streamer25_')) return 'streamer25';
+      if (orderId.startsWith('streamer26_')) return 'streamer26';
+      if (orderId.startsWith('streamer27_')) return 'streamer27';
+      if (orderId.startsWith('streamer28_')) return 'streamer28';
+      if (orderId.startsWith('streamer29_')) return 'streamer29';
+      if (orderId.startsWith('streamer30_')) return 'streamer30';
+      if (orderId.startsWith('streamer31_')) return 'streamer31';
+      if (orderId.startsWith('streamer32_')) return 'streamer32';
+      if (orderId.startsWith('streamer33_')) return 'streamer33';
+      if (orderId.startsWith('streamer34_')) return 'streamer34';
+      if (orderId.startsWith('streamer35_')) return 'streamer35';
+      if (orderId.startsWith('streamer36_')) return 'streamer36';
+      if (orderId.startsWith('streamer37_')) return 'streamer37';
+      if (orderId.startsWith('streamer38_')) return 'streamer38';
+      if (orderId.startsWith('streamer39_')) return 'streamer39';
+      if (orderId.startsWith('streamer40_')) return 'streamer40';
+      if (orderId.startsWith('streamer41_')) return 'streamer41';
+      if (orderId.startsWith('streamer42_')) return 'streamer42';
+      if (orderId.startsWith('streamer43_')) return 'streamer43';
+      if (orderId.startsWith('streamer44_')) return 'streamer44';
+      if (orderId.startsWith('streamer45_')) return 'streamer45';
+      if (orderId.startsWith('streamer46_')) return 'streamer46';
       return 'chiaa_gaming'; // default
     };
 
@@ -210,6 +308,17 @@ serve(async (req) => {
       console.log(`Processing order: ${order_id}`);
       console.log(`Extracted streamer slug: ${streamerSlug}`);
       console.log(`Table name: ${tableName}`);
+      
+      // Get Pusher credentials dynamically based on streamer's group
+      const pusherCreds = await getPusherCredentials(streamerSlug, supabase);
+      
+      // Initialize Pusher with group-specific credentials
+      const pusher = new PusherClient(
+        pusherCreds.appId,
+        pusherCreds.key,
+        pusherCreds.secret,
+        pusherCreds.cluster
+      );
       
       // 1. Trigger OBS alerts channel
       try {

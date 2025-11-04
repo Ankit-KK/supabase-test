@@ -4,7 +4,7 @@ import { usePusherAlerts } from '@/hooks/usePusherAlerts';
 import { usePusherConfig } from '@/hooks/usePusherConfig';
 
 const Demo3ObsAlerts = () => {
-  const { config: pusherConfig, loading: configLoading } = usePusherConfig();
+  const { config: pusherConfig, loading: configLoading } = usePusherConfig('demo3');
   const { currentAlert, isVisible } = usePusherAlerts({
     channelName: 'demo3-alerts',
     pusherKey: pusherConfig?.key || '',
