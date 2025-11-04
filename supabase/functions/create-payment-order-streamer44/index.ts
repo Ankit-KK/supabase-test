@@ -18,6 +18,11 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Get Cashfree credentials
+    const xClientId = Deno.env.get('XClientId')!;
+    const xClientSecret = Deno.env.get('XClientSecret')!;
+    const apiUrl = Deno.env.get('api_url')!;
+
     const { data: streamer, error: streamerError } = await supabase
       .from('streamers')
       .select('id')
@@ -30,12 +35,12 @@ serve(async (req) => {
 
     const orderId = `streamer44_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
-    const cashfreeResponse = await fetch('https://api.cashfree.com/pg/orders', {
+    const cashfreeResponse = await fetch(`${apiUrl}/orders`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-client-id': Deno.env.get('CASHFREE_APP_ID')!,
-        'x-client-secret': Deno.env.get('CASHFREE_SECRET_KEY')!,
+        'x-client-id': xClientId,
+        'x-client-secret': xClientSecret,
         'x-api-version': '2023-08-01',
       },
       body: JSON.stringify({
