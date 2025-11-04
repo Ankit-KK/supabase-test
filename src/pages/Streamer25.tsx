@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { load } from '@cashfreepayments/cashfree-js';
 import SimpleVoiceRecorder from '@/components/SimpleVoiceRecorder';
 import SimpleEmojiSelector from '@/components/SimpleEmojiSelector';
+import { PhoneDialog } from '@/components/PhoneDialog';
 
 const Streamer25 = () => {
   const { toast } = useToast();
