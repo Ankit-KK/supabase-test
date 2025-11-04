@@ -19,6 +19,9 @@ const Streamer25 = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hyperemotesEnabled, setHyperemotesEnabled] = useState(false);
   const [hyperemotesMinAmount, setHyperemotesMinAmount] = useState(50);
+  const [showPhoneDialog, setShowPhoneDialog] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneError, setPhoneError] = useState('');
 
   useEffect(() => {
     const initializeCashfree = async () => {
