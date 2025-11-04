@@ -48,8 +48,26 @@ const Streamer26 = () => {
     setFormData(prev => ({ ...prev, emoji }));
   };
 
+  const validatePhoneNumber = (phone: string): boolean => {
+    const phoneRegex = /^[6-9]\d{9}$/;
+    if (!phoneRegex.test(phone)) {
+      setPhoneError('Please enter a valid 10-digit mobile number starting with 6-9');
+      return false;
+    }
+    setPhoneError('');
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setShowPhoneDialog(true);
+  };
+
+  const handlePaymentWithPhone = async () => {
+    if (!validatePhoneNumber(phoneNumber)) {
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -60,6 +78,7 @@ const Streamer26 = () => {
           message: formData.message,
           voiceBlob: voiceBlob,
           emoji: formData.emoji,
+          phone: phoneNumber,
         },
       });
 
@@ -71,6 +90,7 @@ const Streamer26 = () => {
       };
 
       if (cashfree) {
+        setShowPhoneDialog(false);
         cashfree.checkout(checkoutOptions);
       }
     } catch (error: any) {

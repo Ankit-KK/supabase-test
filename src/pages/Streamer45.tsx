@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { load } from '@cashfreepayments/cashfree-js';
 import SimpleVoiceRecorder from '@/components/SimpleVoiceRecorder';
 import SimpleEmojiSelector from '@/components/SimpleEmojiSelector';
+import { PhoneDialog } from '@/components/PhoneDialog';
 
 const Streamer45 = () => {
   const { toast } = useToast();
@@ -18,6 +19,9 @@ const Streamer45 = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hyperemotesEnabled, setHyperemotesEnabled] = useState(false);
   const [hyperemotesMinAmount, setHyperemotesMinAmount] = useState(50);
+  const [showPhoneDialog, setShowPhoneDialog] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneError, setPhoneError] = useState('');
 
   useEffect(() => {
     const initializeCashfree = async () => {
@@ -44,8 +48,26 @@ const Streamer45 = () => {
     setFormData(prev => ({ ...prev, emoji }));
   };
 
+  const validatePhoneNumber = (phone: string): boolean => {
+    const phoneRegex = /^[6-9]\d{9}$/;
+    if (!phoneRegex.test(phone)) {
+      setPhoneError('Please enter a valid 10-digit mobile number starting with 6-9');
+      return false;
+    }
+    setPhoneError('');
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setShowPhoneDialog(true);
+  };
+
+  const handlePaymentWithPhone = async () => {
+    if (!validatePhoneNumber(phoneNumber)) {
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -56,6 +78,7 @@ const Streamer45 = () => {
           message: formData.message,
           voiceBlob: voiceBlob,
           emoji: formData.emoji,
+          phone: phoneNumber,
         },
       });
 
@@ -67,6 +90,7 @@ const Streamer45 = () => {
       };
 
       if (cashfree) {
+        setShowPhoneDialog(false);
         cashfree.checkout(checkoutOptions);
       }
     } catch (error: any) {
