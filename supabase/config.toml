@@ -134,3 +134,39 @@ verify_jwt = false
 
 [functions.notify-new-donations]
 verify_jwt = false
+
+[functions.create-payment-order-streamer17]
+verify_jwt = false
+
+[functions.create-payment-order-streamer18]
+verify_jwt = false
+
+[functions.create-payment-order-streamer19]
+verify_jwt = false
+
+[functions.create-payment-order-streamer20]
+verify_jwt = false
+
+[functions.create-payment-order-streamer21]
+verify_jwt = false
+
+[functions.create-payment-order-streamer22]
+verify_jwt = false
+
+[functions.upload-voice-message-streamer17]
+verify_jwt = false
+
+[functions.upload-voice-message-streamer18]
+verify_jwt = false
+
+[functions.upload-voice-message-streamer19]
+verify_jwt = false
+
+[functions.upload-voice-message-streamer20]
+verify_jwt = false
+
+[functions.upload-voice-message-streamer21]
+verify_jwt = false
+
+[functions.upload-voice-message-streamer22]
+verify_jwt = false
