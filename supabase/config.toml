@@ -153,6 +153,78 @@ verify_jwt = false
 [functions.create-payment-order-streamer22]
 verify_jwt = false
 
+[functions.create-payment-order-streamer23]
+verify_jwt = false
+
+[functions.create-payment-order-streamer24]
+verify_jwt = false
+
+[functions.create-payment-order-streamer25]
+verify_jwt = false
+
+[functions.create-payment-order-streamer26]
+verify_jwt = false
+
+[functions.create-payment-order-streamer27]
+verify_jwt = false
+
+[functions.create-payment-order-streamer28]
+verify_jwt = false
+
+[functions.create-payment-order-streamer29]
+verify_jwt = false
+
+[functions.create-payment-order-streamer30]
+verify_jwt = false
+
+[functions.create-payment-order-streamer31]
+verify_jwt = false
+
+[functions.create-payment-order-streamer32]
+verify_jwt = false
+
+[functions.create-payment-order-streamer33]
+verify_jwt = false
+
+[functions.create-payment-order-streamer34]
+verify_jwt = false
+
+[functions.create-payment-order-streamer35]
+verify_jwt = false
+
+[functions.create-payment-order-streamer36]
+verify_jwt = false
+
+[functions.create-payment-order-streamer37]
+verify_jwt = false
+
+[functions.create-payment-order-streamer38]
+verify_jwt = false
+
+[functions.create-payment-order-streamer39]
+verify_jwt = false
+
+[functions.create-payment-order-streamer40]
+verify_jwt = false
+
+[functions.create-payment-order-streamer41]
+verify_jwt = false
+
+[functions.create-payment-order-streamer42]
+verify_jwt = false
+
+[functions.create-payment-order-streamer43]
+verify_jwt = false
+
+[functions.create-payment-order-streamer44]
+verify_jwt = false
+
+[functions.create-payment-order-streamer45]
+verify_jwt = false
+
+[functions.create-payment-order-streamer46]
+verify_jwt = false
+
 [functions.upload-voice-message-streamer17]
 verify_jwt = false
 
@@ -169,4 +241,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.upload-voice-message-streamer22]
+verify_jwt = false
+
+[functions.upload-voice-message-streamer23]
 verify_jwt = false
