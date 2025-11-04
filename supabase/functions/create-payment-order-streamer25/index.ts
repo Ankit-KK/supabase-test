@@ -12,7 +12,12 @@ serve(async (req) => {
   }
 
   try {
-    const { name, amount, message, voiceBlob, emoji } = await req.json();
+    const { name, amount, message, voiceBlob, emoji, phone } = await req.json();
+
+    // Validate phone number
+    if (!phone || !/^[6-9]\d{9}$/.test(phone)) {
+      throw new Error('Invalid phone number format. Please provide a valid 10-digit mobile number.');
+    }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -51,7 +56,7 @@ serve(async (req) => {
           customer_id: `customer_${Date.now()}`,
           customer_name: name,
           customer_email: 'donor@example.com',
-          customer_phone: '9999999999',
+          customer_phone: phone,
         },
         order_meta: {
           return_url: `${req.headers.get('origin')}/streamer25`,
