@@ -13,12 +13,11 @@ serve(async (req) => {
   }
 
   try {
-    // Parse request URL to get streamer_slug
-    const url = new URL(req.url);
-    const streamerSlug = url.searchParams.get('streamer_slug');
+    // Parse request body to get streamer_slug
+    const { streamer_slug: streamerSlug } = await req.json();
 
     if (!streamerSlug) {
-      throw new Error('streamer_slug query parameter is required');
+      throw new Error('streamer_slug is required in request body');
     }
 
     console.log(`[get-pusher-config] Request for streamer: ${streamerSlug}`);
