@@ -1,32 +1,56 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { load } from '@cashfreepayments/cashfree-js';
-import SimpleVoiceRecorder from '@/components/SimpleVoiceRecorder';
-import SimpleEmojiSelector from '@/components/SimpleEmojiSelector';
-import { PhoneDialog } from '@/components/PhoneDialog';
+import { useNavigate } from 'react-router-dom';
+import { Sparkles, Heart, Zap } from 'lucide-react';
+import EnhancedVoiceRecorder from '@/components/EnhancedVoiceRecorder';
+import { DonationTypeSelector } from '@/components/DonationTypeSelector';
+import { EnhancedPhoneDialog } from '@/components/EnhancedPhoneDialog';
+import { useDonationLimits } from '@/hooks/useDonationLimits';
+import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 
 const Streamer24 = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
+  const { getCharacterLimit, getVoiceDuration } = useDonationLimits();
+  const brandColor = '#6366f1';
+  
   const [cashfree, setCashfree] = useState<any>(null);
-  const [formData, setFormData] = useState({ name: '', amount: '', message: '', emoji: '' });
-  const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
+  const [sdkLoading, setSdkLoading] = useState(true);
+  const [formData, setFormData] = useState({ name: '', amount: '', message: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [donationType, setDonationType] = useState<'message' | 'voice' | 'hyperemote'>('message');
   const [hyperemotesEnabled, setHyperemotesEnabled] = useState(false);
   const [hyperemotesMinAmount, setHyperemotesMinAmount] = useState(50);
+  const [hasVoiceRecording, setHasVoiceRecording] = useState(false);
+  const [voiceDuration, setVoiceDuration] = useState(0);
+  const [showHyperemoteEffect, setShowHyperemoteEffect] = useState(false);
+  const [isAmountLocked, setIsAmountLocked] = useState(false);
   const [showPhoneDialog, setShowPhoneDialog] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [phoneError, setPhoneError] = useState('');
 
+  const currentAmount = parseFloat(formData.amount) || 0;
+  const maxVoiceDuration = getVoiceDuration(currentAmount);
+  const voiceRecorder = useVoiceRecorder(maxVoiceDuration);
+
   useEffect(() => {
     const initializeCashfree = async () => {
-      const cf = await load({ mode: 'production' });
-      setCashfree(cf);
+      try {
+        setSdkLoading(true);
+        const cf = await load({ mode: 'production' });
+        setCashfree(cf);
+        toast({ title: "Payment System Ready", description: "You can now make donations safely." });
+      } catch (error) {
+        toast({ title: "Payment System Error", description: "Failed to load payment system.", variant: "destructive" });
+      } finally {
+        setSdkLoading(false);
+      }
     };
     initializeCashfree();
 
@@ -40,12 +64,51 @@ const Streamer24 = () => {
     fetchStreamerSettings();
   }, []);
 
-  const handleVoiceRecorded = (blob: Blob | null) => {
-    setVoiceBlob(blob);
+  useEffect(() => {
+    if (voiceRecorder.isRecording) {
+      setIsAmountLocked(true);
+    } else if (!voiceRecorder.audioBlob) {
+      setIsAmountLocked(false);
+    }
+  }, [voiceRecorder.isRecording, voiceRecorder.audioBlob]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    
+    if (name === 'amount' && donationType === 'message') {
+      const newAmount = parseFloat(value) || 40;
+      const newCharLimit = getCharacterLimit(newAmount);
+      
+      if (formData.message.length > newCharLimit) {
+        toast({
+          title: "Message Shortened",
+          description: `Donation amount reduced. Message limited to ${newCharLimit} characters.`,
+        });
+        setFormData(prev => ({
+          ...prev,
+          [name]: value,
+          message: prev.message.substring(0, newCharLimit)
+        }));
+        return;
+      }
+    }
+    
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleEmojiSelect = (emoji: string) => {
-    setFormData(prev => ({ ...prev, emoji }));
+  const handleDonationTypeChange = (type: 'message' | 'voice' | 'hyperemote') => {
+    setDonationType(type);
+    
+    if (type === 'hyperemote') {
+      setFormData(prev => ({ ...prev, amount: '50' }));
+      setIsAmountLocked(true);
+      setShowHyperemoteEffect(true);
+      setTimeout(() => setShowHyperemoteEffect(false), 2000);
+    } else {
+      if (isAmountLocked && donationType === 'hyperemote') {
+        setIsAmountLocked(false);
+      }
+    }
   };
 
   const validatePhoneNumber = (phone: string): boolean => {
@@ -60,29 +123,59 @@ const Streamer24 = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!formData.name.trim() || !formData.amount) {
+      toast({ title: "Missing Information", description: "Please fill in all required fields.", variant: "destructive" });
+      return;
+    }
+    if (donationType === 'message' && !formData.message.trim()) {
+      toast({ title: "Missing Message", description: "Please enter a message for your donation.", variant: "destructive" });
+      return;
+    }
+    if (donationType === 'voice' && !voiceRecorder.audioBlob) {
+      toast({ title: "Missing Voice", description: "Please record a voice message.", variant: "destructive" });
+      return;
+    }
+    if (!cashfree) {
+      toast({ title: "Payment System Not Ready", description: "Please wait for payment system to load.", variant: "destructive" });
+      return;
+    }
     setShowPhoneDialog(true);
   };
 
-  const handlePaymentWithPhone = async () => {
+  const handlePhoneSubmit = async () => {
     if (!validatePhoneNumber(phoneNumber)) {
       return;
     }
 
     setIsSubmitting(true);
-
+    let data: any = null;
     try {
-      const { data, error } = await supabase.functions.invoke('create-payment-order-streamer24', {
+      const amount = parseFloat(formData.amount);
+      let voiceDataBase64: string | null = null;
+      if (donationType === 'voice' && voiceRecorder.audioBlob) {
+        const reader = new FileReader();
+        voiceDataBase64 = await new Promise((resolve) => {
+          reader.onload = () => {
+            const base64String = reader.result as string;
+            resolve(base64String);
+          };
+          reader.readAsDataURL(voiceRecorder.audioBlob!);
+        });
+      }
+
+      const response = await supabase.functions.invoke('create-payment-order-streamer24', {
         body: {
           name: formData.name,
-          amount: parseFloat(formData.amount),
-          message: formData.message,
-          voiceBlob: voiceBlob,
-          emoji: formData.emoji,
-          phone: phoneNumber,
+          amount,
+          message: donationType === 'message' || donationType === 'hyperemote' ? formData.message : null,
+          voiceBlob: voiceDataBase64,
+          phone: phoneNumber
         },
       });
 
-      if (error) throw error;
+      if (response.error) throw response.error;
+      data = response.data;
 
       const checkoutOptions = {
         paymentSessionId: data.payment_session_id,
@@ -94,84 +187,171 @@ const Streamer24 = () => {
         cashfree.checkout(checkoutOptions);
       }
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Payment Failed', description: error.message || 'An error occurred', variant: 'destructive' });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const isHyperemote = hyperemotesEnabled && parseFloat(formData.amount) >= hyperemotesMinAmount;
+  const characterLimit = getCharacterLimit(currentAmount);
+  const isHyperemote = hyperemotesEnabled && currentAmount >= hyperemotesMinAmount;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-100 dark:from-gray-900 dark:to-gray-800 p-4">
-      <div className="container mx-auto max-w-2xl py-8">
-        <Card className="border-indigo-200 dark:border-indigo-800">
-          <CardHeader className="text-center">
-            <CardTitle className="text-3xl font-bold" style={{ color: '#6366f1' }}>
-              Support Streamer 24
-            </CardTitle>
-            <CardDescription>Send a message with your donation</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <Label htmlFor="name">Your Name</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  required
-                  maxLength={50}
-                />
-              </div>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="absolute inset-0 bg-grid-white/[0.02] pointer-events-none" />
+      <div className="absolute inset-0 pointer-events-none opacity-30" style={{ background: `radial-gradient(circle at 50% 50%, ${brandColor}15 0%, transparent 50%)` }} />
 
-              <div>
-                <Label htmlFor="amount">Amount (₹)</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  min="1"
-                  value={formData.amount}
-                  onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-                  required
-                />
-                {isHyperemote && (
-                  <p className="text-sm text-indigo-600 dark:text-indigo-400 mt-1">
-                    🎉 Hyperemote! Your message will be auto-approved!
-                  </p>
-                )}
-              </div>
+      {showHyperemoteEffect && (
+        <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
+          <div className="animate-ping absolute h-32 w-32 rounded-full opacity-75" style={{ backgroundColor: brandColor }} />
+          <Sparkles className="h-16 w-16 animate-pulse" style={{ color: brandColor }} />
+        </div>
+      )}
 
-              <div>
-                <Label htmlFor="message">Message (Optional)</Label>
+      <Card className="w-full max-w-md p-8 space-y-6 backdrop-blur-xl bg-card/80 border-2 shadow-2xl relative z-10">
+        <CardHeader className="text-center space-y-4 p-0">
+          <div className="flex justify-center">
+            <div className="p-4 rounded-full shadow-lg" style={{ backgroundColor: `${brandColor}20` }}>
+              <Zap className="h-12 w-12" style={{ color: brandColor }} />
+            </div>
+          </div>
+          <CardTitle className="text-4xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary bg-clip-text text-transparent">
+            Support Streamer24
+          </CardTitle>
+          <p className="text-muted-foreground text-sm">Choose your support level and make their day special! ✨</p>
+        </CardHeader>
+
+        <CardContent className="space-y-6 p-0">
+          <DonationTypeSelector
+            donationType={donationType}
+            onTypeChange={handleDonationTypeChange}
+            brandColor={brandColor}
+          />
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <label htmlFor="name" className="text-sm font-medium" style={{ color: brandColor }}>Your Name</label>
+              <Input
+                id="name"
+                name="name"
+                placeholder="Enter your name"
+                value={formData.name}
+                onChange={handleInputChange}
+                className="focus:ring-opacity-20"
+                style={{ borderColor: `${brandColor}50` }}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="amount" className="text-sm font-medium" style={{ color: brandColor }}>
+                Amount (₹) {donationType === 'hyperemote' && '- Locked for Hyperemote'}
+              </label>
+              <Input
+                id="amount"
+                name="amount"
+                type="number"
+                min="1"
+                placeholder="Enter amount"
+                value={formData.amount}
+                onChange={handleInputChange}
+                disabled={isAmountLocked}
+                className="focus:ring-opacity-20"
+                style={{ borderColor: `${brandColor}50` }}
+                required
+              />
+              {donationType === 'voice' && currentAmount >= 150 && (
+                <p className="text-xs" style={{ color: brandColor }}>Voice limit: {maxVoiceDuration}s</p>
+              )}
+              {donationType === 'hyperemote' && (
+                <p className="text-xs" style={{ color: brandColor }}>Unlimited message length!</p>
+              )}
+            </div>
+
+            {donationType === 'message' && (
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <label htmlFor="message" className="text-sm font-medium" style={{ color: brandColor }}>Your Message</label>
+                  <span className="text-xs text-muted-foreground">{formData.message.length}/{characterLimit}</span>
+                </div>
                 <Textarea
                   id="message"
+                  name="message"
+                  placeholder="Your message to the streamer..."
                   value={formData.message}
-                  onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
+                  onChange={handleInputChange}
+                  className="focus:ring-opacity-20"
+                  style={{ borderColor: `${brandColor}50` }}
+                  maxLength={characterLimit}
+                  rows={4}
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  {currentAmount >= 200 ? '✨ 250 chars allowed!' : currentAmount >= 100 ? '200 chars allowed' : '100 chars allowed (increase amount for more)'}
+                </p>
+              </div>
+            )}
+
+            {donationType === 'hyperemote' && (
+              <div className="space-y-2">
+                <label htmlFor="message" className="text-sm font-medium" style={{ color: brandColor }}>Celebration Message (Optional)</label>
+                <Textarea
+                  id="message"
+                  name="message"
+                  value={formData.message}
+                  onChange={handleInputChange}
+                  className="focus:ring-opacity-20"
+                  style={{ borderColor: `${brandColor}50` }}
                   maxLength={200}
                   rows={3}
                 />
               </div>
+            )}
 
-              <SimpleEmojiSelector onEmojiSelect={handleEmojiSelect} />
-              <SimpleVoiceRecorder onVoiceRecorded={handleVoiceRecorded} />
+            {donationType === 'voice' && (
+              <EnhancedVoiceRecorder
+                onRecordingComplete={(hasRecording, duration) => {
+                  setHasVoiceRecording(hasRecording);
+                  setVoiceDuration(duration);
+                }}
+                maxDurationSeconds={maxVoiceDuration}
+                controller={voiceRecorder}
+                requiredAmount={150}
+                currentAmount={currentAmount}
+                brandColor={brandColor}
+              />
+            )}
 
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isSubmitting}
-                style={{ backgroundColor: '#6366f1' }}
-              >
-                {isSubmitting ? 'Processing...' : 'Donate Now'}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
+            <Button
+              type="submit"
+              className="w-full gap-2 text-white"
+              style={{ backgroundColor: brandColor }}
+              disabled={isSubmitting || sdkLoading}
+            >
+              {isSubmitting ? 'Processing...' : sdkLoading ? 'Loading...' : (
+                <>
+                  <Heart className="h-4 w-4" />
+                  Donate Now
+                </>
+              )}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <EnhancedPhoneDialog
+        open={showPhoneDialog}
+        onOpenChange={setShowPhoneDialog}
+        phoneNumber={phoneNumber}
+        onPhoneChange={(phone) => {
+          setPhoneNumber(phone);
+          setPhoneError('');
+        }}
+        phoneError={phoneError}
+        onContinue={handlePhoneSubmit}
+        isSubmitting={isSubmitting}
+        brandColor={brandColor}
+      />
     </div>
   );
 };
