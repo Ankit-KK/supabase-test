@@ -10,6 +10,9 @@ import { load } from '@cashfreepayments/cashfree-js';
 import SimpleVoiceRecorder from '@/components/SimpleVoiceRecorder';
 import SimpleEmojiSelector from '@/components/SimpleEmojiSelector';
 
+const STREAMER_COLOR = '#d946ef';
+const STREAMER_ID = 33;
+
 const Streamer33 = () => {
   const { toast } = useToast();
   const [cashfree, setCashfree] = useState<any>(null);
@@ -27,7 +30,7 @@ const Streamer33 = () => {
     initializeCashfree();
 
     const fetchStreamerSettings = async () => {
-      const { data } = await supabase.rpc('get_streamer_public_settings', { slug: 'streamer33' });
+      const { data } = await supabase.rpc('get_streamer_public_settings', { slug: `streamer${STREAMER_ID}` });
       if (data?.[0]) {
         setHyperemotesEnabled(data[0].hyperemotes_enabled);
         setHyperemotesMinAmount(data[0].hyperemotes_min_amount);
@@ -49,7 +52,7 @@ const Streamer33 = () => {
     setIsSubmitting(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('create-payment-order-streamer33', {
+      const { data, error } = await supabase.functions.invoke(`create-payment-order-streamer${STREAMER_ID}`, {
         body: {
           name: formData.name,
           amount: parseFloat(formData.amount),
@@ -63,7 +66,7 @@ const Streamer33 = () => {
 
       const checkoutOptions = {
         paymentSessionId: data.payment_session_id,
-        returnUrl: `${window.location.origin}/streamer33`,
+        returnUrl: `${window.location.origin}/streamer${STREAMER_ID}`,
       };
 
       if (cashfree) {
@@ -83,17 +86,18 @@ const Streamer33 = () => {
   const isHyperemote = hyperemotesEnabled && parseFloat(formData.amount) >= hyperemotesMinAmount;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-blue-100 dark:from-gray-900 dark:to-gray-800 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-fuchsia-50 to-pink-100 dark:from-gray-900 dark:to-gray-800 p-4">
       <div className="container mx-auto max-w-2xl py-8">
-        <Card className="border-sky-200 dark:border-sky-800">
+        <Card className="border-fuchsia-200 dark:border-fuchsia-800">
           <CardHeader className="text-center">
-            <CardTitle className="text-3xl font-bold" style={{ color: '#06b6d4' }}>
+            <CardTitle className="text-3xl font-bold" style={{ color: '#d946ef' }}>
               Support Streamer 33
             </CardTitle>
             <CardDescription>Send a message with your donation</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
+
               <div>
                 <Label htmlFor="name">Your Name</Label>
                 <Input
@@ -116,7 +120,7 @@ const Streamer33 = () => {
                   required
                 />
                 {isHyperemote && (
-                  <p className="text-sm text-sky-600 dark:text-sky-400 mt-1">
+                  <p className="text-sm text-fuchsia-600 dark:text-fuchsia-400 mt-1">
                     🎉 Hyperemote! Your message will be auto-approved!
                   </p>
                 )}
@@ -140,7 +144,7 @@ const Streamer33 = () => {
                 type="submit"
                 className="w-full"
                 disabled={isSubmitting}
-                style={{ backgroundColor: '#06b6d4' }}
+                style={{ backgroundColor: '#d946ef' }}
               >
                 {isSubmitting ? 'Processing...' : 'Donate Now'}
               </Button>
