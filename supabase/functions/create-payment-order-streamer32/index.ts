@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { name, amount, message, voiceBlob, emoji, phone } = await req.json();
+    const { name, amount, message, voiceBlob, phone } = await req.json();
 
     // Validate phone number
     if (!phone || !/^[6-9]\d{9}$/.test(phone)) {
@@ -78,7 +78,7 @@ serve(async (req) => {
       name,
       amount,
       message: message || null,
-      temp_voice_data: voiceBlob ? JSON.stringify({ blob: voiceBlob }) : null,
+      temp_voice_data: (voiceBlob && voiceBlob.trim() !== '') ? JSON.stringify({ blob: voiceBlob }) : null,
       payment_status: 'pending',
       moderation_status: isHyperemote ? 'auto_approved' : 'pending',
       is_hyperemote: isHyperemote,
