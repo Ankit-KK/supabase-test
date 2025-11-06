@@ -1,91 +1,137 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { name, amount, message, voiceBlob, emoji } = await req.json();
+    const { name, amount, message, phone, voiceData, isHyperemote } = await req.json()
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    const { data: streamer, error: streamerError } = await supabase
-      .from('streamers')
-      .select('id')
-      .eq('streamer_slug', 'streamer17')
-      .single();
+    // Get Cashfree credentials
+    const xClientId = Deno.env.get('XClientId')!
+    const xClientSecret = Deno.env.get('XClientSecret')!
+    const apiUrl = Deno.env.get('api_url')!
 
-    if (streamerError || !streamer) {
-      throw new Error('Streamer not found');
+    // Validate input
+    if (!name || !amount || !phone) {
+      throw new Error('Missing required fields: name, amount, phone')
     }
 
-    const orderId = `streamer17_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    if (amount < 1 || amount > 100000) {
+      throw new Error('Invalid amount: must be between 1 and 100000')
+    }
 
-    const cashfreeResponse = await fetch('https://api.cashfree.com/pg/orders', {
+    // Get streamer info including hyperemote settings
+    const { data: streamerData, error: streamerError } = await supabase
+      .from('streamers')
+      .select('id, hyperemotes_enabled, hyperemotes_min_amount')
+      .eq('streamer_slug', 'streamer17')
+      .single()
+
+    if (streamerError || !streamerData) {
+      throw new Error('Streamer not found')
+    }
+
+    // Generate unique order ID
+    const orderId = `streamer17_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+
+    // Create Cashfree payment order
+    const cashfreePayload = {
+      order_id: orderId,
+      order_amount: amount,
+      order_currency: 'INR',
+      customer_details: {
+        customer_id: `customer_${Date.now()}`,
+        customer_name: name,
+        customer_phone: phone
+      },
+      order_meta: {
+        return_url: `${req.headers.get('origin')}/streamer17?order_id=${orderId}&status={order_status}`,
+        notify_url: `${supabaseUrl}/functions/v1/cashfree-webhook`
+      }
+    }
+
+    const cashfreeResponse = await fetch(`${apiUrl}/orders`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-client-id': Deno.env.get('CASHFREE_APP_ID')!,
-        'x-client-secret': Deno.env.get('CASHFREE_SECRET_KEY')!,
-        'x-api-version': '2023-08-01',
+        'x-client-id': xClientId,
+        'x-client-secret': xClientSecret,
+        'x-api-version': '2023-08-01'
       },
-      body: JSON.stringify({
-        order_id: orderId,
-        order_amount: amount,
-        order_currency: 'INR',
-        customer_details: {
-          customer_id: `customer_${Date.now()}`,
-          customer_name: name,
-          customer_email: 'donor@example.com',
-          customer_phone: '9999999999',
-        },
-        order_meta: {
-          return_url: `${req.headers.get('origin')}/streamer17`,
-        },
-      }),
-    });
-
-    const cashfreeData = await cashfreeResponse.json();
+      body: JSON.stringify(cashfreePayload)
+    })
 
     if (!cashfreeResponse.ok) {
-      throw new Error(cashfreeData.message || 'Payment order creation failed');
+      const errorData = await cashfreeResponse.text()
+      console.error('Cashfree API error:', errorData)
+      throw new Error('Failed to create payment order with Cashfree')
     }
 
-    const isHyperemote = amount >= 50;
+    const cashfreeOrder = await cashfreeResponse.json()
 
-    await supabase.from('streamer17_donations').insert({
-      streamer_id: streamer.id,
-      order_id: orderId,
-      name,
-      amount,
-      message: message || null,
-      temp_voice_data: voiceBlob ? JSON.stringify({ blob: voiceBlob }) : null,
-      payment_status: 'pending',
-      moderation_status: isHyperemote ? 'auto_approved' : 'pending',
-      is_hyperemote: isHyperemote,
-    });
+    // Only set hyperemote if explicitly requested by user
+    const isHyperemoteValue = isHyperemote === true
+    
+    // Store donation in database
+    const { data: donation, error: donationError } = await supabase
+      .from('streamer17_donations')
+      .insert({
+        order_id: orderId,
+        name: name.trim(),
+        amount: parseFloat(amount),
+        message: message ? message.trim() : null,
+        streamer_id: streamerData.id,
+        payment_status: 'pending',
+        moderation_status: 'pending',
+        is_hyperemote: isHyperemoteValue,
+        temp_voice_data: voiceData || null
+      })
+      .select()
+      .single()
+
+    if (donationError) {
+      console.error('Database error:', donationError)
+      throw new Error('Failed to store donation')
+    }
 
     return new Response(
       JSON.stringify({
-        payment_session_id: cashfreeData.payment_session_id,
+        success: true,
         order_id: orderId,
+        payment_session_id: cashfreeOrder.payment_session_id,
+        order_token: cashfreeOrder.order_token,
+        cashfree_order_id: cashfreeOrder.cf_order_id
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
+      }
+    )
+
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+      JSON.stringify({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400
+      }
+    )
   }
-});
+})
