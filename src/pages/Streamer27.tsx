@@ -7,21 +7,31 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { load } from '@cashfreepayments/cashfree-js';
-import SimpleVoiceRecorder from '@/components/SimpleVoiceRecorder';
-import SimpleEmojiSelector from '@/components/SimpleEmojiSelector';
-import { PhoneDialog } from '@/components/PhoneDialog';
+import VoiceRecorder from '@/components/VoiceRecorder';
+import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
+import { DonationTypeSelector } from '@/components/DonationTypeSelector';
+import { EnhancedPhoneDialog } from '@/components/EnhancedPhoneDialog';
+import { useDonationLimits } from '@/hooks/useDonationLimits';
+import { Crown } from 'lucide-react';
 
 const Streamer27 = () => {
   const { toast } = useToast();
+  const { getCharacterLimit, getVoiceDuration } = useDonationLimits();
   const [cashfree, setCashfree] = useState<any>(null);
-  const [formData, setFormData] = useState({ name: '', amount: '', message: '', emoji: '' });
-  const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
+  const [donationType, setDonationType] = useState<'message' | 'voice' | 'hyperemote'>('message');
+  const [formData, setFormData] = useState({ name: '', amount: '', message: '' });
+  const [hasVoiceRecording, setHasVoiceRecording] = useState(false);
+  const [voiceDuration, setVoiceDuration] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hyperemotesEnabled, setHyperemotesEnabled] = useState(false);
   const [hyperemotesMinAmount, setHyperemotesMinAmount] = useState(50);
   const [showPhoneDialog, setShowPhoneDialog] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [phoneError, setPhoneError] = useState('');
+  
+  const currentAmount = parseFloat(formData.amount) || 0;
+  const maxVoiceDuration = getVoiceDuration(currentAmount);
+  const voiceRecorder = useVoiceRecorder(maxVoiceDuration);
 
   useEffect(() => {
     const initializeCashfree = async () => {
@@ -40,12 +50,9 @@ const Streamer27 = () => {
     fetchStreamerSettings();
   }, []);
 
-  const handleVoiceRecorded = (blob: Blob | null) => {
-    setVoiceBlob(blob);
-  };
-
-  const handleEmojiSelect = (emoji: string) => {
-    setFormData(prev => ({ ...prev, emoji }));
+  const handleVoiceRecorded = (hasRecording: boolean, duration: number) => {
+    setHasVoiceRecording(hasRecording);
+    setVoiceDuration(duration);
   };
 
   const validatePhoneNumber = (phone: string): boolean => {
@@ -71,13 +78,28 @@ const Streamer27 = () => {
     setIsSubmitting(true);
 
     try {
+      const amount = parseFloat(formData.amount);
+      
+      let voiceDataBase64: string | null = null;
+      if (donationType === 'voice' && voiceRecorder.audioBlob) {
+        const reader = new FileReader();
+        voiceDataBase64 = await new Promise((resolve) => {
+          reader.onload = () => {
+            const base64 = (reader.result as string).split(',')[1];
+            resolve(base64);
+          };
+          reader.readAsDataURL(voiceRecorder.audioBlob!);
+        });
+      }
+
       const { data, error } = await supabase.functions.invoke('create-payment-order-streamer27', {
         body: {
           name: formData.name,
-          amount: parseFloat(formData.amount),
-          message: formData.message,
-          voiceBlob: voiceBlob,
-          emoji: formData.emoji,
+          amount: amount,
+          message: donationType === 'message' ? formData.message : 
+                  donationType === 'voice' ? 'Sent a Voice message' : 
+                  donationType === 'hyperemote' ? formData.message : '',
+          voiceBlob: voiceDataBase64,
           phone: phoneNumber,
         },
       });
@@ -104,33 +126,49 @@ const Streamer27 = () => {
     }
   };
 
-  const isHyperemote = hyperemotesEnabled && parseFloat(formData.amount) >= hyperemotesMinAmount;
+  const characterLimit = getCharacterLimit(currentAmount);
+  const voiceDurationLimit = getVoiceDuration(currentAmount);
+  const isHyperemote = hyperemotesEnabled && currentAmount >= hyperemotesMinAmount;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-yellow-100 dark:from-gray-900 dark:to-gray-800 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-gray-900 dark:to-gray-800 p-4">
       <div className="container mx-auto max-w-2xl py-8">
-        <Card className="border-amber-200 dark:border-amber-800">
-          <CardHeader className="text-center">
-            <CardTitle className="text-3xl font-bold" style={{ color: '#f59e0b' }}>
+        <Card className="border-orange-200 dark:border-orange-800 shadow-xl">
+          <CardHeader className="text-center space-y-4 pb-8">
+            <div className="flex justify-center">
+              <div className="p-4 bg-orange-100 dark:bg-orange-900/20 rounded-full">
+                <Crown className="w-12 h-12 text-orange-600 dark:text-orange-400" />
+              </div>
+            </div>
+            <CardTitle className="text-4xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
               Support Streamer 27
             </CardTitle>
-            <CardDescription>Send a message with your donation</CardDescription>
+            <CardDescription className="text-lg">Send a message, voice note, or hyperemote with your donation</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <Label htmlFor="name">Your Name</Label>
+              <DonationTypeSelector
+                donationType={donationType}
+                onTypeChange={setDonationType}
+                hyperemotesMinAmount={hyperemotesMinAmount}
+                brandColor="#f97316"
+              />
+
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-base font-semibold">Your Name</Label>
                 <Input
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   required
                   maxLength={50}
+                  className="border-orange-200 focus:border-orange-400 focus:ring-orange-400"
+                  placeholder="Enter your name"
                 />
               </div>
 
-              <div>
-                <Label htmlFor="amount">Amount (₹)</Label>
+              <div className="space-y-2">
+                <Label htmlFor="amount" className="text-base font-semibold">Amount (₹)</Label>
                 <Input
                   id="amount"
                   type="number"
@@ -138,40 +176,115 @@ const Streamer27 = () => {
                   value={formData.amount}
                   onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
                   required
+                  className="border-orange-200 focus:border-orange-400 focus:ring-orange-400"
+                  placeholder="Enter amount"
                 />
                 {isHyperemote && (
-                  <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
-                    🎉 Hyperemote! Your message will be auto-approved!
-                  </p>
+                  <div className="flex items-center gap-2 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
+                    <Crown className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                    <p className="text-sm font-medium text-orange-700 dark:text-orange-300">
+                      Hyperemote activated! Your message will be auto-approved!
+                    </p>
+                  </div>
                 )}
               </div>
 
-              <div>
-                <Label htmlFor="message">Message (Optional)</Label>
-                <Textarea
-                  id="message"
-                  value={formData.message}
-                  onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
-                  maxLength={200}
-                  rows={3}
-                />
-              </div>
+              {donationType === 'message' && (
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="message" className="text-base font-semibold">Message</Label>
+                    <span className="text-xs text-muted-foreground">
+                      {formData.message.length}/{characterLimit}
+                    </span>
+                  </div>
+                  <Textarea
+                    id="message"
+                    value={formData.message}
+                    onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
+                    maxLength={characterLimit}
+                    rows={4}
+                    className="border-orange-200 focus:border-orange-400 focus:ring-orange-400 resize-none"
+                    placeholder="Type your message here..."
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    💡 Donate ₹100+ for 200 chars, ₹200+ for 250 chars
+                  </p>
+                </div>
+              )}
 
-              <SimpleEmojiSelector onEmojiSelect={handleEmojiSelect} />
-              <SimpleVoiceRecorder onVoiceRecorded={handleVoiceRecorded} />
+              {donationType === 'voice' && (
+                <div className="space-y-2">
+                  <Label className="text-base font-semibold">Voice Message</Label>
+                  <VoiceRecorder
+                    onRecordingComplete={handleVoiceRecorded}
+                    maxDurationSeconds={voiceDurationLimit}
+                    requiredAmount={150}
+                    currentAmount={currentAmount}
+                    controller={voiceRecorder}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    💡 ₹150+ for 15s, ₹200+ for 20s, ₹250+ for 30s
+                  </p>
+                </div>
+              )}
+
+              {donationType === 'hyperemote' && (
+                <div className="p-4 bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-300 dark:border-orange-700 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <Crown className="w-6 h-6 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-1" />
+                    <div>
+                      <h3 className="font-semibold text-orange-900 dark:text-orange-100 mb-2">
+                        Hyperemote - Premium Support
+                      </h3>
+                      <p className="text-sm text-orange-700 dark:text-orange-300 mb-3">
+                        Show extra support with a hyperemote! Minimum ₹{hyperemotesMinAmount} required.
+                        Your message will be auto-approved and highlighted.
+                      </p>
+                      <div className="space-y-2">
+                        <Label htmlFor="hyperemote-message" className="text-sm font-medium">Your Message</Label>
+                        <Textarea
+                          id="hyperemote-message"
+                          value={formData.message}
+                          onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
+                          maxLength={characterLimit}
+                          rows={3}
+                          className="border-orange-300 focus:border-orange-500 focus:ring-orange-500"
+                          placeholder="Your hyperemote message..."
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full h-12 text-lg font-semibold bg-orange-600 hover:bg-orange-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
                 disabled={isSubmitting}
-                style={{ backgroundColor: '#f59e0b' }}
               >
-                {isSubmitting ? 'Processing...' : 'Donate Now'}
+                {isSubmitting ? (
+                  <span className="flex items-center gap-2">
+                    <span className="animate-spin">⏳</span> Processing...
+                  </span>
+                ) : (
+                  'Donate Now'
+                )}
               </Button>
             </form>
           </CardContent>
         </Card>
       </div>
+
+      <EnhancedPhoneDialog
+        open={showPhoneDialog}
+        onOpenChange={setShowPhoneDialog}
+        phoneNumber={phoneNumber}
+        onPhoneChange={setPhoneNumber}
+        phoneError={phoneError}
+        onContinue={handlePaymentWithPhone}
+        isSubmitting={isSubmitting}
+        brandColor="#f97316"
+      />
     </div>
   );
 };
