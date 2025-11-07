@@ -131,19 +131,17 @@ const Streamer30 = () => {
   const isHyperemote = hyperemotesEnabled && currentAmount >= hyperemotesMinAmount;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 via-rose-50 to-pink-50 dark:from-gray-900 dark:to-gray-800 p-4">
-      <div className="container mx-auto max-w-2xl py-8">
+    <div className="min-h-screen bg-gradient-to-br from-red-50 via-rose-50 to-pink-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+      <div className="w-full max-w-md backdrop-blur-sm">
         <Card className="border-red-200 dark:border-red-800 shadow-xl">
-          <CardHeader className="text-center space-y-4 pb-8">
-            <div className="flex justify-center">
-              <div className="p-4 bg-red-100 dark:bg-red-900/20 rounded-full">
-                <Diamond className="w-12 h-12 text-red-600 dark:text-red-400" />
-              </div>
+          <CardHeader className="text-center space-y-2 pb-6">
+            <div className="flex justify-center mb-2">
+              <Diamond className="w-10 h-10 text-red-600 dark:text-red-400" />
             </div>
-            <CardTitle className="text-4xl font-bold bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent">
+            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent">
               Support Streamer 30
             </CardTitle>
-            <CardDescription className="text-lg">Send a message, voice note, or hyperemote with your donation</CardDescription>
+            <CardDescription>Send a message, voice note, or hyperemote</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">

@@ -128,17 +128,17 @@ const Streamer36 = () => {
   const voiceDuration = getVoiceDuration(currentAmount);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-red-50 dark:from-gray-900 dark:to-gray-800 p-4">
-      <div className="container mx-auto max-w-2xl py-8">
+    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-red-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+      <div className="w-full max-w-md backdrop-blur-sm">
         <Card className="border-rose-200 dark:border-rose-800 shadow-xl">
-          <CardHeader className="text-center space-y-2 bg-gradient-to-r from-rose-50 to-pink-50 dark:from-gray-800 dark:to-gray-900">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Heart className="w-8 h-8" style={{ color: brandColor }} />
+          <CardHeader className="text-center space-y-2 pb-6">
+            <div className="flex justify-center mb-2">
+              <Heart className="w-10 h-10 text-rose-600 dark:text-rose-400" />
             </div>
-            <CardTitle className="text-4xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
+            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
               Support Streamer 36
             </CardTitle>
-            <CardDescription className="text-lg">Send a message with your donation</CardDescription>
+            <CardDescription>Send a message, voice note, or hyperemote</CardDescription>
           </CardHeader>
           <CardContent className="pt-6">
             <form onSubmit={handleSubmit} className="space-y-6">
