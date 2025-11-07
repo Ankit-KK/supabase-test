@@ -132,21 +132,23 @@ const Streamer23 = () => {
   const isHyperemote = hyperemotesEnabled && currentAmount >= hyperemotesMinAmount;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-red-50 dark:from-gray-900 dark:to-gray-800 p-4">
-      <div className="container mx-auto max-w-2xl py-8">
-        <Card className="border-rose-200 dark:border-rose-800 shadow-xl">
-          <CardHeader className="text-center space-y-4 pb-8">
-            <div className="flex justify-center">
-              <div className="p-4 bg-rose-100 dark:bg-rose-900/20 rounded-full">
-                <Star className="w-12 h-12 text-rose-600 dark:text-rose-400" />
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
+      <Card className="w-full max-w-md mx-auto bg-card/95 backdrop-blur-sm border-rose-500/20 shadow-2xl relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-rose-500/20 via-rose-600/20 to-rose-400/20 opacity-50 blur-xl"></div>
+          <CardHeader className="text-center relative z-10">
+            <div className="flex items-center justify-center mb-4">
+              <div className="flex items-center space-x-2 text-rose-500">
+                <Star className="h-8 w-8" />
               </div>
             </div>
-            <CardTitle className="text-4xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
-              Support Streamer 23
+            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-rose-500 to-rose-600 bg-clip-text text-transparent">
+              Streamer 23
             </CardTitle>
-            <CardDescription className="text-lg">Send a message, voice note, or hyperemote with your donation</CardDescription>
+            <p className="text-muted-foreground text-sm">
+              Support Streamer 23 with your donation
+            </p>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-6 relative z-10">
             <form onSubmit={handleSubmit} className="space-y-6">
               <DonationTypeSelector
                 donationType={donationType}
@@ -274,7 +276,6 @@ const Streamer23 = () => {
             </form>
           </CardContent>
         </Card>
-      </div>
 
       <EnhancedPhoneDialog
         open={showPhoneDialog}
