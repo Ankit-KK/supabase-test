@@ -195,19 +195,19 @@ const Streamer17 = () => {
     }
 
     // Validate minimum amounts based on donation type
-    if (donationType === 'message' && amount < 40) {
+    if (donationType === 'message' && amount < 1) {
       toast({
         title: "Insufficient Amount",
-        description: "Text messages require a minimum donation of ₹40.",
+        description: "Text messages require a minimum donation of ₹1.",
         variant: "destructive",
       });
       return;
     }
 
-    if (donationType === 'voice' && amount < 150) {
+    if (donationType === 'voice' && amount < 2) {
       toast({
         title: "Insufficient Amount",
-        description: "Voice messages require a minimum donation of ₹150.",
+        description: "Voice messages require a minimum donation of ₹2.",
         variant: "destructive",
       });
       return;
@@ -417,11 +417,11 @@ const Streamer17 = () => {
                         : 'border-orange-500/30 hover:border-orange-500/50'
                     }`}
                   >
-                    <div className="text-center">
-                      <div className="text-base mb-1">💬</div>
-                      <div className="font-medium text-xs">Text Message</div>
-                      <div className="text-xs text-muted-foreground">Min: ₹40</div>
-                    </div>
+                      <div className="text-center">
+                        <div className="text-base mb-1">💬</div>
+                        <div className="font-medium text-xs">Text Message</div>
+                        <div className="text-xs text-muted-foreground">Min: ₹1</div>
+                      </div>
                   </button>
                   <button
                     type="button"
@@ -432,11 +432,11 @@ const Streamer17 = () => {
                         : 'border-orange-500/30 hover:border-orange-500/50'
                     }`}
                   >
-                    <div className="text-center">
-                      <div className="text-base mb-1">🎤</div>
-                      <div className="font-medium text-xs">Voice Message</div>
-                      <div className="text-xs text-muted-foreground">Min: ₹150</div>
-                    </div>
+                      <div className="text-center">
+                        <div className="text-base mb-1">🎤</div>
+                        <div className="font-medium text-xs">Voice Message</div>
+                        <div className="text-xs text-muted-foreground">Min: ₹2</div>
+                      </div>
                   </button>
                   <button
                     type="button"
@@ -468,8 +468,8 @@ const Streamer17 = () => {
                 name="amount"
                 type="number"
                 placeholder={
-                  donationType === 'message' ? 'Min: ₹40' : 
-                  donationType === 'voice' ? 'Min: ₹150' : 
+                  donationType === 'message' ? 'Min: ₹1' : 
+                  donationType === 'voice' ? 'Min: ₹2' : 
                   'Enter amount'
                 }
                 value={formData.amount}

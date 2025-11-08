@@ -129,12 +129,12 @@ const Streamer22 = () => {
       toast({ title: "Invalid Amount", description: "Please enter a valid donation amount.", variant: "destructive" });
       return;
     }
-    if (donationType === 'message' && amount < 40) {
-      toast({ title: "Insufficient Amount", description: "Text messages require ₹40 minimum.", variant: "destructive" });
+    if (donationType === 'message' && amount < 1) {
+      toast({ title: "Insufficient Amount", description: "Text messages require ₹1 minimum.", variant: "destructive" });
       return;
     }
-    if (donationType === 'voice' && amount < 150) {
-      toast({ title: "Insufficient Amount", description: "Voice messages require ₹150 minimum.", variant: "destructive" });
+    if (donationType === 'voice' && amount < 2) {
+      toast({ title: "Insufficient Amount", description: "Voice messages require ₹2 minimum.", variant: "destructive" });
       return;
     }
     if (!cashfree) {
@@ -245,7 +245,7 @@ const Streamer22 = () => {
             <DonationTypeSelector donationType={donationType} onTypeChange={handleDonationTypeChange} hyperemotesMinAmount={hyperemotesMinAmount} brandColor={brandColor} />
             <div className="space-y-2">
               <label htmlFor="amount" className="text-sm font-medium" style={{ color: brandColor }}>Amount (₹) *</label>
-              <Input id="amount" name="amount" type="number" placeholder={donationType === 'message' ? 'Min: ₹40' : donationType === 'voice' ? 'Min: ₹150' : `Min: ₹${hyperemotesMinAmount}`} value={formData.amount} onChange={handleInputChange} style={{ borderColor: `${brandColor}50` }} disabled={isAmountLocked || donationType === 'hyperemote'} required />
+              <Input id="amount" name="amount" type="number" placeholder={donationType === 'message' ? 'Min: ₹1' : donationType === 'voice' ? 'Min: ₹2' : `Min: ₹${hyperemotesMinAmount}`} value={formData.amount} onChange={handleInputChange} style={{ borderColor: `${brandColor}50` }} disabled={isAmountLocked || donationType === 'hyperemote'} required />
               {donationType === 'voice' && currentAmount >= 150 && <p className="text-xs text-muted-foreground">🎤 Voice duration: {getVoiceDuration(currentAmount)} seconds</p>}
               {isHyperemote && <div className="text-sm p-3 rounded-lg animate-pulse" style={{ backgroundColor: `${brandColor}20`, color: brandColor }}>🎉 Hyperemote! Auto-approved celebration message!</div>}
             </div>

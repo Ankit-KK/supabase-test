@@ -101,7 +101,7 @@ const Streamer25 = () => {
     setDonationType(type);
     
     if (type === 'hyperemote') {
-      setFormData(prev => ({ ...prev, amount: '50' }));
+      setFormData(prev => ({ ...prev, amount: '3' }));
       setIsAmountLocked(true);
       setShowHyperemoteEffect(true);
       setTimeout(() => setShowHyperemoteEffect(false), 2000);

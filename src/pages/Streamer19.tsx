@@ -150,13 +150,13 @@ const Streamer19 = () => {
       return;
     }
 
-    if (donationType === 'message' && amount < 40) {
-      toast({ title: "Insufficient Amount", description: "Text messages require ₹40 minimum.", variant: "destructive" });
+    if (donationType === 'message' && amount < 1) {
+      toast({ title: "Insufficient Amount", description: "Text messages require ₹1 minimum.", variant: "destructive" });
       return;
     }
 
-    if (donationType === 'voice' && amount < 150) {
-      toast({ title: "Insufficient Amount", description: "Voice messages require ₹150 minimum.", variant: "destructive" });
+    if (donationType === 'voice' && amount < 2) {
+      toast({ title: "Insufficient Amount", description: "Voice messages require ₹2 minimum.", variant: "destructive" });
       return;
     }
 
@@ -320,7 +320,7 @@ const Streamer19 = () => {
                 id="amount"
                 name="amount"
                 type="number"
-                placeholder={donationType === 'message' ? 'Min: ₹40' : donationType === 'voice' ? 'Min: ₹150' : `Min: ₹${hyperemotesMinAmount}`}
+                placeholder={donationType === 'message' ? 'Min: ₹1' : donationType === 'voice' ? 'Min: ₹2' : `Min: ₹${hyperemotesMinAmount}`}
                 value={formData.amount}
                 onChange={handleInputChange}
                 className="focus:ring-opacity-20"
