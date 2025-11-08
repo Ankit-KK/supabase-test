@@ -183,10 +183,10 @@ const Streamer18 = () => {
       return;
     }
 
-    if (donationType === 'message' && amount < 1) {
+    if (donationType === 'message' && amount < 3) {
       toast({
         title: "Insufficient Amount",
-        description: "Text messages require a minimum donation of ₹1.",
+        description: "Text messages require a minimum donation of ₹3.",
         variant: "destructive",
       });
       return;

@@ -129,8 +129,8 @@ const Streamer22 = () => {
       toast({ title: "Invalid Amount", description: "Please enter a valid donation amount.", variant: "destructive" });
       return;
     }
-    if (donationType === 'message' && amount < 1) {
-      toast({ title: "Insufficient Amount", description: "Text messages require ₹1 minimum.", variant: "destructive" });
+    if (donationType === 'message' && amount < 3) {
+      toast({ title: "Insufficient Amount", description: "Text messages require ₹3 minimum.", variant: "destructive" });
       return;
     }
     if (donationType === 'voice' && amount < 2) {
