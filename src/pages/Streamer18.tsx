@@ -462,11 +462,11 @@ const Streamer18 = () => {
                   🔒 Amount locked during voice recording
                 </p>
               )}
-              {donationType === 'message' && (
-                <p className="text-xs text-muted-foreground">
-                  TTS available for donations above ₹70
-                </p>
-              )}
+                  {donationType === 'message' && (
+                    <p className="text-xs text-muted-foreground">
+                      TTS available for donations ₹2+. Text-only for ₹1.
+                    </p>
+                  )}
               {donationType === 'voice' && currentAmount >= 150 && (
                 <p className="text-xs text-muted-foreground">
                   Voice duration: {getVoiceDuration(currentAmount)}s
