@@ -415,10 +415,10 @@ serve(async (req) => {
           console.error('Voice upload trigger error:', voiceError)
         }
       }
-      // Handle TTS generation for text-only donations (₹70+)
-      else if (updatedDonation?.message && !updatedDonation?.tts_audio_url && updatedDonation.amount >= 70) {
+      // Handle TTS generation for text-only donations (₹2+)
+      else if (updatedDonation?.message && !updatedDonation?.tts_audio_url && updatedDonation.amount >= 2) {
         try {
-          console.log('Triggering TTS generation for text donation (₹70+):', order_id)
+          console.log('Triggering TTS generation for text donation (₹2+):', order_id)
           
           // Wait for TTS generation to complete
           const { data: ttsData, error: ttsError } = await supabase.functions.invoke('generate-donation-tts', {

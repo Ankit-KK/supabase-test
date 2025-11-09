@@ -195,19 +195,19 @@ const Streamer17 = () => {
     }
 
     // Validate minimum amounts based on donation type
-    if (donationType === 'message' && amount < 3) {
+    if (donationType === 'message' && amount < 1) {
       toast({
         title: "Insufficient Amount",
-        description: "Text messages require a minimum donation of ₹3.",
+        description: "Text messages require a minimum donation of ₹1. TTS available from ₹2+.",
         variant: "destructive",
       });
       return;
     }
 
-    if (donationType === 'voice' && amount < 2) {
+    if (donationType === 'voice' && amount < 3) {
       toast({
         title: "Insufficient Amount",
-        description: "Voice messages require a minimum donation of ₹2.",
+        description: "Voice messages require a minimum donation of ₹3 (3 seconds).",
         variant: "destructive",
       });
       return;

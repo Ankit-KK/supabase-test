@@ -55,6 +55,14 @@ const Streamer23 = () => {
     setVoiceDuration(duration);
   };
 
+  const handleDonationTypeChange = (type: 'message' | 'voice' | 'hyperemote') => {
+    setDonationType(type);
+    
+    if (type === 'hyperemote') {
+      setFormData(prev => ({ ...prev, amount: '4' }));
+    }
+  };
+
   const validatePhoneNumber = (phone: string): boolean => {
     const phoneRegex = /^[6-9]\d{9}$/;
     if (!phoneRegex.test(phone)) {
@@ -67,6 +75,26 @@ const Streamer23 = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate minimum amounts based on donation type
+    const amount = parseFloat(formData.amount);
+    if (donationType === 'message' && amount < 1) {
+      toast({
+        title: "Insufficient Amount",
+        description: "Text messages require a minimum donation of ₹1. TTS available from ₹2+.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (donationType === 'voice' && amount < 3) {
+      toast({
+        title: "Insufficient Amount",
+        description: "Voice messages require a minimum donation of ₹3 (3 seconds).",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setShowPhoneDialog(true);
   };
 
@@ -152,7 +180,7 @@ const Streamer23 = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               <DonationTypeSelector
                 donationType={donationType}
-                onTypeChange={setDonationType}
+                onTypeChange={handleDonationTypeChange}
                 hyperemotesMinAmount={hyperemotesMinAmount}
                 brandColor="#f43f5e"
               />

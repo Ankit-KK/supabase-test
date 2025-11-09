@@ -10,7 +10,7 @@ interface DonationTypeSelectorProps {
 export const DonationTypeSelector: React.FC<DonationTypeSelectorProps> = ({
   donationType,
   onTypeChange,
-  hyperemotesMinAmount = 3,
+  hyperemotesMinAmount = 4,
   brandColor = '#6366f1'
 }) => {
   return (
@@ -35,7 +35,7 @@ export const DonationTypeSelector: React.FC<DonationTypeSelectorProps> = ({
           <div className="text-center">
             <div className="text-base mb-1">💬</div>
             <div className="font-medium text-xs">Text Message</div>
-            <div className="text-xs text-muted-foreground">Min: ₹3</div>
+            <div className="text-xs text-muted-foreground">Min: ₹1</div>
           </div>
         </button>
         
@@ -55,7 +55,7 @@ export const DonationTypeSelector: React.FC<DonationTypeSelectorProps> = ({
           <div className="text-center">
             <div className="text-base mb-1">🎤</div>
             <div className="font-medium text-xs">Voice Message</div>
-            <div className="text-xs text-muted-foreground">Min: ₹2</div>
+            <div className="text-xs text-muted-foreground">Min: ₹3</div>
           </div>
         </button>
         

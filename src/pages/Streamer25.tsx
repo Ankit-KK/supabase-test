@@ -101,7 +101,7 @@ const Streamer25 = () => {
     setDonationType(type);
     
     if (type === 'hyperemote') {
-      setFormData(prev => ({ ...prev, amount: '3' }));
+      setFormData(prev => ({ ...prev, amount: '4' }));
       setIsAmountLocked(true);
       setShowHyperemoteEffect(true);
       setTimeout(() => setShowHyperemoteEffect(false), 2000);
@@ -137,6 +137,18 @@ const Streamer25 = () => {
       toast({ title: "Missing Voice", description: "Please record a voice message.", variant: "destructive" });
       return;
     }
+    
+    // Validate minimum amounts based on donation type
+    const amount = parseFloat(formData.amount);
+    if (donationType === 'message' && amount < 1) {
+      toast({ title: "Insufficient Amount", description: "Text messages require ₹1 minimum. TTS from ₹2+.", variant: "destructive" });
+      return;
+    }
+    if (donationType === 'voice' && amount < 3) {
+      toast({ title: "Insufficient Amount", description: "Voice messages require ₹3 minimum (3 seconds).", variant: "destructive" });
+      return;
+    }
+    
     if (!cashfree) {
       toast({ title: "Payment System Not Ready", description: "Please wait for payment system to load.", variant: "destructive" });
       return;
