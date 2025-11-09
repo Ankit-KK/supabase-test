@@ -86,6 +86,7 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({
+        success: true,
         payment_session_id: cashfreeData.payment_session_id,
         order_id: orderId,
       }),
