@@ -377,6 +377,15 @@ serve(async (req) => {
             if (orderId.startsWith('demo2_')) return 'upload-voice-message-demo2';
             if (orderId.startsWith('demo3_')) return 'upload-voice-message-demo3';
             if (orderId.startsWith('demo4_')) return 'upload-voice-message-demo4';
+            if (orderId.startsWith('streamer17_')) return 'upload-voice-message-streamer17';
+            if (orderId.startsWith('streamer18_')) return 'upload-voice-message-streamer18';
+            if (orderId.startsWith('streamer19_')) return 'upload-voice-message-streamer19';
+            if (orderId.startsWith('streamer20_')) return 'upload-voice-message-streamer20';
+            if (orderId.startsWith('streamer21_')) return 'upload-voice-message-streamer21';
+            if (orderId.startsWith('streamer22_')) return 'upload-voice-message-streamer22';
+            if (orderId.startsWith('streamer23_')) return 'upload-voice-message-streamer23';
+            if (orderId.startsWith('streamer24_')) return 'upload-voice-message-streamer24';
+            if (orderId.startsWith('streamer25_')) return 'upload-voice-message-streamer25';
             return 'upload-voice-message'; // default for chia_gaming
           };
           
