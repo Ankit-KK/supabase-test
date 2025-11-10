@@ -126,6 +126,15 @@ serve(async (req) => {
       'demo2': 'demo2_donations',
       'demo3': 'demo3_donations',
       'demo4': 'demo4_donations',
+      'streamer17': 'streamer17_donations',
+      'streamer18': 'streamer18_donations',
+      'streamer19': 'streamer19_donations',
+      'streamer20': 'streamer20_donations',
+      'streamer21': 'streamer21_donations',
+      'streamer22': 'streamer22_donations',
+      'streamer23': 'streamer23_donations',
+      'streamer24': 'streamer24_donations',
+      'streamer25': 'streamer25_donations',
     };
 
     const donationTable = donationTableMap[streamerSlug];
