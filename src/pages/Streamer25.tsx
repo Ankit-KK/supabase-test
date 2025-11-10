@@ -144,8 +144,8 @@ const Streamer25 = () => {
       toast({ title: "Insufficient Amount", description: "Text messages require ₹1 minimum. TTS from ₹2+.", variant: "destructive" });
       return;
     }
-    if (donationType === 'voice' && amount < 3) {
-      toast({ title: "Insufficient Amount", description: "Voice messages require ₹3 minimum (3 seconds).", variant: "destructive" });
+    if (donationType === 'voice' && amount < 2) {
+      toast({ title: "Insufficient Amount", description: "Voice messages require ₹2 minimum.", variant: "destructive" });
       return;
     }
     
@@ -329,7 +329,7 @@ const Streamer25 = () => {
                 }}
                 maxDurationSeconds={maxVoiceDuration}
                 controller={voiceRecorder}
-                requiredAmount={150}
+                requiredAmount={2}
                 currentAmount={currentAmount}
                 brandColor={brandColor}
               />

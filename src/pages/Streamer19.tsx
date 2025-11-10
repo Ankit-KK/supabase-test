@@ -155,8 +155,8 @@ const Streamer19 = () => {
       return;
     }
 
-    if (donationType === 'voice' && amount < 3) {
-      toast({ title: "Insufficient Amount", description: "Voice messages require ₹3 minimum (3 seconds).", variant: "destructive" });
+    if (donationType === 'voice' && amount < 2) {
+      toast({ title: "Insufficient Amount", description: "Voice messages require ₹2 minimum.", variant: "destructive" });
       return;
     }
 
@@ -388,7 +388,7 @@ const Streamer19 = () => {
                 }}
                 maxDurationSeconds={maxVoiceDuration}
                 controller={voiceRecorder}
-                requiredAmount={150}
+                requiredAmount={2}
                 currentAmount={currentAmount}
                 brandColor={brandColor}
               />

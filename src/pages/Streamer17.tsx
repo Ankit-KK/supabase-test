@@ -204,10 +204,10 @@ const Streamer17 = () => {
       return;
     }
 
-    if (donationType === 'voice' && amount < 3) {
+    if (donationType === 'voice' && amount < 2) {
       toast({
         title: "Insufficient Amount",
-        description: "Voice messages require a minimum donation of ₹3 (3 seconds).",
+        description: "Voice messages require a minimum donation of ₹2.",
         variant: "destructive",
       });
       return;
@@ -538,7 +538,7 @@ const Streamer17 = () => {
                   }}
                   maxDurationSeconds={maxVoiceDuration}
                   controller={voiceRecorder}
-                  requiredAmount={150}
+                  requiredAmount={2}
                   currentAmount={currentAmount}
                 />
               </div>

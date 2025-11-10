@@ -133,8 +133,8 @@ const Streamer22 = () => {
       toast({ title: "Insufficient Amount", description: "Text messages require ₹1 minimum. TTS from ₹2+.", variant: "destructive" });
       return;
     }
-    if (donationType === 'voice' && amount < 3) {
-      toast({ title: "Insufficient Amount", description: "Voice messages require ₹3 minimum (3 seconds).", variant: "destructive" });
+    if (donationType === 'voice' && amount < 2) {
+      toast({ title: "Insufficient Amount", description: "Voice messages require ₹2 minimum.", variant: "destructive" });
       return;
     }
     if (!cashfree) {
@@ -265,7 +265,7 @@ const Streamer22 = () => {
                 <Textarea id="message" name="message" value={formData.message} onChange={handleInputChange} style={{ borderColor: `${brandColor}50` }} maxLength={200} rows={3} />
               </div>
             )}
-            {donationType === 'voice' && <EnhancedVoiceRecorder onRecordingComplete={(hasRecording, duration) => { setHasVoiceRecording(hasRecording); setVoiceDuration(duration); }} maxDurationSeconds={maxVoiceDuration} controller={voiceRecorder} requiredAmount={150} currentAmount={currentAmount} brandColor={brandColor} />}
+            {donationType === 'voice' && <EnhancedVoiceRecorder onRecordingComplete={(hasRecording, duration) => { setHasVoiceRecording(hasRecording); setVoiceDuration(duration); }} maxDurationSeconds={maxVoiceDuration} controller={voiceRecorder} requiredAmount={2} currentAmount={currentAmount} brandColor={brandColor} />}
             <Button type="submit" className="w-full gap-2 text-white" style={{ backgroundColor: brandColor }} disabled={isSubmitting || sdkLoading}>
               {isSubmitting ? 'Processing...' : sdkLoading ? 'Loading...' : (<><Heart className="h-4 w-4" />Donate Now</>)}
             </Button>
