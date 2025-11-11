@@ -17,17 +17,16 @@ serve(async (req) => {
     console.log('Creating Looteriya Gaming payment order:', { name, amount, message, phone, isHyperemote })
 
     // Initialize Supabase client with service role
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Initialize Cashfree SDK
-    const CASHFREE_APP_ID = Deno.env.get('CASHFREE_APP_ID')
-    const CASHFREE_SECRET_KEY = Deno.env.get('CASHFREE_SECRET_KEY')
-    const CASHFREE_API_VERSION = '2023-08-01'
+    // Get Cashfree credentials (using the same env vars as other functions)
+    const xClientId = Deno.env.get('XClientId')!
+    const xClientSecret = Deno.env.get('XClientSecret')!
+    const apiUrl = Deno.env.get('api_url')!
 
-    if (!CASHFREE_APP_ID || !CASHFREE_SECRET_KEY) {
+    if (!xClientId || !xClientSecret || !apiUrl) {
       throw new Error('Cashfree credentials not configured')
     }
 
@@ -92,13 +91,13 @@ serve(async (req) => {
     console.log('Cashfree order data:', JSON.stringify(cashfreeOrderData, null, 2))
 
     // Call Cashfree API
-    const cashfreeResponse = await fetch('https://api.cashfree.com/pg/orders', {
+    const cashfreeResponse = await fetch(`${apiUrl}/orders`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-version': CASHFREE_API_VERSION,
-        'x-client-id': CASHFREE_APP_ID,
-        'x-client-secret': CASHFREE_SECRET_KEY,
+        'x-api-version': '2023-08-01',
+        'x-client-id': xClientId,
+        'x-client-secret': xClientSecret,
       },
       body: JSON.stringify(cashfreeOrderData),
     })
