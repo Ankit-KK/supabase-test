@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Gamepad2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -13,6 +12,9 @@ import { load } from '@cashfreepayments/cashfree-js';
 import EnhancedVoiceRecorder from '@/components/EnhancedVoiceRecorder';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { PhoneDialog } from '@/components/PhoneDialog';
+import looteriyaLogo from '@/assets/looteriya-logo.jpg';
+import looteriyaProfile from '@/assets/looteriya-profile.jpg';
+import looteriyaBanner from '@/assets/looteriya-banner.jpg';
 
 const LooteriyaGaming = () => {
   const [formData, setFormData] = useState({
@@ -154,12 +156,21 @@ const LooteriyaGaming = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-950 via-amber-900 to-yellow-900 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-slate-900/90 border-amber-500/20">
+    <div 
+      className="min-h-screen flex items-center justify-center p-4 bg-cover bg-center bg-no-repeat"
+      style={{ backgroundImage: `url(${looteriyaBanner})` }}
+    >
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+      <Card className="w-full max-w-md bg-slate-900/95 border-amber-500/20 relative z-10">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="p-4 bg-gradient-to-br from-amber-500 to-amber-600 rounded-full">
-              <Gamepad2 className="h-12 w-12 text-white" />
+            <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-amber-500 shadow-xl">
+              <img src={looteriyaLogo} alt="Looteriya Gaming Logo" className="w-full h-full object-cover" />
+            </div>
+          </div>
+          <div className="flex justify-center mb-4">
+            <div className="w-24 h-24 rounded-lg overflow-hidden border-2 border-amber-500 shadow-lg">
+              <img src={looteriyaProfile} alt="Looteriya Profile" className="w-full h-full object-cover" />
             </div>
           </div>
           <CardTitle className="text-3xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 text-transparent bg-clip-text">
