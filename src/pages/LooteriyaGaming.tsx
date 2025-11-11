@@ -13,8 +13,7 @@ import EnhancedVoiceRecorder from '@/components/EnhancedVoiceRecorder';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { PhoneDialog } from '@/components/PhoneDialog';
 import looteriyaLogo from '@/assets/looteriya-logo.jpg';
-import looteriyaProfile from '@/assets/looteriya-profile.jpg';
-import looteriyaBanner from '@/assets/looteriya-banner.jpg';
+import looteriyaCardBg from '@/assets/looteriya-card-bg.jpg';
 
 const LooteriyaGaming = () => {
   const [formData, setFormData] = useState({
@@ -25,6 +24,7 @@ const LooteriyaGaming = () => {
   const [donationType, setDonationType] = useState<'text' | 'voice' | 'hyperemote'>('text');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [cashfree, setCashfree] = useState<any>(null);
+  const [sdkLoading, setSdkLoading] = useState(true);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [phoneError, setPhoneError] = useState('');
   const [isPhoneDialogOpen, setIsPhoneDialogOpen] = useState(false);
@@ -35,11 +35,15 @@ const LooteriyaGaming = () => {
   useEffect(() => {
     const initializeCashfree = async () => {
       try {
+        setSdkLoading(true);
         const cashfreeInstance = await load({ mode: 'production' });
         setCashfree(cashfreeInstance);
+        toast.success('Payment system ready');
       } catch (error) {
         console.error('Failed to initialize Cashfree:', error);
         toast.error('Payment system initialization failed');
+      } finally {
+        setSdkLoading(false);
       }
     };
 
@@ -156,65 +160,123 @@ const LooteriyaGaming = () => {
   };
 
   return (
-    <div 
-      className="min-h-screen flex items-center justify-center p-4 bg-cover bg-center bg-no-repeat"
-      style={{ backgroundImage: `url(${looteriyaBanner})` }}
-    >
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-      <Card className="w-full max-w-md bg-slate-900/95 border-amber-500/20 relative z-10">
-        <CardHeader className="text-center">
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
+      {/* Background decorations */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-20 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-20 w-40 h-40 bg-amber-600/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-amber-400/10 rounded-full blur-2xl animate-pulse"></div>
+      </div>
+
+      <Card 
+        className="w-full max-w-md mx-auto bg-card/95 backdrop-blur-sm border-amber-500/20 shadow-2xl relative overflow-hidden"
+        style={{ 
+          backgroundImage: `url(${looteriyaCardBg})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }}
+      >
+        {/* Dark overlay for readability */}
+        <div className="absolute inset-0 bg-black/70"></div>
+        
+        {/* Card glow effect */}
+        <div className="absolute inset-0 bg-gradient-to-r from-amber-500/20 via-amber-600/20 to-amber-400/20 opacity-50 blur-xl"></div>
+        
+        <CardHeader className="text-center relative z-10">
           <div className="flex justify-center mb-4">
             <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-amber-500 shadow-xl">
               <img src={looteriyaLogo} alt="Looteriya Gaming Logo" className="w-full h-full object-cover" />
             </div>
           </div>
-          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 text-transparent bg-clip-text">
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent">
             Looteriya Gaming
           </CardTitle>
-          <CardDescription className="text-slate-300">
+          <p className="text-muted-foreground text-sm">
             Support Looteriya Gaming with your donation
-          </CardDescription>
+          </p>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+
+        <CardContent className="space-y-6 relative z-10">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Name Field */}
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-slate-200">Your Name *</Label>
+              <label htmlFor="name" className="text-sm font-medium text-amber-500">
+                Your Name *
+              </label>
               <Input
                 id="name"
                 name="name"
-                type="text"
                 placeholder="Enter your name"
                 value={formData.name}
                 onChange={handleInputChange}
+                className="border-amber-500/30 focus:border-amber-500 focus:ring-amber-500/20"
                 required
-                className="bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-500"
               />
             </div>
 
+            {/* Donation Type Selection */}
             <div className="space-y-3">
-              <Label className="text-slate-200">Donation Type *</Label>
-              <RadioGroup value={donationType} onValueChange={handleDonationTypeChange}>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="text" id="text" className="border-amber-500 text-amber-500" />
-                  <Label htmlFor="text" className="text-slate-300 cursor-pointer">Text Message</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="voice" id="voice" className="border-amber-500 text-amber-500" />
-                  <Label htmlFor="voice" className="text-slate-300 cursor-pointer">Voice Message</Label>
-                </div>
-                {streamerSettings?.hyperemotes_enabled && (
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="hyperemote" id="hyperemote" className="border-amber-500 text-amber-500" />
-                    <Label htmlFor="hyperemote" className="text-slate-300 cursor-pointer">
-                      Hyperemote (₹{streamerSettings.hyperemotes_min_amount}+ for rain effect)
-                    </Label>
+              <label className="text-sm font-medium text-amber-500">
+                Choose your donation type
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleDonationTypeChange('text')}
+                  className={`p-3 rounded-lg border-2 transition-all ${
+                    donationType === 'text'
+                      ? 'border-amber-500 bg-amber-500/10'
+                      : 'border-amber-500/30 hover:border-amber-500/50'
+                  }`}
+                >
+                  <div className="text-center">
+                    <div className="text-base mb-1">💬</div>
+                    <div className="font-medium text-xs">Text Message</div>
+                    <div className="text-xs text-muted-foreground">Min: ₹1</div>
                   </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDonationTypeChange('voice')}
+                  className={`p-3 rounded-lg border-2 transition-all ${
+                    donationType === 'voice'
+                      ? 'border-amber-500 bg-amber-500/10'
+                      : 'border-amber-500/30 hover:border-amber-500/50'
+                  }`}
+                >
+                  <div className="text-center">
+                    <div className="text-base mb-1">🎤</div>
+                    <div className="font-medium text-xs">Voice Message</div>
+                    <div className="text-xs text-muted-foreground">Min: ₹2</div>
+                  </div>
+                </button>
+                {streamerSettings?.hyperemotes_enabled && (
+                  <button
+                    type="button"
+                    onClick={() => handleDonationTypeChange('hyperemote')}
+                    className={`p-3 rounded-lg border-2 transition-all ${
+                      donationType === 'hyperemote'
+                        ? 'border-purple-500 bg-purple-500/10'
+                        : 'border-purple-500/30 hover:border-purple-500/50'
+                    }`}
+                  >
+                    <div className="text-center">
+                      <div className="text-base mb-1">🎉</div>
+                      <div className="font-medium text-xs">Hyperemotes</div>
+                      <div className="text-xs text-muted-foreground">
+                        ₹{streamerSettings?.hyperemotes_min_amount || 4}+ celebration
+                      </div>
+                    </div>
+                  </button>
                 )}
-              </RadioGroup>
+              </div>
             </div>
 
+            {/* Amount Field */}
             <div className="space-y-2">
-              <Label htmlFor="amount" className="text-slate-200">Amount (₹) *</Label>
+              <label htmlFor="amount" className="text-sm font-medium text-amber-500">
+                Amount (₹) *
+              </label>
               <Input
                 id="amount"
                 name="amount"
@@ -222,31 +284,36 @@ const LooteriyaGaming = () => {
                 placeholder="Enter amount"
                 value={formData.amount}
                 onChange={handleInputChange}
+                className="border-amber-500/30 focus:border-amber-500 focus:ring-amber-500/20"
                 required
                 min="1"
                 disabled={donationType === 'hyperemote'}
-                className="bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-500"
               />
             </div>
 
+            {/* Message/Voice Field */}
             {donationType === 'text' && (
               <div className="space-y-2">
-                <Label htmlFor="message" className="text-slate-200">Message (Optional)</Label>
-                <Textarea
+                <label htmlFor="message" className="text-sm font-medium text-amber-500">
+                  Your Message (Optional)
+                </label>
+                <textarea
                   id="message"
                   name="message"
-                  placeholder="Enter your message (optional)"
+                  placeholder="Enter your message"
                   value={formData.message}
                   onChange={handleInputChange}
+                  className="w-full min-h-[100px] px-3 py-2 rounded-md border border-amber-500/30 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 bg-background text-foreground placeholder:text-muted-foreground"
                   rows={3}
-                  className="bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-500"
                 />
               </div>
             )}
 
             {donationType === 'voice' && (
               <div className="space-y-2">
-                <Label className="text-slate-200">Voice Message *</Label>
+                <label className="text-sm font-medium text-amber-500">
+                  Voice Message *
+                </label>
                 <EnhancedVoiceRecorder
                   onRecordingComplete={(blob) => {}}
                   controller={voiceRecorder}
@@ -258,9 +325,10 @@ const LooteriyaGaming = () => {
             )}
 
             <Button 
-              type="submit"
-              className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold"
-              disabled={isProcessingPayment}
+              type="submit" 
+              className="w-full font-semibold py-6"
+              style={{ backgroundColor: '#f59e0b' }}
+              disabled={isProcessingPayment || sdkLoading}
             >
               {isProcessingPayment ? 'Processing...' : 'Continue to Payment'}
             </Button>
