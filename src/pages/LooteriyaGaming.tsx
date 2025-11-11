@@ -126,14 +126,41 @@ const LooteriyaGaming = () => {
         throw new Error('Payment system not initialized');
       }
 
+      const orderId = data.order_id;
+
       const checkoutOptions = {
         paymentSessionId: data.payment_session_id,
-        returnUrl: `${window.location.origin}/looteriya_gaming?order_id=${data.order_id}`,
+        redirectTarget: "_modal",
+        appearance: {
+          width: "500px",
+          height: "700px"
+        },
+        onSuccess: function(data: any) {
+          console.log("Payment successful:", data);
+        },
+        onFailure: function(data: any) {
+          console.log("Payment failed:", data);
+        }
       };
 
-      cashfree.checkout(checkoutOptions).then(() => {
-        console.log('Payment initiated');
-      });
+      // Add a small delay to ensure proper focus handling
+      setTimeout(async () => {
+        const result = await cashfree.checkout(checkoutOptions);
+        
+        // Navigate to status page based on payment result
+        if (result.error) {
+          console.log("Payment cancelled or error:", result.error);
+          navigate(`/status?order_id=${orderId}&status=pending`);
+        } else if (result.paymentDetails) {
+          console.log("Payment completed:", result.paymentDetails);
+          navigate(`/status?order_id=${orderId}&status=success`);
+        } else if (result.redirect) {
+          console.log("Payment will be redirected");
+          navigate(`/status?order_id=${orderId}&status=pending`);
+        } else {
+          navigate(`/status?order_id=${orderId}&status=pending`);
+        }
+      }, 100);
 
     } catch (error) {
       console.error('Payment error:', error);
