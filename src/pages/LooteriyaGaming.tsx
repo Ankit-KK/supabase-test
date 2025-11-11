@@ -168,11 +168,6 @@ const LooteriyaGaming = () => {
               <img src={looteriyaLogo} alt="Looteriya Gaming Logo" className="w-full h-full object-cover" />
             </div>
           </div>
-          <div className="flex justify-center mb-4">
-            <div className="w-24 h-24 rounded-lg overflow-hidden border-2 border-amber-500 shadow-lg">
-              <img src={looteriyaProfile} alt="Looteriya Profile" className="w-full h-full object-cover" />
-            </div>
-          </div>
           <CardTitle className="text-3xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 text-transparent bg-clip-text">
             Looteriya Gaming
           </CardTitle>
