@@ -14,6 +14,7 @@ import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { PhoneDialog } from '@/components/PhoneDialog';
 import looteriyaLogo from '@/assets/looteriya-logo.jpg';
 import looteriyaCardBg from '@/assets/looteriya-card-bg.jpg';
+import looteriyaMainBanner from '@/assets/looteriya-main-banner.jpg';
 
 const LooteriyaGaming = () => {
   const [formData, setFormData] = useState({
@@ -160,13 +161,12 @@ const LooteriyaGaming = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
-      {/* Background decorations */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-20 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-20 w-40 h-40 bg-amber-600/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-amber-400/10 rounded-full blur-2xl animate-pulse"></div>
-      </div>
+    <div 
+      className="min-h-screen flex items-center justify-center p-4 relative bg-cover bg-center"
+      style={{ backgroundImage: `url(${looteriyaMainBanner})` }}
+    >
+      {/* Dark overlay for better card visibility */}
+      <div className="absolute inset-0 bg-black/40"></div>
 
       <Card 
         className="w-full max-w-md mx-auto bg-card/95 backdrop-blur-sm border-amber-500/20 shadow-2xl relative overflow-hidden"
