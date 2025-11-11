@@ -162,10 +162,9 @@ const LooteriyaGaming = () => {
 
   return (
     <div 
-      className="min-h-screen flex items-center justify-center p-4 relative bg-contain bg-center bg-no-repeat"
+      className="min-h-screen flex items-center justify-center p-4 relative bg-cover bg-center bg-no-repeat"
       style={{ 
-        backgroundImage: `url(${looteriyaMainBanner})`,
-        backgroundColor: '#1a1a1a'
+        backgroundImage: `url(${looteriyaMainBanner})`
       }}
     >
       {/* Dark overlay for better card visibility */}
