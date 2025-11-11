@@ -24,6 +24,7 @@ import Ankit from "./pages/Ankit";
 import TechGamer from "./pages/TechGamer";
 import MusicStream from "./pages/MusicStream";
 import CodeLive from "./pages/CodeLive";
+import LooteriyaGaming from "./pages/LooteriyaGaming";
 import ArtCreate from "./pages/ArtCreate";
 import FitnessFlow from "./pages/FitnessFlow";
 import Demo2 from "./pages/Demo2";
@@ -73,6 +74,7 @@ import TechGamerDashboard from "./pages/dashboard/TechGamerDashboard";
 import MusicStreamDashboard from "./pages/dashboard/MusicStreamDashboard";
 import FitnessFlowDashboard from "./pages/dashboard/FitnessFlowDashboard";
 import CodeLiveDashboard from "./pages/dashboard/CodeLiveDashboard";
+import LooteriyaGamingDashboard from "./pages/dashboard/LooteriyaGamingDashboard";
 import ArtCreateDashboard from "./pages/dashboard/ArtCreateDashboard";
 import Demo2Dashboard from "./pages/dashboard/Demo2Dashboard";
 import Demo3Dashboard from "./pages/dashboard/Demo3Dashboard";
@@ -124,6 +126,7 @@ import TechGamerObsAlerts from "./pages/obs-alerts/TechGamerObsAlerts";
 import MusicStreamObsAlerts from "./pages/obs-alerts/MusicStreamObsAlerts";
 import FitnessFlowObsAlerts from "./pages/obs-alerts/FitnessFlowObsAlerts";
 import CodeLiveObsAlerts from "./pages/obs-alerts/CodeLiveObsAlerts";
+import LooteriyaGamingObsAlerts from "./pages/obs-alerts/LooteriyaGamingObsAlerts";
 import ArtCreateObsAlerts from "./pages/obs-alerts/ArtCreateObsAlerts";
 import Demo2ObsAlerts from "./pages/obs-alerts/Demo2ObsAlerts";
 import Demo3ObsAlerts from "./pages/obs-alerts/Demo3ObsAlerts";
@@ -172,6 +175,7 @@ import TechGamerAudioPlayer from "./pages/audio-player/TechGamerAudioPlayer";
 import MusicStreamAudioPlayer from "./pages/audio-player/MusicStreamAudioPlayer";
 import FitnessFlowAudioPlayer from "./pages/audio-player/FitnessFlowAudioPlayer";
 import CodeLiveAudioPlayer from "./pages/audio-player/CodeLiveAudioPlayer";
+import LooteriyaGamingAudioPlayer from "./pages/audio-player/LooteriyaGamingAudioPlayer";
 import ArtCreateAudioPlayer from "./pages/audio-player/ArtCreateAudioPlayer";
 import Demo2AudioPlayer from "./pages/audio-player/Demo2AudioPlayer";
 import Demo3AudioPlayer from "./pages/audio-player/Demo3AudioPlayer";
@@ -244,6 +248,7 @@ const App = () => (
               <Route path="/techgamer" element={<TechGamer />} />
               <Route path="/musicstream" element={<MusicStream />} />
               <Route path="/codelive" element={<CodeLive />} />
+              <Route path="/looteriya_gaming" element={<LooteriyaGaming />} />
               <Route path="/artcreate" element={<ArtCreate />} />
               <Route path="/fitnessflow" element={<FitnessFlow />} />
               <Route path="/demostreamer" element={<DemoStreamer />} />
@@ -296,6 +301,7 @@ const App = () => (
               <Route path="/dashboard/musicstream" element={<MusicStreamDashboard />} />
               <Route path="/dashboard/fitnessflow" element={<FitnessFlowDashboard />} />
               <Route path="/dashboard/codelive" element={<CodeLiveDashboard />} />
+              <Route path="/dashboard/looteriya_gaming" element={<LooteriyaGamingDashboard />} />
               <Route path="/dashboard/artcreate" element={<ArtCreateDashboard />} />
               <Route path="/dashboard/chiaa_gaming" element={<ChiaGamingDashboard />} />
               <Route path="/dashboard/demostreamer" element={<DemoStreamerDashboard />} />
@@ -344,6 +350,7 @@ const App = () => (
               <Route path="/musicstream/obs-alerts" element={<MusicStreamObsAlerts />} />
               <Route path="/fitnessflow/obs-alerts" element={<FitnessFlowObsAlerts />} />
               <Route path="/codelive/obs-alerts" element={<CodeLiveObsAlerts />} />
+              <Route path="/looteriya_gaming/obs-alerts" element={<LooteriyaGamingObsAlerts />} />
               <Route path="/artcreate/obs-alerts" element={<ArtCreateObsAlerts />} />
               <Route path="/chiaa_gaming/obs-alerts" element={<ChiaGamingObsAlerts />} />
               <Route path="/demostreamer/obs-alerts" element={<DemoStreamerObsAlerts />} />
@@ -392,6 +399,7 @@ const App = () => (
               <Route path="/musicstream/audio-player" element={<MusicStreamAudioPlayer />} />
               <Route path="/fitnessflow/audio-player" element={<FitnessFlowAudioPlayer />} />
               <Route path="/codelive/audio-player" element={<CodeLiveAudioPlayer />} />
+              <Route path="/looteriya_gaming/audio-player" element={<LooteriyaGamingAudioPlayer />} />
               <Route path="/artcreate/audio-player" element={<ArtCreateAudioPlayer />} />
               <Route path="/chiaa_gaming/audio-player" element={<ChiaGamingAudioPlayer />} />
               <Route path="/demostreamer/audio-player" element={<DemoStreamerAudioPlayer />} />

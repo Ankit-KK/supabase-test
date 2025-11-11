@@ -59,7 +59,8 @@ export const useRealtimeSubscription = (options: RealtimeSubscriptionOptions) =>
       'techgamer': 'techgamer_donations',
       'fitnessflow': 'fitnessflow_donations',
       'artcreate': 'artcreate_donations',
-      'codelive': 'codelive_donations'
+      'codelive': 'codelive_donations',
+      'looteriya_gaming': 'looteriya_gaming_donations'
     };
     
     return tableMap[slug] || 'chia_gaming_donations';

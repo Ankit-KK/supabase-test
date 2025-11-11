@@ -36,6 +36,9 @@ verify_jwt = false
 [functions.create-payment-order-codelive]
 verify_jwt = false
 
+[functions.create-payment-order-looteriya-gaming]
+verify_jwt = false
+
 [functions.create-payment-order-demostreamer]
 verify_jwt = false
 
@@ -76,6 +79,9 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.upload-voice-message-codelive]
+verify_jwt = false
+
+[functions.upload-voice-message-looteriya-gaming]
 verify_jwt = false
 
 [functions.upload-voice-message-demostreamer]

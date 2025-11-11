@@ -28,7 +28,7 @@ export default function Status() {
           if (orderId.startsWith('techgamer_')) return 'check-payment-status';
           if (orderId.startsWith('fitnessflow_')) return 'check-payment-status';
           if (orderId.startsWith('artcreate_')) return 'check-payment-status';
-          if (orderId.startsWith('codelive_')) return 'check-payment-status';
+          if (orderId.startsWith('looteriya_gaming_')) return 'check-payment-status';
           if (orderId.startsWith('demostreamer_')) return 'check-payment-status';
           return 'check-payment-status'; // default for chia_gaming
         };
@@ -92,7 +92,7 @@ export default function Status() {
               if (orderId.startsWith('techgamer_')) return 'upload-voice-message-techgamer';
               if (orderId.startsWith('fitnessflow_')) return 'upload-voice-message-fitnessflow';
               if (orderId.startsWith('artcreate_')) return 'upload-voice-message-artcreate';
-              if (orderId.startsWith('codelive_')) return 'upload-voice-message-codelive';
+              if (orderId.startsWith('looteriya_gaming_')) return 'upload-voice-message-looteriya-gaming';
               if (orderId.startsWith('demostreamer_')) return 'upload-voice-message-demostreamer';
               return 'upload-voice-message'; // default for chia_gaming
             };
@@ -211,7 +211,7 @@ export default function Status() {
                 if (orderId.startsWith('techgamer_')) return "/tech_gamer";
                 if (orderId.startsWith('fitnessflow_')) return "/fitness_flow";
                 if (orderId.startsWith('artcreate_')) return "/art_create";
-                if (orderId.startsWith('codelive_')) return "/code_live";
+                if (orderId.startsWith('looteriya_gaming_')) return "/looteriya_gaming";
                 if (orderId.startsWith('demostreamer_')) return "/demo_streamer";
                 return "/chiaa_gaming"; // default for chia_gaming
               })()}>
