@@ -5,9 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
+import { LogOut } from 'lucide-react';
 
 const Dashboard = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const [userStreamers, setUserStreamers] = useState<Array<{
     id: string;
@@ -89,9 +90,21 @@ const Dashboard = () => {
             <p className="text-sm text-muted-foreground">
               Please contact an administrator to get access to a streamer dashboard.
             </p>
-            <Button onClick={() => navigate('/')} variant="outline">
-              Return to Home
-            </Button>
+            <div className="flex gap-2 justify-center">
+              <Button onClick={() => navigate('/')} variant="outline">
+                Return to Home
+              </Button>
+              <Button 
+                onClick={async () => {
+                  await signOut();
+                  navigate('/auth');
+                }} 
+                variant="destructive"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Logout
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
