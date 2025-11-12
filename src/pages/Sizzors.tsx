@@ -12,6 +12,7 @@ import VoiceRecorder from "@/components/VoiceRecorder";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import sizzorsBanner from "@/assets/sizzors-banner.jpg";
 import sizzorsProfile from "@/assets/sizzors-profile.jpg";
+import sizzorsLogo from "@/assets/sizzors-logo.jpg";
 
 const Sizzors = () => {
   const navigate = useNavigate();
@@ -325,10 +326,12 @@ const Sizzors = () => {
         
         <CardHeader className="text-center relative z-10">
           <div className="flex items-center justify-center mb-4">
-            <div className="flex items-center space-x-2 text-purple-500">
-              <Scissors className="h-8 w-8" />
-              <Sparkles className="h-6 w-6 animate-pulse" />
-              <Heart className="h-6 w-6 text-purple-400" />
+            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-purple-500 shadow-lg shadow-purple-500/50">
+              <img 
+                src={sizzorsLogo} 
+                alt="Sizzors Logo" 
+                className="w-full h-full object-cover"
+              />
             </div>
           </div>
           <CardTitle className="text-2xl font-bold bg-gradient-to-r from-purple-500 to-purple-600 bg-clip-text text-transparent">
