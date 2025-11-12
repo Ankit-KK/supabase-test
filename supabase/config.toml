@@ -24,40 +24,6 @@ verify_jwt = false
 [functions.telegram-webhook]
 verify_jwt = false
 
-[functions.create-payment-order-ankit]
-verify_jwt = false
-
-[functions.create-payment-order-artcreate]
-verify_jwt = false
-
-[functions.create-payment-order-chiagaming]
-verify_jwt = false
-
-
-[functions.create-payment-order-looteriya-gaming]
-verify_jwt = false
-
-[functions.create-payment-order-demostreamer]
-verify_jwt = false
-
-[functions.create-payment-order-demo2]
-verify_jwt = false
-
-[functions.create-payment-order-demo3]
-verify_jwt = false
-
-[functions.create-payment-order-demo4]
-verify_jwt = false
-
-[functions.create-payment-order-sizzors]
-verify_jwt = false
-
-[functions.create-payment-order-musicstream]
-verify_jwt = false
-
-[functions.create-payment-order-techgamer]
-verify_jwt = false
-
 [functions.check-payment-status]
 verify_jwt = false
 
@@ -67,252 +33,31 @@ verify_jwt = false
 [functions.authenticate-user]
 verify_jwt = false
 
-[functions.upload-voice-message-ankit]
+[functions.notify-new-donations]
 verify_jwt = false
 
-[functions.upload-voice-message-artcreate]
+# Active Streamer Functions - Only 4 Streamers
+
+[functions.create-payment-order-ankit]
+verify_jwt = false
+
+[functions.create-payment-order-chiagaming]
+verify_jwt = false
+
+[functions.create-payment-order-looteriya-gaming]
+verify_jwt = false
+
+[functions.create-payment-order-sizzors]
+verify_jwt = false
+
+[functions.upload-voice-message-ankit]
 verify_jwt = false
 
 [functions.upload-voice-message-chiagaming]
 verify_jwt = false
 
-
 [functions.upload-voice-message-looteriya-gaming]
 verify_jwt = false
 
-[functions.upload-voice-message-demostreamer]
-verify_jwt = false
-
-[functions.upload-voice-message-demo2]
-verify_jwt = false
-
-[functions.upload-voice-message-demo3]
-verify_jwt = false
-
-[functions.upload-voice-message-demo4]
-verify_jwt = false
-
 [functions.upload-voice-message-sizzors]
-verify_jwt = false
-
-[functions.upload-voice-message-musicstream]
-verify_jwt = false
-
-[functions.upload-voice-message-techgamer]
-verify_jwt = false
-
-[functions.upload-voice-message]
-verify_jwt = false
-
-[functions.create-payment-order-valorantpro]
-verify_jwt = false
-
-[functions.create-payment-order-craftmaster]
-verify_jwt = false
-
-[functions.create-payment-order-apexlegend]
-verify_jwt = false
-
-[functions.create-payment-order-lofibeats]
-verify_jwt = false
-
-[functions.create-payment-order-yogatime]
-verify_jwt = false
-
-[functions.upload-voice-message-valorantpro]
-verify_jwt = false
-
-[functions.upload-voice-message-craftmaster]
-verify_jwt = false
-
-[functions.upload-voice-message-apexlegend]
-verify_jwt = false
-
-[functions.upload-voice-message-lofibeats]
-verify_jwt = false
-
-[functions.upload-voice-message-yogatime]
-verify_jwt = false
-
-[functions.notify-new-donations]
-verify_jwt = false
-
-[functions.create-payment-order-streamer17]
-verify_jwt = false
-
-[functions.create-payment-order-streamer18]
-verify_jwt = false
-
-[functions.create-payment-order-streamer19]
-verify_jwt = false
-
-[functions.create-payment-order-streamer20]
-verify_jwt = false
-
-[functions.create-payment-order-streamer21]
-verify_jwt = false
-
-[functions.create-payment-order-streamer22]
-verify_jwt = false
-
-[functions.create-payment-order-streamer23]
-verify_jwt = false
-
-[functions.create-payment-order-streamer24]
-verify_jwt = false
-
-[functions.create-payment-order-streamer25]
-verify_jwt = false
-
-[functions.create-payment-order-streamer26]
-verify_jwt = false
-
-[functions.create-payment-order-streamer27]
-verify_jwt = false
-
-[functions.create-payment-order-streamer28]
-verify_jwt = false
-
-[functions.create-payment-order-streamer29]
-verify_jwt = false
-
-[functions.create-payment-order-streamer30]
-verify_jwt = false
-
-[functions.create-payment-order-streamer31]
-verify_jwt = false
-
-[functions.create-payment-order-streamer32]
-verify_jwt = false
-
-[functions.create-payment-order-streamer33]
-verify_jwt = false
-
-[functions.create-payment-order-streamer34]
-verify_jwt = false
-
-[functions.create-payment-order-streamer35]
-verify_jwt = false
-
-[functions.create-payment-order-streamer36]
-verify_jwt = false
-
-[functions.create-payment-order-streamer37]
-verify_jwt = false
-
-[functions.create-payment-order-streamer38]
-verify_jwt = false
-
-[functions.create-payment-order-streamer39]
-verify_jwt = false
-
-[functions.create-payment-order-streamer40]
-verify_jwt = false
-
-[functions.create-payment-order-streamer41]
-verify_jwt = false
-
-[functions.create-payment-order-streamer42]
-verify_jwt = false
-
-[functions.create-payment-order-streamer43]
-verify_jwt = false
-
-[functions.create-payment-order-streamer44]
-verify_jwt = false
-
-[functions.create-payment-order-streamer45]
-verify_jwt = false
-
-[functions.create-payment-order-streamer46]
-verify_jwt = false
-
-[functions.upload-voice-message-streamer17]
-verify_jwt = false
-
-[functions.upload-voice-message-streamer18]
-verify_jwt = false
-
-[functions.upload-voice-message-streamer19]
-verify_jwt = false
-
-[functions.upload-voice-message-streamer20]
-verify_jwt = false
-
-[functions.upload-voice-message-streamer21]
-verify_jwt = false
-
-[functions.upload-voice-message-streamer22]
-verify_jwt = false
-
-[functions.upload-voice-message-streamer23]
-verify_jwt = false
-
-[functions.upload-voice-message-streamer24]
-verify_jwt = false
-
-[functions.upload-voice-message-streamer25]
-verify_jwt = false
-
-[functions.upload-voice-message-streamer26]
-verify_jwt = false
-
-[functions.upload-voice-message-streamer27]
-verify_jwt = false
-
-[functions.upload-voice-message-streamer28]
-verify_jwt = false
-
-[functions.upload-voice-message-streamer29]
-verify_jwt = false
-
-[functions.upload-voice-message-streamer30]
-verify_jwt = false
-
-[functions.upload-voice-message-streamer31]
-verify_jwt = false
-
-[functions.upload-voice-message-streamer32]
-verify_jwt = false
-
-[functions.upload-voice-message-streamer33]
-verify_jwt = false
-
-[functions.upload-voice-message-streamer34]
-verify_jwt = false
-
-[functions.upload-voice-message-streamer35]
-verify_jwt = false
-
-[functions.upload-voice-message-streamer36]
-verify_jwt = false
-
-[functions.upload-voice-message-streamer37]
-verify_jwt = false
-
-[functions.upload-voice-message-streamer38]
-verify_jwt = false
-
-[functions.upload-voice-message-streamer39]
-verify_jwt = false
-
-[functions.upload-voice-message-streamer40]
-verify_jwt = false
-
-[functions.upload-voice-message-streamer41]
-verify_jwt = false
-
-[functions.upload-voice-message-streamer42]
-verify_jwt = false
-
-[functions.upload-voice-message-streamer43]
-verify_jwt = false
-
-[functions.upload-voice-message-streamer44]
-verify_jwt = false
-
-[functions.upload-voice-message-streamer45]
-verify_jwt = false
-
-[functions.upload-voice-message-streamer46]
 verify_jwt = false
