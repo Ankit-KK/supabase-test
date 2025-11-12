@@ -49,7 +49,7 @@ verify_jwt = false
 [functions.create-payment-order-demo4]
 verify_jwt = false
 
-[functions.create-payment-order-fitnessflow]
+[functions.create-payment-order-sizzors]
 verify_jwt = false
 
 [functions.create-payment-order-musicstream]
@@ -92,7 +92,7 @@ verify_jwt = false
 [functions.upload-voice-message-demo4]
 verify_jwt = false
 
-[functions.upload-voice-message-fitnessflow]
+[functions.upload-voice-message-sizzors]
 verify_jwt = false
 
 [functions.upload-voice-message-musicstream]

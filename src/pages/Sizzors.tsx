@@ -4,14 +4,14 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { Dumbbell, Heart, Sparkles } from "lucide-react";
+import { Scissors, Heart, Sparkles } from "lucide-react";
 import { load } from '@cashfreepayments/cashfree-js';
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import VoiceRecorder from "@/components/VoiceRecorder";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 
-const FitnessFlow = () => {
+const Sizzors = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
@@ -81,7 +81,7 @@ const FitnessFlow = () => {
     const fetchStreamerSettings = async () => {
       try {
         const { data, error } = await supabase
-          .rpc('get_streamer_public_settings', { slug: 'fitnessflow' });
+          .rpc('get_streamer_public_settings', { slug: 'sizzors' });
 
         if (error) throw error;
         if (data && data.length > 0) setStreamerSettings(data[0]);
@@ -200,7 +200,7 @@ const FitnessFlow = () => {
       }
 
       // Create order via Supabase edge function
-      const response = await supabase.functions.invoke('create-payment-order-fitnessflow', {
+      const response = await supabase.functions.invoke('create-payment-order-sizzors', {
         body: {
           name: formData.name.trim(),
           amount: amount,
@@ -310,28 +310,28 @@ const FitnessFlow = () => {
     <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
       {/* Background decorations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-20 w-32 h-32 bg-orange-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-20 w-40 h-40 bg-orange-600/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-orange-400/10 rounded-full blur-2xl animate-pulse"></div>
+        <div className="absolute top-20 left-20 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-20 w-40 h-40 bg-purple-600/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-purple-400/10 rounded-full blur-2xl animate-pulse"></div>
       </div>
 
-      <Card className="w-full max-w-md mx-auto bg-card/95 backdrop-blur-sm border-orange-500/20 shadow-2xl relative overflow-hidden">
+      <Card className="w-full max-w-md mx-auto bg-card/95 backdrop-blur-sm border-purple-500/20 shadow-2xl relative overflow-hidden">
         {/* Card glow effect */}
-        <div className="absolute inset-0 bg-gradient-to-r from-orange-500/20 via-orange-600/20 to-orange-400/20 opacity-50 blur-xl"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 via-purple-600/20 to-purple-400/20 opacity-50 blur-xl"></div>
         
         <CardHeader className="text-center relative z-10">
           <div className="flex items-center justify-center mb-4">
-            <div className="flex items-center space-x-2 text-orange-500">
-              <Dumbbell className="h-8 w-8" />
+            <div className="flex items-center space-x-2 text-purple-500">
+              <Scissors className="h-8 w-8" />
               <Sparkles className="h-6 w-6 animate-pulse" />
-              <Heart className="h-6 w-6 text-orange-400" />
+              <Heart className="h-6 w-6 text-purple-400" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
-            FitnessFlow
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-purple-500 to-purple-600 bg-clip-text text-transparent">
+            Sizzors
           </CardTitle>
           <p className="text-muted-foreground text-sm">
-            Support FitnessFlow with your donation
+            Support Sizzors with your donation
           </p>
         </CardHeader>
 
@@ -339,7 +339,7 @@ const FitnessFlow = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Name Field */}
             <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-medium text-orange-500">
+              <label htmlFor="name" className="text-sm font-medium text-purple-500">
                 Your Name *
               </label>
               <Input
@@ -348,14 +348,14 @@ const FitnessFlow = () => {
                 placeholder="Enter your name"
                 value={formData.name}
                 onChange={handleInputChange}
-                className="border-orange-500/30 focus:border-orange-500 focus:ring-orange-500/20"
+                className="border-purple-500/30 focus:border-purple-500 focus:ring-purple-500/20"
                 required
               />
             </div>
 
             {/* Donation Type Selection */}
             <div className="space-y-3">
-                <label className="text-sm font-medium text-orange-500">
+                <label className="text-sm font-medium text-purple-500">
                   Choose your donation type
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -364,8 +364,8 @@ const FitnessFlow = () => {
                     onClick={() => handleDonationTypeChange('message')}
                     className={`p-3 rounded-lg border-2 transition-all ${
                       donationType === 'message'
-                        ? 'border-orange-500 bg-orange-500/10'
-                        : 'border-orange-500/30 hover:border-orange-500/50'
+                        ? 'border-purple-500 bg-purple-500/10'
+                        : 'border-purple-500/30 hover:border-purple-500/50'
                     }`}
                   >
                     <div className="text-center">
@@ -379,8 +379,8 @@ const FitnessFlow = () => {
                     onClick={() => handleDonationTypeChange('voice')}
                     className={`p-3 rounded-lg border-2 transition-all ${
                       donationType === 'voice'
-                        ? 'border-orange-500 bg-orange-500/10'
-                        : 'border-orange-500/30 hover:border-orange-500/50'
+                        ? 'border-purple-500 bg-purple-500/10'
+                        : 'border-purple-500/30 hover:border-purple-500/50'
                     }`}
                   >
                     <div className="text-center">
@@ -409,7 +409,7 @@ const FitnessFlow = () => {
 
             {/* Amount Field */}
             <div className="space-y-2">
-              <label htmlFor="amount" className="text-sm font-medium text-orange-500">
+              <label htmlFor="amount" className="text-sm font-medium text-purple-500">
                 Amount (₹) *
               </label>
               <Input
@@ -424,7 +424,7 @@ const FitnessFlow = () => {
                 }
                 value={formData.amount}
                 onChange={handleInputChange}
-                className="border-orange-500/30 focus:border-orange-500 focus:ring-orange-500/20"
+                className="border-purple-500/30 focus:border-purple-500 focus:ring-purple-500/20"
                 min={donationType === 'hyperemote' ? (streamerSettings?.hyperemotes_min_amount || 50).toString() : '1'}
                 max="100000"
                 disabled={donationType === 'hyperemote'}
@@ -443,7 +443,7 @@ const FitnessFlow = () => {
             {/* Message Field */}
             {donationType === 'message' && (
               <div className="space-y-2">
-                <label htmlFor="message" className="text-sm font-medium text-orange-500">
+                <label htmlFor="message" className="text-sm font-medium text-purple-500">
                   Message *
                 </label>
                 <textarea
@@ -452,7 +452,7 @@ const FitnessFlow = () => {
                   placeholder="Enter your message"
                   value={formData.message}
                   onChange={handleInputChange}
-                  className="w-full p-3 border border-orange-500/30 rounded-lg bg-background/50 backdrop-blur-sm focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 focus:outline-none resize-none"
+                  className="w-full p-3 border border-purple-500/30 rounded-lg bg-background/50 backdrop-blur-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 focus:outline-none resize-none"
                   rows={3}
                   maxLength={500}
                   required
@@ -465,7 +465,7 @@ const FitnessFlow = () => {
 
             {donationType === 'voice' && (
               <div className="space-y-3">
-                <label className="text-sm font-medium text-orange-500">
+                <label className="text-sm font-medium text-purple-500">
                   Record Voice Message *
                 </label>
                 <VoiceRecorder
@@ -504,7 +504,7 @@ const FitnessFlow = () => {
             {/* Submit Button */}
             <Button
               type="submit"
-              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               disabled={isProcessing || sdkLoading || !!sdkError}
             >
               {isProcessing ? (
@@ -548,8 +548,8 @@ const FitnessFlow = () => {
       <Dialog open={showPhoneDialog} onOpenChange={setShowPhoneDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Heart className="h-5 w-5 text-orange-500" />
+          <DialogTitle className="flex items-center gap-2">
+              <Heart className="h-5 w-5 text-purple-500" />
               Complete Your Donation
             </DialogTitle>
             <DialogDescription>
@@ -588,7 +588,7 @@ const FitnessFlow = () => {
               </Button>
               <Button
                 onClick={handlePhoneSubmit}
-                className="flex-1 bg-orange-500 hover:bg-orange-600"
+                className="flex-1 bg-purple-500 hover:bg-purple-600"
                 disabled={isProcessing}
               >
                 {isProcessing ? (
@@ -615,4 +615,4 @@ const FitnessFlow = () => {
   );
 };
 
-export default FitnessFlow;
+export default Sizzors;

@@ -90,7 +90,7 @@ export default function Status() {
               if (orderId.startsWith('ankit_')) return 'upload-voice-message-ankit';
               if (orderId.startsWith('musicstream_')) return 'upload-voice-message-musicstream';
               if (orderId.startsWith('techgamer_')) return 'upload-voice-message-techgamer';
-              if (orderId.startsWith('fitnessflow_')) return 'upload-voice-message-fitnessflow';
+              if (orderId.startsWith('sizzors_')) return 'upload-voice-message-sizzors';
               if (orderId.startsWith('artcreate_')) return 'upload-voice-message-artcreate';
               if (orderId.startsWith('looteriya_gaming_')) return 'upload-voice-message-looteriya-gaming';
               if (orderId.startsWith('demostreamer_')) return 'upload-voice-message-demostreamer';
@@ -209,7 +209,7 @@ export default function Status() {
                 if (orderId.startsWith('ankit_')) return "/ankit";
                 if (orderId.startsWith('musicstream_')) return "/music_stream";
                 if (orderId.startsWith('techgamer_')) return "/tech_gamer";
-                if (orderId.startsWith('fitnessflow_')) return "/fitness_flow";
+                if (orderId.startsWith('sizzors_')) return "/sizzors";
                 if (orderId.startsWith('artcreate_')) return "/art_create";
                 if (orderId.startsWith('looteriya_gaming_')) return "/looteriya_gaming";
                 if (orderId.startsWith('demostreamer_')) return "/demo_streamer";

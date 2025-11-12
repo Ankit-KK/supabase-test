@@ -26,7 +26,7 @@ import MusicStream from "./pages/MusicStream";
 
 import LooteriyaGaming from "./pages/LooteriyaGaming";
 import ArtCreate from "./pages/ArtCreate";
-import FitnessFlow from "./pages/FitnessFlow";
+import Sizzors from "./pages/Sizzors";
 import Demo2 from "./pages/Demo2";
 import Demo3 from "./pages/Demo3";
 import Demo4 from "./pages/Demo4";
@@ -72,7 +72,7 @@ import ChiaGamingDashboard from "./pages/dashboard/ChiaGamingDashboard";
 import DemoStreamerDashboard from "./pages/dashboard/DemoStreamerDashboard";
 import TechGamerDashboard from "./pages/dashboard/TechGamerDashboard";
 import MusicStreamDashboard from "./pages/dashboard/MusicStreamDashboard";
-import FitnessFlowDashboard from "./pages/dashboard/FitnessFlowDashboard";
+import SizzorsDashboard from "./pages/dashboard/SizzorsDashboard";
 
 import LooteriyaGamingDashboard from "./pages/dashboard/LooteriyaGamingDashboard";
 import ArtCreateDashboard from "./pages/dashboard/ArtCreateDashboard";
@@ -124,7 +124,7 @@ import ChiaGamingObsAlerts from "./pages/obs-alerts/ChiaGamingObsAlerts";
 import DemoStreamerObsAlerts from "./pages/obs-alerts/DemoStreamerObsAlerts";
 import TechGamerObsAlerts from "./pages/obs-alerts/TechGamerObsAlerts";
 import MusicStreamObsAlerts from "./pages/obs-alerts/MusicStreamObsAlerts";
-import FitnessFlowObsAlerts from "./pages/obs-alerts/FitnessFlowObsAlerts";
+import SizzorsObsAlerts from "./pages/obs-alerts/SizzorsObsAlerts";
 
 import LooteriyaGamingObsAlerts from "./pages/obs-alerts/LooteriyaGamingObsAlerts";
 import ArtCreateObsAlerts from "./pages/obs-alerts/ArtCreateObsAlerts";
@@ -173,7 +173,7 @@ import ChiaGamingAudioPlayer from "./pages/audio-player/ChiaGamingAudioPlayer";
 import DemoStreamerAudioPlayer from "./pages/audio-player/DemoStreamerAudioPlayer";
 import TechGamerAudioPlayer from "./pages/audio-player/TechGamerAudioPlayer";
 import MusicStreamAudioPlayer from "./pages/audio-player/MusicStreamAudioPlayer";
-import FitnessFlowAudioPlayer from "./pages/audio-player/FitnessFlowAudioPlayer";
+import SizzorsAudioPlayer from "./pages/audio-player/SizzorsAudioPlayer";
 
 import LooteriyaGamingAudioPlayer from "./pages/audio-player/LooteriyaGamingAudioPlayer";
 import ArtCreateAudioPlayer from "./pages/audio-player/ArtCreateAudioPlayer";
@@ -250,7 +250,7 @@ const App = () => (
               
               <Route path="/looteriya_gaming" element={<LooteriyaGaming />} />
               <Route path="/artcreate" element={<ArtCreate />} />
-              <Route path="/fitnessflow" element={<FitnessFlow />} />
+              <Route path="/sizzors" element={<Sizzors />} />
               <Route path="/demostreamer" element={<DemoStreamer />} />
               <Route path="/demo2" element={<Demo2 />} />
               <Route path="/demo3" element={<Demo3 />} />
@@ -299,7 +299,7 @@ const App = () => (
               <Route path="/dashboard/ankit" element={<AnkitDashboard />} />
               <Route path="/dashboard/techgamer" element={<TechGamerDashboard />} />
               <Route path="/dashboard/musicstream" element={<MusicStreamDashboard />} />
-              <Route path="/dashboard/fitnessflow" element={<FitnessFlowDashboard />} />
+              <Route path="/dashboard/sizzors" element={<SizzorsDashboard />} />
               
               <Route path="/dashboard/looteriya_gaming" element={<LooteriyaGamingDashboard />} />
               <Route path="/dashboard/artcreate" element={<ArtCreateDashboard />} />
@@ -348,7 +348,7 @@ const App = () => (
               <Route path="/ankit/obs-alerts" element={<AnkitObsAlerts />} />
               <Route path="/techgamer/obs-alerts" element={<TechGamerObsAlerts />} />
               <Route path="/musicstream/obs-alerts" element={<MusicStreamObsAlerts />} />
-              <Route path="/fitnessflow/obs-alerts" element={<FitnessFlowObsAlerts />} />
+              <Route path="/sizzors/obs-alerts" element={<SizzorsObsAlerts />} />
               
               <Route path="/looteriya_gaming/obs-alerts" element={<LooteriyaGamingObsAlerts />} />
               <Route path="/artcreate/obs-alerts" element={<ArtCreateObsAlerts />} />
@@ -397,7 +397,7 @@ const App = () => (
               <Route path="/ankit/audio-player" element={<AnkitAudioPlayer />} />
               <Route path="/techgamer/audio-player" element={<TechGamerAudioPlayer />} />
               <Route path="/musicstream/audio-player" element={<MusicStreamAudioPlayer />} />
-              <Route path="/fitnessflow/audio-player" element={<FitnessFlowAudioPlayer />} />
+              <Route path="/sizzors/audio-player" element={<SizzorsAudioPlayer />} />
               
               <Route path="/looteriya_gaming/audio-player" element={<LooteriyaGamingAudioPlayer />} />
               <Route path="/artcreate/audio-player" element={<ArtCreateAudioPlayer />} />

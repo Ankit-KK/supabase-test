@@ -122,7 +122,7 @@ serve(async (req) => {
       'artcreate': 'artcreate_donations',
       'looteriya_gaming': 'looteriya_gaming_donations',
       'demostreamer': 'demostreamer_donations',
-      'fitnessflow': 'fitnessflow_donations',
+      'sizzors': 'sizzors_donations',
       'demo2': 'demo2_donations',
       'demo3': 'demo3_donations',
       'demo4': 'demo4_donations',

@@ -42,7 +42,7 @@ serve(async (req) => {
     const { data: streamerData, error: streamerError } = await supabaseClient
       .from('streamers')
       .select('id, hyperemotes_enabled, hyperemotes_min_amount')
-      .eq('streamer_slug', 'fitnessflow')
+      .eq('streamer_slug', 'sizzors')
       .single()
 
     if (streamerError || !streamerData) {
@@ -50,7 +50,7 @@ serve(async (req) => {
     }
 
     // Generate unique order ID
-    const orderId = `fitnessflow_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    const orderId = `sizzors_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
     // Create payment order with Cashfree
     const cashfreePayload = {
@@ -63,7 +63,7 @@ serve(async (req) => {
         customer_phone: phone,
       },
       order_meta: {
-        return_url: `${req.headers.get('origin')}/fitnessflow?order_id=${orderId}`,
+        return_url: `${req.headers.get('origin')}/sizzors?order_id=${orderId}`,
         notify_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/cashfree-webhook`,
       },
     }
@@ -92,7 +92,7 @@ serve(async (req) => {
 
     // Store donation in database
     const { error: insertError } = await supabaseClient
-      .from('fitnessflow_donations')
+      .from('sizzors_donations')
       .insert({
         order_id: orderId,
         streamer_id: streamerData.id,
@@ -120,7 +120,7 @@ serve(async (req) => {
       }
     )
   } catch (error) {
-    console.error('Error in create-payment-order-fitnessflow:', error)
+    console.error('Error in create-payment-order-sizzors:', error)
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       {

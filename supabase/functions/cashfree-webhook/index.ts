@@ -170,7 +170,7 @@ serve(async (req) => {
       if (orderId.startsWith('ankit_')) return 'ankit_donations';
       if (orderId.startsWith('musicstream_')) return 'musicstream_donations';
       if (orderId.startsWith('techgamer_')) return 'techgamer_donations';
-      if (orderId.startsWith('fitnessflow_')) return 'fitnessflow_donations';
+      if (orderId.startsWith('sizzors_')) return 'sizzors_donations';
       if (orderId.startsWith('artcreate_')) return 'artcreate_donations';
       if (orderId.startsWith('looteriya_gaming_')) return 'looteriya_gaming_donations';
       if (orderId.startsWith('demostreamer_')) return 'demostreamer_donations';
@@ -253,7 +253,7 @@ serve(async (req) => {
       if (orderId.startsWith('ankit_')) return 'ankit';
       if (orderId.startsWith('musicstream_')) return 'musicstream';
       if (orderId.startsWith('techgamer_')) return 'techgamer';
-      if (orderId.startsWith('fitnessflow_')) return 'fitnessflow';
+      if (orderId.startsWith('sizzors_')) return 'sizzors';
       if (orderId.startsWith('artcreate_')) return 'artcreate';
       if (orderId.startsWith('looteriya_gaming_')) return 'looteriya_gaming';
       if (orderId.startsWith('demostreamer_')) return 'demostreamer';
@@ -370,7 +370,7 @@ serve(async (req) => {
             if (orderId.startsWith('ankit_')) return 'upload-voice-message-ankit';
             if (orderId.startsWith('musicstream_')) return 'upload-voice-message-musicstream';
             if (orderId.startsWith('techgamer_')) return 'upload-voice-message-techgamer';
-            if (orderId.startsWith('fitnessflow_')) return 'upload-voice-message-fitnessflow';
+            if (orderId.startsWith('sizzors_')) return 'upload-voice-message-sizzors';
             if (orderId.startsWith('artcreate_')) return 'upload-voice-message-artcreate';
             if (orderId.startsWith('looteriya_gaming_')) return 'upload-voice-message-looteriya-gaming';
             if (orderId.startsWith('demostreamer_')) return 'upload-voice-message-demostreamer';

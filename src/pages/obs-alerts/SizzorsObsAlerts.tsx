@@ -3,8 +3,8 @@ import { AlertDisplay } from '@/components/AlertDisplay';
 import { usePusherAlerts } from '@/hooks/usePusherAlerts';
 import { usePusherConfig } from '@/hooks/usePusherConfig';
 
-const FitnessFlowObsAlerts = () => {
-  const { config: pusherConfig, loading: configLoading } = usePusherConfig('fitnessflow');
+const SizzorsObsAlerts = () => {
+  const { config: pusherConfig, loading: configLoading } = usePusherConfig('sizzors');
   
   const {
     currentAlert,
@@ -12,7 +12,7 @@ const FitnessFlowObsAlerts = () => {
     connectionStatus,
     triggerTestAlert,
   } = usePusherAlerts({
-    channelName: 'fitnessflow-alerts',
+    channelName: 'sizzors-alerts',
     pusherKey: pusherConfig?.key || '',
     pusherCluster: pusherConfig?.cluster || '',
   });
@@ -21,7 +21,7 @@ const FitnessFlowObsAlerts = () => {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black text-white">
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p>Loading Pusher configuration...</p>
         </div>
       </div>
@@ -33,19 +33,19 @@ const FitnessFlowObsAlerts = () => {
       <AlertDisplay
         donation={currentAlert}
         isVisible={isVisible}
-        streamerName="FitnessFlow"
-        streamerBrandColor="#f59e0b"
+        streamerName="Sizzors"
+        streamerBrandColor="#8b5cf6"
       />
       
       {/* Debug info (only visible in development) */}
       {process.env.NODE_ENV === 'development' && (
         <div className="fixed bottom-4 left-4 bg-black/80 text-white p-2 rounded text-xs space-y-1">
           <div>Status: {connectionStatus}</div>
-          <div>Channel: fitnessflow-alerts</div>
+          <div>Channel: sizzors-alerts</div>
           <div>Alert: {currentAlert ? 'Active' : 'None'}</div>
           <button 
             onClick={triggerTestAlert}
-            className="px-2 py-1 bg-orange-600 text-white rounded text-xs"
+            className="px-2 py-1 bg-purple-600 text-white rounded text-xs"
           >
             Test Alert
           </button>
@@ -55,4 +55,4 @@ const FitnessFlowObsAlerts = () => {
   );
 };
 
-export default FitnessFlowObsAlerts;
+export default SizzorsObsAlerts;
