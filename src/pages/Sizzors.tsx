@@ -499,8 +499,10 @@ const Sizzors = () => {
                     setHasVoiceRecording(hasRecording);
                     setVoiceDuration(duration);
                   }}
-                  maxDurationSeconds={60}
+                  maxDurationSeconds={getVoiceDuration(currentAmount)}
                   controller={voiceRecorder}
+                  currentAmount={currentAmount}
+                  requiredAmount={150}
                 />
               </div>
             )}
