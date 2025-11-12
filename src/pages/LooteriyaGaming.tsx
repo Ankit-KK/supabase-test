@@ -206,7 +206,7 @@ const LooteriyaGaming = () => {
         }}
       >
         {/* Dark overlay for readability */}
-        <div className="absolute inset-0 bg-black/70"></div>
+        <div className="absolute inset-0 bg-black/50"></div>
         
         {/* Card glow effect */}
         <div className="absolute inset-0 bg-gradient-to-r from-amber-500/20 via-amber-600/20 to-amber-400/20 opacity-50 blur-xl"></div>
