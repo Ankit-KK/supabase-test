@@ -53,17 +53,12 @@ export const useRealtimeSubscription = (options: RealtimeSubscriptionOptions) =>
     
     const tableMap: { [key: string]: string } = {
       'ankit': 'ankit_donations',
-      'chia_gaming': 'chia_gaming_donations',
-      'demostreamer': 'demostreamer_donations',
-      'musicstream': 'musicstream_donations',
-      'techgamer': 'techgamer_donations',
-      'fitnessflow': 'fitnessflow_donations',
-      'artcreate': 'artcreate_donations',
-      'codelive': 'codelive_donations',
-      'looteriya_gaming': 'looteriya_gaming_donations'
+      'chiaa_gaming': 'chiaa_gaming_donations',
+      'looteriya_gaming': 'looteriya_gaming_donations',
+      'sizzors': 'sizzors_donations'
     };
     
-    return tableMap[slug] || 'chia_gaming_donations';
+    return tableMap[slug] || 'chiaa_gaming_donations';
   }, []);
 
   const checkSupabaseHealth = useCallback(async (): Promise<boolean> => {
