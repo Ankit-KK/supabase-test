@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { name, amount, message, phone, voiceData, isHyperemote } = await req.json()
+    const { name, amount, message, phone, voiceMessageUrl, isHyperemote } = await req.json()
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -97,7 +97,7 @@ serve(async (req) => {
         payment_status: 'pending',
         moderation_status: 'pending',
         is_hyperemote: isHyperemoteValue,
-        temp_voice_data: voiceData || null
+        voice_message_url: voiceMessageUrl || null
       })
       .select()
       .single()

@@ -201,18 +201,37 @@ const ChiaGaming = () => {
     try {
       const amount = parseFloat(formData.amount);
 
-      // Prepare optional voice data before creating order
-      let tempVoice: string | null = null;
+      // Upload voice message BEFORE creating payment order
+      let voiceMessageUrl: string | null = null;
       if (donationType === 'voice' && voiceRecorder.audioBlob) {
-        console.log('Converting voice recording to base64 for temporary storage');
+        console.log('Uploading voice message before payment...');
         const reader = new FileReader();
-        tempVoice = await new Promise((resolve) => {
+        const voiceDataBase64 = await new Promise<string>((resolve) => {
           reader.onload = () => {
             const base64 = (reader.result as string).split(',')[1];
             resolve(base64);
           };
           reader.readAsDataURL(voiceRecorder.audioBlob!);
         });
+
+        // Upload voice message directly
+        const { data: uploadResult, error: uploadError } = await supabase.functions.invoke(
+          'upload-voice-message-direct',
+          {
+            body: { 
+              voiceData: voiceDataBase64, 
+              streamerSlug: 'chiaa_gaming'
+            }
+          }
+        );
+
+        if (uploadError) {
+          console.error('Voice upload error:', uploadError);
+          throw new Error('Failed to upload voice message');
+        }
+
+        voiceMessageUrl = uploadResult.voice_message_url;
+        console.log('Voice message uploaded successfully:', voiceMessageUrl);
       }
 
       // Create order via Supabase edge function
@@ -222,7 +241,7 @@ const ChiaGaming = () => {
           amount: amount,
           message: donationType === 'message' ? formData.message.trim() : donationType === 'voice' ? 'Voice message donation' : '',
           phone: phoneNumber,
-          voiceData: tempVoice
+          voiceMessageUrl: voiceMessageUrl
         }
       });
 

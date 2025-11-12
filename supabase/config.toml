@@ -50,14 +50,5 @@ verify_jwt = false
 [functions.create-payment-order-sizzors]
 verify_jwt = false
 
-[functions.upload-voice-message-ankit]
-verify_jwt = false
-
-[functions.upload-voice-message-chiagaming]
-verify_jwt = false
-
-[functions.upload-voice-message-looteriya-gaming]
-verify_jwt = false
-
-[functions.upload-voice-message-sizzors]
+[functions.upload-voice-message-direct]
 verify_jwt = false

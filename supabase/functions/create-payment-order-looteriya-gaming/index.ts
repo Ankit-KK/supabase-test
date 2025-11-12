@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { name, amount, message, phone, voiceData, isHyperemote } = await req.json()
+    const { name, amount, message, phone, voiceMessageUrl, isHyperemote } = await req.json()
 
     console.log('Creating Looteriya Gaming payment order:', { name, amount, message, phone, isHyperemote })
 
@@ -122,7 +122,7 @@ serve(async (req) => {
         order_id: orderId,
         payment_status: 'pending',
         moderation_status: 'pending',
-        temp_voice_data: voiceData,
+        voice_message_url: voiceMessageUrl || null,
         is_hyperemote: isHyperemote || false,
       })
       .select()

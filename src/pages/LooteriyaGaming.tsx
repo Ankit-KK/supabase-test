@@ -100,13 +100,37 @@ const LooteriyaGaming = () => {
     setIsProcessingPayment(true);
 
     try {
-      let voiceData = null;
+      // Upload voice message BEFORE creating payment order
+      let voiceMessageUrl: string | null = null;
       if (donationType === 'voice' && voiceRecorder.audioBlob) {
+        console.log('Uploading voice message before payment...');
         const reader = new FileReader();
-        voiceData = await new Promise<string>((resolve) => {
-          reader.onloadend = () => resolve(reader.result as string);
+        const voiceDataBase64 = await new Promise<string>((resolve) => {
+          reader.onloadend = () => {
+            const base64 = (reader.result as string).split(',')[1];
+            resolve(base64);
+          };
           reader.readAsDataURL(voiceRecorder.audioBlob!);
         });
+
+        // Upload voice message directly
+        const { data: uploadResult, error: uploadError } = await supabase.functions.invoke(
+          'upload-voice-message-direct',
+          {
+            body: { 
+              voiceData: voiceDataBase64, 
+              streamerSlug: 'looteriya_gaming'
+            }
+          }
+        );
+
+        if (uploadError) {
+          console.error('Voice upload error:', uploadError);
+          throw new Error('Failed to upload voice message');
+        }
+
+        voiceMessageUrl = uploadResult.voice_message_url;
+        console.log('Voice message uploaded successfully:', voiceMessageUrl);
       }
 
       const { data, error } = await supabase.functions.invoke('create-payment-order-looteriya-gaming', {
@@ -115,7 +139,7 @@ const LooteriyaGaming = () => {
           amount: parseFloat(formData.amount),
           message: donationType === 'text' ? formData.message : null,
           phone: phoneNumber,
-          voiceData: voiceData,
+          voiceMessageUrl: voiceMessageUrl,
           isHyperemote: donationType === 'hyperemote',
         },
       });

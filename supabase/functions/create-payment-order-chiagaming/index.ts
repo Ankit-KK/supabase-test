@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { name, amount, message, phone, voiceData, isHyperemote } = await req.json();
+    const { name, amount, message, phone, voiceMessageUrl, isHyperemote } = await req.json();
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -101,7 +101,7 @@ serve(async (req) => {
         payment_status: 'pending',
         moderation_status: isHyperemoteValue ? 'auto_approved' : (parseFloat(amount) >= 100 ? 'approved' : 'pending'),
         streamer_id: streamerData.id,
-        temp_voice_data: voiceData || null,
+        voice_message_url: voiceMessageUrl || null,
         is_hyperemote: isHyperemoteValue
       })
       .select()

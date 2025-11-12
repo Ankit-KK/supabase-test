@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { name, amount, message, phone, voiceData, isHyperemote } = await req.json()
+    const { name, amount, message, phone, voiceMessageUrl, isHyperemote } = await req.json()
 
     // Initialize Supabase client
     const supabaseClient = createClient(
@@ -99,7 +99,7 @@ serve(async (req) => {
         name: name,
         amount: amount,
         message: message || null,
-        temp_voice_data: voiceData || null,
+        voice_message_url: voiceMessageUrl || null,
         payment_status: 'pending',
         moderation_status: isHyperemoteValue ? 'auto_approved' : 'pending',
         is_hyperemote: isHyperemoteValue,
