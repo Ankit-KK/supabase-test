@@ -35,16 +35,11 @@ const EnhancedVoiceRecorder: React.FC<EnhancedVoiceRecorderProps> = ({
     playRecording,
     stopPlayback,
     clearRecording,
-    cleanup,
   } = controller ?? internalRecorder;
 
   useEffect(() => {
     onRecordingComplete(!!audioBlob, duration);
   }, [audioBlob, duration, onRecordingComplete]);
-
-  useEffect(() => {
-    return cleanup;
-  }, [cleanup]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

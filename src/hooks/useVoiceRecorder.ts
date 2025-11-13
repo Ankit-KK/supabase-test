@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
@@ -25,6 +25,13 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
   const startTimeRef = useRef<number>(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const selectedMimeTypeRef = useRef<string | undefined>(undefined);
+  const maxDurationRef = useRef<number>(maxDurationSeconds);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  // Update max duration ref when prop changes
+  useEffect(() => {
+    maxDurationRef.current = maxDurationSeconds;
+  }, [maxDurationSeconds]);
 
   const startRecording = useCallback(async () => {
     try {
@@ -36,6 +43,8 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
           sampleRate: 44100,
         } 
       });
+
+      streamRef.current = stream;
 
       const preferredTypes = ['audio/ogg;codecs=opus','audio/webm;codecs=opus','audio/webm'];
       const supported = (typeof MediaRecorder !== 'undefined' && (MediaRecorder as any).isTypeSupported)
@@ -69,7 +78,10 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
         }));
 
         // Stop all tracks
-        stream.getTracks().forEach(track => track.stop());
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(track => track.stop());
+          streamRef.current = null;
+        }
       };
 
       mediaRecorder.start(1000); // Collect data every second
@@ -81,9 +93,16 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
         const elapsed = Math.round((Date.now() - startTimeRef.current) / 1000);
         setState(prev => ({ ...prev, duration: elapsed }));
 
-        // Auto-stop at max duration
-        if (elapsed >= maxDurationSeconds) {
-          stopRecording();
+        // Auto-stop at max duration using ref (not stale closure)
+        if (elapsed >= maxDurationRef.current) {
+          // Stop recording immediately
+          if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+            mediaRecorderRef.current.stop();
+          }
+          if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+          }
         }
       }, 1000);
 
@@ -95,18 +114,23 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
         variant: "destructive",
       });
     }
-  }, [maxDurationSeconds]);
+  }, []);
 
   const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && state.isRecording) {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
-      
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
-      }
     }
-  }, [state.isRecording]);
+    
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+  }, []);
 
   const playRecording = useCallback(() => {
     if (state.audioUrl) {
@@ -145,9 +169,18 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
       audioRef.current.pause();
       audioRef.current = null;
     }
+    
+    // Stop any ongoing recording
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
     }
 
     setState({
@@ -160,36 +193,42 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
   }, [state.audioUrl]);
 
   const uploadRecording = useCallback(async (donationId: string): Promise<string | null> => {
-    if (!state.audioBlob) return null;
+    if (!state.audioBlob) {
+      console.error('No audio blob available');
+      return null;
+    }
 
     try {
-      console.log('Starting voice message upload for donation:', donationId);
-      const fileName = `${donationId}-${Date.now()}.webm`;
-      const filePath = `${fileName}`; // store at bucket root
+      // Generate unique filename
+      const timestamp = Date.now();
+      const random = Math.random().toString(36).substring(7);
+      const mimeType = state.audioBlob.type || 'audio/webm';
+      const extension = mimeType.includes('ogg') ? 'ogg' : 'webm';
+      const fileName = `voice_${donationId}_${timestamp}_${random}.${extension}`;
 
-      console.log('Uploading to path:', filePath);
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      console.log('Uploading voice message:', fileName, mimeType);
+
+      // Upload to storage
+      const { data, error } = await supabase.storage
         .from('voice-messages')
-        .upload(filePath, state.audioBlob, {
-          contentType: 'audio/webm',
-          upsert: false,
+        .upload(fileName, state.audioBlob, {
+          contentType: mimeType,
+          upsert: false
         });
 
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        throw uploadError;
+      if (error) {
+        console.error('Upload error:', error);
+        throw error;
       }
 
-      console.log('Upload successful:', uploadData);
-
-      // Bucket is public -> get public URL (no policy needed)
-      const { data: pub } = supabase.storage
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
         .from('voice-messages')
-        .getPublicUrl(filePath);
+        .getPublicUrl(fileName);
 
-      console.log('Public URL:', pub.publicUrl);
-      return pub.publicUrl;
-      
+      console.log('Voice message uploaded successfully:', publicUrl);
+      return publicUrl;
+
     } catch (error) {
       console.error('Error uploading voice message:', error);
       toast({
@@ -202,16 +241,21 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
   }, [state.audioBlob]);
 
   // Cleanup on unmount
-  const cleanup = useCallback(() => {
-    if (state.audioUrl) {
-      URL.revokeObjectURL(state.audioUrl);
-    }
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-    }
+  useEffect(() => {
+    return () => {
+      if (state.audioUrl) {
+        URL.revokeObjectURL(state.audioUrl);
+      }
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
   }, [state.audioUrl]);
 
   return {
@@ -222,7 +266,5 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
     stopPlayback,
     clearRecording,
     uploadRecording,
-    cleanup,
-    maxDurationSeconds,
   };
 };
