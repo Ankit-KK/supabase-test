@@ -229,8 +229,10 @@ const LooteriyaGaming = () => {
     if (value === 'hyperemote') {
       const minAmount = streamerSettings?.hyperemotes_min_amount || 50;
       setFormData(prev => ({ ...prev, amount: minAmount.toString(), message: '' }));
+    } else if (value === 'voice') {
+      setFormData(prev => ({ ...prev, amount: '150', message: '' }));
     } else {
-      setFormData(prev => ({ ...prev, message: '' }));
+      setFormData(prev => ({ ...prev, amount: '40', message: '' }));
     }
   };
 
@@ -308,7 +310,7 @@ const LooteriyaGaming = () => {
                   <div className="text-center">
                     <div className="text-base mb-1">💬</div>
                     <div className="font-medium text-xs">Text Message</div>
-                    <div className="text-xs text-muted-foreground">Min: ₹1</div>
+                    <div className="text-xs text-muted-foreground">Min: ₹40</div>
                   </div>
                 </button>
                 <button
@@ -323,7 +325,7 @@ const LooteriyaGaming = () => {
                   <div className="text-center">
                     <div className="text-base mb-1">🎤</div>
                     <div className="font-medium text-xs">Voice Message</div>
-                    <div className="text-xs text-muted-foreground">Min: ₹2</div>
+                    <div className="text-xs text-muted-foreground">Min: ₹150</div>
                   </div>
                 </button>
                 {streamerSettings?.hyperemotes_enabled && (
@@ -332,16 +334,14 @@ const LooteriyaGaming = () => {
                     onClick={() => handleDonationTypeChange('hyperemote')}
                     className={`p-3 rounded-lg border-2 transition-all ${
                       donationType === 'hyperemote'
-                        ? 'border-purple-500 bg-purple-500/10'
-                        : 'border-purple-500/30 hover:border-purple-500/50'
+                        ? 'border-amber-500 bg-amber-500/10'
+                        : 'border-amber-500/30 hover:border-amber-500/50'
                     }`}
                   >
                     <div className="text-center">
-                      <div className="text-base mb-1">🎉</div>
-                      <div className="font-medium text-xs">Hyperemotes</div>
-                      <div className="text-xs text-muted-foreground">
-                        ₹{streamerSettings?.hyperemotes_min_amount || 4}+ celebration
-                      </div>
+                      <div className="text-base mb-1">✨</div>
+                      <div className="font-medium text-xs">Hyperemote</div>
+                      <div className="text-xs text-muted-foreground">Min: ₹50</div>
                     </div>
                   </button>
                 )}
