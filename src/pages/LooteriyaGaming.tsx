@@ -31,7 +31,16 @@ const LooteriyaGaming = () => {
   const [isPhoneDialogOpen, setIsPhoneDialogOpen] = useState(false);
   const [streamerSettings, setStreamerSettings] = useState<{ hyperemotes_enabled: boolean; hyperemotes_min_amount: number } | null>(null);
   const navigate = useNavigate();
-  const voiceRecorder = useVoiceRecorder(120);
+  // Calculate voice duration based on amount
+  const getVoiceDuration = (amount: number) => {
+    if (amount >= 500) return 30;
+    if (amount >= 250) return 25;
+    if (amount >= 150) return 15;
+    return 15; // default
+  };
+
+  const currentAmount = parseFloat(formData.amount) || 0;
+  const voiceRecorder = useVoiceRecorder(getVoiceDuration(currentAmount));
 
   useEffect(() => {
     const initializeCashfree = async () => {
@@ -78,6 +87,20 @@ const LooteriyaGaming = () => {
     const amount = parseFloat(formData.amount);
     if (isNaN(amount) || amount <= 0) {
       toast.error('Please enter a valid amount');
+      return;
+    }
+
+    // Validate minimum amounts based on donation type
+    if (donationType === 'text' && amount < 40) {
+      toast.error('Minimum amount for text message is ₹40');
+      return;
+    }
+    if (donationType === 'voice' && amount < 150) {
+      toast.error('Minimum amount for voice message is ₹150');
+      return;
+    }
+    if (donationType === 'hyperemote' && amount < 50) {
+      toast.error('Minimum amount for hyperemotes is ₹50');
       return;
     }
 

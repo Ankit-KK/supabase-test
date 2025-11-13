@@ -67,6 +67,17 @@ serve(async (req) => {
       throw new Error('Invalid amount')
     }
 
+    // Validate minimum amounts based on donation type
+    if (isHyperemote && amountNum < 50) {
+      throw new Error('Minimum amount for hyperemotes is ₹50')
+    }
+    if (voiceMessageUrl && amountNum < 150) {
+      throw new Error('Minimum amount for voice messages is ₹150')
+    }
+    if (message && !voiceMessageUrl && !isHyperemote && amountNum < 40) {
+      throw new Error('Minimum amount for text messages is ₹40')
+    }
+
     // Generate unique order ID
     const orderId = `looteriya_gaming_${Date.now()}_${Math.random().toString(36).substring(7)}`
 

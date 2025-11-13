@@ -31,8 +31,20 @@ serve(async (req) => {
       throw new Error('Name and amount are required');
     }
 
-    if (parseFloat(amount) < 1 || parseFloat(amount) > 100000) {
+    const amountNum = parseFloat(amount);
+    if (amountNum < 1 || amountNum > 100000) {
       throw new Error('Invalid amount: must be between 1 and 100000');
+    }
+
+    // Validate minimum amounts based on donation type
+    if (isHyperemote && amountNum < 50) {
+      throw new Error('Minimum amount for hyperemotes is ₹50');
+    }
+    if (voiceMessageUrl && amountNum < 150) {
+      throw new Error('Minimum amount for voice messages is ₹150');
+    }
+    if (message && !voiceMessageUrl && !isHyperemote && amountNum < 40) {
+      throw new Error('Minimum amount for text messages is ₹40');
     }
 
     if (!phone || !/^[6-9]\d{9}$/.test(phone)) {

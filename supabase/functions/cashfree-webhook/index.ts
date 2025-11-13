@@ -363,117 +363,250 @@ serve(async (req) => {
 
       // Audio channel events are now sent AFTER voice/TTS processing completes below
 
-      // Handle voice message upload if voice data exists
-      if (updatedDonation?.temp_voice_data) {
-        try {
-          const getVoiceUploadFunction = (orderId: string) => {
-            if (orderId.startsWith('ankit_')) return 'upload-voice-message-ankit';
-            if (orderId.startsWith('musicstream_')) return 'upload-voice-message-musicstream';
-            if (orderId.startsWith('techgamer_')) return 'upload-voice-message-techgamer';
-            if (orderId.startsWith('sizzors_')) return 'upload-voice-message-sizzors';
-            if (orderId.startsWith('artcreate_')) return 'upload-voice-message-artcreate';
-            if (orderId.startsWith('looteriya_gaming_')) return 'upload-voice-message-looteriya-gaming';
-            if (orderId.startsWith('demostreamer_')) return 'upload-voice-message-demostreamer';
-            if (orderId.startsWith('demo2_')) return 'upload-voice-message-demo2';
-            if (orderId.startsWith('demo3_')) return 'upload-voice-message-demo3';
-            if (orderId.startsWith('demo4_')) return 'upload-voice-message-demo4';
-            if (orderId.startsWith('streamer17_')) return 'upload-voice-message-streamer17';
-            if (orderId.startsWith('streamer18_')) return 'upload-voice-message-streamer18';
-            if (orderId.startsWith('streamer19_')) return 'upload-voice-message-streamer19';
-            if (orderId.startsWith('streamer20_')) return 'upload-voice-message-streamer20';
-            if (orderId.startsWith('streamer21_')) return 'upload-voice-message-streamer21';
-            if (orderId.startsWith('streamer22_')) return 'upload-voice-message-streamer22';
-            if (orderId.startsWith('streamer23_')) return 'upload-voice-message-streamer23';
-            if (orderId.startsWith('streamer24_')) return 'upload-voice-message-streamer24';
-            if (orderId.startsWith('streamer25_')) return 'upload-voice-message-streamer25';
-            return 'upload-voice-message'; // default for chia_gaming
-          };
+      // NEW DONATION LOGIC - Only for looteriya_gaming, chiaa_gaming, and sizzors
+      const isNewStreamer = ['looteriya_gaming', 'chiaa_gaming', 'sizzors'].includes(streamerSlug);
+      
+      if (isNewStreamer) {
+        // 1. HYPEREMOTES - NO TTS, just visual effects
+        if (updatedDonation.is_hyperemote) {
+          console.log('Hyperemote donation - skipping TTS, visual alert only:', order_id);
+          // Alert already sent to dashboard via Pusher above
+          // NO TTS or audio channel events for hyperemotes
+        }
+        
+        // 2. VOICE MESSAGES - Generate announcement TTS + play voice
+        else if (updatedDonation.voice_message_url) {
+          console.log('Voice message donation - generating announcement TTS:', order_id);
           
-          const voiceUploadFunction = getVoiceUploadFunction(order_id);
-
-          // Wait for voice message upload to complete
-          const { data: voiceData, error: voiceError } = await supabase.functions.invoke(voiceUploadFunction, {
-            body: { order_id }
-          })
-
-          if (voiceError) {
-            console.error('Voice upload error:', voiceError)
-          } else if (voiceData?.voice_message_url) {
-            // Send audio event now that voice URL is ready
-            try {
+          try {
+            // Generate announcement TTS: "{Username} sent a Voice message"
+            const { data: announcementTTS, error: announcementError } = await supabase.functions.invoke('generate-donation-tts', {
+              body: {
+                username: updatedDonation.name,
+                amount: updatedDonation.amount,
+                message: null,
+                donationId: updatedDonation.id,
+                streamerId: updatedDonation.streamer_id,
+                isVoiceAnnouncement: true
+              }
+            });
+            
+            if (announcementError) {
+              console.error('Announcement TTS generation error:', announcementError);
+            } else if (announcementTTS?.audioUrl) {
+              console.log('Announcement TTS generated successfully, sending to audio channel');
+              
+              // Send audio event with BOTH announcement TTS and voice URL
               const audioSlug = streamerSlug === 'chiaa_gaming' ? 'chia_gaming' : streamerSlug;
               const audioChannel = `${audioSlug}-audio`;
-              console.log(`Publishing voice audio to channel: ${audioChannel}`);
               
               await pusher.trigger(audioChannel, 'new-audio-message', {
                 id: updatedDonation.id,
                 name: updatedDonation.name,
                 amount: updatedDonation.amount,
-                message: updatedDonation.message,
-                voice_message_url: voiceData.voice_message_url,
+                message: null,
+                announcement_tts_url: announcementTTS.audioUrl, // Play this first
+                voice_message_url: updatedDonation.voice_message_url, // Then play this
                 tts_audio_url: null,
                 created_at: updatedDonation.created_at,
               });
               
-              console.log(`✅ Pusher voice audio event sent to ${audioChannel}`);
-            } catch (pusherError) {
-              console.error('❌ Pusher (voice audio) trigger error:', pusherError);
+              console.log(`✅ Voice message with announcement sent to ${audioChannel}`);
             }
+          } catch (error) {
+            console.error('Voice message announcement error:', error);
           }
-        } catch (voiceError) {
-          console.error('Voice upload trigger error:', voiceError)
         }
-      }
-      // Handle TTS generation for text-only donations (₹2+)
-      else if (updatedDonation?.message && !updatedDonation?.tts_audio_url && updatedDonation.amount >= 2) {
-        try {
-          console.log('Triggering TTS generation for text donation (₹2+):', order_id)
+        
+        // 3. TEXT MESSAGES - Conditional TTS based on amount
+        else if (updatedDonation.message) {
+          // ₹40-69: Display only, NO TTS
+          if (updatedDonation.amount >= 40 && updatedDonation.amount < 70) {
+            console.log('Text donation ₹40-69 - displaying without TTS:', order_id);
+            // Alert already sent to dashboard, no audio event needed
+          }
           
-          // Wait for TTS generation to complete
-          const { data: ttsData, error: ttsError } = await supabase.functions.invoke('generate-donation-tts', {
-            body: {
-              username: updatedDonation.name,
-              amount: updatedDonation.amount,
-              message: updatedDonation.message,
-              donationId: updatedDonation.id,
-              streamerId: updatedDonation.streamer_id
-            }
-          })
-
-          if (ttsError) {
-            console.error('TTS generation error:', ttsError)
-          } else if (ttsData?.audioUrl) {
-            console.log('TTS generation completed successfully for:', order_id)
+          // ₹70+: Display + Generate TTS
+          else if (updatedDonation.amount >= 70) {
+            console.log('Text donation ₹70+ - generating TTS:', order_id);
             
-            // Send audio event now that TTS URL is ready
             try {
-              const audioSlug = streamerSlug === 'chiaa_gaming' ? 'chia_gaming' : streamerSlug;
-              const audioChannel = `${audioSlug}-audio`;
-              console.log(`Publishing TTS audio to channel: ${audioChannel}`);
-              
-              await pusher.trigger(audioChannel, 'new-audio-message', {
-                id: updatedDonation.id,
-                name: updatedDonation.name,
-                amount: updatedDonation.amount,
-                message: updatedDonation.message,
-                voice_message_url: null,
-                tts_audio_url: ttsData.audioUrl,
-                created_at: updatedDonation.created_at,
+              const { data: ttsData, error: ttsError } = await supabase.functions.invoke('generate-donation-tts', {
+                body: {
+                  username: updatedDonation.name,
+                  amount: updatedDonation.amount,
+                  message: updatedDonation.message,
+                  donationId: updatedDonation.id,
+                  streamerId: updatedDonation.streamer_id,
+                  isVoiceAnnouncement: false
+                }
               });
               
-              console.log(`✅ Pusher TTS audio event sent to ${audioChannel}`);
-            } catch (pusherError) {
-              console.error('❌ Pusher (TTS audio) trigger error:', pusherError);
+              if (ttsError) {
+                console.error('TTS generation error:', ttsError);
+              } else if (ttsData?.audioUrl) {
+                console.log('TTS generation completed successfully');
+                
+                // Send audio event with TTS
+                const audioSlug = streamerSlug === 'chiaa_gaming' ? 'chia_gaming' : streamerSlug;
+                const audioChannel = `${audioSlug}-audio`;
+                
+                await pusher.trigger(audioChannel, 'new-audio-message', {
+                  id: updatedDonation.id,
+                  name: updatedDonation.name,
+                  amount: updatedDonation.amount,
+                  message: updatedDonation.message,
+                  tts_audio_url: ttsData.audioUrl,
+                  voice_message_url: null,
+                  announcement_tts_url: null,
+                  created_at: updatedDonation.created_at,
+                });
+                
+                console.log(`✅ TTS audio sent to ${audioChannel}`);
+              }
+            } catch (error) {
+              console.error('TTS generation error:', error);
             }
           }
-        } catch (ttsError) {
-          console.error('TTS generation trigger error:', ttsError)
         }
-      }
-      // Handle text-only donations below ₹70 (no TTS)
-      else if (updatedDonation?.message && updatedDonation.amount < 70) {
-        console.log('Text donation below ₹70 - skipping TTS generation:', order_id)
-        // Donation is already sent to dashboard via line 241, no additional processing needed
+      } 
+      // OLD STREAMERS LOGIC (ankit, etc.) - Keep existing behavior
+      else {
+        // Handle voice message upload if voice data exists
+        if (updatedDonation?.temp_voice_data) {
+          try {
+            const getVoiceUploadFunction = (orderId: string) => {
+              if (orderId.startsWith('ankit_')) return 'upload-voice-message-ankit';
+              if (orderId.startsWith('musicstream_')) return 'upload-voice-message-musicstream';
+              if (orderId.startsWith('techgamer_')) return 'upload-voice-message-techgamer';
+              if (orderId.startsWith('artcreate_')) return 'upload-voice-message-artcreate';
+              if (orderId.startsWith('demostreamer_')) return 'upload-voice-message-demostreamer';
+              if (orderId.startsWith('demo2_')) return 'upload-voice-message-demo2';
+              if (orderId.startsWith('demo3_')) return 'upload-voice-message-demo3';
+              if (orderId.startsWith('demo4_')) return 'upload-voice-message-demo4';
+              if (orderId.startsWith('streamer17_')) return 'upload-voice-message-streamer17';
+              if (orderId.startsWith('streamer18_')) return 'upload-voice-message-streamer18';
+              if (orderId.startsWith('streamer19_')) return 'upload-voice-message-streamer19';
+              if (orderId.startsWith('streamer20_')) return 'upload-voice-message-streamer20';
+              if (orderId.startsWith('streamer21_')) return 'upload-voice-message-streamer21';
+              if (orderId.startsWith('streamer22_')) return 'upload-voice-message-streamer22';
+              if (orderId.startsWith('streamer23_')) return 'upload-voice-message-streamer23';
+              if (orderId.startsWith('streamer24_')) return 'upload-voice-message-streamer24';
+              if (orderId.startsWith('streamer25_')) return 'upload-voice-message-streamer25';
+              if (orderId.startsWith('streamer26_')) return 'upload-voice-message-streamer26';
+              if (orderId.startsWith('streamer27_')) return 'upload-voice-message-streamer27';
+              if (orderId.startsWith('streamer28_')) return 'upload-voice-message-streamer28';
+              if (orderId.startsWith('streamer29_')) return 'upload-voice-message-streamer29';
+              if (orderId.startsWith('streamer30_')) return 'upload-voice-message-streamer30';
+              if (orderId.startsWith('streamer31_')) return 'upload-voice-message-streamer31';
+              if (orderId.startsWith('streamer32_')) return 'upload-voice-message-streamer32';
+              if (orderId.startsWith('streamer33_')) return 'upload-voice-message-streamer33';
+              if (orderId.startsWith('streamer34_')) return 'upload-voice-message-streamer34';
+              if (orderId.startsWith('streamer35_')) return 'upload-voice-message-streamer35';
+              if (orderId.startsWith('streamer36_')) return 'upload-voice-message-streamer36';
+              if (orderId.startsWith('streamer37_')) return 'upload-voice-message-streamer37';
+              if (orderId.startsWith('streamer38_')) return 'upload-voice-message-streamer38';
+              if (orderId.startsWith('streamer39_')) return 'upload-voice-message-streamer39';
+              if (orderId.startsWith('streamer40_')) return 'upload-voice-message-streamer40';
+              if (orderId.startsWith('streamer41_')) return 'upload-voice-message-streamer41';
+              if (orderId.startsWith('streamer42_')) return 'upload-voice-message-streamer42';
+              if (orderId.startsWith('streamer43_')) return 'upload-voice-message-streamer43';
+              if (orderId.startsWith('streamer44_')) return 'upload-voice-message-streamer44';
+              if (orderId.startsWith('streamer45_')) return 'upload-voice-message-streamer45';
+              if (orderId.startsWith('streamer46_')) return 'upload-voice-message-streamer46';
+              return 'upload-voice-message-chiagaming'; // default
+            };
+
+            const uploadFunction = getVoiceUploadFunction(order_id);
+            console.log(`Uploading voice message using function: ${uploadFunction}`)
+
+            const { data: voiceData, error: voiceError } = await supabase.functions.invoke(uploadFunction, {
+              body: {
+                voiceData: updatedDonation.temp_voice_data,
+                donationId: updatedDonation.id,
+                orderId: order_id
+              }
+            })
+
+            if (voiceError) {
+              console.error('Voice upload error:', voiceError)
+            } else if (voiceData?.voice_message_url) {
+              // Send audio event now that voice URL is ready
+              try {
+                const audioSlug = streamerSlug === 'chiaa_gaming' ? 'chia_gaming' : streamerSlug;
+                const audioChannel = `${audioSlug}-audio`;
+                console.log(`Publishing voice audio to channel: ${audioChannel}`);
+                
+                await pusher.trigger(audioChannel, 'new-audio-message', {
+                  id: updatedDonation.id,
+                  name: updatedDonation.name,
+                  amount: updatedDonation.amount,
+                  message: updatedDonation.message,
+                  voice_message_url: voiceData.voice_message_url,
+                  tts_audio_url: null,
+                  created_at: updatedDonation.created_at,
+                });
+                
+                console.log(`✅ Pusher voice audio event sent to ${audioChannel}`);
+              } catch (pusherError) {
+                console.error('❌ Pusher (voice audio) trigger error:', pusherError);
+              }
+            }
+          } catch (voiceError) {
+            console.error('Voice upload trigger error:', voiceError)
+          }
+        }
+        // Handle TTS generation for text-only donations (₹2+)
+        else if (updatedDonation?.message && !updatedDonation?.tts_audio_url && updatedDonation.amount >= 2) {
+          try {
+            console.log('Triggering TTS generation for text donation (₹2+):', order_id)
+            
+            // Wait for TTS generation to complete
+            const { data: ttsData, error: ttsError } = await supabase.functions.invoke('generate-donation-tts', {
+              body: {
+                username: updatedDonation.name,
+                amount: updatedDonation.amount,
+                message: updatedDonation.message,
+                donationId: updatedDonation.id,
+                streamerId: updatedDonation.streamer_id
+              }
+            })
+
+            if (ttsError) {
+              console.error('TTS generation error:', ttsError)
+            } else if (ttsData?.audioUrl) {
+              console.log('TTS generation completed successfully for:', order_id)
+              
+              // Send audio event now that TTS URL is ready
+              try {
+                const audioSlug = streamerSlug === 'chiaa_gaming' ? 'chia_gaming' : streamerSlug;
+                const audioChannel = `${audioSlug}-audio`;
+                console.log(`Publishing TTS audio to channel: ${audioChannel}`);
+                
+                await pusher.trigger(audioChannel, 'new-audio-message', {
+                  id: updatedDonation.id,
+                  name: updatedDonation.name,
+                  amount: updatedDonation.amount,
+                  message: updatedDonation.message,
+                  voice_message_url: null,
+                  tts_audio_url: ttsData.audioUrl,
+                  created_at: updatedDonation.created_at,
+                });
+                
+                console.log(`✅ Pusher TTS audio event sent to ${audioChannel}`);
+              } catch (pusherError) {
+                console.error('❌ Pusher (TTS audio) trigger error:', pusherError);
+              }
+            }
+          } catch (ttsError) {
+            console.error('TTS generation trigger error:', ttsError)
+          }
+        }
+        // Handle text-only donations below ₹70 (no TTS)
+        else if (updatedDonation?.message && updatedDonation.amount < 70) {
+          console.log('Text donation below ₹70 - skipping TTS generation:', order_id)
+          // Donation is already sent to dashboard via line 241, no additional processing needed
+        }
       }
 
       // Send Telegram notification to moderators

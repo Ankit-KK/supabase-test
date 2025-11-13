@@ -39,9 +39,9 @@ const Sizzors = () => {
   // Calculate voice recording duration based on amount
   const getVoiceDuration = (amount: number) => {
     if (amount >= 500) return 30;
-    if (amount >= 250) return 20;
+    if (amount >= 250) return 25;
     if (amount >= 150) return 15;
-    return 10;
+    return 15;
   };
 
   // Voice recorder instance - dynamically update duration based on amount
@@ -152,32 +152,30 @@ const Sizzors = () => {
     // Validate minimum amounts based on donation type
     if (donationType === 'message' && amount < 40) {
       toast({
-        title: "Insufficient Amount",
-        description: "Text messages require a minimum donation of ₹40.",
+        title: "Minimum Amount Required",
+        description: "Minimum amount for text message is ₹40",
         variant: "destructive",
       });
       return;
     }
-
     if (donationType === 'voice' && amount < 150) {
       toast({
-        title: "Insufficient Amount",
-        description: "Voice messages require a minimum donation of ₹150.",
+        title: "Minimum Amount Required",
+        description: "Minimum amount for voice message is ₹150",
         variant: "destructive",
       });
       return;
     }
-
-    if (!cashfree) {
+    if (donationType === 'hyperemote' && amount < 50) {
       toast({
-        title: "Payment System Not Ready",
-        description: "Please wait for the payment system to load or refresh the page.",
+        title: "Minimum Amount Required",
+        description: "Minimum amount for hyperemotes is ₹50",
         variant: "destructive",
       });
       return;
     }
 
-    // Show phone dialog after validation passes
+    // Open phone number dialog
     setShowPhoneDialog(true);
   };
 

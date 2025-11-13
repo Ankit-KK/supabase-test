@@ -78,7 +78,7 @@ serve(async (req) => {
   }
 
   try {
-    const { username, amount, message, donationId, streamerId } = await req.json();
+    const { username, amount, message, donationId, streamerId, isVoiceAnnouncement } = await req.json();
 
     if (!username || !amount) {
       throw new Error('Username and amount are required');
@@ -144,10 +144,19 @@ serve(async (req) => {
 
     console.log('Using donation table:', donationTable);
 
-    // Format the donation announcement
-    const donationText = message 
-      ? `${username} donated ${amount} rupees. ${message}`
-      : `${username} donated ${amount} rupees. Thank you!`;
+    // Format the donation text for TTS
+    let donationText: string;
+    
+    if (isVoiceAnnouncement) {
+      // Voice message announcement: just announce the sender
+      donationText = `${username} sent a Voice message`;
+    } else if (message) {
+      // Text message with content
+      donationText = `${username} donated ${amount} rupees. ${message}`;
+    } else {
+      // Fallback
+      donationText = `${username} donated ${amount} rupees. Thank you!`;
+    }
 
     console.log('Generating TTS with Sarvam AI for:', donationText);
 
