@@ -215,6 +215,7 @@ serve(async (req) => {
       if (orderId.startsWith('streamer44_')) return 'streamer44_donations';
       if (orderId.startsWith('streamer45_')) return 'streamer45_donations';
       if (orderId.startsWith('streamer46_')) return 'streamer46_donations';
+      if (orderId.startsWith('damask_plays_')) return 'damask_plays_donations';
       return 'chiaa_gaming_donations'; // default for chia_gaming
     };
     
@@ -298,6 +299,7 @@ serve(async (req) => {
       if (orderId.startsWith('streamer44_')) return 'streamer44';
       if (orderId.startsWith('streamer45_')) return 'streamer45';
       if (orderId.startsWith('streamer46_')) return 'streamer46';
+      if (orderId.startsWith('damask_plays_')) return 'damask_plays';
       return 'chiaa_gaming'; // default
     };
 
@@ -363,8 +365,8 @@ serve(async (req) => {
 
       // Audio channel events are now sent AFTER voice/TTS processing completes below
 
-      // NEW DONATION LOGIC - Only for looteriya_gaming, chiaa_gaming, and sizzors
-      const isNewStreamer = ['looteriya_gaming', 'chiaa_gaming', 'sizzors'].includes(streamerSlug);
+      // NEW DONATION LOGIC - Only for looteriya_gaming, chiaa_gaming, sizzors, and damask_plays
+      const isNewStreamer = ['looteriya_gaming', 'chiaa_gaming', 'sizzors', 'damask_plays'].includes(streamerSlug);
       
       if (isNewStreamer) {
         // 1. HYPEREMOTES - NO TTS, just visual effects

@@ -50,5 +50,8 @@ verify_jwt = false
 [functions.create-payment-order-sizzors]
 verify_jwt = false
 
+[functions.create-payment-order-damask-plays]
+verify_jwt = false
+
 [functions.upload-voice-message-direct]
 verify_jwt = false
