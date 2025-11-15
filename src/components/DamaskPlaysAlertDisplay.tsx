@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { Music } from 'lucide-react';
 
 interface Donation {
   id: string;
@@ -253,53 +254,46 @@ export const DamaskPlaysAlertDisplay: React.FC<DamaskPlaysAlertDisplayProps> = (
     );
   }
 
-  // Regular donation alert (non-hyperemote)
+  // Regular donation alert with HyperChat gradient (matching Ankit exactly)
   return (
-    <div className="fixed bottom-0 left-0 right-0 flex items-center justify-center p-8 pointer-events-none z-50">
+    <div className="fixed inset-0 pointer-events-none z-50">
       <div 
-        className="backdrop-blur-xl rounded-2xl shadow-2xl p-8 max-w-2xl w-full animate-in slide-in-from-bottom-5 duration-500"
+        className={`
+          absolute bottom-[10%] left-1/2 -translate-x-1/2
+          text-white text-center
+          flex flex-col items-center gap-1.5
+          px-8 py-4 rounded-xl
+          ${isVisible ? 'opacity-100' : 'opacity-0'}
+          transition-opacity duration-600
+        `}
         style={{
-          background: `linear-gradient(135deg, ${streamerBrandColor}15 0%, ${streamerBrandColor}05 100%)`,
-          border: `2px solid ${streamerBrandColor}40`,
+          background: 'linear-gradient(90deg, rgba(0, 122, 255, 0.6), rgba(144, 0, 255, 0.6))',
+          boxShadow: '0 0 25px rgba(144, 0, 255, 0.4)',
+          letterSpacing: '0.4px',
         }}
       >
-        <div className="flex items-center gap-6 mb-4">
-          <div 
-            className="w-16 h-16 rounded-full flex items-center justify-center text-3xl font-bold shadow-lg"
-            style={{
-              background: `linear-gradient(135deg, ${streamerBrandColor} 0%, ${streamerBrandColor}dd 100%)`,
-              color: 'white',
-            }}
-          >
-            ₹
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-2xl font-bold text-white">{donation.name}</h3>
-              <span 
-                className="text-2xl font-bold px-4 py-1 rounded-full"
-                style={{
-                  background: `${streamerBrandColor}30`,
-                  color: streamerBrandColor,
-                }}
-              >
-                ₹{donation.amount}
-              </span>
-            </div>
-            {donation.voice_message_url && (
-              <div className="flex items-center gap-2 text-white/80">
-                <span className="text-lg">🎤 Voice Message</span>
-              </div>
-            )}
-          </div>
+        {/* Name and Amount */}
+        <div className="text-[1.2rem]">
+          <span className="font-bold">{donation.name}</span> donated{' '}
+          <span className="font-bold">₹{donation.amount}</span>
         </div>
-        
+
+        {/* Voice Message Indicator */}
+        {donation.voice_message_url && (
+          <div className="inline-flex items-center gap-2 text-sm">
+            <Music className="w-4 h-4" />
+            <span>🎵 Voice Message</span>
+          </div>
+        )}
+
+        {/* Message with Typing Effect */}
         {donation.message && (
-          <div className="mt-4 p-4 rounded-xl bg-white/10 backdrop-blur-sm">
-            <p className="text-xl text-white leading-relaxed">
-              {displayedMessage}
-              {isTyping && <span className="animate-pulse">|</span>}
-            </p>
+          <div 
+            className="text-base font-normal min-h-[1.2em]"
+            style={{ opacity: 0.9, color: '#f9f9f9' }}
+          >
+            "{donation.voice_message_url ? donation.message : displayedMessage}"
+            {isTyping && <span className="animate-pulse ml-1">|</span>}
           </div>
         )}
       </div>
