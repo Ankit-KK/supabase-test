@@ -33,6 +33,50 @@ const DamaskPlays = () => {
   const [selectedGif, setSelectedGif] = useState<string>('');
   const navigate = useNavigate();
   
+  const getEffectDescription = (gifName: string): { title: string; description: string; icon: string } => {
+    const name = gifName.replace('.gif', '').toLowerCase();
+    
+    const effects: Record<string, { title: string; description: string; icon: string }> = {
+      'rain': { 
+        title: '🌧️ Rain Effect', 
+        description: 'Multiple emotes rain down from the top',
+        icon: '🌧️'
+      },
+      'spiral': { 
+        title: '🌀 Spiral Effect', 
+        description: 'Emotes spiral around the screen',
+        icon: '🌀'
+      },
+      'explode': { 
+        title: '💥 Explosion Effect', 
+        description: 'Emotes explode from the center outward',
+        icon: '💥'
+      },
+      'float': { 
+        title: '✨ Float Effect', 
+        description: 'Emotes gently float upward',
+        icon: '✨'
+      },
+      'bounce': { 
+        title: '🎾 Bounce Effect', 
+        description: 'Emotes bounce across the screen',
+        icon: '🎾'
+      },
+    };
+    
+    for (const [key, effect] of Object.entries(effects)) {
+      if (name.includes(key)) {
+        return effect;
+      }
+    }
+    
+    return { 
+      title: '🎭 Custom Effect', 
+      description: name.replace(/-/g, ' ').replace(/_/g, ' '),
+      icon: '🎭'
+    };
+  };
+  
   const getVoiceDuration = (amount: number) => {
     if (amount >= 500) return 30;
     if (amount >= 250) return 25;
@@ -441,34 +485,42 @@ const DamaskPlays = () => {
 
             {donationType === 'hyperemote' && (
               <div className="space-y-2">
-                <Label className="text-sm text-emerald-500">Choose Your Hyperemote GIF</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  {availableGifs.map((gif) => (
-                    <div
-                      key={gif.name}
-                      onClick={() => setSelectedGif(gif.name)}
-                      className={`cursor-pointer rounded-lg border-2 overflow-hidden transition-all hover:scale-105 ${
-                        selectedGif === gif.name
-                          ? 'border-emerald-500 ring-2 ring-emerald-500/50'
-                          : 'border-emerald-500/30 hover:border-emerald-500/50'
-                      }`}
-                    >
-                      <img
-                        src={gif.url}
-                        alt={gif.name.replace('.gif', '')}
-                        className="w-full h-24 object-cover"
-                      />
-                      <div className="p-1 bg-card/50 backdrop-blur">
-                        <p className="text-[10px] text-center text-foreground font-medium truncate">
-                          {gif.name.replace('.gif', '').replace(/-/g, ' ')}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                <Label className="text-sm text-emerald-500">Choose Your Hyperemote Effect</Label>
+                <div className="grid grid-cols-1 gap-2 max-h-[300px] overflow-y-auto">
+                  {availableGifs.map((gif) => {
+                    const effect = getEffectDescription(gif.name);
+                    return (
+                      <button
+                        key={gif.name}
+                        type="button"
+                        onClick={() => setSelectedGif(gif.name)}
+                        className={`p-3 rounded-lg border-2 transition-all text-left ${
+                          selectedGif === gif.name
+                            ? 'border-emerald-500 bg-emerald-500/20 ring-2 ring-emerald-500/50'
+                            : 'border-emerald-500/30 hover:border-emerald-500/50 hover:bg-emerald-500/10'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <span className="text-2xl">{effect.icon}</span>
+                          <div className="flex-1">
+                            <p className="font-semibold text-emerald-100 text-sm">
+                              {effect.title}
+                            </p>
+                            <p className="text-xs text-emerald-300/70 mt-1">
+                              {effect.description}
+                            </p>
+                          </div>
+                          {selectedGif === gif.name && (
+                            <span className="text-emerald-400 text-xs">✓</span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
                 {availableGifs.length === 0 && (
                   <p className="text-xs text-muted-foreground text-center py-2">
-                    Loading GIFs...
+                    No hyperemote effects available yet
                   </p>
                 )}
               </div>
