@@ -75,7 +75,7 @@ serve(async (req) => {
         customer_phone: phone,
       },
       order_meta: {
-        return_url: `${req.headers.get('origin')}/sizzors?order_id=${orderId}`,
+        return_url: `${req.headers.get('origin')}/sizzors?order_id=${orderId}&status={order_status}`,
         notify_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/cashfree-webhook`,
       },
     }

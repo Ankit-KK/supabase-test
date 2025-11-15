@@ -94,7 +94,7 @@ serve(async (req) => {
         customer_phone: phone,
       },
       order_meta: {
-        return_url: `https://${req.headers.get('host')}/looteriya_gaming?order_id=${orderId}&status={order_status}`,
+        return_url: `${req.headers.get('origin')}/looteriya_gaming?order_id=${orderId}&status={order_status}`,
         notify_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/cashfree-webhook`,
       },
     }
