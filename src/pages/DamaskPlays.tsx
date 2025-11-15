@@ -29,6 +29,8 @@ const DamaskPlays = () => {
   const [phoneError, setPhoneError] = useState('');
   const [isPhoneDialogOpen, setIsPhoneDialogOpen] = useState(false);
   const [streamerSettings, setStreamerSettings] = useState<{ hyperemotes_enabled: boolean; hyperemotes_min_amount: number } | null>(null);
+  const [availableGifs, setAvailableGifs] = useState<{ name: string; url: string }[]>([]);
+  const [selectedGif, setSelectedGif] = useState<string>('');
   const navigate = useNavigate();
   
   const getVoiceDuration = (amount: number) => {
@@ -81,6 +83,41 @@ const DamaskPlays = () => {
     fetchStreamerSettings();
   }, []);
 
+  // Fetch available GIFs for hyperemote selection
+  useEffect(() => {
+    const fetchGifs = async () => {
+      try {
+        const { data, error } = await supabase.storage
+          .from('damask-gif')
+          .list();
+
+        if (error) {
+          console.error('Error fetching GIFs:', error);
+          return;
+        }
+
+        if (data) {
+          const gifs = data
+            .filter(file => file.name.endsWith('.gif'))
+            .map(file => ({
+              name: file.name,
+              url: supabase.storage.from('damask-gif').getPublicUrl(file.name).data.publicUrl
+            }));
+          setAvailableGifs(gifs);
+          if (gifs.length > 0) {
+            setSelectedGif(gifs[0].name); // Default to first GIF
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch GIFs:', err);
+      }
+    };
+
+    if (donationType === 'hyperemote') {
+      fetchGifs();
+    }
+  }, [donationType]);
+
   const validatePhoneNumber = (phone: string): boolean => {
     const phoneRegex = /^[6-9]\d{9}$/;
     return phoneRegex.test(phone);
@@ -100,6 +137,10 @@ const DamaskPlays = () => {
       const minAmount = streamerSettings?.hyperemotes_min_amount || 50;
       if (amountNum < minAmount) {
         toast.error(`Minimum amount for hyperemotes is ₹${minAmount}`);
+        return;
+      }
+      if (!selectedGif) {
+        toast.error('Please select a GIF for your hyperemote');
         return;
       }
     } else if (donationType === 'voice') {
@@ -174,6 +215,7 @@ const DamaskPlays = () => {
             voice_message_url: voiceMessageUrl,
             is_hyperemote: donationType === 'hyperemote',
             phone: phoneNumber,
+            selectedGifId: donationType === 'hyperemote' ? selectedGif : null,
           }),
         }
       );
@@ -354,6 +396,41 @@ const DamaskPlays = () => {
                 <p className="text-xs text-muted-foreground text-right">
                   {currentMessageLength}/{currentCharLimit} characters
                 </p>
+              </div>
+            )}
+
+            {donationType === 'hyperemote' && (
+              <div className="space-y-3">
+                <Label className="text-emerald-500">Choose Your Hyperemote GIF</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {availableGifs.map((gif) => (
+                    <div
+                      key={gif.name}
+                      onClick={() => setSelectedGif(gif.name)}
+                      className={`cursor-pointer rounded-lg border-2 overflow-hidden transition-all hover:scale-105 ${
+                        selectedGif === gif.name
+                          ? 'border-emerald-500 ring-2 ring-emerald-500/50'
+                          : 'border-emerald-500/30 hover:border-emerald-500/50'
+                      }`}
+                    >
+                      <img
+                        src={gif.url}
+                        alt={gif.name.replace('.gif', '')}
+                        className="w-full h-32 object-cover"
+                      />
+                      <div className="p-2 bg-card/50 backdrop-blur">
+                        <p className="text-xs text-center text-foreground font-medium truncate">
+                          {gif.name.replace('.gif', '').replace(/-/g, ' ')}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {availableGifs.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Loading GIFs...
+                  </p>
+                )}
               </div>
             )}
 
