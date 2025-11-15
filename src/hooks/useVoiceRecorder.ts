@@ -95,12 +95,8 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
 
         // Auto-stop at max duration using ref (not stale closure)
         if (elapsed >= maxDurationRef.current) {
-          // Stop recording immediately
+          // Stop recording - MediaRecorder will automatically flush remaining data
           if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-            // Request any buffered data before auto-stopping
-            if (mediaRecorderRef.current.state === 'recording') {
-              mediaRecorderRef.current.requestData();
-            }
             mediaRecorderRef.current.stop();
           }
           if (timerRef.current) {
@@ -122,10 +118,7 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
 
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      // Request any buffered data before stopping
-      if (mediaRecorderRef.current.state === 'recording') {
-        mediaRecorderRef.current.requestData();
-      }
+      // Just stop - MediaRecorder will automatically flush remaining data
       mediaRecorderRef.current.stop();
     }
     
