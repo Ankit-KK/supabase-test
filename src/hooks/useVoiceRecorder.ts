@@ -84,7 +84,7 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
         }
       };
 
-      mediaRecorder.start(1000); // Collect data every second
+      mediaRecorder.start(100); // Collect data every 100ms for reliable capture
       
       setState(prev => ({ ...prev, isRecording: true, duration: 0 }));
 
@@ -118,6 +118,10 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
 
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      // Request any buffered data before stopping
+      if (mediaRecorderRef.current.state === 'recording') {
+        mediaRecorderRef.current.requestData();
+      }
       mediaRecorderRef.current.stop();
     }
     
