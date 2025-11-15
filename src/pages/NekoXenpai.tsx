@@ -328,6 +328,7 @@ const NekoXenpai = () => {
             <Label htmlFor="name" className="text-sm text-fuchsia-200">Your Name</Label>
             <Input
               id="name"
+              name="name"
               type="text"
               placeholder="Enter your name"
               value={formData.name}
@@ -341,6 +342,7 @@ const NekoXenpai = () => {
             <Label htmlFor="amount" className="text-sm text-fuchsia-200">Amount (₹)</Label>
             <Input
               id="amount"
+              name="amount"
               type="number"
               placeholder="Enter amount"
               value={formData.amount}
@@ -361,6 +363,7 @@ const NekoXenpai = () => {
               </div>
               <Textarea
                 id="message"
+                name="message"
                 placeholder="Write your message here..."
                 value={formData.message}
                 onChange={handleInputChange}
