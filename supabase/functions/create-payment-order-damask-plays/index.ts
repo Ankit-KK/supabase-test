@@ -12,9 +12,9 @@ serve(async (req) => {
   }
 
   try {
-    const { name, amount, message, phone, voiceMessageUrl, isHyperemote } = await req.json()
+    const { name, amount, message, phone, voiceMessageUrl, isHyperemote, selectedGifId } = await req.json()
 
-    console.log('Creating Damask plays payment order:', { name, amount, message, phone, isHyperemote })
+    console.log('Creating Damask plays payment order:', { name, amount, message, phone, isHyperemote, selectedGifId })
 
     // Initialize Supabase client with service role
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -136,6 +136,7 @@ serve(async (req) => {
         message: message || null,
         voice_message_url: voiceMessageUrl || null,
         is_hyperemote: isHyperemote || false,
+        selected_gif_id: selectedGifId || null,
         order_id: orderId,
         payment_status: 'pending',
         moderation_status: 'pending',

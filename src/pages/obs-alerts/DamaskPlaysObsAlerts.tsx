@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertDisplay } from '@/components/AlertDisplay';
+import { DamaskPlaysAlertDisplay } from '@/components/DamaskPlaysAlertDisplay';
 import { usePusherAlerts } from '@/hooks/usePusherAlerts';
 import { usePusherConfig } from '@/hooks/usePusherConfig';
 
@@ -27,7 +27,7 @@ const DamaskPlaysObsAlerts = () => {
 
   return (
     <div className="min-h-screen bg-transparent relative overflow-hidden">
-      <AlertDisplay
+      <DamaskPlaysAlertDisplay
         donation={currentAlert}
         isVisible={isVisible}
         streamerName="Damask plays"
