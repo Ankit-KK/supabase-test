@@ -172,7 +172,7 @@ const DamaskPlays = () => {
             message: donationType === 'text' ? formData.message : null,
             voice_message_url: voiceMessageUrl,
             is_hyperemote: donationType === 'hyperemote',
-            customer_phone: phoneNumber,
+            phone: phoneNumber,
           }),
         }
       );
@@ -231,18 +231,34 @@ const DamaskPlays = () => {
     >
       <div className="absolute inset-0 bg-black/40"></div>
       
-      <Card className="w-full max-w-md shadow-2xl border-emerald-500/20 bg-card/95 backdrop-blur-sm relative overflow-hidden">
+      <Card 
+        className="w-full max-w-md mx-auto bg-card/95 backdrop-blur-sm border-emerald-500/20 shadow-2xl relative overflow-hidden"
+        style={{ 
+          backgroundImage: `url(${damaskBanner})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }}
+      >
+        {/* Dark overlay for readability */}
+        <div className="absolute inset-0 bg-black/50"></div>
+        
+        {/* Card glow effect */}
+        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 via-emerald-600/20 to-emerald-400/20 opacity-50 blur-xl"></div>
         <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-emerald-600/10 to-emerald-400/10 opacity-50 blur-xl"></div>
         
-        <CardHeader className="space-y-4 relative z-10">
-          <div className="flex items-center gap-4">
-            <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-emerald-500 shadow-xl">
+        <CardHeader className="text-center space-y-4 relative z-10">
+          <div className="flex justify-center">
+            <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-emerald-500 shadow-xl">
               <img src={damaskProfile} alt="Damask plays" className="w-full h-full object-cover" />
             </div>
-            <div>
-              <CardTitle className="text-2xl font-bold text-emerald-500">Damask plays</CardTitle>
-              <CardDescription>Support the stream with your donation</CardDescription>
-            </div>
+          </div>
+          <div>
+            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-emerald-500 to-emerald-600 bg-clip-text text-transparent">
+              Damask Plays
+            </CardTitle>
+            <p className="text-muted-foreground text-sm mt-2">
+              Support Damask Plays with your donation
+            </p>
           </div>
         </CardHeader>
         
