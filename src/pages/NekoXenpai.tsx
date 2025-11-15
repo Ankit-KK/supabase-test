@@ -11,7 +11,9 @@ import { load } from '@cashfreepayments/cashfree-js';
 import EnhancedVoiceRecorder from '@/components/EnhancedVoiceRecorder';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { PhoneDialog } from '@/components/PhoneDialog';
-import { Cat, Sparkles, Mic, MessageSquare } from 'lucide-react';
+import nekoXenpaiBanner from '@/assets/neko-xenpai-banner.jpg';
+import nekoXenpaiProfile from '@/assets/neko-xenpai-profile.jpg';
+import nekoXenpaiLogo from '@/assets/neko-xenpai-logo.jpg';
 
 const NekoXenpai = () => {
   const [formData, setFormData] = useState({
@@ -36,6 +38,14 @@ const NekoXenpai = () => {
     if (amount >= 250) return 25;
     if (amount >= 150) return 15;
     return 15;
+  };
+
+  const getCharacterLimit = () => {
+    const amount = parseFloat(formData.amount) || 0;
+    if (amount >= 250) return 500;
+    if (amount >= 100) return 250;
+    if (amount >= 70) return 150;
+    return 100;
   };
 
   const currentAmount = parseFloat(formData.amount) || 0;
@@ -221,190 +231,207 @@ const NekoXenpai = () => {
     }
   };
 
+  const characterLimit = getCharacterLimit();
+  const remainingChars = characterLimit - formData.message.length;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-fuchsia-950 via-slate-900 to-fuchsia-800">
-      {/* Header with Cat Icon */}
-      <div className="relative h-48 bg-gradient-to-r from-fuchsia-600 to-pink-600 flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1),transparent)]"></div>
-        </div>
-        <div className="relative z-10 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="w-20 h-20 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center border-4 border-fuchsia-400/50">
-              <Cat className="w-12 h-12 text-fuchsia-200" />
+    <div 
+      className="min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center p-4 relative"
+      style={{ backgroundImage: `url(${nekoXenpaiBanner})` }}
+    >
+      <div className="absolute inset-0 bg-black/40"></div>
+      
+      <Card 
+        className="w-full max-w-md mx-auto bg-card/95 backdrop-blur-sm border-fuchsia-500/20 shadow-2xl relative overflow-hidden"
+        style={{ 
+          backgroundImage: `url(${nekoXenpaiProfile})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }}
+      >
+        <div className="absolute inset-0 bg-black/50"></div>
+        
+        <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-500/20 via-pink-600/20 to-fuchsia-400/20 opacity-50 blur-xl"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-500/10 via-pink-600/10 to-fuchsia-400/10 opacity-50 blur-xl"></div>
+        
+        <CardHeader className="text-center space-y-4 relative z-10">
+          <div className="flex justify-center">
+            <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-fuchsia-500 shadow-xl">
+              <img 
+                src={nekoXenpaiLogo} 
+                alt="Neko XENPAI"
+                className="w-full h-full object-cover"
+              />
             </div>
           </div>
-          <h1 className="text-4xl font-bold text-white drop-shadow-lg">Neko XENPAI</h1>
-          <p className="text-fuchsia-100 mt-2">Support with Style ✨</p>
-        </div>
-      </div>
+          <CardTitle className="text-4xl font-bold bg-gradient-to-r from-fuchsia-400 to-pink-400 bg-clip-text text-transparent">
+            Neko XENPAI
+          </CardTitle>
+          <CardDescription className="text-lg text-fuchsia-200">
+            Support your favorite streamer!
+          </CardDescription>
+        </CardHeader>
 
-      <div className="container mx-auto px-4 py-8">
-        <Card className="max-w-2xl mx-auto bg-slate-900/95 border-fuchsia-500/30 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="text-fuchsia-400 text-2xl">Send Your Support</CardTitle>
-            <CardDescription className="text-slate-400">
-              Choose your donation style and make it memorable!
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-3">
-                <Label className="text-fuchsia-300 font-semibold">Choose Donation Type</Label>
-                <div className="grid grid-cols-3 gap-3">
-                  <Button
-                    type="button"
-                    variant={donationType === 'text' ? 'default' : 'outline'}
-                    onClick={() => setDonationType('text')}
-                    className={`h-24 flex flex-col items-center justify-center gap-2 ${
-                      donationType === 'text'
-                        ? 'bg-gradient-to-br from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white border-fuchsia-500'
-                        : 'bg-slate-800/50 hover:bg-slate-800/70 text-fuchsia-200 border-fuchsia-500/30'
-                    }`}
-                  >
-                    <span className="text-3xl">💬</span>
-                    <span className="text-xs">Text Message</span>
-                    <span className="text-xs opacity-70">Min ₹40</span>
-                  </Button>
-
-                  <Button
-                    type="button"
-                    variant={donationType === 'voice' ? 'default' : 'outline'}
-                    onClick={() => setDonationType('voice')}
-                    className={`h-24 flex flex-col items-center justify-center gap-2 ${
-                      donationType === 'voice'
-                        ? 'bg-gradient-to-br from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white border-fuchsia-500'
-                        : 'bg-slate-800/50 hover:bg-slate-800/70 text-fuchsia-200 border-fuchsia-500/30'
-                    }`}
-                  >
-                    <span className="text-3xl">🎤</span>
-                    <span className="text-xs">Voice Message</span>
-                    <span className="text-xs opacity-70">Min ₹150</span>
-                  </Button>
-
-                  <Button
-                    type="button"
-                    variant={donationType === 'hyperemote' ? 'default' : 'outline'}
-                    onClick={() => setDonationType('hyperemote')}
-                    disabled={!streamerSettings?.hyperemotes_enabled}
-                    className={`h-24 flex flex-col items-center justify-center gap-2 ${
-                      donationType === 'hyperemote'
-                        ? 'bg-gradient-to-br from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white border-fuchsia-500'
-                        : 'bg-slate-800/50 hover:bg-slate-800/70 text-fuchsia-200 border-fuchsia-500/30'
-                    }`}
-                  >
-                    <span className="text-3xl">🎁</span>
-                    <span className="text-xs">Hyperemotes</span>
-                    <span className="text-xs opacity-70">Min ₹{streamerSettings?.hyperemotes_min_amount || 50}</span>
-                  </Button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-fuchsia-300">Your Name</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  placeholder="Enter your name"
-                  required
-                  className="bg-slate-800/50 border-fuchsia-500/30 text-white placeholder:text-slate-500"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="amount" className="text-fuchsia-300">
-                  Amount (₹)
-                  {donationType === 'voice' && (
-                    <span className="ml-2 text-xs text-slate-400">
-                      (₹150-249: 15s | ₹250-499: 25s | ₹500+: 30s)
-                    </span>
-                  )}
-                </Label>
-                <Input
-                  id="amount"
-                  name="amount"
-                  type="number"
-                  value={formData.amount}
-                  onChange={handleInputChange}
-                  placeholder={`Min ₹${donationType === 'voice' ? '150' : donationType === 'hyperemote' ? '50' : '40'}`}
-                  required
-                  className="bg-slate-800/50 border-fuchsia-500/30 text-white placeholder:text-slate-500"
-                />
-              </div>
-
-              {donationType === 'text' && (
-                <div className="space-y-2">
-                  <Label htmlFor="message" className="text-fuchsia-300 flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4" />
-                    Your Message
-                  </Label>
-                  <Textarea
-                    id="message"
-                    name="message"
-                    value={formData.message}
-                    onChange={handleInputChange}
-                    placeholder="Write your message here..."
-                    required
-                    rows={4}
-                    className="bg-slate-800/50 border-fuchsia-500/30 text-white placeholder:text-slate-500 resize-none"
-                  />
-                </div>
-              )}
-
-              {donationType === 'voice' && (
-                <div className="space-y-2">
-                  <Label className="text-fuchsia-300 flex items-center gap-2">
-                    <Mic className="w-4 h-4" />
-                    Voice Message
-                  </Label>
-                  <EnhancedVoiceRecorder
-                    onRecordingComplete={(hasRecording) => {}}
-                    maxDurationSeconds={getVoiceDuration(currentAmount)}
-                    controller={voiceRecorder}
-                    requiredAmount={150}
-                    currentAmount={currentAmount}
-                    brandColor="#d946ef"
-                  />
-                </div>
-              )}
-
-              {donationType === 'hyperemote' && availableGifs.length > 0 && (
-                <div className="space-y-2">
-                  <Label className="text-fuchsia-300 flex items-center gap-2">
-                    <Sparkles className="w-4 h-4" />
-                    Select GIF
-                  </Label>
-                  <div className="grid grid-cols-3 gap-4">
-                    {availableGifs.map((gif) => (
-                      <div
-                        key={gif.name}
-                        onClick={() => setSelectedGif(gif.name)}
-                        className={`cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${
-                          selectedGif === gif.name
-                            ? 'border-fuchsia-500 shadow-lg shadow-fuchsia-500/50'
-                            : 'border-slate-700 hover:border-fuchsia-400'
-                        }`}
-                      >
-                        <img src={gif.url} alt={gif.name} className="w-full h-24 object-cover" />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+        <CardContent className="relative z-10 space-y-6">
+          <div className="space-y-3">
+            <Label className="text-fuchsia-200">Choose Donation Type</Label>
+            <div className="grid grid-cols-3 gap-3">
+              <Button
+                type="button"
+                variant={donationType === 'text' ? 'default' : 'outline'}
+                onClick={() => setDonationType('text')}
+                className={`h-24 flex flex-col items-center justify-center gap-2 transition-all ${
+                  donationType === 'text'
+                    ? 'bg-gradient-to-br from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white border-fuchsia-500'
+                    : 'bg-black/40 hover:bg-black/60 text-fuchsia-200 border-fuchsia-500/30'
+                }`}
+              >
+                <span className="text-3xl">💬</span>
+                <span className="text-xs font-semibold">Text Message</span>
+                <span className="text-xs opacity-70">Min ₹40</span>
+              </Button>
 
               <Button
-                type="submit"
-                disabled={isProcessingPayment || sdkLoading}
-                className="w-full text-lg py-6 bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white font-semibold shadow-lg shadow-fuchsia-500/50"
+                type="button"
+                variant={donationType === 'voice' ? 'default' : 'outline'}
+                onClick={() => setDonationType('voice')}
+                className={`h-24 flex flex-col items-center justify-center gap-2 transition-all ${
+                  donationType === 'voice'
+                    ? 'bg-gradient-to-br from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white border-fuchsia-500'
+                    : 'bg-black/40 hover:bg-black/60 text-fuchsia-200 border-fuchsia-500/30'
+                }`}
               >
-                {isProcessingPayment ? 'Processing...' : `Continue with ₹${formData.amount || '0'}`}
+                <span className="text-3xl">🎤</span>
+                <span className="text-xs font-semibold">Voice Message</span>
+                <span className="text-xs opacity-70">Min ₹150</span>
               </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
+
+              <Button
+                type="button"
+                variant={donationType === 'hyperemote' ? 'default' : 'outline'}
+                onClick={() => setDonationType('hyperemote')}
+                disabled={!streamerSettings?.hyperemotes_enabled}
+                className={`h-24 flex flex-col items-center justify-center gap-2 transition-all ${
+                  donationType === 'hyperemote'
+                    ? 'bg-gradient-to-br from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white border-fuchsia-500'
+                    : 'bg-black/40 hover:bg-black/60 text-fuchsia-200 border-fuchsia-500/30 disabled:opacity-50'
+                }`}
+              >
+                <span className="text-3xl">🎁</span>
+                <span className="text-xs font-semibold">Hyperemotes</span>
+                <span className="text-xs opacity-70">Min ₹{streamerSettings?.hyperemotes_min_amount || 50}</span>
+              </Button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="name" className="text-fuchsia-200">Your Name</Label>
+            <Input
+              id="name"
+              type="text"
+              placeholder="Enter your name"
+              value={formData.name}
+              onChange={handleInputChange}
+              className="bg-black/40 border-fuchsia-500/30 text-white placeholder:text-fuchsia-300/50 focus:border-fuchsia-500 focus:ring-fuchsia-500/20"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="amount" className="text-fuchsia-200">Amount (₹)</Label>
+            <Input
+              id="amount"
+              type="number"
+              placeholder="Enter amount"
+              value={formData.amount}
+              onChange={handleInputChange}
+              className="bg-black/40 border-fuchsia-500/30 text-white placeholder:text-fuchsia-300/50 focus:border-fuchsia-500 focus:ring-fuchsia-500/20"
+              min="1"
+              required
+            />
+          </div>
+
+          {donationType === 'text' && (
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <Label htmlFor="message" className="text-fuchsia-200">Your Message</Label>
+                <span className={`text-sm ${remainingChars < 0 ? 'text-red-400' : 'text-fuchsia-300'}`}>
+                  {remainingChars} characters left
+                </span>
+              </div>
+              <Textarea
+                id="message"
+                placeholder="Write your message here..."
+                value={formData.message}
+                onChange={handleInputChange}
+                className="bg-black/40 border-fuchsia-500/30 text-white placeholder:text-fuchsia-300/50 focus:border-fuchsia-500 focus:ring-fuchsia-500/20 min-h-[120px]"
+                maxLength={characterLimit}
+                required
+              />
+              <p className="text-xs text-fuchsia-300/70">
+                Character limit increases with donation amount
+              </p>
+            </div>
+          )}
+
+          {donationType === 'voice' && (
+            <div className="space-y-2">
+              <Label className="text-fuchsia-200">Voice Message</Label>
+              <EnhancedVoiceRecorder
+                onRecordingComplete={(hasRecording, duration) => {}}
+                maxDurationSeconds={getVoiceDuration(parseFloat(formData.amount) || 0)}
+                controller={voiceRecorder}
+                requiredAmount={150}
+                currentAmount={parseFloat(formData.amount) || 0}
+                brandColor="#d946ef"
+              />
+              <p className="text-xs text-fuchsia-300/70">
+                Duration: {getVoiceDuration(parseFloat(formData.amount) || 0)}s (increases with donation amount)
+              </p>
+            </div>
+          )}
+
+          {donationType === 'hyperemote' && (
+            <div className="space-y-2">
+              <Label className="text-fuchsia-200">Select Hyperemote</Label>
+              {availableGifs.length > 0 ? (
+                <div className="grid grid-cols-3 gap-3 max-h-[300px] overflow-y-auto p-2 bg-black/40 rounded-lg border border-fuchsia-500/30">
+                  {availableGifs.map((gif) => (
+                    <button
+                      key={gif.name}
+                      type="button"
+                      onClick={() => setSelectedGif(gif.name)}
+                      className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                        selectedGif === gif.name
+                          ? 'border-fuchsia-500 ring-2 ring-fuchsia-500/50 scale-95'
+                          : 'border-fuchsia-500/30 hover:border-fuchsia-500/50 hover:scale-95'
+                      }`}
+                    >
+                      <img
+                        src={gif.url}
+                        alt={gif.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-fuchsia-300/70 text-center py-4">
+                  No hyperemotes available yet
+                </p>
+              )}
+            </div>
+          )}
+
+          <Button
+            onClick={handleSubmit}
+            disabled={isProcessingPayment || sdkLoading}
+            className="w-full bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white font-semibold py-6 text-lg shadow-lg shadow-fuchsia-500/30 transition-all"
+          >
+            {isProcessingPayment ? 'Processing...' : `Support with ₹${formData.amount || '0'}`}
+          </Button>
+        </CardContent>
+      </Card>
 
       <PhoneDialog
         open={isPhoneDialogOpen}
@@ -412,7 +439,7 @@ const NekoXenpai = () => {
         phoneNumber={phoneNumber}
         onPhoneChange={setPhoneNumber}
         phoneError={phoneError}
-        onContinue={handleContinueToPayment}
+        onContinue={processPayment}
         isSubmitting={isProcessingPayment}
         buttonColor="#d946ef"
       />
