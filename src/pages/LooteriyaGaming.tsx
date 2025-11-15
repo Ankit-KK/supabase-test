@@ -129,7 +129,7 @@ const LooteriyaGaming = () => {
         console.log('Uploading voice message before payment...');
         const reader = new FileReader();
         const voiceDataBase64 = await new Promise<string>((resolve) => {
-          reader.onloadend = () => {
+          reader.onload = () => {
             const base64 = (reader.result as string).split(',')[1];
             resolve(base64);
           };
