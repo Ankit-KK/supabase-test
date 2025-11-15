@@ -180,15 +180,42 @@ const DamaskPlays = () => {
 
       // Upload voice message BEFORE creating payment order
       if (donationType === 'voice' && voiceRecorder.audioBlob) {
-        console.log('Uploading voice message before payment...');
-        const reader = new FileReader();
-        const voiceDataBase64 = await new Promise<string>((resolve) => {
-          reader.onloadend = () => {
-            const base64 = (reader.result as string).split(',')[1];
+        console.log('Uploading voice message before payment...', { 
+          blobSize: voiceRecorder.audioBlob.size,
+          blobType: voiceRecorder.audioBlob.type 
+        });
+
+        if (!voiceRecorder.audioBlob || voiceRecorder.audioBlob.size === 0) {
+          throw new Error('No voice recording found. Please record your message again.');
+        }
+
+        // Convert blob to base64
+        const voiceDataBase64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          
+          reader.onload = () => {
+            const result = reader.result as string;
+            if (!result || !result.includes(',')) {
+              reject(new Error('Failed to read voice data'));
+              return;
+            }
+            const base64 = result.split(',')[1];
+            console.log('Voice data converted to base64, length:', base64.length);
             resolve(base64);
           };
+          
+          reader.onerror = () => {
+            reject(new Error('Failed to read voice recording'));
+          };
+          
           reader.readAsDataURL(voiceRecorder.audioBlob!);
         });
+
+        if (!voiceDataBase64 || voiceDataBase64.length === 0) {
+          throw new Error('Voice recording is empty. Please try recording again.');
+        }
+
+        console.log('Invoking upload-voice-message-direct...');
 
         // Upload voice message using edge function
         const { data: uploadResult, error: uploadError } = await supabase.functions.invoke(
@@ -203,7 +230,11 @@ const DamaskPlays = () => {
 
         if (uploadError) {
           console.error('Voice upload error:', uploadError);
-          throw new Error('Failed to upload voice message');
+          throw new Error('Failed to upload voice message: ' + uploadError.message);
+        }
+
+        if (!uploadResult?.voice_message_url) {
+          throw new Error('Voice upload succeeded but no URL was returned');
         }
 
         voiceMessageUrl = uploadResult.voice_message_url;
