@@ -13,6 +13,7 @@ import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { PhoneDialog } from '@/components/PhoneDialog';
 import damaskBanner from '@/assets/damask-banner.jpg';
 import damaskProfile from '@/assets/damask-profile.jpg';
+import damaskLogo from '@/assets/damask-logo.jpg';
 
 const DamaskPlays = () => {
   const [formData, setFormData] = useState({
@@ -249,7 +250,7 @@ const DamaskPlays = () => {
         <CardHeader className="text-center space-y-4 relative z-10">
           <div className="flex justify-center">
             <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-emerald-500 shadow-xl">
-              <img src={damaskBanner} alt="Damask plays" className="w-full h-full object-cover" />
+              <img src={damaskLogo} alt="Damask plays" className="w-full h-full object-cover" />
             </div>
           </div>
           <div>
