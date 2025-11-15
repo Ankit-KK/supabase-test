@@ -183,10 +183,10 @@ const DamaskPlays = () => {
         throw new Error(errorData.error || 'Payment initialization failed');
       }
 
-      const { sessionId, orderId } = await response.json();
+      const { payment_session_id, order_id } = await response.json();
 
       const checkoutOptions = {
-        paymentSessionId: sessionId,
+        paymentSessionId: payment_session_id,
         redirectTarget: '_self',
       };
 

@@ -47,7 +47,7 @@ const Dashboard = () => {
           } else if (slug === 'demostreamer') {
             navigate('/dashboard/demostreamer');
           } else if (slug === 'damask_plays') {
-            navigate('/dashboard/damask-plays');
+            navigate('/dashboard/damask_plays');
           }
           return;
         }
