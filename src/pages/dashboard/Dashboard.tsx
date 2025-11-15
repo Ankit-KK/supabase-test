@@ -46,6 +46,8 @@ const Dashboard = () => {
             navigate('/dashboard/chiaa_gaming');
           } else if (slug === 'demostreamer') {
             navigate('/dashboard/demostreamer');
+          } else if (slug === 'damask_plays') {
+            navigate('/dashboard/damask-plays');
           }
           return;
         }
