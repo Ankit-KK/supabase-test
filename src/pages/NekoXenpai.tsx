@@ -12,7 +12,6 @@ import EnhancedVoiceRecorder from '@/components/EnhancedVoiceRecorder';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { PhoneDialog } from '@/components/PhoneDialog';
 import { Cat, Sparkles, Mic, MessageSquare } from 'lucide-react';
-import { DonationTypeSelector } from '@/components/DonationTypeSelector';
 
 const NekoXenpai = () => {
   const [formData, setFormData] = useState({
@@ -136,7 +135,7 @@ const NekoXenpai = () => {
       return false;
     }
 
-    if (donationType === 'message' && !formData.message.trim()) {
+    if (donationType === 'text' && !formData.message.trim()) {
       toast.error('Please enter a message');
       return false;
     }
@@ -195,7 +194,7 @@ const NekoXenpai = () => {
         body: {
           name: formData.name,
           amount: formData.amount,
-          message: donationType === 'message' ? formData.message : null,
+          message: donationType === 'text' ? formData.message : null,
           phone: phoneNumber,
           voiceMessageUrl,
           isHyperemote: donationType === 'hyperemote',
@@ -250,12 +249,56 @@ const NekoXenpai = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              <DonationTypeSelector
-                donationType={donationType}
-                onTypeChange={setDonationType}
-                hyperemotesMinAmount={streamerSettings?.hyperemotes_min_amount}
-                brandColor="#d946ef"
-              />
+              <div className="space-y-3">
+                <Label className="text-fuchsia-300 font-semibold">Choose Donation Type</Label>
+                <div className="grid grid-cols-3 gap-3">
+                  <Button
+                    type="button"
+                    variant={donationType === 'text' ? 'default' : 'outline'}
+                    onClick={() => setDonationType('text')}
+                    className={`h-24 flex flex-col items-center justify-center gap-2 ${
+                      donationType === 'text'
+                        ? 'bg-gradient-to-br from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white border-fuchsia-500'
+                        : 'bg-slate-800/50 hover:bg-slate-800/70 text-fuchsia-200 border-fuchsia-500/30'
+                    }`}
+                  >
+                    <span className="text-3xl">💬</span>
+                    <span className="text-xs">Text Message</span>
+                    <span className="text-xs opacity-70">Min ₹40</span>
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant={donationType === 'voice' ? 'default' : 'outline'}
+                    onClick={() => setDonationType('voice')}
+                    className={`h-24 flex flex-col items-center justify-center gap-2 ${
+                      donationType === 'voice'
+                        ? 'bg-gradient-to-br from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white border-fuchsia-500'
+                        : 'bg-slate-800/50 hover:bg-slate-800/70 text-fuchsia-200 border-fuchsia-500/30'
+                    }`}
+                  >
+                    <span className="text-3xl">🎤</span>
+                    <span className="text-xs">Voice Message</span>
+                    <span className="text-xs opacity-70">Min ₹150</span>
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant={donationType === 'hyperemote' ? 'default' : 'outline'}
+                    onClick={() => setDonationType('hyperemote')}
+                    disabled={!streamerSettings?.hyperemotes_enabled}
+                    className={`h-24 flex flex-col items-center justify-center gap-2 ${
+                      donationType === 'hyperemote'
+                        ? 'bg-gradient-to-br from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white border-fuchsia-500'
+                        : 'bg-slate-800/50 hover:bg-slate-800/70 text-fuchsia-200 border-fuchsia-500/30'
+                    }`}
+                  >
+                    <span className="text-3xl">🎁</span>
+                    <span className="text-xs">Hyperemotes</span>
+                    <span className="text-xs opacity-70">Min ₹{streamerSettings?.hyperemotes_min_amount || 50}</span>
+                  </Button>
+                </div>
+              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-fuchsia-300">Your Name</Label>
@@ -291,7 +334,7 @@ const NekoXenpai = () => {
                 />
               </div>
 
-              {donationType === 'message' && (
+              {donationType === 'text' && (
                 <div className="space-y-2">
                   <Label htmlFor="message" className="text-fuchsia-300 flex items-center gap-2">
                     <MessageSquare className="w-4 h-4" />
