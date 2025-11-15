@@ -178,27 +178,36 @@ const DamaskPlays = () => {
     try {
       let voiceMessageUrl = null;
 
+      // Upload voice message BEFORE creating payment order
       if (donationType === 'voice' && voiceRecorder.audioBlob) {
-        const timestamp = Date.now();
-        const fileName = `voice-${timestamp}.webm`;
-        
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('voice-messages')
-          .upload(`damask_plays/${fileName}`, voiceRecorder.audioBlob, {
-            contentType: 'audio/webm',
-            upsert: false
-          });
+        console.log('Uploading voice message before payment...');
+        const reader = new FileReader();
+        const voiceDataBase64 = await new Promise<string>((resolve) => {
+          reader.onloadend = () => {
+            const base64 = (reader.result as string).split(',')[1];
+            resolve(base64);
+          };
+          reader.readAsDataURL(voiceRecorder.audioBlob!);
+        });
+
+        // Upload voice message using edge function
+        const { data: uploadResult, error: uploadError } = await supabase.functions.invoke(
+          'upload-voice-message-direct',
+          {
+            body: { 
+              voiceData: voiceDataBase64, 
+              streamerSlug: 'damask_plays'
+            }
+          }
+        );
 
         if (uploadError) {
-          console.error('Upload error:', uploadError);
+          console.error('Voice upload error:', uploadError);
           throw new Error('Failed to upload voice message');
         }
 
-        const { data: { publicUrl } } = supabase.storage
-          .from('voice-messages')
-          .getPublicUrl(`damask_plays/${fileName}`);
-
-        voiceMessageUrl = publicUrl;
+        voiceMessageUrl = uploadResult.voice_message_url;
+        console.log('Voice message uploaded successfully:', voiceMessageUrl);
       }
 
       const response = await fetch(
@@ -212,8 +221,8 @@ const DamaskPlays = () => {
             name: formData.name,
             amount: parseFloat(formData.amount),
             message: donationType === 'text' ? formData.message : null,
-            voice_message_url: voiceMessageUrl,
-            is_hyperemote: donationType === 'hyperemote',
+            voiceMessageUrl: voiceMessageUrl,
+            isHyperemote: donationType === 'hyperemote',
             phone: phoneNumber,
             selectedGifId: donationType === 'hyperemote' ? selectedGif : null,
           }),
