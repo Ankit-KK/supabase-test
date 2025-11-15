@@ -11,9 +11,9 @@ import { load } from '@cashfreepayments/cashfree-js';
 import EnhancedVoiceRecorder from '@/components/EnhancedVoiceRecorder';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { PhoneDialog } from '@/components/PhoneDialog';
-import nekoXenpaiBanner from '@/assets/neko-xenpai-banner.jpg';
-import nekoXenpaiProfile from '@/assets/neko-xenpai-profile.jpg';
-import nekoXenpaiLogo from '@/assets/neko-xenpai-logo.jpg';
+import nekoXenpaiBanner from '@/assets/neko-xenpai-banner-new.jpg';
+import nekoXenpaiProfile from '@/assets/neko-xenpai-profile-new.jpg';
+import nekoXenpaiLogo from '@/assets/neko-xenpai-profile-new.jpg';
 
 const NekoXenpai = () => {
   const [formData, setFormData] = useState({
