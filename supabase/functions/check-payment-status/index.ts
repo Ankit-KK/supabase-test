@@ -99,7 +99,7 @@ serve(async (req) => {
         approved_at: dbStatus === 'success' ? new Date().toISOString() : null,
         approved_by: dbStatus === 'success' ? 'system' : null
       })
-      .eq('id', order_id)
+      .eq('order_id', order_id)
       .select()
       .single()
 
