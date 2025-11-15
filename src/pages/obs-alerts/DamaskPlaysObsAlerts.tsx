@@ -15,6 +15,7 @@ const DamaskPlaysObsAlerts = () => {
     channelName: 'damask_plays-alerts',
     pusherKey: pusherConfig?.key || '',
     pusherCluster: pusherConfig?.cluster || '',
+    delayBeforeDisplay: 60000,
   });
 
   if (configLoading) {
