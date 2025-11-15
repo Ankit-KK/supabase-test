@@ -84,7 +84,7 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
         }
       };
 
-      mediaRecorder.start(100); // Collect data every 100ms for reliable capture
+      mediaRecorder.start(); // Collect all data, ondataavailable fires once on stop()
       
       setState(prev => ({ ...prev, isRecording: true, duration: 0 }));
 
