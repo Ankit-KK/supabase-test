@@ -242,7 +242,7 @@ const NekoXenpai = () => {
       <div className="absolute inset-0 bg-black/40"></div>
       
       <Card 
-        className="w-full max-w-[21rem] mx-auto bg-card/95 backdrop-blur-sm border-fuchsia-500/20 shadow-2xl relative overflow-hidden"
+        className="w-full max-w-md mx-auto bg-card/95 backdrop-blur-sm border-fuchsia-500/20 shadow-2xl relative overflow-hidden"
         style={{ 
           backgroundImage: `url(${nekoXenpaiProfile})`,
           backgroundSize: 'cover',
