@@ -88,6 +88,8 @@ serve(async (req) => {
       tableName = 'demostreamer_donations'
     } else if (order_id.startsWith('damask_plays_')) {
       tableName = 'damask_plays_donations'
+    } else if (order_id.startsWith('neko_xenpai_')) {
+      tableName = 'neko_xenpai_donations'
     }
 
     // Update the donation record

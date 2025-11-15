@@ -53,5 +53,8 @@ verify_jwt = false
 [functions.create-payment-order-damask-plays]
 verify_jwt = false
 
+[functions.create-payment-order-neko-xenpai]
+verify_jwt = false
+
 [functions.upload-voice-message-direct]
 verify_jwt = false
