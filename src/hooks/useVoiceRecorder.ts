@@ -97,6 +97,10 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
         if (elapsed >= maxDurationRef.current) {
           // Stop recording immediately
           if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+            // Request any buffered data before auto-stopping
+            if (mediaRecorderRef.current.state === 'recording') {
+              mediaRecorderRef.current.requestData();
+            }
             mediaRecorderRef.current.stop();
           }
           if (timerRef.current) {
