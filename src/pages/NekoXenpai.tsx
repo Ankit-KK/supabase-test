@@ -254,9 +254,9 @@ const NekoXenpai = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-500/20 via-pink-600/20 to-fuchsia-400/20 opacity-50 blur-xl"></div>
         <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-500/10 via-pink-600/10 to-fuchsia-400/10 opacity-50 blur-xl"></div>
         
-        <CardHeader className="text-center space-y-4 relative z-10">
+        <CardHeader className="text-center space-y-3 relative z-10">
           <div className="flex justify-center">
-            <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-fuchsia-500 shadow-xl">
+            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-fuchsia-500 shadow-xl">
               <img 
                 src={nekoXenpaiLogo} 
                 alt="Neko XENPAI"
@@ -264,46 +264,46 @@ const NekoXenpai = () => {
               />
             </div>
           </div>
-          <CardTitle className="text-4xl font-bold bg-gradient-to-r from-fuchsia-400 to-pink-400 bg-clip-text text-transparent">
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-fuchsia-400 to-pink-400 bg-clip-text text-transparent">
             Neko XENPAI
           </CardTitle>
-          <CardDescription className="text-lg text-fuchsia-200">
+          <CardDescription className="text-base text-fuchsia-200">
             Support your favorite streamer!
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="relative z-10 space-y-6">
-          <div className="space-y-3">
-            <Label className="text-fuchsia-200">Choose Donation Type</Label>
-            <div className="grid grid-cols-3 gap-3">
+        <CardContent className="relative z-10 space-y-4">
+          <div className="space-y-2">
+            <Label className="text-sm text-fuchsia-200">Choose Donation Type</Label>
+            <div className="grid grid-cols-3 gap-2">
               <Button
                 type="button"
                 variant={donationType === 'text' ? 'default' : 'outline'}
                 onClick={() => setDonationType('text')}
-                className={`h-24 flex flex-col items-center justify-center gap-2 transition-all ${
+                className={`h-16 flex flex-col items-center justify-center gap-1 transition-all ${
                   donationType === 'text'
                     ? 'bg-gradient-to-br from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white border-fuchsia-500'
                     : 'bg-black/40 hover:bg-black/60 text-fuchsia-200 border-fuchsia-500/30'
                 }`}
               >
-                <span className="text-3xl">💬</span>
-                <span className="text-xs font-semibold">Text Message</span>
-                <span className="text-xs opacity-70">Min ₹40</span>
+                <span className="text-2xl">💬</span>
+                <span className="text-[10px] font-semibold">Text Message</span>
+                <span className="text-[9px] opacity-70">Min ₹40</span>
               </Button>
 
               <Button
                 type="button"
                 variant={donationType === 'voice' ? 'default' : 'outline'}
                 onClick={() => setDonationType('voice')}
-                className={`h-24 flex flex-col items-center justify-center gap-2 transition-all ${
+                className={`h-16 flex flex-col items-center justify-center gap-1 transition-all ${
                   donationType === 'voice'
                     ? 'bg-gradient-to-br from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white border-fuchsia-500'
                     : 'bg-black/40 hover:bg-black/60 text-fuchsia-200 border-fuchsia-500/30'
                 }`}
               >
-                <span className="text-3xl">🎤</span>
-                <span className="text-xs font-semibold">Voice Message</span>
-                <span className="text-xs opacity-70">Min ₹150</span>
+                <span className="text-2xl">🎤</span>
+                <span className="text-[10px] font-semibold">Voice Message</span>
+                <span className="text-[9px] opacity-70">Min ₹150</span>
               </Button>
 
               <Button
@@ -311,21 +311,21 @@ const NekoXenpai = () => {
                 variant={donationType === 'hyperemote' ? 'default' : 'outline'}
                 onClick={() => setDonationType('hyperemote')}
                 disabled={!streamerSettings?.hyperemotes_enabled}
-                className={`h-24 flex flex-col items-center justify-center gap-2 transition-all ${
+                className={`h-16 flex flex-col items-center justify-center gap-1 transition-all ${
                   donationType === 'hyperemote'
                     ? 'bg-gradient-to-br from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white border-fuchsia-500'
                     : 'bg-black/40 hover:bg-black/60 text-fuchsia-200 border-fuchsia-500/30 disabled:opacity-50'
                 }`}
               >
-                <span className="text-3xl">🎁</span>
-                <span className="text-xs font-semibold">Hyperemotes</span>
-                <span className="text-xs opacity-70">Min ₹{streamerSettings?.hyperemotes_min_amount || 50}</span>
+                <span className="text-2xl">🎁</span>
+                <span className="text-[10px] font-semibold">Hyperemotes</span>
+                <span className="text-[9px] opacity-70">Min ₹{streamerSettings?.hyperemotes_min_amount || 50}</span>
               </Button>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="name" className="text-fuchsia-200">Your Name</Label>
+          <div className="space-y-1">
+            <Label htmlFor="name" className="text-sm text-fuchsia-200">Your Name</Label>
             <Input
               id="name"
               type="text"
@@ -337,8 +337,8 @@ const NekoXenpai = () => {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="amount" className="text-fuchsia-200">Amount (₹)</Label>
+          <div className="space-y-1">
+            <Label htmlFor="amount" className="text-sm text-fuchsia-200">Amount (₹)</Label>
             <Input
               id="amount"
               type="number"
@@ -352,10 +352,10 @@ const NekoXenpai = () => {
           </div>
 
           {donationType === 'text' && (
-            <div className="space-y-2">
+            <div className="space-y-1">
               <div className="flex justify-between items-center">
-                <Label htmlFor="message" className="text-fuchsia-200">Your Message</Label>
-                <span className={`text-sm ${remainingChars < 0 ? 'text-red-400' : 'text-fuchsia-300'}`}>
+                <Label htmlFor="message" className="text-sm text-fuchsia-200">Your Message</Label>
+                <span className={`text-xs ${remainingChars < 0 ? 'text-red-400' : 'text-fuchsia-300'}`}>
                   {remainingChars} characters left
                 </span>
               </div>
@@ -375,8 +375,8 @@ const NekoXenpai = () => {
           )}
 
           {donationType === 'voice' && (
-            <div className="space-y-2">
-              <Label className="text-fuchsia-200">Voice Message</Label>
+            <div className="space-y-1">
+              <Label className="text-sm text-fuchsia-200">Voice Message</Label>
               <EnhancedVoiceRecorder
                 onRecordingComplete={(hasRecording, duration) => {}}
                 maxDurationSeconds={getVoiceDuration(parseFloat(formData.amount) || 0)}
@@ -385,15 +385,15 @@ const NekoXenpai = () => {
                 currentAmount={parseFloat(formData.amount) || 0}
                 brandColor="#d946ef"
               />
-              <p className="text-xs text-fuchsia-300/70">
+              <p className="text-[10px] text-fuchsia-300/70">
                 Duration: {getVoiceDuration(parseFloat(formData.amount) || 0)}s (increases with donation amount)
               </p>
             </div>
           )}
 
           {donationType === 'hyperemote' && (
-            <div className="space-y-2">
-              <Label className="text-fuchsia-200">Select Hyperemote</Label>
+            <div className="space-y-1">
+              <Label className="text-sm text-fuchsia-200">Select Hyperemote</Label>
               {availableGifs.length > 0 ? (
                 <div className="grid grid-cols-3 gap-3 max-h-[300px] overflow-y-auto p-2 bg-black/40 rounded-lg border border-fuchsia-500/30">
                   {availableGifs.map((gif) => (
@@ -426,7 +426,7 @@ const NekoXenpai = () => {
           <Button
             onClick={handleSubmit}
             disabled={isProcessingPayment || sdkLoading}
-            className="w-full bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white font-semibold py-6 text-lg shadow-lg shadow-fuchsia-500/30 transition-all"
+            className="w-full bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white font-semibold py-4 text-base shadow-lg shadow-fuchsia-500/30 transition-all"
           >
             {isProcessingPayment ? 'Processing...' : `Support with ₹${formData.amount || '0'}`}
           </Button>

@@ -329,75 +329,75 @@ const DamaskPlays = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 via-emerald-600/20 to-emerald-400/20 opacity-50 blur-xl"></div>
         <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-emerald-600/10 to-emerald-400/10 opacity-50 blur-xl"></div>
         
-        <CardHeader className="text-center space-y-4 relative z-10">
+        <CardHeader className="text-center space-y-3 relative z-10">
           <div className="flex justify-center">
-            <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-emerald-500 shadow-xl">
+            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-emerald-500 shadow-xl">
               <img src={damaskLogo} alt="Damask plays" className="w-full h-full object-cover" />
             </div>
           </div>
           <div>
-            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-emerald-500 to-emerald-600 bg-clip-text text-transparent">
+            <CardTitle className="text-xl font-bold bg-gradient-to-r from-emerald-500 to-emerald-600 bg-clip-text text-transparent">
               Damask Plays
             </CardTitle>
-            <p className="text-muted-foreground text-sm mt-2">
+            <p className="text-muted-foreground text-sm mt-1">
               Support Damask Plays with your donation
             </p>
           </div>
         </CardHeader>
         
-        <CardContent className="space-y-6 relative z-10">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <CardContent className="space-y-4 relative z-10">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="donationType" className="text-base font-semibold text-emerald-500">
+              <Label htmlFor="donationType" className="text-sm font-semibold text-emerald-500">
                 Choose Donation Type
               </Label>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={() => setDonationType('text')}
-                  className={`flex flex-col items-center justify-between rounded-md border-2 p-4 transition-all ${
+                  className={`flex flex-col items-center justify-between rounded-md border-2 p-2 transition-all ${
                     donationType === 'text'
                       ? 'border-emerald-500 bg-emerald-500/10'
                       : 'border-emerald-500/30 hover:border-emerald-500/50 bg-card'
                   }`}
                 >
-                  <span className="text-2xl mb-2">💬</span>
-                  <span className="text-sm font-medium">Text Message</span>
-                  <span className="text-xs text-muted-foreground mt-1">₹40 min</span>
+                  <span className="text-xl mb-1">💬</span>
+                  <span className="text-xs font-medium">Text Message</span>
+                  <span className="text-[10px] text-muted-foreground">₹40 min</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setDonationType('voice')}
-                  className={`flex flex-col items-center justify-between rounded-md border-2 p-4 transition-all ${
+                  className={`flex flex-col items-center justify-between rounded-md border-2 p-2 transition-all ${
                     donationType === 'voice'
                       ? 'border-emerald-500 bg-emerald-500/10'
                       : 'border-emerald-500/30 hover:border-emerald-500/50 bg-card'
                   }`}
                 >
-                  <span className="text-2xl mb-2">🎤</span>
-                  <span className="text-sm font-medium">Voice Message</span>
-                  <span className="text-xs text-muted-foreground mt-1">₹150 min</span>
+                  <span className="text-xl mb-1">🎤</span>
+                  <span className="text-xs font-medium">Voice Message</span>
+                  <span className="text-[10px] text-muted-foreground">₹150 min</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setDonationType('hyperemote')}
-                  className={`flex flex-col items-center justify-between rounded-md border-2 p-4 transition-all ${
+                  className={`flex flex-col items-center justify-between rounded-md border-2 p-2 transition-all ${
                     donationType === 'hyperemote'
                       ? 'border-emerald-500 bg-emerald-500/10'
                       : 'border-emerald-500/30 hover:border-emerald-500/50 bg-card'
                   }`}
                 >
-                  <span className="text-2xl mb-2">🎉</span>
-                  <span className="text-sm font-medium">Hyperemotes</span>
-                  <span className="text-xs text-muted-foreground mt-1">
+                  <span className="text-xl mb-1">🎉</span>
+                  <span className="text-xs font-medium">Hyperemotes</span>
+                  <span className="text-[10px] text-muted-foreground">
                     ₹{streamerSettings?.hyperemotes_min_amount || 50} min
                   </span>
                 </button>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="name" className="text-emerald-500">Your Name</Label>
+            <div className="space-y-1">
+              <Label htmlFor="name" className="text-sm text-emerald-500">Your Name</Label>
               <Input
                 id="name"
                 value={formData.name}
@@ -408,8 +408,8 @@ const DamaskPlays = () => {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="amount" className="text-emerald-500">Amount (₹)</Label>
+            <div className="space-y-1">
+              <Label htmlFor="amount" className="text-sm text-emerald-500">Amount (₹)</Label>
               <Input
                 id="amount"
                 type="number"
@@ -423,8 +423,8 @@ const DamaskPlays = () => {
             </div>
 
             {donationType === 'text' && (
-              <div className="space-y-2">
-                <Label htmlFor="message" className="text-emerald-500">Your Message</Label>
+              <div className="space-y-1">
+                <Label htmlFor="message" className="text-sm text-emerald-500">Your Message</Label>
                 <Textarea
                   id="message"
                   value={formData.message}
@@ -440,9 +440,9 @@ const DamaskPlays = () => {
             )}
 
             {donationType === 'hyperemote' && (
-              <div className="space-y-3">
-                <Label className="text-emerald-500">Choose Your Hyperemote GIF</Label>
-                <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-sm text-emerald-500">Choose Your Hyperemote GIF</Label>
+                <div className="grid grid-cols-2 gap-2">
                   {availableGifs.map((gif) => (
                     <div
                       key={gif.name}
@@ -456,10 +456,10 @@ const DamaskPlays = () => {
                       <img
                         src={gif.url}
                         alt={gif.name.replace('.gif', '')}
-                        className="w-full h-32 object-cover"
+                        className="w-full h-24 object-cover"
                       />
-                      <div className="p-2 bg-card/50 backdrop-blur">
-                        <p className="text-xs text-center text-foreground font-medium truncate">
+                      <div className="p-1 bg-card/50 backdrop-blur">
+                        <p className="text-[10px] text-center text-foreground font-medium truncate">
                           {gif.name.replace('.gif', '').replace(/-/g, ' ')}
                         </p>
                       </div>
@@ -467,7 +467,7 @@ const DamaskPlays = () => {
                   ))}
                 </div>
                 {availableGifs.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-4">
+                  <p className="text-xs text-muted-foreground text-center py-2">
                     Loading GIFs...
                   </p>
                 )}
@@ -475,8 +475,8 @@ const DamaskPlays = () => {
             )}
 
             {donationType === 'voice' && (
-              <div className="space-y-2">
-                <Label className="text-emerald-500">Record Voice Message</Label>
+              <div className="space-y-1">
+                <Label className="text-sm text-emerald-500">Record Voice Message</Label>
                 <EnhancedVoiceRecorder 
                   controller={voiceRecorder}
                   currentAmount={currentAmount}
@@ -488,8 +488,8 @@ const DamaskPlays = () => {
             )}
 
             {donationType === 'hyperemote' && (
-              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-4">
-                <p className="text-sm text-muted-foreground">
+              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-2">
+                <p className="text-xs text-muted-foreground">
                   Hyperemotes will trigger special visual effects during the stream!
                   Minimum amount: ₹{streamerSettings?.hyperemotes_min_amount || 50}
                 </p>
