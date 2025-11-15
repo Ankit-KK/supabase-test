@@ -604,35 +604,6 @@ export type Database = {
         }
         Relationships: []
       }
-      streamers_auth_emails: {
-        Row: {
-          created_at: string
-          email: string
-          id: string
-          streamer_id: string
-        }
-        Insert: {
-          created_at?: string
-          email: string
-          id?: string
-          streamer_id: string
-        }
-        Update: {
-          created_at?: string
-          email?: string
-          id?: string
-          streamer_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "streamers_auth_emails_streamer_id_fkey"
-            columns: ["streamer_id"]
-            isOneToOne: false
-            referencedRelation: "streamers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       streamers_moderators: {
         Row: {
           created_at: string
