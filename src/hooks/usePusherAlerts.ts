@@ -17,6 +17,7 @@ interface PusherAlertsConfig {
   channelName: string;
   pusherKey: string;
   pusherCluster: string;
+  delayBeforeDisplay?: number;
   alertDuration?: {
     text: number;
     hyperemote: number;
@@ -29,6 +30,7 @@ export function usePusherAlerts(config: PusherAlertsConfig) {
     channelName,
     pusherKey,
     pusherCluster,
+    delayBeforeDisplay = 0,
     alertDuration = { text: 5000, hyperemote: 8000, voice: 15000 },
   } = config;
 
@@ -156,7 +158,15 @@ export function usePusherAlerts(config: PusherAlertsConfig) {
     // Bind to new-donation event
     channel.bind('new-donation', (data: Donation) => {
       console.log('[PusherAlerts] New donation received:', data);
-      addToQueueRef.current(data);
+      
+      if (delayBeforeDisplay > 0) {
+        console.log(`[PusherAlerts] Delaying alert for ${delayBeforeDisplay}ms`);
+        setTimeout(() => {
+          addToQueueRef.current(data);
+        }, delayBeforeDisplay);
+      } else {
+        addToQueueRef.current(data);
+      }
     });
 
     // Cleanup

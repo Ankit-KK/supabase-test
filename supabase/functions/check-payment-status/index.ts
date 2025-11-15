@@ -112,9 +112,12 @@ serve(async (req) => {
         success: true,
         order_id,
         status: orderStatus,
+        final_status: orderStatus,
         cashfree_status: cashfreeOrder.order_status,
+        order_status: cashfreeOrder.order_status,
         payment_amount: cashfreeOrder.order_amount,
         transactions: getOrderResponse,
+        payments: getOrderResponse,
         updated_donation: updatedDonation
       }),
       {
