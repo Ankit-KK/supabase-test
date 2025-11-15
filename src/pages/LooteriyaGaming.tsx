@@ -126,13 +126,35 @@ const LooteriyaGaming = () => {
       // Upload voice message BEFORE creating payment order
       let voiceMessageUrl: string | null = null;
       if (donationType === 'voice' && voiceRecorder.audioBlob) {
-        console.log('Uploading voice message before payment...');
-        const reader = new FileReader();
-        const voiceDataBase64 = await new Promise<string>((resolve) => {
+        console.log('Uploading voice message before payment...', { 
+          blobSize: voiceRecorder.audioBlob.size,
+          blobType: voiceRecorder.audioBlob.type 
+        });
+
+        // Validate blob has data
+        if (!voiceRecorder.audioBlob || voiceRecorder.audioBlob.size === 0) {
+          throw new Error('No voice recording found. Please record your message again.');
+        }
+
+        // Convert blob to base64 with proper error handling
+        const voiceDataBase64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          
           reader.onload = () => {
-            const base64 = (reader.result as string).split(',')[1];
+            const result = reader.result as string;
+            if (!result || !result.includes(',')) {
+              reject(new Error('Failed to read voice data'));
+              return;
+            }
+            const base64 = result.split(',')[1];
+            console.log('Voice data converted to base64, length:', base64.length);
             resolve(base64);
           };
+          
+          reader.onerror = () => {
+            reject(new Error('Failed to read voice recording'));
+          };
+          
           reader.readAsDataURL(voiceRecorder.audioBlob!);
         });
 
