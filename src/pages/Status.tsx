@@ -31,6 +31,7 @@ export default function Status() {
           if (orderId.startsWith('looteriya_gaming_')) return 'check-payment-status';
           if (orderId.startsWith('demostreamer_')) return 'check-payment-status';
           if (orderId.startsWith('damask_plays_')) return 'check-payment-status';
+          if (orderId.startsWith('neko_xenpai_')) return 'check-payment-status';
           return 'check-payment-status'; // default for chia_gaming
         };
         
@@ -215,6 +216,7 @@ export default function Status() {
                 if (orderId.startsWith('looteriya_gaming_')) return "/looteriya_gaming";
                 if (orderId.startsWith('demostreamer_')) return "/demo_streamer";
                 if (orderId.startsWith('damask_plays_')) return "/damask_plays";
+                if (orderId.startsWith('neko_xenpai_')) return "/neko_xenpai";
                 return "/chiaa_gaming"; // default for chia_gaming
               })()}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
