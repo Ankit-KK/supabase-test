@@ -234,7 +234,7 @@ const DamaskPlays = () => {
       <Card 
         className="w-full max-w-md mx-auto bg-card/95 backdrop-blur-sm border-emerald-500/20 shadow-2xl relative overflow-hidden"
         style={{ 
-          backgroundImage: `url(${damaskBanner})`,
+          backgroundImage: `url(${damaskProfile})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center'
         }}
@@ -249,7 +249,7 @@ const DamaskPlays = () => {
         <CardHeader className="text-center space-y-4 relative z-10">
           <div className="flex justify-center">
             <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-emerald-500 shadow-xl">
-              <img src={damaskProfile} alt="Damask plays" className="w-full h-full object-cover" />
+              <img src={damaskBanner} alt="Damask plays" className="w-full h-full object-cover" />
             </div>
           </div>
           <div>
