@@ -20,7 +20,7 @@ const NekoXenpai = () => {
     amount: '',
     message: '',
   });
-  const [donationType, setDonationType] = useState<'message' | 'voice' | 'hyperemote'>('message');
+  const [donationType, setDonationType] = useState<'text' | 'voice' | 'hyperemote'>('text');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [cashfree, setCashfree] = useState<any>(null);
   const [sdkLoading, setSdkLoading] = useState(true);
