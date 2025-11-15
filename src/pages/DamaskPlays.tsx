@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -12,7 +11,8 @@ import { load } from '@cashfreepayments/cashfree-js';
 import EnhancedVoiceRecorder from '@/components/EnhancedVoiceRecorder';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { PhoneDialog } from '@/components/PhoneDialog';
-import { Gamepad2 } from 'lucide-react';
+import damaskBanner from '@/assets/damask-banner.jpg';
+import damaskProfile from '@/assets/damask-profile.jpg';
 
 const DamaskPlays = () => {
   const [formData, setFormData] = useState({
@@ -30,12 +30,11 @@ const DamaskPlays = () => {
   const [streamerSettings, setStreamerSettings] = useState<{ hyperemotes_enabled: boolean; hyperemotes_min_amount: number } | null>(null);
   const navigate = useNavigate();
   
-  // Calculate voice duration based on amount
   const getVoiceDuration = (amount: number) => {
     if (amount >= 500) return 30;
     if (amount >= 250) return 25;
     if (amount >= 150) return 15;
-    return 15; // default
+    return 15;
   };
 
   const currentAmount = parseFloat(formData.amount) || 0;
@@ -96,7 +95,6 @@ const DamaskPlays = () => {
 
     const amountNum = parseFloat(formData.amount);
     
-    // Validate amounts based on donation type
     if (donationType === 'hyperemote') {
       const minAmount = streamerSettings?.hyperemotes_min_amount || 50;
       if (amountNum < minAmount) {
@@ -122,81 +120,96 @@ const DamaskPlays = () => {
         return;
       }
     }
-    
-    setPhoneError('');
+
     setIsPhoneDialogOpen(true);
   };
 
   const handlePaymentWithPhone = async () => {
     if (!validatePhoneNumber(phoneNumber)) {
-      setPhoneError('Please enter a valid 10-digit mobile number starting with 6-9');
+      setPhoneError('Please enter a valid 10-digit phone number');
       return;
     }
 
+    setPhoneError('');
     setIsProcessingPayment(true);
-    setIsPhoneDialogOpen(false);
 
     try {
       let voiceMessageUrl = null;
 
       if (donationType === 'voice' && voiceRecorder.audioBlob) {
-        const reader = new FileReader();
-        const voiceDataBase64 = await new Promise<string>((resolve, reject) => {
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(voiceRecorder.audioBlob);
-        });
-
-        const { data: uploadResult, error: uploadError } = await supabase.functions.invoke(
-          'upload-voice-message-direct',
-          {
-            body: { 
-              voiceData: voiceDataBase64, 
-              streamerSlug: 'damask_plays'
-            }
-          }
-        );
+        const timestamp = Date.now();
+        const fileName = `voice-${timestamp}.webm`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('voice-messages')
+          .upload(`damask_plays/${fileName}`, voiceRecorder.audioBlob, {
+            contentType: 'audio/webm',
+            upsert: false
+          });
 
         if (uploadError) {
-          console.error('Voice upload error:', uploadError);
+          console.error('Upload error:', uploadError);
           throw new Error('Failed to upload voice message');
         }
 
-        voiceMessageUrl = uploadResult.voice_message_url;
-        console.log('Voice message uploaded successfully:', voiceMessageUrl);
+        const { data: { publicUrl } } = supabase.storage
+          .from('voice-messages')
+          .getPublicUrl(`damask_plays/${fileName}`);
+
+        voiceMessageUrl = publicUrl;
       }
 
-      const { data, error } = await supabase.functions.invoke('create-payment-order-damask-plays', {
-        body: {
-          name: formData.name,
-          amount: parseFloat(formData.amount),
-          message: donationType === 'text' ? formData.message : null,
-          phone: phoneNumber,
-          voiceMessageUrl: voiceMessageUrl,
-          isHyperemote: donationType === 'hyperemote',
-        },
-      });
+      const response = await fetch(
+        'https://vsevsjvtrshgeiudrnth.supabase.co/functions/v1/create-payment-order-damask-plays',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: formData.name,
+            amount: parseFloat(formData.amount),
+            message: donationType === 'text' ? formData.message : null,
+            voice_message_url: voiceMessageUrl,
+            is_hyperemote: donationType === 'hyperemote',
+            customer_phone: phoneNumber,
+          }),
+        }
+      );
 
-      if (error) throw error;
-
-      if (!data?.payment_session_id) {
-        throw new Error('No payment session ID received');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Payment initialization failed');
       }
+
+      const { sessionId, orderId } = await response.json();
 
       const checkoutOptions = {
-        paymentSessionId: data.payment_session_id,
-        returnUrl: `${window.location.origin}/damask_plays?order_id=${data.order_id}&status={order_status}`,
+        paymentSessionId: sessionId,
+        redirectTarget: '_self',
       };
 
       if (cashfree) {
         cashfree.checkout(checkoutOptions);
-      } else {
-        throw new Error('Payment system not initialized');
       }
     } catch (error: any) {
       console.error('Payment error:', error);
-      toast.error(error.message || 'Failed to process payment');
+      toast.error(error.message || 'Failed to process payment. Please try again.');
+    } finally {
       setIsProcessingPayment(false);
+      setIsPhoneDialogOpen(false);
+    }
+  };
+
+  const getMinAmount = () => {
+    switch (donationType) {
+      case 'voice':
+        return 150;
+      case 'hyperemote':
+        return streamerSettings?.hyperemotes_min_amount || 50;
+      case 'text':
+      default:
+        return 40;
     }
   };
 
@@ -212,176 +225,164 @@ const DamaskPlays = () => {
   const currentMessageLength = formData.message.length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-950 via-slate-900 to-emerald-800 py-8 px-4">
-      <div className="max-w-2xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-4">
-          <div className="flex justify-center">
-            <div className="w-32 h-32 rounded-full bg-emerald-500/20 flex items-center justify-center border-4 border-emerald-500">
-              <Gamepad2 className="w-16 h-16 text-emerald-400" />
+    <div 
+      className="min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center p-4 relative"
+      style={{ backgroundImage: `url(${damaskBanner})` }}
+    >
+      <div className="absolute inset-0 bg-black/40"></div>
+      
+      <Card className="w-full max-w-md shadow-2xl border-emerald-500/20 bg-card/95 backdrop-blur-sm relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-emerald-600/10 to-emerald-400/10 opacity-50 blur-xl"></div>
+        
+        <CardHeader className="space-y-4 relative z-10">
+          <div className="flex items-center gap-4">
+            <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-emerald-500 shadow-xl">
+              <img src={damaskProfile} alt="Damask plays" className="w-full h-full object-cover" />
+            </div>
+            <div>
+              <CardTitle className="text-2xl font-bold text-emerald-500">Damask plays</CardTitle>
+              <CardDescription>Support the stream with your donation</CardDescription>
             </div>
           </div>
-          <h1 className="text-4xl font-bold text-white">Damask plays</h1>
-          <p className="text-emerald-300 text-lg">Support with a donation</p>
-        </div>
-
-        {/* Donation Card */}
-        <Card className="bg-slate-800/50 border-emerald-500/30 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="text-2xl text-white">Make a Donation</CardTitle>
-            <CardDescription className="text-emerald-300">
-              Choose your donation type and amount
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Donation Type Selection */}
-              <div className="space-y-3">
-                <Label className="text-white text-lg">Donation Type</Label>
-                <RadioGroup
-                  value={donationType}
-                  onValueChange={(value: 'text' | 'voice' | 'hyperemote') => setDonationType(value)}
-                  className="grid grid-cols-1 md:grid-cols-3 gap-3"
+        </CardHeader>
+        
+        <CardContent className="space-y-6 relative z-10">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="donationType" className="text-base font-semibold text-emerald-500">
+                Choose Donation Type
+              </Label>
+              <div className="grid grid-cols-3 gap-4">
+                <button
+                  type="button"
+                  onClick={() => setDonationType('text')}
+                  className={`flex flex-col items-center justify-between rounded-md border-2 p-4 transition-all ${
+                    donationType === 'text'
+                      ? 'border-emerald-500 bg-emerald-500/10'
+                      : 'border-emerald-500/30 hover:border-emerald-500/50 bg-card'
+                  }`}
                 >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="text" id="text" className="border-emerald-500" />
-                    <Label htmlFor="text" className="text-white cursor-pointer flex-1">
-                      Text Message (₹40+)
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="voice" id="voice" className="border-emerald-500" />
-                    <Label htmlFor="voice" className="text-white cursor-pointer flex-1">
-                      Voice Message (₹150+)
-                    </Label>
-                  </div>
-                  {streamerSettings?.hyperemotes_enabled && (
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="hyperemote" id="hyperemote" className="border-emerald-500" />
-                      <Label htmlFor="hyperemote" className="text-white cursor-pointer flex-1">
-                        Hyperemote (₹{streamerSettings.hyperemotes_min_amount}+)
-                      </Label>
-                    </div>
-                  )}
-                </RadioGroup>
+                  <span className="text-2xl mb-2">💬</span>
+                  <span className="text-sm font-medium">Text Message</span>
+                  <span className="text-xs text-muted-foreground mt-1">₹40 min</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDonationType('voice')}
+                  className={`flex flex-col items-center justify-between rounded-md border-2 p-4 transition-all ${
+                    donationType === 'voice'
+                      ? 'border-emerald-500 bg-emerald-500/10'
+                      : 'border-emerald-500/30 hover:border-emerald-500/50 bg-card'
+                  }`}
+                >
+                  <span className="text-2xl mb-2">🎤</span>
+                  <span className="text-sm font-medium">Voice Message</span>
+                  <span className="text-xs text-muted-foreground mt-1">₹150 min</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDonationType('hyperemote')}
+                  className={`flex flex-col items-center justify-between rounded-md border-2 p-4 transition-all ${
+                    donationType === 'hyperemote'
+                      ? 'border-emerald-500 bg-emerald-500/10'
+                      : 'border-emerald-500/30 hover:border-emerald-500/50 bg-card'
+                  }`}
+                >
+                  <span className="text-2xl mb-2">🎉</span>
+                  <span className="text-sm font-medium">Hyperemotes</span>
+                  <span className="text-xs text-muted-foreground mt-1">
+                    ₹{streamerSettings?.hyperemotes_min_amount || 50} min
+                  </span>
+                </button>
               </div>
+            </div>
 
-              {/* Name Input */}
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-emerald-500">Your Name</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Enter your name"
+                required
+                className="border-emerald-500/30 focus:border-emerald-500 bg-background"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="amount" className="text-emerald-500">Amount (₹)</Label>
+              <Input
+                id="amount"
+                type="number"
+                value={formData.amount}
+                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                placeholder="Enter amount"
+                min={getMinAmount()}
+                required
+                className="border-emerald-500/30 focus:border-emerald-500 bg-background"
+              />
+            </div>
+
+            {donationType === 'text' && (
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-white">Your Name</Label>
-                <Input
-                  id="name"
-                  placeholder="Enter your name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  maxLength={50}
-                  required
-                  className="bg-slate-700/50 border-emerald-500/50 text-white placeholder:text-slate-400"
+                <Label htmlFor="message" className="text-emerald-500">Your Message</Label>
+                <Textarea
+                  id="message"
+                  value={formData.message}
+                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                  placeholder="Enter your message..."
+                  maxLength={getCharacterLimit()}
+                  className="border-emerald-500/30 focus:border-emerald-500 min-h-[100px] bg-background"
+                />
+                <p className="text-xs text-muted-foreground text-right">
+                  {currentMessageLength}/{currentCharLimit} characters
+                </p>
+              </div>
+            )}
+
+            {donationType === 'voice' && (
+              <div className="space-y-2">
+                <Label className="text-emerald-500">Record Voice Message</Label>
+                <EnhancedVoiceRecorder 
+                  controller={voiceRecorder}
+                  currentAmount={currentAmount}
+                  requiredAmount={150}
+                  brandColor="#10b981"
+                  onRecordingComplete={() => {}}
                 />
               </div>
+            )}
 
-              {/* Amount Input */}
-              <div className="space-y-2">
-                <Label htmlFor="amount" className="text-white">
-                  Amount (₹)
-                  {donationType === 'text' && ' - Minimum ₹40'}
-                  {donationType === 'voice' && ' - Minimum ₹150 (15s-30s based on amount)'}
-                  {donationType === 'hyperemote' && ` - Minimum ₹${streamerSettings?.hyperemotes_min_amount || 50}`}
-                </Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  placeholder="Enter amount"
-                  value={formData.amount}
-                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                  min={donationType === 'hyperemote' ? streamerSettings?.hyperemotes_min_amount || 50 : donationType === 'voice' ? 150 : 40}
-                  required
-                  className="bg-slate-700/50 border-emerald-500/50 text-white placeholder:text-slate-400"
-                />
+            {donationType === 'hyperemote' && (
+              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-4">
+                <p className="text-sm text-muted-foreground">
+                  Hyperemotes will trigger special visual effects during the stream!
+                  Minimum amount: ₹{streamerSettings?.hyperemotes_min_amount || 50}
+                </p>
               </div>
+            )}
 
-              {/* Text Message */}
-              {donationType === 'text' && (
-                <div className="space-y-2">
-                  <Label htmlFor="message" className="text-white">
-                    Your Message ({currentMessageLength}/{currentCharLimit})
-                  </Label>
-                  <Textarea
-                    id="message"
-                    placeholder="Enter your message..."
-                    value={formData.message}
-                    onChange={(e) => {
-                      if (e.target.value.length <= currentCharLimit) {
-                        setFormData({ ...formData, message: e.target.value });
-                      }
-                    }}
-                    rows={4}
-                    maxLength={currentCharLimit}
-                    required
-                    className="bg-slate-700/50 border-emerald-500/50 text-white placeholder:text-slate-400 resize-none"
-                  />
-                  <p className="text-xs text-emerald-300">
-                    {parseFloat(formData.amount) >= 70 
-                      ? '✓ TTS will be generated for your message'
-                      : '⚠️ ₹70+ required for TTS generation'}
-                  </p>
-                </div>
-              )}
+            <Button 
+              type="submit" 
+              className="w-full bg-emerald-500 hover:bg-emerald-600"
+              disabled={sdkLoading || isProcessingPayment}
+            >
+              {isProcessingPayment ? 'Processing...' : 'Continue to Payment'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
 
-              {/* Voice Recorder */}
-              {donationType === 'voice' && (
-                <div className="space-y-2">
-                  <Label className="text-white">Voice Message</Label>
-                  <EnhancedVoiceRecorder
-                    onRecordingComplete={() => {}}
-                    maxDurationSeconds={getVoiceDuration(currentAmount)}
-                    controller={voiceRecorder}
-                    currentAmount={currentAmount}
-                    requiredAmount={150}
-                    brandColor="#10b981"
-                  />
-                  <p className="text-xs text-emerald-300">
-                    Duration: {currentAmount >= 500 ? '30s' : currentAmount >= 250 ? '25s' : '15s'} based on amount
-                  </p>
-                </div>
-              )}
-
-              {/* Hyperemote Info */}
-              {donationType === 'hyperemote' && (
-                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4">
-                  <p className="text-emerald-300 text-sm">
-                    ✨ Your hyperemote will trigger special visual effects on stream!
-                  </p>
-                </div>
-              )}
-
-              {/* Submit Button */}
-              <Button
-                type="submit"
-                disabled={sdkLoading || isProcessingPayment}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-6 text-lg"
-              >
-                {sdkLoading ? 'Loading...' : isProcessingPayment ? 'Processing...' : 'Proceed to Payment'}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        {/* Phone Dialog */}
-        <PhoneDialog
-          open={isPhoneDialogOpen}
-          onOpenChange={setIsPhoneDialogOpen}
-          phoneNumber={phoneNumber}
-          onPhoneChange={(phone) => {
-            setPhoneNumber(phone);
-            setPhoneError('');
-          }}
-          phoneError={phoneError}
-          onContinue={handlePaymentWithPhone}
-          isSubmitting={isProcessingPayment}
-          buttonColor="#10b981"
-        />
-      </div>
+      <PhoneDialog
+        open={isPhoneDialogOpen}
+        onOpenChange={setIsPhoneDialogOpen}
+        phoneNumber={phoneNumber}
+        onPhoneChange={setPhoneNumber}
+        phoneError={phoneError}
+        onContinue={handlePaymentWithPhone}
+        isSubmitting={isProcessingPayment}
+        buttonColor="#10b981"
+      />
     </div>
   );
 };
