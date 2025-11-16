@@ -171,12 +171,12 @@ const Pricing: React.FC = () => {
   const bundleOffer = {
     name: "Complete Bundle",
     description: "Base Plan + Voice + HyperEmotes",
-    price: "999",
+    price: "1199",
     originalPrice: "1399",
     popular: true,
     gradient: "bg-hero-gradient",
     icon: <Crown className="text-white h-5 w-5" />,
-    badge: "SAVE ₹400",
+    badge: "SAVE ₹200",
     features: [
       "Everything in Base Plan",
       "Voice message recordings",
