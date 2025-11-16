@@ -29,53 +29,7 @@ const DamaskPlays = () => {
   const [phoneError, setPhoneError] = useState('');
   const [isPhoneDialogOpen, setIsPhoneDialogOpen] = useState(false);
   const [streamerSettings, setStreamerSettings] = useState<{ hyperemotes_enabled: boolean; hyperemotes_min_amount: number } | null>(null);
-  const [availableGifs, setAvailableGifs] = useState<{ name: string; url: string }[]>([]);
-  const [selectedGif, setSelectedGif] = useState<string>('');
   const navigate = useNavigate();
-  
-  const getEffectDescription = (gifName: string): { title: string; description: string; icon: string } => {
-    const name = gifName.replace('.gif', '').toLowerCase();
-    
-    const effects: Record<string, { title: string; description: string; icon: string }> = {
-      'rain': { 
-        title: '🌧️ Rain Effect', 
-        description: 'Multiple emotes rain down from the top',
-        icon: '🌧️'
-      },
-      'spiral': { 
-        title: '🌀 Spiral Effect', 
-        description: 'Emotes spiral around the screen',
-        icon: '🌀'
-      },
-      'explode': { 
-        title: '💥 Explosion Effect', 
-        description: 'Emotes explode from the center outward',
-        icon: '💥'
-      },
-      'float': { 
-        title: '✨ Float Effect', 
-        description: 'Emotes gently float upward',
-        icon: '✨'
-      },
-      'bounce': { 
-        title: '🎾 Bounce Effect', 
-        description: 'Emotes bounce across the screen',
-        icon: '🎾'
-      },
-    };
-    
-    for (const [key, effect] of Object.entries(effects)) {
-      if (name.includes(key)) {
-        return effect;
-      }
-    }
-    
-    return { 
-      title: '🎭 Custom Effect', 
-      description: name.replace(/-/g, ' ').replace(/_/g, ' '),
-      icon: '🎭'
-    };
-  };
   
   const getVoiceDuration = (amount: number) => {
     if (amount >= 500) return 30;
@@ -127,41 +81,6 @@ const DamaskPlays = () => {
     fetchStreamerSettings();
   }, []);
 
-  // Fetch available GIFs for hyperemote selection
-  useEffect(() => {
-    const fetchGifs = async () => {
-      try {
-        const { data, error } = await supabase.storage
-          .from('damask-gif')
-          .list();
-
-        if (error) {
-          console.error('Error fetching GIFs:', error);
-          return;
-        }
-
-        if (data) {
-          const gifs = data
-            .filter(file => file.name.endsWith('.gif'))
-            .map(file => ({
-              name: file.name,
-              url: supabase.storage.from('damask-gif').getPublicUrl(file.name).data.publicUrl
-            }));
-          setAvailableGifs(gifs);
-          if (gifs.length > 0) {
-            setSelectedGif(gifs[0].name); // Default to first GIF
-          }
-        }
-      } catch (err) {
-        console.error('Failed to fetch GIFs:', err);
-      }
-    };
-
-    if (donationType === 'hyperemote') {
-      fetchGifs();
-    }
-  }, [donationType]);
-
   const validatePhoneNumber = (phone: string): boolean => {
     const phoneRegex = /^[6-9]\d{9}$/;
     return phoneRegex.test(phone);
@@ -181,10 +100,6 @@ const DamaskPlays = () => {
       const minAmount = streamerSettings?.hyperemotes_min_amount || 50;
       if (amountNum < minAmount) {
         toast.error(`Minimum amount for hyperemotes is ₹${minAmount}`);
-        return;
-      }
-      if (!selectedGif) {
-        toast.error('Please select a GIF for your hyperemote');
         return;
       }
     } else if (donationType === 'voice') {
@@ -299,7 +214,6 @@ const DamaskPlays = () => {
             voiceMessageUrl: voiceMessageUrl,
             isHyperemote: donationType === 'hyperemote',
             phone: phoneNumber,
-            selectedGifId: donationType === 'hyperemote' ? selectedGif : null,
           }),
         }
       );
@@ -485,44 +399,21 @@ const DamaskPlays = () => {
 
             {donationType === 'hyperemote' && (
               <div className="space-y-2">
-                <Label className="text-sm text-emerald-500">Choose Your Hyperemote Effect</Label>
-                <div className="grid grid-cols-1 gap-2 max-h-[300px] overflow-y-auto">
-                  {availableGifs.map((gif) => {
-                    const effect = getEffectDescription(gif.name);
-                    return (
-                      <button
-                        key={gif.name}
-                        type="button"
-                        onClick={() => setSelectedGif(gif.name)}
-                        className={`p-3 rounded-lg border-2 transition-all text-left ${
-                          selectedGif === gif.name
-                            ? 'border-emerald-500 bg-emerald-500/20 ring-2 ring-emerald-500/50'
-                            : 'border-emerald-500/30 hover:border-emerald-500/50 hover:bg-emerald-500/10'
-                        }`}
-                      >
-                        <div className="flex items-start gap-3">
-                          <span className="text-2xl">{effect.icon}</span>
-                          <div className="flex-1">
-                            <p className="font-semibold text-emerald-100 text-sm">
-                              {effect.title}
-                            </p>
-                            <p className="text-xs text-emerald-300/70 mt-1">
-                              {effect.description}
-                            </p>
-                          </div>
-                          {selectedGif === gif.name && (
-                            <span className="text-emerald-400 text-xs">✓</span>
-                          )}
-                        </div>
-                      </button>
-                    );
-                  })}
+                <Label className="text-sm text-emerald-500">Hyperemote Effect Preview</Label>
+                <div className="p-4 rounded-lg border-2 border-emerald-500 bg-emerald-500/10">
+                  <div className="flex items-start gap-3">
+                    <span className="text-3xl">🌧️</span>
+                    <div className="flex-1">
+                      <p className="font-bold text-emerald-100 text-base">
+                        GIF Rain Effect
+                      </p>
+                      <p className="text-sm text-emerald-300/80 mt-2">
+                        All animated GIFs will rain down from the top of the screen with spiraling and floating animations! 
+                        Your donation triggers an epic visual spectacle for the stream.
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                {availableGifs.length === 0 && (
-                  <p className="text-xs text-muted-foreground text-center py-2">
-                    No hyperemote effects available yet
-                  </p>
-                )}
               </div>
             )}
 
