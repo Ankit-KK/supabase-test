@@ -286,37 +286,37 @@ const NekoXenpai = () => {
         </CardHeader>
 
         <CardContent className="relative z-10 space-y-4">
-          <div className="space-y-2">
-            <Label className="text-sm text-fuchsia-200">Choose Donation Type</Label>
-            <div className="grid grid-cols-3 gap-2">
+          <div className="space-y-3">
+            <Label className="text-sm font-semibold text-fuchsia-200">Choose Donation Type</Label>
+            <div className="grid grid-cols-3 gap-3">
               <Button
                 type="button"
                 variant={donationType === 'text' ? 'default' : 'outline'}
                 onClick={() => setDonationType('text')}
-                className={`h-16 flex flex-col items-center justify-center gap-1 transition-all ${
+                className={`h-20 flex flex-col items-center justify-center gap-1.5 transition-all ${
                   donationType === 'text'
-                    ? 'bg-gradient-to-br from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white border-fuchsia-500'
-                    : 'bg-black/40 hover:bg-black/60 text-fuchsia-200 border-fuchsia-500/30'
+                    ? 'bg-gradient-to-br from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white border-2 border-fuchsia-400 shadow-lg shadow-fuchsia-500/50 scale-105'
+                    : 'bg-black/50 hover:bg-black/70 text-fuchsia-200 border-2 border-fuchsia-500/40 hover:border-fuchsia-500/60 hover:scale-105'
                 }`}
               >
-                <span className="text-2xl">💬</span>
-                <span className="text-[10px] font-semibold">Text Message</span>
-                <span className="text-[9px] opacity-70">Min ₹40</span>
+                <span className="text-3xl">💬</span>
+                <span className="text-xs font-bold tracking-wide">Text</span>
+                <span className="text-[10px] opacity-80 font-medium">Min ₹40</span>
               </Button>
 
               <Button
                 type="button"
                 variant={donationType === 'voice' ? 'default' : 'outline'}
                 onClick={() => setDonationType('voice')}
-                className={`h-16 flex flex-col items-center justify-center gap-1 transition-all ${
+                className={`h-20 flex flex-col items-center justify-center gap-1.5 transition-all ${
                   donationType === 'voice'
-                    ? 'bg-gradient-to-br from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white border-fuchsia-500'
-                    : 'bg-black/40 hover:bg-black/60 text-fuchsia-200 border-fuchsia-500/30'
+                    ? 'bg-gradient-to-br from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white border-2 border-fuchsia-400 shadow-lg shadow-fuchsia-500/50 scale-105'
+                    : 'bg-black/50 hover:bg-black/70 text-fuchsia-200 border-2 border-fuchsia-500/40 hover:border-fuchsia-500/60 hover:scale-105'
                 }`}
               >
-                <span className="text-2xl">🎤</span>
-                <span className="text-[10px] font-semibold">Voice Message</span>
-                <span className="text-[9px] opacity-70">Min ₹150</span>
+                <span className="text-3xl">🎤</span>
+                <span className="text-xs font-bold tracking-wide">Voice</span>
+                <span className="text-[10px] opacity-80 font-medium">Min ₹150</span>
               </Button>
 
               <Button
@@ -324,15 +324,15 @@ const NekoXenpai = () => {
                 variant={donationType === 'hyperemote' ? 'default' : 'outline'}
                 onClick={() => setDonationType('hyperemote')}
                 disabled={!streamerSettings?.hyperemotes_enabled}
-                className={`h-16 flex flex-col items-center justify-center gap-1 transition-all ${
+                className={`h-20 flex flex-col items-center justify-center gap-1.5 transition-all ${
                   donationType === 'hyperemote'
-                    ? 'bg-gradient-to-br from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white border-fuchsia-500'
-                    : 'bg-black/40 hover:bg-black/60 text-fuchsia-200 border-fuchsia-500/30 disabled:opacity-50'
+                    ? 'bg-gradient-to-br from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white border-2 border-fuchsia-400 shadow-lg shadow-fuchsia-500/50 scale-105'
+                    : 'bg-black/50 hover:bg-black/70 text-fuchsia-200 border-2 border-fuchsia-500/40 hover:border-fuchsia-500/60 hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed'
                 }`}
               >
-                <span className="text-2xl">🎁</span>
-                <span className="text-[10px] font-semibold">Hyperemotes</span>
-                <span className="text-[9px] opacity-70">Min ₹{streamerSettings?.hyperemotes_min_amount || 50}</span>
+                <span className="text-3xl">🎁</span>
+                <span className="text-xs font-bold tracking-wide">Effects</span>
+                <span className="text-[10px] opacity-80 font-medium">Min ₹{streamerSettings?.hyperemotes_min_amount || 50}</span>
               </Button>
             </div>
           </div>

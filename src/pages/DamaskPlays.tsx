@@ -305,50 +305,50 @@ const DamaskPlays = () => {
         
         <CardContent className="space-y-4 relative z-10">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label htmlFor="donationType" className="text-sm font-semibold text-emerald-500">
                 Choose Donation Type
               </Label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-3">
                 <button
                   type="button"
                   onClick={() => setDonationType('text')}
-                  className={`flex flex-col items-center justify-between rounded-md border-2 p-2 transition-all ${
+                  className={`h-20 flex flex-col items-center justify-center gap-1.5 rounded-lg border-2 transition-all ${
                     donationType === 'text'
-                      ? 'border-emerald-500 bg-emerald-500/10'
-                      : 'border-emerald-500/30 hover:border-emerald-500/50 bg-card'
+                      ? 'border-emerald-400 bg-gradient-to-br from-emerald-600 to-green-600 text-white shadow-lg shadow-emerald-500/50 scale-105'
+                      : 'border-emerald-500/40 hover:border-emerald-500/60 bg-black/50 hover:bg-black/70 text-emerald-200 hover:scale-105'
                   }`}
                 >
-                  <span className="text-xl mb-1">💬</span>
-                  <span className="text-xs font-medium">Text Message</span>
-                  <span className="text-[10px] text-muted-foreground">₹40 min</span>
+                  <span className="text-3xl">💬</span>
+                  <span className="text-xs font-bold tracking-wide">Text</span>
+                  <span className="text-[10px] opacity-80 font-medium">Min ₹40</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setDonationType('voice')}
-                  className={`flex flex-col items-center justify-between rounded-md border-2 p-2 transition-all ${
+                  className={`h-20 flex flex-col items-center justify-center gap-1.5 rounded-lg border-2 transition-all ${
                     donationType === 'voice'
-                      ? 'border-emerald-500 bg-emerald-500/10'
-                      : 'border-emerald-500/30 hover:border-emerald-500/50 bg-card'
+                      ? 'border-emerald-400 bg-gradient-to-br from-emerald-600 to-green-600 text-white shadow-lg shadow-emerald-500/50 scale-105'
+                      : 'border-emerald-500/40 hover:border-emerald-500/60 bg-black/50 hover:bg-black/70 text-emerald-200 hover:scale-105'
                   }`}
                 >
-                  <span className="text-xl mb-1">🎤</span>
-                  <span className="text-xs font-medium">Voice Message</span>
-                  <span className="text-[10px] text-muted-foreground">₹150 min</span>
+                  <span className="text-3xl">🎤</span>
+                  <span className="text-xs font-bold tracking-wide">Voice</span>
+                  <span className="text-[10px] opacity-80 font-medium">Min ₹150</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setDonationType('hyperemote')}
-                  className={`flex flex-col items-center justify-between rounded-md border-2 p-2 transition-all ${
+                  className={`h-20 flex flex-col items-center justify-center gap-1.5 rounded-lg border-2 transition-all ${
                     donationType === 'hyperemote'
-                      ? 'border-emerald-500 bg-emerald-500/10'
-                      : 'border-emerald-500/30 hover:border-emerald-500/50 bg-card'
+                      ? 'border-emerald-400 bg-gradient-to-br from-emerald-600 to-green-600 text-white shadow-lg shadow-emerald-500/50 scale-105'
+                      : 'border-emerald-500/40 hover:border-emerald-500/60 bg-black/50 hover:bg-black/70 text-emerald-200 hover:scale-105'
                   }`}
                 >
-                  <span className="text-xl mb-1">🎉</span>
-                  <span className="text-xs font-medium">Hyperemotes</span>
-                  <span className="text-[10px] text-muted-foreground">
-                    ₹{streamerSettings?.hyperemotes_min_amount || 50} min
+                  <span className="text-3xl">🎁</span>
+                  <span className="text-xs font-bold tracking-wide">Effects</span>
+                  <span className="text-[10px] opacity-80 font-medium">
+                    Min ₹{streamerSettings?.hyperemotes_min_amount || 50}
                   </span>
                 </button>
               </div>
