@@ -29,53 +29,7 @@ const NekoXenpai = () => {
   const [phoneError, setPhoneError] = useState('');
   const [isPhoneDialogOpen, setIsPhoneDialogOpen] = useState(false);
   const [streamerSettings, setStreamerSettings] = useState<{ hyperemotes_enabled: boolean; hyperemotes_min_amount: number } | null>(null);
-  const [availableGifs, setAvailableGifs] = useState<{ name: string; url: string }[]>([]);
-  const [selectedGif, setSelectedGif] = useState<string>('');
   const navigate = useNavigate();
-  
-  const getEffectDescription = (gifName: string): { title: string; description: string; icon: string } => {
-    const name = gifName.replace('.gif', '').toLowerCase();
-    
-    const effects: Record<string, { title: string; description: string; icon: string }> = {
-      'rain': { 
-        title: '🌧️ Rain Effect', 
-        description: 'Multiple emotes rain down from the top',
-        icon: '🌧️'
-      },
-      'spiral': { 
-        title: '🌀 Spiral Effect', 
-        description: 'Emotes spiral around the screen',
-        icon: '🌀'
-      },
-      'explode': { 
-        title: '💥 Explosion Effect', 
-        description: 'Emotes explode from the center outward',
-        icon: '💥'
-      },
-      'float': { 
-        title: '✨ Float Effect', 
-        description: 'Emotes gently float upward',
-        icon: '✨'
-      },
-      'bounce': { 
-        title: '🎾 Bounce Effect', 
-        description: 'Emotes bounce across the screen',
-        icon: '🎾'
-      },
-    };
-    
-    for (const [key, effect] of Object.entries(effects)) {
-      if (name.includes(key)) {
-        return effect;
-      }
-    }
-    
-    return { 
-      title: '🎭 Custom Effect', 
-      description: name.replace(/-/g, ' ').replace(/_/g, ' '),
-      icon: '🎭'
-    };
-  };
   
   const getVoiceDuration = (amount: number) => {
     if (amount >= 500) return 30;
@@ -135,41 +89,6 @@ const NekoXenpai = () => {
     fetchStreamerSettings();
   }, []);
 
-  // Fetch available GIFs for hyperemote selection
-  useEffect(() => {
-    const fetchGifs = async () => {
-      try {
-        const { data, error } = await supabase.storage
-          .from('neko-gif')
-          .list();
-
-        if (error) {
-          console.error('Error fetching GIFs:', error);
-          return;
-        }
-
-        if (data) {
-          const gifs = data
-            .filter(file => file.name.endsWith('.gif'))
-            .map(file => ({
-              name: file.name,
-              url: supabase.storage.from('neko-gif').getPublicUrl(file.name).data.publicUrl
-            }));
-          setAvailableGifs(gifs);
-          if (gifs.length > 0) {
-            setSelectedGif(gifs[0].name);
-          }
-        }
-      } catch (err) {
-        console.error('Failed to fetch GIFs:', err);
-      }
-    };
-
-    if (donationType === 'hyperemote') {
-      fetchGifs();
-    }
-  }, [donationType]);
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -196,11 +115,6 @@ const NekoXenpai = () => {
 
     if (donationType === 'voice' && !voiceRecorder.audioBlob) {
       toast.error('Please record a voice message');
-      return false;
-    }
-
-    if (donationType === 'hyperemote' && !selectedGif) {
-      toast.error('Please select a GIF');
       return false;
     }
 
@@ -308,7 +222,6 @@ const NekoXenpai = () => {
           phone: phoneNumber,
           voiceMessageUrl,
           isHyperemote: donationType === 'hyperemote',
-          selectedGifId: donationType === 'hyperemote' ? selectedGif : null,
         },
       });
 
@@ -495,46 +408,22 @@ const NekoXenpai = () => {
           )}
 
           {donationType === 'hyperemote' && (
-            <div className="space-y-1">
-              <Label className="text-sm text-fuchsia-200">Select Hyperemote Effect</Label>
-              {availableGifs.length > 0 ? (
-                <div className="grid grid-cols-1 gap-2 max-h-[300px] overflow-y-auto p-2 bg-black/40 rounded-lg border border-fuchsia-500/30">
-                  {availableGifs.map((gif) => {
-                    const effect = getEffectDescription(gif.name);
-                    return (
-                      <button
-                        key={gif.name}
-                        type="button"
-                        onClick={() => setSelectedGif(gif.name)}
-                        className={`p-3 rounded-lg border-2 transition-all text-left ${
-                          selectedGif === gif.name
-                            ? 'border-fuchsia-500 bg-fuchsia-500/20 ring-2 ring-fuchsia-500/50'
-                            : 'border-fuchsia-500/30 hover:border-fuchsia-500/50 hover:bg-fuchsia-500/10'
-                        }`}
-                      >
-                        <div className="flex items-start gap-3">
-                          <span className="text-2xl">{effect.icon}</span>
-                          <div className="flex-1">
-                            <p className="font-semibold text-fuchsia-100 text-sm">
-                              {effect.title}
-                            </p>
-                            <p className="text-xs text-fuchsia-300/70 mt-1">
-                              {effect.description}
-                            </p>
-                          </div>
-                          {selectedGif === gif.name && (
-                            <span className="text-fuchsia-400 text-xs">✓</span>
-                          )}
-                        </div>
-                      </button>
-                    );
-                  })}
+            <div className="space-y-2">
+              <Label className="text-sm text-fuchsia-200">Hyperemote Effect Preview</Label>
+              <div className="p-4 rounded-lg border-2 border-fuchsia-500 bg-fuchsia-500/10">
+                <div className="flex items-start gap-3">
+                  <span className="text-3xl">🌧️</span>
+                  <div className="flex-1">
+                    <p className="font-bold text-fuchsia-100 text-base">
+                      Hyperemote Rain Effect
+                    </p>
+                    <p className="text-sm text-fuchsia-300/80 mt-2">
+                      Adorable emotes will rain down across the screen with beautiful animations! 
+                      Your donation will trigger a spectacular visual display that everyone will love.
+                    </p>
+                  </div>
                 </div>
-              ) : (
-                <p className="text-sm text-fuchsia-300/70 text-center py-4">
-                  No hyperemote effects available yet
-                </p>
-              )}
+              </div>
             </div>
           )}
 
