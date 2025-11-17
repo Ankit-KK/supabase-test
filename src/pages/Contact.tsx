@@ -193,6 +193,29 @@ const Contact = () => {
             </form>
           </div>
 
+          {/* Company Details */}
+          <div className="mt-12 p-6 rounded-lg border bg-card">
+            <h3 className="text-xl font-semibold mb-4">Company Details</h3>
+            <div className="grid md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-muted-foreground mb-1">Legal Entity</p>
+                <p className="font-medium text-lg">STREAMHEART PRIVATE LIMITED</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground mb-1">Brand Name</p>
+                <p className="font-medium">HyperChat</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground mb-1">Email</p>
+                <p className="font-medium">ankit@hyperchat.site</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground mb-1">Phone</p>
+                <p className="font-medium">+91 9211460100</p>
+              </div>
+            </div>
+          </div>
+
           <div className="mt-16">
             <h2 className="text-2xl font-semibold mb-6 text-center">Contact Person</h2>
             <div className="flex flex-col items-center p-6 rounded-lg border bg-card text-card-foreground shadow-sm max-w-md mx-auto">
