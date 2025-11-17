@@ -49,9 +49,10 @@ const Footer: React.FC = () => {
           </div>
         </div>
         <div className="mt-12 pt-6 border-t border-white/10 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} HyperChat - UPI Payment Platform for Creators. All rights reserved.
-          </p>
+              <div className="text-sm text-muted-foreground">
+                <p>© {new Date().getFullYear()} HyperChat - UPI Payment Platform for Creators. All rights reserved.</p>
+                <p className="mt-1">A product of <span className="font-medium text-foreground">STREAMHEART PRIVATE LIMITED</span></p>
+              </div>
           <div className="flex space-x-4 mt-4 md:mt-0">
             <a href="#" className="text-muted-foreground hover:text-hyperchat-purple transition-colors">
               <span className="sr-only">Twitter</span>
