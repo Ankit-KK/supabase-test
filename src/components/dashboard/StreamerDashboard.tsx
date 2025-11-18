@@ -432,7 +432,7 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
             </Card>
           </TabsContent>
 
-          <TabsContent value="telegram" className="space-y-6" forceMount>
+          <TabsContent value="telegram" className="space-y-6">
             <TelegramDashboard 
               donations={pendingDonations}
               tableName={tableName}
