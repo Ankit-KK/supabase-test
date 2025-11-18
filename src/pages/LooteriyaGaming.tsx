@@ -354,16 +354,23 @@ const LooteriyaGaming = () => {
                   <button
                     type="button"
                     onClick={() => handleDonationTypeChange('hyperemote')}
-                    className={`p-3 rounded-lg border-2 transition-all ${
+                    className={`relative p-4 rounded-lg border-2 transition-all overflow-hidden ${
                       donationType === 'hyperemote'
                         ? 'border-amber-500 bg-amber-500/10'
                         : 'border-amber-500/30 hover:border-amber-500/50'
                     }`}
                   >
-                    <div className="text-center">
-                      <div className="text-base mb-1">✨</div>
-                      <div className="font-medium text-xs">Hyperemote</div>
-                      <div className="text-xs text-muted-foreground">Min: ₹50</div>
+                    <div 
+                      className="absolute inset-0 opacity-10"
+                      style={{
+                        background: 'linear-gradient(135deg, #f59e0b 0%, #fb923c 100%)'
+                      }}
+                    />
+                    <div className="relative text-center">
+                      <div className="text-2xl mb-1">✨🎉</div>
+                      <div className="font-bold text-sm mb-1">Hyperemote Rain Effect</div>
+                      <div className="text-xs text-muted-foreground mb-2">Trigger an epic rain of animated GIFs!</div>
+                      <div className="text-xs font-medium text-amber-500">Min: ₹50</div>
                     </div>
                   </button>
                 )}
