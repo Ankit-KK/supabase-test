@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertDisplay } from '@/components/AlertDisplay';
+import { LooteriyaGamingAlertDisplay } from '@/components/LooteriyaGamingAlertDisplay';
 import { usePusherAlerts } from '@/hooks/usePusherAlerts';
 import { usePusherConfig } from '@/hooks/usePusherConfig';
 
@@ -30,7 +30,7 @@ const LooteriyaGamingObsAlerts = () => {
 
   return (
     <div className="min-h-screen bg-transparent relative overflow-hidden">
-      <AlertDisplay
+      <LooteriyaGamingAlertDisplay
         donation={currentAlert}
         isVisible={isVisible}
         streamerName="Looteriya Gaming"
