@@ -147,7 +147,7 @@ export const LooteriyaGamingAlertDisplay: React.FC<LooteriyaGamingAlertDisplayPr
                 opacity: 1;
               }
               100% {
-                transform: translateY(-20vh) scale(1.2) rotate(360deg);
+                transform: translateY(-120vh) scale(1.2) rotate(360deg);
                 opacity: 0;
               }
             }
@@ -164,7 +164,7 @@ export const LooteriyaGamingAlertDisplay: React.FC<LooteriyaGamingAlertDisplayPr
                 opacity: 1;
               }
               100% {
-                transform: translateY(-20vh) translateX(-30vw) scale(1.2) rotate(-360deg);
+                transform: translateY(-120vh) translateX(-30vw) scale(1.2) rotate(-360deg);
                 opacity: 0;
               }
             }
@@ -181,7 +181,7 @@ export const LooteriyaGamingAlertDisplay: React.FC<LooteriyaGamingAlertDisplayPr
                 opacity: 1;
               }
               100% {
-                transform: translateY(-20vh) translateX(30vw) scale(1.2) rotate(360deg);
+                transform: translateY(-120vh) translateX(30vw) scale(1.2) rotate(360deg);
                 opacity: 0;
               }
             }
@@ -207,7 +207,7 @@ export const LooteriyaGamingAlertDisplay: React.FC<LooteriyaGamingAlertDisplayPr
                 opacity: 1;
               }
               100% {
-                transform: translateY(-20vh) translateX(0) scale(1.2) rotate(360deg);
+                transform: translateY(-120vh) translateX(0) scale(1.2) rotate(360deg);
                 opacity: 0;
               }
             }

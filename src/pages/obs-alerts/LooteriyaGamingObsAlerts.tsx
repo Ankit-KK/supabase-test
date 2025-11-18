@@ -15,6 +15,7 @@ const LooteriyaGamingObsAlerts = () => {
     channelName: 'looteriya_gaming-alerts',
     pusherKey: pusherConfig?.key || '',
     pusherCluster: pusherConfig?.cluster || '',
+    delayBeforeDisplay: 60000,
   });
 
   if (configLoading) {
