@@ -249,8 +249,7 @@ const LooteriyaGaming = () => {
   const handleDonationTypeChange = (value: string) => {
     setDonationType(value as 'text' | 'voice' | 'hyperemote');
     if (value === 'hyperemote') {
-      const minAmount = streamerSettings?.hyperemotes_min_amount || 50;
-      setFormData(prev => ({ ...prev, amount: minAmount.toString(), message: '' }));
+      setFormData(prev => ({ ...prev, amount: '50', message: '' }));
     } else if (value === 'voice') {
       setFormData(prev => ({ ...prev, amount: '150', message: '' }));
     } else {
@@ -392,7 +391,6 @@ const LooteriyaGaming = () => {
                 className="border-amber-500/30 focus:border-amber-500 focus:ring-amber-500/20"
                 required
                 min="1"
-                disabled={donationType === 'hyperemote'}
               />
             </div>
 
