@@ -17,7 +17,7 @@ const HeroWithCanyonAnimation = () => {
             </div>
             
             <CanyonAnimatedText
-              text="UPI Payment Platform for Creators"
+              text="Hype up your favourite streamer"
               className="mb-4"
             />
             
