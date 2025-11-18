@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Contact from "./pages/Contact";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsAndConditions from "./pages/TermsAndConditions";
 import CancellationRefunds from "./pages/CancellationRefunds";
 import Shipping from "./pages/Shipping";
 import Blog from "./pages/Blog";
@@ -65,8 +66,9 @@ const App = () => (
               {/* Public Routes */}
               <Route path="/" element={<Index />} />
               <Route path="/contact" element={<Contact />} />
-              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-              <Route path="/cancellation-refunds" element={<CancellationRefunds />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+            <Route path="/cancellation-refunds" element={<CancellationRefunds />} />
               <Route path="/shipping" element={<Shipping />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/sitemap" element={<Sitemap />} />

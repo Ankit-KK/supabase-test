@@ -43,6 +43,7 @@ const Footer: React.FC = () => {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><Link to="/contact" className="hover:text-hyperchat-purple transition-colors">Contact Us</Link></li>
               <li><Link to="/privacy-policy" className="hover:text-hyperchat-purple transition-colors">Privacy Policy</Link></li>
+              <li><Link to="/terms-and-conditions" className="hover:text-hyperchat-purple transition-colors">Terms & Conditions</Link></li>
               <li><Link to="/cancellation-refunds" className="hover:text-hyperchat-purple transition-colors">Cancellation & Refunds</Link></li>
               <li><Link to="/shipping" className="hover:text-hyperchat-purple transition-colors">Support</Link></li>
             </ul>
