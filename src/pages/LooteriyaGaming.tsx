@@ -315,46 +315,46 @@ const LooteriyaGaming = () => {
             </div>
 
             {/* Donation Type Selection */}
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-amber-500">
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-amber-500">
                 Choose your donation type
               </label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-1.5">
                 <button
                   type="button"
                   onClick={() => handleDonationTypeChange('text')}
-                  className={`p-3 rounded-lg border-2 transition-all ${
+                  className={`p-2 rounded-lg border-2 transition-all ${
                     donationType === 'text'
                       ? 'border-amber-500 bg-amber-500/10'
                       : 'border-amber-500/30 hover:border-amber-500/50'
                   }`}
                 >
                   <div className="text-center">
-                    <div className="text-base mb-1">💬</div>
-                    <div className="font-medium text-xs">Text Message</div>
-                    <div className="text-xs text-muted-foreground">Min: ₹40</div>
+                    <div className="text-sm mb-0.5">💬</div>
+                    <div className="font-medium text-[10px]">Text Message</div>
+                    <div className="text-[9px] text-muted-foreground">Min: ₹40</div>
                   </div>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleDonationTypeChange('voice')}
-                  className={`p-3 rounded-lg border-2 transition-all ${
+                  className={`p-2 rounded-lg border-2 transition-all ${
                     donationType === 'voice'
                       ? 'border-amber-500 bg-amber-500/10'
                       : 'border-amber-500/30 hover:border-amber-500/50'
                   }`}
                 >
                   <div className="text-center">
-                    <div className="text-base mb-1">🎤</div>
-                    <div className="font-medium text-xs">Voice Message</div>
-                    <div className="text-xs text-muted-foreground">Min: ₹150</div>
+                    <div className="text-sm mb-0.5">🎤</div>
+                    <div className="font-medium text-[10px]">Voice Message</div>
+                    <div className="text-[9px] text-muted-foreground">Min: ₹150</div>
                   </div>
                 </button>
                 {streamerSettings?.hyperemotes_enabled && (
                   <button
                     type="button"
                     onClick={() => handleDonationTypeChange('hyperemote')}
-                    className={`relative p-4 rounded-lg border-2 transition-all overflow-hidden ${
+                    className={`relative p-2 rounded-lg border-2 transition-all overflow-hidden ${
                       donationType === 'hyperemote'
                         ? 'border-amber-500 bg-amber-500/10'
                         : 'border-amber-500/30 hover:border-amber-500/50'
@@ -367,10 +367,10 @@ const LooteriyaGaming = () => {
                       }}
                     />
                     <div className="relative text-center">
-                      <div className="text-2xl mb-1">✨🎉</div>
-                      <div className="font-bold text-sm mb-1">Hyperemote Rain Effect</div>
-                      <div className="text-xs text-muted-foreground mb-2">Trigger an epic rain of animated GIFs!</div>
-                      <div className="text-xs font-medium text-amber-500">Min: ₹50</div>
+                      <div className="text-base mb-0.5">✨🎉</div>
+                      <div className="font-bold text-[10px] mb-0.5">Hyperemote Rain</div>
+                      <div className="text-[9px] text-muted-foreground mb-1">Animated GIFs!</div>
+                      <div className="text-[9px] font-medium text-amber-500">Min: ₹50</div>
                     </div>
                   </button>
                 )}
