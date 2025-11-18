@@ -19,9 +19,6 @@ const Navbar: React.FC = () => {
           </Link>
         </div>
         <div className="hidden md:flex items-center space-x-6">
-          <a href="#features" className="text-sm hover:text-hyperchat-purple transition-colors">
-            UPI Payments
-          </a>
           <a href="#services" className="text-sm hover:text-hyperchat-purple transition-colors">
             For Creators
           </a>
@@ -38,7 +35,7 @@ const Navbar: React.FC = () => {
             className="bg-hero-gradient hover:opacity-90 transition-opacity"
             onClick={() => setShowSignupDialog(true)}
           >
-            Start Earning
+            Sign Up
           </Button>
         </div>
       </div>
