@@ -10,13 +10,12 @@ const Navbar: React.FC = () => {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/40">
       <div className="container flex h-16 items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Link to="/">
-            <img 
-              src="/lovable-uploads/6baaf08e-b2c6-40bd-86d9-0329286b56dc.png" 
-              alt="HyperChat - UPI Payment Platform for Creators" 
-              className="h-8"
-            />
+        <div className="flex flex-col">
+          <Link to="/" className="flex flex-col">
+            <span className="text-xs font-semibold text-muted-foreground">STREAMHEART PRIVATE LIMITED</span>
+            <span className="text-sm font-bold bg-gradient-to-r from-hyperchat-purple to-hyperchat-pink bg-clip-text text-transparent">
+              HyperChat - UPI Payment Platform
+            </span>
           </Link>
         </div>
         <div className="hidden md:flex items-center space-x-6">
