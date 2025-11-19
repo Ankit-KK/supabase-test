@@ -227,7 +227,7 @@ const ThunderX = () => {
       <div className="absolute inset-0 bg-black/20"></div>
 
       <Card 
-        className="w-full max-w-[21rem] mx-auto bg-card/95 backdrop-blur-sm border-emerald-500/20 shadow-2xl relative overflow-hidden"
+        className="w-full max-w-md mx-auto bg-card/95 backdrop-blur-sm border-emerald-500/20 shadow-2xl relative overflow-hidden"
         style={{
           backgroundImage: `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7))`,
           backgroundSize: 'cover',
@@ -236,10 +236,10 @@ const ThunderX = () => {
       >
         <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 via-emerald-600/20 to-emerald-400/20 opacity-50 blur-xl"></div>
         
-        <CardHeader className="text-center relative z-10">
-          <div className="flex justify-center mb-4">
-            <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-emerald-500 shadow-xl bg-emerald-500/20 flex items-center justify-center">
-              <Zap className="w-20 h-20 text-emerald-400" />
+        <CardHeader className="text-center space-y-3 relative z-10">
+          <div className="flex justify-center">
+            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-emerald-500 shadow-xl bg-emerald-500/20 flex items-center justify-center">
+              <Zap className="w-16 h-16 text-emerald-400" />
             </div>
           </div>
           <CardTitle className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-emerald-600 bg-clip-text text-transparent">
@@ -271,36 +271,36 @@ const ThunderX = () => {
               <Label className="text-xs font-medium text-emerald-400">
                 Choose your donation type
               </Label>
-              <div className="grid grid-cols-3 gap-1.5">
+              <div className="grid grid-cols-3 gap-3">
                 <button
                   type="button"
                   onClick={() => handleDonationTypeChange('text')}
-                  className={`p-2 rounded-lg border-2 transition-all ${
+                  className={`h-20 flex flex-col items-center justify-center gap-1.5 rounded-lg border-2 transition-all ${
                     donationType === 'text'
-                      ? 'border-emerald-500 bg-emerald-500/10'
-                      : 'border-emerald-500/30 hover:border-emerald-500/50'
+                      ? 'border-emerald-400 bg-gradient-to-br from-emerald-600 to-green-600 text-white shadow-lg shadow-emerald-500/50 scale-105'
+                      : 'border-emerald-500/40 hover:border-emerald-500/60 bg-black/50 hover:bg-black/70 text-emerald-200 hover:scale-105'
                   }`}
                 >
                   <div className="text-center">
-                    <div className="text-sm mb-0.5">💬</div>
-                    <div className="font-medium text-[10px] text-foreground">Text Message</div>
-                    <div className="text-[9px] text-muted-foreground">Min: ₹40</div>
+                    <div className="text-2xl mb-0.5">💬</div>
+                    <div className="font-medium text-[10px]">Text Message</div>
+                    <div className="text-[9px]">Min: ₹40</div>
                   </div>
                 </button>
                 
                 <button
                   type="button"
                   onClick={() => handleDonationTypeChange('voice')}
-                  className={`p-2 rounded-lg border-2 transition-all ${
+                  className={`h-20 flex flex-col items-center justify-center gap-1.5 rounded-lg border-2 transition-all ${
                     donationType === 'voice'
-                      ? 'border-emerald-500 bg-emerald-500/10'
-                      : 'border-emerald-500/30 hover:border-emerald-500/50'
+                      ? 'border-emerald-400 bg-gradient-to-br from-emerald-600 to-green-600 text-white shadow-lg shadow-emerald-500/50 scale-105'
+                      : 'border-emerald-500/40 hover:border-emerald-500/60 bg-black/50 hover:bg-black/70 text-emerald-200 hover:scale-105'
                   }`}
                 >
                   <div className="text-center">
-                    <div className="text-sm mb-0.5">🎤</div>
-                    <div className="font-medium text-[10px] text-foreground">Voice Message</div>
-                    <div className="text-[9px] text-muted-foreground">Min: ₹150</div>
+                    <div className="text-2xl mb-0.5">🎤</div>
+                    <div className="font-medium text-[10px]">Voice Message</div>
+                    <div className="text-[9px]">Min: ₹150</div>
                   </div>
                 </button>
                 
@@ -308,21 +308,17 @@ const ThunderX = () => {
                   <button
                     type="button"
                     onClick={() => handleDonationTypeChange('hyperemote')}
-                    className={`relative p-2 rounded-lg border-2 transition-all overflow-hidden ${
+                    className={`relative h-20 flex flex-col items-center justify-center gap-1.5 rounded-lg border-2 transition-all overflow-hidden ${
                       donationType === 'hyperemote'
-                        ? 'border-emerald-500 bg-emerald-500/10'
-                        : 'border-emerald-500/30 hover:border-emerald-500/50'
+                        ? 'border-emerald-400 bg-gradient-to-br from-emerald-600 to-green-600 text-white shadow-lg shadow-emerald-500/50 scale-105'
+                        : 'border-emerald-500/40 hover:border-emerald-500/60 bg-black/50 hover:bg-black/70 text-emerald-200 hover:scale-105'
                     }`}
                   >
-                    <div 
-                      className="absolute inset-0 opacity-10"
-                      style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
-                    />
-                    <div className="relative text-center">
-                      <div className="text-base mb-0.5">⚡✨</div>
-                      <div className="font-bold text-[10px] mb-0.5 text-foreground">Thunder Rain</div>
-                      <div className="text-[9px] text-muted-foreground mb-1">Epic GIFs!</div>
-                      <div className="text-[9px] font-medium text-emerald-400">Min: ₹50</div>
+                    <div className="text-center">
+                      <div className="text-2xl mb-0.5">⚡✨</div>
+                      <div className="font-bold text-[10px] mb-0.5">Thunder Rain</div>
+                      <div className="text-[9px] mb-1">Epic GIFs!</div>
+                      <div className="text-[9px] font-medium">Min: ₹50</div>
                     </div>
                   </button>
                 )}
