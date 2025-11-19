@@ -13,11 +13,8 @@ import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { PhoneDialog } from '@/components/PhoneDialog';
 import { Zap } from 'lucide-react';
 
-// Note: Replace these with actual ThunderX assets when available
-// For now, we'll use a placeholder gradient background
-const thunderxBanner = '/lovable-uploads/thunderx-banner.jpg'; // User will need to upload
-const thunderxCardBg = '/lovable-uploads/thunderx-card-bg.jpg'; // User will need to upload
-const thunderxLogo = '/lovable-uploads/thunderx-logo.jpg'; // User will need to upload
+const thunderxBanner = '/lovable-uploads/thunderx-banner.jpg';
+const thunderxLogo = '/lovable-uploads/thunderx-logo.jpg';
 
 const ThunderX = () => {
   const [formData, setFormData] = useState({
@@ -219,33 +216,33 @@ const ThunderX = () => {
 
   return (
     <div 
-      className="min-h-screen flex items-center justify-center p-4 relative"
-      style={{ 
-        background: 'linear-gradient(135deg, #064e3b 0%, #047857 50%, #10b981 100%)',
-      }}
+      className="min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center p-4 relative"
+      style={{ backgroundImage: `url(${thunderxBanner})` }}
     >
-      <div className="absolute inset-0 bg-black/20"></div>
+      <div className="absolute inset-0 bg-black/40"></div>
 
       <Card 
         className="w-full max-w-md mx-auto bg-card/95 backdrop-blur-sm border-emerald-500/20 shadow-2xl relative overflow-hidden"
-        style={{
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7))`,
+        style={{ 
+          backgroundImage: `url(${thunderxLogo})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center'
         }}
       >
+        <div className="absolute inset-0 bg-black/50"></div>
+        
         <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 via-emerald-600/20 to-emerald-400/20 opacity-50 blur-xl"></div>
         
         <CardHeader className="text-center space-y-3 relative z-10">
           <div className="flex justify-center">
-            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-emerald-500 shadow-xl bg-emerald-500/20 flex items-center justify-center">
-              <Zap className="w-16 h-16 text-emerald-400" />
+            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-emerald-500 shadow-xl">
+              <img src={thunderxLogo} alt="THUNDERX" className="w-full h-full object-cover" />
             </div>
           </div>
           <CardTitle className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-emerald-600 bg-clip-text text-transparent">
             THUNDERX
           </CardTitle>
-          <p className="text-muted-foreground text-sm mt-2">
+          <p className="text-emerald-200 text-sm mt-2">
             Support THUNDERX with your donation ⚡
           </p>
         </CardHeader>
