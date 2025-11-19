@@ -217,6 +217,7 @@ serve(async (req) => {
       if (orderId.startsWith('streamer46_')) return 'streamer46_donations';
       if (orderId.startsWith('damask_plays_')) return 'damask_plays_donations';
       if (orderId.startsWith('neko_xenpai_')) return 'neko_xenpai_donations';
+      if (orderId.startsWith('thunderx_')) return 'thunderx_donations';
       return 'chiaa_gaming_donations'; // default for chia_gaming
     };
     
@@ -302,6 +303,7 @@ serve(async (req) => {
       if (orderId.startsWith('streamer46_')) return 'streamer46';
       if (orderId.startsWith('damask_plays_')) return 'damask_plays';
       if (orderId.startsWith('neko_xenpai_')) return 'neko_xenpai';
+      if (orderId.startsWith('thunderx_')) return 'thunderx';
       return 'chiaa_gaming'; // default
     };
 
