@@ -205,28 +205,6 @@ export const ThunderXAlertDisplay: React.FC<ThunderXAlertDisplayProps> = ({
               />
             );
           })}
-          
-          {/* Center celebration message */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div 
-              className="text-center p-8 rounded-2xl"
-              style={{
-                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.95), rgba(5, 150, 105, 0.95))',
-                boxShadow: '0 20px 60px rgba(16, 185, 129, 0.5)',
-                animation: 'pulse 2s ease-in-out infinite'
-              }}
-            >
-              <div className="flex items-center justify-center gap-3 mb-4">
-                <Zap className="w-12 h-12 text-white animate-bounce" />
-                <div className="text-5xl font-black text-white">
-                  ⚡ THUNDER DONATION! ⚡
-                </div>
-                <Zap className="w-12 h-12 text-white animate-bounce" />
-              </div>
-              <div className="text-3xl font-bold text-white mb-2">{donation.name}</div>
-              <div className="text-6xl font-black text-yellow-300">₹{donation.amount}</div>
-            </div>
-          </div>
         </div>
       </>
     );
