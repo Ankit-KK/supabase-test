@@ -212,63 +212,42 @@ export const ThunderXAlertDisplay: React.FC<ThunderXAlertDisplayProps> = ({
 
   // Regular Donation Alert
   return (
-    <div 
-      className="fixed top-8 left-1/2 transform -translate-x-1/2 z-50"
-      style={{
-        animation: 'slideDown 0.5s ease-out',
-        maxWidth: '600px',
-        width: '90%'
-      }}
-    >
-      <style>{`
-        @keyframes slideDown {
-          from {
-            transform: translate(-50%, -100%);
-            opacity: 0;
-          }
-          to {
-            transform: translate(-50%, 0);
-            opacity: 1;
-          }
-        }
-      `}</style>
-      
+    <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 w-11/12 max-w-2xl z-50 pointer-events-none">
       <div 
-        className="p-6 rounded-2xl shadow-2xl"
+        className="relative px-8 py-6 rounded-2xl shadow-2xl backdrop-blur-sm"
         style={{
-          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.95), rgba(5, 150, 105, 0.95))',
-          border: '3px solid rgba(16, 185, 129, 0.8)',
-          boxShadow: '0 10px 40px rgba(16, 185, 129, 0.4)'
+          background: `linear-gradient(135deg, ${streamerBrandColor}15 0%, ${streamerBrandColor}25 100%)`,
+          border: `2px solid ${streamerBrandColor}40`,
+          boxShadow: `0 8px 32px ${streamerBrandColor}30, inset 0 0 20px ${streamerBrandColor}10`
         }}
       >
-        <div className="flex items-start gap-4">
-          <div className="bg-white/20 p-3 rounded-full">
-            <Zap className="w-8 h-8 text-white" />
+        <div className="flex items-center gap-4 mb-3">
+          <div className="text-3xl font-black tracking-tight" 
+            style={{ color: streamerBrandColor }}>
+            {donation.name}
           </div>
-          
-          <div className="flex-1">
-            <div className="flex items-baseline gap-3 mb-2">
-              <span className="text-2xl font-bold text-white">{donation.name}</span>
-              <span className="text-3xl font-black text-yellow-300">₹{donation.amount}</span>
-            </div>
-            
-            {donation.message && (
-              <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm">
-                <p className="text-white text-lg leading-relaxed">
-                  {displayedMessage}
-                  {isTyping && <span className="animate-pulse">▋</span>}
-                </p>
-              </div>
-            )}
-            
-            {donation.voice_message_url && (
-              <div className="flex items-center gap-2 text-white/90 text-sm mt-2">
-                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                <span>🎤 Voice Message Playing...</span>
-              </div>
-            )}
+          <div className="text-2xl font-bold px-4 py-1 rounded-full"
+            style={{ background: streamerBrandColor, color: '#000' }}>
+            ₹{donation.amount}
           </div>
         </div>
+
+        {donation.voice_message_url && (
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium mb-2"
+            style={{ background: `${streamerBrandColor}20`, color: streamerBrandColor }}>
+            🎤 Voice Message
+          </div>
+        )}
+
+        {(donation.message || isTyping) && (
+          <div className="text-xl text-white font-medium leading-relaxed">
+            {displayedMessage}
+            {isTyping && (
+              <span className="inline-block w-1 h-5 ml-1 animate-pulse"
+                style={{ background: streamerBrandColor }} />
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
