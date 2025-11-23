@@ -8,7 +8,7 @@ const CancellationRefunds: React.FC = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container px-4 md:px-6 py-32 mx-auto max-w-4xl">
-        <h1 className="text-3xl font-bold mb-6">Cancellation & Refunds Policy</h1>
+        <h1 className="text-3xl font-bold mb-6">Refund & Cancellation Policy</h1>
         
         <div className="bg-muted/30 border border-muted p-6 rounded-lg mb-6">
           <h3 className="text-lg font-semibold mb-3">Company Information</h3>
@@ -22,88 +22,108 @@ const CancellationRefunds: React.FC = () => {
         </div>
         
         <div className="prose prose-gray dark:prose-invert max-w-none">
-          <p className="text-sm text-muted-foreground mb-4">Last updated on 19-11-2025</p>
+          <p className="text-sm text-muted-foreground mb-6">Last Updated: 07-05-2025</p>
           
-          <h2 className="text-2xl font-bold mt-8 mb-4">Refund and Cancellation Policy</h2>
-          
+          <h2 className="text-2xl font-bold mt-8 mb-4">1. General Policy</h2>
           <p>
-            This refund and cancellation policy outlines how you can cancel or seek a refund for a service that you have purchased through the Platform. Under this policy:
+            HyperChat provides audience engagement software tools for interactive communication between creators and their viewers. Since our platform services are primarily digital and access-based, refunds are handled only under specific and valid circumstances as outlined below.
           </p>
           
-          <h3 className="text-xl font-semibold mt-6 mb-3">Cancellation Policy</h3>
-          
-          <ol className="list-decimal pl-6 space-y-3 my-4">
-            <li>
-              <strong>Cancellation Window:</strong> Cancellations will only be considered if the request is made within 7 days of placing the order. However, cancellation requests may not be entertained if the orders have been communicated to sellers/merchants listed on the Platform and they have initiated the process of delivery. In such an event, you may choose to reject the service.
-            </li>
-            
-            <li>
-              <strong>Digital Services:</strong> STREAMHEART PRIVATE LIMITED provides exclusively digital services for live streaming. Due to the instant delivery nature of our digital services, most transactions cannot be canceled once they have been processed and delivered to the streamer.
-            </li>
-            
-            <li>
-              <strong>Technical Issues:</strong> In case of receipt of service failure or technical defects, please report to our customer service team. The request would be entertained once we have checked and determined the same at our end. This should be reported within 7 days of the transaction.
-            </li>
-            
-            <li>
-              <strong>Service Quality:</strong> In case you feel that the service received is not as described on the site or as per your expectations, you must bring it to the notice of our customer service within 7 days of the transaction. The customer service team after looking into your complaint will take an appropriate decision.
-            </li>
-            
-            <li>
-              <strong>Refund Processing:</strong> In case of any refunds approved by STREAMHEART PRIVATE LIMITED, it will take 7 days for the refund to be processed to you.
-            </li>
-          </ol>
-          
-          <h3 className="text-xl font-semibold mt-6 mb-3">Important Notes for Digital Services</h3>
-          
-          <p>
-            Please understand that HyperChat provides instant digital services. When you make a donation or use our platform's features:
-          </p>
-          
+          <h2 className="text-2xl font-bold mt-8 mb-4">2. Service Access Issues</h2>
+          <p>Users may request a refund only in cases where:</p>
           <ul className="list-disc pl-6 space-y-2 my-4">
-            <li>Your donation is immediately processed and sent to the streamer</li>
-            <li>Your message or interaction is delivered in real-time</li>
-            <li>Once delivered, these digital services cannot be "returned" or reversed</li>
+            <li>The user was unable to access the platform due to a verified technical issue caused by HyperChat.</li>
+            <li>There was a proven malfunction or disruption of service on our systems that prevented usage.</li>
           </ul>
           
-          <p>
-            Due to the instantaneous nature of our digital services, we carefully review refund requests on a case-by-case basis, primarily for technical failures or service delivery issues.
-          </p>
-          
-          <h2 className="text-2xl font-bold mt-8 mb-4">Return Policy</h2>
-          
-          <p>
-            We offer refund/resolution within the first 7 days from the date of your transaction. If 7 days have passed since your transaction, you will not be offered a return or refund of any kind.
-          </p>
-          
-          <p>
-            In order to become eligible for a refund consideration, you must demonstrate that:
-          </p>
-          
+          <p className="font-semibold mt-4">Refunds will NOT be granted for:</p>
           <ul className="list-disc pl-6 space-y-2 my-4">
-            <li>The digital service was not delivered as described</li>
-            <li>Technical issues on our platform prevented proper service delivery</li>
-            <li>The transaction was processed in error</li>
+            <li>Issues arising due to user-side internet, device, browser, or third-party service failures.</li>
+            <li>Cases where the user has already used or accessed the service features.</li>
+            <li>Personal dissatisfaction or subjective preference-based reasons.</li>
           </ul>
           
+          <h2 className="text-2xl font-bold mt-8 mb-4">3. No Refund for Completed Usage</h2>
           <p>
-            You agree that there may be certain categories of services that are exempted from returns or refunds. Such categories would be clearly identified to you at the time of transaction.
+            Once a service session, feature access, or usage interaction has taken place, the refund request becomes ineligible, as digital services consumed cannot be reversed.
           </p>
           
-          <h3 className="text-xl font-semibold mt-6 mb-3">Contact Information</h3>
-          
-          <p>
-            If you have any questions or concerns regarding this policy, please contact us at:
-          </p>
-          
+          <p className="font-semibold mt-4">HyperChat does not provide refunds for:</p>
           <ul className="list-disc pl-6 space-y-2 my-4">
-            <li>Email: ankit@hyperchat.site</li>
-            <li>Phone: +91 9211460100</li>
+            <li>Completed audience engagement interactions</li>
+            <li>Access to features already utilized</li>
+            <li>Time-based platform usage</li>
           </ul>
           
-          <p>
-            By using our services, you acknowledge that you have read, understood, and agree to this Cancellation & Refunds Policy.
-          </p>
+          <h2 className="text-2xl font-bold mt-8 mb-4">4. Processing of Approved Refunds</h2>
+          <p>If a refund is approved:</p>
+          <ul className="list-disc pl-6 space-y-2 my-4">
+            <li>Refund will be processed through the same channel from which the transaction was initiated.</li>
+            <li>Processing times may vary depending on intermediary services such as service providers and banks.</li>
+            <li>Refund processing time may take 7–14 business days.</li>
+          </ul>
+          
+          <h2 className="text-2xl font-bold mt-8 mb-4">5. No Guarantees or Warranties of Suitability</h2>
+          <p>Users acknowledge that:</p>
+          <ul className="list-disc pl-6 space-y-2 my-4">
+            <li>HyperChat does not guarantee outcomes, engagement levels, audience responses, or creator visibility.</li>
+            <li>The platform provides functionality — actual audience behavior or engagement is not controlled by us.</li>
+            <li>Refunds cannot be requested on the basis of community interaction levels, audience attention, or subjective participation metrics.</li>
+          </ul>
+          
+          <h2 className="text-2xl font-bold mt-8 mb-4">6. Eligibility Verification</h2>
+          <p>HyperChat may require:</p>
+          <ul className="list-disc pl-6 space-y-2 my-4">
+            <li>service logs,</li>
+            <li>account activity records,</li>
+            <li>technical support history,</li>
+            <li>timestamp data</li>
+          </ul>
+          <p>to verify the legitimacy of a refund request.</p>
+          
+          <h2 className="text-2xl font-bold mt-8 mb-4">7. Abuse of Refund Policy</h2>
+          <p>In case of:</p>
+          <ul className="list-disc pl-6 space-y-2 my-4">
+            <li>repeated refund claims,</li>
+            <li>fraudulent requests,</li>
+            <li>misuse or manipulation of the platform, or</li>
+            <li>violation of Terms & Conditions</li>
+          </ul>
+          <p>HyperChat reserves the right to deny refunds and may restrict platform access.</p>
+          
+          <h2 className="text-2xl font-bold mt-8 mb-4">8. No Financial Responsibilities</h2>
+          <p>HyperChat:</p>
+          <ul className="list-disc pl-6 space-y-2 my-4">
+            <li>does not handle or store financial data,</li>
+            <li>does not process monetary interactions between creators and audiences,</li>
+            <li>does not function as a financial intermediary, payment handler, or settlement facilitator.</li>
+          </ul>
+          <p>Users understand that HyperChat is strictly an engagement software service.</p>
+          
+          <h2 className="text-2xl font-bold mt-8 mb-4">9. How to Request a Refund</h2>
+          <p>Refund requests must be submitted via:</p>
+          <ul className="list-disc pl-6 space-y-2 my-4">
+            <li>📩 Email: ankit@hyperchat.site</li>
+            <li>📞 Phone: +91 9211460100</li>
+          </ul>
+          
+          <p className="font-semibold mt-4">You must include:</p>
+          <ul className="list-disc pl-6 space-y-2 my-4">
+            <li>Registered name</li>
+            <li>Contact details</li>
+            <li>Account ID</li>
+            <li>Explanation of the issue</li>
+            <li>Screenshots or log references (if applicable)</li>
+          </ul>
+          
+          <h2 className="text-2xl font-bold mt-8 mb-4">10. Final Decision Authority</h2>
+          <p>STREAMHEART PRIVATE LIMITED reserves the right to:</p>
+          <ul className="list-disc pl-6 space-y-2 my-4">
+            <li>evaluate each request individually,</li>
+            <li>determine eligibility at its sole discretion,</li>
+            <li>approve or deny refund requests.</li>
+          </ul>
+          <p>All decisions made by HyperChat regarding refunds are final.</p>
         </div>
       </div>
       <Footer />
