@@ -14,7 +14,7 @@ const Navbar: React.FC = () => {
           <Link to="/" className="flex flex-col">
             <span className="text-xs font-semibold text-muted-foreground">STREAMHEART PRIVATE LIMITED</span>
             <span className="text-sm font-bold bg-gradient-to-r from-hyperchat-purple to-hyperchat-pink bg-clip-text text-transparent">
-              HyperChat - UPI Payment Platform
+              HyperChat - Digital Engagement Platform
             </span>
           </Link>
         </div>
@@ -35,7 +35,7 @@ const Navbar: React.FC = () => {
             className="bg-hero-gradient hover:opacity-90 transition-opacity"
             onClick={() => setShowSignupDialog(true)}
           >
-            Sign Up
+            Join the Experience
           </Button>
         </div>
       </div>

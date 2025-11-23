@@ -1,31 +1,31 @@
 
 import React from "react";
-import { UserPlus, CreditCard, TrendingUp, Users } from "lucide-react";
+import { Play, MessageCircle, Sparkles, Heart } from "lucide-react";
 
 const HowItWorks = () => {
   const steps = [
     {
-      icon: <UserPlus className="text-white" size={24} />,
-      title: "Sign Up as Creator",
-      description: "Join our UPI payment platform for creators and set up your personalized donation page to start earning money from streaming in India.",
+      icon: <Play className="text-white" size={24} />,
+      title: "Join a Live Session",
+      description: "Connect to a creator's live broadcast on their platform",
       gradient: "bg-gradient-to-br from-hyperchat-purple to-hyperchat-blue",
     },
     {
-      icon: <CreditCard className="text-white" size={24} />,
-      title: "Enable UPI Payments",
-      description: "Connect your UPI ID and enable direct fan support via UPI. Our UPI-based tipping solution makes it easy for fans to support you.",
+      icon: <MessageCircle className="text-white" size={24} />,
+      title: "Engage with HyperChat",
+      description: "Use HyperChat to participate and elevate your presence",
       gradient: "bg-gradient-to-br from-hyperchat-pink to-hyperchat-purple",
     },
     {
-      icon: <Users className="text-white" size={24} />,
-      title: "Engage Your Fans",
-      description: "Let fans tip your favorite content creators with voice messages, live chat tipping, and interactive fan engagement tools.",
+      icon: <Sparkles className="text-white" size={24} />,
+      title: "Your Presence is Elevated",
+      description: "Experience real-time recognition in the live environment",
       gradient: "bg-gradient-to-br from-hyperchat-orange to-hyperchat-pink",
     },
     {
-      icon: <TrendingUp className="text-white" size={24} />,
-      title: "Get Paid Instantly",
-      description: "Receive instant payments and monetize content in India. Track your creators earning with UPI through our comprehensive dashboard.",
+      icon: <Heart className="text-white" size={24} />,
+      title: "Create Memorable Moments",
+      description: "Be part of something special with creators and communities you care about",
       gradient: "bg-gradient-to-br from-hyperchat-blue to-hyperchat-purple",
     },
   ];
@@ -35,10 +35,10 @@ const HowItWorks = () => {
       <div className="container px-4 md:px-6">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl mb-4">
-            How to Earn Money from Streaming in India
+            How HyperChat Works
           </h2>
           <p className="text-muted-foreground md:text-xl max-w-3xl mx-auto">
-            Simple 4-step process to start monetizing your content and receiving support from fans through our live streaming platform.
+            A simple way to participate meaningfully in live creator content
           </p>
         </div>
 
@@ -61,22 +61,22 @@ const HowItWorks = () => {
 
         <div className="mt-16 text-center">
           <div className="bg-secondary/50 p-8 rounded-xl border border-white/10 max-w-4xl mx-auto">
-            <h3 className="text-2xl font-bold mb-4">Ready to Start Your Content Monetization Journey?</h3>
+            <h3 className="text-2xl font-bold mb-4">Ready to Experience Deeper Engagement?</h3>
             <p className="text-muted-foreground mb-6">
-              Join thousands of creators already using our UPI for content creators platform to earn money from streaming and receive voice messages with donations.
+              Join creators and audiences who value authentic connection
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
               <div className="flex items-center justify-center space-x-2">
                 <div className="w-2 h-2 bg-hyperchat-pink rounded-full"></div>
-                <span>Indian Streaming Monetization</span>
+                <span>Real-Time Engagement</span>
               </div>
               <div className="flex items-center justify-center space-x-2">
                 <div className="w-2 h-2 bg-hyperchat-purple rounded-full"></div>
-                <span>Live Stream Payment Gateway</span>
+                <span>Community Building</span>
               </div>
               <div className="flex items-center justify-center space-x-2">
                 <div className="w-2 h-2 bg-hyperchat-pink rounded-full"></div>
-                <span>Streamer Donation App</span>
+                <span>Authentic Connection</span>
               </div>
             </div>
           </div>

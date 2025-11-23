@@ -11,28 +11,28 @@ import { MessageCircle, Mail } from "lucide-react";
 const FAQSection = () => {
   const faqs = [
     {
-      question: "What services do you offer?",
-      answer: "We provide comprehensive technology solutions including web development, software consulting, and digital transformation services tailored to your business needs."
+      question: "What is HyperChat?",
+      answer: "HyperChat is a digital engagement platform that enhances communication between creators and their audiences during live content. We help foster meaningful connections and elevated presence in real-time."
+    },
+    {
+      question: "How does it work?",
+      answer: "When you're watching live content from a creator who uses HyperChat, you can engage through our platform to make your presence more noticeable and meaningful. The creator experiences enhanced interaction from their community."
+    },
+    {
+      question: "Who can use HyperChat?",
+      answer: "HyperChat is for both creators who want to deepen audience engagement, and for audiences who want to feel more connected and recognized during live experiences."
+    },
+    {
+      question: "What makes HyperChat different?",
+      answer: "We focus on creating genuine moments of connection. Your participation isn't just noise — it becomes a meaningful part of the live experience."
+    },
+    {
+      question: "Is HyperChat available worldwide?",
+      answer: "While built in India, HyperChat serves creators and audiences globally who value authentic engagement."
     },
     {
       question: "How do I get started?",
-      answer: "Simply contact us through our contact form or email. We'll schedule a consultation to understand your requirements and propose the best solution for your project."
-    },
-    {
-      question: "What is your pricing structure?",
-      answer: "Our pricing varies based on project scope and requirements. We offer competitive rates and flexible payment options. Contact us for a personalized quote."
-    },
-    {
-      question: "Do you provide ongoing support?",
-      answer: "Yes, we offer comprehensive support and maintenance services to ensure your solutions continue to perform optimally after deployment."
-    },
-    {
-      question: "How long does a typical project take?",
-      answer: "Project timelines vary depending on complexity and scope. Simple projects may take 2-4 weeks, while larger enterprise solutions can take several months. We'll provide a detailed timeline during consultation."
-    },
-    {
-      question: "Do you work with international clients?",
-      answer: "Yes, we work with clients globally and are experienced in managing remote projects across different time zones."
+      answer: "Creators can sign up to integrate HyperChat into their live content. Audiences can start participating when their favorite creators enable HyperChat."
     }
   ];
 
@@ -80,9 +80,11 @@ const FAQSection = () => {
                 <MessageCircle className="h-4 w-4" />
                 Contact Support
               </Button>
-              <Button variant="outline" className="flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                Get In Touch
+              <Button variant="outline" className="flex items-center gap-2" asChild>
+                <a href="/contact">
+                  <Mail className="h-4 w-4" />
+                  Learn More
+                </a>
               </Button>
             </div>
           </div>

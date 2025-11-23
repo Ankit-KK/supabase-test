@@ -1,6 +1,6 @@
 
 import React from "react";
-import { MessageSquare, Palette, Users, Award, Heart, Star, CreditCard, Zap, Sparkles } from "lucide-react";
+import { MessageSquare, Users, Heart, Zap, Sparkles, Award } from "lucide-react";
 
 interface FeatureProps {
   icon: React.ReactNode;
@@ -24,46 +24,40 @@ const Feature: React.FC<FeatureProps> = ({ icon, title, description, gradient })
 const Features: React.FC = () => {
   const features = [
     {
-      icon: <CreditCard className="text-white" size={24} />,
-      title: "UPI & Card Payments for Creators",
-      description: "Enable direct fan support via UPI, Rupay, Master and Visa cards with instant payment processing. Perfect payment platform for creators in India.",
+      icon: <MessageSquare className="text-white" size={24} />,
+      title: "Real-Time Engagement",
+      description: "Enable meaningful interactions between you and your audience during live moments",
       gradient: "bg-gradient-to-br from-hyperchat-purple to-hyperchat-blue",
     },
     {
-      icon: <Heart className="text-white" size={24} />,
-      title: "Virtual Gifts for Live Streamers",
-      description: "Let fans tip your favorite content creators with virtual gifting and animated effects during live streams.",
+      icon: <Users className="text-white" size={24} />,
+      title: "Elevated Presence",
+      description: "Make your audience feel noticed, valued, and part of the experience",
       gradient: "bg-gradient-to-br from-hyperchat-pink to-hyperchat-purple",
     },
     {
-      icon: <MessageSquare className="text-white" size={24} />,
-      title: "Live Chat Tipping",
-      description: "Interactive live chat tipping system that highlights premium messages and creates better fan engagement.",
+      icon: <Sparkles className="text-white" size={24} />,
+      title: "Expressive Communication",
+      description: "Go beyond basic chat — create memorable and personalized moments",
       gradient: "bg-gradient-to-br from-hyperchat-orange to-hyperchat-pink",
     },
     {
-      icon: <Zap className="text-white" size={24} />,
-      title: "Get Paid by Fans Instantly",
-      description: "Earn money from streaming in India with instant UPI, Rupay, Master & Visa card transfers. No delays, no hassle - just direct monetization.",
+      icon: <Heart className="text-white" size={24} />,
+      title: "Community Identity",
+      description: "Build stronger connections with audiences who truly engage with your content",
       gradient: "bg-gradient-to-br from-hyperchat-pink to-hyperchat-orange",
     },
     {
-      icon: <Award className="text-white" size={24} />,
-      title: "Content Monetization Tools",
-      description: "Complete platform to monetize content in India with analytics, fan leaderboards, and recognition systems.",
+      icon: <Zap className="text-white" size={24} />,
+      title: "Live Participation",
+      description: "Transform passive viewers into active participants in your creative journey",
       gradient: "bg-gradient-to-br from-hyperchat-blue to-hyperchat-purple",
     },
     {
-      icon: <Users className="text-white" size={24} />,
-      title: "Indian Streaming Monetization",
-      description: "Built specifically for Indian creators with UPI, Rupay, Master and Visa card integration, and all major local payment methods.",
+      icon: <Award className="text-white" size={24} />,
+      title: "Audience Recognition",
+      description: "Help your supporters stand out and be recognized in the moment",
       gradient: "bg-gradient-to-br from-hyperchat-purple to-hyperchat-pink",
-    },
-    {
-      icon: <Sparkles className="text-white" size={24} />,
-      title: "HyperEmotes Emoji Rain",
-      description: "Premium donations trigger spectacular emoji rain effects with up to 50 animated emojis cascading across the screen.",
-      gradient: "bg-gradient-to-br from-hyperchat-pink to-hyperchat-orange",
     },
   ];
 
@@ -72,10 +66,10 @@ const Features: React.FC = () => {
       <div className="container px-4 md:px-6">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
-            Complete Live Streaming Platform for Content Monetization
+            Deepen Creator-Audience Relationships
           </h2>
           <p className="mt-4 text-muted-foreground md:text-xl">
-            Everything you need for fan engagement with UPI, Rupay, Master and Visa cards, and comprehensive payment solutions in India.
+            Everything you need to foster meaningful engagement and build authentic community connections
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
