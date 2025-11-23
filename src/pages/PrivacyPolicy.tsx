@@ -1,8 +1,10 @@
 import React from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+
 const PrivacyPolicy: React.FC = () => {
-  return <div className="min-h-screen bg-background">
+  return (
+    <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container px-4 md:px-6 py-32 mx-auto max-w-4xl">
         <h1 className="text-3xl font-bold mb-6">Privacy Policy</h1>
@@ -20,84 +22,117 @@ const PrivacyPolicy: React.FC = () => {
         <div className="prose prose-gray dark:prose-invert max-w-none">
           <p className="text-sm text-muted-foreground mb-4">Last updated on 07-05-2025 21:17:40</p>
           
-          <h2 className="text-2xl font-bold mt-8 mb-4">Introduction</h2>
+          <h2 className="text-2xl font-bold mt-8 mb-4">1. Introduction</h2>
           <p>
-            This Privacy Policy explains how STREAMHEART PRIVATE LIMITED (“HyperChat”, “we”, “us”, or “our”) collects, uses, and protects information when you access or interact with our website and Services.
-
-By using HyperChat, you consent to the practices described in this Privacy Policy.
+            This Privacy Policy explains how STREAMHEART PRIVATE LIMITED ("HyperChat", "we", "us", or "our") collects, uses, and protects information when you access or interact with our website and Services.
+          </p>
+          <p>
+            By using HyperChat, you consent to the practices described in this Privacy Policy.
           </p>
 
-          <h2 className="text-2xl font-bold mt-8 mb-4">Information We Collect</h2>
-          <p>We collect information that you provide directly to us, including:</p>
+          <h2 className="text-2xl font-bold mt-8 mb-4">2. Information We Collect</h2>
+          <p>We may collect the following types of information that you voluntarily provide:</p>
           <ul className="list-disc pl-6 space-y-2 my-4">
-            <li>Name and contact information</li>
-            <li>Payment information and transaction details</li>
-            <li>Account credentials</li>
-            <li>Communications with us</li>
-            <li>Usage data and analytics</li>
+            <li>Name</li>
+            <li>Contact details (email, phone if provided)</li>
+            <li>Account access information (username or user ID)</li>
+            <li>User feedback or communications sent to us</li>
+            <li>Platform interaction data (engagement metrics, preference selections, usage statistics)</li>
+          </ul>
+          <p className="font-semibold mt-4">We do not collect or store:</p>
+          <ul className="list-none pl-6 space-y-2 my-4">
+            <li>❌ financial information</li>
+            <li>❌ transactional details</li>
+            <li>❌ payment instrument data</li>
+            <li>❌ bank/card numbers</li>
           </ul>
 
-          <h2 className="text-2xl font-bold mt-8 mb-4">How We Use Your Information</h2>
-          <p>We use the information we collect to:</p>
+          <h2 className="text-2xl font-bold mt-8 mb-4">3. How We Use Your Information</h2>
+          <p>We use collected information to:</p>
           <ul className="list-disc pl-6 space-y-2 my-4">
-            <li>Provide, maintain, and improve our services</li>
-            <li>Process transactions and send related information</li>
-            <li>Send you technical notices and support messages</li>
-            <li>Respond to your comments and questions</li>
-            <li>Monitor and analyze trends, usage, and activities</li>
-            <li>Detect, prevent, and address technical issues</li>
+            <li>Operate and maintain the HyperChat platform</li>
+            <li>Improve communication and engagement features</li>
+            <li>Provide support and respond to inquiries</li>
+            <li>Personalize user experience</li>
+            <li>Analyze platform use to improve performance</li>
+            <li>Enhance security and prevent misuse</li>
           </ul>
 
-          <h2 className="text-2xl font-bold mt-8 mb-4">Information Sharing</h2>
+          <h2 className="text-2xl font-bold mt-8 mb-4">4. Information Sharing</h2>
           <p>
-            We do not sell your personal information. We may share your information only in the following circumstances:
+            We do not sell personal information to third parties.
           </p>
+          <p>We may share user data only in the following limited circumstances:</p>
           <ul className="list-disc pl-6 space-y-2 my-4">
             <li>With your consent</li>
-            <li>To comply with legal obligations</li>
-            <li>To protect our rights and prevent fraud</li>
-            <li>With service providers who assist in our operations</li>
+            <li>With service providers strictly for platform-related functionality (e.g., hosting, analytics, communication infrastructure)</li>
+            <li>To comply with lawful government or legal requirements</li>
+            <li>To protect the safety and integrity of the Service</li>
           </ul>
+          <p>All third-party service providers are bound by confidentiality and security obligations.</p>
 
-          <h2 className="text-2xl font-bold mt-8 mb-4">Data Security</h2>
+          <h2 className="text-2xl font-bold mt-8 mb-4">5. Data Security</h2>
           <p>
-            We implement appropriate technical and organizational measures to protect your personal information 
-            against unauthorized access, alteration, disclosure, or destruction.
+            We employ industry-standard security measures to protect your information, including safeguards against:
           </p>
-
-          <h2 className="text-2xl font-bold mt-8 mb-4">Your Rights</h2>
-          <p>You have the right to:</p>
           <ul className="list-disc pl-6 space-y-2 my-4">
-            <li>Access your personal information</li>
-            <li>Correct inaccurate information</li>
-            <li>Request deletion of your information</li>
-            <li>Opt-out of marketing communications</li>
-            <li>Withdraw consent where applicable</li>
+            <li>Unauthorized access</li>
+            <li>Alteration</li>
+            <li>Disclosure</li>
+            <li>Misuse or accidental loss</li>
           </ul>
-
-          <h2 className="text-2xl font-bold mt-8 mb-4">Cookies</h2>
           <p>
-            We use cookies and similar tracking technologies to collect information about your browsing activities 
-            and to improve your experience on our website.
+            However, no online transmission or digital storage system is completely secure, and we cannot guarantee absolute protection.
           </p>
 
-          <h2 className="text-2xl font-bold mt-8 mb-4">Changes to This Policy</h2>
+          <h2 className="text-2xl font-bold mt-8 mb-4">6. Your Rights</h2>
+          <p>Depending on applicable laws, you may:</p>
+          <ul className="list-disc pl-6 space-y-2 my-4">
+            <li>Request access to your personal data</li>
+            <li>Request corrections of inaccurate information</li>
+            <li>Request deletion of your stored data</li>
+            <li>Request limitation of data processing</li>
+            <li>Withdraw previously granted consent</li>
+          </ul>
+          <p>To exercise your rights, contact us using the details provided below.</p>
+
+          <h2 className="text-2xl font-bold mt-8 mb-4">7. Cookies and Usage Information</h2>
+          <p>We may use browser cookies and passive usage tracking to:</p>
+          <ul className="list-disc pl-6 space-y-2 my-4">
+            <li>Understand user interaction patterns</li>
+            <li>Improve website performance</li>
+            <li>Enhance user experience</li>
+          </ul>
           <p>
-            We may update this Privacy Policy from time to time. We will notify you of any changes by posting 
-            the new Privacy Policy on this page and updating the "Last updated" date.
+            You may disable cookies in your browser settings, though certain platform functionality may be affected.
           </p>
 
-          <h2 className="text-2xl font-bold mt-8 mb-4">Contact Us</h2>
+          <h2 className="text-2xl font-bold mt-8 mb-4">8. Children's Privacy</h2>
           <p>
-            If you have any questions about this Privacy Policy, please contact us at:
+            HyperChat is not intended for children under the age of 13 (or applicable local age of digital consent). We do not knowingly collect personal data from children without valid consent where required.
+          </p>
+
+          <h2 className="text-2xl font-bold mt-8 mb-4">9. Changes to This Policy</h2>
+          <p>
+            We may revise or update this Privacy Policy periodically to reflect service updates, legal requirements, or technology improvements.
+          </p>
+          <p>
+            The updated Policy will be posted on this page with a revised "Last Updated" timestamp.
+          </p>
+
+          <h2 className="text-2xl font-bold mt-8 mb-4">10. Contact Us</h2>
+          <p>
+            For questions, requests, or concerns regarding this Privacy Policy, please contact us:
           </p>
           <ul className="list-none pl-0 space-y-2 my-4">
-            <li>Email: ankit@hyperchat.site</li>
-            <li>Phone: +91 9211460100</li>
+            <li><strong>Email:</strong> ankit@hyperchat.site</li>
+            <li><strong>Phone:</strong> +91 9211460100</li>
           </ul>
         </div>
       </div>
       <Footer />
-    </div>;
+    </div>
+  );
 };
+
 export default PrivacyPolicy;
