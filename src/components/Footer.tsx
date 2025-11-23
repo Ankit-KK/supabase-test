@@ -38,6 +38,7 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="font-medium mb-4">Company</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
+              <li><Link to="/about" className="hover:text-hyperchat-purple transition-colors">About HyperChat</Link></li>
               <li><Link to="/contact" className="hover:text-hyperchat-purple transition-colors">Contact Us</Link></li>
               <li><Link to="/privacy-policy" className="hover:text-hyperchat-purple transition-colors">Privacy Policy</Link></li>
               <li><Link to="/terms-and-conditions" className="hover:text-hyperchat-purple transition-colors">Terms & Conditions</Link></li>
