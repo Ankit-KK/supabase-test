@@ -1,10 +1,8 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Building2, Users, Shield } from "lucide-react";
-
 const About = () => {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted">
+  return <div className="min-h-screen bg-gradient-to-br from-background to-muted">
       <Navbar />
       
       <main className="container mx-auto px-4 py-16 md:py-24">
@@ -30,9 +28,7 @@ const About = () => {
                 <div>
                   <h2 className="text-2xl font-semibold mb-4">Our Mission</h2>
                   <p className="text-foreground/80 leading-relaxed">
-                    HyperChat is a digital audience-interaction platform developed by STREAMHEART PRIVATE LIMITED. 
-                    Our mission is to help creators build stronger audience engagement by enabling meaningful participation, 
-                    expression, and real-time presence during live content.
+                    HyperChat is a digital audience-interaction platform developed by STREAMHEART PRIVATE LIMITED. Our mission is to help creators build stronger audience engagement by enabling meaningful participation, expression, and real-time presence.   
                   </p>
                 </div>
               </div>
@@ -80,8 +76,6 @@ const About = () => {
       </main>
 
       <Footer />
-    </div>
-  );
+    </div>;
 };
-
 export default About;
