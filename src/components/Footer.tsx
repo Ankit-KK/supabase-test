@@ -23,19 +23,19 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="font-medium mb-4">For Creators</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#features" className="hover:text-hyperchat-purple transition-colors">Engagement Tools</a></li>
+              <li><a href="#features" className="hover:text-hyperchat-purple transition-colors">About HyperChat</a></li>
               <li><a href="#services" className="hover:text-hyperchat-purple transition-colors">Community Building</a></li>
-              <li><Link to="/contact" className="hover:text-hyperchat-purple transition-colors">Platform Integration</Link></li>
-              <li><a href="#" className="hover:text-hyperchat-purple transition-colors">Real-Time Interaction</a></li>
+              <li><Link to="/contact" className="hover:text-hyperchat-purple transition-colors">Creator Resources</Link></li>
+              <li><a href="#how-it-works" className="hover:text-hyperchat-purple transition-colors">How It Works</a></li>
             </ul>
           </div>
           <div>
             <h3 className="font-medium mb-4">Features</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-hyperchat-purple transition-colors">Live Participation</a></li>
-              <li><a href="#" className="hover:text-hyperchat-purple transition-colors">Audience Recognition</a></li>
-              <li><a href="#" className="hover:text-hyperchat-purple transition-colors">Expressive Communication</a></li>
-              <li><a href="#" className="hover:text-hyperchat-purple transition-colors">Community Identity</a></li>
+              <li><a href="#features" className="hover:text-hyperchat-purple transition-colors">Audience Expression</a></li>
+              <li><a href="#features" className="hover:text-hyperchat-purple transition-colors">Shared Experiences</a></li>
+              <li><a href="#features" className="hover:text-hyperchat-purple transition-colors">Community Atmosphere</a></li>
+              <li><a href="#features" className="hover:text-hyperchat-purple transition-colors">Creator Connection</a></li>
             </ul>
           </div>
           <div>
@@ -44,7 +44,6 @@ const Footer: React.FC = () => {
               <li><Link to="/contact" className="hover:text-hyperchat-purple transition-colors">Contact Us</Link></li>
               <li><Link to="/privacy-policy" className="hover:text-hyperchat-purple transition-colors">Privacy Policy</Link></li>
               <li><Link to="/terms-and-conditions" className="hover:text-hyperchat-purple transition-colors">Terms & Conditions</Link></li>
-              <li><Link to="/cancellation-refunds" className="hover:text-hyperchat-purple transition-colors">Cancellation & Refunds</Link></li>
               <li><Link to="/shipping" className="hover:text-hyperchat-purple transition-colors">Support</Link></li>
             </ul>
           </div>
@@ -54,6 +53,7 @@ const Footer: React.FC = () => {
                 <p>© {new Date().getFullYear()} HyperChat - Digital Engagement Platform. All rights reserved.</p>
                 <p className="mt-1">A product of <span className="font-medium text-foreground">STREAMHEART PRIVATE LIMITED</span></p>
                 <p className="mt-2 text-xs">HyperChat is a digital engagement platform that enhances presence and communication between creators and their audiences.</p>
+                <p className="mt-2 text-xs opacity-75">We do not process payments on the homepage.</p>
               </div>
           <div className="flex space-x-4 mt-4 md:mt-0">
             <a href="#" className="text-muted-foreground hover:text-hyperchat-purple transition-colors">
