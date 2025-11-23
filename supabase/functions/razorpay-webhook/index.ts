@@ -184,7 +184,7 @@ serve(async (req) => {
               amount: donation.amount,
               message: donation.message,
               donationId: donation.id,
-              streamerId: 'ankit',
+              streamerId: donation.streamer_id,
               isVoiceAnnouncement: isVoiceAnnouncement
             }
           })
