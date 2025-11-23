@@ -1,10 +1,7 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
-
 const Footer: React.FC = () => {
-  return (
-    <footer className="border-t border-white/10 bg-background">
+  return <footer className="border-t border-white/10 bg-background">
       <div className="container px-4 md:px-6 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="col-span-1">
@@ -53,7 +50,7 @@ const Footer: React.FC = () => {
                 <p>© {new Date().getFullYear()} HyperChat - Digital Engagement Platform. All rights reserved.</p>
                 <p className="mt-1">A product of <span className="font-medium text-foreground">STREAMHEART PRIVATE LIMITED</span></p>
                 <p className="mt-2 text-xs">HyperChat is a digital engagement platform that enhances presence and communication between creators and their audiences.</p>
-                <p className="mt-2 text-xs opacity-75">We do not process payments on the homepage.</p>
+                
               </div>
           <div className="flex space-x-4 mt-4 md:mt-0">
             <a href="#" className="text-muted-foreground hover:text-hyperchat-purple transition-colors">
@@ -83,8 +80,6 @@ const Footer: React.FC = () => {
           </div>
         </div>
       </div>
-    </footer>
-  );
+    </footer>;
 };
-
 export default Footer;
