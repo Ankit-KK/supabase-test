@@ -68,10 +68,10 @@ serve(async (req) => {
       amount: Math.round(amount * 100), // Convert to paise
       currency: 'INR',
       receipt: orderId,
+      description: 'Digital Interaction Service',
       notes: {
-        streamer: 'ankit',
-        donation_type: isHyperemote ? 'hyperemote' : (voiceMessageUrl ? 'voice' : 'message'),
-        name: name.substring(0, 50) // Razorpay limits note values
+        product_type: 'digital_engagement',
+        customer_name: name.substring(0, 50)
       }
     }
 
