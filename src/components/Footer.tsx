@@ -12,30 +12,30 @@ const Footer: React.FC = () => {
               🎉 HyperChat
             </div>
             <p className="text-sm text-muted-foreground mb-4">
-              The ultimate UPI payment platform for creators and live streaming monetization in India. Support streamers with UPI payments.
+              A digital engagement platform that enhances presence and communication between creators and their audiences.
             </p>
             <div className="space-y-1 text-xs text-muted-foreground">
-              <p>✓ Direct fan support via UPI</p>
-              <p>✓ Get paid by fans instantly</p>
-              <p>✓ Voice messages with donations</p>
+              <p>✓ Real-time engagement</p>
+              <p>✓ Meaningful connections</p>
+              <p>✓ Elevated presence</p>
             </div>
           </div>
           <div>
             <h3 className="font-medium mb-4">For Creators</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#features" className="hover:text-hyperchat-purple transition-colors">UPI Payments</a></li>
-              <li><a href="#services" className="hover:text-hyperchat-purple transition-colors">Content Monetization</a></li>
-              <li><Link to="/contact" className="hover:text-hyperchat-purple transition-colors">Live Chat Tipping</Link></li>
-              <li><a href="#" className="hover:text-hyperchat-purple transition-colors">Earn Money from Streaming</a></li>
+              <li><a href="#features" className="hover:text-hyperchat-purple transition-colors">Engagement Tools</a></li>
+              <li><a href="#services" className="hover:text-hyperchat-purple transition-colors">Community Building</a></li>
+              <li><Link to="/contact" className="hover:text-hyperchat-purple transition-colors">Platform Integration</Link></li>
+              <li><a href="#" className="hover:text-hyperchat-purple transition-colors">Real-Time Interaction</a></li>
             </ul>
           </div>
           <div>
             <h3 className="font-medium mb-4">Features</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-hyperchat-purple transition-colors">Voice Messages</a></li>
-              <li><a href="#" className="hover:text-hyperchat-purple transition-colors">Fan Engagement</a></li>
-              <li><a href="#" className="hover:text-hyperchat-purple transition-colors">UPI-based Tipping Solution</a></li>
-              <li><a href="#" className="hover:text-hyperchat-purple transition-colors">Indian Streaming Monetization</a></li>
+              <li><a href="#" className="hover:text-hyperchat-purple transition-colors">Live Participation</a></li>
+              <li><a href="#" className="hover:text-hyperchat-purple transition-colors">Audience Recognition</a></li>
+              <li><a href="#" className="hover:text-hyperchat-purple transition-colors">Expressive Communication</a></li>
+              <li><a href="#" className="hover:text-hyperchat-purple transition-colors">Community Identity</a></li>
             </ul>
           </div>
           <div>
@@ -51,8 +51,9 @@ const Footer: React.FC = () => {
         </div>
         <div className="mt-12 pt-6 border-t border-white/10 flex flex-col md:flex-row justify-between items-center">
               <div className="text-sm text-muted-foreground">
-                <p>© {new Date().getFullYear()} HyperChat - UPI Payment Platform for Creators. All rights reserved.</p>
+                <p>© {new Date().getFullYear()} HyperChat - Digital Engagement Platform. All rights reserved.</p>
                 <p className="mt-1">A product of <span className="font-medium text-foreground">STREAMHEART PRIVATE LIMITED</span></p>
+                <p className="mt-2 text-xs">HyperChat is a digital engagement platform that enhances presence and communication between creators and their audiences.</p>
               </div>
           <div className="flex space-x-4 mt-4 md:mt-0">
             <a href="#" className="text-muted-foreground hover:text-hyperchat-purple transition-colors">

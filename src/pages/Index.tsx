@@ -12,8 +12,7 @@ import VideoBackground from "@/components/VideoBackground";
 import HowItWorks from "@/components/HowItWorks";
 import BlogSection from "@/components/BlogSection";
 import FAQSection from "@/components/FAQSection";
-
-import Pricing from "@/components/Pricing";
+import AudienceValue from "@/components/AudienceValue";
 
 const Index = () => {
   const [videoUrl, setVideoUrl] = useState<string>('');
@@ -39,9 +38,9 @@ const Index = () => {
         <Navbar />
         <HeroWithCanyonAnimation />
         <Features />
-        <HowItWorks />
-        <Pricing />
         <Services />
+        <AudienceValue />
+        <HowItWorks />
         <BlogSection />
         <FAQSection />
         <Footer />
