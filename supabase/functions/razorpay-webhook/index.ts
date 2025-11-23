@@ -94,16 +94,8 @@ serve(async (req) => {
       updated_at: new Date().toISOString()
     }
 
-    // Auto-approve on success
-    if (isSuccess) {
-      if (donation.is_hyperemote) {
-        updateData.moderation_status = 'auto_approved'
-        updateData.approved_by = 'system'
-        updateData.approved_at = new Date().toISOString()
-      } else {
-        updateData.moderation_status = 'pending'
-      }
-    }
+    // Note: moderation_status is handled by database trigger
+    // All donations are auto-approved by auto_approve_ankit_hyperemotes_iu()
 
     const { error: updateError } = await supabase
       .from('ankit_donations')
