@@ -1,15 +1,11 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Users, Heart, MessageCircle, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import SignupDialog from "@/components/SignupDialog";
-
 const Services: React.FC = () => {
   const [showSignupDialog, setShowSignupDialog] = useState(false);
-
-  return (
-    <section id="services" className="py-16 md:py-24 bg-secondary/20">
+  return <section id="services" className="py-16 md:py-24 bg-secondary/20">
       <div className="container px-4 md:px-6">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
@@ -72,12 +68,8 @@ const Services: React.FC = () => {
         
         <div className="mt-12 text-center">
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              size="lg" 
-              className="bg-hero-gradient hover:opacity-90 transition-opacity"
-              onClick={() => setShowSignupDialog(true)}
-            >
-              Join the Experience
+            <Button size="lg" className="bg-hero-gradient hover:opacity-90 transition-opacity" onClick={() => setShowSignupDialog(true)}>
+              Get Connected
             </Button>
             <Button variant="outline" size="lg" asChild>
               <Link to="/contact">Learn About Our Platform</Link>
@@ -87,8 +79,6 @@ const Services: React.FC = () => {
       </div>
       
       <SignupDialog open={showSignupDialog} onOpenChange={setShowSignupDialog} />
-    </section>
-  );
+    </section>;
 };
-
 export default Services;
