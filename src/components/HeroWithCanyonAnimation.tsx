@@ -18,8 +18,8 @@ const HeroWithCanyonAnimation = () => {
             </div>
             
             <CanyonAnimatedText
-              text="Connecting Audiences and Creators — Instantly."
-              className="mb-4"
+              text="Connecting Audiences and Creators"
+              className="mb-4 text-center"
             />
             
             <h2 className="text-2xl md:text-3xl font-bold text-muted-foreground max-w-[60ch] mx-auto">
