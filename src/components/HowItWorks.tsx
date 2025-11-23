@@ -13,7 +13,7 @@ const HowItWorks = () => {
     {
       icon: <MessageCircle className="text-white" size={24} />,
       title: "Engage with HyperChat",
-      description: "Use HyperChat to participate and elevate your presence",
+      description: "Use HyperChat to express yourself and participate meaningfully",
       gradient: "bg-gradient-to-br from-hyperchat-pink to-hyperchat-purple",
     },
     {
@@ -68,7 +68,7 @@ const HowItWorks = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
               <div className="flex items-center justify-center space-x-2">
                 <div className="w-2 h-2 bg-hyperchat-pink rounded-full"></div>
-                <span>Real-Time Engagement</span>
+                <span>Meaningful Expression</span>
               </div>
               <div className="flex items-center justify-center space-x-2">
                 <div className="w-2 h-2 bg-hyperchat-purple rounded-full"></div>

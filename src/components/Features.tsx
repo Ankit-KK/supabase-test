@@ -1,6 +1,6 @@
 
 import React from "react";
-import { MessageSquare, Users, Heart, Zap, Sparkles, Award } from "lucide-react";
+import { MessageSquare, Users, Heart, Sparkles } from "lucide-react";
 
 interface FeatureProps {
   icon: React.ReactNode;
@@ -24,22 +24,10 @@ const Feature: React.FC<FeatureProps> = ({ icon, title, description, gradient })
 const Features: React.FC = () => {
   const features = [
     {
-      icon: <MessageSquare className="text-white" size={24} />,
-      title: "Real-Time Engagement",
-      description: "Enable meaningful interactions between you and your audience during live moments",
-      gradient: "bg-gradient-to-br from-hyperchat-purple to-hyperchat-blue",
-    },
-    {
       icon: <Users className="text-white" size={24} />,
       title: "Elevated Presence",
       description: "Make your audience feel noticed, valued, and part of the experience",
       gradient: "bg-gradient-to-br from-hyperchat-pink to-hyperchat-purple",
-    },
-    {
-      icon: <Sparkles className="text-white" size={24} />,
-      title: "Expressive Communication",
-      description: "Go beyond basic chat — create memorable and personalized moments",
-      gradient: "bg-gradient-to-br from-hyperchat-orange to-hyperchat-pink",
     },
     {
       icon: <Heart className="text-white" size={24} />,
@@ -48,15 +36,27 @@ const Features: React.FC = () => {
       gradient: "bg-gradient-to-br from-hyperchat-pink to-hyperchat-orange",
     },
     {
-      icon: <Zap className="text-white" size={24} />,
-      title: "Live Participation",
-      description: "Transform passive viewers into active participants in your creative journey",
+      icon: <Heart className="text-white" size={24} />,
+      title: "Audience Expression",
+      description: "Enable your community to share their support and appreciation naturally",
+      gradient: "bg-gradient-to-br from-hyperchat-purple to-hyperchat-blue",
+    },
+    {
+      icon: <MessageSquare className="text-white" size={24} />,
+      title: "Creator-Audience Bridge",
+      description: "Connect meaningfully with those who value your content",
+      gradient: "bg-gradient-to-br from-hyperchat-orange to-hyperchat-pink",
+    },
+    {
+      icon: <Sparkles className="text-white" size={24} />,
+      title: "Shared Moments",
+      description: "Create memorable experiences during your live broadcasts",
       gradient: "bg-gradient-to-br from-hyperchat-blue to-hyperchat-purple",
     },
     {
-      icon: <Award className="text-white" size={24} />,
-      title: "Audience Recognition",
-      description: "Help your supporters stand out and be recognized in the moment",
+      icon: <Users className="text-white" size={24} />,
+      title: "Community Atmosphere",
+      description: "Foster a welcoming space where audiences feel part of something special",
       gradient: "bg-gradient-to-br from-hyperchat-purple to-hyperchat-pink",
     },
   ];
