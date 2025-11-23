@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Contact from "./pages/Contact";
+import About from "./pages/About";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import CancellationRefunds from "./pages/CancellationRefunds";
@@ -70,6 +71,7 @@ const App = () => (
               {/* Public Routes */}
               <Route path="/" element={<Index />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/about" element={<About />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
             <Route path="/cancellation-refunds" element={<CancellationRefunds />} />
