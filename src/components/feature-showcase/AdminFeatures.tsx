@@ -9,22 +9,22 @@ const AdminFeatures = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
 
   const adminStats = [
-    { label: "Total Revenue", value: "₹2,45,670", change: "+12.5%", icon: BarChart3 },
-    { label: "Active Users", value: "1,247", change: "+8.2%", icon: Users },
+    { label: "Total Engagements", value: "12,470", change: "+12.5%", icon: BarChart3 },
+    { label: "Active Participants", value: "1,247", change: "+8.2%", icon: Users },
     { label: "Pending Reviews", value: "23", change: "-5.1%", icon: MessageSquare },
-    { label: "System Health", value: "99.9%", change: "+0.1%", icon: Shield }
+    { label: "Platform Health", value: "99.9%", change: "+0.1%", icon: Shield }
   ];
 
   const recentDonations = [
-    { id: "1", name: "Supporter123", amount: "₹100", status: "pending", time: "2 min ago" },
-    { id: "2", name: "GamerPro", amount: "₹250", status: "approved", time: "5 min ago" },
-    { id: "3", name: "StreamFan", amount: "₹50", status: "pending", time: "8 min ago" },
-    { id: "4", name: "Anonymous", amount: "₹500", status: "approved", time: "12 min ago" }
+    { id: "1", name: "Supporter123", amount: "Audio Message", status: "pending", time: "2 min ago" },
+    { id: "2", name: "GamerPro", amount: "Visual Effect", status: "approved", time: "5 min ago" },
+    { id: "3", name: "StreamFan", amount: "Text Message", status: "pending", time: "8 min ago" },
+    { id: "4", name: "Anonymous", amount: "Celebration", status: "approved", time: "12 min ago" }
   ];
 
   const moderationQueue = [
-    { id: "1", type: "voice", content: "Voice message", reporter: "User123", status: "pending" },
-    { id: "2", type: "gif", content: "Custom GIF", reporter: "User456", status: "reviewing" },
+    { id: "1", type: "audio", content: "Audio message", reporter: "User123", status: "pending" },
+    { id: "2", type: "visual", content: "Visual effect", reporter: "User456", status: "reviewing" },
     { id: "3", type: "message", content: "Text message", reporter: "User789", status: "pending" }
   ];
 
@@ -37,11 +37,11 @@ const AdminFeatures = () => {
             Admin & Creator Tools
           </Badge>
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Comprehensive Admin Dashboard
+            Creator Platform Tools
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Full-featured admin interface with analytics, moderation tools, 
-            and complete control over your streaming platform.
+            Comprehensive creator interface with insights, management tools, 
+            and complete control over your community engagement platform.
           </p>
         </div>
 
@@ -79,7 +79,7 @@ const AdminFeatures = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <MessageSquare className="w-5 h-5 text-hyperchat-blue" />
-                    Recent Donations
+                    Recent Engagements
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -103,7 +103,7 @@ const AdminFeatures = () => {
                     ))}
                   </div>
                   <Button className="w-full mt-4" variant="outline">
-                    View All Donations
+                    View All Engagements
                   </Button>
                 </CardContent>
               </Card>
@@ -118,15 +118,15 @@ const AdminFeatures = () => {
                 <CardContent className="space-y-3">
                   <Button className="w-full justify-start" variant="outline">
                     <Download className="w-4 h-4 mr-2" />
-                    Export CSV Report
+                    Export Analytics Report
                   </Button>
                   <Button className="w-full justify-start" variant="outline">
                     <Settings className="w-4 h-4 mr-2" />
-                    Configure OBS Settings
+                    Platform Configuration
                   </Button>
                   <Button className="w-full justify-start" variant="outline">
                     <Shield className="w-4 h-4 mr-2" />
-                    Review Security Logs
+                    Review Activity Logs
                   </Button>
                   <Button className="w-full justify-start" variant="outline">
                     <Users className="w-4 h-4 mr-2" />
@@ -160,7 +160,7 @@ const AdminFeatures = () => {
                           </Badge>
                         </div>
                         <div className="text-sm font-medium">{item.content}</div>
-                        <div className="text-xs text-muted-foreground">Reported by: {item.reporter}</div>
+                        <div className="text-xs text-muted-foreground">Flagged by: {item.reporter}</div>
                         <div className="flex gap-2 mt-2">
                           <Button size="sm" className="bg-green-500 hover:bg-green-600">Approve</Button>
                           <Button size="sm" variant="destructive">Reject</Button>
@@ -187,10 +187,10 @@ const AdminFeatures = () => {
                   <div className="space-y-2">
                     <div className="text-sm font-medium">Available Commands</div>
                     <div className="space-y-1 text-sm font-mono">
-                      <div>/approve - Approve donation</div>
-                      <div>/reject - Reject donation</div>
-                      <div>/status - Check system status</div>
-                      <div>/stats - View statistics</div>
+                      <div>/approve - Approve engagement</div>
+                      <div>/reject - Reject engagement</div>
+                      <div>/status - Check platform status</div>
+                      <div>/stats - View engagement stats</div>
                     </div>
                   </div>
                   
@@ -208,24 +208,24 @@ const AdminFeatures = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <BarChart3 className="w-5 h-5 text-hyperchat-blue" />
-                    Revenue Analytics
+                    Engagement Analytics
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="text-center">
-                      <div className="text-3xl font-bold text-hyperchat-blue mb-2">₹2,45,670</div>
-                      <div className="text-sm text-muted-foreground">Total Revenue</div>
+                      <div className="text-3xl font-bold text-hyperchat-blue mb-2">12,470</div>
+                      <div className="text-sm text-muted-foreground">Total Engagements</div>
                       <div className="text-xs text-green-500">+12.5% from last month</div>
                     </div>
                     <div className="text-center">
                       <div className="text-3xl font-bold text-hyperchat-purple mb-2">1,247</div>
-                      <div className="text-sm text-muted-foreground">Total Donations</div>
+                      <div className="text-sm text-muted-foreground">Active Participants</div>
                       <div className="text-xs text-green-500">+8.2% from last month</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-3xl font-bold text-hyperchat-pink mb-2">₹197</div>
-                      <div className="text-sm text-muted-foreground">Average Donation</div>
+                      <div className="text-3xl font-bold text-hyperchat-pink mb-2">10/min</div>
+                      <div className="text-sm text-muted-foreground">Engagement Rate</div>
                       <div className="text-xs text-green-500">+3.8% from last month</div>
                     </div>
                   </div>
@@ -233,7 +233,7 @@ const AdminFeatures = () => {
                   <div className="mt-6 h-40 bg-gradient-to-r from-hyperchat-blue/10 to-hyperchat-purple/10 rounded-lg flex items-center justify-center">
                     <div className="text-center">
                       <BarChart3 className="w-12 h-12 mx-auto mb-2 text-hyperchat-blue" />
-                      <div className="text-sm text-muted-foreground">Revenue Chart Placeholder</div>
+                      <div className="text-sm text-muted-foreground">Analytics Chart Placeholder</div>
                     </div>
                   </div>
                 </CardContent>
@@ -246,7 +246,7 @@ const AdminFeatures = () => {
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm">Voice Messages</span>
+                      <span className="text-sm">Audio Messages</span>
                       <div className="flex items-center gap-2">
                         <div className="w-24 bg-muted rounded-full h-2">
                           <div className="bg-hyperchat-pink h-2 rounded-full w-3/4"></div>
@@ -255,7 +255,7 @@ const AdminFeatures = () => {
                       </div>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm">Custom GIFs</span>
+                      <span className="text-sm">Visual Effects</span>
                       <div className="flex items-center gap-2">
                         <div className="w-24 bg-muted rounded-full h-2">
                           <div className="bg-hyperchat-blue h-2 rounded-full w-1/2"></div>
@@ -264,7 +264,7 @@ const AdminFeatures = () => {
                       </div>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm">HyperEmotes</span>
+                      <span className="text-sm">Animated Effects</span>
                       <div className="flex items-center gap-2">
                         <div className="w-24 bg-muted rounded-full h-2">
                           <div className="bg-hyperchat-orange h-2 rounded-full w-4/5"></div>
@@ -282,7 +282,7 @@ const AdminFeatures = () => {
                   <CardContent className="space-y-3">
                     <Button className="w-full justify-start" variant="outline">
                       <Download className="w-4 h-4 mr-2" />
-                      Download Donation Report
+                      Download Engagement Report
                     </Button>
                     <Button className="w-full justify-start" variant="outline">
                       <Download className="w-4 h-4 mr-2" />
@@ -290,7 +290,7 @@ const AdminFeatures = () => {
                     </Button>
                     <Button className="w-full justify-start" variant="outline">
                       <Download className="w-4 h-4 mr-2" />
-                      Generate Tax Report
+                      Generate Activity Summary
                     </Button>
                   </CardContent>
                 </Card>
@@ -307,20 +307,20 @@ const AdminFeatures = () => {
                 <CardContent className="space-y-4">
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm">Auto-approve donations</span>
+                      <span className="text-sm">Auto-approve engagements</span>
                       <Badge variant="outline">Disabled</Badge>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm">Voice message limit</span>
+                      <span className="text-sm">Audio message limit</span>
                       <Badge variant="secondary">60 seconds</Badge>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm">GIF file size limit</span>
+                      <span className="text-sm">Visual effect limit</span>
                       <Badge variant="secondary">50MB</Badge>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm">Minimum donation</span>
-                      <Badge variant="secondary">₹10</Badge>
+                      <span className="text-sm">Community size</span>
+                      <Badge variant="secondary">Unlimited</Badge>
                     </div>
                   </div>
                   <Button className="w-full">Update Settings</Button>

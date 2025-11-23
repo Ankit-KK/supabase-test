@@ -15,54 +15,55 @@ const TechnicalFeatures = () => {
     { label: "API Endpoints", value: "20+", icon: Code }
   ];
 
-  const databaseSchema = `-- Donations Table
-CREATE TABLE chiaa_gaming_donations (
+  const databaseSchema = `-- Engagement Data Table
+CREATE TABLE creator_engagements (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
+  creator_id UUID NOT NULL,
+  participant_name TEXT NOT NULL,
   message TEXT NOT NULL DEFAULT '',
-  amount NUMERIC NOT NULL,
-  payment_status TEXT DEFAULT 'pending',
-  voice_url TEXT,
-  gif_url TEXT,
-  hyperemotes_enabled BOOLEAN DEFAULT false,
+  engagement_type TEXT NOT NULL,
+  presence_status TEXT DEFAULT 'active',
+  audio_url TEXT,
+  visual_url TEXT,
+  effects_enabled BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
 -- Row Level Security
-ALTER TABLE chiaa_gaming_donations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE creator_engagements ENABLE ROW LEVEL SECURITY;
 
 -- Real-time subscription
-ALTER TABLE chiaa_gaming_donations REPLICA IDENTITY FULL;
-ALTER PUBLICATION supabase_realtime ADD TABLE chiaa_gaming_donations;`;
+ALTER TABLE creator_engagements REPLICA IDENTITY FULL;
+ALTER PUBLICATION supabase_realtime ADD TABLE creator_engagements;`;
 
-  const edgeFunctionCode = `// Payment Processing Edge Function
+  const edgeFunctionCode = `// Engagement Processing Edge Function
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 serve(async (req) => {
-  const { amount, name, message } = await req.json();
+  const { type, name, message } = await req.json();
   
   // Validate input
-  if (!amount || amount < 1) {
-    return new Response('Invalid amount', { status: 400 });
+  if (!name || !type) {
+    return new Response('Invalid engagement data', { status: 400 });
   }
   
-  // Create payment order
-  const order = await createPaymentOrder({
-    amount,
+  // Process engagement
+  const engagement = await processEngagement({
+    type,
     name,
     message
   });
   
-  return new Response(JSON.stringify(order), {
+  return new Response(JSON.stringify(engagement), {
     headers: { 'Content-Type': 'application/json' }
   });
 });`;
 
   const apiEndpoints = [
-    { method: "POST", endpoint: "/create-payment-order", description: "Create new payment" },
-    { method: "POST", endpoint: "/verify-payment", description: "Verify payment status" },
-    { method: "POST", endpoint: "/telegram-bot", description: "Telegram integration" },
-    { method: "GET", endpoint: "/donation-notification", description: "Real-time notifications" }
+    { method: "POST", endpoint: "/create-engagement", description: "Create new audience engagement" },
+    { method: "POST", endpoint: "/verify-presence", description: "Verify participant presence" },
+    { method: "POST", endpoint: "/broadcast-notification", description: "Send live notification" },
+    { method: "GET", endpoint: "/engagement-feed", description: "Real-time engagement feed" }
   ];
 
   return (
@@ -74,11 +75,11 @@ serve(async (req) => {
             Technical Infrastructure
           </Badge>
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Enterprise-Grade Backend
+            Robust Technical Infrastructure
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Built on modern cloud infrastructure with real-time databases, 
-            edge functions, and scalable architecture.
+            Built on modern cloud infrastructure with real-time data systems, 
+            scalable architecture, and enterprise-grade reliability.
           </p>
         </div>
 
@@ -227,13 +228,13 @@ serve(async (req) => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Voice Storage</CardTitle>
+                  <CardTitle className="text-lg">Audio Storage</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span>Bucket:</span>
-                      <span className="font-mono">voice-messages</span>
+                      <span className="font-mono">audio-messages</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Format:</span>
@@ -253,13 +254,13 @@ serve(async (req) => {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">GIF Storage</CardTitle>
+                  <CardTitle className="text-lg">Visual Storage</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span>Bucket:</span>
-                      <span className="font-mono">donation-gifs</span>
+                      <span className="font-mono">visual-effects</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Format:</span>
@@ -279,13 +280,13 @@ serve(async (req) => {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Emoji Assets</CardTitle>
+                  <CardTitle className="text-lg">Effect Assets</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span>Bucket:</span>
-                      <span className="font-mono">chiaa-emotes</span>
+                      <span className="font-mono">celebration-effects</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Format:</span>

@@ -45,11 +45,11 @@ https://yourapp.com/chiaa_gaming/obs/YOUR_OBS_TOKEN
             Streaming Integration
           </Badge>
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Advanced OBS Integration
+            Live Streaming Integration
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Seamless streaming integration with customizable overlays, real-time alerts, 
-            and professional-grade broadcasting tools.
+            Seamless streaming integration with customizable overlays, real-time presence alerts, 
+            and professional-grade broadcasting tools for enhanced audience connection.
           </p>
         </div>
 
@@ -87,17 +87,17 @@ https://yourapp.com/chiaa_gaming/obs/YOUR_OBS_TOKEN
                 <CardContent>
                   <div className="relative bg-gradient-to-br from-hyperchat-purple/20 to-hyperchat-pink/20 rounded-lg p-6 min-h-[300px] border-2 border-dashed border-hyperchat-purple/30">
                     <div className="absolute top-4 right-4 bg-card rounded-lg p-3 shadow-lg animate-float">
-                      <div className="text-sm font-bold text-hyperchat-purple">New Donation!</div>
-                      <div className="text-xs">₹100 from Supporter</div>
-                      <div className="text-xs text-muted-foreground">"Great stream!"</div>
+                      <div className="text-sm font-bold text-hyperchat-purple">Audience Joined!</div>
+                      <div className="text-xs">Supporter is now present</div>
+                      <div className="text-xs text-muted-foreground">"Excited to be here!"</div>
                     </div>
                     
                     <div className="absolute bottom-4 left-4 bg-card rounded-lg p-3 shadow-lg">
-                      <div className="text-sm font-bold">Goal Progress</div>
+                      <div className="text-sm font-bold">Community Size</div>
                       <div className="w-32 bg-muted rounded-full h-2 mt-1">
                         <div className="bg-hero-gradient h-2 rounded-full w-3/4"></div>
                       </div>
-                      <div className="text-xs text-muted-foreground mt-1">₹750 / ₹1000</div>
+                      <div className="text-xs text-muted-foreground mt-1">750 / 1000 viewers</div>
                     </div>
                     
                     <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
@@ -120,24 +120,24 @@ https://yourapp.com/chiaa_gaming/obs/YOUR_OBS_TOKEN
                     <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                       <Volume2 className="w-4 h-4 text-hyperchat-blue" />
                       <div>
-                        <div className="font-medium text-sm">Voice Message Alert</div>
-                        <div className="text-xs text-muted-foreground">Plays voice + visual notification</div>
+                        <div className="font-medium text-sm">Audio Message Alert</div>
+                        <div className="text-xs text-muted-foreground">Plays audio + visual notification</div>
                       </div>
                     </div>
                     
                     <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                       <Eye className="w-4 h-4 text-hyperchat-pink" />
                       <div>
-                        <div className="font-medium text-sm">GIF Alert</div>
-                        <div className="text-xs text-muted-foreground">Custom GIF display with animation</div>
+                        <div className="font-medium text-sm">Visual Effect Alert</div>
+                        <div className="text-xs text-muted-foreground">Custom visual display with animation</div>
                       </div>
                     </div>
                     
                     <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                       <Settings className="w-4 h-4 text-hyperchat-orange" />
                       <div>
-                        <div className="font-medium text-sm">HyperEmotes Rain</div>
-                        <div className="text-xs text-muted-foreground">50+ animated emoji effects</div>
+                        <div className="font-medium text-sm">Animated Effects</div>
+                        <div className="text-xs text-muted-foreground">50+ animated celebration effects</div>
                       </div>
                     </div>
                   </div>
@@ -184,15 +184,15 @@ https://yourapp.com/chiaa_gaming/obs/YOUR_OBS_TOKEN
                 <CardContent className="space-y-4">
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm">Voice Messages</span>
+                      <span className="text-sm">Audio Messages</span>
                       <Badge variant="secondary">Enabled</Badge>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm">Custom Sounds</span>
+                      <span className="text-sm">Notification Sounds</span>
                       <Badge variant="secondary">Enabled</Badge>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm">Background Music</span>
+                      <span className="text-sm">Ambient Audio</span>
                       <Badge variant="outline">Optional</Badge>
                     </div>
                   </div>

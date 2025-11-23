@@ -15,7 +15,7 @@ const SecurityFeatures = () => {
     {
       icon: Lock,
       title: "CSRF Protection",
-      description: "Cross-site request forgery protection on all forms and endpoints",
+      description: "Cross-site request forgery protection on all interactions and endpoints",
       status: "Active",
       level: "High"
     },
@@ -29,14 +29,14 @@ const SecurityFeatures = () => {
     {
       icon: AlertTriangle,
       title: "Rate Limiting",
-      description: "Intelligent rate limiting to prevent abuse and DDoS attacks",
+      description: "Intelligent rate limiting to prevent platform abuse and maintain quality",
       status: "Active",
       level: "Medium"
     },
     {
       icon: Key,
       title: "Token Security",
-      description: "Secure token generation and validation for OBS and API access",
+      description: "Secure token generation and validation for platform and API access",
       status: "Active",
       level: "Critical"
     },
@@ -50,10 +50,10 @@ const SecurityFeatures = () => {
   ];
 
   const complianceItems = [
-    { standard: "GDPR", status: "Compliant", description: "European data protection regulation" },
-    { standard: "PCI DSS", status: "Level 1", description: "Payment card industry security" },
-    { standard: "SOC 2", status: "Type II", description: "Service organization controls" },
-    { standard: "ISO 27001", status: "Certified", description: "Information security management" }
+    { standard: "Data Protection", status: "Compliant", description: "International data protection standards" },
+    { standard: "Privacy Standards", status: "Certified", description: "Platform privacy compliance" },
+    { standard: "Platform Security", status: "Type II", description: "Service organization controls" },
+    { standard: "Information Security", status: "Certified", description: "ISO 27001 compliance" }
   ];
 
   const securityMetrics = [
@@ -72,11 +72,11 @@ const SecurityFeatures = () => {
             Security & Compliance
           </Badge>
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Enterprise-Grade Security
+            Platform Security & Trust
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Bank-level security measures protecting your data and transactions 
-            with comprehensive compliance and monitoring.
+            Enterprise-grade security measures protecting your community and interactions 
+            with comprehensive safeguards and monitoring.
           </p>
         </div>
 
@@ -155,8 +155,8 @@ const SecurityFeatures = () => {
               <div className="bg-muted/50 rounded-lg p-4 font-mono text-sm">
                 <div className="text-green-500 mb-2">// Row Level Security Policy</div>
                 <div>CREATE POLICY "users_own_data"</div>
-                <div>ON donations FOR ALL</div>
-                <div>USING (auth.uid() = user_id);</div>
+                <div>ON engagements FOR ALL</div>
+                <div>USING (auth.uid() = creator_id);</div>
                 <div className="mt-3 text-green-500">// Rate Limiting</div>
                 <div>check_rate_limit(ip, endpoint, 10, 1)</div>
               </div>

@@ -5,13 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { Play, Users, Zap, Shield, Mic, Gift } from "lucide-react";
 
 const FeatureShowcaseHero = () => {
-  const [donationCount, setDonationCount] = useState(1247);
+  const [engagementCount, setEngagementCount] = useState(1247);
   const [liveUsers, setLiveUsers] = useState(23);
 
   useEffect(() => {
     // Simulate live statistics
     const interval = setInterval(() => {
-      setDonationCount(prev => prev + Math.floor(Math.random() * 3));
+      setEngagementCount(prev => prev + Math.floor(Math.random() * 3));
       setLiveUsers(prev => Math.max(15, prev + Math.floor(Math.random() * 5) - 2));
     }, 5000);
 
@@ -19,10 +19,10 @@ const FeatureShowcaseHero = () => {
   }, []);
 
   const features = [
-    { icon: Mic, label: "Voice Messages", desc: "World's First" },
-    { icon: Gift, label: "Custom GIFs", desc: "Unlimited Upload" },
-    { icon: Zap, label: "HyperEmotes", desc: "50+ Animations" },
-    { icon: Shield, label: "Secure UPI", desc: "100% Safe" }
+    { icon: Mic, label: "Audio Messages", desc: "Express Yourself" },
+    { icon: Gift, label: "Visual Effects", desc: "Creative Expression" },
+    { icon: Zap, label: "Animated Effects", desc: "Stand Out" },
+    { icon: Shield, label: "Safe Platform", desc: "Protected Space" }
   ];
 
   return (
@@ -32,20 +32,20 @@ const FeatureShowcaseHero = () => {
           <div className="flex justify-center gap-2 mb-6">
             <Badge variant="secondary" className="bg-hero-gradient text-white">
               <Zap className="w-3 h-3 mr-1" />
-              World's First Platform
+              Digital Engagement Platform
             </Badge>
             <Badge variant="outline" className="border-hyperchat-purple text-hyperchat-purple">
-              Live: {liveUsers} users
+              Live: {liveUsers} creators
             </Badge>
           </div>
           
           <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-hyperchat-purple to-hyperchat-pink bg-clip-text text-transparent">
-            Complete Feature Showcase
+            Platform Features
           </h1>
           
           <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-            Explore every feature of India's most advanced UPI donation platform. 
-            From voice messages to real-time streaming integration - see it all in action.
+            Explore how HyperChat fosters meaningful connections between creators and audiences. 
+            From audio messages to real-time presence - see every engagement feature in action.
           </p>
 
           <div className="flex flex-wrap justify-center gap-4 mb-12">
@@ -67,23 +67,23 @@ const FeatureShowcaseHero = () => {
             <Card className="p-6 bg-gradient-to-br from-hyperchat-purple/10 to-hyperchat-pink/10">
               <CardContent className="p-0 text-center">
                 <div className="text-3xl font-bold text-hyperchat-purple mb-2">
-                  {donationCount.toLocaleString()}
+                  {engagementCount.toLocaleString()}
                 </div>
-                <div className="text-sm text-muted-foreground">Total Donations Processed</div>
+                <div className="text-sm text-muted-foreground">Live Interactions</div>
               </CardContent>
             </Card>
             
             <Card className="p-6 bg-gradient-to-br from-hyperchat-blue/10 to-hyperchat-purple/10">
               <CardContent className="p-0 text-center">
                 <div className="text-3xl font-bold text-hyperchat-blue mb-2">99.9%</div>
-                <div className="text-sm text-muted-foreground">Payment Success Rate</div>
+                <div className="text-sm text-muted-foreground">Platform Uptime</div>
               </CardContent>
             </Card>
             
             <Card className="p-6 bg-gradient-to-br from-hyperchat-pink/10 to-hyperchat-orange/10">
               <CardContent className="p-0 text-center">
                 <div className="text-3xl font-bold text-hyperchat-pink mb-2">50+</div>
-                <div className="text-sm text-muted-foreground">Unique Features</div>
+                <div className="text-sm text-muted-foreground">Engagement Features</div>
               </CardContent>
             </Card>
           </div>
@@ -94,7 +94,7 @@ const FeatureShowcaseHero = () => {
               className="bg-hero-gradient hover:opacity-90 transition-opacity"
             >
               <Play className="w-4 h-4 mr-2" />
-              Start Live Demo
+              Explore Platform
             </Button>
             <Button 
               size="lg" 
@@ -102,7 +102,7 @@ const FeatureShowcaseHero = () => {
               className="border-hyperchat-purple text-hyperchat-purple hover:bg-hyperchat-purple/10"
             >
               <Users className="w-4 h-4 mr-2" />
-              View All Features
+              Learn More
             </Button>
           </div>
         </div>
