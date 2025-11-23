@@ -17,7 +17,7 @@ const HeroWithCanyonAnimation = () => {
             <CanyonAnimatedText text="Connecting Audiences and Creators" className="mb-4 text-center" />
             
             <h2 className="text-2xl md:text-3xl font-bold text-muted-foreground max-w-[60ch] mx-auto">
-              A platform built to foster meaningful audience–creator connection, expression, and presence during live content.
+              A platform built to foster meaningful audience–creator connection, expression, and presence.
             </h2>
             
             <div className="mt-8">
