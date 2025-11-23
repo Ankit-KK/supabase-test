@@ -1,20 +1,16 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import SignupDialog from "@/components/SignupDialog";
 import { Link } from "react-router-dom";
-
 const Navbar: React.FC = () => {
   const [showSignupDialog, setShowSignupDialog] = useState(false);
-
-  return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/40">
+  return <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/40">
       <div className="container flex h-16 items-center justify-between">
         <div className="flex flex-col">
           <Link to="/" className="flex flex-col">
             <span className="text-xs font-semibold text-muted-foreground">STREAMHEART PRIVATE LIMITED</span>
             <span className="text-sm font-bold bg-gradient-to-r from-hyperchat-purple to-hyperchat-pink bg-clip-text text-transparent">
-              HyperChat – Interactive Audience Engagement Experience
+              HyperChat – Digital Audience Interaction Experience
             </span>
           </Link>
         </div>
@@ -30,25 +26,14 @@ const Navbar: React.FC = () => {
           </Link>
         </div>
         <div className="flex items-center space-x-4">
-          <Button 
-            size="sm" 
-            className="bg-hero-gradient hover:opacity-90 transition-opacity"
-            onClick={() => setShowSignupDialog(true)}
-          >
+          <Button size="sm" className="bg-hero-gradient hover:opacity-90 transition-opacity" onClick={() => setShowSignupDialog(true)}>
             Join the Experience
           </Button>
         </div>
       </div>
       
       {/* Render SignupDialog conditionally only when needed */}
-      {showSignupDialog && (
-        <SignupDialog 
-          open={showSignupDialog} 
-          onOpenChange={setShowSignupDialog}
-        />
-      )}
-    </nav>
-  );
+      {showSignupDialog && <SignupDialog open={showSignupDialog} onOpenChange={setShowSignupDialog} />}
+    </nav>;
 };
-
 export default Navbar;
