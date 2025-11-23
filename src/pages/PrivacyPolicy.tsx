@@ -1,11 +1,8 @@
-
 import React from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-
 const PrivacyPolicy: React.FC = () => {
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container px-4 md:px-6 py-32 mx-auto max-w-4xl">
         <h1 className="text-3xl font-bold mb-6">Privacy Policy</h1>
@@ -25,8 +22,9 @@ const PrivacyPolicy: React.FC = () => {
           
           <h2 className="text-2xl font-bold mt-8 mb-4">Introduction</h2>
           <p>
-            This Privacy Policy explains how STREAMHEART PRIVATE LIMITED ("HyperChat", "we", "us", or "our") 
-            collects, uses, shares, and protects information about you when you use our website and services.
+            This Privacy Policy explains how STREAMHEART PRIVATE LIMITED (“HyperChat”, “we”, “us”, or “our”) collects, uses, and protects information when you access or interact with our website and Services.
+
+By using HyperChat, you consent to the practices described in this Privacy Policy.
           </p>
 
           <h2 className="text-2xl font-bold mt-8 mb-4">Information We Collect</h2>
@@ -100,8 +98,6 @@ const PrivacyPolicy: React.FC = () => {
         </div>
       </div>
       <Footer />
-    </div>
-  );
+    </div>;
 };
-
 export default PrivacyPolicy;
