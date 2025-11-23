@@ -1,0 +1,240 @@
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createHmac } from 'https://deno.land/std@0.177.0/node/crypto.ts'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-razorpay-signature',
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
+  try {
+    const webhookSecret = Deno.env.get('razorpay-webhook-secret')!
+    const webhookSignature = req.headers.get('x-razorpay-signature')
+    const webhookBody = await req.text()
+
+    console.log('Razorpay webhook received')
+
+    // CRITICAL: Verify webhook signature
+    if (!webhookSignature) {
+      console.error('Missing webhook signature')
+      return new Response('Missing signature', { status: 400, headers: corsHeaders })
+    }
+
+    const expectedSignature = createHmac('sha256', webhookSecret)
+      .update(webhookBody)
+      .digest('hex')
+
+    if (webhookSignature !== expectedSignature) {
+      console.error('Invalid webhook signature')
+      return new Response('Invalid signature', { status: 400, headers: corsHeaders })
+    }
+
+    console.log('Webhook signature verified')
+
+    // Parse webhook data
+    const webhookData = JSON.parse(webhookBody)
+    const event = webhookData.event
+    const payload = webhookData.payload.payment?.entity || webhookData.payload.order?.entity
+
+    console.log('Webhook event:', event, 'Order ID:', payload?.notes?.receipt || payload?.receipt)
+
+    // Only process payment.captured and payment.failed events
+    if (event !== 'payment.captured' && event !== 'payment.failed') {
+      console.log('Ignoring event:', event)
+      return new Response('Event ignored', { status: 200, headers: corsHeaders })
+    }
+
+    // Extract order ID from receipt
+    const orderId = payload?.notes?.receipt || payload?.receipt
+    
+    // Only process Ankit's Razorpay orders
+    if (!orderId || !orderId.startsWith('ankit_razorpay_')) {
+      console.log('Not an Ankit Razorpay order, ignoring')
+      return new Response('Not an Ankit order', { status: 200, headers: corsHeaders })
+    }
+
+    console.log('Processing Ankit order:', orderId)
+
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+    // Get donation from database
+    const { data: donation, error: fetchError } = await supabase
+      .from('ankit_donations')
+      .select('*')
+      .eq('order_id', orderId)
+      .single()
+
+    if (fetchError || !donation) {
+      console.error('Donation not found:', orderId)
+      return new Response('Donation not found', { status: 404, headers: corsHeaders })
+    }
+
+    // Check if already processed
+    if (donation.payment_status === 'success') {
+      console.log('Payment already processed:', orderId)
+      return new Response('Already processed', { status: 200, headers: corsHeaders })
+    }
+
+    const isSuccess = event === 'payment.captured'
+    const newStatus = isSuccess ? 'success' : 'failed'
+
+    console.log('Updating payment status to:', newStatus)
+
+    // Update donation status
+    const updateData: any = {
+      payment_status: newStatus,
+      updated_at: new Date().toISOString()
+    }
+
+    // Auto-approve on success
+    if (isSuccess) {
+      if (donation.is_hyperemote) {
+        updateData.moderation_status = 'auto_approved'
+        updateData.approved_by = 'system'
+        updateData.approved_at = new Date().toISOString()
+      } else {
+        updateData.moderation_status = 'pending'
+      }
+    }
+
+    const { error: updateError } = await supabase
+      .from('ankit_donations')
+      .update(updateData)
+      .eq('order_id', orderId)
+
+    if (updateError) {
+      console.error('Failed to update donation:', updateError)
+      throw updateError
+    }
+
+    console.log('Donation updated successfully')
+
+    // Only trigger events and TTS for successful payments
+    if (isSuccess) {
+      // Initialize Pusher
+      const pusherAppId = Deno.env.get('PUSHER_APP_ID')!
+      const pusherKey = Deno.env.get('PUSHER_KEY')!
+      const pusherSecret = Deno.env.get('PUSHER_SECRET')!
+      const pusherCluster = Deno.env.get('PUSHER_CLUSTER')!
+
+      const pusherUrl = `https://api-${pusherCluster}.pusher.com/apps/${pusherAppId}/events`
+
+      // Trigger Pusher events for OBS alerts, dashboard, and audio player
+      const pusherPayload = {
+        name: 'new-donation',
+        channels: ['ankit-alerts', 'ankit-dashboard', 'ankit-audio'],
+        data: JSON.stringify({
+          id: donation.id,
+          name: donation.name,
+          amount: donation.amount,
+          message: donation.message,
+          is_hyperemote: donation.is_hyperemote,
+          voice_message_url: donation.voice_message_url,
+          created_at: donation.created_at
+        })
+      }
+
+      const timestamp = Math.floor(Date.now() / 1000)
+      const pusherBody = JSON.stringify(pusherPayload)
+      const authString = ['POST', `/apps/${pusherAppId}/events`, `auth_key=${pusherKey}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${await md5(pusherBody)}`].join('\n')
+      const authSignature = await hmacSha256(pusherSecret, authString)
+
+      await fetch(pusherUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: pusherBody + `&auth_key=${pusherKey}&auth_timestamp=${timestamp}&auth_version=1.0&auth_signature=${authSignature}`
+      })
+
+      console.log('Pusher events triggered')
+
+      // Generate TTS based on donation type
+      // Hyperemotes: NO TTS
+      // Voice messages: Generate announcement TTS
+      // Text messages ₹70+: Generate TTS
+      if (!donation.is_hyperemote) {
+        let shouldGenerateTTS = false
+        let isVoiceAnnouncement = false
+
+        if (donation.voice_message_url) {
+          // Voice message - generate announcement
+          shouldGenerateTTS = true
+          isVoiceAnnouncement = true
+        } else if (donation.amount >= 70 && donation.message) {
+          // Text message with ₹70+
+          shouldGenerateTTS = true
+          isVoiceAnnouncement = false
+        }
+
+        if (shouldGenerateTTS) {
+          console.log('Generating TTS:', { isVoiceAnnouncement, amount: donation.amount })
+          
+          await supabase.functions.invoke('generate-donation-tts', {
+            body: {
+              donationId: donation.id,
+              tableName: 'ankit_donations',
+              isVoiceAnnouncement: isVoiceAnnouncement
+            }
+          })
+        }
+      }
+    }
+
+    return new Response(
+      JSON.stringify({ success: true, status: newStatus }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
+      }
+    )
+
+  } catch (error) {
+    console.error('Webhook error:', error)
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500
+      }
+    )
+  }
+})
+
+// Helper functions for Pusher authentication
+async function md5(text: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(text)
+  const hashBuffer = await crypto.subtle.digest('MD5', data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+async function hmacSha256(secret: string, message: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const keyData = encoder.encode(secret)
+  const messageData = encoder.encode(message)
+  
+  const key = await crypto.subtle.importKey(
+    'raw',
+    keyData,
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  )
+  
+  const signature = await crypto.subtle.sign('HMAC', key, messageData)
+  const signatureArray = Array.from(new Uint8Array(signature))
+  return signatureArray.map(b => b.toString(16).padStart(2, '0')).join('')
+}
