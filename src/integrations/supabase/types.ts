@@ -48,6 +48,7 @@ export type Database = {
           name: string
           order_id: string | null
           payment_status: string | null
+          razorpay_order_id: string | null
           streamer_id: string | null
           temp_voice_data: string | null
           tts_audio_url: string | null
@@ -69,6 +70,7 @@ export type Database = {
           name: string
           order_id?: string | null
           payment_status?: string | null
+          razorpay_order_id?: string | null
           streamer_id?: string | null
           temp_voice_data?: string | null
           tts_audio_url?: string | null
@@ -90,6 +92,7 @@ export type Database = {
           name?: string
           order_id?: string | null
           payment_status?: string | null
+          razorpay_order_id?: string | null
           streamer_id?: string | null
           temp_voice_data?: string | null
           tts_audio_url?: string | null
