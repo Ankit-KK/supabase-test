@@ -11,10 +11,10 @@ const InteractiveFeatures = () => {
   const [showEmojis, setShowEmojis] = useState(false);
 
   const interactiveStats = [
-    { label: "Voice Messages", value: "World's First", icon: Mic },
-    { label: "Custom GIFs", value: "Unlimited", icon: Image },
-    { label: "Emoji Types", value: "50+", icon: Smile },
-    { label: "Real-time", value: "Instant", icon: Zap }
+    { label: "Audio Messages", value: "Express Freely", icon: Mic },
+    { label: "Visual Effects", value: "Unlimited", icon: Image },
+    { label: "Animation Types", value: "50+", icon: Smile },
+    { label: "Response Time", value: "Instant", icon: Zap }
   ];
 
   const emojis = ["🎮", "🔥", "💖", "⭐", "🎉", "🚀", "💎", "🌟", "🎊", "✨"];
@@ -40,11 +40,11 @@ const InteractiveFeatures = () => {
             Interactive Features
           </Badge>
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            World's First Interactive Platform
+            Expressive Interaction Features
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Revolutionary features that transform viewer engagement - voice messages, 
-            custom GIFs, and animated emoji effects never seen before.
+            Innovative features that amplify audience expression - audio messages, 
+            custom visuals, and animated celebration effects for meaningful presence.
           </p>
         </div>
 
@@ -65,9 +65,9 @@ const InteractiveFeatures = () => {
 
         <Tabs value={activeFeature} onValueChange={setActiveFeature} className="w-full">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="voice">Voice Messages</TabsTrigger>
-            <TabsTrigger value="gifs">Custom GIFs</TabsTrigger>
-            <TabsTrigger value="hyperemotes">HyperEmotes</TabsTrigger>
+            <TabsTrigger value="voice">Audio Messages</TabsTrigger>
+            <TabsTrigger value="gifs">Visual Effects</TabsTrigger>
+            <TabsTrigger value="hyperemotes">Animated Effects</TabsTrigger>
           </TabsList>
 
           <TabsContent value="voice" className="mt-6">
@@ -76,7 +76,7 @@ const InteractiveFeatures = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Mic className="w-5 h-5 text-hyperchat-pink" />
-                    Voice Message Demo
+                    Audio Message Demo
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -87,7 +87,7 @@ const InteractiveFeatures = () => {
                         {isRecording ? "Recording..." : "Ready to Record"}
                       </div>
                       <div className="text-sm text-muted-foreground mb-4">
-                        {isRecording ? "Speak your message now" : "Click to start voice message"}
+                        {isRecording ? "Express yourself now" : "Click to start audio message"}
                       </div>
                       {isRecording && (
                         <div className="flex justify-center space-x-1">
@@ -116,7 +116,7 @@ const InteractiveFeatures = () => {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Voice Features</CardTitle>
+                  <CardTitle>Audio Features</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-3">
@@ -147,10 +147,10 @@ const InteractiveFeatures = () => {
                   
                   <div className="mt-4 p-3 bg-hyperchat-pink/10 rounded-lg">
                     <div className="text-sm font-semibold text-hyperchat-pink mb-1">
-                      🎯 World's First Feature
+                      🎯 Innovative Expression
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      No other platform offers voice messages in donations
+                      Audio messages enable authentic, personal connection with creators
                     </div>
                   </div>
                 </CardContent>
@@ -164,15 +164,15 @@ const InteractiveFeatures = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Image className="w-5 h-5 text-hyperchat-blue" />
-                    GIF Upload Demo
+                    Visual Effect Upload
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="border-2 border-dashed border-hyperchat-blue/30 rounded-lg p-8 text-center">
                     <Upload className="w-12 h-12 mx-auto mb-4 text-hyperchat-blue" />
-                    <div className="text-lg font-semibold mb-2">Upload Your GIF</div>
+                    <div className="text-lg font-semibold mb-2">Upload Your Visual</div>
                     <div className="text-sm text-muted-foreground mb-4">
-                      Drag and drop or click to select
+                      Add custom visuals to express your presence
                     </div>
                     <Button variant="outline" className="border-hyperchat-blue text-hyperchat-blue">
                       Choose File
@@ -191,7 +191,7 @@ const InteractiveFeatures = () => {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>GIF Processing</CardTitle>
+                  <CardTitle>Visual Processing</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-3">
@@ -223,7 +223,7 @@ const InteractiveFeatures = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Smile className="w-5 h-5 text-hyperchat-orange" />
-                    HyperEmotes Demo
+                    Animated Effects Demo
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -249,9 +249,9 @@ const InteractiveFeatures = () => {
                       )}
                       <div className="relative z-10">
                         <Smile className="w-12 h-12 mx-auto mb-4 text-hyperchat-orange" />
-                        <div className="text-lg font-semibold mb-2">Emoji Rain Effect</div>
+                        <div className="text-lg font-semibold mb-2">Celebration Effect</div>
                         <div className="text-sm text-muted-foreground mb-4">
-                          50+ animated emojis falling from sky
+                          50+ animated effects celebrating presence
                         </div>
                       </div>
                     </div>
@@ -260,7 +260,7 @@ const InteractiveFeatures = () => {
                       className="w-full mt-4 bg-hyperchat-orange hover:bg-hyperchat-orange/90"
                     >
                       <Zap className="w-4 h-4 mr-2" />
-                      Trigger Emoji Rain
+                      Trigger Celebration
                     </Button>
                   </div>
                 </CardContent>
@@ -268,7 +268,7 @@ const InteractiveFeatures = () => {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Available Emojis</CardTitle>
+                  <CardTitle>Available Effects</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-5 gap-3 mb-4">
