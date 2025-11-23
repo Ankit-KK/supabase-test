@@ -39,9 +39,8 @@ serve(async (req) => {
     // Parse webhook data
     const webhookData = JSON.parse(webhookBody)
     const event = webhookData.event
-    const payload = webhookData.payload.payment?.entity || webhookData.payload.order?.entity
-
-    console.log('Webhook event:', event, 'Order ID:', payload?.notes?.receipt || payload?.receipt)
+    
+    console.log('Webhook event:', event)
 
     // Only process payment.captured and payment.failed events
     if (event !== 'payment.captured' && event !== 'payment.failed') {
@@ -49,33 +48,34 @@ serve(async (req) => {
       return new Response('Event ignored', { status: 200, headers: corsHeaders })
     }
 
-    // Extract order ID from receipt
-    const orderId = payload?.notes?.receipt || payload?.receipt
+    // Extract Razorpay order ID from payment entity
+    const razorpayOrderId = webhookData.payload?.payment?.entity?.order_id
     
-    // Only process Ankit's Razorpay orders
-    if (!orderId || !orderId.startsWith('ankit_razorpay_')) {
-      console.log('Not an Ankit Razorpay order, ignoring')
-      return new Response('Not an Ankit order', { status: 200, headers: corsHeaders })
+    console.log('Razorpay Order ID:', razorpayOrderId)
+    
+    if (!razorpayOrderId) {
+      console.log('No Razorpay order ID found, ignoring')
+      return new Response('No order ID', { status: 400, headers: corsHeaders })
     }
-
-    console.log('Processing Ankit order:', orderId)
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Get donation from database
+    // Get donation from database using Razorpay order ID
     const { data: donation, error: fetchError } = await supabase
       .from('ankit_donations')
       .select('*')
-      .eq('order_id', orderId)
+      .eq('razorpay_order_id', razorpayOrderId)
       .single()
 
     if (fetchError || !donation) {
-      console.error('Donation not found:', orderId)
+      console.error('Donation not found for Razorpay order:', razorpayOrderId)
       return new Response('Donation not found', { status: 404, headers: corsHeaders })
     }
+    
+    console.log('Found donation:', donation.order_id)
 
     // Check if already processed
     if (donation.payment_status === 'success') {
@@ -108,7 +108,7 @@ serve(async (req) => {
     const { error: updateError } = await supabase
       .from('ankit_donations')
       .update(updateData)
-      .eq('order_id', orderId)
+      .eq('razorpay_order_id', razorpayOrderId)
 
     if (updateError) {
       console.error('Failed to update donation:', updateError)

@@ -98,6 +98,7 @@ serve(async (req) => {
       .from('ankit_donations')
       .insert({
         order_id: orderId,
+        razorpay_order_id: razorpayOrder.id,
         name: name.trim(),
         amount: parseFloat(amount),
         message: message ? message.trim() : null,
