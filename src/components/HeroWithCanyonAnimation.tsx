@@ -1,14 +1,10 @@
-
 import React, { useState } from "react";
 import CanyonAnimatedText from "@/components/CanyonAnimatedText";
 import { Button } from "@/components/ui/button";
 import SignupDialog from "@/components/SignupDialog";
-
 const HeroWithCanyonAnimation = () => {
   const [showSignupDialog, setShowSignupDialog] = useState(false);
-
-  return (
-    <section id="hero" className="py-20 md:py-24 lg:py-32 relative overflow-hidden">
+  return <section id="hero" className="py-20 md:py-24 lg:py-32 relative overflow-hidden">
       <div className="container px-4 md:px-6">
         <div className="flex flex-col items-center text-center space-y-10">
           <div className="space-y-8 max-w-4xl">
@@ -18,22 +14,15 @@ const HeroWithCanyonAnimation = () => {
               </div>
             </div>
             
-            <CanyonAnimatedText
-              text="Connecting Audiences and Creators"
-              className="mb-4 text-center"
-            />
+            <CanyonAnimatedText text="Connecting Audiences and Creators" className="mb-4 text-center" />
             
             <h2 className="text-2xl md:text-3xl font-bold text-muted-foreground max-w-[60ch] mx-auto">
               A platform built to foster meaningful audience–creator connection, expression, and presence during live content.
             </h2>
             
             <div className="mt-8">
-              <Button 
-                size="lg" 
-                className="bg-hero-gradient hover:opacity-90 transition-opacity text-lg px-8"
-                onClick={() => setShowSignupDialog(true)}
-              >
-                Join the Experience
+              <Button size="lg" className="bg-hero-gradient hover:opacity-90 transition-opacity text-lg px-8" onClick={() => setShowSignupDialog(true)}>
+                Get Connected
               </Button>
             </div>
           </div>
@@ -41,8 +30,6 @@ const HeroWithCanyonAnimation = () => {
       </div>
 
       <SignupDialog open={showSignupDialog} onOpenChange={setShowSignupDialog} />
-    </section>
-  );
+    </section>;
 };
-
 export default HeroWithCanyonAnimation;
