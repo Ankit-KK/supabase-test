@@ -10,7 +10,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import VoiceRecorder from "@/components/VoiceRecorder";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
-
 const Ankit = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -26,7 +25,7 @@ const Ankit = () => {
   const [voiceDuration, setVoiceDuration] = useState(0);
   const [showHyperemoteEffect, setShowHyperemoteEffect] = useState(false);
   const [isAmountLocked, setIsAmountLocked] = useState(false);
-  
+
   // Calculate character limit based on amount
   const getCharacterLimit = (amount: number): number => {
     if (amount >= 200) return 250;
@@ -34,7 +33,7 @@ const Ankit = () => {
     if (amount >= 40) return 100;
     return 100;
   };
-  
+
   // Calculate voice recording duration based on amount
   const getVoiceDuration = (amount: number): number => {
     if (amount >= 250) return 30;
@@ -47,7 +46,7 @@ const Ankit = () => {
   const currentAmount = parseFloat(formData.amount) || 0;
   const maxVoiceDuration = getVoiceDuration(currentAmount);
   const voiceRecorder = useVoiceRecorder(maxVoiceDuration);
-  
+
   // Lock amount when recording starts
   useEffect(() => {
     if (voiceRecorder.isRecording) {
@@ -56,8 +55,6 @@ const Ankit = () => {
       setIsAmountLocked(false);
     }
   }, [voiceRecorder.isRecording, voiceRecorder.audioBlob]);
-
-  
 
   // Load Razorpay SDK and fetch streamer settings
   useEffect(() => {
@@ -70,7 +67,7 @@ const Ankit = () => {
         console.log('Razorpay SDK loaded successfully');
         toast({
           title: "Payment System Ready",
-          description: "You can now make donations safely.",
+          description: "You can now make donations safely."
         });
       };
       script.onerror = () => {
@@ -78,44 +75,45 @@ const Ankit = () => {
         toast({
           title: "Payment System Error",
           description: "Failed to load payment system. Please refresh.",
-          variant: "destructive",
+          variant: "destructive"
         });
       };
       document.body.appendChild(script);
-
       return () => {
         document.body.removeChild(script);
       };
     };
-
     const fetchStreamerSettings = async () => {
       try {
-        const { data, error } = await supabase
-          .rpc('get_streamer_public_settings', { slug: 'ankit' });
-
+        const {
+          data,
+          error
+        } = await supabase.rpc('get_streamer_public_settings', {
+          slug: 'ankit'
+        });
         if (error) throw error;
         if (data && data.length > 0) setStreamerSettings(data[0]);
       } catch (error) {
         console.error('Failed to fetch streamer settings:', error);
       }
     };
-    
     loadRazorpay();
     fetchStreamerSettings();
   }, []);
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    
+    const {
+      name,
+      value
+    } = e.target;
+
     // If amount changes and message exceeds new limit, truncate message
     if (name === 'amount' && donationType === 'message') {
       const newAmount = parseFloat(value) || 40;
       const newCharLimit = getCharacterLimit(newAmount);
-      
       if (formData.message.length > newCharLimit) {
         toast({
           title: "Message Shortened",
-          description: `Donation amount reduced. Message limited to ${newCharLimit} characters.`,
+          description: `Donation amount reduced. Message limited to ${newCharLimit} characters.`
         });
         setFormData(prev => ({
           ...prev,
@@ -125,47 +123,41 @@ const Ankit = () => {
         return;
       }
     }
-    
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
   };
-
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validate inputs first
     const amount = parseFloat(formData.amount);
-    
     if (!formData.name?.trim()) {
       toast({
         title: "Name Required",
         description: "Please enter your name.",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-
     if (donationType === 'voice' && !hasVoiceRecording) {
       toast({
-        title: "Voice Message Required", 
+        title: "Voice Message Required",
         description: "Please record a voice message for your donation.",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-
     if (donationType === 'message' && !formData.message?.trim()) {
       toast({
         title: "Message Required",
-        description: "Please enter a message for your donation.", 
-        variant: "destructive",
+        description: "Please enter a message for your donation.",
+        variant: "destructive"
       });
       return;
     }
-    
+
     // Validate character limits for text messages
     if (donationType === 'message' && formData.message?.trim()) {
       const charLimit = getCharacterLimit(amount);
@@ -173,17 +165,16 @@ const Ankit = () => {
         toast({
           title: "Message Too Long",
           description: `Your donation amount allows up to ${charLimit} characters. Increase donation or shorten message.`,
-          variant: "destructive",
+          variant: "destructive"
         });
         return;
       }
     }
-
     if (!amount || amount < 1) {
       toast({
         title: "Invalid Amount",
         description: "Please enter a valid donation amount.",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
@@ -193,31 +184,27 @@ const Ankit = () => {
       toast({
         title: "Insufficient Amount",
         description: "Text messages require a minimum donation of ₹40.",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-
     if (donationType === 'voice' && amount < 150) {
       toast({
         title: "Insufficient Amount",
         description: "Voice messages require a minimum donation of ₹150.",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-
     if (!razorpayLoaded) {
       toast({
         title: "Payment System Not Ready",
         description: "Please wait or refresh the page.",
-        variant: "destructive",
+        variant: "destructive"
       });
       return;
     }
-
     setIsProcessing(true);
-
     try {
       const amount = parseFloat(formData.amount);
 
@@ -226,7 +213,7 @@ const Ankit = () => {
       if (donationType === 'voice' && voiceRecorder.audioBlob) {
         console.log('Uploading voice message before payment...');
         const reader = new FileReader();
-        const voiceDataBase64 = await new Promise<string>((resolve) => {
+        const voiceDataBase64 = await new Promise<string>(resolve => {
           reader.onload = () => {
             const base64 = (reader.result as string).split(',')[1];
             resolve(base64);
@@ -235,21 +222,19 @@ const Ankit = () => {
         });
 
         // Upload voice message directly
-        const { data: uploadResult, error: uploadError } = await supabase.functions.invoke(
-          'upload-voice-message-direct',
-          {
-            body: { 
-              voiceData: voiceDataBase64, 
-              streamerSlug: 'ankit'
-            }
+        const {
+          data: uploadResult,
+          error: uploadError
+        } = await supabase.functions.invoke('upload-voice-message-direct', {
+          body: {
+            voiceData: voiceDataBase64,
+            streamerSlug: 'ankit'
           }
-        );
-
+        });
         if (uploadError) {
           console.error('Voice upload error:', uploadError);
           throw new Error('Failed to upload voice message');
         }
-
         voiceMessageUrl = uploadResult.voice_message_url;
         console.log('Voice message uploaded successfully:', voiceMessageUrl);
       }
@@ -259,85 +244,80 @@ const Ankit = () => {
         body: {
           name: formData.name.trim(),
           amount: amount,
-          message: donationType === 'message' ? formData.message.trim() : 
-                  donationType === 'voice' ? 'Sent a Voice message' : 
-                  donationType === 'hyperemote' ? formData.message.trim() : '',
+          message: donationType === 'message' ? formData.message.trim() : donationType === 'voice' ? 'Sent a Voice message' : donationType === 'hyperemote' ? formData.message.trim() : '',
           voiceMessageUrl: voiceMessageUrl,
           isHyperemote: donationType === 'hyperemote'
         }
       });
-
       const data = response.data;
       const error = response.error;
-
       if (error || !data?.success) {
         throw new Error(data?.error || 'Failed to create payment order');
       }
-
       console.log('Razorpay order created:', data.razorpay_order_id);
 
       // Initialize Razorpay Checkout
       const options = {
         key: data.razorpay_key_id,
-        amount: data.amount, // Already in paise
+        amount: data.amount,
+        // Already in paise
         currency: 'INR',
         name: 'HyperChat - Ankit',
-        description: donationType === 'hyperemote' ? 'Hyperemote Celebration' : 
-                     donationType === 'voice' ? 'Voice Message' : 'Text Message',
+        description: donationType === 'hyperemote' ? 'Hyperemote Celebration' : donationType === 'voice' ? 'Voice Message' : 'Text Message',
         order_id: data.razorpay_order_id,
         prefill: {
-          name: formData.name.trim(),
+          name: formData.name.trim()
         },
         theme: {
           color: '#3b82f6'
         },
-        handler: function(response: any) {
+        handler: function (response: any) {
           console.log('Payment success:', response);
           navigate(`/status?order_id=${data.order_id}&status=success`);
         },
         modal: {
-          ondismiss: function() {
+          ondismiss: function () {
             console.log('Payment cancelled');
             navigate(`/status?order_id=${data.order_id}&status=pending`);
           }
         }
       };
-
       const rzp = new (window as any).Razorpay(options);
-      
-      rzp.on('payment.failed', function(response: any) {
+      rzp.on('payment.failed', function (response: any) {
         console.log('Payment failed:', response);
         navigate(`/status?order_id=${data.order_id}&status=failed`);
       });
-
       rzp.open();
-
     } catch (error) {
       console.error('Payment error:', error);
       toast({
         title: "Payment Failed",
         description: error instanceof Error ? error.message : "Something went wrong.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsProcessing(false);
     }
   };
-
   const handleDonationTypeChange = (type: 'message' | 'voice' | 'hyperemote') => {
     setDonationType(type);
     if (type === 'hyperemote') {
       const minAmount = streamerSettings?.hyperemotes_min_amount || 1;
-      setFormData(prev => ({ ...prev, amount: minAmount.toString(), message: 'Hyperemote celebration! 🎉' }));
+      setFormData(prev => ({
+        ...prev,
+        amount: minAmount.toString(),
+        message: 'Hyperemote celebration! 🎉'
+      }));
       setShowHyperemoteEffect(true);
       setTimeout(() => setShowHyperemoteEffect(false), 3000);
     } else {
-      setFormData(prev => ({ ...prev, amount: '' }));
+      setFormData(prev => ({
+        ...prev,
+        amount: ''
+      }));
     }
   };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
+  return <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
       {/* Background decorations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-20 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
@@ -372,15 +352,7 @@ const Ankit = () => {
               <label htmlFor="name" className="text-sm font-medium text-blue-500">
                 Your Name *
               </label>
-              <Input
-                id="name"
-                name="name"
-                placeholder="Enter your name"
-                value={formData.name}
-                onChange={handleInputChange}
-                className="border-blue-500/30 focus:border-blue-500 focus:ring-blue-500/20"
-                required
-              />
+              <Input id="name" name="name" placeholder="Enter your name" value={formData.name} onChange={handleInputChange} className="border-blue-500/30 focus:border-blue-500 focus:ring-blue-500/20" required />
             </div>
 
             {/* Donation Type Selection */}
@@ -389,45 +361,21 @@ const Ankit = () => {
                   Choose your donation type
                 </label>
                 <div className="grid grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleDonationTypeChange('message')}
-                    className={`p-3 rounded-lg border-2 transition-all ${
-                      donationType === 'message'
-                        ? 'border-blue-500 bg-blue-500/10'
-                        : 'border-blue-500/30 hover:border-blue-500/50'
-                    }`}
-                  >
+                  <button type="button" onClick={() => handleDonationTypeChange('message')} className={`p-3 rounded-lg border-2 transition-all ${donationType === 'message' ? 'border-blue-500 bg-blue-500/10' : 'border-blue-500/30 hover:border-blue-500/50'}`}>
                     <div className="text-center">
                       <div className="text-base mb-1">💬</div>
                       <div className="font-medium text-xs">Text Message</div>
                       <div className="text-xs text-muted-foreground">Min: ₹40</div>
                     </div>
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDonationTypeChange('voice')}
-                    className={`p-3 rounded-lg border-2 transition-all ${
-                      donationType === 'voice'
-                        ? 'border-blue-500 bg-blue-500/10'
-                        : 'border-blue-500/30 hover:border-blue-500/50'
-                    }`}
-                  >
+                  <button type="button" onClick={() => handleDonationTypeChange('voice')} className={`p-3 rounded-lg border-2 transition-all ${donationType === 'voice' ? 'border-blue-500 bg-blue-500/10' : 'border-blue-500/30 hover:border-blue-500/50'}`}>
                     <div className="text-center">
                       <div className="text-base mb-1">🎤</div>
                       <div className="font-medium text-xs">Voice Message</div>
                       <div className="text-xs text-muted-foreground">Min: ₹150</div>
                     </div>
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDonationTypeChange('hyperemote')}
-                    className={`p-3 rounded-lg border-2 transition-all ${
-                      donationType === 'hyperemote'
-                        ? 'border-purple-500 bg-purple-500/10'
-                        : 'border-purple-500/30 hover:border-purple-500/50'
-                    }`}
-                  >
+                  <button type="button" onClick={() => handleDonationTypeChange('hyperemote')} className={`p-3 rounded-lg border-2 transition-all ${donationType === 'hyperemote' ? 'border-purple-500 bg-purple-500/10' : 'border-purple-500/30 hover:border-purple-500/50'}`}>
                     <div className="text-center">
                       <div className="text-base mb-1">🎉</div>
                       <div className="font-medium text-xs">Hyperemotes</div>
@@ -444,90 +392,43 @@ const Ankit = () => {
               <label htmlFor="amount" className="text-sm font-medium text-blue-500">
                 Amount (₹) *
               </label>
-              <Input
-                id="amount"
-                name="amount"
-                type="number"
-                placeholder={
-                  donationType === 'message' ? 'Min: ₹40' : 
-                  donationType === 'voice' ? 'Min: ₹150' : 
-                  'Enter amount'
-                }
-                value={formData.amount}
-                onChange={handleInputChange}
-                className="border-blue-500/30 focus:border-blue-500 focus:ring-blue-500/20"
-                min="1"
-                max="100000"
-                disabled={donationType === 'hyperemote' || isAmountLocked}
-                required
-              />
-              {isAmountLocked && (
-                <p className="text-xs text-yellow-600 flex items-center gap-1">
+              <Input id="amount" name="amount" type="number" placeholder={donationType === 'message' ? 'Min: ₹40' : donationType === 'voice' ? 'Min: ₹150' : 'Enter amount'} value={formData.amount} onChange={handleInputChange} className="border-blue-500/30 focus:border-blue-500 focus:ring-blue-500/20" min="1" max="100000" disabled={donationType === 'hyperemote' || isAmountLocked} required />
+              {isAmountLocked && <p className="text-xs text-yellow-600 flex items-center gap-1">
                   🔒 Amount locked during voice recording
-                </p>
-              )}
-              {donationType === 'message' && (
-                <p className="text-xs text-muted-foreground">
-                  TTS available for donations above ₹70
-                </p>
-              )}
-              {donationType === 'voice' && currentAmount >= 150 && (
-                <p className="text-xs text-muted-foreground">
+                </p>}
+              {donationType === 'message'}
+              {donationType === 'voice' && currentAmount >= 150 && <p className="text-xs text-muted-foreground">
                   Voice duration: {getVoiceDuration(currentAmount)}s
                   {currentAmount < 200 && ' (Donate ₹200+ for 20s, ₹250+ for 30s)'}
-                </p>
-              )}
-              {donationType === 'hyperemote' && (
-                <p className="text-xs text-muted-foreground">
+                </p>}
+              {donationType === 'hyperemote' && <p className="text-xs text-muted-foreground">
                   Hyperemotes start at ₹{streamerSettings?.hyperemotes_min_amount || 1} with automatic celebration effects
-                </p>
-              )}
+                </p>}
             </div>
 
             {/* Message Field */}
-            {donationType === 'message' && (
-              <div className="space-y-2">
+            {donationType === 'message' && <div className="space-y-2">
                 <label htmlFor="message" className="text-sm font-medium text-blue-500">
                   Message *
                 </label>
-                <textarea
-                  id="message"
-                  name="message"
-                  placeholder="Enter your message"
-                  value={formData.message}
-                  onChange={handleInputChange}
-                  className="w-full p-3 border border-blue-500/30 rounded-lg bg-background/50 backdrop-blur-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none resize-none"
-                  rows={3}
-                  maxLength={getCharacterLimit(currentAmount)}
-                  required
-                />
+                <textarea id="message" name="message" placeholder="Enter your message" value={formData.message} onChange={handleInputChange} className="w-full p-3 border border-blue-500/30 rounded-lg bg-background/50 backdrop-blur-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none resize-none" rows={3} maxLength={getCharacterLimit(currentAmount)} required />
                 <div className="text-xs text-muted-foreground text-right">
                   {formData.message.length}/{getCharacterLimit(currentAmount)} characters
                 </div>
-              </div>
-            )}
+              </div>}
 
-            {donationType === 'voice' && (
-              <div className="space-y-3">
+            {donationType === 'voice' && <div className="space-y-3">
                 <label className="text-sm font-medium text-blue-500">
                   Record Voice Message *
                 </label>
-                <VoiceRecorder
-                  onRecordingComplete={(hasRecording, duration) => {
-                    setHasVoiceRecording(hasRecording);
-                    setVoiceDuration(duration);
-                  }}
-                  maxDurationSeconds={maxVoiceDuration}
-                  controller={voiceRecorder}
-                  requiredAmount={150}
-                  currentAmount={currentAmount}
-                />
-              </div>
-            )}
+                <VoiceRecorder onRecordingComplete={(hasRecording, duration) => {
+              setHasVoiceRecording(hasRecording);
+              setVoiceDuration(duration);
+            }} maxDurationSeconds={maxVoiceDuration} controller={voiceRecorder} requiredAmount={150} currentAmount={currentAmount} />
+              </div>}
 
             {/* Hyperemote Info */}
-            {donationType === 'hyperemote' && (
-              <div className="space-y-3">
+            {donationType === 'hyperemote' && <div className="space-y-3">
                 <div className="p-4 rounded-lg border border-purple-500/30 bg-purple-500/5">
                   <div className="flex items-center gap-3 mb-2">
                     <Sparkles className="h-5 w-5 text-purple-500" />
@@ -543,44 +444,29 @@ const Ankit = () => {
                     <span>💫 ₹500+: Legendary show</span>
                   </div>
                 </div>
-              </div>
-            )}
+              </div>}
 
             {/* Submit Button */}
-            <Button
-              type="submit"
-              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-              disabled={isProcessing || !razorpayLoaded}
-            >
-              {isProcessing ? (
-                <div className="flex items-center justify-center space-x-2">
+            <Button type="submit" className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none" disabled={isProcessing || !razorpayLoaded}>
+              {isProcessing ? <div className="flex items-center justify-center space-x-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   <span>Processing...</span>
-                </div>
-              ) : !razorpayLoaded ? (
-                <div className="flex items-center justify-center space-x-2">
+                </div> : !razorpayLoaded ? <div className="flex items-center justify-center space-x-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   <span>Loading Payment System...</span>
-                </div>
-              ) : (
-                <span className="flex items-center justify-center space-x-2">
+                </div> : <span className="flex items-center justify-center space-x-2">
                   <Heart className="h-4 w-4" />
                   <span>Donate ₹{formData.amount || '0'}</span>
-                </span>
-              )}
+                </span>}
             </Button>
           </form>
         </CardContent>
       </Card>
 
       {/* Hyperemote Effect */}
-      {showHyperemoteEffect && (
-        <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
+      {showHyperemoteEffect && <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
           <div className="animate-bounce text-6xl">🎉</div>
-        </div>
-      )}
-    </div>
-  );
+        </div>}
+    </div>;
 };
-
 export default Ankit;
