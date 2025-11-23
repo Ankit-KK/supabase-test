@@ -67,12 +67,7 @@ serve(async (req) => {
     const razorpayPayload = {
       amount: Math.round(amount * 100), // Convert to paise
       currency: 'INR',
-      receipt: orderId,
-      description: 'Digital Interaction Service',
-      notes: {
-        product_type: 'digital_engagement',
-        customer_name: name.substring(0, 50)
-      }
+      receipt: orderId
     }
 
     const razorpayResponse = await fetch('https://api.razorpay.com/v1/orders', {
