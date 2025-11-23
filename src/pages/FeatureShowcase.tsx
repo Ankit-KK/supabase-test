@@ -5,9 +5,6 @@ import FeatureShowcaseHero from "@/components/feature-showcase/FeatureShowcaseHe
 import EngagementFeatures from "@/components/feature-showcase/EngagementFeatures";
 import StreamingFeatures from "@/components/feature-showcase/StreamingFeatures";
 import InteractiveFeatures from "@/components/feature-showcase/InteractiveFeatures";
-import TechnicalFeatures from "@/components/feature-showcase/TechnicalFeatures";
-import SecurityFeatures from "@/components/feature-showcase/SecurityFeatures";
-import AdminFeatures from "@/components/feature-showcase/AdminFeatures";
 
 const FeatureShowcase = () => {
   return (
@@ -19,9 +16,6 @@ const FeatureShowcase = () => {
         <EngagementFeatures />
         <StreamingFeatures />
         <InteractiveFeatures />
-        <TechnicalFeatures />
-        <SecurityFeatures />
-        <AdminFeatures />
       </main>
       
       <Footer />
