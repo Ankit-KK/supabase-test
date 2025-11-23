@@ -1,6 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { createHmac } from 'https://deno.land/std@0.177.0/node/crypto.ts'
+import { createHash, createHmac } from 'https://deno.land/std@0.177.0/node/crypto.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -144,15 +144,23 @@ serve(async (req) => {
 
       const timestamp = Math.floor(Date.now() / 1000)
       const pusherBody = JSON.stringify(pusherPayload)
-      const authString = ['POST', `/apps/${pusherAppId}/events`, `auth_key=${pusherKey}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${await md5(pusherBody)}`].join('\n')
-      const authSignature = await hmacSha256(pusherSecret, authString)
+      
+      // Calculate body MD5 using Node.js crypto
+      const bodyMd5 = createHash('md5').update(pusherBody).digest('hex')
+      
+      // Calculate HMAC signature for Pusher authentication
+      const authString = `POST\n/apps/${pusherAppId}/events\nauth_key=${pusherKey}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${bodyMd5}`
+      const authSignature = createHmac('sha256', pusherSecret).update(authString).digest('hex')
+      
+      // Send request with auth params in query string
+      const pusherUrlWithAuth = `${pusherUrl}?auth_key=${pusherKey}&auth_timestamp=${timestamp}&auth_version=1.0&auth_signature=${authSignature}&body_md5=${bodyMd5}`
 
-      await fetch(pusherUrl, {
+      await fetch(pusherUrlWithAuth, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: pusherBody + `&auth_key=${pusherKey}&auth_timestamp=${timestamp}&auth_version=1.0&auth_signature=${authSignature}`
+        body: pusherBody
       })
 
       console.log('Pusher events triggered')
@@ -212,29 +220,3 @@ serve(async (req) => {
   }
 })
 
-// Helper functions for Pusher authentication
-async function md5(text: string): Promise<string> {
-  const encoder = new TextEncoder()
-  const data = encoder.encode(text)
-  const hashBuffer = await crypto.subtle.digest('MD5', data)
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
-}
-
-async function hmacSha256(secret: string, message: string): Promise<string> {
-  const encoder = new TextEncoder()
-  const keyData = encoder.encode(secret)
-  const messageData = encoder.encode(message)
-  
-  const key = await crypto.subtle.importKey(
-    'raw',
-    keyData,
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
-  )
-  
-  const signature = await crypto.subtle.sign('HMAC', key, messageData)
-  const signatureArray = Array.from(new Uint8Array(signature))
-  return signatureArray.map(b => b.toString(16).padStart(2, '0')).join('')
-}
