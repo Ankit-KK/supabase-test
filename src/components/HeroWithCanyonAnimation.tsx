@@ -1,10 +1,12 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Sparkles } from "lucide-react";
 import CanyonAnimatedText from "@/components/CanyonAnimatedText";
 import { Button } from "@/components/ui/button";
+import SignupDialog from "@/components/SignupDialog";
 
 const HeroWithCanyonAnimation = () => {
+  const [showSignupDialog, setShowSignupDialog] = useState(false);
 
   return (
     <section id="hero" className="py-20 md:py-24 lg:py-32 relative overflow-hidden">
@@ -27,7 +29,11 @@ const HeroWithCanyonAnimation = () => {
             </h2>
             
             <div className="mt-8">
-              <Button size="lg" className="bg-hero-gradient hover:opacity-90 transition-opacity text-lg px-8">
+              <Button 
+                size="lg" 
+                className="bg-hero-gradient hover:opacity-90 transition-opacity text-lg px-8"
+                onClick={() => setShowSignupDialog(true)}
+              >
                 Join the Experience
               </Button>
             </div>
@@ -54,6 +60,7 @@ const HeroWithCanyonAnimation = () => {
         </div>
       </div>
 
+      <SignupDialog open={showSignupDialog} onOpenChange={setShowSignupDialog} />
     </section>
   );
 };
