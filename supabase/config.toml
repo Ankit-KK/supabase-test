@@ -58,3 +58,9 @@ verify_jwt = false
 
 [functions.upload-voice-message-direct]
 verify_jwt = false
+
+[functions.create-razorpay-order-ankit]
+verify_jwt = false
+
+[functions.razorpay-webhook]
+verify_jwt = false

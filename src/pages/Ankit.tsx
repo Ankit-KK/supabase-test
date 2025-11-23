@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { Gamepad2, Heart, Sparkles } from "lucide-react";
-import { load } from '@cashfreepayments/cashfree-js';
+// Razorpay integration - SDK loaded dynamically
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import VoiceRecorder from "@/components/VoiceRecorder";
@@ -19,19 +19,13 @@ const Ankit = () => {
     message: ''
   });
   const [isProcessing, setIsProcessing] = useState(false);
-  const [cashfree, setCashfree] = useState<any>(null);
-  const [sdkLoading, setSdkLoading] = useState(true);
-  const [sdkError, setSdkError] = useState<string | null>(null);
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [donationType, setDonationType] = useState<'message' | 'voice' | 'hyperemote'>('message');
   const [streamerSettings, setStreamerSettings] = useState<any>(null);
   const [hasVoiceRecording, setHasVoiceRecording] = useState(false);
   const [voiceDuration, setVoiceDuration] = useState(0);
   const [showHyperemoteEffect, setShowHyperemoteEffect] = useState(false);
   const [isAmountLocked, setIsAmountLocked] = useState(false);
-  // Phone number dialog states
-  const [showPhoneDialog, setShowPhoneDialog] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [phoneError, setPhoneError] = useState('');
   
   // Calculate character limit based on amount
   const getCharacterLimit = (amount: number): number => {
@@ -65,36 +59,33 @@ const Ankit = () => {
 
   
 
-  // Initialize Cashfree SDK and fetch streamer settings
+  // Load Razorpay SDK and fetch streamer settings
   useEffect(() => {
-    const initializeSDK = async () => {
-      try {
-        setSdkLoading(true);
-        setSdkError(null);
-        console.log('Initializing Cashfree SDK...');
-        
-        const cf = await load({
-          mode: "production"
-        });
-        
-        setCashfree(cf);
-        console.log('Cashfree SDK initialized successfully');
-        
+    const loadRazorpay = () => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => {
+        setRazorpayLoaded(true);
+        console.log('Razorpay SDK loaded successfully');
         toast({
           title: "Payment System Ready",
           description: "You can now make donations safely.",
         });
-      } catch (error) {
-        console.error('Failed to initialize Cashfree SDK:', error);
-        setSdkError('Failed to load payment system. Please refresh the page.');
+      };
+      script.onerror = () => {
+        console.error('Failed to load Razorpay SDK');
         toast({
-          title: "Payment System Error", 
-          description: "Failed to load payment system. Please refresh the page.",
+          title: "Payment System Error",
+          description: "Failed to load payment system. Please refresh.",
           variant: "destructive",
         });
-      } finally {
-        setSdkLoading(false);
-      }
+      };
+      document.body.appendChild(script);
+
+      return () => {
+        document.body.removeChild(script);
+      };
     };
 
     const fetchStreamerSettings = async () => {
@@ -109,7 +100,7 @@ const Ankit = () => {
       }
     };
     
-    initializeSDK();
+    loadRazorpay();
     fetchStreamerSettings();
   }, []);
 
@@ -216,22 +207,16 @@ const Ankit = () => {
       return;
     }
 
-    if (!cashfree) {
+    if (!razorpayLoaded) {
       toast({
         title: "Payment System Not Ready",
-        description: "Please wait for the payment system to load or refresh the page.",
+        description: "Please wait or refresh the page.",
         variant: "destructive",
       });
       return;
     }
 
-    // Show phone dialog after validation passes
-    setShowPhoneDialog(true);
-  };
-
-  const handlePaymentAfterPhone = async () => {
     setIsProcessing(true);
-    let data: any = null;
 
     try {
       const amount = parseFloat(formData.amount);
@@ -269,107 +254,74 @@ const Ankit = () => {
         console.log('Voice message uploaded successfully:', voiceMessageUrl);
       }
 
-      // Create order via Supabase edge function
-      const response = await supabase.functions.invoke('create-payment-order-ankit', {
+      // Create Razorpay order via Supabase edge function
+      const response = await supabase.functions.invoke('create-razorpay-order-ankit', {
         body: {
           name: formData.name.trim(),
           amount: amount,
           message: donationType === 'message' ? formData.message.trim() : 
-                  donationType === 'voice' ? 'Send a Voice message' : 
+                  donationType === 'voice' ? 'Sent a Voice message' : 
                   donationType === 'hyperemote' ? formData.message.trim() : '',
-          phone: phoneNumber?.trim() || undefined,
           voiceMessageUrl: voiceMessageUrl,
           isHyperemote: donationType === 'hyperemote'
         }
       });
 
-      data = response.data;
+      const data = response.data;
       const error = response.error;
 
       if (error || !data?.success) {
         throw new Error(data?.error || 'Failed to create payment order');
       }
 
-      const orderId = data.order_id;
+      console.log('Razorpay order created:', data.razorpay_order_id);
 
-      // Attach optional data to the existing donation (created by edge function)
-      // Note: Voice data and extras are now handled by the create-payment-order-ankit edge function
-
-      // Initialize Cashfree checkout
-      const checkoutOptions = {
-        paymentSessionId: data.payment_session_id,
-        redirectTarget: "_modal",
-        appearance: {
-          width: "500px",
-          height: "700px"
+      // Initialize Razorpay Checkout
+      const options = {
+        key: data.razorpay_key_id,
+        amount: data.amount, // Already in paise
+        currency: 'INR',
+        name: 'HyperChat - Ankit',
+        description: donationType === 'hyperemote' ? 'Hyperemote Celebration' : 
+                     donationType === 'voice' ? 'Voice Message' : 'Text Message',
+        order_id: data.razorpay_order_id,
+        prefill: {
+          name: formData.name.trim(),
         },
-        onSuccess: function(data: any) {
-          console.log("Payment successful:", data);
+        theme: {
+          color: '#3b82f6'
         },
-        onFailure: function(data: any) {
-          console.log("Payment failed:", data);
+        handler: function(response: any) {
+          console.log('Payment success:', response);
+          navigate(`/status?order_id=${data.order_id}&status=success`);
+        },
+        modal: {
+          ondismiss: function() {
+            console.log('Payment cancelled');
+            navigate(`/status?order_id=${data.order_id}&status=pending`);
+          }
         }
       };
 
-      // Add a small delay to ensure proper focus handling
-      setTimeout(async () => {
-        const result = await cashfree.checkout(checkoutOptions);
-        
-        // Payment status updates are handled by edge functions via webhooks/verification
-        // No client-side updates needed to avoid RLS policy violations
-        
-        if (result.error) {
-          console.log("Payment cancelled or error:", result.error);
-          navigate(`/status?order_id=${orderId}&status=pending`);
-        } else if (result.paymentDetails) {
-          console.log("Payment completed:", result.paymentDetails);
-          navigate(`/status?order_id=${orderId}&status=success`);
-        } else if (result.redirect) {
-          console.log("Payment will be redirected");
-          navigate(`/status?order_id=${orderId}&status=pending`);
-        } else {
-          navigate(`/status?order_id=${orderId}&status=pending`);
-        }
-      }, 100);
+      const rzp = new (window as any).Razorpay(options);
+      
+      rzp.on('payment.failed', function(response: any) {
+        console.log('Payment failed:', response);
+        navigate(`/status?order_id=${data.order_id}&status=failed`);
+      });
+
+      rzp.open();
 
     } catch (error) {
       console.error('Payment error:', error);
-      const orderId = data?.order_id;
-      if (orderId) {
-        // Edge functions will handle status updates via verification
-        navigate(`/status?order_id=${orderId}&status=error`);
-      } else {
-        toast({
-          title: "Payment Failed",
-          description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Payment Failed",
+        description: error instanceof Error ? error.message : "Something went wrong.",
+        variant: "destructive",
+      });
     } finally {
       setIsProcessing(false);
-      setShowPhoneDialog(false);
     }
-  };
-
-  const validatePhoneNumber = (phone: string): boolean => {
-    const phoneRegex = /^[6-9]\d{9}$/; // Indian mobile number format
-    return phoneRegex.test(phone);
-  };
-
-  const handlePhoneSubmit = () => {
-    setPhoneError('');
-    
-    if (!phoneNumber.trim()) {
-      setPhoneError('Please enter your mobile number');
-      return;
-    }
-    
-    if (!validatePhoneNumber(phoneNumber)) {
-      setPhoneError('Please enter a valid 10-digit mobile number');
-      return;
-    }
-    
-    handlePaymentAfterPhone();
   };
 
   const handleDonationTypeChange = (type: 'message' | 'voice' | 'hyperemote') => {
@@ -598,20 +550,18 @@ const Ankit = () => {
             <Button
               type="submit"
               className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-              disabled={isProcessing || sdkLoading || !!sdkError}
+              disabled={isProcessing || !razorpayLoaded}
             >
               {isProcessing ? (
                 <div className="flex items-center justify-center space-x-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   <span>Processing...</span>
                 </div>
-              ) : sdkLoading ? (
+              ) : !razorpayLoaded ? (
                 <div className="flex items-center justify-center space-x-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   <span>Loading Payment System...</span>
                 </div>
-              ) : sdkError ? (
-                <span className="text-red-300">Payment System Error</span>
               ) : (
                 <span className="flex items-center justify-center space-x-2">
                   <Heart className="h-4 w-4" />
@@ -619,84 +569,9 @@ const Ankit = () => {
                 </span>
               )}
             </Button>
-
-            {sdkError && (
-              <div className="text-center">
-                <p className="text-red-500 text-sm">{sdkError}</p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => window.location.reload()}
-                  className="mt-2 text-xs"
-                >
-                  Refresh Page
-                </Button>
-              </div>
-            )}
           </form>
         </CardContent>
       </Card>
-
-      {/* Phone Number Dialog */}
-      <Dialog open={showPhoneDialog} onOpenChange={setShowPhoneDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Heart className="h-5 w-5 text-blue-500" />
-              Complete Your Donation
-            </DialogTitle>
-            <DialogDescription>
-              Please enter your mobile number to complete the payment process.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="phone" className="text-sm font-medium">
-                Mobile Number *
-              </label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="Enter 10-digit mobile number"
-                value={phoneNumber}
-                onChange={(e) => {
-                  setPhoneNumber(e.target.value);
-                  setPhoneError('');
-                }}
-                className={`${phoneError ? 'border-red-500' : ''}`}
-                maxLength={10}
-              />
-              {phoneError && (
-                <p className="text-red-500 text-sm">{phoneError}</p>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowPhoneDialog(false)}
-                className="flex-1"
-                disabled={isProcessing}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handlePhoneSubmit}
-                className="flex-1 bg-blue-500 hover:bg-blue-600"
-                disabled={isProcessing}
-              >
-                {isProcessing ? (
-                  <div className="flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Processing...
-                  </div>
-                ) : (
-                  'Continue to Payment'
-                )}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Hyperemote Effect */}
       {showHyperemoteEffect && (
