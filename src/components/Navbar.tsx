@@ -27,7 +27,7 @@ const Navbar: React.FC = () => {
         </div>
         <div className="flex items-center space-x-4">
           <Button size="sm" className="bg-hero-gradient hover:opacity-90 transition-opacity" onClick={() => setShowSignupDialog(true)}>
-            Join the Experience
+            Get Connected
           </Button>
         </div>
       </div>
