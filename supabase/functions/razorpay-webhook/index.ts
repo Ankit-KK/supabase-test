@@ -180,8 +180,11 @@ serve(async (req) => {
           
           await supabase.functions.invoke('generate-donation-tts', {
             body: {
+              username: donation.name,
+              amount: donation.amount,
+              message: donation.message,
               donationId: donation.id,
-              tableName: 'ankit_donations',
+              streamerId: 'ankit',
               isVoiceAnnouncement: isVoiceAnnouncement
             }
           })
