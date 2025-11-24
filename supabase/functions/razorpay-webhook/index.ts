@@ -111,97 +111,143 @@ serve(async (req) => {
 
     // Only trigger events and TTS for successful payments
     if (isSuccess) {
-      // Generate TTS FIRST based on donation type
-      // Hyperemotes: NO TTS
-      // Voice messages: Generate announcement TTS
-      // Text messages ₹70+: Generate TTS
-      if (!donation.is_hyperemote) {
-        let shouldGenerateTTS = false
-        let isVoiceAnnouncement = false
-
-        if (donation.voice_message_url) {
-          // Voice message - generate announcement
-          shouldGenerateTTS = true
-          isVoiceAnnouncement = true
-        } else if (donation.amount >= 70 && donation.message) {
-          // Text message with ₹70+
-          shouldGenerateTTS = true
-          isVoiceAnnouncement = false
-        }
-
-        if (shouldGenerateTTS) {
-          console.log('Generating TTS:', { isVoiceAnnouncement, amount: donation.amount })
-          
-          await supabase.functions.invoke('generate-donation-tts', {
-            body: {
-              username: donation.name,
-              amount: donation.amount,
-              message: donation.message,
-              donationId: donation.id,
-              streamerId: donation.streamer_id,
-              isVoiceAnnouncement: isVoiceAnnouncement
-            }
-          })
-
-          console.log('TTS generation completed')
-        }
-      }
-
-      // Refetch donation to get updated tts_audio_url
-      const { data: updatedDonation } = await supabase
-        .from('ankit_donations')
-        .select('*')
-        .eq('id', donation.id)
-        .single()
-
-      const finalDonation = updatedDonation || donation
-
-      // Initialize Pusher
+      // Initialize Pusher for all events
       const pusherAppId = Deno.env.get('PUSHER_APP_ID')!
       const pusherKey = Deno.env.get('PUSHER_KEY')!
       const pusherSecret = Deno.env.get('PUSHER_SECRET')!
       const pusherCluster = Deno.env.get('PUSHER_CLUSTER')!
-
       const pusherUrl = `https://api-${pusherCluster}.pusher.com/apps/${pusherAppId}/events`
 
-      // Trigger Pusher events for OBS alerts, dashboard, and audio player with TTS URL
-      const pusherPayload = {
-        name: 'new-donation',
-        channels: ['ankit-alerts', 'ankit-dashboard', 'ankit-audio'],
-        data: JSON.stringify({
-          id: finalDonation.id,
-          name: finalDonation.name,
-          amount: finalDonation.amount,
-          message: finalDonation.message,
-          is_hyperemote: finalDonation.is_hyperemote,
-          voice_message_url: finalDonation.voice_message_url,
-          tts_audio_url: finalDonation.tts_audio_url,
-          created_at: finalDonation.created_at
+      // Helper function to send Pusher events
+      const sendPusherEvent = async (channels: string[], eventName: string, data: any) => {
+        const pusherPayload = {
+          name: eventName,
+          channels,
+          data: JSON.stringify(data)
+        }
+        
+        const timestamp = Math.floor(Date.now() / 1000)
+        const pusherBody = JSON.stringify(pusherPayload)
+        const bodyMd5 = createHash('md5').update(pusherBody).digest('hex')
+        const authString = `POST\n/apps/${pusherAppId}/events\nauth_key=${pusherKey}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${bodyMd5}`
+        const authSignature = createHmac('sha256', pusherSecret).update(authString).digest('hex')
+        const pusherUrlWithAuth = `${pusherUrl}?auth_key=${pusherKey}&auth_timestamp=${timestamp}&auth_version=1.0&auth_signature=${authSignature}&body_md5=${bodyMd5}`
+        
+        await fetch(pusherUrlWithAuth, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: pusherBody
         })
       }
 
-      const timestamp = Math.floor(Date.now() / 1000)
-      const pusherBody = JSON.stringify(pusherPayload)
-      
-      // Calculate body MD5 using Node.js crypto
-      const bodyMd5 = createHash('md5').update(pusherBody).digest('hex')
-      
-      // Calculate HMAC signature for Pusher authentication
-      const authString = `POST\n/apps/${pusherAppId}/events\nauth_key=${pusherKey}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${bodyMd5}`
-      const authSignature = createHmac('sha256', pusherSecret).update(authString).digest('hex')
-      
-      // Send request with auth params in query string
-      const pusherUrlWithAuth = `${pusherUrl}?auth_key=${pusherKey}&auth_timestamp=${timestamp}&auth_version=1.0&auth_signature=${authSignature}&body_md5=${bodyMd5}`
-
-      await fetch(pusherUrlWithAuth, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: pusherBody
+      // Send new-donation event to alerts and dashboard channels
+      await sendPusherEvent(['ankit-alerts', 'ankit-dashboard'], 'new-donation', {
+        id: donation.id,
+        name: donation.name,
+        amount: donation.amount,
+        message: donation.message,
+        is_hyperemote: donation.is_hyperemote,
+        voice_message_url: donation.voice_message_url,
+        created_at: donation.created_at
       })
 
-      console.log('Pusher events triggered with TTS URL')
+      console.log('Pusher events sent to alerts and dashboard')
+
+      // Handle TTS generation and audio channel events based on donation type
+      // 1. HYPEREMOTES - NO TTS, just visual effects
+      if (donation.is_hyperemote) {
+        console.log('Hyperemote donation - skipping TTS, visual alert only')
+        // No audio channel event for hyperemotes
+      }
+      
+      // 2. VOICE MESSAGES - Generate announcement TTS + play voice
+      else if (donation.voice_message_url) {
+        console.log('Voice message donation - generating announcement TTS')
+        
+        try {
+          const { data: announcementTTS, error: announcementError } = await supabase.functions.invoke('generate-donation-tts', {
+            body: {
+              username: donation.name,
+              amount: donation.amount,
+              message: null,
+              donationId: donation.id,
+              streamerId: donation.streamer_id,
+              isVoiceAnnouncement: true
+            }
+          })
+          
+          if (announcementError) {
+            console.error('Announcement TTS generation error:', announcementError)
+          } else if (announcementTTS?.audioUrl) {
+            console.log('Announcement TTS generated successfully, sending to audio channel')
+            
+            // Send audio event with BOTH announcement TTS and voice URL
+            await sendPusherEvent(['ankit-audio'], 'new-audio-message', {
+              id: donation.id,
+              name: donation.name,
+              amount: donation.amount,
+              message: null,
+              announcement_tts_url: announcementTTS.audioUrl, // Play this first
+              voice_message_url: donation.voice_message_url, // Then play this
+              tts_audio_url: null,
+              created_at: donation.created_at
+            })
+            
+            console.log('✅ Voice message with announcement sent to ankit-audio')
+          }
+        } catch (error) {
+          console.error('Voice message announcement error:', error)
+        }
+      }
+      
+      // 3. TEXT MESSAGES - Conditional TTS based on amount
+      else if (donation.message) {
+        // ₹40-69: Display only, NO TTS
+        if (donation.amount >= 40 && donation.amount < 70) {
+          console.log('Text donation ₹40-69 - displaying without TTS')
+          // Alert already sent to dashboard, no audio event needed
+        }
+        
+        // ₹70+: Display + Generate TTS
+        else if (donation.amount >= 70) {
+          console.log('Text donation ₹70+ - generating TTS')
+          
+          try {
+            const { data: ttsData, error: ttsError } = await supabase.functions.invoke('generate-donation-tts', {
+              body: {
+                username: donation.name,
+                amount: donation.amount,
+                message: donation.message,
+                donationId: donation.id,
+                streamerId: donation.streamer_id,
+                isVoiceAnnouncement: false
+              }
+            })
+            
+            if (ttsError) {
+              console.error('TTS generation error:', ttsError)
+            } else if (ttsData?.audioUrl) {
+              console.log('TTS generated successfully, sending to audio channel')
+              
+              // Send audio event with TTS URL
+              await sendPusherEvent(['ankit-audio'], 'new-audio-message', {
+                id: donation.id,
+                name: donation.name,
+                amount: donation.amount,
+                message: donation.message,
+                announcement_tts_url: null,
+                voice_message_url: null,
+                tts_audio_url: ttsData.audioUrl,
+                created_at: donation.created_at
+              })
+              
+              console.log('✅ Text message with TTS sent to ankit-audio')
+            }
+          } catch (error) {
+            console.error('Text TTS generation error:', error)
+          }
+        }
+      }
     }
 
     return new Response(
