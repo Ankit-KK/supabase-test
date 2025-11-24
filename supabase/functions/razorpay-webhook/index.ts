@@ -111,53 +111,7 @@ serve(async (req) => {
 
     // Only trigger events and TTS for successful payments
     if (isSuccess) {
-      // Initialize Pusher
-      const pusherAppId = Deno.env.get('PUSHER_APP_ID')!
-      const pusherKey = Deno.env.get('PUSHER_KEY')!
-      const pusherSecret = Deno.env.get('PUSHER_SECRET')!
-      const pusherCluster = Deno.env.get('PUSHER_CLUSTER')!
-
-      const pusherUrl = `https://api-${pusherCluster}.pusher.com/apps/${pusherAppId}/events`
-
-      // Trigger Pusher events for OBS alerts, dashboard, and audio player
-      const pusherPayload = {
-        name: 'new-donation',
-        channels: ['ankit-alerts', 'ankit-dashboard', 'ankit-audio'],
-        data: JSON.stringify({
-          id: donation.id,
-          name: donation.name,
-          amount: donation.amount,
-          message: donation.message,
-          is_hyperemote: donation.is_hyperemote,
-          voice_message_url: donation.voice_message_url,
-          created_at: donation.created_at
-        })
-      }
-
-      const timestamp = Math.floor(Date.now() / 1000)
-      const pusherBody = JSON.stringify(pusherPayload)
-      
-      // Calculate body MD5 using Node.js crypto
-      const bodyMd5 = createHash('md5').update(pusherBody).digest('hex')
-      
-      // Calculate HMAC signature for Pusher authentication
-      const authString = `POST\n/apps/${pusherAppId}/events\nauth_key=${pusherKey}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${bodyMd5}`
-      const authSignature = createHmac('sha256', pusherSecret).update(authString).digest('hex')
-      
-      // Send request with auth params in query string
-      const pusherUrlWithAuth = `${pusherUrl}?auth_key=${pusherKey}&auth_timestamp=${timestamp}&auth_version=1.0&auth_signature=${authSignature}&body_md5=${bodyMd5}`
-
-      await fetch(pusherUrlWithAuth, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: pusherBody
-      })
-
-      console.log('Pusher events triggered')
-
-      // Generate TTS based on donation type
+      // Generate TTS FIRST based on donation type
       // Hyperemotes: NO TTS
       // Voice messages: Generate announcement TTS
       // Text messages ₹70+: Generate TTS
@@ -188,8 +142,66 @@ serve(async (req) => {
               isVoiceAnnouncement: isVoiceAnnouncement
             }
           })
+
+          console.log('TTS generation completed')
         }
       }
+
+      // Refetch donation to get updated tts_audio_url
+      const { data: updatedDonation } = await supabase
+        .from('ankit_donations')
+        .select('*')
+        .eq('id', donation.id)
+        .single()
+
+      const finalDonation = updatedDonation || donation
+
+      // Initialize Pusher
+      const pusherAppId = Deno.env.get('PUSHER_APP_ID')!
+      const pusherKey = Deno.env.get('PUSHER_KEY')!
+      const pusherSecret = Deno.env.get('PUSHER_SECRET')!
+      const pusherCluster = Deno.env.get('PUSHER_CLUSTER')!
+
+      const pusherUrl = `https://api-${pusherCluster}.pusher.com/apps/${pusherAppId}/events`
+
+      // Trigger Pusher events for OBS alerts, dashboard, and audio player with TTS URL
+      const pusherPayload = {
+        name: 'new-donation',
+        channels: ['ankit-alerts', 'ankit-dashboard', 'ankit-audio'],
+        data: JSON.stringify({
+          id: finalDonation.id,
+          name: finalDonation.name,
+          amount: finalDonation.amount,
+          message: finalDonation.message,
+          is_hyperemote: finalDonation.is_hyperemote,
+          voice_message_url: finalDonation.voice_message_url,
+          tts_audio_url: finalDonation.tts_audio_url,
+          created_at: finalDonation.created_at
+        })
+      }
+
+      const timestamp = Math.floor(Date.now() / 1000)
+      const pusherBody = JSON.stringify(pusherPayload)
+      
+      // Calculate body MD5 using Node.js crypto
+      const bodyMd5 = createHash('md5').update(pusherBody).digest('hex')
+      
+      // Calculate HMAC signature for Pusher authentication
+      const authString = `POST\n/apps/${pusherAppId}/events\nauth_key=${pusherKey}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${bodyMd5}`
+      const authSignature = createHmac('sha256', pusherSecret).update(authString).digest('hex')
+      
+      // Send request with auth params in query string
+      const pusherUrlWithAuth = `${pusherUrl}?auth_key=${pusherKey}&auth_timestamp=${timestamp}&auth_version=1.0&auth_signature=${authSignature}&body_md5=${bodyMd5}`
+
+      await fetch(pusherUrlWithAuth, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: pusherBody
+      })
+
+      console.log('Pusher events triggered with TTS URL')
     }
 
     return new Response(
