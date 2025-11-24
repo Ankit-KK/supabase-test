@@ -166,16 +166,6 @@
   min-height: 100vh;
 }
 
-/* Hide video background on mobile for performance */
-@media (max-width: 767px) {
-  .video-background {
-    display: none !important;
-  }
-  
-  .content-overlay {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  }
-}
 
 /* Keep existing animations */
 @keyframes fadeIn {
