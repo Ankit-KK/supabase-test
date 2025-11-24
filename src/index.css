@@ -77,20 +77,38 @@
   }
 }
 
+/* Container for all words - allows wrapping between words */
+.concept-three .word-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (min-width: 640px) {
+  .concept-three .word-container {
+    gap: 12px;
+  }
+}
+
+@media (min-width: 768px) {
+  .concept-three .word-container {
+    gap: 16px;
+  }
+}
+
+/* Each word container - prevents breaking letters within a word */
 .concept-three .word {
   display: flex;
+  flex-wrap: nowrap !important;
   align-items: center;
-  justify-content: center;
-  max-width: 100%;
-  margin: auto;
   gap: 2px;
-  flex-wrap: wrap;
 }
 
 @media (min-width: 640px) {
   .concept-three .word {
     gap: 4px;
-    flex-wrap: nowrap;
   }
 }
 
