@@ -8,9 +8,10 @@ const Navbar: React.FC = () => {
       <div className="container flex h-16 items-center justify-between">
         <div className="flex flex-col">
           <Link to="/" className="flex flex-col">
-            <span className="text-xs font-semibold text-muted-foreground">STREAMHEART PRIVATE LIMITED</span>
+            <span className="hidden md:block text-xs font-semibold text-muted-foreground">STREAMHEART PRIVATE LIMITED</span>
             <span className="text-sm font-bold bg-gradient-to-r from-hyperchat-purple to-hyperchat-pink bg-clip-text text-transparent">
-              HyperChat – Digital Audience Interaction Experience
+              <span className="md:hidden">HyperChat</span>
+              <span className="hidden md:inline">HyperChat – Digital Audience Interaction Experience</span>
             </span>
           </Link>
         </div>
@@ -26,8 +27,9 @@ const Navbar: React.FC = () => {
           </Link>
         </div>
         <div className="flex items-center space-x-4">
-          <Button size="sm" className="bg-hero-gradient hover:opacity-90 transition-opacity" onClick={() => setShowSignupDialog(true)}>
-            Get Connected
+          <Button size="sm" className="bg-hero-gradient hover:opacity-90 transition-opacity text-xs sm:text-sm px-3 sm:px-4" onClick={() => setShowSignupDialog(true)}>
+            <span className="hidden sm:inline">Get Connected</span>
+            <span className="sm:hidden">Join</span>
           </Button>
         </div>
       </div>
