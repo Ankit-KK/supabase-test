@@ -187,10 +187,10 @@ const VIPBhai = () => {
       className="min-h-screen relative bg-cover bg-center bg-fixed"
       style={{ backgroundImage: `url(${vipbhaiBanner})` }}
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-amber-950/90 via-yellow-900/85 to-amber-950/90 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/40" />
       
       <div className="relative z-10 container mx-auto px-4 py-8 flex items-center justify-center min-h-screen">
-        <Card className="w-full max-w-[21rem] bg-gradient-to-br from-amber-900/95 via-yellow-800/90 to-amber-900/95 border-2 border-amber-500/50 shadow-2xl backdrop-blur-md">
+        <Card className="w-full max-w-[21rem] bg-background/95 border-2 border-amber-500/50 shadow-2xl backdrop-blur-md">
           <CardHeader className="text-center pb-4 space-y-3">
             <div className="flex justify-center">
               <div className="w-20 h-20 rounded-full overflow-hidden ring-4 ring-amber-400/50 shadow-xl">
