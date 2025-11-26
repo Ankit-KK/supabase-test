@@ -7,6 +7,50 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-razorpay-signature',
 }
 
+// Helper function to get Pusher credentials based on streamer_slug
+async function getPusherCredentials(streamerSlug: string, supabase: any) {
+  try {
+    const { data: streamer, error } = await supabase
+      .from('streamers')
+      .select('pusher_group, streamer_name')
+      .eq('streamer_slug', streamerSlug)
+      .single();
+
+    if (error || !streamer) {
+      console.error(`[Pusher] Failed to fetch pusher_group for ${streamerSlug}:`, error);
+      return {
+        appId: Deno.env.get('PUSHER_APP_ID_1') || Deno.env.get('PUSHER_APP_ID'),
+        key: Deno.env.get('PUSHER_KEY_1') || Deno.env.get('PUSHER_KEY'),
+        secret: Deno.env.get('PUSHER_SECRET_1') || Deno.env.get('PUSHER_SECRET'),
+        cluster: Deno.env.get('PUSHER_CLUSTER_1') || Deno.env.get('PUSHER_CLUSTER'),
+        group: 1
+      };
+    }
+
+    const group = streamer.pusher_group || 1;
+    
+    const credentials = {
+      appId: Deno.env.get(`PUSHER_APP_ID_${group}`),
+      key: Deno.env.get(`PUSHER_KEY_${group}`),
+      secret: Deno.env.get(`PUSHER_SECRET_${group}`),
+      cluster: Deno.env.get(`PUSHER_CLUSTER_${group}`),
+      group
+    };
+
+    console.log(`[Pusher] Using Group ${group} credentials for ${streamerSlug}`);
+    return credentials;
+  } catch (err) {
+    console.error('[Pusher] Error fetching credentials:', err);
+    return {
+      appId: Deno.env.get('PUSHER_APP_ID_1') || Deno.env.get('PUSHER_APP_ID'),
+      key: Deno.env.get('PUSHER_KEY_1') || Deno.env.get('PUSHER_KEY'),
+      secret: Deno.env.get('PUSHER_SECRET_1') || Deno.env.get('PUSHER_SECRET'),
+      cluster: Deno.env.get('PUSHER_CLUSTER_1') || Deno.env.get('PUSHER_CLUSTER'),
+      group: 1
+    };
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -153,11 +197,12 @@ serve(async (req) => {
 
     // Only trigger events and TTS for successful payments
     if (isSuccess) {
-      // Initialize Pusher for all events
-      const pusherAppId = Deno.env.get('PUSHER_APP_ID')!
-      const pusherKey = Deno.env.get('PUSHER_KEY')!
-      const pusherSecret = Deno.env.get('PUSHER_SECRET')!
-      const pusherCluster = Deno.env.get('PUSHER_CLUSTER')!
+      // Get group-specific Pusher credentials based on streamer
+      const pusherCreds = await getPusherCredentials(streamerType, supabase);
+      const pusherAppId = pusherCreds.appId!
+      const pusherKey = pusherCreds.key!
+      const pusherSecret = pusherCreds.secret!
+      const pusherCluster = pusherCreds.cluster!
       const pusherUrl = `https://api-${pusherCluster}.pusher.com/apps/${pusherAppId}/events`
 
       // Helper function to send Pusher events
