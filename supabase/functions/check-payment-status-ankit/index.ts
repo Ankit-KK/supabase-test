@@ -25,8 +25,8 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Get Razorpay credentials
-    const razorpayKeyId = Deno.env.get('RAZORPAY_KEY_ID');
-    const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
+    const razorpayKeyId = Deno.env.get('razorpay-keyid');
+    const razorpayKeySecret = Deno.env.get('razorpay-keysecret');
 
     if (!razorpayKeyId || !razorpayKeySecret) {
       throw new Error('Razorpay credentials not configured');
