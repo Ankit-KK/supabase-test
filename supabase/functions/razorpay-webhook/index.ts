@@ -64,11 +64,29 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // Get donation from database using Razorpay order ID
-    const { data: donation, error: fetchError } = await supabase
+    // First try ankit_donations
+    let { data: donation, error: fetchError } = await supabase
       .from('ankit_donations')
       .select('*')
       .eq('razorpay_order_id', razorpayOrderId)
-      .single()
+      .maybeSingle()
+
+    // If not found, try thunderx_donations
+    let streamerType = 'ankit'
+    let tableName = 'ankit_donations'
+    if (!donation) {
+      const thunderxResult = await supabase
+        .from('thunderx_donations')
+        .select('*')
+        .eq('razorpay_order_id', razorpayOrderId)
+        .maybeSingle()
+      
+      if (thunderxResult.data) {
+        donation = thunderxResult.data
+        streamerType = 'thunderx'
+        tableName = 'thunderx_donations'
+      }
+    }
 
     if (fetchError || !donation) {
       console.error('Donation not found for Razorpay order:', razorpayOrderId)
@@ -98,7 +116,7 @@ serve(async (req) => {
     // All donations are auto-approved by auto_approve_ankit_hyperemotes_iu()
 
     const { error: updateError } = await supabase
-      .from('ankit_donations')
+      .from(tableName)
       .update(updateData)
       .eq('razorpay_order_id', razorpayOrderId)
 
@@ -140,8 +158,12 @@ serve(async (req) => {
         })
       }
 
-      // Send new-donation event to alerts and dashboard channels
-      await sendPusherEvent(['ankit-alerts', 'ankit-dashboard'], 'new-donation', {
+      // Send new-donation event to alerts and dashboard channels based on streamer type
+      const alertChannels = streamerType === 'thunderx' 
+        ? ['thunderx-alerts', 'thunderx-dashboard'] 
+        : ['ankit-alerts', 'ankit-dashboard']
+      
+      await sendPusherEvent(alertChannels, 'new-donation', {
         id: donation.id,
         name: donation.name,
         amount: donation.amount,
@@ -182,7 +204,8 @@ serve(async (req) => {
             console.log('Announcement TTS generated successfully, sending to audio channel')
             
             // Send audio event with BOTH announcement TTS and voice URL
-            await sendPusherEvent(['ankit-audio'], 'new-audio-message', {
+            const audioChannel = streamerType === 'thunderx' ? ['thunderx-audio'] : ['ankit-audio']
+            await sendPusherEvent(audioChannel, 'new-audio-message', {
               id: donation.id,
               name: donation.name,
               amount: donation.amount,
@@ -193,7 +216,7 @@ serve(async (req) => {
               created_at: donation.created_at
             })
             
-            console.log('✅ Voice message with announcement sent to ankit-audio')
+            console.log(`✅ Voice message with announcement sent to ${streamerType}-audio`)
           }
         } catch (error) {
           console.error('Voice message announcement error:', error)
@@ -230,7 +253,8 @@ serve(async (req) => {
               console.log('TTS generated successfully, sending to audio channel')
               
               // Send audio event with TTS URL
-              await sendPusherEvent(['ankit-audio'], 'new-audio-message', {
+              const audioChannel = streamerType === 'thunderx' ? ['thunderx-audio'] : ['ankit-audio']
+              await sendPusherEvent(audioChannel, 'new-audio-message', {
                 id: donation.id,
                 name: donation.name,
                 amount: donation.amount,
@@ -241,7 +265,7 @@ serve(async (req) => {
                 created_at: donation.created_at
               })
               
-              console.log('✅ Text message with TTS sent to ankit-audio')
+              console.log(`✅ Text message with TTS sent to ${streamerType}-audio`)
             }
           } catch (error) {
             console.error('Text TTS generation error:', error)
