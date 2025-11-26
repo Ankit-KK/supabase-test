@@ -122,11 +122,13 @@ const ThunderX = () => {
 
         const { data: uploadData, error: uploadError } = await supabase.functions.invoke(
           'upload-voice-message-direct',
-          { body: { voiceData: base64Data.split(',')[1] } }
+          { body: { voiceData: base64Data.split(',')[1], streamerSlug: 'thunderx' } }
         );
 
-        if (uploadError) throw uploadError;
-        voiceMessageUrl = uploadData.url;
+        if (uploadError || !uploadData?.voice_message_url) {
+          throw new Error('Failed to upload voice message');
+        }
+        voiceMessageUrl = uploadData.voice_message_url;
       }
 
       const { data, error } = await supabase.functions.invoke('create-razorpay-order-thunderx', {
@@ -361,6 +363,8 @@ const ThunderX = () => {
                   }}
                   maxDurationSeconds={getVoiceDuration(currentAmount)}
                   brandColor="#10b981"
+                  requiredAmount={150}
+                  currentAmount={currentAmount}
                 />
                 <p className="text-xs text-muted-foreground">
                   Duration: {getVoiceDuration(currentAmount)}s • ₹150-249: 15s • ₹250-499: 25s • ₹500+: 30s
