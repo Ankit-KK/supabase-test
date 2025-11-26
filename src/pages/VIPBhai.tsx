@@ -125,14 +125,14 @@ const VIPBhai = () => {
         const base64Audio = await base64Promise;
 
         const { data: uploadData, error: uploadError } = await supabase.functions.invoke('upload-voice-message-direct', {
-          body: { voiceData: base64Audio }
+          body: { voiceData: base64Audio, streamerSlug: 'vipbhai' }
         });
 
-        if (uploadError || !uploadData?.voiceMessageUrl) {
+        if (uploadError || !uploadData?.voice_message_url) {
           throw new Error('Failed to upload voice message');
         }
 
-        voiceMessageUrl = uploadData.voiceMessageUrl;
+        voiceMessageUrl = uploadData.voice_message_url;
       }
 
       const { data, error } = await supabase.functions.invoke('create-razorpay-order-vipbhai', {
