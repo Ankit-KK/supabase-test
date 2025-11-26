@@ -108,7 +108,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // Determine table based on order ID prefix (supports both old and new formats)
-    let streamerType: 'ankit' | 'thunderx' | 'vipbhai' | 'sagarujjwalgaming' | 'notyourkween'
+    let streamerType: 'ankit' | 'thunderx' | 'vipbhai' | 'sagarujjwalgaming' | 'notyourkween' | 'bongflick'
     let tableName: string
     
     // Get donation from the appropriate table using Razorpay order ID
@@ -175,7 +175,20 @@ serve(async (req) => {
               streamerType = 'notyourkween'
               tableName = 'notyourkween_donations'
             } else {
-              fetchError = ankitResult.error || thunderxResult.error || vipbhaiResult.error || sagarujjwalgamingResult.error || notyourkweenResult.error
+              // Try bongflick
+              const bongflickResult = await supabase
+                .from('bongflick_donations')
+                .select('*')
+                .eq('razorpay_order_id', razorpayOrderId)
+                .maybeSingle()
+              
+              if (bongflickResult.data) {
+                donation = bongflickResult.data
+                streamerType = 'bongflick'
+                tableName = 'bongflick_donations'
+              } else {
+                fetchError = ankitResult.error || thunderxResult.error || vipbhaiResult.error || sagarujjwalgamingResult.error || notyourkweenResult.error || bongflickResult.error
+              }
             }
           }
         }
@@ -262,6 +275,8 @@ serve(async (req) => {
         ? ['sagarujjwalgaming-alerts', 'sagarujjwalgaming-dashboard']
         : streamerType === 'notyourkween'
         ? ['notyourkween-alerts', 'notyourkween-dashboard']
+        : streamerType === 'bongflick'
+        ? ['bongflick-alerts', 'bongflick-dashboard']
         : ['ankit-alerts', 'ankit-dashboard']
       
       await sendPusherEvent(alertChannels, 'new-donation', {
@@ -370,6 +385,8 @@ serve(async (req) => {
                 ? ['sagarujjwalgaming-audio']
                 : streamerType === 'notyourkween'
                 ? ['notyourkween-audio']
+                : streamerType === 'bongflick'
+                ? ['bongflick-audio']
                 : ['ankit-audio']
               await sendPusherEvent(audioChannel, 'new-audio-message', {
                 id: donation.id,
