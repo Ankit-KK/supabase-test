@@ -45,8 +45,6 @@ verify_jwt = false
 [functions.notify-new-donations]
 verify_jwt = false
 
-# Active Streamer Functions - Only 4 Streamers
-
 [functions.create-payment-order-ankit]
 verify_jwt = false
 
