@@ -16,7 +16,7 @@ interface Donation {
   tts_audio_url?: string;
 }
 
-type TableName = 'ankit_donations' | 'chiaa_gaming_donations' | 'looteriya_gaming_donations' | 'sizzors_donations' | 'damask_plays_donations' | 'neko_xenpai_donations' | 'thunderx_donations' | 'vipbhai_donations' | 'sagarujjwalgaming_donations';
+type TableName = 'ankit_donations' | 'chiaa_gaming_donations' | 'looteriya_gaming_donations' | 'sizzors_donations' | 'damask_plays_donations' | 'neko_xenpai_donations' | 'thunderx_donations' | 'vipbhai_donations' | 'sagarujjwalgaming_donations' | 'notyourkween_donations';
 
 interface UseAudioPlayerProps {
   tableName: TableName;
@@ -77,7 +77,7 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
       console.log('📥 Fetching unplayed donations created after page opened...');
       
       const { data, error } = await supabase
-        .from(tableName)
+        .from(tableName as any)
         .select('*')
         .is('audio_played_at', null)
         .gte('created_at', pageOpenedAt)
@@ -85,7 +85,7 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
         .eq('payment_status', 'success')
         .or('voice_message_url.not.is.null,tts_audio_url.not.is.null,message.not.is.null')
         .order('created_at', { ascending: true })
-        .limit(MAX_QUEUE_SIZE);
+        .limit(MAX_QUEUE_SIZE) as { data: Donation[] | null, error: any };
 
       if (data && !error && data.length > 0) {
         console.log(`📥 Loaded ${data.length} recent donations (last 2 min)`);
@@ -116,7 +116,7 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
     
     // Update database to mark as played
     const { error } = await supabase
-      .from(tableName)
+      .from(tableName as any)
       .update({ audio_played_at: new Date().toISOString() })
       .eq('id', currentDonation.id);
     

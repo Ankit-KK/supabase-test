@@ -30,6 +30,7 @@ import NekoXenpai from "./pages/NekoXenpai";
 import ThunderX from "./pages/ThunderX";
 import VIPBhai from "./pages/VIPBhai";
 import SagarUjjwalGaming from "./pages/SagarUjjwalGaming";
+import NotYourKween from "./pages/NotYourKween";
 
 // Dashboard pages (active streamers + ThunderX)
 import Dashboard from "./pages/dashboard/Dashboard";
@@ -43,6 +44,7 @@ import NekoXenpaiDashboard from "./pages/dashboard/NekoXenpaiDashboard";
 import ThunderXDashboard from "./pages/dashboard/ThunderXDashboard";
 import VIPBhaiDashboard from "./pages/dashboard/VIPBhaiDashboard";
 import SagarUjjwalGamingDashboard from "./pages/dashboard/SagarUjjwalGamingDashboard";
+import NotYourKweenDashboard from "./pages/dashboard/NotYourKweenDashboard";
 
 // OBS Alert pages (active streamers + ThunderX)
 import AnkitObsAlerts from "./pages/obs-alerts/AnkitObsAlerts";
@@ -54,6 +56,7 @@ import NekoXenpaiObsAlerts from "./pages/obs-alerts/NekoXenpaiObsAlerts";
 import ThunderXObsAlerts from "./pages/obs-alerts/ThunderXObsAlerts";
 import VIPBhaiObsAlerts from "./pages/obs-alerts/VIPBhaiObsAlerts";
 import SagarUjjwalGamingObsAlerts from "./pages/obs-alerts/SagarUjjwalGamingObsAlerts";
+import NotYourKweenObsAlerts from "./pages/obs-alerts/NotYourKweenObsAlerts";
 
 // Audio Player pages (active streamers + ThunderX)
 import AnkitAudioPlayer from "./pages/audio-player/AnkitAudioPlayer";
@@ -65,6 +68,7 @@ import NekoXenpaiAudioPlayer from "./pages/audio-player/NekoXenpaiAudioPlayer";
 import ThunderXAudioPlayer from "./pages/audio-player/ThunderXAudioPlayer";
 import VIPBhaiAudioPlayer from "./pages/audio-player/VIPBhaiAudioPlayer";
 import SagarUjjwalGamingAudioPlayer from "./pages/audio-player/SagarUjjwalGamingAudioPlayer";
+import NotYourKweenAudioPlayer from "./pages/audio-player/NotYourKweenAudioPlayer";
 
 const queryClient = new QueryClient();
 
@@ -104,6 +108,7 @@ const App = () => (
               <Route path="/thunderx" element={<ThunderX />} />
               <Route path="/vipbhai" element={<VIPBhai />} />
               <Route path="/sagarujjwalgaming" element={<SagarUjjwalGaming />} />
+              <Route path="/notyourkween" element={<NotYourKween />} />
               
               {/* Authentication */}
               <Route path="/auth" element={<Auth />} />
@@ -119,6 +124,7 @@ const App = () => (
               <Route path="/dashboard/thunderx" element={<ThunderXDashboard />} />
               <Route path="/dashboard/vipbhai" element={<VIPBhaiDashboard />} />
               <Route path="/dashboard/sagarujjwalgaming" element={<SagarUjjwalGamingDashboard />} />
+              <Route path="/dashboard/notyourkween" element={<NotYourKweenDashboard />} />
               
               {/* OBS Alert routes */}
               <Route path="/ankit/obs-alerts" element={<AnkitObsAlerts />} />
@@ -130,6 +136,7 @@ const App = () => (
               <Route path="/thunderx/obs-alerts" element={<ThunderXObsAlerts />} />
               <Route path="/vipbhai/obs-alerts" element={<VIPBhaiObsAlerts />} />
               <Route path="/sagarujjwalgaming/obs-alerts" element={<SagarUjjwalGamingObsAlerts />} />
+              <Route path="/notyourkween/obs-alerts" element={<NotYourKweenObsAlerts />} />
               
               {/* Audio Player routes */}
               <Route path="/ankit/audio-player" element={<AnkitAudioPlayer />} />
@@ -141,6 +148,7 @@ const App = () => (
               <Route path="/thunderx/audio-player" element={<ThunderXAudioPlayer />} />
               <Route path="/vipbhai/audio-player" element={<VIPBhaiAudioPlayer />} />
               <Route path="/sagarujjwalgaming/audio-player" element={<SagarUjjwalGamingAudioPlayer />} />
+              <Route path="/notyourkween/audio-player" element={<NotYourKweenAudioPlayer />} />
               
               {/* Catch all 404 */}
               <Route path="*" element={<NotFound />} />
