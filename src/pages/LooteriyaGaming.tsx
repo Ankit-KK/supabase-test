@@ -11,7 +11,6 @@ import { toast } from 'sonner';
 // Razorpay - loaded via script tag
 import EnhancedVoiceRecorder from '@/components/EnhancedVoiceRecorder';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
-import { PhoneDialog } from '@/components/PhoneDialog';
 import looteriyaLogo from '@/assets/looteriya-logo.jpg';
 import looteriyaCardBg from '@/assets/looteriya-card-bg.jpg';
 import looteriyaMainBanner from '@/assets/looteriya-main-banner.jpg';
@@ -24,9 +23,6 @@ const LooteriyaGaming = () => {
   });
   const [donationType, setDonationType] = useState<'text' | 'voice' | 'hyperemote'>('text');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [phoneError, setPhoneError] = useState('');
-  const [isPhoneDialogOpen, setIsPhoneDialogOpen] = useState(false);
   const [streamerSettings, setStreamerSettings] = useState<{ hyperemotes_enabled: boolean; hyperemotes_min_amount: number } | null>(null);
   const navigate = useNavigate();
   // Calculate voice duration based on amount
@@ -102,17 +98,10 @@ const LooteriyaGaming = () => {
       return;
     }
 
-    setIsPhoneDialogOpen(true);
+    await processPayment();
   };
 
-  const handlePaymentAfterPhone = async () => {
-    if (!validatePhoneNumber(phoneNumber)) {
-      setPhoneError('Please enter a valid 10-digit phone number');
-      return;
-    }
-
-    setPhoneError('');
-    setIsPhoneDialogOpen(false);
+  const processPayment = async () => {
     setIsProcessingPayment(true);
 
     try {
@@ -212,16 +201,9 @@ const LooteriyaGaming = () => {
     } catch (error) {
       console.error('Payment error:', error);
       toast.error('Failed to process payment. Please try again.');
+    } finally {
       setIsProcessingPayment(false);
     }
-  };
-
-  const validatePhoneNumber = (phone: string): boolean => {
-    return /^\d{10}$/.test(phone);
-  };
-
-  const handlePhoneSubmit = () => {
-    handlePaymentAfterPhone();
   };
 
   const handleDonationTypeChange = (value: string) => {
@@ -416,17 +398,6 @@ const LooteriyaGaming = () => {
           </form>
         </CardContent>
       </Card>
-
-      <PhoneDialog
-        open={isPhoneDialogOpen}
-        onOpenChange={setIsPhoneDialogOpen}
-        phoneNumber={phoneNumber}
-        onPhoneChange={setPhoneNumber}
-        phoneError={phoneError}
-        onContinue={handlePhoneSubmit}
-        isSubmitting={isProcessingPayment}
-        buttonColor="#f59e0b"
-      />
     </div>
   );
 };
