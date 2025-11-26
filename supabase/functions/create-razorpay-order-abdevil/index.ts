@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import Razorpay from "https://esm.sh/razorpay@2.9.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -53,24 +52,35 @@ serve(async (req) => {
 
     console.log('[ABdevil Order] Generated internal order ID:', internalOrderId);
 
-    // Create Razorpay order
-    const razorpayKeyId = Deno.env.get("RAZORPAY_KEY_ID");
-    const razorpayKeySecret = Deno.env.get("RAZORPAY_KEY_SECRET");
+    // Get Razorpay credentials
+    const razorpayKeyId = Deno.env.get('RAZORPAY_KEY_ID');
+    const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
 
     if (!razorpayKeyId || !razorpayKeySecret) {
-      throw new Error("Razorpay credentials not configured");
+      throw new Error('Razorpay credentials not configured');
     }
 
-    const razorpay = new Razorpay({
-      key_id: razorpayKeyId,
-      key_secret: razorpayKeySecret,
+    // Create Razorpay order
+    const razorpayResponse = await fetch('https://api.razorpay.com/v1/orders', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${btoa(`${razorpayKeyId}:${razorpayKeySecret}`)}`,
+      },
+      body: JSON.stringify({
+        amount: Math.round(amount * 100),
+        currency: 'INR',
+        receipt: internalOrderId,
+      }),
     });
 
-    const razorpayOrder = await razorpay.orders.create({
-      amount: amount * 100, // Convert to paise
-      currency: "INR",
-      receipt: internalOrderId,
-    });
+    if (!razorpayResponse.ok) {
+      const errorText = await razorpayResponse.text();
+      console.error('Razorpay API error:', errorText);
+      throw new Error('Failed to create Razorpay order');
+    }
+
+    const razorpayOrder = await razorpayResponse.json();
 
     console.log('[ABdevil Order] Razorpay order created:', razorpayOrder.id);
 
