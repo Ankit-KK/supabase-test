@@ -11,8 +11,8 @@ import EnhancedVoiceRecorder from '@/components/EnhancedVoiceRecorder';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { Crown } from 'lucide-react';
 
-const vipbhaiBanner = 'https://placehold.co/1920x400/f59e0b/ffffff?text=VIP+BHAI';
-const vipbhaiLogo = 'https://placehold.co/200x200/f59e0b/ffffff?text=VB';
+const vipbhaiBanner = '/lovable-uploads/vipbhai-banner.jpg';
+const vipbhaiLogo = '/lovable-uploads/vipbhai-logo.jpg';
 
 const VIPBhai = () => {
   const [formData, setFormData] = useState({
