@@ -10,7 +10,6 @@ import { toast } from 'sonner';
 // Razorpay - loaded via script tag
 import EnhancedVoiceRecorder from '@/components/EnhancedVoiceRecorder';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
-import { PhoneDialog } from '@/components/PhoneDialog';
 import nekoXenpaiBanner from '@/assets/neko-xenpai-banner-new.jpg';
 import nekoXenpaiProfile from '@/assets/neko-xenpai-profile-new.jpg';
 import nekoXenpaiLogo from '@/assets/neko-xenpai-profile-new.jpg';
@@ -23,9 +22,6 @@ const NekoXenpai = () => {
   });
   const [donationType, setDonationType] = useState<'text' | 'voice' | 'hyperemote'>('text');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [phoneError, setPhoneError] = useState('');
-  const [isPhoneDialogOpen, setIsPhoneDialogOpen] = useState(false);
   const [streamerSettings, setStreamerSettings] = useState<{ hyperemotes_enabled: boolean; hyperemotes_min_amount: number } | null>(null);
   const navigate = useNavigate();
   
@@ -117,22 +113,6 @@ const NekoXenpai = () => {
 
     if (!validateDonation()) return;
 
-    setIsPhoneDialogOpen(true);
-  };
-
-  const validatePhone = () => {
-    if (!phoneNumber || phoneNumber.length !== 10 || !/^\d{10}$/.test(phoneNumber)) {
-      setPhoneError('Please enter a valid 10-digit mobile number');
-      return false;
-    }
-    setPhoneError('');
-    return true;
-  };
-
-  const handleContinueToPayment = async () => {
-    if (!validatePhone()) return;
-
-    setIsPhoneDialogOpen(false);
     await processPayment();
   };
 
@@ -442,17 +422,6 @@ const NekoXenpai = () => {
           </Button>
         </CardContent>
       </Card>
-
-      <PhoneDialog
-        open={isPhoneDialogOpen}
-        onOpenChange={setIsPhoneDialogOpen}
-        phoneNumber={phoneNumber}
-        onPhoneChange={setPhoneNumber}
-        phoneError={phoneError}
-        onContinue={processPayment}
-        isSubmitting={isProcessingPayment}
-        buttonColor="#d946ef"
-      />
     </div>
   );
 };

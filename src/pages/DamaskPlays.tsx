@@ -10,7 +10,6 @@ import { toast } from 'sonner';
 // Razorpay - loaded via script tag
 import EnhancedVoiceRecorder from '@/components/EnhancedVoiceRecorder';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
-import { PhoneDialog } from '@/components/PhoneDialog';
 import damaskBanner from '@/assets/damask-banner.jpg';
 import damaskProfile from '@/assets/damask-profile.jpg';
 import damaskLogo from '@/assets/damask-logo.jpg';
@@ -23,9 +22,6 @@ const DamaskPlays = () => {
   });
   const [donationType, setDonationType] = useState<'text' | 'voice' | 'hyperemote'>('text');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [phoneError, setPhoneError] = useState('');
-  const [isPhoneDialogOpen, setIsPhoneDialogOpen] = useState(false);
   const [streamerSettings, setStreamerSettings] = useState<{ hyperemotes_enabled: boolean; hyperemotes_min_amount: number } | null>(null);
   const navigate = useNavigate();
   
@@ -72,11 +68,6 @@ const DamaskPlays = () => {
     };
   }, []);
 
-  const validatePhoneNumber = (phone: string): boolean => {
-    const phoneRegex = /^[6-9]\d{9}$/;
-    return phoneRegex.test(phone);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -113,16 +104,10 @@ const DamaskPlays = () => {
       }
     }
 
-    setIsPhoneDialogOpen(true);
+    await processPayment();
   };
 
-  const handlePaymentWithPhone = async () => {
-    if (!validatePhoneNumber(phoneNumber)) {
-      setPhoneError('Please enter a valid 10-digit phone number');
-      return;
-    }
-
-    setPhoneError('');
+  const processPayment = async () => {
     setIsProcessingPayment(true);
 
     try {
@@ -237,7 +222,6 @@ const DamaskPlays = () => {
       toast.error(error.message || 'Failed to process payment. Please try again.');
     } finally {
       setIsProcessingPayment(false);
-      setIsPhoneDialogOpen(false);
     }
   };
 
@@ -448,17 +432,6 @@ const DamaskPlays = () => {
           </form>
         </CardContent>
       </Card>
-
-      <PhoneDialog
-        open={isPhoneDialogOpen}
-        onOpenChange={setIsPhoneDialogOpen}
-        phoneNumber={phoneNumber}
-        onPhoneChange={setPhoneNumber}
-        phoneError={phoneError}
-        onContinue={handlePaymentWithPhone}
-        isSubmitting={isProcessingPayment}
-        buttonColor="#10b981"
-      />
     </div>
   );
 };
