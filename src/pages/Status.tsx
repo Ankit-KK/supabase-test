@@ -86,39 +86,49 @@ export default function Status() {
         setPaymentStatus(backendStatus as any);
 
         // If payment is successful, upload voice message if it exists
+        // Skip voice upload for Razorpay streamers (ThunderX, Ankit) - they upload BEFORE payment
         if (backendStatus === 'success') {
+          const shouldSkipVoiceUpload = (orderId: string) => {
+            // Razorpay streamers upload voice messages before payment via upload-voice-message-direct
+            if (orderId.startsWith('ak_rp_') || orderId.startsWith('tx_rp_')) return true;
+            if (orderId.startsWith('ankit_razorpay_') || orderId.startsWith('thunderx_razorpay_')) return true;
+            return false;
+          };
+
+          if (!shouldSkipVoiceUpload(orderId)) {
             try {
-            console.log('Payment successful, checking for voice message upload...');
-            const getVoiceUploadFunction = (orderId: string) => {
-              if (orderId.startsWith('ankit_') || orderId.startsWith('ak_rp_')) return 'upload-voice-message-ankit';
-              if (orderId.startsWith('thunderx_') || orderId.startsWith('tx_rp_')) return 'upload-voice-message-thunderx';
-              if (orderId.startsWith('musicstream_')) return 'upload-voice-message-musicstream';
-              if (orderId.startsWith('techgamer_')) return 'upload-voice-message-techgamer';
-              if (orderId.startsWith('sizzors_')) return 'upload-voice-message-sizzors';
-              if (orderId.startsWith('artcreate_')) return 'upload-voice-message-artcreate';
-              if (orderId.startsWith('looteriya_gaming_')) return 'upload-voice-message-looteriya-gaming';
-              if (orderId.startsWith('demostreamer_')) return 'upload-voice-message-demostreamer';
-              return 'upload-voice-message'; // default for chia_gaming
-            };
-            
-            const voiceFunctionName = getVoiceUploadFunction(orderId);
-            console.log(`Voice upload function determined: ${voiceFunctionName} for order: ${orderId}`);
-            
-            // Add a small delay to ensure webhook has completed
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            const { data: uploadResult, error: uploadError } = await supabase.functions.invoke(voiceFunctionName, {
-              body: { order_id: orderId }
-            });
-            
-            if (uploadError) {
-              console.error('Voice message upload error:', uploadError);
-            } else if (uploadResult?.success) {
-              console.log('Voice message uploaded successfully:', uploadResult.voice_message_url);
+              console.log('Payment successful, checking for voice message upload...');
+              const getVoiceUploadFunction = (orderId: string) => {
+                if (orderId.startsWith('musicstream_')) return 'upload-voice-message-musicstream';
+                if (orderId.startsWith('techgamer_')) return 'upload-voice-message-techgamer';
+                if (orderId.startsWith('sizzors_')) return 'upload-voice-message-sizzors';
+                if (orderId.startsWith('artcreate_')) return 'upload-voice-message-artcreate';
+                if (orderId.startsWith('looteriya_gaming_')) return 'upload-voice-message-looteriya-gaming';
+                if (orderId.startsWith('demostreamer_')) return 'upload-voice-message-demostreamer';
+                return 'upload-voice-message'; // default for chia_gaming
+              };
+              
+              const voiceFunctionName = getVoiceUploadFunction(orderId);
+              console.log(`Voice upload function determined: ${voiceFunctionName} for order: ${orderId}`);
+              
+              // Add a small delay to ensure webhook has completed
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              
+              const { data: uploadResult, error: uploadError } = await supabase.functions.invoke(voiceFunctionName, {
+                body: { order_id: orderId }
+              });
+              
+              if (uploadError) {
+                console.error('Voice message upload error:', uploadError);
+              } else if (uploadResult?.success) {
+                console.log('Voice message uploaded successfully:', uploadResult.voice_message_url);
+              }
+            } catch (uploadErr) {
+              console.error('Failed to upload voice message:', uploadErr);
+              // Don't fail the entire status check if voice upload fails
             }
-          } catch (uploadErr) {
-            console.error('Failed to upload voice message:', uploadErr);
-            // Don't fail the entire status check if voice upload fails
+          } else {
+            console.log('Skipping voice upload for Razorpay streamer (already uploaded before payment)');
           }
         }
       } catch (err) {
