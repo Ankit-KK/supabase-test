@@ -1,6 +1,5 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
-import Razorpay from 'https://esm.sh/razorpay@2.9.2';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,9 +12,9 @@ serve(async (req) => {
   }
 
   try {
-    const { orderId } = await req.json();
+    const { order_id } = await req.json();
 
-    if (!orderId) {
+    if (!order_id) {
       throw new Error('Order ID is required');
     }
 
@@ -24,65 +23,97 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get donation by order_id
+    const razorpayKeyId = Deno.env.get('razorpay-keyid');
+    const razorpayKeySecret = Deno.env.get('razorpay-keysecret');
+
+    if (!razorpayKeyId || !razorpayKeySecret) {
+      throw new Error('Razorpay credentials not configured');
+    }
+
+    // Fetch donation from database to get razorpay_order_id
     const { data: donation, error: dbError } = await supabase
       .from('notyourkween_donations')
-      .select('*')
-      .eq('order_id', orderId)
+      .select('razorpay_order_id, payment_status, amount, name')
+      .eq('order_id', order_id)
       .single();
 
     if (dbError || !donation) {
+      console.error('Donation lookup error:', dbError);
       throw new Error('Donation not found');
     }
 
-    // If already successful, return cached status
-    if (donation.payment_status === 'success') {
-      return new Response(
-        JSON.stringify({
-          status: 'success',
-          donation: {
-            name: donation.name,
-            amount: donation.amount,
-            message: donation.message,
-          },
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Fetch order details from Razorpay
+    const razorpayResponse = await fetch(
+      `https://api.razorpay.com/v1/orders/${donation.razorpay_order_id}`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': 'Basic ' + btoa(`${razorpayKeyId}:${razorpayKeySecret}`),
+        },
+      }
+    );
+
+    if (!razorpayResponse.ok) {
+      const errorText = await razorpayResponse.text();
+      console.error('Razorpay API error:', errorText);
+      throw new Error('Failed to fetch payment status from Razorpay');
     }
 
-    // Check with Razorpay
-    const razorpay = new Razorpay({
-      key_id: Deno.env.get('RAZORPAY_KEY_ID'),
-      key_secret: Deno.env.get('RAZORPAY_KEY_SECRET'),
-    });
+    const razorpayOrder = await razorpayResponse.json();
 
-    const razorpayOrder = await razorpay.orders.fetch(donation.razorpay_order_id);
-    const paymentStatus = razorpayOrder.status === 'paid' ? 'success' : 'pending';
+    // Fetch payment details for this order
+    const paymentsResponse = await fetch(
+      `https://api.razorpay.com/v1/orders/${donation.razorpay_order_id}/payments`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': 'Basic ' + btoa(`${razorpayKeyId}:${razorpayKeySecret}`),
+        },
+      }
+    );
 
-    // Update database if status changed
-    if (paymentStatus !== donation.payment_status) {
-      await supabase
-        .from('notyourkween_donations')
-        .update({ payment_status: paymentStatus })
-        .eq('id', donation.id);
+    let payments = [];
+    if (paymentsResponse.ok) {
+      const paymentsData = await paymentsResponse.json();
+      payments = paymentsData.items || [];
+    }
+
+    // Determine final status
+    let finalStatus = 'pending';
+    if (razorpayOrder.status === 'paid' || donation.payment_status === 'success') {
+      finalStatus = 'success';
+    } else if (razorpayOrder.status === 'attempted') {
+      finalStatus = 'pending';
     }
 
     return new Response(
       JSON.stringify({
-        status: paymentStatus,
-        donation: {
-          name: donation.name,
-          amount: donation.amount,
-          message: donation.message,
+        order_status: razorpayOrder.status,
+        final_status: finalStatus,
+        order_amount: donation.amount,
+        payments: payments.map(p => ({
+          payment_id: p.id,
+          status: p.status,
+          method: p.method,
+          amount: p.amount / 100,
+        })),
+        customer_details: {
+          customer_name: donation.name,
         },
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      }
     );
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error in check-payment-status-notyourkween:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      }
     );
   }
 });
