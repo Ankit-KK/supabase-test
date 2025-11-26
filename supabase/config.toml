@@ -77,5 +77,8 @@ verify_jwt = false
 [functions.create-razorpay-order-vipbhai]
 verify_jwt = false
 
+[functions.create-razorpay-order-sagarujjwalgaming]
+verify_jwt = false
+
 [functions.razorpay-webhook]
 verify_jwt = false
