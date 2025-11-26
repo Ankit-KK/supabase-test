@@ -62,5 +62,8 @@ verify_jwt = false
 [functions.create-razorpay-order-ankit]
 verify_jwt = false
 
+[functions.create-razorpay-order-thunderx]
+verify_jwt = false
+
 [functions.razorpay-webhook]
 verify_jwt = false

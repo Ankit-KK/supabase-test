@@ -7,10 +7,8 @@ import { Label } from '@/components/ui/label';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { load } from '@cashfreepayments/cashfree-js';
 import EnhancedVoiceRecorder from '@/components/EnhancedVoiceRecorder';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
-import { PhoneDialog } from '@/components/PhoneDialog';
 import { Zap } from 'lucide-react';
 
 const thunderxBanner = '/lovable-uploads/thunderx-banner.jpg';
@@ -24,11 +22,7 @@ const ThunderX = () => {
   });
   const [donationType, setDonationType] = useState<'text' | 'voice' | 'hyperemote'>('text');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [cashfree, setCashfree] = useState<any>(null);
-  const [sdkLoading, setSdkLoading] = useState(true);
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [phoneError, setPhoneError] = useState('');
-  const [isPhoneDialogOpen, setIsPhoneDialogOpen] = useState(false);
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [streamerSettings, setStreamerSettings] = useState<{ hyperemotes_enabled: boolean; hyperemotes_min_amount: number } | null>(null);
   const navigate = useNavigate();
 
@@ -43,18 +37,18 @@ const ThunderX = () => {
   const voiceRecorder = useVoiceRecorder(getVoiceDuration(currentAmount));
 
   useEffect(() => {
-    const initializeCashfree = async () => {
-      try {
-        setSdkLoading(true);
-        const cashfreeInstance = await load({ mode: 'production' });
-        setCashfree(cashfreeInstance);
+    const loadRazorpay = () => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => {
+        setRazorpayLoaded(true);
         toast.success('Payment system ready');
-      } catch (error) {
-        console.error('Failed to initialize Cashfree:', error);
-        toast.error('Payment system initialization failed');
-      } finally {
-        setSdkLoading(false);
-      }
+      };
+      script.onerror = () => {
+        toast.error('Failed to load payment system');
+      };
+      document.body.appendChild(script);
     };
 
     const fetchStreamerSettings = async () => {
@@ -67,7 +61,7 @@ const ThunderX = () => {
       }
     };
 
-    initializeCashfree();
+    loadRazorpay();
     fetchStreamerSettings();
   }, []);
 
@@ -113,17 +107,7 @@ const ThunderX = () => {
       return;
     }
 
-    setIsPhoneDialogOpen(true);
-  };
-
-  const handlePaymentWithPhone = async () => {
-    if (!phoneNumber || phoneNumber.length !== 10) {
-      setPhoneError('Please enter a valid 10-digit phone number');
-      return;
-    }
-    setPhoneError('');
     setIsProcessingPayment(true);
-    setIsPhoneDialogOpen(false);
 
     try {
       let voiceMessageUrl = null;
@@ -145,12 +129,11 @@ const ThunderX = () => {
         voiceMessageUrl = uploadData.url;
       }
 
-      const { data, error } = await supabase.functions.invoke('create-payment-order-thunderx', {
+      const { data, error } = await supabase.functions.invoke('create-razorpay-order-thunderx', {
         body: {
           name: formData.name,
           amount: formData.amount,
           message: formData.message,
-          phone: phoneNumber,
           voiceMessageUrl,
           isHyperemote: donationType === 'hyperemote'
         }
@@ -158,40 +141,46 @@ const ThunderX = () => {
 
       if (error) throw error;
 
-      if (!cashfree) {
-        toast.error('Payment system not initialized');
+      if (!razorpayLoaded || !(window as any).Razorpay) {
+        toast.error('Payment system not ready. Please refresh the page.');
         setIsProcessingPayment(false);
         return;
       }
 
-      const checkoutOptions = {
-        paymentSessionId: data.payment_session_id,
-        redirectTarget: "_modal"
+      const options = {
+        key: data.razorpay_key_id,
+        amount: data.amount,
+        currency: 'INR',
+        name: 'HyperChat - THUNDERX',
+        description: donationType === 'hyperemote' ? 'Thunder Rain Effect' : 
+                     donationType === 'voice' ? 'Voice Message' : 'Text Message',
+        order_id: data.razorpay_order_id,
+        prefill: {
+          name: formData.name
+        },
+        theme: {
+          color: '#10b981'
+        },
+        handler: (response: any) => {
+          console.log('Payment successful:', response);
+          navigate(`/status?order_id=${data.order_id}&status=success`);
+        },
+        modal: {
+          ondismiss: () => {
+            console.log('Payment modal closed');
+            navigate(`/status?order_id=${data.order_id}&status=pending`);
+            setIsProcessingPayment(false);
+          }
+        }
       };
 
-      setTimeout(async () => {
-        try {
-          const result = await cashfree.checkout(checkoutOptions);
-          if (result.error) {
-            navigate(`/status?order_id=${data.order_id}&status=pending`);
-          } else if (result.paymentDetails) {
-            navigate(`/status?order_id=${data.order_id}&status=success`);
-          } else {
-            navigate(`/status?order_id=${data.order_id}&status=pending`);
-          }
-        } catch (checkoutError) {
-          console.error('Checkout error:', checkoutError);
-          navigate(`/status?order_id=${data.order_id}&status=pending`);
-        } finally {
-          setIsProcessingPayment(false);
-        }
-      }, 100);
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
 
     } catch (error) {
       console.error('Payment error:', error);
       toast.error('Failed to process payment. Please try again.');
       setIsProcessingPayment(false);
-      setIsPhoneDialogOpen(true);
     }
   };
 
@@ -400,24 +389,13 @@ const ThunderX = () => {
                 background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                 border: '2px solid rgba(16, 185, 129, 0.3)'
               }}
-              disabled={isProcessingPayment || sdkLoading}
+              disabled={isProcessingPayment || !razorpayLoaded}
             >
               {isProcessingPayment ? 'Processing...' : `Donate ₹${formData.amount || '0'}`}
             </Button>
           </form>
         </CardContent>
       </Card>
-
-      <PhoneDialog
-        open={isPhoneDialogOpen}
-        onOpenChange={setIsPhoneDialogOpen}
-        phoneNumber={phoneNumber}
-        onPhoneChange={setPhoneNumber}
-        phoneError={phoneError}
-        onContinue={handlePaymentWithPhone}
-        isSubmitting={isProcessingPayment}
-        buttonColor="#10b981"
-      />
     </div>
   );
 };
