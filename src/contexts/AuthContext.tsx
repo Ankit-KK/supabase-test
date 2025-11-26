@@ -38,9 +38,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           const { data, error } = await supabase.rpc('validate_session_token', { token });
           if (!error && data && data.length > 0) {
-            const userData = data[0] as any; // Type cast needed as DB returns 'id' but types show 'user_id'
+          const userData = data[0] as any; // Type cast needed as DB returns 'user_id'
             setUser({
-              id: userData.id,
+              id: userData.user_id,
               email: userData.email,
               username: userData.username,
               role: userData.role
