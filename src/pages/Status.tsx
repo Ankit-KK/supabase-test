@@ -27,6 +27,7 @@ export default function Status() {
           if (orderId.startsWith('thunderx_') || orderId.startsWith('tx_rp_')) return 'check-payment-status-thunderx';
           if (orderId.startsWith('vb_rp_')) return 'check-payment-status-vipbhai';
           if (orderId.startsWith('sug_rp_')) return 'check-payment-status-sagarujjwalgaming';
+          if (orderId.startsWith('nyk_rp_')) return 'check-payment-status-notyourkween';
           if (orderId.startsWith('musicstream_')) return 'check-payment-status';
           if (orderId.startsWith('techgamer_')) return 'check-payment-status';
           if (orderId.startsWith('fitnessflow_')) return 'check-payment-status';
@@ -92,7 +93,7 @@ export default function Status() {
         if (backendStatus === 'success') {
           const shouldSkipVoiceUpload = (orderId: string) => {
             // Razorpay streamers upload voice messages before payment via upload-voice-message-direct
-            if (orderId.startsWith('ak_rp_') || orderId.startsWith('tx_rp_') || orderId.startsWith('vb_rp_') || orderId.startsWith('sug_rp_')) return true;
+            if (orderId.startsWith('ak_rp_') || orderId.startsWith('tx_rp_') || orderId.startsWith('vb_rp_') || orderId.startsWith('sug_rp_') || orderId.startsWith('nyk_rp_')) return true;
             if (orderId.startsWith('ankit_razorpay_') || orderId.startsWith('thunderx_razorpay_')) return true;
             return false;
           };
@@ -226,6 +227,7 @@ export default function Status() {
                 if (orderId.startsWith('thunderx_') || orderId.startsWith('tx_rp_')) return "/thunderx";
                 if (orderId.startsWith('vb_rp_')) return "/vipbhai";
                 if (orderId.startsWith('sug_rp_')) return "/sagarujjwalgaming";
+                if (orderId.startsWith('nyk_rp_')) return "/notyourkween";
                 if (orderId.startsWith('musicstream_')) return "/music_stream";
                 if (orderId.startsWith('techgamer_')) return "/tech_gamer";
                 if (orderId.startsWith('sizzors_')) return "/sizzors";

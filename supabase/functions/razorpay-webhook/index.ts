@@ -108,7 +108,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // Determine table based on order ID prefix (supports both old and new formats)
-    let streamerType: 'ankit' | 'thunderx' | 'vipbhai' | 'sagarujjwalgaming'
+    let streamerType: 'ankit' | 'thunderx' | 'vipbhai' | 'sagarujjwalgaming' | 'notyourkween'
     let tableName: string
     
     // Get donation from the appropriate table using Razorpay order ID
@@ -163,7 +163,20 @@ serve(async (req) => {
             streamerType = 'sagarujjwalgaming'
             tableName = 'sagarujjwalgaming_donations'
           } else {
-            fetchError = ankitResult.error || thunderxResult.error || vipbhaiResult.error || sagarujjwalgamingResult.error
+            // Try notyourkween
+            const notyourkweenResult = await supabase
+              .from('notyourkween_donations')
+              .select('*')
+              .eq('razorpay_order_id', razorpayOrderId)
+              .maybeSingle()
+            
+            if (notyourkweenResult.data) {
+              donation = notyourkweenResult.data
+              streamerType = 'notyourkween'
+              tableName = 'notyourkween_donations'
+            } else {
+              fetchError = ankitResult.error || thunderxResult.error || vipbhaiResult.error || sagarujjwalgamingResult.error || notyourkweenResult.error
+            }
           }
         }
       }

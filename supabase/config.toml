@@ -83,5 +83,11 @@ verify_jwt = false
 [functions.check-payment-status-sagarujjwalgaming]
 verify_jwt = false
 
+[functions.create-razorpay-order-notyourkween]
+verify_jwt = false
+
+[functions.check-payment-status-notyourkween]
+verify_jwt = false
+
 [functions.razorpay-webhook]
 verify_jwt = false
