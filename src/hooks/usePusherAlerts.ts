@@ -109,6 +109,13 @@ export function usePusherAlerts(config: PusherAlertsConfig) {
 
   // Initialize Pusher connection
   useEffect(() => {
+    // Don't initialize if credentials are not yet loaded
+    if (!pusherKey || !pusherCluster) {
+      console.log('[PusherAlerts] Waiting for Pusher credentials...');
+      setConnectionStatus('connecting');
+      return;
+    }
+
     console.log('[PusherAlerts] Initializing Pusher connection...');
     
     // Enable Pusher logging in development
