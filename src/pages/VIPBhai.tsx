@@ -190,20 +190,16 @@ const VIPBhai = () => {
       <div className="absolute inset-0 bg-black/40" />
       
       <div className="relative z-10 container mx-auto px-4 py-8 flex items-center justify-center min-h-screen">
-        <Card className="w-full max-w-[21rem] bg-background/95 border-2 border-amber-500/50 shadow-2xl backdrop-blur-md">
+        <Card 
+          className="w-full max-w-[21rem] border-2 border-amber-500/50 shadow-2xl backdrop-blur-md overflow-hidden relative bg-cover bg-center"
+          style={{ backgroundImage: `url(${vipbhaiLogo})` }}
+        >
+          <div className="absolute inset-0 bg-background/90 backdrop-blur-sm" />
+          <div className="relative z-10">
           <CardHeader className="text-center pb-4 space-y-3">
-            <div className="flex justify-center">
-              <div className="w-20 h-20 rounded-full overflow-hidden ring-4 ring-amber-400/50 shadow-xl">
-                <img 
-                  src={vipbhaiLogo} 
-                  alt="VIP BHAI" 
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
             <div>
-              <CardTitle className="text-2xl font-bold text-amber-100">VIP BHAI</CardTitle>
-              <p className="text-xs text-amber-300 mt-1">Premium Engagement Platform</p>
+              <CardTitle className="text-2xl font-bold text-foreground">VIP BHAI</CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">Premium Engagement Platform</p>
             </div>
           </CardHeader>
 
@@ -351,6 +347,7 @@ const VIPBhai = () => {
               </Button>
             </form>
           </CardContent>
+          </div>
         </Card>
       </div>
     </div>
