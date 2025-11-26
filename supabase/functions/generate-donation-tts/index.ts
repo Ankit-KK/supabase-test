@@ -138,6 +138,7 @@ serve(async (req) => {
       'damask_plays': 'damask_plays_donations',
       'neko_xenpai': 'neko_xenpai_donations',
       'thunderx': 'thunderx_donations',
+      'sagarujjwalgaming': 'sagarujjwalgaming_donations',
     };
 
     const donationTable = donationTableMap[streamerSlug];
