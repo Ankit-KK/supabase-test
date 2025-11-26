@@ -153,7 +153,7 @@ const ThunderX = () => {
         currency: 'INR',
         name: 'HyperChat - THUNDERX',
         description: donationType === 'hyperemote' ? 'Thunder Rain Effect' : 
-                     donationType === 'voice' ? 'Voice Message' : 'Text Message',
+                     donationType === 'voice' ? 'Voice Interactions' : 'Text Interactions',
         order_id: data.razorpay_order_id,
         prefill: {
           name: formData.name
@@ -269,7 +269,7 @@ const ThunderX = () => {
                 >
                   <div className="text-center">
                     <div className="text-2xl mb-0.5">💬</div>
-                    <div className="font-medium text-[10px]">Text Message</div>
+                    <div className="font-medium text-[10px]">Text Interactions</div>
                     <div className="text-[9px]">Min: ₹40</div>
                   </div>
                 </button>
@@ -285,7 +285,7 @@ const ThunderX = () => {
                 >
                   <div className="text-center">
                     <div className="text-2xl mb-0.5">🎤</div>
-                    <div className="font-medium text-[10px]">Voice Message</div>
+                    <div className="font-medium text-[10px]">Voice Interactions</div>
                     <div className="text-[9px]">Min: ₹150</div>
                   </div>
                 </button>
@@ -391,7 +391,7 @@ const ThunderX = () => {
               }}
               disabled={isProcessingPayment || !razorpayLoaded}
             >
-              {isProcessingPayment ? 'Processing...' : `Donate ₹${formData.amount || '0'}`}
+              {isProcessingPayment ? 'Processing...' : `Pay ₹${formData.amount || '0'}`}
             </Button>
           </form>
         </CardContent>
