@@ -194,7 +194,7 @@ const VIPBhai = () => {
           className="w-full max-w-[21rem] border-2 border-amber-500/50 shadow-2xl backdrop-blur-md overflow-hidden relative bg-cover bg-center"
           style={{ backgroundImage: `url(${vipbhaiLogo})` }}
         >
-          <div className="absolute inset-0 bg-background/75 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-background/50" />
           <div className="relative z-10">
           <CardHeader className="text-center pb-4 space-y-3">
             <div>
