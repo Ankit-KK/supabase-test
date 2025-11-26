@@ -21,9 +21,10 @@ export default function Status() {
       }
 
       try {
-        // Determine which function to call based on order ID prefix
+        // Determine which function to call based on order ID prefix (supports both old and new formats)
         const getCheckPaymentFunction = (orderId: string) => {
-          if (orderId.startsWith('ankit_')) return 'check-payment-status-ankit';
+          if (orderId.startsWith('ankit_') || orderId.startsWith('ak_rp_')) return 'check-payment-status-ankit';
+          if (orderId.startsWith('thunderx_') || orderId.startsWith('tx_rp_')) return 'check-payment-status-thunderx';
           if (orderId.startsWith('musicstream_')) return 'check-payment-status';
           if (orderId.startsWith('techgamer_')) return 'check-payment-status';
           if (orderId.startsWith('fitnessflow_')) return 'check-payment-status';
@@ -89,7 +90,8 @@ export default function Status() {
             try {
             console.log('Payment successful, checking for voice message upload...');
             const getVoiceUploadFunction = (orderId: string) => {
-              if (orderId.startsWith('ankit_')) return 'upload-voice-message-ankit';
+              if (orderId.startsWith('ankit_') || orderId.startsWith('ak_rp_')) return 'upload-voice-message-ankit';
+              if (orderId.startsWith('thunderx_') || orderId.startsWith('tx_rp_')) return 'upload-voice-message-thunderx';
               if (orderId.startsWith('musicstream_')) return 'upload-voice-message-musicstream';
               if (orderId.startsWith('techgamer_')) return 'upload-voice-message-techgamer';
               if (orderId.startsWith('sizzors_')) return 'upload-voice-message-sizzors';
@@ -208,7 +210,8 @@ export default function Status() {
             <Button asChild className="w-full">
               <Link to={(() => {
                 if (!orderId) return "/";
-                if (orderId.startsWith('ankit_')) return "/ankit";
+                if (orderId.startsWith('ankit_') || orderId.startsWith('ak_rp_')) return "/ankit";
+                if (orderId.startsWith('thunderx_') || orderId.startsWith('tx_rp_')) return "/thunderx";
                 if (orderId.startsWith('musicstream_')) return "/music_stream";
                 if (orderId.startsWith('techgamer_')) return "/tech_gamer";
                 if (orderId.startsWith('sizzors_')) return "/sizzors";

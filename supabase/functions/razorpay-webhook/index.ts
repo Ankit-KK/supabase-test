@@ -63,18 +63,27 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Get donation from database using Razorpay order ID
-    // First try ankit_donations
-    let { data: donation, error: fetchError } = await supabase
+    // Determine table based on order ID prefix (supports both old and new formats)
+    let streamerType: 'ankit' | 'thunderx'
+    let tableName: string
+    
+    // Get donation from the appropriate table using Razorpay order ID
+    let donation: any
+    let fetchError: any
+    
+    // Try ankit first (check both old and new prefixes)
+    const ankitResult = await supabase
       .from('ankit_donations')
       .select('*')
       .eq('razorpay_order_id', razorpayOrderId)
       .maybeSingle()
-
-    // If not found, try thunderx_donations
-    let streamerType = 'ankit'
-    let tableName = 'ankit_donations'
-    if (!donation) {
+    
+    if (ankitResult.data) {
+      donation = ankitResult.data
+      streamerType = 'ankit'
+      tableName = 'ankit_donations'
+    } else {
+      // Try thunderx (check both old and new prefixes)
       const thunderxResult = await supabase
         .from('thunderx_donations')
         .select('*')
@@ -85,6 +94,8 @@ serve(async (req) => {
         donation = thunderxResult.data
         streamerType = 'thunderx'
         tableName = 'thunderx_donations'
+      } else {
+        fetchError = ankitResult.error || thunderxResult.error
       }
     }
 
