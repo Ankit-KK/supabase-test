@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Zap } from 'lucide-react';
+import { Music } from 'lucide-react';
 
 interface Donation {
   id: string;
@@ -212,40 +212,31 @@ export const ThunderXAlertDisplay: React.FC<ThunderXAlertDisplayProps> = ({
 
   // Regular Donation Alert
   return (
-    <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 w-11/12 max-w-2xl z-50 pointer-events-none">
+    <div className="fixed inset-0 pointer-events-none z-50">
       <div 
-        className="relative px-8 py-6 rounded-2xl shadow-2xl backdrop-blur-sm"
+        className="absolute bottom-[10%] left-1/2 -translate-x-1/2 text-white text-center flex flex-col items-center gap-1.5 px-8 py-4 rounded-xl"
         style={{
-          background: `linear-gradient(135deg, ${streamerBrandColor}15 0%, ${streamerBrandColor}25 100%)`,
-          border: `2px solid ${streamerBrandColor}40`,
-          boxShadow: `0 8px 32px ${streamerBrandColor}30, inset 0 0 20px ${streamerBrandColor}10`
+          background: 'linear-gradient(90deg, rgba(0, 122, 255, 0.6), rgba(144, 0, 255, 0.6))',
+          boxShadow: '0 0 25px rgba(144, 0, 255, 0.4)',
+          letterSpacing: '0.4px',
         }}
       >
-        <div className="flex items-center gap-4 mb-3">
-          <div className="text-3xl font-black tracking-tight" 
-            style={{ color: streamerBrandColor }}>
-            {donation.name}
-          </div>
-          <div className="text-2xl font-bold px-4 py-1 rounded-full"
-            style={{ background: streamerBrandColor, color: '#000' }}>
-            ₹{donation.amount}
-          </div>
+        <div className="text-[1.2rem]">
+          <span className="font-bold">{donation.name}</span> donated{' '}
+          <span className="font-bold">₹{donation.amount}</span>
         </div>
 
         {donation.voice_message_url && (
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium mb-2"
-            style={{ background: `${streamerBrandColor}20`, color: streamerBrandColor }}>
-            🎤 Voice Message
+          <div className="inline-flex items-center gap-2 text-sm">
+            <Music className="w-4 h-4" />
+            <span>🎵 Voice Message</span>
           </div>
         )}
 
         {(donation.message || isTyping) && (
-          <div className="text-xl text-white font-medium leading-relaxed">
-            {displayedMessage}
-            {isTyping && (
-              <span className="inline-block w-1 h-5 ml-1 animate-pulse"
-                style={{ background: streamerBrandColor }} />
-            )}
+          <div className="text-base font-normal min-h-[1.2em]" style={{ opacity: 0.9, color: '#f9f9f9' }}>
+            "{donation.voice_message_url ? donation.message : displayedMessage}"
+            {isTyping && <span className="animate-pulse ml-1">|</span>}
           </div>
         )}
       </div>
