@@ -108,7 +108,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // Determine table based on order ID prefix (supports both old and new formats)
-    let streamerType: 'ankit' | 'thunderx' | 'vipbhai'
+    let streamerType: 'ankit' | 'thunderx' | 'vipbhai' | 'sagarujjwalgaming'
     let tableName: string
     
     // Get donation from the appropriate table using Razorpay order ID
@@ -151,7 +151,20 @@ serve(async (req) => {
           streamerType = 'vipbhai'
           tableName = 'vipbhai_donations'
         } else {
-          fetchError = ankitResult.error || thunderxResult.error || vipbhaiResult.error
+          // Try sagarujjwalgaming
+          const sagarujjwalgamingResult = await supabase
+            .from('sagarujjwalgaming_donations')
+            .select('*')
+            .eq('razorpay_order_id', razorpayOrderId)
+            .maybeSingle()
+          
+          if (sagarujjwalgamingResult.data) {
+            donation = sagarujjwalgamingResult.data
+            streamerType = 'sagarujjwalgaming'
+            tableName = 'sagarujjwalgaming_donations'
+          } else {
+            fetchError = ankitResult.error || thunderxResult.error || vipbhaiResult.error || sagarujjwalgamingResult.error
+          }
         }
       }
     }
@@ -232,6 +245,8 @@ serve(async (req) => {
         ? ['thunderx-alerts', 'thunderx-dashboard'] 
         : streamerType === 'vipbhai'
         ? ['vipbhai-alerts', 'vipbhai-dashboard']
+        : streamerType === 'sagarujjwalgaming'
+        ? ['sagarujjwalgaming-alerts', 'sagarujjwalgaming-dashboard']
         : ['ankit-alerts', 'ankit-dashboard']
       
       await sendPusherEvent(alertChannels, 'new-donation', {
@@ -279,6 +294,8 @@ serve(async (req) => {
               ? ['thunderx-audio'] 
               : streamerType === 'vipbhai'
               ? ['vipbhai-audio']
+              : streamerType === 'sagarujjwalgaming'
+              ? ['sagarujjwalgaming-audio']
               : ['ankit-audio']
             await sendPusherEvent(audioChannel, 'new-audio-message', {
               id: donation.id,
@@ -332,6 +349,8 @@ serve(async (req) => {
                 ? ['thunderx-audio'] 
                 : streamerType === 'vipbhai'
                 ? ['vipbhai-audio']
+                : streamerType === 'sagarujjwalgaming'
+                ? ['sagarujjwalgaming-audio']
                 : ['ankit-audio']
               await sendPusherEvent(audioChannel, 'new-audio-message', {
                 id: donation.id,
