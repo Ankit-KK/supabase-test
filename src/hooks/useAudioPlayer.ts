@@ -71,17 +71,16 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
     }
   });
 
-  // Fetch only very recent unplayed donations (last 2 minutes)
+  // Fetch only unplayed donations created after page opened
   useEffect(() => {
     const fetchRecentUnplayed = async () => {
-      const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
-      console.log('📥 Fetching recent unplayed donations (last 2 minutes)...');
+      console.log('📥 Fetching unplayed donations created after page opened...');
       
       const { data, error } = await supabase
         .from(tableName)
         .select('*')
         .is('audio_played_at', null)
-        .gte('created_at', twoMinutesAgo)
+        .gte('created_at', pageOpenedAt)
         .in('moderation_status', ['approved', 'auto_approved'])
         .eq('payment_status', 'success')
         .or('voice_message_url.not.is.null,tts_audio_url.not.is.null,message.not.is.null')

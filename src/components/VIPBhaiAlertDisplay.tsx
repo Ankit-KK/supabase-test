@@ -1,188 +1,244 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import AnimatedText from './AnimatedText';
+import { Music } from 'lucide-react';
 
 interface Donation {
   id: string;
   name: string;
   amount: number;
-  message: string | null;
+  message: string;
+  voice_message_url?: string;
+  created_at: string;
   is_hyperemote: boolean;
-  voice_message_url: string | null;
+  selected_gif_id?: string;
 }
 
 interface VIPBhaiAlertDisplayProps {
   donation: Donation | null;
+  isVisible: boolean;
+  streamerBrandColor?: string;
+  streamerName?: string;
 }
 
-const VIPBhaiAlertDisplay: React.FC<VIPBhaiAlertDisplayProps> = ({ donation }) => {
-  const [gifUrls, setGifUrls] = useState<string[]>([]);
-  const [showAlert, setShowAlert] = useState(false);
+export const VIPBhaiAlertDisplay: React.FC<VIPBhaiAlertDisplayProps> = ({
+  donation,
+  isVisible,
+  streamerBrandColor = '#f59e0b',
+  streamerName = 'VIP BHAI'
+}) => {
+  const [displayedMessage, setDisplayedMessage] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [availableGifs, setAvailableGifs] = useState<{ name: string; url: string }[]>([]);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const donationIdRef = useRef<string | null>(null);
 
-  // Handle null donation
-  if (!donation) {
-    return null;
-  }
-
+  // Fetch GIFs from storage
   useEffect(() => {
     const fetchGifs = async () => {
-      if (!donation.is_hyperemote) return;
-      
-      const { data, error } = await supabase.storage
-        .from('vipbhai-gifs')
-        .list('', { limit: 100 });
+      try {
+        const { data, error } = await supabase.storage
+          .from('vipbhai-gifs')
+          .list();
 
-      if (!error && data) {
-        const gifs = data
-          .filter(file => file.name.match(/\.(gif|png|jpg|jpeg)$/i))
-          .map(file => {
-            const { data: { publicUrl } } = supabase.storage
-              .from('vipbhai-gifs')
-              .getPublicUrl(file.name);
-            return publicUrl;
-          });
-        setGifUrls(gifs);
+        if (error) {
+          console.error('Error fetching GIFs:', error);
+          return;
+        }
+
+        if (data) {
+          const gifs = data
+            .filter(file => file.name.endsWith('.gif'))
+            .map(file => ({
+              name: file.name,
+              url: supabase.storage.from('vipbhai-gifs').getPublicUrl(file.name).data.publicUrl
+            }));
+          setAvailableGifs(gifs);
+          console.log('Loaded GIFs for VIP BHAI:', gifs);
+        }
+      } catch (err) {
+        console.error('Failed to fetch GIFs:', err);
       }
     };
 
     fetchGifs();
-    setShowAlert(true);
+  }, []);
 
-    return () => setShowAlert(false);
-  }, [donation.is_hyperemote]);
+  // Typing effect for text messages
+  useEffect(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
 
-  if (donation.is_hyperemote && gifUrls.length > 0) {
+    setDisplayedMessage('');
+    setIsTyping(false);
+
+    if (!donation?.message || !isVisible) {
+      return;
+    }
+
+    if (donationIdRef.current !== donation.id) {
+      donationIdRef.current = donation.id;
+    }
+
+    // Voice messages show full text immediately
+    if (donation.voice_message_url) {
+      setDisplayedMessage(donation.message);
+      return;
+    }
+
+    // Text messages get typing animation
+    setIsTyping(true);
+    let index = 0;
+    const message = donation.message;
+    
+    intervalRef.current = setInterval(() => {
+      if (donationIdRef.current !== donation.id) {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+        return;
+      }
+
+      if (index < message.length) {
+        setDisplayedMessage(message.substring(0, index + 1));
+        index++;
+      } else {
+        setIsTyping(false);
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+      }
+    }, 50); // 50ms per character
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [donation?.id, donation?.message, donation?.voice_message_url, isVisible]);
+
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, []);
+
+  if (!donation || !isVisible) {
+    return null;
+  }
+
+  // Helper to get GIF for rain
+  const getGifForRain = () => {
+    if (donation.selected_gif_id && availableGifs.length > 0) {
+      const selectedGif = availableGifs.find(gif => gif.name === donation.selected_gif_id);
+      if (selectedGif) return [selectedGif.url];
+    }
+    return availableGifs.map(gif => gif.url);
+  };
+
+  // Hyperemote Rain Effect
+  if (donation.is_hyperemote) {
+    const animations = ['floatUp', 'floatUpLeft', 'floatUpRight', 'spiralUp'];
+    const gifsToShow = getGifForRain();
+    
     return (
-      <div className="fixed inset-0 w-screen h-screen overflow-hidden pointer-events-none">
-        {Array.from({ length: 30 }).map((_, i) => {
-          const randomGif = gifUrls[Math.floor(Math.random() * gifUrls.length)];
-          const startX = Math.random() * 100;
-          const animations = ['floatUp', 'floatUpLeft', 'floatUpRight', 'spiralUp'];
-          const animation = animations[i % animations.length];
-          const duration = 8 + Math.random() * 4;
-          const delay = Math.random() * 2;
-          const size = 80 + Math.random() * 80;
-
-          return (
-            <img
-              key={`gif-${i}`}
-              src={randomGif}
-              alt="Celebration"
-              className="absolute"
-              style={{
-                left: `${startX}%`,
-                bottom: '-120px',
-                width: `${size}px`,
-                height: `${size}px`,
-                objectFit: 'contain',
-                animation: `${animation} ${duration}s ease-in-out ${delay}s forwards`,
-                opacity: 0.9,
-                filter: 'drop-shadow(0 0 10px rgba(245, 158, 11, 0.5))',
-              }}
-            />
-          );
-        })}
+      <>
         <style>{`
           @keyframes floatUp {
-            0% {
-              transform: translateY(0) rotate(0deg);
-              opacity: 0;
-            }
-            10% {
-              opacity: 1;
-            }
-            90% {
-              opacity: 1;
-            }
-            100% {
-              transform: translateY(-120vh) rotate(360deg);
-              opacity: 0;
-            }
+            0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-120vh) rotate(360deg); opacity: 0; }
           }
           @keyframes floatUpLeft {
-            0% {
-              transform: translate(0, 0) rotate(0deg);
-              opacity: 0;
-            }
-            10% {
-              opacity: 1;
-            }
-            90% {
-              opacity: 1;
-            }
-            100% {
-              transform: translate(-30vw, -120vh) rotate(-360deg);
-              opacity: 0;
-            }
+            0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translate(-30vw, -120vh) rotate(-360deg); opacity: 0; }
           }
           @keyframes floatUpRight {
-            0% {
-              transform: translate(0, 0) rotate(0deg);
-              opacity: 0;
-            }
-            10% {
-              opacity: 1;
-            }
-            90% {
-              opacity: 1;
-            }
-            100% {
-              transform: translate(30vw, -120vh) rotate(360deg);
-              opacity: 0;
-            }
+            0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translate(30vw, -120vh) rotate(360deg); opacity: 0; }
           }
           @keyframes spiralUp {
-            0% {
-              transform: translate(0, 0) rotate(0deg) scale(0.5);
-              opacity: 0;
-            }
-            10% {
-              opacity: 1;
-            }
-            50% {
-              transform: translate(20vw, -60vh) rotate(720deg) scale(1);
-            }
-            90% {
-              opacity: 1;
-            }
-            100% {
-              transform: translate(-20vw, -120vh) rotate(1080deg) scale(0.8);
-              opacity: 0;
-            }
+            0% { transform: translate(0, 0) rotate(0deg) scale(0.5); opacity: 0; }
+            10% { opacity: 1; }
+            50% { transform: translate(15vw, -60vh) rotate(720deg) scale(1); }
+            90% { opacity: 1; }
+            100% { transform: translate(-15vw, -120vh) rotate(1080deg) scale(0.5); opacity: 0; }
           }
         `}</style>
-      </div>
+        
+        <div className="fixed inset-0 pointer-events-none overflow-hidden">
+          {Array.from({ length: 20 }).map((_, i) => {
+            const gif = gifsToShow[i % gifsToShow.length];
+            const animation = animations[i % animations.length];
+            const delay = Math.random() * 2;
+            const duration = 8 + Math.random() * 4;
+            const startX = Math.random() * 100;
+            const size = 80 + Math.random() * 60;
+
+            return (
+              <img
+                key={i}
+                src={gif}
+                alt="celebration"
+                className="absolute"
+                style={{
+                  left: `${startX}%`,
+                  bottom: '-150px',
+                  width: `${size}px`,
+                  height: `${size}px`,
+                  animation: `${animation} ${duration}s ease-in-out ${delay}s`,
+                  filter: 'drop-shadow(0 0 10px rgba(245, 158, 11, 0.6))',
+                  zIndex: 9999,
+                }}
+              />
+            );
+          })}
+        </div>
+      </>
     );
   }
 
+  // Regular Donation Alert
   return (
-    <div 
-      className={`fixed inset-0 flex items-center justify-center transition-opacity duration-500 ${
-        showAlert ? 'opacity-100' : 'opacity-0'
-      }`}
-    >
-      <div className="relative w-full max-w-2xl mx-auto px-8" style={{ bottom: '10%', left: '50%', transform: 'translateX(-50%)' }}>
-        <div className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-blue-600 rounded-2xl p-8 shadow-2xl border-4 border-white/30 backdrop-blur-md">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-3xl font-bold text-white">{donation.name}</span>
-              <span className="text-4xl font-bold text-amber-300">₹{donation.amount}</span>
-            </div>
-            
-            {donation.message && !donation.voice_message_url && (
-              <div className="text-white text-2xl leading-relaxed">
-                <AnimatedText text={donation.message} />
-              </div>
-            )}
-
-            {donation.voice_message_url && (
-              <div className="flex items-center gap-3 text-white text-xl">
-                <span className="text-2xl">🎤</span>
-                <span className="italic">"{donation.message || 'Voice message'}"</span>
-              </div>
-            )}
-          </div>
+    <div className="fixed inset-0 pointer-events-none z-50">
+      <div 
+        className="absolute bottom-[10%] left-1/2 -translate-x-1/2 text-white text-center flex flex-col items-center gap-1.5 px-8 py-4 rounded-xl"
+        style={{
+          background: 'linear-gradient(90deg, rgba(245, 158, 11, 0.6), rgba(234, 88, 12, 0.6))',
+          boxShadow: '0 0 25px rgba(245, 158, 11, 0.4)',
+          letterSpacing: '0.4px',
+        }}
+      >
+        <div className="text-[1.2rem]">
+          <span className="font-bold">{donation.name}</span> donated{' '}
+          <span className="font-bold">₹{donation.amount}</span>
         </div>
+
+        {donation.voice_message_url && (
+          <div className="inline-flex items-center gap-2 text-sm">
+            <Music className="w-4 h-4" />
+            <span>🎵 Voice Message</span>
+          </div>
+        )}
+
+        {(donation.message || isTyping) && (
+          <div className="text-base font-normal min-h-[1.2em]" style={{ opacity: 0.9, color: '#f9f9f9' }}>
+            "{donation.voice_message_url ? donation.message : displayedMessage}"
+            {isTyping && <span className="animate-pulse ml-1">|</span>}
+          </div>
+        )}
       </div>
     </div>
   );
