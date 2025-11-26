@@ -108,7 +108,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // Determine table based on order ID prefix (supports both old and new formats)
-    let streamerType: 'ankit' | 'thunderx' | 'vipbhai' | 'sagarujjwalgaming' | 'notyourkween' | 'bongflick'
+    let streamerType: 'ankit' | 'thunderx' | 'vipbhai' | 'sagarujjwalgaming' | 'notyourkween' | 'bongflick' | 'mriqmaster'
     let tableName: string
     
     // Get donation from the appropriate table using Razorpay order ID
@@ -187,7 +187,20 @@ serve(async (req) => {
                 streamerType = 'bongflick'
                 tableName = 'bongflick_donations'
               } else {
-                fetchError = ankitResult.error || thunderxResult.error || vipbhaiResult.error || sagarujjwalgamingResult.error || notyourkweenResult.error || bongflickResult.error
+                // Try mriqmaster
+                const mriqmasterResult = await supabase
+                  .from('mriqmaster_donations')
+                  .select('*')
+                  .eq('razorpay_order_id', razorpayOrderId)
+                  .maybeSingle()
+                
+                if (mriqmasterResult.data) {
+                  donation = mriqmasterResult.data
+                  streamerType = 'mriqmaster'
+                  tableName = 'mriqmaster_donations'
+                } else {
+                  fetchError = ankitResult.error || thunderxResult.error || vipbhaiResult.error || sagarujjwalgamingResult.error || notyourkweenResult.error || bongflickResult.error || mriqmasterResult.error
+                }
               }
             }
           }
@@ -277,6 +290,8 @@ serve(async (req) => {
         ? ['notyourkween-alerts', 'notyourkween-dashboard']
         : streamerType === 'bongflick'
         ? ['bongflick-alerts', 'bongflick-dashboard']
+        : streamerType === 'mriqmaster'
+        ? ['mriqmaster-alerts', 'mriqmaster-dashboard']
         : ['ankit-alerts', 'ankit-dashboard']
       
       await sendPusherEvent(alertChannels, 'new-donation', {
