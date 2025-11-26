@@ -212,7 +212,7 @@ const VIPBhai = () => {
                   onClick={() => setDonationType('text')}
                   className={`p-2 rounded-lg border transition-all ${
                     donationType === 'text'
-                      ? 'bg-amber-500 border-amber-400 text-white shadow-lg'
+                      ? 'bg-amber-600/80 border-amber-500/60 text-white shadow-md'
                       : 'bg-amber-900/40 border-amber-700/30 text-amber-300 hover:bg-amber-800/50'
                   }`}
                 >
@@ -231,7 +231,7 @@ const VIPBhai = () => {
                   }}
                   className={`p-2 rounded-lg border transition-all ${
                     donationType === 'voice'
-                      ? 'bg-amber-500 border-amber-400 text-white shadow-lg'
+                      ? 'bg-amber-600/80 border-amber-500/60 text-white shadow-md'
                       : 'bg-amber-900/40 border-amber-700/30 text-amber-300 hover:bg-amber-800/50'
                   }`}
                 >
@@ -247,7 +247,7 @@ const VIPBhai = () => {
                   onClick={() => setDonationType('hyperemote')}
                   className={`p-2 rounded-lg border transition-all ${
                     donationType === 'hyperemote'
-                      ? 'bg-amber-500 border-amber-400 text-white shadow-lg'
+                      ? 'bg-amber-600/80 border-amber-500/60 text-white shadow-md'
                       : 'bg-amber-900/40 border-amber-700/30 text-amber-300 hover:bg-amber-800/50'
                   }`}
                 >
