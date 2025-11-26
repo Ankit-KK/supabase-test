@@ -231,37 +231,37 @@ const MrIqmaster = () => {
                   type="button"
                   onClick={() => { setDonationType('text'); setFormData({ ...formData, amount: '40' }); }}
                   variant={donationType === 'text' ? 'default' : 'outline'}
-                  className={donationType === 'text' ? 'bg-cyan-500 hover:bg-cyan-600 border-cyan-400' : 'border-cyan-500/30 text-cyan-300 hover:bg-cyan-950/50'}
+                  className={donationType === 'text' ? 'bg-cyan-500 hover:bg-cyan-600 text-white border-cyan-400' : 'border-cyan-500/30 text-cyan-300 hover:bg-cyan-950/50 hover:text-cyan-200'}
                 >
-                  <div className="flex flex-col items-center gap-1">
+                  <div className="flex flex-col items-center gap-1 py-1">
                     <span className="text-xl">💬</span>
-                    <span className="text-xs">Text</span>
-                    <span className="text-xs">₹40+</span>
+                    <span className="text-xs font-medium">Text</span>
+                    <span className="text-[10px] opacity-90">₹40+</span>
                   </div>
                 </Button>
                 <Button
                   type="button"
                   onClick={() => { setDonationType('voice'); setFormData({ ...formData, amount: '150' }); }}
                   variant={donationType === 'voice' ? 'default' : 'outline'}
-                  className={donationType === 'voice' ? 'bg-cyan-500 hover:bg-cyan-600 border-cyan-400' : 'border-cyan-500/30 text-cyan-300 hover:bg-cyan-950/50'}
+                  className={donationType === 'voice' ? 'bg-cyan-500 hover:bg-cyan-600 text-white border-cyan-400' : 'border-cyan-500/30 text-cyan-300 hover:bg-cyan-950/50 hover:text-cyan-200'}
                 >
-                  <div className="flex flex-col items-center gap-1">
+                  <div className="flex flex-col items-center gap-1 py-1">
                     <span className="text-xl">🎤</span>
-                    <span className="text-xs">Voice</span>
-                    <span className="text-xs">₹150+</span>
+                    <span className="text-xs font-medium">Voice</span>
+                    <span className="text-[10px] opacity-90">₹150+</span>
                   </div>
                 </Button>
                 <Button
                   type="button"
                   onClick={() => { setDonationType('hyperemote'); setFormData({ ...formData, amount: '50' }); }}
                   variant={donationType === 'hyperemote' ? 'default' : 'outline'}
-                  className={donationType === 'hyperemote' ? 'bg-cyan-500 hover:bg-cyan-600 border-cyan-400' : 'border-cyan-500/30 text-cyan-300 hover:bg-cyan-950/50'}
+                  className={donationType === 'hyperemote' ? 'bg-cyan-500 hover:bg-cyan-600 text-white border-cyan-400' : 'border-cyan-500/30 text-cyan-300 hover:bg-cyan-950/50 hover:text-cyan-200'}
                   disabled={!streamerSettings?.hyperemotes_enabled}
                 >
-                  <div className="flex flex-col items-center gap-1">
+                  <div className="flex flex-col items-center gap-1 py-1">
                     <Brain className="w-5 h-5" />
-                    <span className="text-xs">Brain</span>
-                    <span className="text-xs">₹50+</span>
+                    <span className="text-xs font-medium">Brain</span>
+                    <span className="text-[10px] opacity-90">₹50+</span>
                   </div>
                 </Button>
               </div>
