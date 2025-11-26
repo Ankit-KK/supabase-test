@@ -108,7 +108,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // Determine table based on order ID prefix (supports both old and new formats)
-    let streamerType: 'ankit' | 'thunderx' | 'vipbhai' | 'sagarujjwalgaming' | 'notyourkween' | 'bongflick' | 'mriqmaster'
+    let streamerType: 'ankit' | 'thunderx' | 'vipbhai' | 'sagarujjwalgaming' | 'notyourkween' | 'bongflick' | 'mriqmaster' | 'abdevil'
     let tableName: string
     
     // Get donation from the appropriate table using Razorpay order ID
@@ -199,7 +199,20 @@ serve(async (req) => {
                   streamerType = 'mriqmaster'
                   tableName = 'mriqmaster_donations'
                 } else {
-                  fetchError = ankitResult.error || thunderxResult.error || vipbhaiResult.error || sagarujjwalgamingResult.error || notyourkweenResult.error || bongflickResult.error || mriqmasterResult.error
+                  // Try abdevil
+                  const abdevilResult = await supabase
+                    .from('abdevil_donations')
+                    .select('*')
+                    .eq('razorpay_order_id', razorpayOrderId)
+                    .maybeSingle()
+                  
+                  if (abdevilResult.data) {
+                    donation = abdevilResult.data
+                    streamerType = 'abdevil'
+                    tableName = 'abdevil_donations'
+                  } else {
+                    fetchError = ankitResult.error || thunderxResult.error || vipbhaiResult.error || sagarujjwalgamingResult.error || notyourkweenResult.error || bongflickResult.error || mriqmasterResult.error || abdevilResult.error
+                  }
                 }
               }
             }
@@ -292,6 +305,8 @@ serve(async (req) => {
         ? ['bongflick-alerts', 'bongflick-dashboard']
         : streamerType === 'mriqmaster'
         ? ['mriqmaster-alerts', 'mriqmaster-dashboard']
+        : streamerType === 'abdevil'
+        ? ['abdevil-alerts', 'abdevil-dashboard']
         : ['ankit-alerts', 'ankit-dashboard']
       
       await sendPusherEvent(alertChannels, 'new-donation', {
@@ -343,6 +358,12 @@ serve(async (req) => {
               ? ['sagarujjwalgaming-audio']
               : streamerType === 'notyourkween'
               ? ['notyourkween-audio']
+              : streamerType === 'bongflick'
+              ? ['bongflick-audio']
+              : streamerType === 'mriqmaster'
+              ? ['mriqmaster-audio']
+              : streamerType === 'abdevil'
+              ? ['abdevil-audio']
               : ['ankit-audio']
             await sendPusherEvent(audioChannel, 'new-audio-message', {
               id: donation.id,
@@ -402,6 +423,10 @@ serve(async (req) => {
                 ? ['notyourkween-audio']
                 : streamerType === 'bongflick'
                 ? ['bongflick-audio']
+                : streamerType === 'mriqmaster'
+                ? ['mriqmaster-audio']
+                : streamerType === 'abdevil'
+                ? ['abdevil-audio']
                 : ['ankit-audio']
               await sendPusherEvent(audioChannel, 'new-audio-message', {
                 id: donation.id,
