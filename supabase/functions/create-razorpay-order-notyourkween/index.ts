@@ -104,11 +104,12 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        orderId: razorpayOrder.id,
+        orderId: orderId,
+        razorpay_order_id: razorpayOrder.id,
+        razorpay_key_id: razorpayKeyId,
         amount: razorpayOrder.amount,
         currency: razorpayOrder.currency,
         internalOrderId: orderId,
-        razorpay_key_id: razorpayKeyId,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
