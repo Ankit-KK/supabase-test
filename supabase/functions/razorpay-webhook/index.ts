@@ -64,14 +64,14 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // Determine table based on order ID prefix (supports both old and new formats)
-    let streamerType: 'ankit' | 'thunderx'
+    let streamerType: 'ankit' | 'thunderx' | 'vipbhai'
     let tableName: string
     
     // Get donation from the appropriate table using Razorpay order ID
     let donation: any
     let fetchError: any
     
-    // Try ankit first (check both old and new prefixes)
+    // Try ankit first
     const ankitResult = await supabase
       .from('ankit_donations')
       .select('*')
@@ -83,7 +83,7 @@ serve(async (req) => {
       streamerType = 'ankit'
       tableName = 'ankit_donations'
     } else {
-      // Try thunderx (check both old and new prefixes)
+      // Try thunderx
       const thunderxResult = await supabase
         .from('thunderx_donations')
         .select('*')
@@ -95,7 +95,20 @@ serve(async (req) => {
         streamerType = 'thunderx'
         tableName = 'thunderx_donations'
       } else {
-        fetchError = ankitResult.error || thunderxResult.error
+        // Try vipbhai
+        const vipbhaiResult = await supabase
+          .from('vipbhai_donations')
+          .select('*')
+          .eq('razorpay_order_id', razorpayOrderId)
+          .maybeSingle()
+        
+        if (vipbhaiResult.data) {
+          donation = vipbhaiResult.data
+          streamerType = 'vipbhai'
+          tableName = 'vipbhai_donations'
+        } else {
+          fetchError = ankitResult.error || thunderxResult.error || vipbhaiResult.error
+        }
       }
     }
 
@@ -172,6 +185,8 @@ serve(async (req) => {
       // Send new-donation event to alerts and dashboard channels based on streamer type
       const alertChannels = streamerType === 'thunderx' 
         ? ['thunderx-alerts', 'thunderx-dashboard'] 
+        : streamerType === 'vipbhai'
+        ? ['vipbhai-alerts', 'vipbhai-dashboard']
         : ['ankit-alerts', 'ankit-dashboard']
       
       await sendPusherEvent(alertChannels, 'new-donation', {
@@ -215,7 +230,11 @@ serve(async (req) => {
             console.log('Announcement TTS generated successfully, sending to audio channel')
             
             // Send audio event with BOTH announcement TTS and voice URL
-            const audioChannel = streamerType === 'thunderx' ? ['thunderx-audio'] : ['ankit-audio']
+            const audioChannel = streamerType === 'thunderx' 
+              ? ['thunderx-audio'] 
+              : streamerType === 'vipbhai'
+              ? ['vipbhai-audio']
+              : ['ankit-audio']
             await sendPusherEvent(audioChannel, 'new-audio-message', {
               id: donation.id,
               name: donation.name,
@@ -264,7 +283,11 @@ serve(async (req) => {
               console.log('TTS generated successfully, sending to audio channel')
               
               // Send audio event with TTS URL
-              const audioChannel = streamerType === 'thunderx' ? ['thunderx-audio'] : ['ankit-audio']
+              const audioChannel = streamerType === 'thunderx' 
+                ? ['thunderx-audio'] 
+                : streamerType === 'vipbhai'
+                ? ['vipbhai-audio']
+                : ['ankit-audio']
               await sendPusherEvent(audioChannel, 'new-audio-message', {
                 id: donation.id,
                 name: donation.name,
