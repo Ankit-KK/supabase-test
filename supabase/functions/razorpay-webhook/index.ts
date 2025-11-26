@@ -7,6 +7,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-razorpay-signature',
 }
 
+// Mapping from streamerType to correct streamer_slug (for database lookup)
+const streamerSlugMap: Record<string, string> = {
+  'looteriyagaming': 'looteriya_gaming',
+  'damaskplays': 'damask_plays',
+  'nekoxenpai': 'neko_xenpai',
+  // Other streamers stay as-is since they match
+};
+
 // Helper function to get Pusher credentials based on streamer_slug
 async function getPusherCredentials(streamerSlug: string, supabase: any) {
   try {
@@ -301,8 +309,9 @@ serve(async (req) => {
 
     // Only trigger events and TTS for successful payments
     if (isSuccess) {
-      // Get group-specific Pusher credentials based on streamer
-      const pusherCreds = await getPusherCredentials(streamerType, supabase);
+      // Get group-specific Pusher credentials based on streamer (use correct slug for database lookup)
+      const pusherSlug = streamerSlugMap[streamerType] || streamerType;
+      const pusherCreds = await getPusherCredentials(pusherSlug, supabase);
       const pusherAppId = pusherCreds.appId!
       const pusherKey = pusherCreds.key!
       const pusherSecret = pusherCreds.secret!
@@ -347,11 +356,11 @@ serve(async (req) => {
         : streamerType === 'abdevil'
         ? ['abdevil-alerts', 'abdevil-dashboard']
         : streamerType === 'looteriyagaming'
-        ? ['looteriyagaming-alerts', 'looteriyagaming-dashboard']
+        ? ['looteriya_gaming-alerts', 'looteriya_gaming-dashboard']
         : streamerType === 'damaskplays'
-        ? ['damaskplays-alerts', 'damaskplays-dashboard']
+        ? ['damask_plays-alerts', 'damask_plays-dashboard']
         : streamerType === 'nekoxenpai'
-        ? ['nekoxenpai-alerts', 'nekoxenpai-dashboard']
+        ? ['neko_xenpai-alerts', 'neko_xenpai-dashboard']
         : ['ankit-alerts', 'ankit-dashboard']
       
       await sendPusherEvent(alertChannels, 'new-donation', {
@@ -410,11 +419,11 @@ serve(async (req) => {
               : streamerType === 'abdevil'
               ? ['abdevil-audio']
               : streamerType === 'looteriyagaming'
-              ? ['looteriyagaming-audio']
+              ? ['looteriya_gaming-audio']
               : streamerType === 'damaskplays'
-              ? ['damaskplays-audio']
+              ? ['damask_plays-audio']
               : streamerType === 'nekoxenpai'
-              ? ['nekoxenpai-audio']
+              ? ['neko_xenpai-audio']
               : ['ankit-audio']
             await sendPusherEvent(audioChannel, 'new-audio-message', {
               id: donation.id,
@@ -479,11 +488,11 @@ serve(async (req) => {
                 : streamerType === 'abdevil'
                 ? ['abdevil-audio']
                 : streamerType === 'looteriyagaming'
-                ? ['looteriyagaming-audio']
+                ? ['looteriya_gaming-audio']
                 : streamerType === 'damaskplays'
-                ? ['damaskplays-audio']
+                ? ['damask_plays-audio']
                 : streamerType === 'nekoxenpai'
-                ? ['nekoxenpai-audio']
+                ? ['neko_xenpai-audio']
                 : ['ankit-audio']
               await sendPusherEvent(audioChannel, 'new-audio-message', {
                 id: donation.id,
