@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { load } from '@cashfreepayments/cashfree-js';
+// Razorpay - loaded via script tag
 import EnhancedVoiceRecorder from '@/components/EnhancedVoiceRecorder';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { PhoneDialog } from '@/components/PhoneDialog';
@@ -24,8 +24,6 @@ const LooteriyaGaming = () => {
   });
   const [donationType, setDonationType] = useState<'text' | 'voice' | 'hyperemote'>('text');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [cashfree, setCashfree] = useState<any>(null);
-  const [sdkLoading, setSdkLoading] = useState(true);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [phoneError, setPhoneError] = useState('');
   const [isPhoneDialogOpen, setIsPhoneDialogOpen] = useState(false);
@@ -43,19 +41,11 @@ const LooteriyaGaming = () => {
   const voiceRecorder = useVoiceRecorder(getVoiceDuration(currentAmount));
 
   useEffect(() => {
-    const initializeCashfree = async () => {
-      try {
-        setSdkLoading(true);
-        const cashfreeInstance = await load({ mode: 'production' });
-        setCashfree(cashfreeInstance);
-        toast.success('Payment system ready');
-      } catch (error) {
-        console.error('Failed to initialize Cashfree:', error);
-        toast.error('Payment system initialization failed');
-      } finally {
-        setSdkLoading(false);
-      }
-    };
+    // Load Razorpay script
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    document.body.appendChild(script);
 
     const fetchStreamerSettings = async () => {
       const { data, error } = await supabase.rpc('get_streamer_public_settings', {
@@ -67,8 +57,11 @@ const LooteriyaGaming = () => {
       }
     };
 
-    initializeCashfree();
     fetchStreamerSettings();
+
+    return () => {
+      document.body.removeChild(script);
+    };
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -178,12 +171,11 @@ const LooteriyaGaming = () => {
         console.log('Voice message uploaded successfully:', voiceMessageUrl);
       }
 
-      const { data, error } = await supabase.functions.invoke('create-payment-order-looteriya-gaming', {
+      const { data, error } = await supabase.functions.invoke('create-razorpay-order-looteriya-gaming', {
         body: {
           name: formData.name,
           amount: parseFloat(formData.amount),
           message: donationType === 'text' ? formData.message : null,
-          phone: phoneNumber,
           voiceMessageUrl: voiceMessageUrl,
           isHyperemote: donationType === 'hyperemote',
         },
@@ -191,45 +183,31 @@ const LooteriyaGaming = () => {
 
       if (error) throw error;
 
-      if (!cashfree) {
-        throw new Error('Payment system not initialized');
-      }
-
-      const orderId = data.order_id;
-
-      const checkoutOptions = {
-        paymentSessionId: data.payment_session_id,
-        redirectTarget: "_modal",
-        appearance: {
-          width: "500px",
-          height: "700px"
+      // Initialize Razorpay checkout
+      const options = {
+        key: data.razorpay_key_id,
+        amount: data.amount,
+        currency: data.currency,
+        order_id: data.razorpay_order_id,
+        name: 'Looteriya Gaming',
+        description: 'Support Looteriya Gaming',
+        handler: function (response: any) {
+          console.log('Payment successful:', response);
+          navigate(`/status?order_id=${data.orderId}&status=success`);
         },
-        onSuccess: function(data: any) {
-          console.log("Payment successful:", data);
+        modal: {
+          ondismiss: function() {
+            console.log('Payment cancelled');
+            navigate(`/status?order_id=${data.orderId}&status=pending`);
+          }
         },
-        onFailure: function(data: any) {
-          console.log("Payment failed:", data);
+        theme: {
+          color: '#f59e0b'
         }
       };
 
-      // Add a small delay to ensure proper focus handling
-      setTimeout(async () => {
-        const result = await cashfree.checkout(checkoutOptions);
-        
-        // Navigate to status page based on payment result
-        if (result.error) {
-          console.log("Payment cancelled or error:", result.error);
-          navigate(`/status?order_id=${orderId}&status=pending`);
-        } else if (result.paymentDetails) {
-          console.log("Payment completed:", result.paymentDetails);
-          navigate(`/status?order_id=${orderId}&status=success`);
-        } else if (result.redirect) {
-          console.log("Payment will be redirected");
-          navigate(`/status?order_id=${orderId}&status=pending`);
-        } else {
-          navigate(`/status?order_id=${orderId}&status=pending`);
-        }
-      }, 100);
+      const razorpay = new (window as any).Razorpay(options);
+      razorpay.open();
 
     } catch (error) {
       console.error('Payment error:', error);
@@ -431,7 +409,7 @@ const LooteriyaGaming = () => {
               type="submit" 
               className="w-full font-semibold py-6"
               style={{ backgroundColor: '#f59e0b' }}
-              disabled={isProcessingPayment || sdkLoading}
+              disabled={isProcessingPayment}
             >
               {isProcessingPayment ? 'Processing...' : 'Continue to Payment'}
             </Button>

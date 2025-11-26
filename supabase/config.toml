@@ -102,5 +102,23 @@ verify_jwt = false
 [functions.check-payment-status-abdevil]
 verify_jwt = false
 
+[functions.create-razorpay-order-looteriya-gaming]
+verify_jwt = false
+
+[functions.create-razorpay-order-damask-plays]
+verify_jwt = false
+
+[functions.create-razorpay-order-neko-xenpai]
+verify_jwt = false
+
+[functions.check-payment-status-looteriya-gaming]
+verify_jwt = false
+
+[functions.check-payment-status-damask-plays]
+verify_jwt = false
+
+[functions.check-payment-status-neko-xenpai]
+verify_jwt = false
+
 [functions.razorpay-webhook]
 verify_jwt = false

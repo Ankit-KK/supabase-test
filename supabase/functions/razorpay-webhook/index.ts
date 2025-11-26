@@ -108,7 +108,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // Determine table based on order ID prefix (supports both old and new formats)
-    let streamerType: 'ankit' | 'thunderx' | 'vipbhai' | 'sagarujjwalgaming' | 'notyourkween' | 'bongflick' | 'mriqmaster' | 'abdevil'
+    let streamerType: 'ankit' | 'thunderx' | 'vipbhai' | 'sagarujjwalgaming' | 'notyourkween' | 'bongflick' | 'mriqmaster' | 'abdevil' | 'looteriyagaming' | 'damaskplays' | 'nekoxenpai'
     let tableName: string
     
     // Get donation from the appropriate table using Razorpay order ID
@@ -211,7 +211,46 @@ serve(async (req) => {
                     streamerType = 'abdevil'
                     tableName = 'abdevil_donations'
                   } else {
-                    fetchError = ankitResult.error || thunderxResult.error || vipbhaiResult.error || sagarujjwalgamingResult.error || notyourkweenResult.error || bongflickResult.error || mriqmasterResult.error || abdevilResult.error
+                    // Try looteriya_gaming
+                    const looteriyaGamingResult = await supabase
+                      .from('looteriya_gaming_donations')
+                      .select('*')
+                      .eq('razorpay_order_id', razorpayOrderId)
+                      .maybeSingle()
+                    
+                    if (looteriyaGamingResult.data) {
+                      donation = looteriyaGamingResult.data
+                      streamerType = 'looteriyagaming'
+                      tableName = 'looteriya_gaming_donations'
+                    } else {
+                      // Try damask_plays
+                      const damaskPlaysResult = await supabase
+                        .from('damask_plays_donations')
+                        .select('*')
+                        .eq('razorpay_order_id', razorpayOrderId)
+                        .maybeSingle()
+                      
+                      if (damaskPlaysResult.data) {
+                        donation = damaskPlaysResult.data
+                        streamerType = 'damaskplays'
+                        tableName = 'damask_plays_donations'
+                      } else {
+                        // Try neko_xenpai
+                        const nekoXenpaiResult = await supabase
+                          .from('neko_xenpai_donations')
+                          .select('*')
+                          .eq('razorpay_order_id', razorpayOrderId)
+                          .maybeSingle()
+                        
+                        if (nekoXenpaiResult.data) {
+                          donation = nekoXenpaiResult.data
+                          streamerType = 'nekoxenpai'
+                          tableName = 'neko_xenpai_donations'
+                        } else {
+                          fetchError = ankitResult.error || thunderxResult.error || vipbhaiResult.error || sagarujjwalgamingResult.error || notyourkweenResult.error || bongflickResult.error || mriqmasterResult.error || abdevilResult.error || looteriyaGamingResult.error || damaskPlaysResult.error || nekoXenpaiResult.error
+                        }
+                      }
+                    }
                   }
                 }
               }
@@ -307,6 +346,12 @@ serve(async (req) => {
         ? ['mriqmaster-alerts', 'mriqmaster-dashboard']
         : streamerType === 'abdevil'
         ? ['abdevil-alerts', 'abdevil-dashboard']
+        : streamerType === 'looteriyagaming'
+        ? ['looteriyagaming-alerts', 'looteriyagaming-dashboard']
+        : streamerType === 'damaskplays'
+        ? ['damaskplays-alerts', 'damaskplays-dashboard']
+        : streamerType === 'nekoxenpai'
+        ? ['nekoxenpai-alerts', 'nekoxenpai-dashboard']
         : ['ankit-alerts', 'ankit-dashboard']
       
       await sendPusherEvent(alertChannels, 'new-donation', {
@@ -364,6 +409,12 @@ serve(async (req) => {
               ? ['mriqmaster-audio']
               : streamerType === 'abdevil'
               ? ['abdevil-audio']
+              : streamerType === 'looteriyagaming'
+              ? ['looteriyagaming-audio']
+              : streamerType === 'damaskplays'
+              ? ['damaskplays-audio']
+              : streamerType === 'nekoxenpai'
+              ? ['nekoxenpai-audio']
               : ['ankit-audio']
             await sendPusherEvent(audioChannel, 'new-audio-message', {
               id: donation.id,
@@ -427,6 +478,12 @@ serve(async (req) => {
                 ? ['mriqmaster-audio']
                 : streamerType === 'abdevil'
                 ? ['abdevil-audio']
+                : streamerType === 'looteriyagaming'
+                ? ['looteriyagaming-audio']
+                : streamerType === 'damaskplays'
+                ? ['damaskplays-audio']
+                : streamerType === 'nekoxenpai'
+                ? ['nekoxenpai-audio']
                 : ['ankit-audio']
               await sendPusherEvent(audioChannel, 'new-audio-message', {
                 id: donation.id,

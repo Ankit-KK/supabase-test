@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { load } from '@cashfreepayments/cashfree-js';
+// Razorpay - loaded via script tag
 import EnhancedVoiceRecorder from '@/components/EnhancedVoiceRecorder';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { PhoneDialog } from '@/components/PhoneDialog';
@@ -23,8 +23,6 @@ const DamaskPlays = () => {
   });
   const [donationType, setDonationType] = useState<'text' | 'voice' | 'hyperemote'>('text');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [cashfree, setCashfree] = useState<any>(null);
-  const [sdkLoading, setSdkLoading] = useState(true);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [phoneError, setPhoneError] = useState('');
   const [isPhoneDialogOpen, setIsPhoneDialogOpen] = useState(false);
@@ -42,23 +40,12 @@ const DamaskPlays = () => {
   const voiceRecorder = useVoiceRecorder(getVoiceDuration(currentAmount));
 
   useEffect(() => {
-    const initializeCashfree = async () => {
-      try {
-        setSdkLoading(true);
-        const cashfreeInstance = await load({ mode: 'production' });
-        setCashfree(cashfreeInstance);
-      } catch (error) {
-        console.error('Failed to load Cashfree SDK:', error);
-        toast.error('Failed to initialize payment system');
-      } finally {
-        setSdkLoading(false);
-      }
-    };
+    // Load Razorpay script
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    document.body.appendChild(script);
 
-    initializeCashfree();
-  }, []);
-
-  useEffect(() => {
     const fetchStreamerSettings = async () => {
       try {
         const { data, error } = await supabase.rpc('get_streamer_public_settings', {
@@ -79,6 +66,10 @@ const DamaskPlays = () => {
     };
 
     fetchStreamerSettings();
+
+    return () => {
+      document.body.removeChild(script);
+    };
   }, []);
 
   const validatePhoneNumber = (phone: string): boolean => {
@@ -200,39 +191,47 @@ const DamaskPlays = () => {
         console.log('Voice message uploaded successfully:', voiceMessageUrl);
       }
 
-      const response = await fetch(
-        'https://vsevsjvtrshgeiudrnth.supabase.co/functions/v1/create-payment-order-damask-plays',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: formData.name,
-            amount: parseFloat(formData.amount),
-            message: donationType === 'text' ? formData.message : null,
-            voiceMessageUrl: voiceMessageUrl,
-            isHyperemote: donationType === 'hyperemote',
-            phone: phoneNumber,
-          }),
-        }
-      );
+      const response = await supabase.functions.invoke('create-razorpay-order-damask-plays', {
+        body: {
+          name: formData.name,
+          amount: parseFloat(formData.amount),
+          message: donationType === 'text' ? formData.message : null,
+          voiceMessageUrl: voiceMessageUrl,
+          isHyperemote: donationType === 'hyperemote',
+        },
+      });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Payment initialization failed');
+      if (response.error) {
+        throw new Error(response.error.message || 'Payment initialization failed');
       }
 
-      const { payment_session_id, order_id } = await response.json();
+      const data = response.data;
 
-      const checkoutOptions = {
-        paymentSessionId: payment_session_id,
-        redirectTarget: '_self',
+      // Initialize Razorpay checkout
+      const options = {
+        key: data.razorpay_key_id,
+        amount: data.amount,
+        currency: data.currency,
+        order_id: data.razorpay_order_id,
+        name: 'Damask Plays',
+        description: 'Support Damask Plays',
+        handler: function (response: any) {
+          console.log('Payment successful:', response);
+          navigate(`/status?order_id=${data.orderId}&status=success`);
+        },
+        modal: {
+          ondismiss: function() {
+            console.log('Payment cancelled');
+            navigate(`/status?order_id=${data.orderId}&status=pending`);
+          }
+        },
+        theme: {
+          color: '#10b981'
+        }
       };
 
-      if (cashfree) {
-        cashfree.checkout(checkoutOptions);
-      }
+      const razorpay = new (window as any).Razorpay(options);
+      razorpay.open();
     } catch (error: any) {
       console.error('Payment error:', error);
       toast.error(error.message || 'Failed to process payment. Please try again.');
@@ -442,7 +441,7 @@ const DamaskPlays = () => {
             <Button 
               type="submit" 
               className="w-full bg-emerald-500 hover:bg-emerald-600"
-              disabled={sdkLoading || isProcessingPayment}
+              disabled={isProcessingPayment}
             >
               {isProcessingPayment ? 'Processing...' : 'Continue to Payment'}
             </Button>
