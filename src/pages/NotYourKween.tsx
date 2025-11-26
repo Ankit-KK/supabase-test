@@ -1,273 +1,354 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Crown } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import SimpleVoiceRecorder from "@/components/SimpleVoiceRecorder";
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import EnhancedVoiceRecorder from '@/components/EnhancedVoiceRecorder';
+import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
+import { Crown } from 'lucide-react';
 
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
-}
+const notyourkweenBanner = '/lovable-uploads/notyourkween-banner.jpg';
+const notyourkweenLogo = '/lovable-uploads/notyourkween-logo.jpg';
 
 const NotYourKween = () => {
+  const [formData, setFormData] = useState({
+    name: '',
+    amount: '',
+    message: '',
+  });
+  const [donationType, setDonationType] = useState<'text' | 'voice' | 'hyperemote'>('text');
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
+  const [streamerSettings, setStreamerSettings] = useState<{ hyperemotes_enabled: boolean; hyperemotes_min_amount: number } | null>(null);
   const navigate = useNavigate();
-  const [name, setName] = useState("");
-  const [amount, setAmount] = useState("");
-  const [message, setMessage] = useState("");
-  const [donationType, setDonationType] = useState<"text" | "voice" | "hyperemote">("text");
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
 
-  const getVoiceDuration = () => {
-    const amt = parseFloat(amount);
-    if (amt >= 500) return 30;
-    if (amt >= 250) return 25;
+  const getVoiceDuration = (amount: number) => {
+    if (amount >= 500) return 30;
+    if (amount >= 250) return 25;
+    if (amount >= 150) return 15;
     return 15;
   };
 
-  const getCharacterLimit = () => {
-    const amt = parseFloat(amount);
-    if (amt >= 200) return 250;
-    if (amt >= 100) return 200;
-    return 100;
+  const currentAmount = parseFloat(formData.amount) || 0;
+  const voiceRecorder = useVoiceRecorder(getVoiceDuration(currentAmount));
+
+  useEffect(() => {
+    const loadRazorpay = () => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => {
+        setRazorpayLoaded(true);
+        toast.success('Payment system ready');
+      };
+      script.onerror = () => {
+        toast.error('Failed to load payment system');
+      };
+      document.body.appendChild(script);
+    };
+
+    const fetchStreamerSettings = async () => {
+      const { data, error } = await supabase.rpc('get_streamer_public_settings', {
+        slug: 'notyourkween'
+      });
+      
+      if (!error && data && data.length > 0) {
+        setStreamerSettings(data[0]);
+      }
+    };
+
+    loadRazorpay();
+    fetchStreamerSettings();
+  }, []);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name.trim() || !amount) {
-      toast.error("Please fill in all required fields");
+    if (!formData.name || !formData.amount) {
+      toast.error('Please fill in all required fields');
       return;
     }
 
-    const amountNum = parseFloat(amount);
-    
-    // Validate minimums
-    if (donationType === "hyperemote" && amountNum < 50) {
-      toast.error("Hyperemote minimum is ₹50");
-      return;
-    }
-    if (donationType === "voice" && amountNum < 150) {
-      toast.error("Voice message minimum is ₹150");
-      return;
-    }
-    if (donationType === "text" && amountNum < 40) {
-      toast.error("Text message minimum is ₹40");
+    const amount = parseFloat(formData.amount);
+    if (isNaN(amount) || amount <= 0) {
+      toast.error('Please enter a valid amount');
       return;
     }
 
-    setIsProcessing(true);
+    if (donationType === 'text' && amount < 40) {
+      toast.error('Minimum amount for text message is ₹40');
+      return;
+    }
+    if (donationType === 'voice' && amount < 150) {
+      toast.error('Minimum amount for voice message is ₹150');
+      return;
+    }
+    if (donationType === 'hyperemote' && amount < 50) {
+      toast.error('Minimum amount for hyperemotes is ₹50');
+      return;
+    }
+
+    if (donationType === 'text' && !formData.message.trim()) {
+      toast.error('Please enter a message');
+      return;
+    }
+
+    if (donationType === 'voice' && !voiceRecorder.audioBlob) {
+      toast.error('Please record a voice message');
+      return;
+    }
+
+    setIsProcessingPayment(true);
 
     try {
       let voiceMessageUrl = null;
 
-      // Upload voice message if present
-      if (donationType === "voice" && audioBlob) {
+      if (donationType === 'voice' && voiceRecorder.audioBlob) {
         const reader = new FileReader();
-        const base64Promise = new Promise<string>((resolve) => {
+        const base64Promise = new Promise<string>((resolve, reject) => {
           reader.onloadend = () => {
-            const base64 = (reader.result as string).split(',')[1];
-            resolve(base64);
+            const base64 = reader.result as string;
+            resolve(base64.split(',')[1]);
           };
+          reader.onerror = reject;
         });
-        reader.readAsDataURL(audioBlob);
-        const voiceData = await base64Promise;
+        reader.readAsDataURL(voiceRecorder.audioBlob);
+        const base64Audio = await base64Promise;
 
-        const { data: uploadData, error: uploadError } = await supabase.functions.invoke(
-          'upload-voice-message-direct',
-          { body: { voiceData, streamerSlug: 'notyourkween' } }
-        );
+        const { data: uploadData, error: uploadError } = await supabase.functions.invoke('upload-voice-message-direct', {
+          body: { voiceData: base64Audio, streamerSlug: 'notyourkween' }
+        });
 
-        if (uploadError) throw uploadError;
+        if (uploadError || !uploadData?.voice_message_url) {
+          throw new Error('Failed to upload voice message');
+        }
+
         voiceMessageUrl = uploadData.voice_message_url;
       }
 
-      // Create Razorpay order
-      const { data: orderData, error: orderError } = await supabase.functions.invoke(
-        'create-razorpay-order-notyourkween',
-        {
-          body: {
-            name: name.trim(),
-            amount: amountNum,
-            message: donationType === "text" ? message.trim() : null,
-            voiceMessageUrl,
-            isHyperemote: donationType === "hyperemote",
-          },
+      const { data, error } = await supabase.functions.invoke('create-razorpay-order-notyourkween', {
+        body: {
+          name: formData.name,
+          amount,
+          message: donationType === 'text' ? formData.message : null,
+          voiceMessageUrl,
+          isHyperemote: donationType === 'hyperemote',
         }
-      );
+      });
 
-      if (orderError) throw orderError;
+      if (error) throw error;
 
-      // Initialize Razorpay checkout
       const options = {
-        key: "rzp_live_0BEYiUtkO7pjZo",
-        amount: orderData.amount,
-        currency: orderData.currency,
-        order_id: orderData.orderId,
-        name: "not your Kween",
-        description: "Digital Engagement",
-        handler: function () {
-          navigate(`/status?order_id=${orderData.internalOrderId}&status=success`);
+        key: data.razorpay_key_id,
+        amount: data.amount,
+        currency: 'INR',
+        name: 'HyperChat - not your Kween',
+        description: donationType === 'hyperemote' ? 'Crown Effect' : 
+                     donationType === 'voice' ? 'Voice Interactions' : 'Text Interactions',
+        order_id: data.razorpay_order_id,
+        prefill: {
+          name: formData.name
+        },
+        theme: {
+          color: '#ec4899'
+        },
+        handler: function (response: any) {
+          navigate(`/status?order_id=${data.internalOrderId}&status=success`);
         },
         modal: {
           ondismiss: function () {
-            navigate(`/status?order_id=${orderData.internalOrderId}&status=pending`);
-          },
-        },
-        theme: { color: "#ec4899" },
+            setIsProcessingPayment(false);
+            navigate(`/status?order_id=${data.internalOrderId}&status=pending`);
+          }
+        }
       };
 
-      const razorpay = new window.Razorpay(options);
+      const razorpay = new (window as any).Razorpay(options);
       razorpay.open();
+
     } catch (error: any) {
-      console.error("Error:", error);
-      toast.error(error.message || "Failed to process donation");
-    } finally {
-      setIsProcessing(false);
+      console.error('Payment error:', error);
+      toast.error(error.message || 'Payment failed. Please try again.');
+      setIsProcessingPayment(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-950 via-purple-950 to-pink-900 relative overflow-hidden">
-      <div className="absolute inset-0 bg-black/30" />
+    <div 
+      className="min-h-screen relative bg-cover bg-center bg-fixed"
+      style={{ backgroundImage: `url(${notyourkweenBanner})` }}
+    >
+      <div className="absolute inset-0 bg-black/40" />
       
-      <div className="relative z-10 container mx-auto px-4 py-8">
-        <div className="flex items-center justify-center gap-3 mb-8">
-          <Crown className="w-10 h-10 text-pink-400" />
-          <h1 className="text-4xl md:text-5xl font-bold text-white">not your Kween</h1>
-        </div>
+      <div className="relative z-10 container mx-auto px-4 py-8 flex items-center justify-center min-h-screen">
+        <Card 
+          className="w-full max-w-[21rem] border-2 border-pink-500/50 shadow-2xl backdrop-blur-md overflow-hidden relative bg-cover bg-center"
+          style={{ backgroundImage: `url(${notyourkweenLogo})` }}
+        >
+          <div className="absolute inset-0 bg-background/50" />
+          <div className="relative z-10">
+          <CardHeader className="text-center pb-4 space-y-3">
+            <div>
+              <CardTitle className="text-2xl font-bold text-foreground">not your Kween</CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">Premium Engagement Platform</p>
+            </div>
+          </CardHeader>
 
-        <div className="max-w-md mx-auto bg-gradient-to-br from-pink-900/50 to-purple-900/50 backdrop-blur-sm rounded-2xl p-6 border border-pink-500/30 shadow-2xl">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Donation Type Selector */}
-            <div className="grid grid-cols-3 gap-3">
-              <button
-                type="button"
-                onClick={() => setDonationType("text")}
-                className={`p-4 rounded-lg border-2 transition-all ${
-                  donationType === "text"
-                    ? "border-pink-400 bg-pink-500/20"
-                    : "border-pink-700/30 bg-pink-900/20 hover:border-pink-600"
-                }`}
-              >
-                <div className="text-2xl mb-2">💬</div>
-                <div className="text-sm font-semibold text-pink-100">Text</div>
-                <div className="text-xs text-pink-300">₹40+</div>
-              </button>
+          <CardContent className="space-y-4">
+            <div className="space-y-2 text-center mb-4">
+              <Label className="text-pink-200 text-xs font-medium block">Select Interaction Type</Label>
+              <div className="grid grid-cols-3 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setDonationType('text')}
+                  className={`p-2 rounded-lg border transition-all ${
+                    donationType === 'text'
+                      ? 'bg-pink-600/80 border-pink-500/60 text-white shadow-md'
+                      : 'bg-pink-900/40 border-pink-700/30 text-pink-300 hover:bg-pink-800/50'
+                  }`}
+                >
+                  <div className="text-center">
+                    <div className="text-2xl mb-0.5">💬</div>
+                    <div className="font-medium text-[10px]">Text Interactions</div>
+                    <div className="text-[9px]">Min: ₹40</div>
+                  </div>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setDonationType("voice")}
-                className={`p-4 rounded-lg border-2 transition-all ${
-                  donationType === "voice"
-                    ? "border-pink-400 bg-pink-500/20"
-                    : "border-pink-700/30 bg-pink-900/20 hover:border-pink-600"
-                }`}
-              >
-                <div className="text-2xl mb-2">🎤</div>
-                <div className="text-sm font-semibold text-pink-100">Voice</div>
-                <div className="text-xs text-pink-300">₹150+</div>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDonationType('voice');
+                    voiceRecorder.clearRecording();
+                  }}
+                  className={`p-2 rounded-lg border transition-all ${
+                    donationType === 'voice'
+                      ? 'bg-pink-600/80 border-pink-500/60 text-white shadow-md'
+                      : 'bg-pink-900/40 border-pink-700/30 text-pink-300 hover:bg-pink-800/50'
+                  }`}
+                >
+                  <div className="text-center">
+                    <div className="text-2xl mb-0.5">🎤</div>
+                    <div className="font-medium text-[10px]">Voice Interactions</div>
+                    <div className="text-[9px]">Min: ₹150</div>
+                  </div>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setDonationType("hyperemote")}
-                className={`p-4 rounded-lg border-2 transition-all ${
-                  donationType === "hyperemote"
-                    ? "border-pink-400 bg-pink-500/20"
-                    : "border-pink-700/30 bg-pink-900/20 hover:border-pink-600"
-                }`}
-              >
-                <div className="text-2xl mb-2">👑</div>
-                <div className="text-sm font-semibold text-pink-100">Hyperemote</div>
-                <div className="text-xs text-pink-300">₹50+</div>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setDonationType('hyperemote')}
+                  className={`p-2 rounded-lg border transition-all ${
+                    donationType === 'hyperemote'
+                      ? 'bg-pink-600/80 border-pink-500/60 text-white shadow-md'
+                      : 'bg-pink-900/40 border-pink-700/30 text-pink-300 hover:bg-pink-800/50'
+                  }`}
+                >
+                  <div className="text-center">
+                    <div className="text-2xl mb-0.5">👑</div>
+                    <div className="font-medium text-[10px]">Royal Crown</div>
+                    <div className="text-[9px]">Min: ₹50</div>
+                  </div>
+                </button>
+              </div>
             </div>
 
-            {/* Name Input */}
-            <div className="space-y-2">
-              <Label htmlFor="name" className="text-pink-200">Your Name</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter your name"
-                className="bg-pink-950/50 border-pink-500/30 text-white placeholder:text-pink-400/50 focus:border-pink-400"
-                maxLength={100}
-                required
-              />
-            </div>
-
-            {/* Amount Input */}
-            <div className="space-y-2">
-              <Label htmlFor="amount" className="text-pink-200">
-                Amount (₹)
-                {donationType === "text" && " - Min ₹40"}
-                {donationType === "voice" && " - Min ₹150"}
-                {donationType === "hyperemote" && " - Min ₹50"}
-              </Label>
-              <Input
-                id="amount"
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="Enter amount"
-                className="bg-pink-950/50 border-pink-500/30 text-white placeholder:text-pink-400/50 focus:border-pink-400"
-                min={donationType === "hyperemote" ? 50 : donationType === "voice" ? 150 : 40}
-                required
-              />
-            </div>
-
-            {/* Text Message */}
-            {donationType === "text" && (
-              <div className="space-y-2">
-                <Label htmlFor="message" className="text-pink-200">
-                  Your Message ({message.length}/{getCharacterLimit()})
-                </Label>
-                <Textarea
-                  id="message"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value.slice(0, getCharacterLimit()))}
-                  placeholder="Enter your message..."
-                  className="bg-pink-950/50 border-pink-500/30 text-white placeholder:text-pink-400/50 focus:border-pink-400 min-h-[100px]"
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="name" className="text-pink-200 text-xs">Your Name</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  placeholder="Enter your name"
+                  className="bg-pink-950/40 border-pink-700/40 text-pink-100 placeholder:text-pink-500/50 focus:border-pink-500 text-sm h-9"
+                  required
                 />
               </div>
-            )}
 
-            {/* Voice Recorder */}
-            {donationType === "voice" && amount && parseFloat(amount) >= 150 && (
-              <div className="space-y-2">
-                <Label className="text-pink-200">Voice Message ({getVoiceDuration()}s max)</Label>
-                <SimpleVoiceRecorder
-                  onVoiceRecorded={setAudioBlob}
+              <div className="space-y-1.5">
+                <Label htmlFor="amount" className="text-pink-200 text-xs">Amount (₹)</Label>
+                <Input
+                  id="amount"
+                  name="amount"
+                  type="number"
+                  value={formData.amount}
+                  onChange={handleInputChange}
+                  placeholder={`Min: ₹${donationType === 'voice' ? '150' : donationType === 'hyperemote' ? '50' : '40'}`}
+                  min={donationType === 'voice' ? '150' : donationType === 'hyperemote' ? '50' : '40'}
+                  className="bg-pink-950/40 border-pink-700/40 text-pink-100 placeholder:text-pink-500/50 focus:border-pink-500 text-sm h-9"
+                  required
                 />
               </div>
-            )}
 
-            {/* Hyperemote Info */}
-            {donationType === "hyperemote" && (
-              <div className="p-4 bg-pink-500/10 border border-pink-500/30 rounded-lg">
-                <p className="text-sm text-pink-200 text-center">
-                  👑 Trigger a spectacular celebration effect on stream!
-                </p>
-              </div>
-            )}
+              {donationType === 'text' && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="message" className="text-pink-200 text-xs">Your Message</Label>
+                  <Textarea
+                    id="message"
+                    name="message"
+                    value={formData.message}
+                    onChange={handleInputChange}
+                    placeholder="Enter your message..."
+                    className="bg-pink-950/40 border-pink-700/40 text-pink-100 placeholder:text-pink-500/50 focus:border-pink-500 min-h-[80px] text-sm resize-none"
+                    maxLength={250}
+                    required
+                  />
+                  <p className="text-[10px] text-pink-400">{formData.message.length}/250 characters</p>
+                </div>
+              )}
 
-            <Button
-              type="submit"
-              disabled={isProcessing || (donationType === "voice" && !audioBlob)}
-              className="w-full bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-semibold py-6 text-lg"
-            >
-              {isProcessing ? "Processing..." : "Proceed to Payment"}
-            </Button>
-          </form>
-        </div>
+              {donationType === 'voice' && (
+                <div className="space-y-1.5">
+                  <Label className="text-pink-200 text-xs">Voice Message (Max {getVoiceDuration(currentAmount)}s)</Label>
+                  <EnhancedVoiceRecorder
+                    controller={voiceRecorder}
+                    maxDurationSeconds={getVoiceDuration(currentAmount)}
+                    onRecordingComplete={(hasRecording) => {
+                      if (!hasRecording) {
+                        toast.error('Please record a voice message');
+                      }
+                    }}
+                    requiredAmount={150}
+                    currentAmount={currentAmount}
+                    brandColor="#ec4899"
+                  />
+                </div>
+              )}
+
+              {donationType === 'hyperemote' && (
+                <div className="p-3 bg-gradient-to-br from-pink-900/50 to-rose-800/40 border border-pink-500/30 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="flex-shrink-0">
+                      <Crown className="w-10 h-10 text-pink-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-pink-100 font-semibold text-sm">Royal Crown Effect</h3>
+                      <p className="text-pink-300 text-xs mt-0.5">Trigger a majestic crown celebration on stream!</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                className="w-full bg-gradient-to-r from-pink-600 to-rose-500 hover:from-pink-500 hover:to-rose-400 text-white font-semibold h-10 text-sm shadow-lg transition-all"
+                disabled={isProcessingPayment || !razorpayLoaded}
+              >
+                {isProcessingPayment ? 'Processing...' : `Pay ₹${formData.amount || '0'}`}
+              </Button>
+            </form>
+          </CardContent>
+          </div>
+        </Card>
       </div>
     </div>
   );
