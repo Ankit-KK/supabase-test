@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { load } from '@cashfreepayments/cashfree-js';
+// Razorpay - loaded via script tag
 import EnhancedVoiceRecorder from '@/components/EnhancedVoiceRecorder';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { PhoneDialog } from '@/components/PhoneDialog';
@@ -23,8 +23,6 @@ const NekoXenpai = () => {
   });
   const [donationType, setDonationType] = useState<'text' | 'voice' | 'hyperemote'>('text');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [cashfree, setCashfree] = useState<any>(null);
-  const [sdkLoading, setSdkLoading] = useState(true);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [phoneError, setPhoneError] = useState('');
   const [isPhoneDialogOpen, setIsPhoneDialogOpen] = useState(false);
@@ -50,23 +48,12 @@ const NekoXenpai = () => {
   const voiceRecorder = useVoiceRecorder(getVoiceDuration(currentAmount));
 
   useEffect(() => {
-    const initializeCashfree = async () => {
-      try {
-        setSdkLoading(true);
-        const cashfreeInstance = await load({ mode: 'production' });
-        setCashfree(cashfreeInstance);
-      } catch (error) {
-        console.error('Failed to load Cashfree SDK:', error);
-        toast.error('Failed to initialize payment system');
-      } finally {
-        setSdkLoading(false);
-      }
-    };
+    // Load Razorpay script
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    document.body.appendChild(script);
 
-    initializeCashfree();
-  }, []);
-
-  useEffect(() => {
     const fetchStreamerSettings = async () => {
       try {
         const { data, error } = await supabase.rpc('get_streamer_public_settings', {
@@ -87,6 +74,10 @@ const NekoXenpai = () => {
     };
 
     fetchStreamerSettings();
+
+    return () => {
+      document.body.removeChild(script);
+    };
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -214,28 +205,43 @@ const NekoXenpai = () => {
         console.log('Voice message uploaded successfully:', voiceMessageUrl);
       }
 
-      const { data, error } = await supabase.functions.invoke('create-payment-order-neko-xenpai', {
+      const { data, error } = await supabase.functions.invoke('create-razorpay-order-neko-xenpai', {
         body: {
           name: formData.name,
           amount: formData.amount,
           message: donationType === 'text' ? formData.message : null,
-          phone: phoneNumber,
           voiceMessageUrl,
           isHyperemote: donationType === 'hyperemote',
         },
       });
 
       if (error) throw error;
-      if (!data?.payment_session_id) throw new Error('No payment session ID received');
 
-      const checkoutOptions = {
-        paymentSessionId: data.payment_session_id,
-        returnUrl: `${window.location.origin}/status?order_id=${data.order_id}&status={order_status}`,
+      // Initialize Razorpay checkout
+      const options = {
+        key: data.razorpay_key_id,
+        amount: data.amount,
+        currency: data.currency,
+        order_id: data.razorpay_order_id,
+        name: 'Neko XENPAI',
+        description: 'Support Neko XENPAI',
+        handler: function (response: any) {
+          console.log('Payment successful:', response);
+          navigate(`/status?order_id=${data.orderId}&status=success`);
+        },
+        modal: {
+          ondismiss: function() {
+            console.log('Payment cancelled');
+            navigate(`/status?order_id=${data.orderId}&status=pending`);
+          }
+        },
+        theme: {
+          color: '#d946ef'
+        }
       };
 
-      if (cashfree) {
-        cashfree.checkout(checkoutOptions);
-      }
+      const razorpay = new (window as any).Razorpay(options);
+      razorpay.open();
     } catch (error: any) {
       console.error('Payment error:', error);
       toast.error(error.message || 'Failed to process payment');
@@ -429,7 +435,7 @@ const NekoXenpai = () => {
 
           <Button
             onClick={handleSubmit}
-            disabled={isProcessingPayment || sdkLoading}
+            disabled={isProcessingPayment}
             className="w-full bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white font-semibold py-4 text-base shadow-lg shadow-fuchsia-500/30 transition-all"
           >
             {isProcessingPayment ? 'Processing...' : `Support with ₹${formData.amount || '0'}`}
