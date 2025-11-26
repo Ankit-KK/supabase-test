@@ -25,6 +25,7 @@ export default function Status() {
         const getCheckPaymentFunction = (orderId: string) => {
           if (orderId.startsWith('ankit_') || orderId.startsWith('ak_rp_')) return 'check-payment-status-ankit';
           if (orderId.startsWith('thunderx_') || orderId.startsWith('tx_rp_')) return 'check-payment-status-thunderx';
+          if (orderId.startsWith('vb_rp_')) return 'check-payment-status-vipbhai';
           if (orderId.startsWith('musicstream_')) return 'check-payment-status';
           if (orderId.startsWith('techgamer_')) return 'check-payment-status';
           if (orderId.startsWith('fitnessflow_')) return 'check-payment-status';
@@ -90,7 +91,7 @@ export default function Status() {
         if (backendStatus === 'success') {
           const shouldSkipVoiceUpload = (orderId: string) => {
             // Razorpay streamers upload voice messages before payment via upload-voice-message-direct
-            if (orderId.startsWith('ak_rp_') || orderId.startsWith('tx_rp_')) return true;
+            if (orderId.startsWith('ak_rp_') || orderId.startsWith('tx_rp_') || orderId.startsWith('vb_rp_')) return true;
             if (orderId.startsWith('ankit_razorpay_') || orderId.startsWith('thunderx_razorpay_')) return true;
             return false;
           };

@@ -33,6 +33,9 @@ verify_jwt = false
 [functions.check-payment-status-ankit]
 verify_jwt = false
 
+[functions.check-payment-status-vipbhai]
+verify_jwt = false
+
 [functions.cashfree-webhook]
 verify_jwt = false
 
@@ -69,6 +72,9 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.create-razorpay-order-thunderx]
+verify_jwt = false
+
+[functions.create-razorpay-order-vipbhai]
 verify_jwt = false
 
 [functions.razorpay-webhook]
