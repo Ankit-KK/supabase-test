@@ -12,12 +12,17 @@ interface Donation {
 }
 
 interface VIPBhaiAlertDisplayProps {
-  donation: Donation;
+  donation: Donation | null;
 }
 
 const VIPBhaiAlertDisplay: React.FC<VIPBhaiAlertDisplayProps> = ({ donation }) => {
   const [gifUrls, setGifUrls] = useState<string[]>([]);
   const [showAlert, setShowAlert] = useState(false);
+
+  // Handle null donation
+  if (!donation) {
+    return null;
+  }
 
   useEffect(() => {
     const fetchGifs = async () => {
