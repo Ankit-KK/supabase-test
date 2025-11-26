@@ -58,8 +58,8 @@ serve(async (req) => {
       throw new Error('Streamer not found')
     }
 
-    // Generate unique order ID with razorpay prefix
-    const orderId = `ankit_razorpay_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    // Generate unique order ID with short razorpay prefix (max 40 chars for Razorpay receipt)
+    const orderId = `ak_rp_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`
 
     console.log('Creating Razorpay order:', { orderId, amount })
 
