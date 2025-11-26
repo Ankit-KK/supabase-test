@@ -10,7 +10,7 @@ const HeroWithCanyonAnimation = () => {
           <div className="space-y-8 max-w-4xl">
             <div className="mb-4">
               <div className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-500 via-white to-green-500 text-black px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-bold text-xs sm:text-sm mb-4">
-                Made in India, for Indian Creators
+                Made in India, for Creators
               </div>
             </div>
             
