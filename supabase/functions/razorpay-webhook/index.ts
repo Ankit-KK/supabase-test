@@ -260,6 +260,8 @@ serve(async (req) => {
         ? ['vipbhai-alerts', 'vipbhai-dashboard']
         : streamerType === 'sagarujjwalgaming'
         ? ['sagarujjwalgaming-alerts', 'sagarujjwalgaming-dashboard']
+        : streamerType === 'notyourkween'
+        ? ['notyourkween-alerts', 'notyourkween-dashboard']
         : ['ankit-alerts', 'ankit-dashboard']
       
       await sendPusherEvent(alertChannels, 'new-donation', {
@@ -309,6 +311,8 @@ serve(async (req) => {
               ? ['vipbhai-audio']
               : streamerType === 'sagarujjwalgaming'
               ? ['sagarujjwalgaming-audio']
+              : streamerType === 'notyourkween'
+              ? ['notyourkween-audio']
               : ['ankit-audio']
             await sendPusherEvent(audioChannel, 'new-audio-message', {
               id: donation.id,
@@ -364,6 +368,8 @@ serve(async (req) => {
                 ? ['vipbhai-audio']
                 : streamerType === 'sagarujjwalgaming'
                 ? ['sagarujjwalgaming-audio']
+                : streamerType === 'notyourkween'
+                ? ['notyourkween-audio']
                 : ['ankit-audio']
               await sendPusherEvent(audioChannel, 'new-audio-message', {
                 id: donation.id,
