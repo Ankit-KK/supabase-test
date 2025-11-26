@@ -1,7 +1,7 @@
 import React from 'react';
+import { VIPBhaiAlertDisplay } from '@/components/VIPBhaiAlertDisplay';
 import { usePusherAlerts } from '@/hooks/usePusherAlerts';
 import { usePusherConfig } from '@/hooks/usePusherConfig';
-import VIPBhaiAlertDisplay from '@/components/VIPBhaiAlertDisplay';
 
 const VIPBhaiObsAlerts = () => {
   const { config: pusherConfig, loading: configLoading } = usePusherConfig('vipbhai');
@@ -28,7 +28,12 @@ const VIPBhaiObsAlerts = () => {
 
   return (
     <div className="min-h-screen bg-transparent relative overflow-hidden">
-      <VIPBhaiAlertDisplay donation={currentAlert} />
+      <VIPBhaiAlertDisplay
+        donation={currentAlert}
+        isVisible={isVisible}
+        streamerName="VIP BHAI"
+        streamerBrandColor="#f59e0b"
+      />
       
       {/* Debug panel (development only) */}
       {process.env.NODE_ENV === 'development' && (
