@@ -183,8 +183,14 @@ const ABdevil = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-950 via-amber-900 to-orange-800 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-black/40 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-orange-500/30">
+    <div 
+      className="min-h-screen flex items-center justify-center p-4 bg-cover bg-center bg-no-repeat"
+      style={{ backgroundImage: "url('/lovable-uploads/abdevil-banner.jpg')" }}
+    >
+      <div 
+        className="w-full max-w-md rounded-2xl shadow-2xl p-8 border border-orange-500/30 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: "url('/lovable-uploads/abdevil-logo.jpg')" }}
+      >
         <div className="flex items-center justify-center gap-3 mb-6">
           <Flame className="w-8 h-8 text-orange-500" />
           <h1 className="text-3xl font-bold text-orange-400">ABdevil</h1>
