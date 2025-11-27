@@ -162,8 +162,19 @@ const MrIqmaster = () => {
         }
       );
 
+      console.log('[MrIqmaster] Order response:', { orderData, orderError });
+
       if (orderError) {
+        console.error('[MrIqmaster] Order error:', orderError);
         throw new Error(orderError.message || 'Failed to create order');
+      }
+
+      // Handle both camelCase (orderId) and snake_case (order_id) for backward compatibility
+      const internalOrderId = orderData.orderId || orderData.order_id;
+      
+      if (!orderData || !internalOrderId) {
+        console.error('[MrIqmaster] Invalid order response:', orderData);
+        throw new Error('Invalid order response from server');
       }
 
       const options = {
@@ -175,12 +186,12 @@ const MrIqmaster = () => {
         order_id: orderData.razorpay_order_id,
         handler: function (response: any) {
           toast.success('Payment successful!');
-          navigate(`/status?order_id=${orderData.orderId}&status=success`);
+          navigate(`/status?order_id=${internalOrderId}&status=success`);
         },
         modal: {
           ondismiss: function () {
             setIsProcessingPayment(false);
-            navigate(`/status?order_id=${orderData.orderId}&status=pending`);
+            navigate(`/status?order_id=${internalOrderId}&status=pending`);
           }
         },
         theme: {
