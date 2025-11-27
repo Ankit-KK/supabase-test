@@ -163,11 +163,8 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
+    
+    // Stream cleanup happens in onstop handler - don't stop tracks prematurely here
   }, []);
 
   const playRecording = useCallback(() => {
