@@ -209,11 +209,11 @@ const Jhanvoo = () => {
       className="min-h-screen flex items-center justify-center p-4 bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: `url(${jhanvooBanner})` }}
     >
-      <div className="max-w-md w-full bg-black/40 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-indigo-500/20">
+      <div 
+        className="max-w-md w-full bg-black/40 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-indigo-500/20 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${jhanvooLogo})` }}
+      >
         <div className="flex flex-col items-center mb-8">
-          <div className="w-20 h-20 rounded-full overflow-hidden mb-4 shadow-lg border-4 border-indigo-500">
-            <img src={jhanvooLogo} alt="Jhanvoo" className="w-full h-full object-cover" />
-          </div>
           <h1 className="text-3xl font-bold text-white mb-2">Jhanvoo</h1>
           <p className="text-gray-100 text-center text-sm">
             Support with your interaction
