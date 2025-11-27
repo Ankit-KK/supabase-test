@@ -161,21 +161,9 @@ const Jhanvoo = () => {
         name: "Jhanvoo",
         description: "Support Jhanvoo",
         order_id: orderData.razorpay_order_id,
-        handler: async function (response: any) {
+        handler: (response: any) => {
           console.log("Payment successful:", response);
-          toast({
-            title: "Success!",
-            description: "Your interaction has been sent successfully!",
-          });
-          
-          setTimeout(() => {
-            setName("");
-            setAmount("");
-            setMessage("");
-            setDonationType("message");
-            voiceRecorder.clearRecording();
-            setIsProcessing(false);
-          }, 1000);
+          navigate(`/status?order_id=${orderData.orderId}&status=success`);
         },
         prefill: {
           name: name.trim(),
@@ -184,8 +172,9 @@ const Jhanvoo = () => {
           color: "#6366f1"
         },
         modal: {
-          ondismiss: function() {
-            console.log("Payment cancelled by user");
+          ondismiss: () => {
+            console.log("Payment modal closed");
+            navigate(`/status?order_id=${orderData.orderId}&status=pending`);
             setIsProcessing(false);
           }
         }
