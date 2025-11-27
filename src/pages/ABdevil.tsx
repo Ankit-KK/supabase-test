@@ -188,9 +188,10 @@ const ABdevil = () => {
       style={{ backgroundImage: "url('/lovable-uploads/abdevil-banner.jpg')" }}
     >
       <div 
-        className="w-full max-w-md rounded-2xl shadow-2xl p-8 border border-orange-500/30 bg-cover bg-center bg-no-repeat"
+        className="w-full max-w-md rounded-2xl shadow-2xl p-8 border border-orange-500/30 bg-cover bg-center bg-no-repeat relative"
         style={{ backgroundImage: "url('/lovable-uploads/abdevil-logo.jpg')" }}
       >
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm rounded-2xl -z-10"></div>
         <div className="flex items-center justify-center gap-3 mb-6">
           <Flame className="w-8 h-8 text-orange-500" />
           <h1 className="text-3xl font-bold text-orange-400">ABdevil</h1>
