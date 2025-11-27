@@ -16,8 +16,11 @@ export default function Status() {
 
   useEffect(() => {
     const checkPaymentStatus = async () => {
-      if (!orderId) {
+      // Check for missing or invalid order_id (including string "undefined")
+      if (!orderId || orderId === 'undefined' || orderId === 'null') {
+        console.error('[Status] Invalid order_id:', orderId);
         setPaymentStatus('failure');
+        setPaymentDetails({ error: 'Invalid or missing order ID. Please try again.' });
         return;
       }
 
@@ -186,7 +189,7 @@ export default function Status() {
         return {
           icon: <XCircle className="h-16 w-16 text-red-500 mx-auto" />,
           title: "Payment Failed",
-          description: "Your payment could not be processed. Please try again.",
+          description: paymentDetails?.error || "Your payment could not be processed. Please try again.",
           color: "text-red-600"
         };
       default:
