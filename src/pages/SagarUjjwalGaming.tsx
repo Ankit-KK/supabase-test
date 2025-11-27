@@ -177,9 +177,27 @@ const SagarUjjwalGaming = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-900 via-gray-900 to-black flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-gradient-to-br from-gray-800/90 to-gray-900/90 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-red-500/20">
-        <div className="text-center mb-8">
+    <div 
+      className="min-h-screen flex items-center justify-center p-4 relative"
+      style={{
+        backgroundImage: `url('/lovable-uploads/sagarujjwal-banner.jpg')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <div 
+        className="w-full max-w-md backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-red-500/20 relative z-10"
+        style={{
+          backgroundImage: `url('/lovable-uploads/sagarujjwal-logo.jpg')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
+      >
+        <div className="absolute inset-0 bg-black/70 rounded-2xl" />
+        <div className="text-center mb-8 relative z-10">
           <div className="flex items-center justify-center gap-3 mb-4">
             <Flame className="w-10 h-10 text-red-500" />
             <h1 className="text-3xl font-bold text-white">SAGAR UJJWAL GAMING</h1>
@@ -187,7 +205,7 @@ const SagarUjjwalGaming = () => {
           <p className="text-red-200">Support the stream!</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
           <div className="space-y-2">
             <Label htmlFor="name" className="text-red-100">Your Name</Label>
             <Input
