@@ -194,7 +194,7 @@ const ABdevil = () => {
           style={{ backgroundImage: "url('/lovable-uploads/abdevil-logo.jpg')" }}
         />
         {/* Dark overlay layer */}
-        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
         {/* Content layer */}
         <div className="relative z-10 p-8">
           <div className="flex items-center justify-center gap-3 mb-6">
