@@ -29,6 +29,8 @@ interface AudioPlayerProps {
   tableName: string;
 }
 
+const SILENT_AUDIO_URL = 'https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/voice-messages/test/looteriya_gaming_1764283000518_vrm0ib.webm';
+
 export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   donation,
   onPlayComplete,
@@ -176,7 +178,33 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   }, [audioUnlocked, autoPlayTTS, autoPlayVoice, donation?.id, isPlaying, hasCompleted]);
 
   const unlockAudio = async () => {
-    // The button click itself is the user interaction needed to unlock audio
+    try {
+      // Create and resume AudioContext - this is the key for background playback
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      const audioContext = new AudioContextClass();
+      
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+        console.log('🔊 AudioContext resumed');
+      }
+      
+      // Play silent audio to fully prime the audio system
+      const silentAudio = new Audio(SILENT_AUDIO_URL);
+      silentAudio.volume = 0.01; // Very low volume just in case
+      await silentAudio.play();
+      console.log('🔇 Silent audio played to prime AudioContext');
+      
+      // Clean up after a short delay
+      setTimeout(() => {
+        silentAudio.pause();
+        silentAudio.src = '';
+      }, 1000);
+      
+    } catch (primeError) {
+      console.warn('AudioContext priming failed:', primeError);
+    }
+    
+    // Use sessionStorage to persist unlock state
     try {
       sessionStorage.setItem(`audio-unlocked-${tableName}`, 'true');
       console.log('💾 Saved unlock state to sessionStorage');
