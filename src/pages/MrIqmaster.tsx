@@ -175,12 +175,12 @@ const MrIqmaster = () => {
         order_id: orderData.razorpay_order_id,
         handler: function (response: any) {
           toast.success('Payment successful!');
-          navigate(`/status?order_id=${orderData.orderId}&status=success`);
+          navigate(`/status?order_id=${orderData.order_id}&status=success`);
         },
         modal: {
           ondismiss: function () {
             setIsProcessingPayment(false);
-            navigate(`/status?order_id=${orderData.orderId}&status=pending`);
+            navigate(`/status?order_id=${orderData.order_id}&status=pending`);
           }
         },
         theme: {
