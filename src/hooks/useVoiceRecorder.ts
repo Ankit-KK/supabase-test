@@ -84,7 +84,7 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
         }
       };
 
-      mediaRecorder.start(); // Collect all data, ondataavailable fires once on stop()
+      mediaRecorder.start(100); // Collect data every 100ms to prevent empty recordings
       
       setState(prev => ({ ...prev, isRecording: true, duration: 0 }));
 
@@ -117,6 +117,17 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
   }, []);
 
   const stopRecording = useCallback(() => {
+    // Check minimum recording duration (1 second)
+    const elapsed = Math.round((Date.now() - startTimeRef.current) / 1000);
+    if (elapsed < 1) {
+      toast({
+        title: "Recording Too Short",
+        description: "Please record for at least 1 second",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       // Just stop - MediaRecorder will automatically flush remaining data
       mediaRecorderRef.current.stop();

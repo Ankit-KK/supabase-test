@@ -105,6 +105,17 @@ const ABdevil = () => {
       let voiceMessageUrl = null;
 
       if (donationType === "voice" && voiceRecorder.audioBlob) {
+        // Validate file size before upload (minimum 5KB to prevent corrupted recordings)
+        if (voiceRecorder.audioBlob.size < 5000) {
+          toast({
+            title: "Recording Too Short",
+            description: "Recording is too short. Please record at least 1 second.",
+            variant: "destructive",
+          });
+          setIsProcessing(false);
+          return;
+        }
+
         const voiceDataBase64 = await new Promise<string>((resolve) => {
           const reader = new FileReader();
           reader.onloadend = () => {
