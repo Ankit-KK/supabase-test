@@ -60,10 +60,17 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           chunksRef.current.push(event.data);
+          console.log('[VoiceRecorder] Chunk received, size:', event.data.size, 'bytes, total chunks:', chunksRef.current.length);
         }
       };
 
       mediaRecorder.onstop = () => {
+        console.log('[VoiceRecorder] Total chunks collected:', chunksRef.current.length);
+        
+        // Validate we have actual audio data
+        const totalSize = chunksRef.current.reduce((acc, chunk) => acc + chunk.size, 0);
+        console.log('[VoiceRecorder] Total audio data size:', totalSize, 'bytes');
+        
         const mime = selectedMimeTypeRef.current || 'audio/webm;codecs=opus';
         const audioBlob = new Blob(chunksRef.current, { type: mime });
         const audioUrl = URL.createObjectURL(audioBlob);
@@ -86,7 +93,7 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
         }
       };
 
-      mediaRecorder.start(); // Collect all data, ondataavailable fires once on stop()
+      mediaRecorder.start(500); // Fire ondataavailable every 500ms to collect audio chunks continuously
       
       setState(prev => ({ ...prev, isRecording: true, duration: 0 }));
 
