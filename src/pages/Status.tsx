@@ -24,6 +24,8 @@ export default function Status() {
       try {
         // Determine which function to call based on order ID prefix (supports both old and new formats)
         const getCheckPaymentFunction = (orderId: string) => {
+          console.log('[Status] Checking payment for order_id:', orderId);
+          
           if (orderId.startsWith('ankit_') || orderId.startsWith('ak_rp_')) return 'check-payment-status-ankit';
           if (orderId.startsWith('thunderx_') || orderId.startsWith('tx_rp_')) return 'check-payment-status-thunderx';
           if (orderId.startsWith('vb_rp_')) return 'check-payment-status-vipbhai';
@@ -43,10 +45,13 @@ export default function Status() {
           if (orderId.startsWith('demostreamer_')) return 'check-payment-status';
           if (orderId.startsWith('damask_plays_')) return 'check-payment-status';
           if (orderId.startsWith('neko_xenpai_')) return 'check-payment-status';
-          return 'check-payment-status'; // default for chia_gaming
+          
+          console.warn('[Status] Unknown order_id prefix, defaulting to check-payment-status:', orderId);
+          return 'check-payment-status'; // default fallback
         };
         
         const functionName = getCheckPaymentFunction(orderId);
+        console.log('[Status] Using function:', functionName, 'for order_id:', orderId);
         
         // Call the appropriate edge function to check payment status
         const { data, error } = await supabase.functions.invoke(functionName, {
@@ -249,7 +254,9 @@ export default function Status() {
                 if (orderId.startsWith('demostreamer_')) return "/demo_streamer";
                 if (orderId.startsWith('damask_plays_')) return "/damask_plays";
                 if (orderId.startsWith('neko_xenpai_')) return "/neko_xenpai";
-                return "/chiaa_gaming"; // default for chia_gaming
+                
+                console.warn('[Status] Unknown order_id prefix for navigation, redirecting to homepage:', orderId);
+                return "/"; // default to homepage for unknown order prefixes
               })()}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Donation Page

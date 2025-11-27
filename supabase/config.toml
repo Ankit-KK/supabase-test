@@ -102,6 +102,9 @@ verify_jwt = false
 [functions.check-payment-status-abdevil]
 verify_jwt = false
 
+[functions.create-razorpay-order-abdevil]
+verify_jwt = false
+
 [functions.create-razorpay-order-looteriya-gaming]
 verify_jwt = false
 
