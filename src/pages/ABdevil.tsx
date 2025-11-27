@@ -27,10 +27,10 @@ const ABdevil = () => {
   const [voiceDuration, setVoiceDuration] = useState(0);
   const { toast } = useToast();
   const navigate = useNavigate();
-  
+
   const maxVoiceDuration = getVoiceDuration();
   const voiceRecorder = useVoiceRecorder(maxVoiceDuration);
-  
+
   function getVoiceDuration() {
     const amt = parseFloat(amount);
     if (amt >= 500) return 30;
@@ -48,7 +48,6 @@ const ABdevil = () => {
       document.body.removeChild(script);
     };
   }, []);
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,40 +108,37 @@ const ABdevil = () => {
           const reader = new FileReader();
           reader.onloadend = () => {
             const base64 = reader.result as string;
-            resolve(base64.split(',')[1]);
+            resolve(base64.split(",")[1]);
           };
           reader.readAsDataURL(voiceRecorder.audioBlob!);
         });
 
-        const {
-          data: uploadResult,
-          error: uploadError
-        } = await supabase.functions.invoke('upload-voice-message-direct', {
-          body: {
-            voiceData: voiceDataBase64,
-            streamerSlug: 'abdevil'
-          }
-        });
+        const { data: uploadResult, error: uploadError } = await supabase.functions.invoke(
+          "upload-voice-message-direct",
+          {
+            body: {
+              voiceData: voiceDataBase64,
+              streamerSlug: "abdevil",
+            },
+          },
+        );
         if (uploadError) {
-          console.error('Voice upload error:', uploadError);
-          throw new Error('Failed to upload voice message');
+          console.error("Voice upload error:", uploadError);
+          throw new Error("Failed to upload voice message");
         }
         voiceMessageUrl = uploadResult.voice_message_url;
-        console.log('Voice message uploaded successfully:', voiceMessageUrl);
+        console.log("Voice message uploaded successfully:", voiceMessageUrl);
       }
 
-      const { data: orderData, error: orderError } = await supabase.functions.invoke(
-        "create-razorpay-order-abdevil",
-        {
-          body: {
-            amount: amountNum,
-            name: name.trim(),
-            message: donationType === "message" ? message.trim() : null,
-            voiceMessageUrl,
-            donationType,
-          },
-        }
-      );
+      const { data: orderData, error: orderError } = await supabase.functions.invoke("create-razorpay-order-abdevil", {
+        body: {
+          amount: amountNum,
+          name: name.trim(),
+          message: donationType === "message" ? message.trim() : null,
+          voiceMessageUrl,
+          donationType,
+        },
+      });
 
       if (orderError) throw orderError;
 
@@ -154,9 +150,7 @@ const ABdevil = () => {
         description: "Support ABdevil",
         order_id: orderData.razorpay_order_id,
         handler: function (response: any) {
-          navigate(
-            `/status?order_id=${orderData.orderId}&status=success&payment_id=${response.razorpay_payment_id}`
-          );
+          navigate(`/status?order_id=${orderData.orderId}&status=success&payment_id=${response.razorpay_payment_id}`);
         },
         modal: {
           ondismiss: function () {
@@ -183,118 +177,108 @@ const ABdevil = () => {
   };
 
   return (
-    <div 
+    <div
       className="min-h-screen flex items-center justify-center p-4 bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: "url('/lovable-uploads/abdevil-banner.jpg')" }}
     >
       <div className="w-full max-w-md rounded-2xl shadow-2xl border border-orange-500/30 relative overflow-hidden">
         {/* Background image layer */}
-        <div 
+        <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: "url('/lovable-uploads/abdevil-logo.jpg')" }}
         />
         {/* Dark overlay layer */}
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
         {/* Content layer */}
         <div className="relative z-10 p-8">
           <div className="flex items-center justify-center gap-3 mb-6">
-          <Flame className="w-8 h-8 text-orange-500" />
-          <h1 className="text-3xl font-bold text-orange-400">ABdevil</h1>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <Label htmlFor="name" className="text-orange-400">
-              Your Name
-            </Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter your name"
-              className="bg-black/30 border-orange-500/30 text-white placeholder:text-gray-400 focus:border-orange-500"
-              required
-            />
+            <Flame className="w-8 h-8 text-orange-500" />
+            <h1 className="text-3xl font-bold text-orange-400">ABdevil</h1>
           </div>
 
-          <DonationTypeSelector
-            donationType={donationType}
-            onTypeChange={setDonationType}
-            brandColor="#f97316"
-          />
-
-          <div>
-            <Label htmlFor="amount" className="text-orange-400">
-              Amount (₹)
-            </Label>
-            <Input
-              id="amount"
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder={
-                donationType === "hyperemote"
-                  ? "Min ₹50"
-                  : donationType === "voice"
-                  ? "Min ₹150"
-                  : "Min ₹40"
-              }
-              className="bg-black/30 border-orange-500/30 text-white placeholder:text-gray-400 focus:border-orange-500"
-              min={donationType === "hyperemote" ? 50 : donationType === "voice" ? 150 : 40}
-              required
-            />
-          </div>
-
-          {donationType === "message" && (
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <Label htmlFor="message" className="text-orange-400">
-                Your Message
+              <Label htmlFor="name" className="text-orange-400">
+                Your Name
               </Label>
-              <Textarea
-                id="message"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Enter your message..."
-                className="bg-black/30 border-orange-500/30 text-white placeholder:text-gray-400 focus:border-orange-500 min-h-[100px]"
-                maxLength={250}
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter your name"
+                className="bg-black/30 border-orange-500/30 text-white placeholder:text-gray-400 focus:border-orange-500"
+                required
               />
             </div>
-          )}
 
-          {donationType === "voice" && (
-            <div className="space-y-3">
-              <Label className="text-orange-400">
-                Record Voice Message *
+            <DonationTypeSelector donationType={donationType} onTypeChange={setDonationType} brandColor="#f97316" />
+
+            <div>
+              <Label htmlFor="amount" className="text-orange-400">
+                Amount (₹)
               </Label>
-              <VoiceRecorder
-                onRecordingComplete={(hasRecording, duration) => {
-                  setHasVoiceRecording(hasRecording);
-                  setVoiceDuration(duration);
-                }}
-                maxDurationSeconds={maxVoiceDuration}
-                controller={voiceRecorder}
-                requiredAmount={150}
-                currentAmount={parseFloat(amount) || 0}
+              <Input
+                id="amount"
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder={
+                  donationType === "hyperemote" ? "Min ₹50" : donationType === "voice" ? "Min ₹150" : "Min ₹40"
+                }
+                className="bg-black/30 border-orange-500/30 text-white placeholder:text-gray-400 focus:border-orange-500"
+                min={donationType === "hyperemote" ? 50 : donationType === "voice" ? 150 : 40}
+                required
               />
             </div>
-          )}
 
-          {donationType === "hyperemote" && (
-            <div className="p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg">
-              <p className="text-orange-300 text-sm text-center">
-                🎊 Trigger a spectacular on-screen celebration effect!
-              </p>
-            </div>
-          )}
+            {donationType === "message" && (
+              <div>
+                <Label htmlFor="message" className="text-orange-400">
+                  Your Message
+                </Label>
+                <Textarea
+                  id="message"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Enter your message..."
+                  className="bg-black/30 border-orange-500/30 text-white placeholder:text-gray-400 focus:border-orange-500 min-h-[100px]"
+                  maxLength={250}
+                />
+              </div>
+            )}
 
-          <Button
-            type="submit"
-            disabled={isProcessing}
-            className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-6 rounded-xl transition-all duration-200 disabled:opacity-50"
-          >
-            {isProcessing ? "Processing..." : `Send ₹${amount || "0"}`}
-          </Button>
-        </form>
+            {donationType === "voice" && (
+              <div className="space-y-3">
+                <Label className="text-orange-400">Record Voice Message *</Label>
+                <VoiceRecorder
+                  onRecordingComplete={(hasRecording, duration) => {
+                    setHasVoiceRecording(hasRecording);
+                    setVoiceDuration(duration);
+                  }}
+                  maxDurationSeconds={maxVoiceDuration}
+                  controller={voiceRecorder}
+                  requiredAmount={150}
+                  currentAmount={parseFloat(amount) || 0}
+                />
+              </div>
+            )}
+
+            {donationType === "hyperemote" && (
+              <div className="p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg">
+                <p className="text-orange-300 text-sm text-center">
+                  🎊 Trigger a spectacular on-screen celebration effect!
+                </p>
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              disabled={isProcessing}
+              className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-6 rounded-xl transition-all duration-200 disabled:opacity-50"
+            >
+              {isProcessing ? "Processing..." : `Send ₹${amount || "0"}`}
+            </Button>
+          </form>
         </div>
       </div>
     </div>
