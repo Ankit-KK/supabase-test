@@ -276,7 +276,7 @@ const ABdevil = () => {
               disabled={isProcessing}
               className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-6 rounded-xl transition-all duration-200 disabled:opacity-50"
             >
-              {isProcessing ? "Processing..." : `Send ₹${amount || "0"}`}
+              {isProcessing ? "Processing..." : `Pay ₹${amount || "0"}`}
             </Button>
           </form>
         </div>
