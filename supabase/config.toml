@@ -123,5 +123,11 @@ verify_jwt = false
 [functions.check-payment-status-neko-xenpai]
 verify_jwt = false
 
+[functions.create-razorpay-order-jhanvoo]
+verify_jwt = false
+
+[functions.check-payment-status-jhanvoo]
+verify_jwt = false
+
 [functions.razorpay-webhook]
 verify_jwt = false

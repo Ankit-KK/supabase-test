@@ -34,6 +34,7 @@ import NotYourKween from "./pages/NotYourKween";
 import BongFlick from "./pages/BongFlick";
 import MrIqmaster from "./pages/MrIqmaster";
 import ABdevil from "./pages/ABdevil";
+import Jhanvoo from "./pages/Jhanvoo";
 
 // Dashboard pages (active streamers + ThunderX)
 import Dashboard from "./pages/dashboard/Dashboard";
@@ -51,6 +52,7 @@ import NotYourKweenDashboard from "./pages/dashboard/NotYourKweenDashboard";
 import BongFlickDashboard from "./pages/dashboard/BongFlickDashboard";
 import MrIqmasterDashboard from "./pages/dashboard/MrIqmasterDashboard";
 import ABdevilDashboard from "./pages/dashboard/ABdevilDashboard";
+import JhanvooDashboard from "./pages/dashboard/JhanvooDashboard";
 
 // OBS Alert pages (active streamers + ThunderX)
 import AnkitObsAlerts from "./pages/obs-alerts/AnkitObsAlerts";
@@ -66,6 +68,7 @@ import NotYourKweenObsAlerts from "./pages/obs-alerts/NotYourKweenObsAlerts";
 import BongFlickObsAlerts from "./pages/obs-alerts/BongFlickObsAlerts";
 import MrIqmasterObsAlerts from "./pages/obs-alerts/MrIqmasterObsAlerts";
 import ABdevilObsAlerts from "./pages/obs-alerts/ABdevilObsAlerts";
+import JhanvooObsAlerts from "./pages/obs-alerts/JhanvooObsAlerts";
 
 // Audio Player pages (active streamers + ThunderX)
 import AnkitAudioPlayer from "./pages/audio-player/AnkitAudioPlayer";
@@ -81,6 +84,7 @@ import NotYourKweenAudioPlayer from "./pages/audio-player/NotYourKweenAudioPlaye
 import BongFlickAudioPlayer from "./pages/audio-player/BongFlickAudioPlayer";
 import MrIqmasterAudioPlayer from "./pages/audio-player/MrIqmasterAudioPlayer";
 import ABdevilAudioPlayer from "./pages/audio-player/ABdevilAudioPlayer";
+import JhanvooAudioPlayer from "./pages/audio-player/JhanvooAudioPlayer";
 
 const queryClient = new QueryClient();
 
@@ -124,6 +128,7 @@ const App = () => (
               <Route path="/bongflick" element={<BongFlick />} />
               <Route path="/mriqmaster" element={<MrIqmaster />} />
               <Route path="/abdevil" element={<ABdevil />} />
+              <Route path="/jhanvoo" element={<Jhanvoo />} />
               
               {/* Authentication */}
               <Route path="/auth" element={<Auth />} />
@@ -143,6 +148,7 @@ const App = () => (
               <Route path="/dashboard/bongflick" element={<BongFlickDashboard />} />
               <Route path="/dashboard/mriqmaster" element={<MrIqmasterDashboard />} />
               <Route path="/dashboard/abdevil" element={<ABdevilDashboard />} />
+              <Route path="/dashboard/jhanvoo" element={<JhanvooDashboard />} />
               
               {/* OBS Alert routes */}
               <Route path="/ankit/obs-alerts" element={<AnkitObsAlerts />} />
@@ -158,6 +164,7 @@ const App = () => (
               <Route path="/bongflick/obs-alerts" element={<BongFlickObsAlerts />} />
               <Route path="/mriqmaster/obs-alerts" element={<MrIqmasterObsAlerts />} />
               <Route path="/abdevil/obs-alerts" element={<ABdevilObsAlerts />} />
+              <Route path="/jhanvoo/obs-alerts" element={<JhanvooObsAlerts />} />
               
               {/* Audio Player routes */}
               <Route path="/ankit/audio-player" element={<AnkitAudioPlayer />} />
@@ -173,6 +180,7 @@ const App = () => (
               <Route path="/bongflick/audio-player" element={<BongFlickAudioPlayer />} />
               <Route path="/mriqmaster/audio-player" element={<MrIqmasterAudioPlayer />} />
               <Route path="/abdevil/audio-player" element={<ABdevilAudioPlayer />} />
+              <Route path="/jhanvoo/audio-player" element={<JhanvooAudioPlayer />} />
               
               {/* Catch all 404 */}
               <Route path="*" element={<NotFound />} />
