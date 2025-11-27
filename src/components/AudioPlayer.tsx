@@ -5,7 +5,6 @@ import { Slider } from '@/components/ui/slider';
 import { CustomSwitch } from '@/components/ui/custom-switch';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { WebAudioPlayer } from '@/utils/audioUtils';
 
 interface Donation {
   id: string;
@@ -42,30 +41,19 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   tableName
 }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
-  const webAudioPlayerRef = useRef<WebAudioPlayer | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(0.8);
   const [isMuted, setIsMuted] = useState(false);
   const [hasCompleted, setHasCompleted] = useState(false);
-  const [pendingAutoPlay, setPendingAutoPlay] = useState(false);
   const [audioUnlocked, setAudioUnlocked] = useState(() => {
     return sessionStorage.getItem(`audio-unlocked-${tableName}`) === 'true';
   });
 
-  // Initialize Web Audio Player
-  useEffect(() => {
-    webAudioPlayerRef.current = new WebAudioPlayer();
-    return () => {
-      webAudioPlayerRef.current?.cleanup();
-    };
-  }, []);
-
   // Reset completion guard when donation changes
   useEffect(() => {
     setHasCompleted(false);
-    setPendingAutoPlay(false);
   }, [donation?.id]);
 
   // Set up audio event listeners with multiple safety nets
@@ -155,7 +143,6 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     setCurrentTime(0);
     setDuration(0);
     setHasCompleted(false);
-    setPendingAutoPlay(false);
 
     // Set audio source (priority: voice message > TTS audio)
     const audioUrl = donation.voice_message_url || donation.tts_audio_url;
@@ -168,14 +155,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
 
       // Auto-play based on message type
       if (shouldAutoPlay()) {
-        // If tab is hidden, mark as pending
-        if (document.visibilityState === 'hidden') {
-          console.log('⏳ Tab hidden - marking auto-play as pending');
-          setPendingAutoPlay(true);
-        } else {
-          console.log(`▶️ Auto-playing ${audioType}`);
-          setTimeout(() => handlePlay(), 100);
-        }
+        console.log(`▶️ Auto-playing ${audioType}`);
+        setTimeout(() => handlePlay(), 100);
       }
     } else if (donation.message && !donation.voice_message_url) {
       // Only wait for TTS if it's a text message without voice recording
@@ -183,47 +164,13 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     }
   }, [donation?.id, donation?.voice_message_url, donation?.tts_audio_url, autoPlayTTS, autoPlayVoice]);
 
-  // Handle visibility change - resume playback when tab becomes visible
-  useEffect(() => {
-    const handleVisibilityChange = async () => {
-      if (document.visibilityState === 'visible') {
-        console.log('🔄 Tab visible - checking for pending audio');
-        
-        // Resume Web Audio API context if suspended
-        await webAudioPlayerRef.current?.resumeContext();
-
-        // If there's a pending auto-play, trigger it
-        if (pendingAutoPlay && shouldAutoPlay() && donation?.id && !isPlaying && !hasCompleted) {
-          const audioUrl = donation.voice_message_url || donation.tts_audio_url;
-          if (audioUrl) {
-            console.log('▶️ Resuming auto-play after tab became visible');
-            setPendingAutoPlay(false);
-            setTimeout(() => handlePlay(), 100);
-          }
-        }
-      } else {
-        console.log('👁️ Tab hidden - audio will continue in background');
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [donation?.id, pendingAutoPlay, isPlaying, hasCompleted, autoPlayTTS, autoPlayVoice]);
-
   // Auto-play when audio becomes unlocked (user clicks "Enable Audio")
   useEffect(() => {
     if (audioUnlocked && shouldAutoPlay() && donation?.id && !isPlaying && !hasCompleted) {
       const audioUrl = donation.voice_message_url || donation.tts_audio_url;
       if (audioUrl && audioRef.current?.src) {
         console.log('🔓 Audio unlocked, attempting autoplay...');
-        
-        // If tab is hidden, mark as pending
-        if (document.visibilityState === 'hidden') {
-          console.log('⏳ Tab hidden - marking auto-play as pending');
-          setPendingAutoPlay(true);
-        } else {
-          setTimeout(() => handlePlay(), 100);
-        }
+        setTimeout(() => handlePlay(), 100);
       }
     }
   }, [audioUnlocked, autoPlayTTS, autoPlayVoice, donation?.id, isPlaying, hasCompleted]);
@@ -243,47 +190,14 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   };
 
   const handlePlay = async () => {
-    const audioUrl = donation?.voice_message_url || donation?.tts_audio_url;
-    
-    if (!audioUrl) {
+    if (!audioRef.current?.src) {
       console.log('⚠️ No audio source available, waiting for backend TTS...');
       return;
     }
 
-    // Update MediaSession API metadata
-    if ('mediaSession' in navigator && donation) {
-      navigator.mediaSession.metadata = new MediaMetadata({
-        title: `${donation.name} - ₹${donation.amount}`,
-        artist: 'HyperChat',
-      });
-      
-      navigator.mediaSession.setActionHandler('play', () => handlePlay());
-      navigator.mediaSession.setActionHandler('pause', () => handlePause());
-    }
-
     try {
-      // Try HTMLAudioElement first for compatibility
-      if (audioRef.current?.src) {
-        await audioRef.current.play();
-        setIsPlaying(true);
-      } else {
-        // Fallback to Web Audio API for better background support
-        console.log('🎵 Using Web Audio API for playback');
-        await webAudioPlayerRef.current?.playFromUrl(
-          audioUrl,
-          isMuted ? 0 : volume,
-          () => {
-            console.log('🏁 Web Audio API playback complete');
-            setHasCompleted(true);
-            setIsPlaying(false);
-            setCurrentTime(0);
-            if (onPlayComplete) {
-              setTimeout(onPlayComplete, 500);
-            }
-          }
-        );
-        setIsPlaying(true);
-      }
+      await audioRef.current.play();
+      setIsPlaying(true);
     } catch (error) {
       console.error('Error playing audio:', error);
       if (error instanceof Error && error.name === 'NotAllowedError') {
@@ -297,10 +211,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   };
 
   const handlePause = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
-    webAudioPlayerRef.current?.stop();
+    if (!audioRef.current) return;
+    audioRef.current.pause();
     setIsPlaying(false);
   };
 
