@@ -27,6 +27,7 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
   const selectedMimeTypeRef = useRef<string | undefined>(undefined);
   const maxDurationRef = useRef<number>(maxDurationSeconds);
   const streamRef = useRef<MediaStream | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   // Update max duration ref when prop changes
   useEffect(() => {
@@ -67,6 +68,27 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
         throw new Error('Audio track is disabled or muted');
       }
 
+      // Create AudioContext to properly process the audio stream
+      const audioContext = new AudioContext();
+      audioContextRef.current = audioContext;
+
+      // Create a source from the microphone stream
+      const source = audioContext.createMediaStreamSource(stream);
+
+      // Create a destination that outputs a new MediaStream
+      const destination = audioContext.createMediaStreamDestination();
+
+      // Connect: microphone → destination
+      source.connect(destination);
+
+      // Use the destination's stream for MediaRecorder (not the raw stream)
+      const processedStream = destination.stream;
+
+      console.log('[VoiceRecorder] Audio routing setup:', {
+        audioContextState: audioContext.state,
+        processedStreamTracks: processedStream.getTracks().length,
+      });
+
       // Select MIME type - prioritize audio/webm;codecs=opus (most compatible)
       const preferredTypes = [
         'audio/webm;codecs=opus',  // Most compatible - try this first
@@ -91,9 +113,9 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
 
       selectedMimeTypeRef.current = supportedType;
       
-      // Create MediaRecorder with selected MIME type
+      // Create MediaRecorder with selected MIME type using processed stream
       const options = supportedType ? { mimeType: supportedType } : {};
-      const mediaRecorder = new MediaRecorder(stream, options);
+      const mediaRecorder = new MediaRecorder(processedStream, options);
 
       chunksRef.current = [];
       mediaRecorderRef.current = mediaRecorder;
@@ -150,6 +172,13 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
           duration,
           isRecording: false,
         }));
+
+        // Clean up AudioContext
+        if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+          console.log('[VoiceRecorder] Closing AudioContext');
+          audioContextRef.current.close();
+          audioContextRef.current = null;
+        }
 
         // Clean up stream AFTER blob is created
         if (streamRef.current) {
@@ -272,6 +301,10 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
+    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
@@ -345,6 +378,9 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
       }
       if (timerRef.current) {
         clearInterval(timerRef.current);
+      }
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close();
       }
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
