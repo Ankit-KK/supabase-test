@@ -46,6 +46,20 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
 
       streamRef.current = stream;
 
+      // Validate stream has audio tracks
+      const audioTracks = stream.getAudioTracks();
+      console.log('[VoiceRecorder] Stream obtained:', {
+        trackCount: audioTracks.length,
+        trackState: audioTracks[0]?.readyState,
+        trackEnabled: audioTracks[0]?.enabled,
+        trackMuted: audioTracks[0]?.muted,
+        trackLabel: audioTracks[0]?.label
+      });
+
+      if (audioTracks.length === 0 || !audioTracks[0].enabled) {
+        throw new Error('No enabled audio track found');
+      }
+
       const preferredTypes = ['audio/ogg;codecs=opus','audio/webm;codecs=opus','audio/webm'];
       const supported = (typeof MediaRecorder !== 'undefined' && (MediaRecorder as any).isTypeSupported)
         ? preferredTypes.find(t => (MediaRecorder as any).isTypeSupported(t))
@@ -93,7 +107,16 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
         }
       };
 
+      mediaRecorder.onerror = (event: any) => {
+        console.error('[VoiceRecorder] MediaRecorder error:', event.error);
+      };
+
       mediaRecorder.start(500); // Fire ondataavailable every 500ms to collect audio chunks continuously
+      console.log('[VoiceRecorder] MediaRecorder started:', {
+        state: mediaRecorder.state,
+        mimeType: mediaRecorder.mimeType,
+        audioBitsPerSecond: mediaRecorder.audioBitsPerSecond
+      });
       
       setState(prev => ({ ...prev, isRecording: true, duration: 0 }));
 
