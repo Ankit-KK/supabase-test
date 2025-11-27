@@ -193,12 +193,12 @@ const ABdevil = () => {
         <div className="relative z-10 p-8">
           <div className="flex items-center justify-center gap-3 mb-6">
             <Flame className="w-8 h-8 text-orange-500" />
-            <h1 className="text-3xl font-bold text-orange-400">ABdevil</h1>
+            <h1 className="text-3xl font-bold text-white">ABdevil</h1>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <Label htmlFor="name" className="text-orange-400">
+              <Label htmlFor="name" className="text-gray-100">
                 Your Name
               </Label>
               <Input
@@ -214,7 +214,7 @@ const ABdevil = () => {
             <DonationTypeSelector donationType={donationType} onTypeChange={setDonationType} brandColor="#f97316" />
 
             <div>
-              <Label htmlFor="amount" className="text-orange-400">
+              <Label htmlFor="amount" className="text-gray-100">
                 Amount (₹)
               </Label>
               <Input
@@ -233,7 +233,7 @@ const ABdevil = () => {
 
             {donationType === "message" && (
               <div>
-                <Label htmlFor="message" className="text-orange-400">
+                <Label htmlFor="message" className="text-gray-100">
                   Your Message
                 </Label>
                 <Textarea
@@ -249,7 +249,7 @@ const ABdevil = () => {
 
             {donationType === "voice" && (
               <div className="space-y-3">
-                <Label className="text-orange-400">Record Voice Message *</Label>
+                <Label className="text-gray-100">Record Voice Message *</Label>
                 <VoiceRecorder
                   onRecordingComplete={(hasRecording, duration) => {
                     setHasVoiceRecording(hasRecording);
