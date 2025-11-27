@@ -10,6 +10,8 @@ import { useNavigate } from "react-router-dom";
 import { DonationTypeSelector } from "@/components/DonationTypeSelector";
 import VoiceRecorder from "@/components/VoiceRecorder";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
+import jhanvooBanner from "@/assets/jhanvoo-banner.jpg";
+import jhanvooLogo from "@/assets/jhanvoo-logo.jpg";
 
 declare global {
   interface Window {
@@ -203,11 +205,14 @@ const Jhanvoo = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-800 flex items-center justify-center p-4">
+    <div 
+      className="min-h-screen flex items-center justify-center p-4 bg-cover bg-center bg-no-repeat"
+      style={{ backgroundImage: `url(${jhanvooBanner})` }}
+    >
       <div className="max-w-md w-full bg-black/40 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-indigo-500/20">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center mb-4 shadow-lg">
-            <Sparkles className="w-8 h-8 text-white" />
+          <div className="w-20 h-20 rounded-full overflow-hidden mb-4 shadow-lg border-4 border-indigo-500">
+            <img src={jhanvooLogo} alt="Jhanvoo" className="w-full h-full object-cover" />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">Jhanvoo</h1>
           <p className="text-gray-100 text-center text-sm">
