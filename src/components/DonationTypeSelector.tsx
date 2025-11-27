@@ -34,8 +34,8 @@ export const DonationTypeSelector: React.FC<DonationTypeSelectorProps> = ({
         >
           <div className="text-center">
             <div className="text-base mb-1">💬</div>
-            <div className="font-medium text-xs">Text Message</div>
-            <div className="text-xs text-muted-foreground">Min: ₹1</div>
+            <div className="font-medium text-xs">Text Interaction</div>
+            <div className="text-xs text-muted-foreground">40+</div>
           </div>
         </button>
         
@@ -54,8 +54,8 @@ export const DonationTypeSelector: React.FC<DonationTypeSelectorProps> = ({
         >
           <div className="text-center">
             <div className="text-base mb-1">🎤</div>
-            <div className="font-medium text-xs">Voice Message</div>
-            <div className="text-xs text-muted-foreground">Min: ₹3</div>
+            <div className="font-medium text-xs">Voice Interaction</div>
+            <div className="text-xs text-muted-foreground">150+</div>
           </div>
         </button>
         
@@ -72,7 +72,7 @@ export const DonationTypeSelector: React.FC<DonationTypeSelectorProps> = ({
             <div className="text-base mb-1">🎉</div>
             <div className="font-medium text-xs">Hyperemotes</div>
             <div className="text-xs text-muted-foreground">
-              ₹{hyperemotesMinAmount}+ celebration
+              50+
             </div>
           </div>
         </button>
