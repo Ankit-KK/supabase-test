@@ -142,6 +142,8 @@ serve(async (req) => {
       'notyourkween': 'notyourkween_donations',
       'bongflick': 'bongflick_donations',
       'mriqmaster': 'mriqmaster_donations',
+      'abdevil': 'abdevil_donations',
+      'vipbhai': 'vipbhai_donations',
     };
 
     const donationTable = donationTableMap[streamerSlug];
