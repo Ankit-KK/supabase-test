@@ -20,13 +20,15 @@ interface UsePusherAudioQueueConfig {
   pusherKey?: string;
   pusherCluster?: string;
   onNewAudioMessage?: (donation: AudioDonation) => void;
+  delayBeforeDisplay?: number; // Delay in milliseconds before adding to queue
 }
 
 export const usePusherAudioQueue = ({
   streamerSlug,
   pusherKey,
   pusherCluster,
-  onNewAudioMessage
+  onNewAudioMessage,
+  delayBeforeDisplay = 0
 }: UsePusherAudioQueueConfig) => {
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('connecting');
   const [queueSize, setQueueSize] = useState(0);
@@ -83,10 +85,21 @@ export const usePusherAudioQueue = ({
     // New audio message ready
     channel.bind('new-audio-message', (data: AudioDonation) => {
       console.log('[PusherAudioQueue] New audio message received:', data);
-      if (onNewAudioMessageRef.current) {
-        onNewAudioMessageRef.current(data);
+      
+      if (delayBeforeDisplay > 0) {
+        console.log(`[PusherAudioQueue] Delaying audio message for ${delayBeforeDisplay}ms`);
+        setTimeout(() => {
+          if (onNewAudioMessageRef.current) {
+            onNewAudioMessageRef.current(data);
+          }
+          setQueueSize(prev => prev + 1);
+        }, delayBeforeDisplay);
+      } else {
+        if (onNewAudioMessageRef.current) {
+          onNewAudioMessageRef.current(data);
+        }
+        setQueueSize(prev => prev + 1);
       }
-      setQueueSize(prev => prev + 1);
     });
 
     return () => {
