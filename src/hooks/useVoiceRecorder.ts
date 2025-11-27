@@ -58,24 +58,14 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
       startTimeRef.current = Date.now();
 
       mediaRecorder.ondataavailable = (event) => {
-        console.log(`📦 Chunk received: ${event.data.size} bytes`);
-        if (event.data && event.data.size > 0) {
+        if (event.data.size > 0) {
           chunksRef.current.push(event.data);
-          console.log(`✅ Chunk added. Total chunks: ${chunksRef.current.length}`);
-        } else {
-          console.log('⚠️ Empty chunk ignored');
         }
       };
 
       mediaRecorder.onstop = () => {
-        console.log(`🎬 Recording stopped. Total chunks collected: ${chunksRef.current.length}`);
-        const totalSize = chunksRef.current.reduce((sum, chunk) => sum + chunk.size, 0);
-        console.log(`📊 Total audio data size: ${totalSize} bytes`);
-        
         const mime = selectedMimeTypeRef.current || 'audio/webm;codecs=opus';
         const audioBlob = new Blob(chunksRef.current, { type: mime });
-        console.log(`🔊 Final blob created: ${audioBlob.size} bytes, mime: ${mime}`);
-        
         const audioUrl = URL.createObjectURL(audioBlob);
         const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
 
@@ -94,8 +84,7 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
         }
       };
 
-      console.log('🎤 Starting MediaRecorder with 500ms timeslice');
-      mediaRecorder.start(500); // Collect data every 500ms for better browser compatibility
+      mediaRecorder.start(); // Collect all data, ondataavailable fires once on stop()
       
       setState(prev => ({ ...prev, isRecording: true, duration: 0 }));
 
@@ -106,16 +95,9 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
 
         // Auto-stop at max duration using ref (not stale closure)
         if (elapsed >= maxDurationRef.current) {
-          console.log('⏱️ Auto-stopping at max duration, requesting final data flush');
-          // Request any buffered audio data before stopping
+          // Stop recording - MediaRecorder will automatically flush remaining data
           if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-            mediaRecorderRef.current.requestData();
-            // Small delay to allow requestData to complete
-            setTimeout(() => {
-              if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-                mediaRecorderRef.current.stop();
-              }
-            }, 100);
+            mediaRecorderRef.current.stop();
           }
           if (timerRef.current) {
             clearInterval(timerRef.current);
@@ -135,36 +117,20 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
   }, []);
 
   const stopRecording = useCallback(() => {
-    // Check minimum recording duration (1 second)
-    const elapsed = Math.round((Date.now() - startTimeRef.current) / 1000);
-    if (elapsed < 1) {
-      toast({
-        title: "Recording Too Short",
-        description: "Please record for at least 1 second",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    console.log('🛑 Stopping recording, requesting final data flush');
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      // Request any buffered audio data to be flushed before stopping
-      mediaRecorderRef.current.requestData();
-      
-      // Small delay to allow requestData to complete before stopping
-      setTimeout(() => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-          mediaRecorderRef.current.stop();
-        }
-      }, 100);
+      // Just stop - MediaRecorder will automatically flush remaining data
+      mediaRecorderRef.current.stop();
     }
     
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-    
-    // Stream cleanup happens in onstop handler - don't stop tracks prematurely here
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
   }, []);
 
   const playRecording = useCallback(() => {
