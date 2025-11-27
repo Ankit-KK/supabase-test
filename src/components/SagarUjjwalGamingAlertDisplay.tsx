@@ -184,30 +184,48 @@ export const SagarUjjwalGamingAlertDisplay = ({
 
   // Regular donation alert
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+    <div className="fixed inset-0 pointer-events-none z-50">
       <div 
-        className="bg-gradient-to-r from-red-600/90 to-red-700/90 backdrop-blur-sm text-white p-8 rounded-2xl shadow-2xl max-w-2xl w-full animate-in fade-in slide-in-from-bottom-4 duration-500"
+        className={`
+          absolute bottom-[10%] left-1/2 -translate-x-1/2
+          text-white text-center
+          flex flex-col items-center gap-1.5
+          px-8 py-4 rounded-xl
+          ${isVisible ? 'opacity-100' : 'opacity-0'}
+          transition-opacity duration-600
+        `}
         style={{
-          boxShadow: `0 0 40px rgba(239, 68, 68, 0.4)`,
+          background: 'linear-gradient(90deg, rgba(0, 122, 255, 0.6), rgba(144, 0, 255, 0.6))',
+          boxShadow: '0 0 25px rgba(144, 0, 255, 0.4)',
+          letterSpacing: '0.4px',
         }}
       >
-        <div className="text-center space-y-4">
-          <div className="flex items-center justify-center gap-3">
-            <h2 className="text-3xl font-bold">{donation.name}</h2>
-            {donation.voice_message_url && (
-              <Music className="w-8 h-8 text-red-200 animate-pulse" />
+        {/* Name and Amount */}
+        <div className="text-[1.2rem]">
+          <span className="font-bold">{donation.name}</span> donated{' '}
+          <span className="font-bold">₹{donation.amount}</span>
+        </div>
+
+        {/* Voice Message Indicator */}
+        {donation.voice_message_url && (
+          <div className="inline-flex items-center gap-2 text-sm">
+            <Music className="w-4 h-4" />
+            <span>🎵 Voice Message</span>
+          </div>
+        )}
+
+        {/* Message with Typing Effect */}
+        {displayedMessage && (
+          <div 
+            className="text-base font-normal min-h-[1.2em]"
+            style={{ opacity: 0.9, color: '#f9f9f9' }}
+          >
+            "{displayedMessage}"
+            {displayedMessage !== donation.message && (
+              <span className="animate-pulse ml-1">|</span>
             )}
           </div>
-          <p className="text-5xl font-bold text-red-100">₹{donation.amount}</p>
-          {displayedMessage && (
-            <p className="text-xl text-red-50 mt-4 break-words">
-              {displayedMessage}
-              {displayedMessage !== donation.message && (
-                <span className="inline-block w-2 h-6 bg-red-200 ml-1 animate-pulse" />
-              )}
-            </p>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );

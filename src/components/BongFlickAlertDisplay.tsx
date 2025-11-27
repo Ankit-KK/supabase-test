@@ -111,30 +111,40 @@ export const BongFlickAlertDisplay = ({ donation }: BongFlickAlertDisplayProps) 
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center p-4 pointer-events-none">
-      <div className="bg-gradient-to-br from-violet-600 to-purple-600 rounded-3xl shadow-2xl p-8 max-w-2xl w-full border-4 border-violet-300 animate-scale-in">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="bg-white/20 p-4 rounded-full">
-            <Flame className="w-12 h-12 text-white" />
-          </div>
-          <div>
-            <h2 className="text-4xl font-bold text-white">{donation.name}</h2>
-            <p className="text-2xl text-violet-100">₹{donation.amount}</p>
-          </div>
+    <div className="fixed inset-0 pointer-events-none z-50">
+      <div 
+        className="absolute bottom-[10%] left-1/2 -translate-x-1/2 text-white text-center flex flex-col items-center gap-1.5 px-8 py-4 rounded-xl opacity-100 transition-opacity duration-600"
+        style={{
+          background: 'linear-gradient(90deg, rgba(0, 122, 255, 0.6), rgba(144, 0, 255, 0.6))',
+          boxShadow: '0 0 25px rgba(144, 0, 255, 0.4)',
+          letterSpacing: '0.4px',
+        }}
+      >
+        {/* Name and Amount */}
+        <div className="text-[1.2rem]">
+          <span className="font-bold">{donation.name}</span> donated{' '}
+          <span className="font-bold">₹{donation.amount}</span>
         </div>
-        
-        {isVoiceMessage ? (
-          <div className="bg-white/10 rounded-xl p-6 backdrop-blur-sm">
-            <p className="text-xl text-white text-center flex items-center justify-center gap-3">
-              <span className="text-3xl">🎤</span>
-              Sent a Voice Message
-            </p>
+
+        {/* Voice Message Indicator */}
+        {isVoiceMessage && (
+          <div className="inline-flex items-center gap-2 text-sm">
+            <span>🎵 Voice Message</span>
           </div>
-        ) : donation.message ? (
-          <div className="bg-white/10 rounded-xl p-6 backdrop-blur-sm">
-            <p className="text-xl text-white leading-relaxed">{displayedText}</p>
+        )}
+
+        {/* Message with Typing Effect */}
+        {donation.message && !isVoiceMessage && (
+          <div 
+            className="text-base font-normal min-h-[1.2em]"
+            style={{ opacity: 0.9, color: '#f9f9f9' }}
+          >
+            "{displayedText}"
+            {displayedText !== donation.message && (
+              <span className="animate-pulse ml-1">|</span>
+            )}
           </div>
-        ) : null}
+        )}
       </div>
     </div>
   );
