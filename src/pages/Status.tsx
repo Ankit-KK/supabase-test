@@ -1,3 +1,4 @@
+// Payment status page - supports all streamers with Razorpay and Cashfree integrations
 import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
