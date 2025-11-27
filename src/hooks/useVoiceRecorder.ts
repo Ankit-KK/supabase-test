@@ -69,6 +69,8 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
         const audioUrl = URL.createObjectURL(audioBlob);
         const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
 
+        console.log('[VoiceRecorder] Recording stopped, blob size:', audioBlob.size, 'bytes, type:', audioBlob.type);
+
         setState(prev => ({
           ...prev,
           audioBlob,
@@ -95,8 +97,10 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
 
         // Auto-stop at max duration using ref (not stale closure)
         if (elapsed >= maxDurationRef.current) {
-          // Stop recording - MediaRecorder will automatically flush remaining data
+          // Flush buffered audio before stopping
           if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+            console.log('[VoiceRecorder] Auto-stop triggered, flushing audio buffer');
+            mediaRecorderRef.current.requestData();
             mediaRecorderRef.current.stop();
           }
           if (timerRef.current) {
@@ -118,7 +122,9 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
 
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      // Just stop - MediaRecorder will automatically flush remaining data
+      // Flush any buffered audio data before stopping
+      console.log('[VoiceRecorder] Manual stop triggered, flushing audio buffer');
+      mediaRecorderRef.current.requestData();
       mediaRecorderRef.current.stop();
     }
     
@@ -127,10 +133,8 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
       timerRef.current = null;
     }
 
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
+    // ❌ REMOVED: Do NOT stop stream here - let onstop handler do it
+    // The stream must remain active until MediaRecorder finishes capturing
   }, []);
 
   const playRecording = useCallback(() => {
