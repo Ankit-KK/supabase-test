@@ -378,11 +378,14 @@ const LooteriyaGaming = () => {
                   Voice Message *
                 </label>
                 <EnhancedVoiceRecorder
-                  onRecordingComplete={(blob) => {}}
                   controller={voiceRecorder}
-                  requiredAmount={2}
-                  currentAmount={parseFloat(formData.amount) || 0}
+                  onRecordingComplete={(hasRecording, duration) => {
+                    console.log('Recording complete:', hasRecording, duration);
+                  }}
+                  maxDurationSeconds={getVoiceDuration(currentAmount)}
                   brandColor="#f59e0b"
+                  requiredAmount={150}
+                  currentAmount={currentAmount}
                 />
               </div>
             )}

@@ -24,7 +24,8 @@ const EnhancedVoiceRecorder: React.FC<EnhancedVoiceRecorderProps> = ({
   brandColor = '#6366f1'
 }) => {
   const canRecord = currentAmount >= requiredAmount;
-  const internalRecorder = useVoiceRecorder(maxDurationSeconds);
+  // Use controller if provided, otherwise fallback to internal
+  const recorder = controller || useVoiceRecorder(maxDurationSeconds);
   const {
     isRecording,
     audioBlob,
@@ -35,7 +36,7 @@ const EnhancedVoiceRecorder: React.FC<EnhancedVoiceRecorderProps> = ({
     playRecording,
     stopPlayback,
     clearRecording,
-  } = controller ?? internalRecorder;
+  } = recorder;
 
   useEffect(() => {
     onRecordingComplete(!!audioBlob, duration);
