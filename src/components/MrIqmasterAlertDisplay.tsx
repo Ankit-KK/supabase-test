@@ -145,35 +145,36 @@ export const MrIqmasterAlertDisplay = ({ donation, isVisible = true }: MrIqmaste
 
   // Regular donation alert
   return (
-    <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-50 p-8">
-      <div className="bg-gradient-to-br from-cyan-900/95 via-cyan-800/95 to-teal-900/95 backdrop-blur-xl rounded-3xl p-12 max-w-4xl w-full shadow-2xl border-4 border-cyan-400 animate-in fade-in zoom-in duration-500">
-        <div className="flex items-center justify-center gap-6 mb-8">
-          <div className="w-20 h-20 rounded-full bg-cyan-400/20 flex items-center justify-center animate-pulse">
-            <Brain className="w-12 h-12 text-cyan-400" />
-          </div>
-          <div>
-            <h2 className="text-6xl font-bold text-white mb-2">{donation.name}</h2>
-            <p className="text-4xl font-semibold text-cyan-300">₹{donation.amount}</p>
-          </div>
+    <div className="fixed inset-0 pointer-events-none z-50">
+      <div 
+        className="absolute bottom-[10%] left-1/2 -translate-x-1/2 text-white text-center flex flex-col items-center gap-1.5 px-8 py-4 rounded-xl opacity-100 transition-opacity duration-600"
+        style={{
+          background: 'linear-gradient(90deg, rgba(0, 122, 255, 0.6), rgba(144, 0, 255, 0.6))',
+          boxShadow: '0 0 25px rgba(144, 0, 255, 0.4)',
+          letterSpacing: '0.4px',
+        }}
+      >
+        {/* Name and Amount */}
+        <div className="text-[1.2rem]">
+          <span className="font-bold">{donation.name}</span> donated{' '}
+          <span className="font-bold">₹{donation.amount}</span>
         </div>
 
+        {/* Voice Message Indicator */}
         {donation.voice_message_url && (
-          <div className="mt-6 p-6 bg-cyan-950/50 rounded-2xl border-2 border-cyan-400/50">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-cyan-400/30 flex items-center justify-center animate-pulse">
-                <span className="text-3xl">🎤</span>
-              </div>
-              <p className="text-3xl font-semibold text-cyan-200">Voice Message</p>
-            </div>
+          <div className="inline-flex items-center gap-2 text-sm">
+            <span>🎵 Voice Message</span>
           </div>
         )}
 
+        {/* Message with Typing Effect */}
         {donation.message && !donation.voice_message_url && (
-          <div className="mt-6 p-8 bg-cyan-950/50 rounded-2xl border-2 border-cyan-400/50">
-            <p className="text-3xl text-white leading-relaxed">
-              {displayedText}
-              {isTyping && <span className="animate-pulse">|</span>}
-            </p>
+          <div 
+            className="text-base font-normal min-h-[1.2em]"
+            style={{ opacity: 0.9, color: '#f9f9f9' }}
+          >
+            "{displayedText}"
+            {isTyping && <span className="animate-pulse ml-1">|</span>}
           </div>
         )}
       </div>

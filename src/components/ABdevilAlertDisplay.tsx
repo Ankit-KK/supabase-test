@@ -198,32 +198,36 @@ export const ABdevilAlertDisplay = ({
 
   // Regular donation alert
   return (
-    <div className="fixed top-8 left-1/2 transform -translate-x-1/2 z-50 animate-in slide-in-from-top duration-500">
-      <div className="bg-gradient-to-r from-orange-900/95 to-amber-800/95 backdrop-blur-md rounded-2xl shadow-2xl p-6 border-2 border-orange-400 min-w-[400px] max-w-2xl">
-        <div className="flex items-center gap-4 mb-4">
-          <div className="bg-orange-600 p-3 rounded-full">
-            <Flame className="w-8 h-8 text-white" />
-          </div>
-          <div className="flex-1">
-            <h3 className="text-2xl font-bold text-white">{donation.name}</h3>
-            <p className="text-orange-200 text-lg">₹{donation.amount}</p>
-          </div>
+    <div className="fixed inset-0 pointer-events-none z-50">
+      <div 
+        className="absolute bottom-[10%] left-1/2 -translate-x-1/2 text-white text-center flex flex-col items-center gap-1.5 px-8 py-4 rounded-xl opacity-100 transition-opacity duration-600"
+        style={{
+          background: 'linear-gradient(90deg, rgba(0, 122, 255, 0.6), rgba(144, 0, 255, 0.6))',
+          boxShadow: '0 0 25px rgba(144, 0, 255, 0.4)',
+          letterSpacing: '0.4px',
+        }}
+      >
+        {/* Name and Amount */}
+        <div className="text-[1.2rem]">
+          <span className="font-bold">{donation.name}</span> donated{' '}
+          <span className="font-bold">₹{donation.amount}</span>
         </div>
 
+        {/* Voice Message Indicator */}
         {donation.voice_message_url && (
-          <div className="mt-4 p-4 bg-orange-500/20 rounded-lg border border-orange-400/30">
-            <p className="text-orange-300 font-semibold flex items-center gap-2">
-              🎤 Voice Message
-            </p>
+          <div className="inline-flex items-center gap-2 text-sm">
+            <span>🎵 Voice Message</span>
           </div>
         )}
 
+        {/* Message with Typing Effect */}
         {donation.message && !donation.voice_message_url && (
-          <div className="mt-4 p-4 bg-black/30 rounded-lg border border-orange-400/30">
-            <p className="text-white text-lg leading-relaxed">
-              {displayedText}
-              {isTyping && <span className="animate-pulse">|</span>}
-            </p>
+          <div 
+            className="text-base font-normal min-h-[1.2em]"
+            style={{ opacity: 0.9, color: '#f9f9f9' }}
+          >
+            "{displayedText}"
+            {isTyping && <span className="animate-pulse ml-1">|</span>}
           </div>
         )}
       </div>
