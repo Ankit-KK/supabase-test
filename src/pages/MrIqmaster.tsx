@@ -198,8 +198,27 @@ const MrIqmaster = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cyan-950 via-teal-900 to-cyan-800 flex items-center justify-center p-4">
-      <Card className="w-full max-w-[21rem] bg-gradient-to-br from-cyan-900/95 via-cyan-800/95 to-teal-900/95 backdrop-blur-xl border-2 border-cyan-400/30 shadow-2xl">
+    <div 
+      className="min-h-screen flex items-center justify-center p-4 relative"
+      style={{
+        backgroundImage: `url('/lovable-uploads/mriqmaster-banner.jpg')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <Card 
+        className="w-full max-w-[21rem] backdrop-blur-xl border-2 border-cyan-400/30 shadow-2xl relative z-10 overflow-hidden"
+        style={{
+          backgroundImage: `url('/lovable-uploads/mriqmaster-logo.jpg')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
+      >
+        <div className="absolute inset-0 bg-black/70" />
+        <div className="relative z-10">
         <CardHeader className="text-center pb-4">
           <div className="flex justify-center mb-4">
             <div className="w-16 h-16 rounded-full bg-cyan-400/20 flex items-center justify-center border-4 border-cyan-400">
@@ -334,6 +353,7 @@ const MrIqmaster = () => {
             </Button>
           </form>
         </CardContent>
+        </div>
       </Card>
     </div>
   );
