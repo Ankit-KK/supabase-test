@@ -8,7 +8,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { DonationTypeSelector } from "@/components/DonationTypeSelector";
-import EnhancedVoiceRecorder from "@/components/EnhancedVoiceRecorder";
+import VoiceRecorder from "@/components/VoiceRecorder";
+import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 
 declare global {
   interface Window {
@@ -22,9 +23,21 @@ const ABdevil = () => {
   const [message, setMessage] = useState("");
   const [donationType, setDonationType] = useState<"message" | "voice" | "hyperemote">("message");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
+  const [hasVoiceRecording, setHasVoiceRecording] = useState(false);
+  const [voiceDuration, setVoiceDuration] = useState(0);
   const { toast } = useToast();
   const navigate = useNavigate();
+  
+  const maxVoiceDuration = getVoiceDuration();
+  const voiceRecorder = useVoiceRecorder(maxVoiceDuration);
+  
+  function getVoiceDuration() {
+    const amt = parseFloat(amount);
+    if (amt >= 500) return 30;
+    if (amt >= 250) return 25;
+    if (amt >= 150) return 15;
+    return 15;
+  }
 
   useEffect(() => {
     const script = document.createElement("script");
@@ -36,17 +49,6 @@ const ABdevil = () => {
     };
   }, []);
 
-  const getVoiceDuration = () => {
-    const amt = parseFloat(amount);
-    if (amt >= 500) return 30;
-    if (amt >= 250) return 25;
-    if (amt >= 150) return 15;
-    return 15;
-  };
-
-  const handleVoiceRecorded = (hasRecording: boolean, duration: number) => {
-    // This will be handled by the recorder component internally
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,16 +90,45 @@ const ABdevil = () => {
       return;
     }
 
-    // Voice recording validation will be handled by the recorder component
+    if (donationType === "voice" && !voiceRecorder.audioBlob) {
+      toast({
+        title: "Voice Required",
+        description: "Please record a voice message",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsProcessing(true);
 
     try {
       let voiceMessageUrl = null;
 
-      if (donationType === "voice") {
-        // Voice upload will be handled by EnhancedVoiceRecorder component
-        // For now, we'll pass null and handle it in the order creation
+      if (donationType === "voice" && voiceRecorder.audioBlob) {
+        const voiceDataBase64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64 = reader.result as string;
+            resolve(base64.split(',')[1]);
+          };
+          reader.readAsDataURL(voiceRecorder.audioBlob!);
+        });
+
+        const {
+          data: uploadResult,
+          error: uploadError
+        } = await supabase.functions.invoke('upload-voice-message-direct', {
+          body: {
+            voiceData: voiceDataBase64,
+            streamerSlug: 'abdevil'
+          }
+        });
+        if (uploadError) {
+          console.error('Voice upload error:', uploadError);
+          throw new Error('Failed to upload voice message');
+        }
+        voiceMessageUrl = uploadResult.voice_message_url;
+        console.log('Voice message uploaded successfully:', voiceMessageUrl);
       }
 
       const { data: orderData, error: orderError } = await supabase.functions.invoke(
@@ -219,10 +250,20 @@ const ABdevil = () => {
           )}
 
           {donationType === "voice" && (
-            <div className="p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg">
-              <p className="text-orange-300 text-sm text-center">
-                🎤 Voice messages available for ₹150+ (max {getVoiceDuration()}s)
-              </p>
+            <div className="space-y-3">
+              <Label className="text-orange-400">
+                Record Voice Message *
+              </Label>
+              <VoiceRecorder
+                onRecordingComplete={(hasRecording, duration) => {
+                  setHasVoiceRecording(hasRecording);
+                  setVoiceDuration(duration);
+                }}
+                maxDurationSeconds={maxVoiceDuration}
+                controller={voiceRecorder}
+                requiredAmount={150}
+                currentAmount={parseFloat(amount) || 0}
+              />
             </div>
           )}
 
