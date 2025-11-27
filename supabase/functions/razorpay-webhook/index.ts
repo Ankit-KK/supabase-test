@@ -116,7 +116,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // Determine table based on order ID prefix (supports both old and new formats)
-    let streamerType: 'ankit' | 'thunderx' | 'vipbhai' | 'sagarujjwalgaming' | 'notyourkween' | 'bongflick' | 'mriqmaster' | 'abdevil' | 'looteriyagaming' | 'damaskplays' | 'nekoxenpai'
+    let streamerType: 'ankit' | 'thunderx' | 'vipbhai' | 'sagarujjwalgaming' | 'notyourkween' | 'bongflick' | 'mriqmaster' | 'abdevil' | 'looteriyagaming' | 'damaskplays' | 'nekoxenpai' | 'jhanvoo'
     let tableName: string
     
     // Get donation from the appropriate table using Razorpay order ID
@@ -255,7 +255,20 @@ serve(async (req) => {
                           streamerType = 'nekoxenpai'
                           tableName = 'neko_xenpai_donations'
                         } else {
-                          fetchError = ankitResult.error || thunderxResult.error || vipbhaiResult.error || sagarujjwalgamingResult.error || notyourkweenResult.error || bongflickResult.error || mriqmasterResult.error || abdevilResult.error || looteriyaGamingResult.error || damaskPlaysResult.error || nekoXenpaiResult.error
+                          // Try jhanvoo
+                          const jhanvooResult = await supabase
+                            .from('jhanvoo_donations')
+                            .select('*')
+                            .eq('razorpay_order_id', razorpayOrderId)
+                            .maybeSingle()
+                          
+                          if (jhanvooResult.data) {
+                            donation = jhanvooResult.data
+                            streamerType = 'jhanvoo'
+                            tableName = 'jhanvoo_donations'
+                          } else {
+                            fetchError = ankitResult.error || thunderxResult.error || vipbhaiResult.error || sagarujjwalgamingResult.error || notyourkweenResult.error || bongflickResult.error || mriqmasterResult.error || abdevilResult.error || looteriyaGamingResult.error || damaskPlaysResult.error || nekoXenpaiResult.error || jhanvooResult.error
+                          }
                         }
                       }
                     }
@@ -361,6 +374,8 @@ serve(async (req) => {
         ? ['damask_plays-alerts', 'damask_plays-dashboard']
         : streamerType === 'nekoxenpai'
         ? ['neko_xenpai-alerts', 'neko_xenpai-dashboard']
+        : streamerType === 'jhanvoo'
+        ? ['jhanvoo-alerts', 'jhanvoo-dashboard']
         : ['ankit-alerts', 'ankit-dashboard']
       
       await sendPusherEvent(alertChannels, 'new-donation', {
@@ -424,6 +439,8 @@ serve(async (req) => {
               ? ['damask_plays-audio']
               : streamerType === 'nekoxenpai'
               ? ['neko_xenpai-audio']
+              : streamerType === 'jhanvoo'
+              ? ['jhanvoo-audio']
               : ['ankit-audio']
             await sendPusherEvent(audioChannel, 'new-audio-message', {
               id: donation.id,
@@ -493,6 +510,8 @@ serve(async (req) => {
                 ? ['damask_plays-audio']
                 : streamerType === 'nekoxenpai'
                 ? ['neko_xenpai-audio']
+                : streamerType === 'jhanvoo'
+                ? ['jhanvoo-audio']
                 : ['ankit-audio']
               await sendPusherEvent(audioChannel, 'new-audio-message', {
                 id: donation.id,
