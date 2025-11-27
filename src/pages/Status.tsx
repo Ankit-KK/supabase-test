@@ -37,6 +37,7 @@ export default function Status() {
           if (orderId.startsWith('bf_rp_')) return 'check-payment-status-bongflick';
           if (orderId.startsWith('miq_rp_')) return 'check-payment-status-mriqmaster';
           if (orderId.startsWith('abd_rp_')) return 'check-payment-status-abdevil';
+          if (orderId.startsWith('jv_rp_')) return 'check-payment-status-jhanvoo';
           if (orderId.startsWith('lg_rp_')) return 'check-payment-status-looteriya-gaming';
           if (orderId.startsWith('dp_rp_')) return 'check-payment-status-damask-plays';
           if (orderId.startsWith('nx_rp_')) return 'check-payment-status-neko-xenpai';
@@ -108,7 +109,7 @@ export default function Status() {
         if (backendStatus === 'success') {
           const shouldSkipVoiceUpload = (orderId: string) => {
             // Razorpay streamers upload voice messages before payment via upload-voice-message-direct
-            if (orderId.startsWith('ak_rp_') || orderId.startsWith('tx_rp_') || orderId.startsWith('vb_rp_') || orderId.startsWith('sug_rp_') || orderId.startsWith('nyk_rp_') || orderId.startsWith('bf_rp_') || orderId.startsWith('miq_rp_') || orderId.startsWith('abd_rp_') || orderId.startsWith('lg_rp_') || orderId.startsWith('dp_rp_') || orderId.startsWith('nx_rp_')) return true;
+            if (orderId.startsWith('ak_rp_') || orderId.startsWith('tx_rp_') || orderId.startsWith('vb_rp_') || orderId.startsWith('sug_rp_') || orderId.startsWith('nyk_rp_') || orderId.startsWith('bf_rp_') || orderId.startsWith('miq_rp_') || orderId.startsWith('abd_rp_') || orderId.startsWith('jv_rp_') || orderId.startsWith('lg_rp_') || orderId.startsWith('dp_rp_') || orderId.startsWith('nx_rp_')) return true;
             if (orderId.startsWith('ankit_razorpay_') || orderId.startsWith('thunderx_razorpay_')) return true;
             return false;
           };
@@ -246,6 +247,7 @@ export default function Status() {
                 if (orderId.startsWith('bf_rp_')) return "/bongflick";
                 if (orderId.startsWith('miq_rp_')) return "/mriqmaster";
                 if (orderId.startsWith('abd_rp_')) return "/abdevil";
+                if (orderId.startsWith('jv_rp_')) return "/jhanvoo";
                 if (orderId.startsWith('lg_rp_')) return "/looteriya_gaming";
                 if (orderId.startsWith('dp_rp_')) return "/damask_plays";
                 if (orderId.startsWith('nx_rp_')) return "/neko_xenpai";
