@@ -58,14 +58,24 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
       startTimeRef.current = Date.now();
 
       mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
+        console.log(`📦 Chunk received: ${event.data.size} bytes`);
+        if (event.data && event.data.size > 0) {
           chunksRef.current.push(event.data);
+          console.log(`✅ Chunk added. Total chunks: ${chunksRef.current.length}`);
+        } else {
+          console.log('⚠️ Empty chunk ignored');
         }
       };
 
       mediaRecorder.onstop = () => {
+        console.log(`🎬 Recording stopped. Total chunks collected: ${chunksRef.current.length}`);
+        const totalSize = chunksRef.current.reduce((sum, chunk) => sum + chunk.size, 0);
+        console.log(`📊 Total audio data size: ${totalSize} bytes`);
+        
         const mime = selectedMimeTypeRef.current || 'audio/webm;codecs=opus';
         const audioBlob = new Blob(chunksRef.current, { type: mime });
+        console.log(`🔊 Final blob created: ${audioBlob.size} bytes, mime: ${mime}`);
+        
         const audioUrl = URL.createObjectURL(audioBlob);
         const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
 
@@ -84,7 +94,8 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
         }
       };
 
-      mediaRecorder.start(100); // Collect data every 100ms to prevent empty recordings
+      console.log('🎤 Starting MediaRecorder with 500ms timeslice');
+      mediaRecorder.start(500); // Collect data every 500ms for better browser compatibility
       
       setState(prev => ({ ...prev, isRecording: true, duration: 0 }));
 
@@ -95,9 +106,16 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
 
         // Auto-stop at max duration using ref (not stale closure)
         if (elapsed >= maxDurationRef.current) {
-          // Stop recording - MediaRecorder will automatically flush remaining data
+          console.log('⏱️ Auto-stopping at max duration, requesting final data flush');
+          // Request any buffered audio data before stopping
           if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-            mediaRecorderRef.current.stop();
+            mediaRecorderRef.current.requestData();
+            // Small delay to allow requestData to complete
+            setTimeout(() => {
+              if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+                mediaRecorderRef.current.stop();
+              }
+            }, 100);
           }
           if (timerRef.current) {
             clearInterval(timerRef.current);
@@ -128,9 +146,17 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
       return;
     }
 
+    console.log('🛑 Stopping recording, requesting final data flush');
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      // Just stop - MediaRecorder will automatically flush remaining data
-      mediaRecorderRef.current.stop();
+      // Request any buffered audio data to be flushed before stopping
+      mediaRecorderRef.current.requestData();
+      
+      // Small delay to allow requestData to complete before stopping
+      setTimeout(() => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+          mediaRecorderRef.current.stop();
+        }
+      }, 100);
     }
     
     if (timerRef.current) {
