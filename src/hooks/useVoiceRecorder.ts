@@ -35,62 +35,113 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
 
   const startRecording = useCallback(async () => {
     try {
+      // Request microphone access with simplified constraints (no custom sampleRate)
       const stream = await navigator.mediaDevices.getUserMedia({ 
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
-          sampleRate: 44100,
-        } 
+          // No custom sampleRate - let browser choose optimal value
+        },
+        video: false,
       });
 
       streamRef.current = stream;
 
-      // Validate stream has audio tracks
+      // Validate stream has active audio tracks
       const audioTracks = stream.getAudioTracks();
       console.log('[VoiceRecorder] Stream obtained:', {
         trackCount: audioTracks.length,
         trackState: audioTracks[0]?.readyState,
         trackEnabled: audioTracks[0]?.enabled,
         trackMuted: audioTracks[0]?.muted,
-        trackLabel: audioTracks[0]?.label
+        trackLabel: audioTracks[0]?.label,
+        settings: audioTracks[0]?.getSettings(),
       });
 
-      if (audioTracks.length === 0 || !audioTracks[0].enabled) {
-        throw new Error('No enabled audio track found');
+      if (audioTracks.length === 0) {
+        throw new Error('No audio tracks found in stream');
       }
 
-      const preferredTypes = ['audio/ogg;codecs=opus','audio/webm;codecs=opus','audio/webm'];
-      const supported = (typeof MediaRecorder !== 'undefined' && (MediaRecorder as any).isTypeSupported)
-        ? preferredTypes.find(t => (MediaRecorder as any).isTypeSupported(t))
-        : undefined;
-      selectedMimeTypeRef.current = supported;
-      const mediaRecorder = supported ? new MediaRecorder(stream, { mimeType: supported }) : new MediaRecorder(stream);
+      if (!audioTracks[0].enabled || audioTracks[0].muted) {
+        throw new Error('Audio track is disabled or muted');
+      }
+
+      // Select MIME type - prioritize audio/webm;codecs=opus (most compatible)
+      const preferredTypes = [
+        'audio/webm;codecs=opus',  // Most compatible - try this first
+        'audio/webm',
+        'audio/ogg;codecs=opus',
+      ];
+
+      const supportedType = preferredTypes.find(type => 
+        typeof MediaRecorder !== 'undefined' && 
+        MediaRecorder.isTypeSupported && 
+        MediaRecorder.isTypeSupported(type)
+      ) || '';
+
+      console.log('[VoiceRecorder] MIME type selection:', {
+        preferred: preferredTypes,
+        selected: supportedType || 'default',
+        allSupported: preferredTypes.map(t => ({
+          type: t,
+          supported: MediaRecorder.isTypeSupported ? MediaRecorder.isTypeSupported(t) : false
+        }))
+      });
+
+      selectedMimeTypeRef.current = supportedType;
+      
+      // Create MediaRecorder with selected MIME type
+      const options = supportedType ? { mimeType: supportedType } : {};
+      const mediaRecorder = new MediaRecorder(stream, options);
 
       chunksRef.current = [];
       mediaRecorderRef.current = mediaRecorder;
       startTimeRef.current = Date.now();
 
+      console.log('[VoiceRecorder] MediaRecorder created:', {
+        state: mediaRecorder.state,
+        mimeType: mediaRecorder.mimeType,
+        audioBitsPerSecond: mediaRecorder.audioBitsPerSecond,
+        videoBitsPerSecond: mediaRecorder.videoBitsPerSecond,
+      });
+
+      // Listen for ALL data events (including size=0 for debugging)
       mediaRecorder.ondataavailable = (event) => {
+        console.log('[VoiceRecorder] ondataavailable fired:', {
+          size: event.data.size,
+          type: event.data.type,
+          timestamp: new Date().toISOString(),
+        });
+
         if (event.data.size > 0) {
           chunksRef.current.push(event.data);
-          console.log('[VoiceRecorder] Chunk received, size:', event.data.size, 'bytes, total chunks:', chunksRef.current.length);
+          console.log('[VoiceRecorder] Chunk added, total chunks:', chunksRef.current.length);
+        } else {
+          console.warn('[VoiceRecorder] Received empty chunk (size=0)');
         }
       };
 
       mediaRecorder.onstop = () => {
+        console.log('[VoiceRecorder] onstop handler fired');
         console.log('[VoiceRecorder] Total chunks collected:', chunksRef.current.length);
         
-        // Validate we have actual audio data
         const totalSize = chunksRef.current.reduce((acc, chunk) => acc + chunk.size, 0);
         console.log('[VoiceRecorder] Total audio data size:', totalSize, 'bytes');
+
+        if (chunksRef.current.length === 0) {
+          console.error('[VoiceRecorder] No audio chunks collected!');
+        }
         
         const mime = selectedMimeTypeRef.current || 'audio/webm;codecs=opus';
         const audioBlob = new Blob(chunksRef.current, { type: mime });
         const audioUrl = URL.createObjectURL(audioBlob);
         const duration = Math.round((Date.now() - startTimeRef.current) / 1000);
 
-        console.log('[VoiceRecorder] Recording stopped, blob size:', audioBlob.size, 'bytes, type:', audioBlob.type);
+        console.log('[VoiceRecorder] Recording stopped, blob created:', {
+          size: audioBlob.size,
+          type: audioBlob.type,
+        });
 
         setState(prev => ({
           ...prev,
@@ -100,9 +151,12 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
           isRecording: false,
         }));
 
-        // Stop all tracks
+        // Clean up stream AFTER blob is created
         if (streamRef.current) {
-          streamRef.current.getTracks().forEach(track => track.stop());
+          streamRef.current.getTracks().forEach(track => {
+            track.stop();
+            console.log('[VoiceRecorder] Track stopped:', track.label);
+          });
           streamRef.current = null;
         }
       };
@@ -111,12 +165,10 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
         console.error('[VoiceRecorder] MediaRecorder error:', event.error);
       };
 
-      mediaRecorder.start(500); // Fire ondataavailable every 500ms to collect audio chunks continuously
-      console.log('[VoiceRecorder] MediaRecorder started:', {
-        state: mediaRecorder.state,
-        mimeType: mediaRecorder.mimeType,
-        audioBitsPerSecond: mediaRecorder.audioBitsPerSecond
-      });
+      // Start recording with timeslice for continuous data emission
+      mediaRecorder.start(500);
+      console.log('[VoiceRecorder] MediaRecorder.start(500) called');
+      console.log('[VoiceRecorder] MediaRecorder state after start:', mediaRecorder.state);
       
       setState(prev => ({ ...prev, isRecording: true, duration: 0 }));
 
@@ -127,15 +179,18 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
 
         // Auto-stop at max duration using ref (not stale closure)
         if (elapsed >= maxDurationRef.current) {
-          // Flush buffered audio before stopping
-          if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-            console.log('[VoiceRecorder] Auto-stop triggered, flushing audio buffer');
+          console.log('[VoiceRecorder] Max duration reached, auto-stopping');
+          clearInterval(timerRef.current!);
+          
+          if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+            console.log('[VoiceRecorder] Flushing audio buffer with requestData()');
             mediaRecorderRef.current.requestData();
-            mediaRecorderRef.current.stop();
-          }
-          if (timerRef.current) {
-            clearInterval(timerRef.current);
-            timerRef.current = null;
+            setTimeout(() => {
+              if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+                console.log('[VoiceRecorder] Stopping MediaRecorder');
+                mediaRecorderRef.current.stop();
+              }
+            }, 100);
           }
         }
       }, 1000);
@@ -151,20 +206,24 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
   }, []);
 
   const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      // Flush any buffered audio data before stopping
-      console.log('[VoiceRecorder] Manual stop triggered, flushing audio buffer');
-      mediaRecorderRef.current.requestData();
-      mediaRecorderRef.current.stop();
-    }
-    
+    console.log('[VoiceRecorder] stopRecording called');
+
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
 
-    // ❌ REMOVED: Do NOT stop stream here - let onstop handler do it
-    // The stream must remain active until MediaRecorder finishes capturing
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      console.log('[VoiceRecorder] Flushing audio buffer with requestData()');
+      mediaRecorderRef.current.requestData();
+      
+      setTimeout(() => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+          console.log('[VoiceRecorder] Stopping MediaRecorder');
+          mediaRecorderRef.current.stop();
+        }
+      }, 100);
+    }
   }, []);
 
   const playRecording = useCallback(() => {
