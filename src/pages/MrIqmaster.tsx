@@ -254,44 +254,52 @@ const MrIqmaster = () => {
               />
             </div>
 
-            <div>
-              <Label className="text-cyan-400 font-semibold mb-3 block">Choose Interaction</Label>
-              <div className="grid grid-cols-3 gap-2">
+            <div className="space-y-3">
+              <Label className="text-cyan-300 font-bold text-sm uppercase tracking-wide block text-center">
+                Choose Your Interaction
+              </Label>
+              <div className="grid grid-cols-3 gap-3">
                 <Button
                   type="button"
                   onClick={() => { setDonationType('text'); setFormData({ ...formData, amount: '40' }); }}
                   variant={donationType === 'text' ? 'default' : 'outline'}
-                  className={donationType === 'text' ? 'bg-cyan-500 hover:bg-cyan-600 text-white border-cyan-400' : 'border-cyan-500/30 text-cyan-300 hover:bg-cyan-950/50 hover:text-cyan-200'}
+                  className={donationType === 'text' 
+                    ? 'bg-gradient-to-br from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white border-2 border-cyan-400 shadow-lg shadow-cyan-500/50 transition-all duration-300 h-auto' 
+                    : 'border-2 border-cyan-500/40 text-cyan-300 hover:bg-cyan-950/60 hover:border-cyan-400/60 hover:text-cyan-200 hover:shadow-lg hover:shadow-cyan-500/20 transition-all duration-300 bg-cyan-950/20 h-auto'}
                 >
-                  <div className="flex flex-col items-center gap-1 py-1">
-                    <span className="text-xl">💬</span>
-                    <span className="text-xs font-medium">Text</span>
-                    <span className="text-[10px] opacity-90">₹40+</span>
+                  <div className="flex flex-col items-center gap-1.5 py-2">
+                    <span className="text-2xl">💬</span>
+                    <span className="text-xs font-semibold">Text</span>
+                    <span className="text-[10px] opacity-80 font-medium">₹40+</span>
                   </div>
                 </Button>
                 <Button
                   type="button"
                   onClick={() => { setDonationType('voice'); setFormData({ ...formData, amount: '150' }); }}
                   variant={donationType === 'voice' ? 'default' : 'outline'}
-                  className={donationType === 'voice' ? 'bg-cyan-500 hover:bg-cyan-600 text-white border-cyan-400' : 'border-cyan-500/30 text-cyan-300 hover:bg-cyan-950/50 hover:text-cyan-200'}
+                  className={donationType === 'voice' 
+                    ? 'bg-gradient-to-br from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white border-2 border-cyan-400 shadow-lg shadow-cyan-500/50 transition-all duration-300 h-auto' 
+                    : 'border-2 border-cyan-500/40 text-cyan-300 hover:bg-cyan-950/60 hover:border-cyan-400/60 hover:text-cyan-200 hover:shadow-lg hover:shadow-cyan-500/20 transition-all duration-300 bg-cyan-950/20 h-auto'}
                 >
-                  <div className="flex flex-col items-center gap-1 py-1">
-                    <span className="text-xl">🎤</span>
-                    <span className="text-xs font-medium">Voice</span>
-                    <span className="text-[10px] opacity-90">₹150+</span>
+                  <div className="flex flex-col items-center gap-1.5 py-2">
+                    <span className="text-2xl">🎤</span>
+                    <span className="text-xs font-semibold">Voice</span>
+                    <span className="text-[10px] opacity-80 font-medium">₹150+</span>
                   </div>
                 </Button>
                 <Button
                   type="button"
                   onClick={() => { setDonationType('hyperemote'); setFormData({ ...formData, amount: '50' }); }}
                   variant={donationType === 'hyperemote' ? 'default' : 'outline'}
-                  className={donationType === 'hyperemote' ? 'bg-cyan-500 hover:bg-cyan-600 text-white border-cyan-400' : 'border-cyan-500/30 text-cyan-300 hover:bg-cyan-950/50 hover:text-cyan-200'}
+                  className={donationType === 'hyperemote' 
+                    ? 'bg-gradient-to-br from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white border-2 border-cyan-400 shadow-lg shadow-cyan-500/50 transition-all duration-300 h-auto' 
+                    : 'border-2 border-cyan-500/40 text-cyan-300 hover:bg-cyan-950/60 hover:border-cyan-400/60 hover:text-cyan-200 hover:shadow-lg hover:shadow-cyan-500/20 transition-all duration-300 bg-cyan-950/20 h-auto'}
                   disabled={!streamerSettings?.hyperemotes_enabled}
                 >
-                  <div className="flex flex-col items-center gap-1 py-1">
-                    <Brain className="w-5 h-5" />
-                    <span className="text-xs font-medium">Brain</span>
-                    <span className="text-[10px] opacity-90">₹50+</span>
+                  <div className="flex flex-col items-center gap-1.5 py-2">
+                    <Brain className="w-6 h-6" />
+                    <span className="text-xs font-semibold">Brain</span>
+                    <span className="text-[10px] opacity-80 font-medium">₹50+</span>
                   </div>
                 </Button>
               </div>
