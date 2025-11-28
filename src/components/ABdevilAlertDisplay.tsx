@@ -93,7 +93,7 @@ export const ABdevilAlertDisplay = ({
           {`
             @keyframes floatUp {
               0% {
-                transform: translateY(120vh) scale(0.8);
+                transform: translateY(0) rotate(0deg);
                 opacity: 0;
               }
               10% {
@@ -103,14 +103,14 @@ export const ABdevilAlertDisplay = ({
                 opacity: 1;
               }
               100% {
-                transform: translateY(-120vh) scale(1.2);
+                transform: translateY(-120vh) rotate(360deg);
                 opacity: 0;
               }
             }
 
             @keyframes floatUpLeft {
               0% {
-                transform: translate(0, 120vh) rotate(0deg) scale(0.8);
+                transform: translate(0, 0) rotate(0deg);
                 opacity: 0;
               }
               10% {
@@ -120,14 +120,14 @@ export const ABdevilAlertDisplay = ({
                 opacity: 1;
               }
               100% {
-                transform: translate(-30vw, -120vh) rotate(-180deg) scale(1.2);
+                transform: translate(-30vw, -120vh) rotate(-360deg);
                 opacity: 0;
               }
             }
 
             @keyframes floatUpRight {
               0% {
-                transform: translate(0, 120vh) rotate(0deg) scale(0.8);
+                transform: translate(0, 0) rotate(0deg);
                 opacity: 0;
               }
               10% {
@@ -137,39 +137,33 @@ export const ABdevilAlertDisplay = ({
                 opacity: 1;
               }
               100% {
-                transform: translate(30vw, -120vh) rotate(180deg) scale(1.2);
+                transform: translate(30vw, -120vh) rotate(360deg);
                 opacity: 0;
               }
             }
 
             @keyframes spiralUp {
               0% {
-                transform: translate(0, 120vh) rotate(0deg) scale(0.8);
+                transform: translate(0, 0) rotate(0deg) scale(0.5);
                 opacity: 0;
               }
               10% {
                 opacity: 1;
               }
-              25% {
-                transform: translate(10vw, 90vh) rotate(90deg) scale(0.9);
-              }
               50% {
-                transform: translate(-10vw, 60vh) rotate(180deg) scale(1);
-              }
-              75% {
-                transform: translate(10vw, 30vh) rotate(270deg) scale(1.1);
+                transform: translate(15vw, -60vh) rotate(720deg) scale(1);
               }
               90% {
                 opacity: 1;
               }
               100% {
-                transform: translate(0, -120vh) rotate(360deg) scale(1.2);
+                transform: translate(-15vw, -120vh) rotate(1080deg) scale(0.5);
                 opacity: 0;
               }
             }
           `}
         </style>
-        {Array.from({ length: 30 }).map((_, index) => {
+        {Array.from({ length: 20 }).map((_, index) => {
           const randomGif = gifs[Math.floor(Math.random() * gifs.length)];
           const randomAnimation = animations[Math.floor(Math.random() * animations.length)];
           const randomDelay = Math.random() * 3;
@@ -186,8 +180,8 @@ export const ABdevilAlertDisplay = ({
                 left: `${randomLeft}%`,
                 width: `${randomSize}px`,
                 height: `${randomSize}px`,
-                animation: `${randomAnimation} ${8 + Math.random() * 4}s ease-in-out ${randomDelay}s`,
-                bottom: "-120vh",
+                animation: `${randomAnimation} ${8 + Math.random() * 4}s ease-in-out ${randomDelay}s forwards`,
+                bottom: '-150px',
               }}
             />
           );
