@@ -15,6 +15,7 @@ const NekoXenpaiObsAlerts = () => {
     channelName: 'neko_xenpai-alerts',
     pusherKey: pusherConfig?.key || '',
     pusherCluster: pusherConfig?.cluster || '',
+    delayBeforeDisplay: 60000, // 1 minute delay
   });
 
   if (configLoading) {
