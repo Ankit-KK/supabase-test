@@ -35,22 +35,21 @@ const SagarUjjwalGamingObsAlerts = () => {
 
   return (
     <div className="min-h-screen bg-transparent relative">
-      <div className="fixed top-4 right-4 z-50">
-        <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-          connectionStatus === 'connected' ? 'bg-green-500' :
-          connectionStatus === 'connecting' ? 'bg-yellow-500' :
-          'bg-red-500'
-        } text-white`}>
-          {connectionStatus}
-        </div>
-      </div>
-      
       <SagarUjjwalGamingAlertDisplay
         donation={currentAlert}
         isVisible={isVisible}
         streamerBrandColor="#ef4444"
         streamerName="SAGAR UJJWAL GAMING"
       />
+      
+      {/* Debug panel (development only) */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="fixed bottom-4 left-4 bg-black/80 text-white p-2 rounded text-xs space-y-1">
+          <div>Status: {connectionStatus}</div>
+          <div>Channel: sagarujjwalgaming-alerts</div>
+          <div>Group: {pusherConfig?.group || 1}</div>
+        </div>
+      )}
     </div>
   );
 };
