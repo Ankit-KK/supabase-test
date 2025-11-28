@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { MessageCircle, Trash2 } from 'lucide-react';
+import { MessageCircle, Trash2, Bot } from 'lucide-react';
 
 interface TelegramDashboardProps {
   donations: Array<{
@@ -257,6 +257,31 @@ const TelegramDashboard: React.FC<TelegramDashboardProps> = ({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Bot Info Box */}
+        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-blue-100 dark:bg-blue-800 rounded-full">
+              <Bot className="h-5 w-5 text-blue-600 dark:text-blue-300" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                HyperChat Notification Bot
+              </p>
+              <a 
+                href="https://t.me/hyperChat_modbot" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-base font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                @hyperChat_modbot
+              </a>
+            </div>
+          </div>
+          <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+            Start a chat with this bot on Telegram to receive donation notifications
+          </p>
+        </div>
+
         {fetchingData ? (
           <div className="flex items-center justify-center py-4">
             <div className="text-sm text-muted-foreground">Loading...</div>
