@@ -109,14 +109,54 @@ serve(async (req) => {
       });
     }
 
-    // Find successful donations that haven't been notified yet (since all are auto-approved now)
-    const { data: donationsToNotify, error: fetchError } = await supabaseAdmin
-      .from('chia_gaming_donations')
-      .select('*')
-      .eq('payment_status', 'success')
-      .in('moderation_status', ['approved', 'auto_approved'])
-      .eq('mod_notified', false)
-      .not('streamer_id', 'is', null);
+    // Find successful donations that haven't been notified yet across all tables
+    const donationTables = [
+      'ankit_donations',
+      'chiaa_gaming_donations',
+      'looteriya_gaming_donations',
+      'sizzors_donations',
+      'thunderx_donations',
+      'vipbhai_donations',
+      'sagarujjwalgaming_donations',
+      'notyourkween_donations',
+      'bongflick_donations',
+      'mriqmaster_donations',
+      'abdevil_donations',
+      'damask_plays_donations',
+      'neko_xenpai_donations',
+      'jhanvoo_donations'
+    ];
+
+    let donationsToNotify: any[] = [];
+    const fetchErrors: any[] = [];
+
+    // Query each table and merge results
+    for (const tableName of donationTables) {
+      try {
+        const { data, error } = await supabaseAdmin
+          .from(tableName)
+          .select('*, table_name')
+          .eq('payment_status', 'success')
+          .in('moderation_status', ['approved', 'auto_approved'])
+          .eq('mod_notified', false)
+          .not('streamer_id', 'is', null);
+
+        if (error) {
+          console.error(`Error fetching from ${tableName}:`, error);
+          fetchErrors.push({ table: tableName, error });
+        } else if (data && data.length > 0) {
+          // Add table name to each donation for tracking
+          const donationsWithTable = data.map(d => ({ ...d, source_table: tableName }));
+          donationsToNotify = [...donationsToNotify, ...donationsWithTable];
+          console.log(`Found ${data.length} donations from ${tableName}`);
+        }
+      } catch (err) {
+        console.error(`Exception querying ${tableName}:`, err);
+        fetchErrors.push({ table: tableName, error: err });
+      }
+    }
+
+    const fetchError = fetchErrors.length > 0 ? fetchErrors[0].error : null;
 
     if (fetchError) {
       console.error('Error fetching donations to notify:', fetchError);
@@ -152,7 +192,7 @@ serve(async (req) => {
           console.log(`No active moderators found for streamer: ${donation.streamer_id}`);
           // Mark as notified even if no moderators to avoid retry loops
           await supabaseAdmin
-            .from('chia_gaming_donations')
+            .from(donation.source_table)
             .update({ mod_notified: true })
             .eq('id', donation.id);
           continue;
@@ -166,10 +206,19 @@ serve(async (req) => {
           `${donation.voice_message_url ? `🎵 <b>Voice Message:</b> Available\n` : ''}\n` +
           `✅ <i>Auto-approved and visible on stream</i>`;
 
+        // Get streamer slug for dashboard link
+        const { data: streamerData } = await supabaseAdmin
+          .from('streamers')
+          .select('streamer_slug')
+          .eq('id', donation.streamer_id)
+          .single();
+
+        const streamerSlug = streamerData?.streamer_slug || 'dashboard';
+
         const keyboard = {
           inline_keyboard: [
             ...(donation.voice_message_url ? [[{ text: '🎵 Play Voice', callback_data: `play_${donation.id}` }]] : []),
-            [{ text: '📊 Dashboard', callback_data: `dashboard_chia_gaming` }]
+            [{ text: '📊 Dashboard', url: `https://hyperchat.site/dashboard/${streamerSlug}` }]
           ]
         };
 
@@ -209,7 +258,7 @@ serve(async (req) => {
         // Mark donation as notified
         if (notificationSent) {
           await supabaseAdmin
-            .from('chia_gaming_donations')
+            .from(donation.source_table)
             .update({ mod_notified: true })
             .eq('id', donation.id);
           notifiedCount++;

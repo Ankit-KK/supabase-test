@@ -390,6 +390,118 @@ serve(async (req) => {
 
       console.log('Pusher events sent to alerts and dashboard')
 
+      // Send Telegram notification to moderators
+      try {
+        console.log('Sending Telegram notification to moderators for donation:', donation.id);
+        
+        const telegramBotToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
+        if (!telegramBotToken) {
+          console.log('TELEGRAM_BOT_TOKEN not configured, skipping Telegram notification');
+        } else {
+          // Get active moderators for this streamer
+          const { data: moderators, error: modError } = await supabase
+            .from('streamers_moderators')
+            .select('telegram_user_id, mod_name')
+            .eq('streamer_id', donation.streamer_id)
+            .eq('is_active', true);
+
+          if (modError) {
+            console.error('Error fetching moderators:', modError);
+          } else if (moderators && moderators.length > 0) {
+            console.log(`Found ${moderators.length} active moderators for streamer ${donation.streamer_id}`);
+
+            // Prepare notification message
+            const messageText = `🎉 *New Donation Received!*\n\n` +
+              `👤 From: *${donation.name}*\n` +
+              `💰 Amount: ₹${donation.amount}\n` +
+              (donation.message ? `💬 Message: "${donation.message}"\n` : '') +
+              (donation.is_hyperemote ? `✨ HyperEmote activated!\n` : '') +
+              `📅 Time: ${new Date(donation.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`;
+
+            // Send notification to each moderator
+            for (const mod of moderators) {
+              try {
+                // Send text notification
+                const textResponse = await fetch(
+                  `https://api.telegram.org/bot${telegramBotToken}/sendMessage`,
+                  {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      chat_id: mod.telegram_user_id,
+                      text: messageText,
+                      parse_mode: 'Markdown',
+                      reply_markup: {
+                        inline_keyboard: [[
+                          {
+                            text: '📊 View Dashboard',
+                            url: `https://hyperchat.site/dashboard/${pusherSlug}`
+                          }
+                        ]]
+                      }
+                    })
+                  }
+                );
+
+                if (!textResponse.ok) {
+                  const errorText = await textResponse.text();
+                  console.error(`Failed to send text to ${mod.mod_name}:`, errorText);
+                  continue;
+                }
+
+                console.log(`✅ Text notification sent to ${mod.mod_name}`);
+
+                // Send voice message if available
+                if (donation.voice_message_url) {
+                  const voiceResponse = await fetch(
+                    `https://api.telegram.org/bot${telegramBotToken}/sendVoice`,
+                    {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        chat_id: mod.telegram_user_id,
+                        voice: donation.voice_message_url,
+                        caption: `🎤 Voice message from ${donation.name}`
+                      })
+                    }
+                  );
+
+                  if (voiceResponse.ok) {
+                    console.log(`✅ Voice message sent to ${mod.mod_name}`);
+                  } else {
+                    const errorText = await voiceResponse.text();
+                    console.error(`Failed to send voice to ${mod.mod_name}:`, errorText);
+                  }
+                }
+
+                // Small delay to avoid rate limits
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+              } catch (modError) {
+                console.error(`Error notifying moderator ${mod.mod_name}:`, modError);
+              }
+            }
+
+            // Mark donation as notified
+            const { error: updateNotifiedError } = await supabase
+              .from(tableName)
+              .update({ mod_notified: true })
+              .eq('id', donation.id);
+
+            if (updateNotifiedError) {
+              console.error('Error updating mod_notified:', updateNotifiedError);
+            } else {
+              console.log(`✅ Donation ${donation.id} marked as notified`);
+            }
+          } else {
+            console.log('No active moderators found for this streamer');
+          }
+        }
+      } catch (telegramError) {
+        console.error('Telegram notification error:', telegramError);
+        // Don't throw - we don't want to fail the webhook if Telegram fails
+      }
+
       // Handle TTS generation and audio channel events based on donation type
       // 1. HYPEREMOTES - NO TTS, just visual effects
       if (donation.is_hyperemote) {
