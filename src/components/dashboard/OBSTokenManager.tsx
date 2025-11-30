@@ -411,7 +411,7 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
           <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
             <li>Open OBS Studio and add a new Browser Source</li>
             <li>Copy and paste the Browser Source URL from above</li>
-            <li>Set Width: 800, Height: 600 (or adjust as needed)</li>
+            <li>Set Width: 1920, Height: 1080 (or adjust as needed)</li>
             <li>Enable "Shutdown source when not visible" and "Refresh browser when scene becomes active"</li>
             <li>Click OK to add the source</li>
             <li>Position and resize the source in your scene as desired</li>
