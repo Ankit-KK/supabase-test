@@ -56,6 +56,7 @@ import JhanvooDashboard from "./pages/dashboard/JhanvooDashboard";
 
 // OBS Alert pages (active streamers + ThunderX)
 import AnkitObsAlerts from "./pages/obs-alerts/AnkitObsAlerts";
+import AnkitGoalOverlay from "./pages/obs-alerts/AnkitGoalOverlay";
 import ChiaGamingObsAlerts from "./pages/obs-alerts/ChiaGamingObsAlerts";
 import LooteriyaGamingObsAlerts from "./pages/obs-alerts/LooteriyaGamingObsAlerts";
 import SizzorsObsAlerts from "./pages/obs-alerts/SizzorsObsAlerts";
@@ -152,6 +153,7 @@ const App = () => (
               
               {/* OBS Alert routes */}
               <Route path="/ankit/obs-alerts" element={<AnkitObsAlerts />} />
+              <Route path="/ankit/goal-overlay" element={<AnkitGoalOverlay />} />
               <Route path="/chiaa_gaming/obs-alerts" element={<ChiaGamingObsAlerts />} />
               <Route path="/looteriya_gaming/obs-alerts" element={<LooteriyaGamingObsAlerts />} />
               <Route path="/sizzors/obs-alerts" element={<SizzorsObsAlerts />} />
