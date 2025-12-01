@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import GoalOverlay from '@/components/GoalOverlay';
 import Pusher from 'pusher-js';
 
-const ANKIT_STREAMER_ID = '99517c50-5949-4ddd-8c5a-88b0a9acf06e'; // From streamers table
+const ANKIT_STREAMER_ID = 'b111b82a-9fec-4e74-8a17-f81ee0e1c912'; // From streamers table
 
 interface GoalData {
   goal_name: string;
@@ -25,14 +25,14 @@ const AnkitGoalOverlay = () => {
     const fetchPusherConfig = async () => {
       try {
         const { data, error } = await supabase.functions.invoke('get-pusher-config', {
-          body: { streamerSlug: 'ankit' }
+          body: { streamer_slug: 'ankit' }
         });
 
         if (error) throw error;
-        if (data?.pusherKey && data?.pusherCluster) {
+        if (data?.key && data?.cluster) {
           setPusherConfig({
-            key: data.pusherKey,
-            cluster: data.pusherCluster,
+            key: data.key,
+            cluster: data.cluster,
           });
         }
       } catch (error) {
