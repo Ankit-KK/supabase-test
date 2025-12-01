@@ -361,6 +361,7 @@ const DamaskPlays = () => {
                 required
                 className="border-emerald-500/30 focus:border-emerald-500 bg-background"
               />
+              <p className="text-xs text-muted-foreground">TTS above ₹70</p>
             </div>
 
             {donationType === 'text' && (

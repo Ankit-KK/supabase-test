@@ -287,6 +287,7 @@ const VIPBhai = () => {
                   className="bg-amber-950/40 border-amber-700/40 text-amber-100 placeholder:text-amber-500/50 focus:border-amber-500 text-sm h-9"
                   required
                 />
+                <p className="text-xs text-amber-400/70">TTS above ₹70</p>
               </div>
 
               {donationType === 'text' && (

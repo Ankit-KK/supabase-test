@@ -352,6 +352,7 @@ const LooteriyaGaming = () => {
                 required
                 min="1"
               />
+              <p className="text-xs text-muted-foreground">TTS above ₹70</p>
             </div>
 
             {/* Message/Voice Field */}

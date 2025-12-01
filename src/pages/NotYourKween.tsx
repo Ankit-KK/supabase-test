@@ -287,6 +287,7 @@ const NotYourKween = () => {
                   className="bg-pink-950/40 border-pink-700/40 text-pink-100 placeholder:text-pink-500/50 focus:border-pink-500 text-sm h-9"
                   required
                 />
+                <p className="text-xs text-pink-400">TTS above ₹70</p>
               </div>
 
               {donationType === 'text' && (

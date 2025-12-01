@@ -328,6 +328,7 @@ const ThunderX = () => {
                 min={donationType === 'voice' ? 150 : donationType === 'hyperemote' ? 50 : 40}
                 required
               />
+              <p className="text-xs text-muted-foreground">TTS above ₹70</p>
             </div>
 
             {donationType === 'text' && (

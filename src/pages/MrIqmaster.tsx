@@ -318,6 +318,7 @@ const MrIqmaster = () => {
                 min={donationType === 'text' ? 40 : donationType === 'voice' ? 150 : 50}
                 className="bg-cyan-950/50 border-cyan-500/30 text-white placeholder:text-cyan-400/50 focus:border-cyan-400"
               />
+              <p className="text-xs text-muted-foreground">TTS above ₹70</p>
             </div>
 
             {donationType === 'text' && (

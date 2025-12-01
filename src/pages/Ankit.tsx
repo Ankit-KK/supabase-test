@@ -396,6 +396,7 @@ const Ankit = () => {
               {isAmountLocked && <p className="text-xs text-yellow-600 flex items-center gap-1">
                   🔒 Amount locked during voice recording
                 </p>}
+              <p className="text-xs text-muted-foreground">TTS above ₹70</p>
               {donationType === 'message'}
               {donationType === 'voice' && currentAmount >= 150 && <p className="text-xs text-muted-foreground">
                   Voice duration: {getVoiceDuration(currentAmount)}s
