@@ -2242,6 +2242,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      update_streamer_goal: {
+        Args: {
+          p_goal_activated_at?: string
+          p_goal_is_active?: boolean
+          p_goal_name?: string
+          p_goal_target_amount?: number
+          p_streamer_id: string
+        }
+        Returns: boolean
+      }
       update_user_profile: {
         Args: { new_username: string; user_id: string }
         Returns: undefined
