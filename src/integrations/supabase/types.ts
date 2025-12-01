@@ -1142,6 +1142,10 @@ export type Database = {
           brand_color: string | null
           brand_logo_url: string | null
           created_at: string | null
+          goal_activated_at: string | null
+          goal_is_active: boolean | null
+          goal_name: string | null
+          goal_target_amount: number | null
           hyperemotes_enabled: boolean | null
           hyperemotes_min_amount: number | null
           id: string
@@ -1155,6 +1159,10 @@ export type Database = {
           brand_color?: string | null
           brand_logo_url?: string | null
           created_at?: string | null
+          goal_activated_at?: string | null
+          goal_is_active?: boolean | null
+          goal_name?: string | null
+          goal_target_amount?: number | null
           hyperemotes_enabled?: boolean | null
           hyperemotes_min_amount?: number | null
           id?: string
@@ -1168,6 +1176,10 @@ export type Database = {
           brand_color?: string | null
           brand_logo_url?: string | null
           created_at?: string | null
+          goal_activated_at?: string | null
+          goal_is_active?: boolean | null
+          goal_name?: string | null
+          goal_target_amount?: number | null
           hyperemotes_enabled?: boolean | null
           hyperemotes_min_amount?: number | null
           id?: string
