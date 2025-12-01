@@ -82,15 +82,13 @@ export const AnkitGoalManager = ({ streamerId }: AnkitGoalManagerProps) => {
 
     setUpdating(true);
     try {
-      const { error } = await supabase
-        .from('streamers')
-        .update({
-          goal_name: goalName.trim(),
-          goal_target_amount: Number(targetAmount),
-          goal_is_active: true,
-          goal_activated_at: new Date().toISOString(),
-        })
-        .eq('id', streamerId);
+      const { data, error } = await supabase.rpc('update_streamer_goal', {
+        p_streamer_id: streamerId,
+        p_goal_name: goalName.trim(),
+        p_goal_target_amount: Number(targetAmount),
+        p_goal_is_active: true,
+        p_goal_activated_at: new Date().toISOString(),
+      });
 
       if (error) throw error;
 
@@ -115,12 +113,10 @@ export const AnkitGoalManager = ({ streamerId }: AnkitGoalManagerProps) => {
   const handleDeactivateGoal = async () => {
     setUpdating(true);
     try {
-      const { error } = await supabase
-        .from('streamers')
-        .update({
-          goal_is_active: false,
-        })
-        .eq('id', streamerId);
+      const { data, error } = await supabase.rpc('update_streamer_goal', {
+        p_streamer_id: streamerId,
+        p_goal_is_active: false,
+      });
 
       if (error) throw error;
 
@@ -154,13 +150,11 @@ export const AnkitGoalManager = ({ streamerId }: AnkitGoalManagerProps) => {
 
     setUpdating(true);
     try {
-      const { error } = await supabase
-        .from('streamers')
-        .update({
-          goal_name: goalName.trim(),
-          goal_target_amount: Number(targetAmount),
-        })
-        .eq('id', streamerId);
+      const { data, error } = await supabase.rpc('update_streamer_goal', {
+        p_streamer_id: streamerId,
+        p_goal_name: goalName.trim(),
+        p_goal_target_amount: Number(targetAmount),
+      });
 
       if (error) throw error;
 
