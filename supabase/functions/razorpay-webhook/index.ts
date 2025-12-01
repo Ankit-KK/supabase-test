@@ -390,6 +390,42 @@ serve(async (req) => {
 
       console.log('Pusher events sent to alerts and dashboard')
 
+      // For Ankit, check if there's an active goal and send progress update
+      if (streamerType === 'ankit') {
+        try {
+          const { data: streamer, error: goalError } = await supabase
+            .from('streamers')
+            .select('goal_is_active, goal_activated_at, goal_target_amount')
+            .eq('id', donation.streamer_id)
+            .single();
+
+          if (!goalError && streamer?.goal_is_active && streamer.goal_activated_at) {
+            // Calculate new total
+            const { data: donations, error: donError } = await supabase
+              .from('ankit_donations')
+              .select('amount')
+              .eq('streamer_id', donation.streamer_id)
+              .eq('payment_status', 'success')
+              .gte('created_at', streamer.goal_activated_at);
+
+            if (!donError && donations) {
+              const newTotal = donations.reduce((sum, d) => sum + Number(d.amount), 0);
+              
+              // Send goal progress update to Pusher
+              await sendPusherEvent(['ankit-goal'], 'goal-progress', {
+                currentAmount: newTotal,
+                targetAmount: streamer.goal_target_amount,
+              });
+
+              console.log('Goal progress update sent:', newTotal);
+            }
+          }
+        } catch (error) {
+          console.error('Error sending goal progress update:', error);
+          // Don't fail the webhook if goal update fails
+        }
+      }
+
       // Send Telegram notification to moderators
       try {
         console.log('Sending Telegram notification to moderators for donation:', donation.id);
