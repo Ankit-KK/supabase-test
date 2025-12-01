@@ -16,7 +16,8 @@ import {
   EyeOff, 
   CheckCircle, 
   AlertCircle,
-  ExternalLink 
+  ExternalLink,
+  Target
 } from 'lucide-react';
 
 interface OBSTokenManagerProps {
@@ -443,6 +444,55 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Goal Progress Overlay Link (Ankit only) */}
+          {streamerSlug === 'ankit' && (
+            <div className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+              <div className="flex items-start space-x-3">
+                <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Target className="h-4 w-4 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-medium text-purple-900 dark:text-purple-100 mb-1">
+                    🎯 Goal Progress Overlay
+                  </h4>
+                  <p className="text-sm text-purple-700 dark:text-purple-300 mb-3">
+                    Add this as a separate OBS browser source to display donation goal progress. 
+                    Set to 1920x1080 and position/resize it anywhere on your stream.
+                  </p>
+                  <div className="flex items-center space-x-2 mb-3">
+                    <Input
+                      value={`${window.location.origin}/${streamerSlug}/goal-overlay`}
+                      readOnly
+                      className="font-mono text-xs"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyToClipboard(
+                        `${window.location.origin}/${streamerSlug}/goal-overlay`,
+                        'goal_overlay_url'
+                      )}
+                    >
+                      {copySuccess === 'goal_overlay_url' ? 
+                        <CheckCircle className="h-4 w-4 text-green-600" /> :
+                        <Copy className="h-4 w-4" />
+                      }
+                    </Button>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(`/${streamerSlug}/goal-overlay`, '_blank')}
+                    className="border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-600 dark:text-purple-300 dark:hover:bg-purple-950/20"
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Open Preview
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
 
           <Alert>
             <AlertCircle className="h-4 w-4" />
