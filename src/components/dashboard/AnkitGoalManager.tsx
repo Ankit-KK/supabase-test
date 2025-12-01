@@ -239,7 +239,7 @@ export const AnkitGoalManager = ({ streamerId }: AnkitGoalManagerProps) => {
               value={goalName}
               onChange={(e) => setGoalName(e.target.value)}
               placeholder="e.g., New Streaming Mic"
-              className="bg-white dark:bg-gray-900"
+              className="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400"
             />
           </div>
 
@@ -254,7 +254,7 @@ export const AnkitGoalManager = ({ streamerId }: AnkitGoalManagerProps) => {
               onChange={(e) => setTargetAmount(e.target.value)}
               placeholder="e.g., 50000"
               min="1"
-              className="bg-white dark:bg-gray-900"
+              className="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400"
             />
           </div>
 
@@ -330,7 +330,7 @@ export const AnkitGoalManager = ({ streamerId }: AnkitGoalManagerProps) => {
               <Input
                 value={`${window.location.origin}/ankit/goal-overlay`}
                 readOnly
-                className="font-mono text-xs bg-white dark:bg-gray-900"
+                className="font-mono text-xs bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
               />
               <Button
                 variant="outline"
