@@ -350,6 +350,7 @@ const NekoXenpai = () => {
               min="1"
               required
             />
+            <p className="text-xs text-muted-foreground">TTS above ₹70</p>
           </div>
 
           {donationType === 'text' && (

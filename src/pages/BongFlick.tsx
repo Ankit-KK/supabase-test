@@ -287,6 +287,7 @@ const BongFlick = () => {
                   className="bg-violet-950/40 border-violet-700/40 text-violet-100 placeholder:text-violet-500/50 focus:border-violet-500 text-sm h-9"
                   required
                 />
+                <p className="text-xs text-violet-400">TTS above ₹70</p>
               </div>
 
               {donationType === 'text' && (

@@ -229,6 +229,7 @@ const ABdevil = () => {
                 min={donationType === "hyperemote" ? 50 : donationType === "voice" ? 150 : 40}
                 required
               />
+              <p className="text-xs text-muted-foreground">TTS above ₹70</p>
             </div>
 
             {donationType === "message" && (
