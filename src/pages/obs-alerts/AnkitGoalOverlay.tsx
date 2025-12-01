@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import GoalOverlay from '@/components/GoalOverlay';
 import Pusher from 'pusher-js';
@@ -19,6 +19,7 @@ const AnkitGoalOverlay = () => {
     key: string;
     cluster: string;
   } | null>(null);
+  const pusherRef = useRef<Pusher | null>(null);
 
   // Fetch Pusher config
   useEffect(() => {
@@ -95,11 +96,16 @@ const AnkitGoalOverlay = () => {
 
   // Setup Pusher for real-time updates
   useEffect(() => {
-    if (!pusherConfig || !goalData) return;
+    if (!pusherConfig) return;
+    
+    // Prevent duplicate connections
+    if (pusherRef.current) return;
 
     const pusher = new Pusher(pusherConfig.key, {
       cluster: pusherConfig.cluster,
     });
+    
+    pusherRef.current = pusher;
 
     const channel = pusher.subscribe('ankit-goal');
 
@@ -109,11 +115,18 @@ const AnkitGoalOverlay = () => {
     });
 
     return () => {
-      channel.unbind_all();
-      channel.unsubscribe();
-      pusher.disconnect();
+      if (pusherRef.current) {
+        try {
+          channel.unbind_all();
+          channel.unsubscribe();
+          pusherRef.current.disconnect();
+        } catch (e) {
+          console.log('Pusher cleanup:', e);
+        }
+        pusherRef.current = null;
+      }
     };
-  }, [pusherConfig, goalData]);
+  }, [pusherConfig]);
 
   // Don't render anything if no active goal
   if (!goalData) {
