@@ -33,58 +33,37 @@ const GoalOverlay: React.FC<GoalOverlayProps> = ({
   };
 
   return (
-    <div className="relative w-full h-full flex items-center justify-center">
-      {/* FX Layer - Floating Particles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(8)].map((_, i) => (
-          <div
-            key={i}
-            className="particle absolute rounded-full"
-            style={{
-              width: `${4 + Math.random() * 8}px`,
-              height: `${4 + Math.random() * 8}px`,
-              left: `${10 + i * 12}%`,
-              top: `${30 + Math.random() * 40}%`,
-              background: i % 2 === 0 ? '#6C63FF' : '#00E5FF',
-              boxShadow: i % 2 === 0 
-                ? '0 0 10px rgba(108, 99, 255, 0.6)'
-                : '0 0 10px rgba(0, 229, 255, 0.6)',
-              animation: `particleFloat ${3 + Math.random() * 2}s ease-in-out ${i * 0.3}s infinite`,
-            }}
-          />
-        ))}
-      </div>
-
+    <div className="relative w-[400px]">
       {/* Main Content */}
-      <div className="relative z-10 w-full max-w-2xl px-8">
+      <div className="relative z-10 w-full">
         {/* Header with Icon */}
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3 mb-3">
           <div className="relative">
             <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#6C63FF] to-[#00E5FF] opacity-30 blur-md animate-pulse" />
-            <Zap className="relative w-8 h-8 text-white drop-shadow-[0_0_8px_rgba(108,99,255,0.8)]" />
+            <Zap className="relative w-6 h-6 text-white drop-shadow-[0_0_8px_rgba(108,99,255,0.8)]" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white tracking-wide drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
+            <h1 className="text-xl font-bold text-white tracking-wide drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
               {title}
             </h1>
-            <p className="text-base text-white/80 drop-shadow-md">{goalName}</p>
+            <p className="text-sm text-white/80 drop-shadow-md">{goalName}</p>
           </div>
         </div>
 
         {/* Progress Numbers */}
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-xl font-semibold text-white drop-shadow-md">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-lg font-semibold text-white drop-shadow-md">
             {formatAmount(currentAmount)} / {formatAmount(targetAmount)}
           </p>
-          <div className="px-4 py-1.5 rounded-full bg-gradient-to-r from-[#6C63FF]/20 to-[#00E5FF]/20 border border-white/20 backdrop-blur-sm">
-            <span className="text-lg font-bold text-white drop-shadow-md">
+          <div className="px-3 py-1 rounded-full bg-gradient-to-r from-[#6C63FF]/20 to-[#00E5FF]/20 border border-white/20 backdrop-blur-sm">
+            <span className="text-base font-bold text-white drop-shadow-md">
               {percentage.toFixed(0)}%
             </span>
           </div>
         </div>
 
         {/* Progress Bar Container */}
-        <div className="relative h-8 bg-white/10 rounded-full border border-white/20 overflow-hidden backdrop-blur-sm">
+        <div className="relative h-6 bg-white/10 rounded-full border border-white/20 overflow-hidden backdrop-blur-sm">
           {/* Progress Bar Fill */}
           <div
             className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-[#6C63FF] to-[#00E5FF] transition-all duration-1000 ease-out"
@@ -141,17 +120,6 @@ const GoalOverlay: React.FC<GoalOverlayProps> = ({
 
       {/* CSS Animations */}
       <style>{`
-        @keyframes particleFloat {
-          0%, 100% {
-            transform: translateY(0) translateX(0);
-            opacity: 0.3;
-          }
-          50% {
-            transform: translateY(-20px) translateX(10px);
-            opacity: 0.8;
-          }
-        }
-
         @keyframes neonPulse {
           0%, 100% {
             box-shadow: 0 0 10px rgba(108, 99, 255, 0.8), 0 0 20px rgba(108, 99, 255, 0.6);

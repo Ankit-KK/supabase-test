@@ -135,11 +135,13 @@ const AnkitGoalOverlay = () => {
 
   return (
     <div className="w-screen h-screen bg-transparent overflow-hidden">
-      <GoalOverlay
-        goalName={goalData.goal_name}
-        currentAmount={currentAmount}
-        targetAmount={goalData.goal_target_amount}
-      />
+      <div className="absolute bottom-8 left-8">
+        <GoalOverlay
+          goalName={goalData.goal_name}
+          currentAmount={currentAmount}
+          targetAmount={goalData.goal_target_amount}
+        />
+      </div>
     </div>
   );
 };
