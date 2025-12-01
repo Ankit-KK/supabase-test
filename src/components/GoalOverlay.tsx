@@ -49,8 +49,7 @@ const GoalOverlay: React.FC<GoalOverlayProps> = ({
               boxShadow: i % 2 === 0 
                 ? '0 0 10px rgba(108, 99, 255, 0.6)'
                 : '0 0 10px rgba(0, 229, 255, 0.6)',
-              animation: `particleFloat ${3 + Math.random() * 2}s ease-in-out infinite`,
-              animationDelay: `${i * 0.3}s`,
+              animation: `particleFloat ${3 + Math.random() * 2}s ease-in-out ${i * 0.3}s infinite`,
             }}
           />
         ))}
@@ -114,8 +113,7 @@ const GoalOverlay: React.FC<GoalOverlayProps> = ({
                   background: i % 3 === 0 ? '#6C63FF' : i % 3 === 1 ? '#00E5FF' : '#ffffff',
                   left: '50%',
                   top: '50%',
-                  animation: `confettiBurst 1.5s ease-out forwards`,
-                  animationDelay: `${i * 0.05}s`,
+                  animation: `confettiBurst 1.5s ease-out ${i * 0.05}s forwards`,
                   transform: `rotate(${i * 18}deg) translateY(0)`,
                 }}
               />
