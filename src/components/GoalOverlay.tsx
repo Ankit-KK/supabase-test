@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import hyperchatLogo from '@/assets/hyperchat-logo-short.png';
+import React, { useEffect, useState } from "react";
+import hyperchatLogo from "@/assets/hyperchat-logo-short.png";
 
 interface GoalOverlayProps {
   title?: string;
@@ -8,11 +8,7 @@ interface GoalOverlayProps {
   targetAmount: number;
 }
 
-const GoalOverlay: React.FC<GoalOverlayProps> = ({
-  goalName,
-  currentAmount,
-  targetAmount,
-}) => {
+const GoalOverlay: React.FC<GoalOverlayProps> = ({ goalName, currentAmount, targetAmount }) => {
   const [showLogo, setShowLogo] = useState(false);
   const percentage = Math.min((currentAmount / Math.max(targetAmount, 0.01)) * 100, 100);
   const isGoalReached = currentAmount >= targetAmount;
@@ -21,7 +17,7 @@ const GoalOverlay: React.FC<GoalOverlayProps> = ({
   // Toggle between logo and title every 5 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      setShowLogo(prev => !prev);
+      setShowLogo((prev) => !prev);
     }, 5000);
     return () => clearInterval(interval);
   }, []);
@@ -33,9 +29,9 @@ const GoalOverlay: React.FC<GoalOverlayProps> = ({
   }, [isGoalReached, showCelebration]);
 
   const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
       maximumFractionDigits: 0,
     }).format(amount);
   };
@@ -43,38 +39,38 @@ const GoalOverlay: React.FC<GoalOverlayProps> = ({
   return (
     <div className="relative w-[min(80vw,900px)]">
       {/* Goal Card */}
-      <div 
+      <div
         className="relative px-7 py-5 rounded-[1.25rem] text-white"
         style={{
-          background: 'rgba(15, 23, 42, 0.95)',
-          border: '1px solid rgba(148, 163, 255, 0.28)',
-          boxShadow: '0 18px 35px rgba(0, 0, 0, 0.6)',
+          background: "rgba(15, 23, 42, 0.95)",
+          border: "1px solid rgba(148, 163, 255, 0.28)",
+          boxShadow: "0 18px 35px rgba(0, 0, 0, 0.6)",
         }}
       >
         {/* Title Row */}
         <div className="flex items-center justify-between mb-3">
           {/* Title/Logo Toggle */}
-          <div className="relative h-12 min-w-[200px]">
-            <img 
-              src={hyperchatLogo} 
+          <div className="relative h-14 min-w-[200px]">
+            <img
+              src={hyperchatLogo}
               alt="HyperChat logo"
-              className="absolute left-0 top-1/2 h-12 w-auto transition-all duration-400 ease-out"
+              className="absolute left-0 top-1/2 h-14 w-auto transition-all duration-400 ease-out"
               style={{
                 opacity: showLogo ? 1 : 0,
-                transform: `translateY(-50%) ${showLogo ? 'scale(1)' : 'scale(0.92)'}`,
+                transform: `translateY(-50%) ${showLogo ? "scale(1)" : "scale(0.92)"}`,
               }}
             />
-            <span 
+            <span
               className="absolute left-0 top-1/2 text-[clamp(1.2rem,2.1vw,1.6rem)] font-semibold tracking-wider uppercase whitespace-nowrap transition-all duration-400 ease-out"
               style={{
                 opacity: showLogo ? 0 : 1,
-                transform: `translateY(-50%) ${showLogo ? 'translateY(-6px)' : 'translateY(0)'}`,
+                transform: `translateY(-50%) ${showLogo ? "translateY(-6px)" : "translateY(0)"}`,
               }}
             >
               {goalName}
             </span>
           </div>
-          
+
           {/* Amount Text */}
           <span className="text-sm opacity-95 ml-auto">
             {formatAmount(currentAmount)} / {formatAmount(targetAmount)}
@@ -82,17 +78,14 @@ const GoalOverlay: React.FC<GoalOverlayProps> = ({
         </div>
 
         {/* Divider */}
-        <div 
-          className="w-full h-px mb-3"
-          style={{ background: 'rgba(148, 163, 255, 0.35)' }}
-        />
+        <div className="w-full h-px mb-3" style={{ background: "rgba(148, 163, 255, 0.35)" }} />
 
         {/* Progress Bar Track */}
-        <div 
+        <div
           className="relative w-full h-[18px] rounded-full overflow-hidden"
           style={{
-            background: 'rgba(15, 23, 42, 1)',
-            border: '1px solid rgba(148, 163, 255, 0.6)',
+            background: "rgba(15, 23, 42, 1)",
+            border: "1px solid rgba(148, 163, 255, 0.6)",
           }}
         >
           {/* Progress Fill */}
@@ -100,17 +93,18 @@ const GoalOverlay: React.FC<GoalOverlayProps> = ({
             className="relative h-full rounded-full transition-[width] duration-1000"
             style={{
               width: `${percentage}%`,
-              background: 'linear-gradient(90deg, #6c63ff, #00e5ff)',
-              boxShadow: '0 0 14px rgba(108, 99, 255, 0.8), 0 0 26px rgba(0, 229, 255, 0.7)',
-              transitionTimingFunction: 'cubic-bezier(0.23, 0.9, 0.32, 1.01)',
+              background: "linear-gradient(90deg, #6c63ff, #00e5ff)",
+              boxShadow: "0 0 14px rgba(108, 99, 255, 0.8), 0 0 26px rgba(0, 229, 255, 0.7)",
+              transitionTimingFunction: "cubic-bezier(0.23, 0.9, 0.32, 1.01)",
             }}
           >
             {/* Shimmer Overlay */}
-            <div 
+            <div
               className="absolute inset-0 opacity-35 mix-blend-screen"
               style={{
-                background: 'repeating-linear-gradient(120deg, rgba(255, 255, 255, 0.18) 0, rgba(255, 255, 255, 0.18) 5px, transparent 5px, transparent 10px)',
-                animation: 'shimmer 1.3s linear infinite',
+                background:
+                  "repeating-linear-gradient(120deg, rgba(255, 255, 255, 0.18) 0, rgba(255, 255, 255, 0.18) 5px, transparent 5px, transparent 10px)",
+                animation: "shimmer 1.3s linear infinite",
               }}
             />
           </div>
@@ -126,9 +120,9 @@ const GoalOverlay: React.FC<GoalOverlayProps> = ({
               key={i}
               className="absolute w-3 h-3 rounded-full"
               style={{
-                background: i % 3 === 0 ? '#6C63FF' : i % 3 === 1 ? '#00E5FF' : '#ffffff',
-                left: '50%',
-                top: '50%',
+                background: i % 3 === 0 ? "#6C63FF" : i % 3 === 1 ? "#00E5FF" : "#ffffff",
+                left: "50%",
+                top: "50%",
                 animation: `confettiBurst 1.5s ease-out ${i * 0.05}s forwards`,
                 transform: `rotate(${i * 18}deg) translateY(0)`,
               }}
@@ -139,9 +133,9 @@ const GoalOverlay: React.FC<GoalOverlayProps> = ({
           <div
             className="absolute rounded-full bg-gradient-to-r from-[#6C63FF] to-[#00E5FF] opacity-50"
             style={{
-              width: '100px',
-              height: '100px',
-              animation: 'rippleExpand 1.5s ease-out infinite',
+              width: "100px",
+              height: "100px",
+              animation: "rippleExpand 1.5s ease-out infinite",
             }}
           />
 
