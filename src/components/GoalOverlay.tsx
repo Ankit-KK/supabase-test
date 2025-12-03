@@ -54,21 +54,21 @@ const GoalOverlay: React.FC<GoalOverlayProps> = ({
         {/* Title Row */}
         <div className="flex items-center justify-between mb-3">
           {/* Title/Logo Toggle */}
-          <div className="relative flex items-center gap-2 overflow-hidden">
+          <div className="relative h-9 min-w-[200px]">
             <img 
               src={hyperchatLogo} 
               alt="HyperChat logo"
-              className="h-9 w-auto transition-all duration-400 ease-out"
+              className="absolute left-0 top-1/2 h-9 w-auto transition-all duration-400 ease-out"
               style={{
                 opacity: showLogo ? 1 : 0,
-                transform: showLogo ? 'scale(1)' : 'scale(0.92)',
+                transform: `translateY(-50%) ${showLogo ? 'scale(1)' : 'scale(0.92)'}`,
               }}
             />
             <span 
-              className="absolute left-0 text-[clamp(1.2rem,2.1vw,1.6rem)] font-semibold tracking-wider uppercase transition-all duration-400 ease-out"
+              className="absolute left-0 top-1/2 text-[clamp(1.2rem,2.1vw,1.6rem)] font-semibold tracking-wider uppercase whitespace-nowrap transition-all duration-400 ease-out"
               style={{
                 opacity: showLogo ? 0 : 1,
-                transform: showLogo ? 'translateY(-6px)' : 'translateY(0)',
+                transform: `translateY(-50%) ${showLogo ? 'translateY(-6px)' : 'translateY(0)'}`,
               }}
             >
               {goalName}
