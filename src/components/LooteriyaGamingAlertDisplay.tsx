@@ -250,26 +250,26 @@ export const LooteriyaGamingAlertDisplay: React.FC<LooteriyaGamingAlertDisplayPr
         className={`
           absolute bottom-[10%] left-1/2 -translate-x-1/2
           text-white text-center
-          flex flex-col items-center gap-1.5
-          px-8 py-4 rounded-xl
+          flex flex-col items-center gap-3
+          px-12 py-6 rounded-2xl
           ${isVisible ? 'opacity-100' : 'opacity-0'}
           transition-opacity duration-600
         `}
         style={{
           background: 'linear-gradient(90deg, rgba(245, 158, 11, 0.6), rgba(234, 88, 12, 0.6))',
-          boxShadow: '0 0 25px rgba(245, 158, 11, 0.4)',
+          boxShadow: '0 0 35px rgba(245, 158, 11, 0.4)',
           letterSpacing: '0.4px',
         }}
       >
         {/* Name and Amount */}
-        <div className="text-[1.2rem]">
+        <div className="text-[1.8rem]">
           <span className="font-bold">{donation.name}</span> donated{' '}
           <span className="font-bold">₹{donation.amount}</span>
         </div>
 
         {/* Voice Message Indicator */}
         {donation.voice_message_url && (
-          <div className="inline-flex items-center gap-2 text-sm">
+          <div className="inline-flex items-center gap-3 text-xl">
             <span>🎤 Voice Message</span>
           </div>
         )}
@@ -277,7 +277,7 @@ export const LooteriyaGamingAlertDisplay: React.FC<LooteriyaGamingAlertDisplayPr
         {/* Message with Typing Effect */}
         {(donation.message || isTyping) && (
           <div 
-            className="text-base font-normal min-h-[1.2em]"
+            className="text-2xl font-normal min-h-[1.2em]"
             style={{ opacity: 0.9, color: '#f9f9f9' }}
           >
             "{donation.voice_message_url ? donation.message : displayedMessage}"
