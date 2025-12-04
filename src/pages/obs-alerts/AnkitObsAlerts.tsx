@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AlertDisplay } from '@/components/AlertDisplay';
 import { usePusherAlerts } from '@/hooks/usePusherAlerts';
 import { usePusherConfig } from '@/hooks/usePusherConfig';
+import { supabase } from '@/integrations/supabase/client';
 
 const AnkitObsAlerts = () => {
+  const [alertBoxScale, setAlertBoxScale] = useState<number>(1.0);
+
   // Get Pusher config from backend
   const { config: pusherConfig, loading: configLoading } = usePusherConfig('ankit');
   
@@ -19,6 +22,41 @@ const AnkitObsAlerts = () => {
     pusherKey: pusherConfig?.key || '',
     pusherCluster: pusherConfig?.cluster || '',
   });
+
+  // Fetch alert box scale setting and subscribe to real-time updates
+  useEffect(() => {
+    const fetchScale = async () => {
+      const { data, error } = await supabase
+        .from('streamers')
+        .select('alert_box_scale')
+        .eq('streamer_slug', 'ankit')
+        .single();
+      
+      if (!error && data?.alert_box_scale) {
+        setAlertBoxScale(Number(data.alert_box_scale));
+      }
+    };
+    fetchScale();
+
+    // Set up real-time subscription for live updates
+    const channel = supabase
+      .channel('ankit-settings')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'streamers',
+        filter: 'streamer_slug=eq.ankit'
+      }, (payload: any) => {
+        if (payload.new?.alert_box_scale) {
+          setAlertBoxScale(Number(payload.new.alert_box_scale));
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   // Show loading while config is being fetched
   if (configLoading || !pusherConfig) {
@@ -39,6 +77,7 @@ const AnkitObsAlerts = () => {
         isVisible={isVisible}
         streamerBrandColor="#3b82f6"
         streamerName="Ankit"
+        scale={alertBoxScale}
       />
       
       {/* Debug info (only visible in development) */}

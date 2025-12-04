@@ -16,6 +16,7 @@ interface AlertDisplayProps {
   isVisible: boolean;
   streamerBrandColor?: string;
   streamerName?: string;
+  scale?: number;
 }
 
 const HYPEREMOTE_ICONS = {
@@ -44,7 +45,8 @@ export const AlertDisplay: React.FC<AlertDisplayProps> = ({
   donation,
   isVisible,
   streamerBrandColor = '#3b82f6',
-  streamerName = 'Streamer'
+  streamerName = 'Streamer',
+  scale = 1.0
 }) => {
   const [displayedMessage, setDisplayedMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -258,7 +260,7 @@ export const AlertDisplay: React.FC<AlertDisplayProps> = ({
     <div className="fixed inset-0 pointer-events-none z-50">
       <div 
         className={`
-          absolute bottom-[10%] left-1/2 -translate-x-1/2
+          absolute bottom-[10%] left-1/2
           text-white text-center
           flex flex-col items-center gap-3
           px-12 py-6 rounded-2xl
@@ -269,6 +271,8 @@ export const AlertDisplay: React.FC<AlertDisplayProps> = ({
           background: 'linear-gradient(90deg, rgba(0, 122, 255, 0.6), rgba(144, 0, 255, 0.6))',
           boxShadow: '0 0 35px rgba(144, 0, 255, 0.4)',
           letterSpacing: '0.4px',
+          transform: `translateX(-50%) scale(${scale})`,
+          transformOrigin: 'bottom center',
         }}
       >
         {/* Name and Amount */}

@@ -16,9 +16,17 @@ import {
   EyeOff, 
   CheckCircle, 
   AlertCircle,
-  ExternalLink
+  ExternalLink,
+  Maximize2
 } from 'lucide-react';
 import { AnkitGoalManager } from './AnkitGoalManager';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface OBSTokenManagerProps {
   streamerId: string;
@@ -46,6 +54,57 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
   const [generating, setGenerating] = useState(false);
   const [showToken, setShowToken] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState<string | null>(null);
+  const [alertBoxScale, setAlertBoxScale] = useState<number>(1.0);
+  const [updatingScale, setUpdatingScale] = useState(false);
+
+  // Fetch alert box scale setting (Ankit only)
+  useEffect(() => {
+    if (streamerSlug !== 'ankit') return;
+    
+    const fetchScale = async () => {
+      const { data, error } = await supabase
+        .from('streamers')
+        .select('alert_box_scale')
+        .eq('streamer_slug', 'ankit')
+        .single();
+      
+      if (!error && data?.alert_box_scale) {
+        setAlertBoxScale(Number(data.alert_box_scale));
+      }
+    };
+    fetchScale();
+  }, [streamerSlug]);
+
+  const handleScaleChange = async (value: string) => {
+    if (streamerSlug !== 'ankit') return;
+    
+    setUpdatingScale(true);
+    const newScale = parseFloat(value);
+    
+    try {
+      const { error } = await supabase
+        .from('streamers')
+        .update({ alert_box_scale: newScale })
+        .eq('streamer_slug', 'ankit');
+      
+      if (error) throw error;
+      
+      setAlertBoxScale(newScale);
+      toast({
+        title: "Size Updated",
+        description: "Alert box size has been updated. Changes apply immediately to OBS.",
+      });
+    } catch (error) {
+      console.error('Error updating alert box scale:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update alert box size.",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdatingScale(false);
+    }
+  };
 
   // Fetch existing tokens using database function
   useEffect(() => {
@@ -447,6 +506,42 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
 
           {/* Goal Configuration (Ankit only) */}
           {streamerSlug === 'ankit' && <AnkitGoalManager streamerId={streamerId} />}
+
+          {/* Alert Box Size (Ankit only) */}
+          {streamerSlug === 'ankit' && (
+            <div className="space-y-4 pt-6 border-t">
+              <h3 className="font-semibold flex items-center space-x-2">
+                <Maximize2 className="h-4 w-4" />
+                <span>Alert Box Size</span>
+              </h3>
+              
+              <div className="space-y-3">
+                <label className="text-sm text-muted-foreground">
+                  Adjust the size of your OBS donation alerts
+                </label>
+                
+                <Select 
+                  value={alertBoxScale.toString()} 
+                  onValueChange={handleScaleChange}
+                  disabled={updatingScale}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select size" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0.75">Small (75%)</SelectItem>
+                    <SelectItem value="1">Default (100%)</SelectItem>
+                    <SelectItem value="1.25">Large (125%)</SelectItem>
+                    <SelectItem value="1.5">Extra Large (150%)</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <p className="text-xs text-muted-foreground">
+                  Changes apply immediately to your OBS alerts
+                </p>
+              </div>
+            </div>
+          )}
 
           <Alert>
             <AlertCircle className="h-4 w-4" />
