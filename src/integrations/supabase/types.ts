@@ -1139,6 +1139,7 @@ export type Database = {
       }
       streamers: {
         Row: {
+          alert_box_scale: number | null
           brand_color: string | null
           brand_logo_url: string | null
           created_at: string | null
@@ -1156,6 +1157,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          alert_box_scale?: number | null
           brand_color?: string | null
           brand_logo_url?: string | null
           created_at?: string | null
@@ -1173,6 +1175,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          alert_box_scale?: number | null
           brand_color?: string | null
           brand_logo_url?: string | null
           created_at?: string | null
