@@ -82,10 +82,10 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
     const newScale = parseFloat(value);
     
     try {
-      const { error } = await supabase
-        .from('streamers')
-        .update({ alert_box_scale: newScale })
-        .eq('streamer_slug', 'ankit');
+      const { data, error } = await supabase.rpc('update_streamer_alert_box_scale', {
+        p_streamer_slug: 'ankit',
+        p_scale: newScale
+      });
       
       if (error) throw error;
       

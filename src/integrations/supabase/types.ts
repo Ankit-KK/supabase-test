@@ -2237,6 +2237,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      update_streamer_alert_box_scale: {
+        Args: { p_scale: number; p_streamer_slug: string }
+        Returns: boolean
+      }
       update_streamer_auth_email: {
         Args: {
           p_new_email: string
