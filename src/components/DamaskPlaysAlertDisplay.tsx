@@ -18,13 +18,15 @@ interface DamaskPlaysAlertDisplayProps {
   isVisible: boolean;
   streamerBrandColor?: string;
   streamerName?: string;
+  scale?: number;
 }
 
 export const DamaskPlaysAlertDisplay: React.FC<DamaskPlaysAlertDisplayProps> = ({
   donation,
   isVisible,
   streamerBrandColor = '#10b981',
-  streamerName = 'Damask plays'
+  streamerName = 'Damask plays',
+  scale = 1.0
 }) => {
   const [displayedMessage, setDisplayedMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -259,7 +261,7 @@ export const DamaskPlaysAlertDisplay: React.FC<DamaskPlaysAlertDisplayProps> = (
     <div className="fixed inset-0 pointer-events-none z-50">
       <div 
         className={`
-          absolute bottom-[10%] left-1/2 -translate-x-1/2
+          absolute bottom-[10%] left-1/2
           text-white text-center
           flex flex-col items-center gap-1.5
           px-8 py-4 rounded-xl
@@ -270,6 +272,8 @@ export const DamaskPlaysAlertDisplay: React.FC<DamaskPlaysAlertDisplayProps> = (
           background: 'linear-gradient(90deg, rgba(0, 122, 255, 0.6), rgba(144, 0, 255, 0.6))',
           boxShadow: '0 0 25px rgba(144, 0, 255, 0.4)',
           letterSpacing: '0.4px',
+          transform: `translateX(-50%) scale(${scale})`,
+          transformOrigin: 'bottom center',
         }}
       >
         {/* Name and Amount */}

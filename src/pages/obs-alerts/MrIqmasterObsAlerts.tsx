@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { MrIqmasterAlertDisplay } from '@/components/MrIqmasterAlertDisplay';
 import { usePusherAlerts } from '@/hooks/usePusherAlerts';
 import { usePusherConfig } from '@/hooks/usePusherConfig';
+import { supabase } from '@/integrations/supabase/client';
 
 const MrIqmasterObsAlerts = () => {
+  const [alertBoxScale, setAlertBoxScale] = useState<number>(1.0);
   const { config: pusherConfig, loading: configLoading } = usePusherConfig('mriqmaster');
   
   const {
@@ -15,8 +17,41 @@ const MrIqmasterObsAlerts = () => {
     channelName: 'mriqmaster-alerts',
     pusherKey: pusherConfig?.key || '',
     pusherCluster: pusherConfig?.cluster || '',
-    delayBeforeDisplay: 60000, // 1 minute delay
+    delayBeforeDisplay: 60000,
   });
+
+  useEffect(() => {
+    const fetchScale = async () => {
+      const { data, error } = await supabase
+        .from('streamers')
+        .select('alert_box_scale')
+        .eq('streamer_slug', 'mriqmaster')
+        .single();
+      
+      if (!error && data?.alert_box_scale) {
+        setAlertBoxScale(Number(data.alert_box_scale));
+      }
+    };
+    fetchScale();
+
+    const channel = supabase
+      .channel('mriqmaster-settings')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'streamers',
+        filter: 'streamer_slug=eq.mriqmaster'
+      }, (payload: any) => {
+        if (payload.new?.alert_box_scale) {
+          setAlertBoxScale(Number(payload.new.alert_box_scale));
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   if (configLoading) {
     return (
@@ -31,6 +66,7 @@ const MrIqmasterObsAlerts = () => {
       <MrIqmasterAlertDisplay
         donation={currentAlert}
         isVisible={isVisible}
+        scale={alertBoxScale}
       />
       
       {/* Debug panel (development only) */}

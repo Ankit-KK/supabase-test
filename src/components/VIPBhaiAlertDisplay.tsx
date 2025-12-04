@@ -18,13 +18,15 @@ interface VIPBhaiAlertDisplayProps {
   isVisible: boolean;
   streamerBrandColor?: string;
   streamerName?: string;
+  scale?: number;
 }
 
 export const VIPBhaiAlertDisplay: React.FC<VIPBhaiAlertDisplayProps> = ({
   donation,
   isVisible,
   streamerBrandColor = '#f59e0b',
-  streamerName = 'VIP BHAI'
+  streamerName = 'VIP BHAI',
+  scale = 1.0
 }) => {
   const [displayedMessage, setDisplayedMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -214,11 +216,13 @@ export const VIPBhaiAlertDisplay: React.FC<VIPBhaiAlertDisplayProps> = ({
   return (
     <div className="fixed inset-0 pointer-events-none z-50">
       <div 
-        className="absolute bottom-[10%] left-1/2 -translate-x-1/2 text-white text-center flex flex-col items-center gap-1.5 px-8 py-4 rounded-xl"
+        className="absolute bottom-[10%] left-1/2 text-white text-center flex flex-col items-center gap-1.5 px-8 py-4 rounded-xl"
         style={{
           background: 'linear-gradient(90deg, rgba(245, 158, 11, 0.6), rgba(234, 88, 12, 0.6))',
           boxShadow: '0 0 25px rgba(245, 158, 11, 0.4)',
           letterSpacing: '0.4px',
+          transform: `translateX(-50%) scale(${scale})`,
+          transformOrigin: 'bottom center',
         }}
       >
         <div className="text-[1.2rem]">

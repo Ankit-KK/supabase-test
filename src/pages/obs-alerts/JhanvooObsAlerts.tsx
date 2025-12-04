@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { JhanvooAlertDisplay } from '@/components/JhanvooAlertDisplay';
 import { usePusherAlerts } from '@/hooks/usePusherAlerts';
 import { usePusherConfig } from '@/hooks/usePusherConfig';
+import { supabase } from '@/integrations/supabase/client';
 
 const JhanvooObsAlerts = () => {
+  const [alertBoxScale, setAlertBoxScale] = useState<number>(1.0);
   const { config: pusherConfig, loading: configLoading } = usePusherConfig('jhanvoo');
   
   const {
@@ -15,8 +17,41 @@ const JhanvooObsAlerts = () => {
     channelName: 'jhanvoo-alerts',
     pusherKey: pusherConfig?.key || '',
     pusherCluster: pusherConfig?.cluster || '',
-    delayBeforeDisplay: 60000, // 1 minute delay
+    delayBeforeDisplay: 60000,
   });
+
+  useEffect(() => {
+    const fetchScale = async () => {
+      const { data, error } = await supabase
+        .from('streamers')
+        .select('alert_box_scale')
+        .eq('streamer_slug', 'jhanvoo')
+        .single();
+      
+      if (!error && data?.alert_box_scale) {
+        setAlertBoxScale(Number(data.alert_box_scale));
+      }
+    };
+    fetchScale();
+
+    const channel = supabase
+      .channel('jhanvoo-settings')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'streamers',
+        filter: 'streamer_slug=eq.jhanvoo'
+      }, (payload: any) => {
+        if (payload.new?.alert_box_scale) {
+          setAlertBoxScale(Number(payload.new.alert_box_scale));
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   if (configLoading) {
     return (
@@ -31,6 +66,7 @@ const JhanvooObsAlerts = () => {
       <JhanvooAlertDisplay
         donation={currentAlert}
         isVisible={isVisible}
+        scale={alertBoxScale}
       />
       
       {/* Debug panel (development only) */}

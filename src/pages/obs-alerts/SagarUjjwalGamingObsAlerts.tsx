@@ -1,9 +1,11 @@
+import { useState, useEffect } from 'react';
 import { usePusherConfig } from '@/hooks/usePusherConfig';
 import { usePusherAlerts } from '@/hooks/usePusherAlerts';
 import { SagarUjjwalGamingAlertDisplay } from '@/components/SagarUjjwalGamingAlertDisplay';
-import { ConnectionStatus } from '@/components/ConnectionStatus';
+import { supabase } from '@/integrations/supabase/client';
 
 const SagarUjjwalGamingObsAlerts = () => {
+  const [alertBoxScale, setAlertBoxScale] = useState<number>(1.0);
   const { config: pusherConfig, loading: configLoading, error: configError } = usePusherConfig('sagarujjwalgaming');
   
   const { 
@@ -16,6 +18,39 @@ const SagarUjjwalGamingObsAlerts = () => {
     pusherCluster: pusherConfig?.cluster || '',
     delayBeforeDisplay: 60000,
   });
+
+  useEffect(() => {
+    const fetchScale = async () => {
+      const { data, error } = await supabase
+        .from('streamers')
+        .select('alert_box_scale')
+        .eq('streamer_slug', 'sagarujjwalgaming')
+        .single();
+      
+      if (!error && data?.alert_box_scale) {
+        setAlertBoxScale(Number(data.alert_box_scale));
+      }
+    };
+    fetchScale();
+
+    const channel = supabase
+      .channel('sagarujjwalgaming-settings')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'streamers',
+        filter: 'streamer_slug=eq.sagarujjwalgaming'
+      }, (payload: any) => {
+        if (payload.new?.alert_box_scale) {
+          setAlertBoxScale(Number(payload.new.alert_box_scale));
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   if (configLoading) {
     return (
@@ -40,6 +75,7 @@ const SagarUjjwalGamingObsAlerts = () => {
         isVisible={isVisible}
         streamerBrandColor="#ef4444"
         streamerName="SAGAR UJJWAL GAMING"
+        scale={alertBoxScale}
       />
       
       {/* Debug panel (development only) */}
