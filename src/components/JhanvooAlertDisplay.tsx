@@ -18,13 +18,15 @@ interface JhanvooAlertDisplayProps {
   isVisible: boolean;
   streamerBrandColor?: string;
   streamerName?: string;
+  scale?: number;
 }
 
 export const JhanvooAlertDisplay = ({ 
   donation, 
   isVisible,
   streamerBrandColor = '#ec4899',
-  streamerName = 'Jhanvoo'
+  streamerName = 'Jhanvoo',
+  scale = 1.0
 }: JhanvooAlertDisplayProps) => {
   const [displayedText, setDisplayedText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -153,7 +155,12 @@ export const JhanvooAlertDisplay = ({
 
       {/* Regular Alert Box */}
       {!donation.is_hyperemote && (
-        <div className="fixed bottom-[10%] left-1/2 -translate-x-1/2 z-50 max-w-3xl w-full px-4">
+        <div className="fixed bottom-[10%] left-1/2 z-50 max-w-3xl w-full px-4"
+          style={{
+            transform: `translateX(-50%) scale(${scale})`,
+            transformOrigin: 'bottom center',
+          }}
+        >
           <div 
             className="backdrop-blur-md px-8 py-4 rounded-xl border"
             style={{

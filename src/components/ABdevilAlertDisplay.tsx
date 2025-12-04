@@ -15,11 +15,13 @@ interface Donation {
 interface ABdevilAlertDisplayProps {
   donation: Donation | null;
   isVisible?: boolean;
+  scale?: number;
 }
 
 export const ABdevilAlertDisplay = ({
   donation,
   isVisible = true,
+  scale = 1.0,
 }: ABdevilAlertDisplayProps) => {
   const [displayedText, setDisplayedText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -194,11 +196,13 @@ export const ABdevilAlertDisplay = ({
   return (
     <div className="fixed inset-0 pointer-events-none z-50">
       <div 
-        className="absolute bottom-[10%] left-1/2 -translate-x-1/2 text-white text-center flex flex-col items-center gap-1.5 px-8 py-4 rounded-xl opacity-100 transition-opacity duration-600"
+        className="absolute bottom-[10%] left-1/2 text-white text-center flex flex-col items-center gap-1.5 px-8 py-4 rounded-xl opacity-100 transition-opacity duration-600"
         style={{
           background: 'linear-gradient(90deg, rgba(0, 122, 255, 0.6), rgba(144, 0, 255, 0.6))',
           boxShadow: '0 0 25px rgba(144, 0, 255, 0.4)',
           letterSpacing: '0.4px',
+          transform: `translateX(-50%) scale(${scale})`,
+          transformOrigin: 'bottom center',
         }}
       >
         {/* Name and Amount */}

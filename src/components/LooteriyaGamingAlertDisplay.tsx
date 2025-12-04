@@ -15,13 +15,15 @@ interface LooteriyaGamingAlertDisplayProps {
   isVisible: boolean;
   streamerName?: string;
   streamerBrandColor?: string;
+  scale?: number;
 }
 
 export const LooteriyaGamingAlertDisplay: React.FC<LooteriyaGamingAlertDisplayProps> = ({
   donation,
   isVisible,
   streamerName = "Looteriya Gaming",
-  streamerBrandColor = "#f59e0b"
+  streamerBrandColor = "#f59e0b",
+  scale = 1.0
 }) => {
   const [displayedMessage, setDisplayedMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -248,7 +250,7 @@ export const LooteriyaGamingAlertDisplay: React.FC<LooteriyaGamingAlertDisplayPr
     <div className="fixed inset-0 pointer-events-none z-50">
       <div 
         className={`
-          absolute bottom-[10%] left-1/2 -translate-x-1/2
+          absolute bottom-[10%] left-1/2
           text-white text-center
           flex flex-col items-center gap-3
           px-12 py-6 rounded-2xl
@@ -259,6 +261,8 @@ export const LooteriyaGamingAlertDisplay: React.FC<LooteriyaGamingAlertDisplayPr
           background: 'linear-gradient(90deg, rgba(245, 158, 11, 0.6), rgba(234, 88, 12, 0.6))',
           boxShadow: '0 0 35px rgba(245, 158, 11, 0.4)',
           letterSpacing: '0.4px',
+          transform: `translateX(-50%) scale(${scale})`,
+          transformOrigin: 'bottom center',
         }}
       >
         {/* Name and Amount */}

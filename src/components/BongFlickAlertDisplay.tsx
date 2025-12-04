@@ -13,9 +13,10 @@ interface Donation {
 
 interface BongFlickAlertDisplayProps {
   donation: Donation;
+  scale?: number;
 }
 
-export const BongFlickAlertDisplay = ({ donation }: BongFlickAlertDisplayProps) => {
+export const BongFlickAlertDisplay = ({ donation, scale = 1.0 }: BongFlickAlertDisplayProps) => {
   const [displayedText, setDisplayedText] = useState("");
   const [gifUrls, setGifUrls] = useState<string[]>([]);
   const [floatingGifs, setFloatingGifs] = useState<Array<{ id: number; url: string; delay: number; animation: string }>>([]);
@@ -113,11 +114,13 @@ export const BongFlickAlertDisplay = ({ donation }: BongFlickAlertDisplayProps) 
   return (
     <div className="fixed inset-0 pointer-events-none z-50">
       <div 
-        className="absolute bottom-[10%] left-1/2 -translate-x-1/2 text-white text-center flex flex-col items-center gap-1.5 px-8 py-4 rounded-xl opacity-100 transition-opacity duration-600"
+        className="absolute bottom-[10%] left-1/2 text-white text-center flex flex-col items-center gap-1.5 px-8 py-4 rounded-xl opacity-100 transition-opacity duration-600"
         style={{
           background: 'linear-gradient(90deg, rgba(0, 122, 255, 0.6), rgba(144, 0, 255, 0.6))',
           boxShadow: '0 0 25px rgba(144, 0, 255, 0.4)',
           letterSpacing: '0.4px',
+          transform: `translateX(-50%) scale(${scale})`,
+          transformOrigin: 'bottom center',
         }}
       >
         {/* Name and Amount */}
