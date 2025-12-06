@@ -501,8 +501,8 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
             </div>
           </div>
 
-          {/* Media Source Audio (Ankit only - Alternative to Browser Source) */}
-          {streamerSlug === 'ankit' && activeToken && (
+          {/* Media Source Audio (Alternative to Browser Source) */}
+          {(streamerSlug === 'ankit' || streamerSlug === 'looteriya_gaming') && activeToken && (
             <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
               <div className="flex items-start space-x-3">
                 <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
@@ -522,7 +522,7 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
                     </label>
                     <div className="flex items-center space-x-2">
                       <Input
-                        value={`https://vsevsjvtrshgeiudrnth.supabase.co/functions/v1/get-current-audio-ankit?token=${activeToken.token}`}
+                        value={`https://vsevsjvtrshgeiudrnth.supabase.co/functions/v1/get-current-audio?token=${activeToken.token}`}
                         readOnly
                         className="font-mono text-xs bg-white dark:bg-gray-900"
                       />
@@ -530,7 +530,7 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
                         variant="outline"
                         size="sm"
                         onClick={() => copyToClipboard(
-                          `https://vsevsjvtrshgeiudrnth.supabase.co/functions/v1/get-current-audio-ankit?token=${activeToken.token}`,
+                          `https://vsevsjvtrshgeiudrnth.supabase.co/functions/v1/get-current-audio?token=${activeToken.token}`,
                           `media_source_${activeToken.id}`
                         )}
                       >
