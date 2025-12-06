@@ -18,6 +18,11 @@ const LooteriyaGamingObsAlerts = () => {
     pusherKey: pusherConfig?.key || '',
     pusherCluster: pusherConfig?.cluster || '',
     delayBeforeDisplay: 60000,
+    alertDuration: {
+      text: 10000,
+      hyperemote: 8000,
+      voice: 15000,
+    },
   });
 
   useEffect(() => {
