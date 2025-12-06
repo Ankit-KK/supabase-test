@@ -46,7 +46,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Fetch oldest unplayed donation with audio
+    // Fetch oldest unplayed donation with audio from the last 10 minutes only
+    // This prevents playing historical donations that were already played via Browser Source
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    
     const { data: donation, error: fetchError } = await supabase
       .from('ankit_donations')
       .select('id, name, amount, message, tts_audio_url, voice_message_url, created_at')
@@ -54,6 +57,7 @@ Deno.serve(async (req) => {
       .in('moderation_status', ['approved', 'auto_approved'])
       .eq('payment_status', 'success')
       .or('tts_audio_url.not.is.null,voice_message_url.not.is.null')
+      .gte('created_at', tenMinutesAgo)
       .order('created_at', { ascending: true })
       .limit(1)
       .maybeSingle();
