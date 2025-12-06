@@ -108,12 +108,24 @@ Deno.serve(async (req) => {
 
     console.log(`Serving audio for donation ${donation.id}: ${donation.name} - ₹${donation.amount}`);
 
-    // Return redirect to actual audio URL
-    return new Response(null, {
-      status: 302,
+    // Fetch and proxy the audio directly to avoid redirect issues with OBS
+    console.log(`Fetching audio from: ${audioUrl}`);
+    const audioResponse = await fetch(audioUrl);
+
+    if (!audioResponse.ok) {
+      console.error('Failed to fetch audio:', audioResponse.status);
+      return new Response(null, {
+        status: 204,
+        headers: corsHeaders,
+      });
+    }
+
+    // Stream the audio directly to OBS
+    return new Response(audioResponse.body, {
+      status: 200,
       headers: {
         ...corsHeaders,
-        'Location': audioUrl,
+        'Content-Type': audioResponse.headers.get('Content-Type') || 'audio/mpeg',
         'Cache-Control': 'no-cache, no-store, must-revalidate',
       },
     });
