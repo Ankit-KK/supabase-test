@@ -17,7 +17,8 @@ import {
   CheckCircle, 
   AlertCircle,
   ExternalLink,
-  Maximize2
+  Maximize2,
+  Volume2
 } from 'lucide-react';
 import { AnkitGoalManager } from './AnkitGoalManager';
 import {
@@ -499,6 +500,61 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Media Source Audio (Ankit only - Alternative to Browser Source) */}
+          {streamerSlug === 'ankit' && activeToken && (
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+              <div className="flex items-start space-x-3">
+                <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Volume2 className="h-4 w-4 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-medium text-purple-900 dark:text-purple-100 mb-1">
+                    🎧 Media Source Audio (Alternative)
+                  </h4>
+                  <p className="text-sm text-purple-700 dark:text-purple-300 mb-3">
+                    If Browser Source audio doesn't work reliably, use this URL with OBS Media Source instead.
+                  </p>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium block text-purple-800 dark:text-purple-200">
+                      Media Source URL
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      <Input
+                        value={`https://vsevsjvtrshgeiudrnth.supabase.co/functions/v1/get-current-audio-ankit?token=${activeToken.token}`}
+                        readOnly
+                        className="font-mono text-xs bg-white dark:bg-gray-900"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => copyToClipboard(
+                          `https://vsevsjvtrshgeiudrnth.supabase.co/functions/v1/get-current-audio-ankit?token=${activeToken.token}`,
+                          `media_source_${activeToken.id}`
+                        )}
+                      >
+                        {copySuccess === `media_source_${activeToken.id}` ? 
+                          <CheckCircle className="h-4 w-4 text-green-600" /> :
+                          <Copy className="h-4 w-4" />
+                        }
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 text-xs text-purple-600 dark:text-purple-400 space-y-1">
+                    <p className="font-medium">OBS Setup for Media Source:</p>
+                    <ol className="list-decimal list-inside space-y-1 ml-2">
+                      <li>Add a new "Media Source" (not Browser Source)</li>
+                      <li>Uncheck "Local File", paste the URL above</li>
+                      <li>Enable "Restart playback when source becomes active"</li>
+                      <li>Set "Network Buffer" to 0 or minimal value</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Goal Configuration (Ankit only) */}
           {streamerSlug === 'ankit' && <AnkitGoalManager streamerId={streamerId} />}
