@@ -11,11 +11,11 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { orderId } = await req.json();
+    const { order_id } = await req.json();
 
-    console.log('[Looteriya Gaming] Checking payment status for:', orderId);
+    console.log('[Looteriya Gaming] Checking payment status for:', order_id);
 
-    if (!orderId) {
+    if (!order_id) {
       throw new Error('Order ID is required');
     }
 
@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
     const { data: donation, error: dbError } = await supabase
       .from('looteriya_gaming_donations')
       .select('*')
-      .eq('order_id', orderId)
+      .eq('order_id', order_id)
       .single();
 
     if (dbError || !donation) {
