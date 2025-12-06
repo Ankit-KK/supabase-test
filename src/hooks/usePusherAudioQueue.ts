@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import Pusher from 'pusher-js';
 
-interface AudioDonation {
+export interface AudioDonation {
   id: string;
   name: string;
   amount: number;
