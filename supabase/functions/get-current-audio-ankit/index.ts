@@ -108,6 +108,10 @@ Deno.serve(async (req) => {
 
     console.log(`Serving audio for donation ${donation.id}: ${donation.name} - ₹${donation.amount}`);
 
+    // Add 6-second delay for visual alerts to display first
+    console.log('Waiting 6 seconds for visual alerts...');
+    await new Promise(resolve => setTimeout(resolve, 6000));
+
     // Fetch and proxy the audio directly to avoid redirect issues with OBS
     console.log(`Fetching audio from: ${audioUrl}`);
     const audioResponse = await fetch(audioUrl);
