@@ -71,13 +71,14 @@ Deno.serve(async (req) => {
     }
 
     if (!donation) {
-      // No audio available - return empty response
-      return new Response(JSON.stringify({ 
-        status: 'empty',
-        message: 'No audio in queue' 
-      }), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      // No audio available - return 204 No Content
+      // OBS Media Source will ignore this and continue polling
+      return new Response(null, {
+        status: 204,
+        headers: {
+          ...corsHeaders,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        },
       });
     }
 
@@ -85,12 +86,13 @@ Deno.serve(async (req) => {
     const audioUrl = donation.voice_message_url || donation.tts_audio_url;
 
     if (!audioUrl) {
-      return new Response(JSON.stringify({ 
-        status: 'empty',
-        message: 'No audio URL found' 
-      }), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      // No audio URL found - return 204 No Content
+      return new Response(null, {
+        status: 204,
+        headers: {
+          ...corsHeaders,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        },
       });
     }
 
