@@ -73,6 +73,7 @@ import JhanvooObsAlerts from "./pages/obs-alerts/JhanvooObsAlerts";
 
 // Audio Player pages (active streamers + ThunderX)
 import AnkitAudioPlayer from "./pages/audio-player/AnkitAudioPlayer";
+import AnkitMediaSourcePlayer from "./pages/audio-player/AnkitMediaSourcePlayer";
 import ChiaGamingAudioPlayer from "./pages/audio-player/ChiaGamingAudioPlayer";
 import LooteriyaGamingAudioPlayer from "./pages/audio-player/LooteriyaGamingAudioPlayer";
 import SizzorsAudioPlayer from "./pages/audio-player/SizzorsAudioPlayer";
@@ -170,6 +171,7 @@ const App = () => (
               
               {/* Audio Player routes */}
               <Route path="/ankit/audio-player" element={<AnkitAudioPlayer />} />
+              <Route path="/ankit/media-audio-player" element={<AnkitMediaSourcePlayer />} />
               <Route path="/chiaa_gaming/audio-player" element={<ChiaGamingAudioPlayer />} />
               <Route path="/looteriya_gaming/audio-player" element={<LooteriyaGamingAudioPlayer />} />
               <Route path="/sizzors/audio-player" element={<SizzorsAudioPlayer />} />

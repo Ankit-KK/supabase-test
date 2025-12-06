@@ -131,3 +131,6 @@ verify_jwt = false
 
 [functions.razorpay-webhook]
 verify_jwt = false
+
+[functions.get-current-audio-ankit]
+verify_jwt = false
