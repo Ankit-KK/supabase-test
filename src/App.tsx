@@ -71,9 +71,6 @@ import MrIqmasterObsAlerts from "./pages/obs-alerts/MrIqmasterObsAlerts";
 import ABdevilObsAlerts from "./pages/obs-alerts/ABdevilObsAlerts";
 import JhanvooObsAlerts from "./pages/obs-alerts/JhanvooObsAlerts";
 
-// OBS Audio pages (alternative to Chrome audio player)
-import AnkitObsAudio from "./pages/obs-audio/AnkitObsAudio";
-
 // Audio Player pages (active streamers + ThunderX)
 import AnkitAudioPlayer from "./pages/audio-player/AnkitAudioPlayer";
 import ChiaGamingAudioPlayer from "./pages/audio-player/ChiaGamingAudioPlayer";
@@ -153,9 +150,6 @@ const App = () => (
               <Route path="/dashboard/mriqmaster" element={<MrIqmasterDashboard />} />
               <Route path="/dashboard/abdevil" element={<ABdevilDashboard />} />
               <Route path="/dashboard/jhanvoo" element={<JhanvooDashboard />} />
-              
-              {/* OBS Audio routes (alternative to Chrome audio player) */}
-              <Route path="/ankit/obs-audio" element={<AnkitObsAudio />} />
               
               {/* OBS Alert routes */}
               <Route path="/ankit/obs-alerts" element={<AnkitObsAlerts />} />
