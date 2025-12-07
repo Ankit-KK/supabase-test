@@ -502,7 +502,7 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
           </div>
 
           {/* Media Source Audio (Alternative to Browser Source) */}
-          {(streamerSlug === 'ankit' || streamerSlug === 'looteriya_gaming') && activeToken && (
+          {(streamerSlug === 'ankit' || streamerSlug === 'looteriya_gaming' || streamerSlug === 'clumsygod') && activeToken && (
             <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
               <div className="flex items-start space-x-3">
                 <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
