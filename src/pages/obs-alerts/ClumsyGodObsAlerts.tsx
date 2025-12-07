@@ -19,6 +19,7 @@ const ClumsyGodObsAlerts = () => {
     channelName: 'clumsygod-alerts',
     pusherKey: pusherConfig?.key || '',
     pusherCluster: pusherConfig?.cluster || '',
+    delayBeforeDisplay: 60000,
   });
 
   useEffect(() => {
