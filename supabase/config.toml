@@ -137,3 +137,9 @@ verify_jwt = false
 
 [functions.get-current-audio]
 verify_jwt = false
+
+[functions.create-razorpay-order-clumsygod]
+verify_jwt = false
+
+[functions.check-payment-status-clumsygod]
+verify_jwt = false

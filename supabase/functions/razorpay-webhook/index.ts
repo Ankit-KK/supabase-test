@@ -116,7 +116,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // Determine table based on order ID prefix (supports both old and new formats)
-    let streamerType: 'ankit' | 'thunderx' | 'vipbhai' | 'sagarujjwalgaming' | 'notyourkween' | 'bongflick' | 'mriqmaster' | 'abdevil' | 'looteriyagaming' | 'damaskplays' | 'nekoxenpai' | 'jhanvoo'
+    let streamerType: 'ankit' | 'thunderx' | 'vipbhai' | 'sagarujjwalgaming' | 'notyourkween' | 'bongflick' | 'mriqmaster' | 'abdevil' | 'looteriyagaming' | 'damaskplays' | 'nekoxenpai' | 'jhanvoo' | 'clumsygod'
     let tableName: string
     
     // Get donation from the appropriate table using Razorpay order ID
@@ -267,10 +267,22 @@ serve(async (req) => {
                             streamerType = 'jhanvoo'
                             tableName = 'jhanvoo_donations'
                           } else {
-                            fetchError = ankitResult.error || thunderxResult.error || vipbhaiResult.error || sagarujjwalgamingResult.error || notyourkweenResult.error || bongflickResult.error || mriqmasterResult.error || abdevilResult.error || looteriyaGamingResult.error || damaskPlaysResult.error || nekoXenpaiResult.error || jhanvooResult.error
+                            // Try clumsygod
+                            const clumsygodResult = await supabase
+                              .from('clumsygod_donations')
+                              .select('*')
+                              .eq('razorpay_order_id', razorpayOrderId)
+                              .maybeSingle()
+                            
+                            if (clumsygodResult.data) {
+                              donation = clumsygodResult.data
+                              streamerType = 'clumsygod'
+                              tableName = 'clumsygod_donations'
+                            } else {
+                              fetchError = ankitResult.error || thunderxResult.error || vipbhaiResult.error || sagarujjwalgamingResult.error || notyourkweenResult.error || bongflickResult.error || mriqmasterResult.error || abdevilResult.error || looteriyaGamingResult.error || damaskPlaysResult.error || nekoXenpaiResult.error || jhanvooResult.error || clumsygodResult.error
+                            }
                           }
                         }
-                      }
                     }
                   }
                 }
@@ -376,6 +388,8 @@ serve(async (req) => {
         ? ['neko_xenpai-alerts', 'neko_xenpai-dashboard']
         : streamerType === 'jhanvoo'
         ? ['jhanvoo-alerts', 'jhanvoo-dashboard']
+        : streamerType === 'clumsygod'
+        ? ['clumsygod-alerts', 'clumsygod-dashboard']
         : ['ankit-alerts', 'ankit-dashboard']
       
       await sendPusherEvent(alertChannels, 'new-donation', {
