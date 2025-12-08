@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { Flame, Heart, Sparkles } from "lucide-react";
+import { Gamepad2, Sparkles, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import VoiceRecorder from "@/components/VoiceRecorder";
@@ -244,7 +244,7 @@ const ClumsyGod = () => {
           name: formData.name.trim()
         },
         theme: {
-          color: '#ef4444'
+          color: '#8b5cf6'
         },
         handler: function (response: any) {
           navigate(`/status?order_id=${data.order_id}&status=success`);
@@ -292,120 +292,191 @@ const ClumsyGod = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Full-page background with banner image */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: 'url(/lovable-uploads/clumsygod-banner.jpg)' }}
+      />
+      {/* Dark overlay for better readability */}
+      <div className="absolute inset-0 bg-black/50" />
+      
+      {/* Animated purple glow effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-20 w-32 h-32 bg-red-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-20 w-40 h-40 bg-red-600/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-red-400/10 rounded-full blur-2xl animate-pulse"></div>
+        <div className="absolute top-20 left-20 w-32 h-32 bg-violet-500/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-20 w-40 h-40 bg-purple-600/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-violet-400/15 rounded-full blur-2xl animate-pulse"></div>
       </div>
 
-      <Card className="w-full max-w-md mx-auto bg-card/95 backdrop-blur-sm border-red-500/20 shadow-2xl relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 via-red-600/20 to-red-400/20 opacity-50 blur-xl"></div>
+      <Card className="w-full max-w-[21rem] mx-auto relative overflow-hidden border-violet-500/30 shadow-2xl shadow-violet-500/20">
+        {/* Card background with logo image */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: 'url(/lovable-uploads/clumsygod-logo.jpg)' }}
+        />
+        {/* Semi-transparent overlay for card content readability */}
+        <div className="absolute inset-0 bg-background/85 backdrop-blur-sm" />
         
-        <CardHeader className="text-center relative z-10">
-          <div className="flex items-center justify-center mb-4">
-            <div className="flex items-center space-x-2 text-red-500">
-              <Flame className="h-8 w-8" />
-              <Sparkles className="h-6 w-6 animate-pulse" />
-              <Heart className="h-6 w-6 text-red-400" />
+        <CardHeader className="text-center relative z-10 pb-3">
+          <div className="flex items-center justify-center mb-3">
+            <div className="flex items-center space-x-2 text-violet-400">
+              <Gamepad2 className="h-7 w-7" />
+              <Sparkles className="h-5 w-5 animate-pulse" />
+              <Star className="h-5 w-5 text-purple-400" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-red-500 to-red-600 bg-clip-text text-transparent">
+          <CardTitle className="text-xl font-bold bg-gradient-to-r from-violet-400 to-purple-500 bg-clip-text text-transparent">
             ClumsyGod
           </CardTitle>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-muted-foreground text-xs">
             Support ClumsyGod with your donation
           </p>
         </CardHeader>
 
-        <CardContent className="space-y-6 relative z-10">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-medium text-red-500">
+        <CardContent className="space-y-4 relative z-10 pt-0">
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <div className="space-y-1.5">
+              <label htmlFor="name" className="text-xs font-medium text-violet-400">
                 Your Name *
               </label>
-              <Input id="name" name="name" placeholder="Enter your name" value={formData.name} onChange={handleInputChange} className="border-red-500/30 focus:border-red-500 focus:ring-red-500/20" required />
+              <Input 
+                id="name" 
+                name="name" 
+                placeholder="Enter your name" 
+                value={formData.name} 
+                onChange={handleInputChange} 
+                className="border-violet-500/30 focus:border-violet-500 focus:ring-violet-500/20 h-9 text-sm" 
+                required 
+              />
             </div>
 
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-red-500">
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-violet-400">
                 Choose your donation type
               </label>
-              <div className="grid grid-cols-3 gap-2">
-                <button type="button" onClick={() => handleDonationTypeChange('message')} className={`p-3 rounded-lg border-2 transition-all ${donationType === 'message' ? 'border-red-500 bg-red-500/10' : 'border-red-500/30 hover:border-red-500/50'}`}>
+              <div className="grid grid-cols-3 gap-1.5">
+                <button 
+                  type="button" 
+                  onClick={() => handleDonationTypeChange('message')} 
+                  className={`p-2 rounded-lg border-2 transition-all ${donationType === 'message' ? 'border-violet-500 bg-violet-500/10' : 'border-violet-500/30 hover:border-violet-500/50'}`}
+                >
                   <div className="text-center">
-                    <div className="text-base mb-1">💬</div>
-                    <div className="font-medium text-xs">Text Message</div>
-                    <div className="text-xs text-muted-foreground">Min: ₹40</div>
+                    <div className="text-sm mb-0.5">💬</div>
+                    <div className="font-medium text-[10px]">Text Message</div>
+                    <div className="text-[9px] text-muted-foreground">Min: ₹40</div>
                   </div>
                 </button>
-                <button type="button" onClick={() => handleDonationTypeChange('voice')} className={`p-3 rounded-lg border-2 transition-all ${donationType === 'voice' ? 'border-red-500 bg-red-500/10' : 'border-red-500/30 hover:border-red-500/50'}`}>
+                <button 
+                  type="button" 
+                  onClick={() => handleDonationTypeChange('voice')} 
+                  className={`p-2 rounded-lg border-2 transition-all ${donationType === 'voice' ? 'border-violet-500 bg-violet-500/10' : 'border-violet-500/30 hover:border-violet-500/50'}`}
+                >
                   <div className="text-center">
-                    <div className="text-base mb-1">🎤</div>
-                    <div className="font-medium text-xs">Voice Message</div>
-                    <div className="text-xs text-muted-foreground">Min: ₹150</div>
+                    <div className="text-sm mb-0.5">🎤</div>
+                    <div className="font-medium text-[10px]">Voice Message</div>
+                    <div className="text-[9px] text-muted-foreground">Min: ₹150</div>
                   </div>
                 </button>
-                <button type="button" onClick={() => handleDonationTypeChange('hyperemote')} className={`p-3 rounded-lg border-2 transition-all ${donationType === 'hyperemote' ? 'border-purple-500 bg-purple-500/10' : 'border-purple-500/30 hover:border-purple-500/50'}`}>
+                <button 
+                  type="button" 
+                  onClick={() => handleDonationTypeChange('hyperemote')} 
+                  className={`p-2 rounded-lg border-2 transition-all ${donationType === 'hyperemote' ? 'border-purple-500 bg-purple-500/10' : 'border-purple-500/30 hover:border-purple-500/50'}`}
+                >
                   <div className="text-center">
-                    <div className="text-base mb-1">🎉</div>
-                    <div className="font-medium text-xs">Hyperemotes</div>
-                    <div className="text-xs text-muted-foreground">
-                      ₹{streamerSettings?.hyperemotes_min_amount || 50}+ celebration
+                    <div className="text-sm mb-0.5">🎉</div>
+                    <div className="font-medium text-[10px]">Hyperemotes</div>
+                    <div className="text-[9px] text-muted-foreground">
+                      ₹{streamerSettings?.hyperemotes_min_amount || 50}+
                     </div>
                   </div>
                 </button>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label htmlFor="amount" className="text-sm font-medium text-red-500">
+            <div className="space-y-1.5">
+              <label htmlFor="amount" className="text-xs font-medium text-violet-400">
                 Amount (₹) *
               </label>
-              <Input id="amount" name="amount" type="number" placeholder={donationType === 'message' ? 'Min: ₹40' : donationType === 'voice' ? 'Min: ₹150' : 'Enter amount'} value={formData.amount} onChange={handleInputChange} className="border-red-500/30 focus:border-red-500 focus:ring-red-500/20" min="1" max="100000" disabled={donationType === 'hyperemote' || isAmountLocked} required />
-              {isAmountLocked && <p className="text-xs text-yellow-600 flex items-center gap-1">
-                🔒 Amount locked during voice recording
-              </p>}
-              <p className="text-xs text-muted-foreground">TTS above ₹70</p>
-              {donationType === 'voice' && currentAmount >= 150 && <p className="text-xs text-muted-foreground">
-                Voice duration: {getVoiceDuration(currentAmount)}s
-                {currentAmount < 200 && ' (Donate ₹200+ for 20s, ₹250+ for 30s)'}
-              </p>}
-              {donationType === 'hyperemote' && <p className="text-xs text-muted-foreground">
-                Hyperemotes start at ₹{streamerSettings?.hyperemotes_min_amount || 50} with automatic celebration effects
-              </p>}
+              <Input 
+                id="amount" 
+                name="amount" 
+                type="number" 
+                placeholder={donationType === 'message' ? 'Min: ₹40' : donationType === 'voice' ? 'Min: ₹150' : 'Enter amount'} 
+                value={formData.amount} 
+                onChange={handleInputChange} 
+                className="border-violet-500/30 focus:border-violet-500 focus:ring-violet-500/20 h-9 text-sm" 
+                min="1" 
+                max="100000" 
+                disabled={donationType === 'hyperemote' || isAmountLocked} 
+                required 
+              />
+              {isAmountLocked && (
+                <p className="text-[10px] text-yellow-600 flex items-center gap-1">
+                  🔒 Amount locked during voice recording
+                </p>
+              )}
+              <p className="text-[10px] text-muted-foreground">TTS above ₹70</p>
+              {donationType === 'voice' && currentAmount >= 150 && (
+                <p className="text-[10px] text-muted-foreground">
+                  Voice duration: {getVoiceDuration(currentAmount)}s
+                  {currentAmount < 200 && ' (₹200+ for 20s, ₹250+ for 30s)'}
+                </p>
+              )}
+              {donationType === 'hyperemote' && (
+                <p className="text-[10px] text-muted-foreground">
+                  Hyperemotes start at ₹{streamerSettings?.hyperemotes_min_amount || 50}
+                </p>
+              )}
             </div>
 
-            {donationType === 'message' && <div className="space-y-2">
-              <label htmlFor="message" className="text-sm font-medium text-red-500">
-                Message *
-              </label>
-              <textarea id="message" name="message" placeholder="Enter your message" value={formData.message} onChange={handleInputChange} className="w-full p-3 border border-red-500/30 rounded-lg bg-background/50 backdrop-blur-sm focus:border-red-500 focus:ring-2 focus:ring-red-500/20 focus:outline-none resize-none" rows={3} maxLength={getCharacterLimit(currentAmount)} required />
-              <div className="text-xs text-muted-foreground text-right">
-                {formData.message.length}/{getCharacterLimit(currentAmount)} characters
+            {donationType === 'message' && (
+              <div className="space-y-1.5">
+                <label htmlFor="message" className="text-xs font-medium text-violet-400">
+                  Message *
+                </label>
+                <textarea 
+                  id="message" 
+                  name="message" 
+                  placeholder="Enter your message" 
+                  value={formData.message} 
+                  onChange={handleInputChange} 
+                  className="w-full p-2 border border-violet-500/30 rounded-lg bg-background/50 backdrop-blur-sm focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 focus:outline-none resize-none text-sm" 
+                  rows={2} 
+                  maxLength={getCharacterLimit(currentAmount)} 
+                  required 
+                />
+                <div className="text-[10px] text-muted-foreground text-right">
+                  {formData.message.length}/{getCharacterLimit(currentAmount)} chars
+                </div>
               </div>
-            </div>}
+            )}
 
-            {donationType === 'voice' && <div className="space-y-3">
-              <label className="text-sm font-medium text-red-500">
-                Record Voice Message *
-              </label>
-              <VoiceRecorder
-                controller={voiceRecorder}
-                maxDurationSeconds={maxVoiceDuration}
-                requiredAmount={150}
-                currentAmount={currentAmount}
-                onRecordingComplete={(hasRecording, duration) => {
-                  setHasVoiceRecording(hasRecording);
-                  setVoiceDuration(duration);
-                }}
-              />
-            </div>}
+            {donationType === 'voice' && (
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-violet-400">
+                  Record Voice Message *
+                </label>
+                <VoiceRecorder
+                  controller={voiceRecorder}
+                  maxDurationSeconds={maxVoiceDuration}
+                  requiredAmount={150}
+                  currentAmount={currentAmount}
+                  onRecordingComplete={(hasRecording, duration) => {
+                    setHasVoiceRecording(hasRecording);
+                    setVoiceDuration(duration);
+                  }}
+                />
+              </div>
+            )}
 
-            <Button type="submit" disabled={isProcessing || !razorpayLoaded} className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold py-3">
+            <Button 
+              type="submit" 
+              disabled={isProcessing || !razorpayLoaded} 
+              className="w-full bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white font-semibold py-2.5 text-sm"
+            >
               {isProcessing ? (
                 <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   <span>Processing...</span>
                 </div>
               ) : (
