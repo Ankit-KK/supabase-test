@@ -556,8 +556,54 @@ serve(async (req) => {
       }
 
       // Handle TTS generation and audio channel events based on donation type
-      // 1. HYPEREMOTES - NO TTS, just visual effects
-      if (donation.is_hyperemote) {
+      // 1. HYPERSOUNDS - Play the selected sound (stored in hypersound_url)
+      if (donation.hypersound_url) {
+        console.log('HyperSound donation - playing selected sound:', donation.hypersound_url)
+        
+        // Send audio event with the hypersound URL
+        const audioChannel = streamerType === 'thunderx' 
+          ? ['thunderx-audio'] 
+          : streamerType === 'vipbhai'
+          ? ['vipbhai-audio']
+          : streamerType === 'sagarujjwalgaming'
+          ? ['sagarujjwalgaming-audio']
+          : streamerType === 'notyourkween'
+          ? ['notyourkween-audio']
+          : streamerType === 'bongflick'
+          ? ['bongflick-audio']
+          : streamerType === 'mriqmaster'
+          ? ['mriqmaster-audio']
+          : streamerType === 'abdevil'
+          ? ['abdevil-audio']
+          : streamerType === 'looteriyagaming'
+          ? ['looteriya_gaming-audio']
+          : streamerType === 'damaskplays'
+          ? ['damask_plays-audio']
+          : streamerType === 'nekoxenpai'
+          ? ['neko_xenpai-audio']
+          : streamerType === 'jhanvoo'
+          ? ['jhanvoo-audio']
+          : streamerType === 'clumsygod'
+          ? ['clumsygod-audio']
+          : ['ankit-audio']
+        
+        await sendPusherEvent(audioChannel, 'new-audio-message', {
+          id: donation.id,
+          name: donation.name,
+          amount: donation.amount,
+          message: '🔊 HyperSound!',
+          hypersound_url: donation.hypersound_url, // Play this sound
+          announcement_tts_url: null,
+          voice_message_url: null,
+          tts_audio_url: null,
+          created_at: donation.created_at
+        })
+        
+        console.log(`✅ HyperSound sent to ${streamerType}-audio`)
+      }
+      
+      // 2. HYPEREMOTES (legacy) - NO TTS, just visual effects
+      else if (donation.is_hyperemote && !donation.hypersound_url) {
         console.log('Hyperemote donation - skipping TTS, visual alert only')
         // No audio channel event for hyperemotes
       }

@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { toast } from "@/hooks/use-toast";
-import { Gamepad2, Heart, Sparkles, Check, ChevronsUpDown } from "lucide-react";
+import { Gamepad2, Heart, Sparkles, Check, ChevronsUpDown, Volume2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SUPPORTED_CURRENCIES, getCurrencySymbol, getCurrencyMinimums } from "@/constants/currencies";
 // Razorpay integration - SDK loaded dynamically
@@ -14,6 +14,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import VoiceRecorder from "@/components/VoiceRecorder";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
+import HyperSoundSelector from "@/components/HyperSoundSelector";
+
 const Ankit = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -24,13 +26,14 @@ const Ankit = () => {
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
-  const [donationType, setDonationType] = useState<'message' | 'voice' | 'hyperemote'>('message');
+  const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersound'>('message');
   const [streamerSettings, setStreamerSettings] = useState<any>(null);
   const [hasVoiceRecording, setHasVoiceRecording] = useState(false);
   const [voiceDuration, setVoiceDuration] = useState(0);
-  const [showHyperemoteEffect, setShowHyperemoteEffect] = useState(false);
+  const [showHypersoundEffect, setShowHypersoundEffect] = useState(false);
   const [isAmountLocked, setIsAmountLocked] = useState(false);
   const [currencyOpen, setCurrencyOpen] = useState(false);
+  const [selectedSound, setSelectedSound] = useState<string | null>(null);
 
   // Calculate character limit based on amount
   const getCharacterLimit = (amount: number): number => {
@@ -106,6 +109,7 @@ const Ankit = () => {
     loadRazorpay();
     fetchStreamerSettings();
   }, []);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const {
       name,
@@ -134,6 +138,7 @@ const Ankit = () => {
       [name]: value
     }));
   };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -151,6 +156,14 @@ const Ankit = () => {
       toast({
         title: "Voice Message Required",
         description: "Please record a voice message for your donation.",
+        variant: "destructive"
+      });
+      return;
+    }
+    if (donationType === 'hypersound' && !selectedSound) {
+      toast({
+        title: "Sound Required",
+        description: "Please select a sound for your HyperSound donation.",
         variant: "destructive"
       });
       return;
@@ -205,10 +218,10 @@ const Ankit = () => {
       });
       return;
     }
-    if (donationType === 'hyperemote' && amount < currencyMins.minHyperemote) {
+    if (donationType === 'hypersound' && amount < currencyMins.minHypersound) {
       toast({
         title: "Insufficient Amount",
-        description: `Hyperemotes require a minimum donation of ${currencySymbol}${currencyMins.minHyperemote}.`,
+        description: `HyperSounds require a minimum donation of ${currencySymbol}${currencyMins.minHypersound}.`,
         variant: "destructive"
       });
       return;
@@ -262,9 +275,9 @@ const Ankit = () => {
           name: formData.name.trim(),
           amount: amount,
           currency: formData.currency,
-          message: donationType === 'message' ? formData.message.trim() : donationType === 'voice' ? 'Sent a Voice message' : donationType === 'hyperemote' ? formData.message.trim() : '',
+          message: donationType === 'message' ? formData.message.trim() : donationType === 'voice' ? 'Sent a Voice message' : donationType === 'hypersound' ? '🔊 HyperSound!' : '',
           voiceMessageUrl: voiceMessageUrl,
-          isHyperemote: donationType === 'hyperemote'
+          hypersoundUrl: donationType === 'hypersound' ? selectedSound : null
         }
       });
       const data = response.data;
@@ -280,7 +293,7 @@ const Ankit = () => {
         amount: data.amount,
         currency: formData.currency,
         name: 'HyperChat - Ankit',
-        description: donationType === 'hyperemote' ? 'Hyperemote Celebration' : donationType === 'voice' ? 'Voice Message' : 'Text Message',
+        description: donationType === 'hypersound' ? 'HyperSound - Soundboard' : donationType === 'voice' ? 'Voice Message' : 'Text Message',
         order_id: data.razorpay_order_id,
         prefill: {
           name: formData.name.trim()
@@ -316,24 +329,27 @@ const Ankit = () => {
       setIsProcessing(false);
     }
   };
-  const handleDonationTypeChange = (type: 'message' | 'voice' | 'hyperemote') => {
+
+  const handleDonationTypeChange = (type: 'message' | 'voice' | 'hypersound') => {
     setDonationType(type);
-    if (type === 'hyperemote') {
-      const minAmount = streamerSettings?.hyperemotes_min_amount || 1;
+    if (type === 'hypersound') {
+      const minAmount = getCurrencyMinimums(formData.currency).minHypersound;
       setFormData(prev => ({
         ...prev,
         amount: minAmount.toString(),
-        message: 'Hyperemote celebration! 🎉'
+        message: ''
       }));
-      setShowHyperemoteEffect(true);
-      setTimeout(() => setShowHyperemoteEffect(false), 3000);
+      setShowHypersoundEffect(true);
+      setTimeout(() => setShowHypersoundEffect(false), 3000);
     } else {
       setFormData(prev => ({
         ...prev,
         amount: ''
       }));
+      setSelectedSound(null);
     }
   };
+
   return <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
       {/* Background decorations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -392,12 +408,12 @@ const Ankit = () => {
                       <div className="text-xs text-muted-foreground">Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minVoice}</div>
                     </div>
                   </button>
-                  <button type="button" onClick={() => handleDonationTypeChange('hyperemote')} className={`p-3 rounded-lg border-2 transition-all ${donationType === 'hyperemote' ? 'border-purple-500 bg-purple-500/10' : 'border-purple-500/30 hover:border-purple-500/50'}`}>
+                  <button type="button" onClick={() => handleDonationTypeChange('hypersound')} className={`p-3 rounded-lg border-2 transition-all ${donationType === 'hypersound' ? 'border-orange-500 bg-orange-500/10' : 'border-orange-500/30 hover:border-orange-500/50'}`}>
                     <div className="text-center">
-                      <div className="text-base mb-1">🎉</div>
-                      <div className="font-medium text-xs">Hyperemotes</div>
+                      <div className="text-base mb-1">🔊</div>
+                      <div className="font-medium text-xs">HyperSounds</div>
                       <div className="text-xs text-muted-foreground">
-                        Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minHyperemote}
+                        Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minHypersound}
                       </div>
                     </div>
                   </button>
@@ -451,7 +467,19 @@ const Ankit = () => {
                     </Command>
                   </PopoverContent>
                 </Popover>
-                <Input id="amount" name="amount" type="number" placeholder={donationType === 'message' ? `Min: ${getCurrencyMinimums(formData.currency).minText}` : donationType === 'voice' ? `Min: ${getCurrencyMinimums(formData.currency).minVoice}` : `Min: ${getCurrencyMinimums(formData.currency).minHyperemote}`} value={formData.amount} onChange={handleInputChange} className="flex-1 border-blue-500/30 focus:border-blue-500 focus:ring-blue-500/20" min="1" max="100000" disabled={isAmountLocked} required />
+                <Input 
+                  id="amount" 
+                  name="amount" 
+                  type="number" 
+                  placeholder={donationType === 'message' ? `Min: ${getCurrencyMinimums(formData.currency).minText}` : donationType === 'voice' ? `Min: ${getCurrencyMinimums(formData.currency).minVoice}` : `Min: ${getCurrencyMinimums(formData.currency).minHypersound}`} 
+                  value={formData.amount} 
+                  onChange={handleInputChange} 
+                  className="flex-1 border-blue-500/30 focus:border-blue-500 focus:ring-blue-500/20" 
+                  min="1" 
+                  max="100000" 
+                  disabled={isAmountLocked} 
+                  required 
+                />
               </div>
               {isAmountLocked && <p className="text-xs text-yellow-600 flex items-center gap-1">
                   🔒 Amount locked during voice recording
@@ -461,8 +489,8 @@ const Ankit = () => {
                   Voice duration: {getVoiceDuration(currentAmount)}s
                   {formData.currency === 'INR' && currentAmount < 200 && ' (Donate ₹200+ for 20s, ₹250+ for 30s)'}
                 </p>}
-              {donationType === 'hyperemote' && <p className="text-xs text-muted-foreground">
-                  Hyperemotes start at {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minHyperemote} with automatic celebration effects
+              {donationType === 'hypersound' && <p className="text-xs text-muted-foreground">
+                  HyperSounds start at {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minHypersound}
                 </p>}
             </div>
 
@@ -487,22 +515,20 @@ const Ankit = () => {
             }} maxDurationSeconds={maxVoiceDuration} controller={voiceRecorder} requiredAmount={150} currentAmount={currentAmount} />
               </div>}
 
-            {/* Hyperemote Info */}
-            {donationType === 'hyperemote' && <div className="space-y-3">
-                <div className="p-4 rounded-lg border border-purple-500/30 bg-purple-500/5">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Sparkles className="h-5 w-5 text-purple-500" />
-                    <span className="font-medium text-purple-500">Hyperemote Celebration</span>
+            {/* HyperSound Selector */}
+            {donationType === 'hypersound' && <div className="space-y-3">
+                <div className="p-4 rounded-lg border border-orange-500/30 bg-orange-500/5">
+                  <div className="flex items-center gap-3 mb-3">
+                    <Volume2 className="h-5 w-5 text-orange-500" />
+                    <span className="font-medium text-orange-500">HyperSounds</span>
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Your donation will trigger an epic celebration animation with special effects! 
-                    The bigger the amount, the more spectacular the celebration.
+                  <p className="text-sm text-muted-foreground mb-4">
+                    You control the soundboard! Pick a sound to play on stream.
                   </p>
-                  <div className="mt-3 flex items-center gap-2 text-xs text-purple-400">
-                    <span>🎯 ₹50-99: Basic celebration</span>
-                    <span>🔥 ₹100-499: Epic effects</span>
-                    <span>💫 ₹500+: Legendary show</span>
-                  </div>
+                  <HyperSoundSelector 
+                    selectedSound={selectedSound}
+                    onSoundSelect={setSelectedSound}
+                  />
                 </div>
               </div>}
 
@@ -523,9 +549,9 @@ const Ankit = () => {
         </CardContent>
       </Card>
 
-      {/* Hyperemote Effect */}
-      {showHyperemoteEffect && <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
-          <div className="animate-bounce text-6xl">🎉</div>
+      {/* HyperSound Effect */}
+      {showHypersoundEffect && <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
+          <div className="animate-bounce text-6xl">🔊</div>
         </div>}
     </div>;
 };

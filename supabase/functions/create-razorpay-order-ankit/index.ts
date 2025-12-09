@@ -14,14 +14,14 @@ const CURRENCY_EXPONENTS: Record<string, number> = {
   'GNF': 0, 'KMF': 0,
 }
 
-// Supported currencies with minimums
-const CURRENCY_MINIMUMS: Record<string, { minText: number; minVoice: number; minHyperemote: number; symbol: string }> = {
-  'INR': { minText: 40, minVoice: 150, minHyperemote: 50, symbol: '₹' },
-  'USD': { minText: 1, minVoice: 3, minHyperemote: 1, symbol: '$' },
-  'EUR': { minText: 1, minVoice: 3, minHyperemote: 1, symbol: '€' },
-  'GBP': { minText: 1, minVoice: 3, minHyperemote: 1, symbol: '£' },
-  'AED': { minText: 4, minVoice: 12, minHyperemote: 4, symbol: 'د.إ' },
-  'AUD': { minText: 2, minVoice: 5, minHyperemote: 2, symbol: 'A$' },
+// Supported currencies with minimums (minHypersound replaces minHyperemote)
+const CURRENCY_MINIMUMS: Record<string, { minText: number; minVoice: number; minHypersound: number; symbol: string }> = {
+  'INR': { minText: 40, minVoice: 150, minHypersound: 30, symbol: '₹' },
+  'USD': { minText: 1, minVoice: 3, minHypersound: 1, symbol: '$' },
+  'EUR': { minText: 1, minVoice: 3, minHypersound: 1, symbol: '€' },
+  'GBP': { minText: 1, minVoice: 3, minHypersound: 1, symbol: '£' },
+  'AED': { minText: 4, minVoice: 12, minHypersound: 3, symbol: 'د.إ' },
+  'AUD': { minText: 2, minVoice: 5, minHypersound: 1.5, symbol: 'A$' },
 }
 
 const getExponent = (currencyCode: string): number => 
@@ -50,9 +50,9 @@ serve(async (req) => {
   }
 
   try {
-    const { name, amount, message, voiceMessageUrl, isHyperemote, currency = 'INR' } = await req.json()
+    const { name, amount, message, voiceMessageUrl, hypersoundUrl, currency = 'INR' } = await req.json()
 
-    console.log('Create Razorpay order request:', { name, amount, currency, isHyperemote, hasVoice: !!voiceMessageUrl })
+    console.log('Create Razorpay order request:', { name, amount, currency, hasVoice: !!voiceMessageUrl, hasHypersound: !!hypersoundUrl })
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -82,22 +82,22 @@ serve(async (req) => {
     const symbol = currencyMins.symbol
 
     // Validate minimum amounts based on donation type and currency
-    if (isHyperemote && amount < currencyMins.minHyperemote) {
-      throw new Error(`Hyperemotes require minimum ${symbol}${currencyMins.minHyperemote}`)
+    if (hypersoundUrl && amount < currencyMins.minHypersound) {
+      throw new Error(`HyperSounds require minimum ${symbol}${currencyMins.minHypersound}`)
     }
 
     if (voiceMessageUrl && amount < currencyMins.minVoice) {
       throw new Error(`Voice messages require minimum ${symbol}${currencyMins.minVoice}`)
     }
 
-    if (!voiceMessageUrl && !isHyperemote && amount < currencyMins.minText) {
+    if (!voiceMessageUrl && !hypersoundUrl && amount < currencyMins.minText) {
       throw new Error(`Text messages require minimum ${symbol}${currencyMins.minText}`)
     }
 
     // Get streamer info
     const { data: streamerData, error: streamerError } = await supabase
       .from('streamers')
-      .select('id, hyperemotes_enabled, hyperemotes_min_amount')
+      .select('id')
       .eq('streamer_slug', 'ankit')
       .single()
 
@@ -139,6 +139,7 @@ serve(async (req) => {
     console.log('Razorpay order created:', razorpayOrder.id)
 
     // Store donation in database with currency
+    // Note: is_hyperemote is set to true for hypersounds to trigger visual effects
     const { data: donation, error: donationError } = await supabase
       .from('ankit_donations')
       .insert({
@@ -151,8 +152,9 @@ serve(async (req) => {
         streamer_id: streamerData.id,
         payment_status: 'pending',
         moderation_status: 'pending',
-        is_hyperemote: isHyperemote || false,
-        voice_message_url: voiceMessageUrl || null
+        is_hyperemote: !!hypersoundUrl, // Still use this flag for visual effects
+        voice_message_url: voiceMessageUrl || null,
+        hypersound_url: hypersoundUrl || null
       })
       .select()
       .single()
