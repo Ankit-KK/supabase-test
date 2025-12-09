@@ -119,6 +119,7 @@ export type Database = {
           approved_by: string | null
           audio_played_at: string | null
           created_at: string | null
+          currency: string
           id: string
           is_hyperemote: boolean | null
           message: string | null
@@ -141,6 +142,7 @@ export type Database = {
           approved_by?: string | null
           audio_played_at?: string | null
           created_at?: string | null
+          currency?: string
           id?: string
           is_hyperemote?: boolean | null
           message?: string | null
@@ -163,6 +165,7 @@ export type Database = {
           approved_by?: string | null
           audio_played_at?: string | null
           created_at?: string | null
+          currency?: string
           id?: string
           is_hyperemote?: boolean | null
           message?: string | null

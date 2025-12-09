@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Gift, Heart, Star, Zap, Music } from 'lucide-react';
+import { getCurrencySymbol } from '@/constants/currencies';
 
 interface Donation {
   id: string;
   name: string;
   amount: number;
+  currency?: string;
   message: string;
   voice_message_url?: string;
   created_at: string;
@@ -278,7 +280,7 @@ export const AlertDisplay: React.FC<AlertDisplayProps> = ({
         {/* Name and Amount */}
         <div className="text-[1.8rem]">
           <span className="font-bold">{donation.name}</span> donated{' '}
-          <span className="font-bold">₹{donation.amount}</span>
+          <span className="font-bold">{getCurrencySymbol(donation.currency || 'INR')}{donation.amount}</span>
         </div>
 
         {/* Voice Message Indicator */}

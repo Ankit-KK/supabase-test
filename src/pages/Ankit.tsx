@@ -3,8 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { Gamepad2, Heart, Sparkles } from "lucide-react";
+import { SUPPORTED_CURRENCIES, getCurrencySymbol } from "@/constants/currencies";
 // Razorpay integration - SDK loaded dynamically
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -15,7 +17,8 @@ const Ankit = () => {
   const [formData, setFormData] = useState({
     name: '',
     amount: '',
-    message: ''
+    message: '',
+    currency: 'INR'
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
@@ -244,6 +247,7 @@ const Ankit = () => {
         body: {
           name: formData.name.trim(),
           amount: amount,
+          currency: formData.currency,
           message: donationType === 'message' ? formData.message.trim() : donationType === 'voice' ? 'Sent a Voice message' : donationType === 'hyperemote' ? formData.message.trim() : '',
           voiceMessageUrl: voiceMessageUrl,
           isHyperemote: donationType === 'hyperemote'
@@ -260,8 +264,7 @@ const Ankit = () => {
       const options = {
         key: data.razorpay_key_id,
         amount: data.amount,
-        // Already in paise
-        currency: 'INR',
+        currency: formData.currency,
         name: 'HyperChat - Ankit',
         description: donationType === 'hyperemote' ? 'Hyperemote Celebration' : donationType === 'voice' ? 'Voice Message' : 'Text Message',
         order_id: data.razorpay_order_id,
@@ -355,6 +358,28 @@ const Ankit = () => {
               <Input id="name" name="name" placeholder="Enter your name" value={formData.name} onChange={handleInputChange} className="border-blue-500/30 focus:border-blue-500 focus:ring-blue-500/20" required />
             </div>
 
+            {/* Currency Selector */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-blue-500">
+                Currency *
+              </label>
+              <Select
+                value={formData.currency}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, currency: value }))}
+              >
+                <SelectTrigger className="border-blue-500/30 focus:border-blue-500 focus:ring-blue-500/20">
+                  <SelectValue placeholder="Select currency" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {SUPPORTED_CURRENCIES.map((currency) => (
+                    <SelectItem key={currency.code} value={currency.code}>
+                      {currency.symbol} {currency.name} ({currency.code})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Donation Type Selection */}
             <div className="space-y-3">
                 <label className="text-sm font-medium text-blue-500">
@@ -365,14 +390,14 @@ const Ankit = () => {
                     <div className="text-center">
                       <div className="text-base mb-1">💬</div>
                       <div className="font-medium text-xs">Text Message</div>
-                      <div className="text-xs text-muted-foreground">Min: ₹40</div>
+                      <div className="text-xs text-muted-foreground">Min: {getCurrencySymbol(formData.currency)}{formData.currency === 'INR' ? '40' : '1'}</div>
                     </div>
                   </button>
                   <button type="button" onClick={() => handleDonationTypeChange('voice')} className={`p-3 rounded-lg border-2 transition-all ${donationType === 'voice' ? 'border-blue-500 bg-blue-500/10' : 'border-blue-500/30 hover:border-blue-500/50'}`}>
                     <div className="text-center">
                       <div className="text-base mb-1">🎤</div>
                       <div className="font-medium text-xs">Voice Message</div>
-                      <div className="text-xs text-muted-foreground">Min: ₹150</div>
+                      <div className="text-xs text-muted-foreground">Min: {getCurrencySymbol(formData.currency)}{formData.currency === 'INR' ? '150' : '2'}</div>
                     </div>
                   </button>
                   <button type="button" onClick={() => handleDonationTypeChange('hyperemote')} className={`p-3 rounded-lg border-2 transition-all ${donationType === 'hyperemote' ? 'border-purple-500 bg-purple-500/10' : 'border-purple-500/30 hover:border-purple-500/50'}`}>
@@ -380,7 +405,7 @@ const Ankit = () => {
                       <div className="text-base mb-1">🎉</div>
                       <div className="font-medium text-xs">Hyperemotes</div>
                       <div className="text-xs text-muted-foreground">
-                        ₹{streamerSettings?.hyperemotes_min_amount || 1}+ celebration
+                        {getCurrencySymbol(formData.currency)}{streamerSettings?.hyperemotes_min_amount || 1}+ celebration
                       </div>
                     </div>
                   </button>
@@ -390,20 +415,20 @@ const Ankit = () => {
             {/* Amount Field */}
             <div className="space-y-2">
               <label htmlFor="amount" className="text-sm font-medium text-blue-500">
-                Amount (₹) *
+                Amount ({getCurrencySymbol(formData.currency)}) *
               </label>
-              <Input id="amount" name="amount" type="number" placeholder={donationType === 'message' ? 'Min: ₹40' : donationType === 'voice' ? 'Min: ₹150' : 'Enter amount'} value={formData.amount} onChange={handleInputChange} className="border-blue-500/30 focus:border-blue-500 focus:ring-blue-500/20" min="1" max="100000" disabled={donationType === 'hyperemote' || isAmountLocked} required />
+              <Input id="amount" name="amount" type="number" placeholder={donationType === 'message' ? `Min: ${getCurrencySymbol(formData.currency)}${formData.currency === 'INR' ? '40' : '1'}` : donationType === 'voice' ? `Min: ${getCurrencySymbol(formData.currency)}${formData.currency === 'INR' ? '150' : '2'}` : 'Enter amount'} value={formData.amount} onChange={handleInputChange} className="border-blue-500/30 focus:border-blue-500 focus:ring-blue-500/20" min="1" max="100000" disabled={donationType === 'hyperemote' || isAmountLocked} required />
               {isAmountLocked && <p className="text-xs text-yellow-600 flex items-center gap-1">
                   🔒 Amount locked during voice recording
                 </p>}
-              <p className="text-xs text-muted-foreground">TTS above ₹70</p>
+              {formData.currency === 'INR' && <p className="text-xs text-muted-foreground">TTS above ₹70</p>}
               {donationType === 'message'}
-              {donationType === 'voice' && currentAmount >= 150 && <p className="text-xs text-muted-foreground">
+              {donationType === 'voice' && currentAmount >= 150 && formData.currency === 'INR' && <p className="text-xs text-muted-foreground">
                   Voice duration: {getVoiceDuration(currentAmount)}s
                   {currentAmount < 200 && ' (Donate ₹200+ for 20s, ₹250+ for 30s)'}
                 </p>}
               {donationType === 'hyperemote' && <p className="text-xs text-muted-foreground">
-                  Hyperemotes start at ₹{streamerSettings?.hyperemotes_min_amount || 1} with automatic celebration effects
+                  Hyperemotes start at {getCurrencySymbol(formData.currency)}{streamerSettings?.hyperemotes_min_amount || 1} with automatic celebration effects
                 </p>}
             </div>
 
@@ -457,7 +482,7 @@ const Ankit = () => {
                   <span>Loading Payment System...</span>
                 </div> : <span className="flex items-center justify-center space-x-2">
                   <Heart className="h-4 w-4" />
-                  <span>Donate ₹{formData.amount || '0'}</span>
+                  <span>Donate {getCurrencySymbol(formData.currency)}{formData.amount || '0'}</span>
                 </span>}
             </Button>
           </form>

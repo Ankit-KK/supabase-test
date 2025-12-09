@@ -100,10 +100,11 @@ serve(async (req) => {
       return new Response('Event ignored', { status: 200, headers: corsHeaders })
     }
 
-    // Extract Razorpay order ID from payment entity
+    // Extract Razorpay order ID and currency from payment entity
     const razorpayOrderId = webhookData.payload?.payment?.entity?.order_id
+    const paymentCurrency = webhookData.payload?.payment?.entity?.currency || 'INR'
     
-    console.log('Razorpay Order ID:', razorpayOrderId)
+    console.log('Razorpay Order ID:', razorpayOrderId, 'Currency:', paymentCurrency)
     
     if (!razorpayOrderId) {
       console.log('No Razorpay order ID found, ignoring')
@@ -397,6 +398,7 @@ serve(async (req) => {
         id: donation.id,
         name: donation.name,
         amount: donation.amount,
+        currency: paymentCurrency,
         message: donation.message,
         is_hyperemote: donation.is_hyperemote,
         voice_message_url: donation.voice_message_url,
@@ -569,6 +571,7 @@ serve(async (req) => {
             body: {
               username: donation.name,
               amount: donation.amount,
+              currency: paymentCurrency,
               message: null,
               donationId: donation.id,
               streamerId: donation.streamer_id,
@@ -642,6 +645,7 @@ serve(async (req) => {
               body: {
                 username: donation.name,
                 amount: donation.amount,
+                currency: paymentCurrency,
                 message: donation.message,
                 donationId: donation.id,
                 streamerId: donation.streamer_id,
