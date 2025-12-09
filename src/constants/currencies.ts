@@ -8,17 +8,17 @@ export interface Currency {
   spokenName: string;
   minText: number;
   minVoice: number;
-  minHyperemote: number;
+  minHypersound: number;
 }
 
 // Only 6 supported currencies with hardcoded minimums
 export const SUPPORTED_CURRENCIES: Currency[] = [
-  { code: 'INR', name: 'Indian Rupee', symbol: '₹', exponent: 2, spokenName: 'rupees', minText: 40, minVoice: 150, minHyperemote: 50 },
-  { code: 'USD', name: 'US Dollar', symbol: '$', exponent: 2, spokenName: 'dollars', minText: 1, minVoice: 3, minHyperemote: 1 },
-  { code: 'EUR', name: 'Euro', symbol: '€', exponent: 2, spokenName: 'euros', minText: 1, minVoice: 3, minHyperemote: 1 },
-  { code: 'GBP', name: 'British Pound', symbol: '£', exponent: 2, spokenName: 'pounds', minText: 1, minVoice: 3, minHyperemote: 1 },
-  { code: 'AED', name: 'UAE Dirham', symbol: 'د.إ', exponent: 2, spokenName: 'dirhams', minText: 4, minVoice: 12, minHyperemote: 4 },
-  { code: 'AUD', name: 'Australian Dollar', symbol: 'A$', exponent: 2, spokenName: 'Australian dollars', minText: 2, minVoice: 5, minHyperemote: 2 },
+  { code: 'INR', name: 'Indian Rupee', symbol: '₹', exponent: 2, spokenName: 'rupees', minText: 40, minVoice: 150, minHypersound: 30 },
+  { code: 'USD', name: 'US Dollar', symbol: '$', exponent: 2, spokenName: 'dollars', minText: 1, minVoice: 3, minHypersound: 1 },
+  { code: 'EUR', name: 'Euro', symbol: '€', exponent: 2, spokenName: 'euros', minText: 1, minVoice: 3, minHypersound: 1 },
+  { code: 'GBP', name: 'British Pound', symbol: '£', exponent: 2, spokenName: 'pounds', minText: 1, minVoice: 3, minHypersound: 1 },
+  { code: 'AED', name: 'UAE Dirham', symbol: 'د.إ', exponent: 2, spokenName: 'dirhams', minText: 4, minVoice: 12, minHypersound: 3 },
+  { code: 'AUD', name: 'Australian Dollar', symbol: 'A$', exponent: 2, spokenName: 'Australian dollars', minText: 2, minVoice: 5, minHypersound: 1.5 },
 ];
 
 // Get currency by code
@@ -38,11 +38,11 @@ export const getCurrencyExponent = (code: string): number =>
   getCurrencyByCode(code)?.exponent ?? 2;
 
 // Get minimums for a currency (defaults to INR if not found)
-export const getCurrencyMinimums = (code: string): { minText: number; minVoice: number; minHyperemote: number } => {
+export const getCurrencyMinimums = (code: string): { minText: number; minVoice: number; minHypersound: number } => {
   const currency = getCurrencyByCode(code);
   return currency 
-    ? { minText: currency.minText, minVoice: currency.minVoice, minHyperemote: currency.minHyperemote }
-    : { minText: 40, minVoice: 150, minHyperemote: 50 }; // Default to INR
+    ? { minText: currency.minText, minVoice: currency.minVoice, minHypersound: currency.minHypersound }
+    : { minText: 40, minVoice: 150, minHypersound: 30 }; // Default to INR
 };
 
 // Convert amount to subunits based on currency exponent
