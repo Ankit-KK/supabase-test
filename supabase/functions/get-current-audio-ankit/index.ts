@@ -52,11 +52,11 @@ Deno.serve(async (req) => {
     
     const { data: donation, error: fetchError } = await supabase
       .from('ankit_donations')
-      .select('id, name, amount, message, tts_audio_url, voice_message_url, created_at')
+      .select('id, name, amount, message, tts_audio_url, voice_message_url, hypersound_url, created_at')
       .is('audio_played_at', null)
       .in('moderation_status', ['approved', 'auto_approved'])
       .eq('payment_status', 'success')
-      .or('tts_audio_url.not.is.null,voice_message_url.not.is.null')
+      .or('tts_audio_url.not.is.null,voice_message_url.not.is.null,hypersound_url.not.is.null')
       .gte('created_at', tenMinutesAgo)
       .order('created_at', { ascending: true })
       .limit(1)
@@ -82,8 +82,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Determine which audio URL to use (voice message takes priority)
-    const audioUrl = donation.voice_message_url || donation.tts_audio_url;
+    // Determine which audio URL to use (hypersound > voice message > TTS)
+    const audioUrl = donation.hypersound_url || donation.voice_message_url || donation.tts_audio_url;
 
     if (!audioUrl) {
       // No audio URL found - return 204 No Content
