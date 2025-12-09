@@ -21,6 +21,10 @@ const AnkitObsAlerts = () => {
     channelName: 'ankit-alerts',
     pusherKey: pusherConfig?.key || '',
     pusherCluster: pusherConfig?.cluster || '',
+    delayBeforeDisplay: 60000, // Default 1 minute for text/voice
+    delayByType: {
+      hypersound: 15000, // 15 seconds for HyperSounds
+    },
   });
 
   // Fetch alert box scale setting and subscribe to real-time updates

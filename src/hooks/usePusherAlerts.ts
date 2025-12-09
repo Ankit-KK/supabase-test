@@ -8,6 +8,7 @@ interface Donation {
   message: string | null;
   voice_message_url: string | null;
   tts_audio_url: string | null;
+  hypersound_url?: string | null;
   is_hyperemote: boolean;
   created_at: string;
   streamer_id: string;
@@ -18,6 +19,11 @@ interface PusherAlertsConfig {
   pusherKey: string;
   pusherCluster: string;
   delayBeforeDisplay?: number;
+  delayByType?: {
+    text?: number;
+    voice?: number;
+    hypersound?: number;
+  };
   alertDuration?: {
     text: number;
     hyperemote: number;
@@ -31,6 +37,7 @@ export function usePusherAlerts(config: PusherAlertsConfig) {
     pusherKey,
     pusherCluster,
     delayBeforeDisplay = 0,
+    delayByType = {},
     alertDuration = { text: 5000, hyperemote: 8000, voice: 15000 },
   } = config;
 
@@ -166,11 +173,21 @@ export function usePusherAlerts(config: PusherAlertsConfig) {
     channel.bind('new-donation', (data: Donation) => {
       console.log('[PusherAlerts] New donation received:', data);
       
-      if (delayBeforeDisplay > 0) {
-        console.log(`[PusherAlerts] Delaying alert for ${delayBeforeDisplay}ms`);
+      // Determine delay based on donation type
+      let delay = delayBeforeDisplay;
+      if (data.hypersound_url && delayByType.hypersound !== undefined) {
+        delay = delayByType.hypersound;
+      } else if (data.voice_message_url && delayByType.voice !== undefined) {
+        delay = delayByType.voice;
+      } else if (delayByType.text !== undefined) {
+        delay = delayByType.text;
+      }
+      
+      if (delay > 0) {
+        console.log(`[PusherAlerts] Delaying alert for ${delay}ms (type-specific)`);
         setTimeout(() => {
           addToQueueRef.current(data);
-        }, delayBeforeDisplay);
+        }, delay);
       } else {
         addToQueueRef.current(data);
       }
