@@ -3,9 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { toast } from "@/hooks/use-toast";
-import { Gamepad2, Heart, Sparkles } from "lucide-react";
+import { Gamepad2, Heart, Sparkles, Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { SUPPORTED_CURRENCIES, getCurrencySymbol } from "@/constants/currencies";
 // Razorpay integration - SDK loaded dynamically
 import { supabase } from "@/integrations/supabase/client";
@@ -28,6 +30,7 @@ const Ankit = () => {
   const [voiceDuration, setVoiceDuration] = useState(0);
   const [showHyperemoteEffect, setShowHyperemoteEffect] = useState(false);
   const [isAmountLocked, setIsAmountLocked] = useState(false);
+  const [currencyOpen, setCurrencyOpen] = useState(false);
 
   // Calculate character limit based on amount
   const getCharacterLimit = (amount: number): number => {
@@ -396,23 +399,47 @@ const Ankit = () => {
                 Amount *
               </label>
               <div className="flex gap-2">
-                <Select
-                  value={formData.currency}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, currency: value }))}
-                >
-                  <SelectTrigger className="w-[100px] border-blue-500/30 focus:border-blue-500 focus:ring-blue-500/20">
-                    <SelectValue>
+                <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={currencyOpen}
+                      className="w-[100px] justify-between border-blue-500/30 focus:border-blue-500 px-2"
+                    >
                       {getCurrencySymbol(formData.currency)} {formData.currency}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent className="max-h-60">
-                    {SUPPORTED_CURRENCIES.map((currency) => (
-                      <SelectItem key={currency.code} value={currency.code}>
-                        {currency.symbol} {currency.code}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                      <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[220px] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search currency..." />
+                      <CommandList>
+                        <CommandEmpty>No currency found.</CommandEmpty>
+                        <CommandGroup>
+                          {SUPPORTED_CURRENCIES.map((currency) => (
+                            <CommandItem
+                              key={currency.code}
+                              value={`${currency.code} ${currency.name}`}
+                              onSelect={() => {
+                                setFormData(prev => ({ ...prev, currency: currency.code }));
+                                setCurrencyOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  formData.currency === currency.code ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {currency.symbol} {currency.code} - {currency.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 <Input id="amount" name="amount" type="number" placeholder={donationType === 'message' ? `Min: ${formData.currency === 'INR' ? '40' : '1'}` : donationType === 'voice' ? `Min: ${formData.currency === 'INR' ? '150' : '2'}` : 'Enter amount'} value={formData.amount} onChange={handleInputChange} className="flex-1 border-blue-500/30 focus:border-blue-500 focus:ring-blue-500/20" min="1" max="100000" disabled={donationType === 'hyperemote' || isAmountLocked} required />
               </div>
               {isAmountLocked && <p className="text-xs text-yellow-600 flex items-center gap-1">
