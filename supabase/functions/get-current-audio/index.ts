@@ -129,9 +129,10 @@ Deno.serve(async (req) => {
 
     console.log(`Serving audio for donation ${donation.id}: ${donation.name} - ₹${donation.amount}`);
 
-    // Add 60-second delay to match platform-wide alert delay standard
-    console.log('Waiting 60 seconds for alert delay...');
-    await new Promise(resolve => setTimeout(resolve, 60000));
+    // Determine delay based on donation type (15s for HyperSounds, 60s for others)
+    const delay = donation.hypersound_url ? 15000 : 60000;
+    console.log(`Waiting ${delay / 1000} seconds for alert delay (${donation.hypersound_url ? 'HyperSound' : 'regular'})...`);
+    await new Promise(resolve => setTimeout(resolve, delay));
 
     // Fetch and proxy the audio directly to avoid redirect issues with OBS
     console.log(`Fetching audio from: ${audioUrl}`);
