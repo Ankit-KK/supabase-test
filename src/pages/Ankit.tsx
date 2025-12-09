@@ -358,28 +358,6 @@ const Ankit = () => {
               <Input id="name" name="name" placeholder="Enter your name" value={formData.name} onChange={handleInputChange} className="border-blue-500/30 focus:border-blue-500 focus:ring-blue-500/20" required />
             </div>
 
-            {/* Currency Selector */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-blue-500">
-                Currency *
-              </label>
-              <Select
-                value={formData.currency}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, currency: value }))}
-              >
-                <SelectTrigger className="border-blue-500/30 focus:border-blue-500 focus:ring-blue-500/20">
-                  <SelectValue placeholder="Select currency" />
-                </SelectTrigger>
-                <SelectContent className="max-h-60">
-                  {SUPPORTED_CURRENCIES.map((currency) => (
-                    <SelectItem key={currency.code} value={currency.code}>
-                      {currency.symbol} {currency.name} ({currency.code})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
             {/* Donation Type Selection */}
             <div className="space-y-3">
                 <label className="text-sm font-medium text-blue-500">
@@ -412,12 +390,31 @@ const Ankit = () => {
                 </div>
             </div>
 
-            {/* Amount Field */}
+            {/* Amount Field with Inline Currency Selector */}
             <div className="space-y-2">
               <label htmlFor="amount" className="text-sm font-medium text-blue-500">
-                Amount ({getCurrencySymbol(formData.currency)}) *
+                Amount *
               </label>
-              <Input id="amount" name="amount" type="number" placeholder={donationType === 'message' ? `Min: ${getCurrencySymbol(formData.currency)}${formData.currency === 'INR' ? '40' : '1'}` : donationType === 'voice' ? `Min: ${getCurrencySymbol(formData.currency)}${formData.currency === 'INR' ? '150' : '2'}` : 'Enter amount'} value={formData.amount} onChange={handleInputChange} className="border-blue-500/30 focus:border-blue-500 focus:ring-blue-500/20" min="1" max="100000" disabled={donationType === 'hyperemote' || isAmountLocked} required />
+              <div className="flex gap-2">
+                <Select
+                  value={formData.currency}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, currency: value }))}
+                >
+                  <SelectTrigger className="w-[100px] border-blue-500/30 focus:border-blue-500 focus:ring-blue-500/20">
+                    <SelectValue>
+                      {getCurrencySymbol(formData.currency)} {formData.currency}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    {SUPPORTED_CURRENCIES.map((currency) => (
+                      <SelectItem key={currency.code} value={currency.code}>
+                        {currency.symbol} {currency.code}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input id="amount" name="amount" type="number" placeholder={donationType === 'message' ? `Min: ${formData.currency === 'INR' ? '40' : '1'}` : donationType === 'voice' ? `Min: ${formData.currency === 'INR' ? '150' : '2'}` : 'Enter amount'} value={formData.amount} onChange={handleInputChange} className="flex-1 border-blue-500/30 focus:border-blue-500 focus:ring-blue-500/20" min="1" max="100000" disabled={donationType === 'hyperemote' || isAmountLocked} required />
+              </div>
               {isAmountLocked && <p className="text-xs text-yellow-600 flex items-center gap-1">
                   🔒 Amount locked during voice recording
                 </p>}
