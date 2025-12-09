@@ -8,13 +8,20 @@ const corsHeaders = {
 
 // Currency exponents for Razorpay
 const CURRENCY_EXPONENTS: Record<string, number> = {
-  // 3 decimal currencies
   'BHD': 3, 'KWD': 3, 'OMR': 3, 'JOD': 3, 'TND': 3, 'IQD': 3, 'LYD': 3,
-  // 0 decimal currencies
   'JPY': 0, 'KRW': 0, 'VND': 0, 'CLP': 0, 'ISK': 0, 'PYG': 0, 'RWF': 0,
   'VUV': 0, 'XAF': 0, 'XOF': 0, 'XPF': 0, 'UGX': 0, 'BIF': 0, 'DJF': 0,
   'GNF': 0, 'KMF': 0,
-  // All others default to 2
+}
+
+// Supported currencies with minimums
+const CURRENCY_MINIMUMS: Record<string, { minText: number; minVoice: number; minHyperemote: number; symbol: string }> = {
+  'INR': { minText: 40, minVoice: 150, minHyperemote: 50, symbol: '₹' },
+  'USD': { minText: 1, minVoice: 3, minHyperemote: 1, symbol: '$' },
+  'EUR': { minText: 1, minVoice: 3, minHyperemote: 1, symbol: '€' },
+  'GBP': { minText: 1, minVoice: 3, minHyperemote: 1, symbol: '£' },
+  'AED': { minText: 4, minVoice: 12, minHyperemote: 4, symbol: 'د.إ' },
+  'AUD': { minText: 2, minVoice: 5, minHyperemote: 2, symbol: 'A$' },
 }
 
 const getExponent = (currencyCode: string): number => 
@@ -26,12 +33,15 @@ const amountToSubunits = (amount: number, currencyCode: string): number => {
   if (exponent === 0) {
     return Math.round(amount)
   } else if (exponent === 3) {
-    // Razorpay requires last digit to be 0 for 3-decimal currencies
     const subunits = Math.round(amount * 1000)
     return Math.floor(subunits / 10) * 10
   } else {
     return Math.round(amount * 100)
   }
+}
+
+const getCurrencyMinimums = (currencyCode: string) => {
+  return CURRENCY_MINIMUMS[currencyCode] || CURRENCY_MINIMUMS['INR']
 }
 
 serve(async (req) => {
@@ -58,24 +68,30 @@ serve(async (req) => {
       throw new Error('Missing required fields: name, amount')
     }
 
+    // Validate currency is supported
+    if (!CURRENCY_MINIMUMS[currency]) {
+      throw new Error(`Unsupported currency: ${currency}. Supported: INR, USD, EUR, GBP, AED, AUD`)
+    }
+
     if (amount < 1 || amount > 100000) {
       throw new Error('Invalid amount: must be between 1 and 100000')
     }
 
-    // Validate minimum amounts based on donation type (for INR)
-    // For other currencies, we skip validation as minimums may vary
-    if (currency === 'INR') {
-      if (isHyperemote && amount < 50) {
-        throw new Error('Hyperemotes require minimum ₹50')
-      }
+    // Get currency-specific minimums
+    const currencyMins = getCurrencyMinimums(currency)
+    const symbol = currencyMins.symbol
 
-      if (voiceMessageUrl && amount < 150) {
-        throw new Error('Voice messages require minimum ₹150')
-      }
+    // Validate minimum amounts based on donation type and currency
+    if (isHyperemote && amount < currencyMins.minHyperemote) {
+      throw new Error(`Hyperemotes require minimum ${symbol}${currencyMins.minHyperemote}`)
+    }
 
-      if (!voiceMessageUrl && !isHyperemote && amount < 40) {
-        throw new Error('Text messages require minimum ₹40')
-      }
+    if (voiceMessageUrl && amount < currencyMins.minVoice) {
+      throw new Error(`Voice messages require minimum ${symbol}${currencyMins.minVoice}`)
+    }
+
+    if (!voiceMessageUrl && !isHyperemote && amount < currencyMins.minText) {
+      throw new Error(`Text messages require minimum ${symbol}${currencyMins.minText}`)
     }
 
     // Get streamer info
@@ -154,7 +170,7 @@ serve(async (req) => {
         order_id: orderId,
         razorpay_order_id: razorpayOrder.id,
         razorpay_key_id: razorpayKeyId,
-        amount: razorpayOrder.amount, // Already in subunits
+        amount: razorpayOrder.amount,
         currency: currency
       }),
       {
