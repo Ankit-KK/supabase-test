@@ -1619,7 +1619,6 @@ export type Database = {
               p_mod_name: string
               p_streamer_id: string
               p_telegram_user_id: string
-              p_user_id: string
             }
             Returns: {
               created_at: string
@@ -1634,6 +1633,7 @@ export type Database = {
               p_mod_name: string
               p_streamer_id: string
               p_telegram_user_id: string
+              p_user_id: string
             }
             Returns: {
               created_at: string
@@ -2245,16 +2245,16 @@ export type Database = {
       }
       log_sensitive_access:
         | {
-            Args: { action: string; record_id?: string; table_name: string }
-            Returns: undefined
-          }
-        | {
             Args: {
               access_reason: string
               access_type: string
               record_id?: string
               table_name: string
             }
+            Returns: undefined
+          }
+        | {
+            Args: { action: string; record_id?: string; table_name: string }
             Returns: undefined
           }
       mask_email: { Args: { email: string }; Returns: string }
