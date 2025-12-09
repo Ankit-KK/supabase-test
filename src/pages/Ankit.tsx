@@ -8,7 +8,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { toast } from "@/hooks/use-toast";
 import { Gamepad2, Heart, Sparkles, Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { SUPPORTED_CURRENCIES, getCurrencySymbol } from "@/constants/currencies";
+import { SUPPORTED_CURRENCIES, getCurrencySymbol, getCurrencyMinimums } from "@/constants/currencies";
 // Razorpay integration - SDK loaded dynamically
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -185,19 +185,30 @@ const Ankit = () => {
       return;
     }
 
-    // Validate minimum amounts based on donation type
-    if (donationType === 'message' && amount < 40) {
+    // Validate minimum amounts based on donation type and currency
+    const currencyMins = getCurrencyMinimums(formData.currency);
+    const currencySymbol = getCurrencySymbol(formData.currency);
+    
+    if (donationType === 'message' && amount < currencyMins.minText) {
       toast({
         title: "Insufficient Amount",
-        description: "Text messages require a minimum donation of ₹40.",
+        description: `Text messages require a minimum donation of ${currencySymbol}${currencyMins.minText}.`,
         variant: "destructive"
       });
       return;
     }
-    if (donationType === 'voice' && amount < 150) {
+    if (donationType === 'voice' && amount < currencyMins.minVoice) {
       toast({
         title: "Insufficient Amount",
-        description: "Voice messages require a minimum donation of ₹150.",
+        description: `Voice messages require a minimum donation of ${currencySymbol}${currencyMins.minVoice}.`,
+        variant: "destructive"
+      });
+      return;
+    }
+    if (donationType === 'hyperemote' && amount < currencyMins.minHyperemote) {
+      toast({
+        title: "Insufficient Amount",
+        description: `Hyperemotes require a minimum donation of ${currencySymbol}${currencyMins.minHyperemote}.`,
         variant: "destructive"
       });
       return;
@@ -371,14 +382,14 @@ const Ankit = () => {
                     <div className="text-center">
                       <div className="text-base mb-1">💬</div>
                       <div className="font-medium text-xs">Text Message</div>
-                      <div className="text-xs text-muted-foreground">Min: {getCurrencySymbol(formData.currency)}{formData.currency === 'INR' ? '40' : '1'}</div>
+                      <div className="text-xs text-muted-foreground">Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minText}</div>
                     </div>
                   </button>
                   <button type="button" onClick={() => handleDonationTypeChange('voice')} className={`p-3 rounded-lg border-2 transition-all ${donationType === 'voice' ? 'border-blue-500 bg-blue-500/10' : 'border-blue-500/30 hover:border-blue-500/50'}`}>
                     <div className="text-center">
                       <div className="text-base mb-1">🎤</div>
                       <div className="font-medium text-xs">Voice Message</div>
-                      <div className="text-xs text-muted-foreground">Min: {getCurrencySymbol(formData.currency)}{formData.currency === 'INR' ? '150' : '2'}</div>
+                      <div className="text-xs text-muted-foreground">Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minVoice}</div>
                     </div>
                   </button>
                   <button type="button" onClick={() => handleDonationTypeChange('hyperemote')} className={`p-3 rounded-lg border-2 transition-all ${donationType === 'hyperemote' ? 'border-purple-500 bg-purple-500/10' : 'border-purple-500/30 hover:border-purple-500/50'}`}>
@@ -386,7 +397,7 @@ const Ankit = () => {
                       <div className="text-base mb-1">🎉</div>
                       <div className="font-medium text-xs">Hyperemotes</div>
                       <div className="text-xs text-muted-foreground">
-                        {getCurrencySymbol(formData.currency)}{streamerSettings?.hyperemotes_min_amount || 1}+ celebration
+                        Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minHyperemote}
                       </div>
                     </div>
                   </button>
@@ -440,19 +451,18 @@ const Ankit = () => {
                     </Command>
                   </PopoverContent>
                 </Popover>
-                <Input id="amount" name="amount" type="number" placeholder={donationType === 'message' ? `Min: ${formData.currency === 'INR' ? '40' : '1'}` : donationType === 'voice' ? `Min: ${formData.currency === 'INR' ? '150' : '2'}` : 'Enter amount'} value={formData.amount} onChange={handleInputChange} className="flex-1 border-blue-500/30 focus:border-blue-500 focus:ring-blue-500/20" min="1" max="100000" disabled={donationType === 'hyperemote' || isAmountLocked} required />
+                <Input id="amount" name="amount" type="number" placeholder={donationType === 'message' ? `Min: ${getCurrencyMinimums(formData.currency).minText}` : donationType === 'voice' ? `Min: ${getCurrencyMinimums(formData.currency).minVoice}` : `Min: ${getCurrencyMinimums(formData.currency).minHyperemote}`} value={formData.amount} onChange={handleInputChange} className="flex-1 border-blue-500/30 focus:border-blue-500 focus:ring-blue-500/20" min="1" max="100000" disabled={isAmountLocked} required />
               </div>
               {isAmountLocked && <p className="text-xs text-yellow-600 flex items-center gap-1">
                   🔒 Amount locked during voice recording
                 </p>}
-              {formData.currency === 'INR' && <p className="text-xs text-muted-foreground">TTS above ₹70</p>}
-              {donationType === 'message'}
-              {donationType === 'voice' && currentAmount >= 150 && formData.currency === 'INR' && <p className="text-xs text-muted-foreground">
+              {formData.currency === 'INR' && donationType === 'message' && <p className="text-xs text-muted-foreground">TTS above ₹70</p>}
+              {donationType === 'voice' && currentAmount >= getCurrencyMinimums(formData.currency).minVoice && <p className="text-xs text-muted-foreground">
                   Voice duration: {getVoiceDuration(currentAmount)}s
-                  {currentAmount < 200 && ' (Donate ₹200+ for 20s, ₹250+ for 30s)'}
+                  {formData.currency === 'INR' && currentAmount < 200 && ' (Donate ₹200+ for 20s, ₹250+ for 30s)'}
                 </p>}
               {donationType === 'hyperemote' && <p className="text-xs text-muted-foreground">
-                  Hyperemotes start at {getCurrencySymbol(formData.currency)}{streamerSettings?.hyperemotes_min_amount || 1} with automatic celebration effects
+                  Hyperemotes start at {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minHyperemote} with automatic celebration effects
                 </p>}
             </div>
 
