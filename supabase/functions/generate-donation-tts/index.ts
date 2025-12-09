@@ -78,7 +78,7 @@ serve(async (req) => {
   }
 
   try {
-    const { username, amount, message, donationId, streamerId, isVoiceAnnouncement } = await req.json();
+    const { username, amount, message, donationId, streamerId, isVoiceAnnouncement, currency = 'INR' } = await req.json();
 
     if (!username || !amount) {
       throw new Error('Username and amount are required');
@@ -155,6 +155,22 @@ serve(async (req) => {
 
     console.log('Using donation table:', donationTable);
 
+    // Currency spoken names mapping
+    const CURRENCY_SPOKEN_NAMES: Record<string, string> = {
+      'INR': 'rupees', 'USD': 'dollars', 'EUR': 'euros', 'GBP': 'pounds',
+      'AED': 'dirhams', 'SGD': 'Singapore dollars', 'AUD': 'Australian dollars',
+      'CAD': 'Canadian dollars', 'JPY': 'yen', 'KRW': 'won', 'KWD': 'Kuwaiti dinars',
+      'BHD': 'Bahraini dinars', 'OMR': 'Omani rials', 'CHF': 'Swiss francs',
+      'NZD': 'New Zealand dollars', 'HKD': 'Hong Kong dollars', 'SEK': 'Swedish kronor',
+      'NOK': 'Norwegian kroner', 'DKK': 'Danish kroner', 'MYR': 'ringgit',
+      'THB': 'baht', 'PHP': 'pesos', 'IDR': 'rupiah', 'ZAR': 'rand',
+      'MXN': 'pesos', 'BRL': 'reais', 'SAR': 'riyals', 'QAR': 'riyals',
+      'TRY': 'lira', 'RUB': 'rubles', 'CNY': 'yuan'
+    };
+    
+    const getSpokenCurrency = (code: string): string => CURRENCY_SPOKEN_NAMES[code] || code;
+    const spokenCurrency = getSpokenCurrency(currency);
+
     // Format the donation text for TTS
     let donationText: string;
     
@@ -163,10 +179,10 @@ serve(async (req) => {
       donationText = `${username} sent a Voice message`;
     } else if (message) {
       // Text message with content
-      donationText = `${username} donated ${amount} rupees. ${message}`;
+      donationText = `${username} donated ${amount} ${spokenCurrency}. ${message}`;
     } else {
       // Fallback
-      donationText = `${username} donated ${amount} rupees. Thank you!`;
+      donationText = `${username} donated ${amount} ${spokenCurrency}. Thank you!`;
     }
 
     console.log('Generating TTS with Sarvam AI for:', donationText);

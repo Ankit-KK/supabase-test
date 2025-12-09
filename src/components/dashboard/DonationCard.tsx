@@ -6,12 +6,14 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
 import { DollarSign, MessageSquare, Mic, Heart } from 'lucide-react';
 import { MiniAudioPlayer } from '@/components/MiniAudioPlayer';
+import { getCurrencySymbol } from '@/constants/currencies';
 
 interface DonationCardProps {
   donation: {
     id: string;
     name: string;
     amount: number;
+    currency?: string;
     message?: string;
     voice_message_url?: string;
     tts_audio_url?: string;
@@ -109,7 +111,7 @@ const DonationCard: React.FC<DonationCardProps> = ({
                   className="font-bold text-lg"
                   style={{ color: brandColor }}
                 >
-                  ₹{donation.amount}
+                  {getCurrencySymbol(donation.currency || 'INR')}{donation.amount}
                 </span>
               </div>
             </div>

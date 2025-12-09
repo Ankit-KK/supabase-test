@@ -6,15 +6,43 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Currency exponents for Razorpay
+const CURRENCY_EXPONENTS: Record<string, number> = {
+  // 3 decimal currencies
+  'BHD': 3, 'KWD': 3, 'OMR': 3, 'JOD': 3, 'TND': 3, 'IQD': 3, 'LYD': 3,
+  // 0 decimal currencies
+  'JPY': 0, 'KRW': 0, 'VND': 0, 'CLP': 0, 'ISK': 0, 'PYG': 0, 'RWF': 0,
+  'VUV': 0, 'XAF': 0, 'XOF': 0, 'XPF': 0, 'UGX': 0, 'BIF': 0, 'DJF': 0,
+  'GNF': 0, 'KMF': 0,
+  // All others default to 2
+}
+
+const getExponent = (currencyCode: string): number => 
+  CURRENCY_EXPONENTS[currencyCode] ?? 2
+
+const amountToSubunits = (amount: number, currencyCode: string): number => {
+  const exponent = getExponent(currencyCode)
+  
+  if (exponent === 0) {
+    return Math.round(amount)
+  } else if (exponent === 3) {
+    // Razorpay requires last digit to be 0 for 3-decimal currencies
+    const subunits = Math.round(amount * 1000)
+    return Math.floor(subunits / 10) * 10
+  } else {
+    return Math.round(amount * 100)
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { name, amount, message, voiceMessageUrl, isHyperemote } = await req.json()
+    const { name, amount, message, voiceMessageUrl, isHyperemote, currency = 'INR' } = await req.json()
 
-    console.log('Create Razorpay order request:', { name, amount, isHyperemote, hasVoice: !!voiceMessageUrl })
+    console.log('Create Razorpay order request:', { name, amount, currency, isHyperemote, hasVoice: !!voiceMessageUrl })
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -34,17 +62,20 @@ serve(async (req) => {
       throw new Error('Invalid amount: must be between 1 and 100000')
     }
 
-    // Validate minimum amounts based on donation type
-    if (isHyperemote && amount < 50) {
-      throw new Error('Hyperemotes require minimum ₹50')
-    }
+    // Validate minimum amounts based on donation type (for INR)
+    // For other currencies, we skip validation as minimums may vary
+    if (currency === 'INR') {
+      if (isHyperemote && amount < 50) {
+        throw new Error('Hyperemotes require minimum ₹50')
+      }
 
-    if (voiceMessageUrl && amount < 150) {
-      throw new Error('Voice messages require minimum ₹150')
-    }
+      if (voiceMessageUrl && amount < 150) {
+        throw new Error('Voice messages require minimum ₹150')
+      }
 
-    if (!voiceMessageUrl && !isHyperemote && amount < 40) {
-      throw new Error('Text messages require minimum ₹40')
+      if (!voiceMessageUrl && !isHyperemote && amount < 40) {
+        throw new Error('Text messages require minimum ₹40')
+      }
     }
 
     // Get streamer info
@@ -61,12 +92,15 @@ serve(async (req) => {
     // Generate unique order ID with short razorpay prefix (max 40 chars for Razorpay receipt)
     const orderId = `ak_rp_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`
 
-    console.log('Creating Razorpay order:', { orderId, amount })
+    // Convert amount to subunits based on currency
+    const amountInSubunits = amountToSubunits(amount, currency)
+
+    console.log('Creating Razorpay order:', { orderId, amount, currency, amountInSubunits })
 
     // Create Razorpay order
     const razorpayPayload = {
-      amount: Math.round(amount * 100), // Convert to paise
-      currency: 'INR',
+      amount: amountInSubunits,
+      currency: currency,
       receipt: orderId
     }
 
@@ -88,7 +122,7 @@ serve(async (req) => {
     const razorpayOrder = await razorpayResponse.json()
     console.log('Razorpay order created:', razorpayOrder.id)
 
-    // Store donation in database
+    // Store donation in database with currency
     const { data: donation, error: donationError } = await supabase
       .from('ankit_donations')
       .insert({
@@ -96,6 +130,7 @@ serve(async (req) => {
         razorpay_order_id: razorpayOrder.id,
         name: name.trim(),
         amount: parseFloat(amount),
+        currency: currency,
         message: message ? message.trim() : null,
         streamer_id: streamerData.id,
         payment_status: 'pending',
@@ -119,7 +154,8 @@ serve(async (req) => {
         order_id: orderId,
         razorpay_order_id: razorpayOrder.id,
         razorpay_key_id: razorpayKeyId,
-        amount: razorpayOrder.amount // Already in paise
+        amount: razorpayOrder.amount, // Already in subunits
+        currency: currency
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
