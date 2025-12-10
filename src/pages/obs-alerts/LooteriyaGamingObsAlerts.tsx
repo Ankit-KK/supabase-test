@@ -12,16 +12,19 @@ const LooteriyaGamingObsAlerts = () => {
     currentAlert,
     isVisible,
     connectionStatus,
-    triggerTestAlert,
   } = usePusherAlerts({
     channelName: 'looteriya_gaming-alerts',
     pusherKey: pusherConfig?.key || '',
     pusherCluster: pusherConfig?.cluster || '',
-    delayBeforeDisplay: 60000,
+    delayByType: {
+      hypersound: 15000,
+      text: 60000,
+      voice: 60000,
+    },
     alertDuration: {
-      text: 10000,
-      hyperemote: 8000,
-      voice: 15000,
+      text: 15000,
+      voice: 60000,
+      hyperemote: 15000,
     },
   });
 
@@ -74,25 +77,8 @@ const LooteriyaGamingObsAlerts = () => {
       <LooteriyaGamingAlertDisplay
         donation={currentAlert}
         isVisible={isVisible}
-        streamerName="Looteriya Gaming"
-        streamerBrandColor="#f59e0b"
         scale={alertBoxScale}
       />
-      
-      {/* Debug info (only visible in development) */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="fixed bottom-4 left-4 bg-black/80 text-white p-2 rounded text-xs space-y-1">
-          <div>Status: {connectionStatus}</div>
-          <div>Channel: looteriya_gaming-alerts</div>
-          <div>Alert: {currentAlert ? 'Active' : 'None'}</div>
-          <button 
-            onClick={triggerTestAlert}
-            className="px-2 py-1 bg-amber-600 text-white rounded text-xs"
-          >
-            Test Alert
-          </button>
-        </div>
-      )}
     </div>
   );
 };
