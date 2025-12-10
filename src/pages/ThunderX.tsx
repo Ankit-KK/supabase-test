@@ -4,12 +4,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import EnhancedVoiceRecorder from '@/components/EnhancedVoiceRecorder';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
-import { Zap } from 'lucide-react';
+import HyperSoundSelector from '@/components/HyperSoundSelector';
+import { Zap, Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { SUPPORTED_CURRENCIES, getCurrencySymbol, getCurrencyMinimums } from '@/constants/currencies';
 
 const thunderxBanner = '/lovable-uploads/thunderx-banner.jpg';
 const thunderxLogo = '/lovable-uploads/thunderx-logo.jpg';
@@ -19,11 +24,14 @@ const ThunderX = () => {
     name: '',
     amount: '',
     message: '',
+    currency: 'INR'
   });
-  const [donationType, setDonationType] = useState<'text' | 'voice' | 'hyperemote'>('text');
+  const [donationType, setDonationType] = useState<'text' | 'voice' | 'hypersound'>('text');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [streamerSettings, setStreamerSettings] = useState<{ hyperemotes_enabled: boolean; hyperemotes_min_amount: number } | null>(null);
+  const [currencyOpen, setCurrencyOpen] = useState(false);
+  const [selectedSound, setSelectedSound] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const getVoiceDuration = (amount: number) => {
@@ -35,6 +43,8 @@ const ThunderX = () => {
 
   const currentAmount = parseFloat(formData.amount) || 0;
   const voiceRecorder = useVoiceRecorder(getVoiceDuration(currentAmount));
+  const currencyMins = getCurrencyMinimums(formData.currency);
+  const currencySymbol = getCurrencySymbol(formData.currency);
 
   useEffect(() => {
     const loadRazorpay = () => {
@@ -70,6 +80,13 @@ const ThunderX = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const getCharacterLimit = () => {
+    const amount = parseFloat(formData.amount) || 0;
+    if (amount >= 200) return 250;
+    if (amount >= 100) return 200;
+    return 100;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -84,16 +101,17 @@ const ThunderX = () => {
       return;
     }
 
-    if (donationType === 'text' && amount < 40) {
-      toast.error('Minimum amount for text message is ₹40');
+    // Validate minimums based on currency
+    if (donationType === 'text' && amount < currencyMins.minText) {
+      toast.error(`Minimum amount for text message is ${currencySymbol}${currencyMins.minText}`);
       return;
     }
-    if (donationType === 'voice' && amount < 150) {
-      toast.error('Minimum amount for voice message is ₹150');
+    if (donationType === 'voice' && amount < currencyMins.minVoice) {
+      toast.error(`Minimum amount for voice message is ${currencySymbol}${currencyMins.minVoice}`);
       return;
     }
-    if (donationType === 'hyperemote' && amount < 50) {
-      toast.error('Minimum amount for hyperemotes is ₹50');
+    if (donationType === 'hypersound' && amount < currencyMins.minHypersound) {
+      toast.error(`Minimum amount for HyperSounds is ${currencySymbol}${currencyMins.minHypersound}`);
       return;
     }
 
@@ -104,6 +122,11 @@ const ThunderX = () => {
 
     if (donationType === 'voice' && !voiceRecorder.audioBlob) {
       toast.error('Please record a voice message');
+      return;
+    }
+
+    if (donationType === 'hypersound' && !selectedSound) {
+      toast.error('Please select a sound');
       return;
     }
 
@@ -135,9 +158,10 @@ const ThunderX = () => {
         body: {
           name: formData.name,
           amount: formData.amount,
-          message: formData.message,
+          currency: formData.currency,
+          message: donationType === 'text' ? formData.message : donationType === 'voice' ? 'Sent a Voice message' : '🔊 HyperSound!',
           voiceMessageUrl,
-          isHyperemote: donationType === 'hyperemote'
+          hypersoundUrl: donationType === 'hypersound' ? selectedSound : null
         }
       });
 
@@ -152,10 +176,10 @@ const ThunderX = () => {
       const options = {
         key: data.razorpay_key_id,
         amount: data.amount,
-        currency: 'INR',
+        currency: formData.currency,
         name: 'HyperChat - THUNDERX',
-        description: donationType === 'hyperemote' ? 'Thunder Rain Effect' : 
-                     donationType === 'voice' ? 'Voice Interactions' : 'Text Interactions',
+        description: donationType === 'hypersound' ? 'HyperSound - Soundboard' : 
+                     donationType === 'voice' ? 'Voice Message' : 'Text Message',
         order_id: data.razorpay_order_id,
         prefill: {
           name: formData.name
@@ -186,23 +210,17 @@ const ThunderX = () => {
     }
   };
 
-  const getCharacterLimit = () => {
-    const amount = parseFloat(formData.amount) || 0;
-    if (amount >= 200) return 250;
-    if (amount >= 100) return 200;
-    return 100;
-  };
-
   const handleDonationTypeChange = (value: string) => {
-    setDonationType(value as 'text' | 'voice' | 'hyperemote');
+    setDonationType(value as 'text' | 'voice' | 'hypersound');
     
-    if (value === 'hyperemote') {
-      setFormData(prev => ({ ...prev, amount: '50', message: '' }));
+    if (value === 'hypersound') {
+      setFormData(prev => ({ ...prev, amount: currencyMins.minHypersound.toString(), message: '' }));
     } else if (value === 'voice') {
-      setFormData(prev => ({ ...prev, amount: '150', message: '' }));
+      setFormData(prev => ({ ...prev, amount: currencyMins.minVoice.toString(), message: '' }));
     } else {
-      setFormData(prev => ({ ...prev, amount: '40' }));
+      setFormData(prev => ({ ...prev, amount: currencyMins.minText.toString() }));
     }
+    setSelectedSound(null);
   };
 
   return (
@@ -213,7 +231,7 @@ const ThunderX = () => {
       <div className="absolute inset-0 bg-black/40"></div>
 
       <Card 
-        className="w-full max-w-md mx-auto bg-card/95 backdrop-blur-sm border-emerald-500/20 shadow-2xl relative overflow-hidden"
+        className="w-full max-w-[21rem] mx-auto bg-card/95 backdrop-blur-sm border-emerald-500/20 shadow-2xl relative overflow-hidden"
         style={{ 
           backgroundImage: `url(${thunderxLogo})`,
           backgroundSize: 'cover',
@@ -224,24 +242,24 @@ const ThunderX = () => {
         
         <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 via-emerald-600/20 to-emerald-400/20 opacity-50 blur-xl"></div>
         
-        <CardHeader className="text-center space-y-3 relative z-10">
+        <CardHeader className="text-center space-y-3 relative z-10 pb-3">
           <div className="flex justify-center">
-            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-emerald-500 shadow-xl">
+            <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-emerald-500 shadow-xl">
               <img src={thunderxLogo} alt="THUNDERX" className="w-full h-full object-cover" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-emerald-600 bg-clip-text text-transparent">
+          <CardTitle className="text-xl font-bold bg-gradient-to-r from-emerald-400 to-emerald-600 bg-clip-text text-transparent">
             THUNDERX
           </CardTitle>
-          <p className="text-emerald-200 text-sm mt-2">
+          <p className="text-emerald-200 text-xs">
             Support THUNDERX with your donation ⚡
           </p>
         </CardHeader>
 
-        <CardContent className="space-y-6 relative z-10">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name" className="text-sm font-medium text-emerald-400">
+        <CardContent className="space-y-4 relative z-10 pt-0">
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="name" className="text-xs font-medium text-emerald-400">
                 Your Name *
               </Label>
               <Input
@@ -250,7 +268,7 @@ const ThunderX = () => {
                 placeholder="Enter your name"
                 value={formData.name}
                 onChange={handleInputChange}
-                className="border-emerald-500/30 focus:border-emerald-500 focus:ring-emerald-500/20 bg-background/50"
+                className="border-emerald-500/30 focus:border-emerald-500 focus:ring-emerald-500/20 bg-background/50 h-9 text-sm"
                 required
               />
             </div>
@@ -259,81 +277,130 @@ const ThunderX = () => {
               <Label className="text-xs font-medium text-emerald-400">
                 Choose your donation type
               </Label>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-1.5">
                 <button
                   type="button"
                   onClick={() => handleDonationTypeChange('text')}
-                  className={`h-20 flex flex-col items-center justify-center gap-1.5 rounded-lg border-2 transition-all ${
+                  className={`p-2 rounded-lg border-2 transition-all ${
                     donationType === 'text'
-                      ? 'border-emerald-400 bg-gradient-to-br from-emerald-600 to-green-600 text-white shadow-lg shadow-emerald-500/50 scale-105'
-                      : 'border-emerald-500/40 hover:border-emerald-500/60 bg-black/50 hover:bg-black/70 text-emerald-200 hover:scale-105'
+                      ? 'border-emerald-400 bg-emerald-500/10'
+                      : 'border-emerald-500/30 hover:border-emerald-500/50'
                   }`}
                 >
                   <div className="text-center">
-                    <div className="text-2xl mb-0.5">💬</div>
-                    <div className="font-medium text-[10px]">Text Interactions</div>
-                    <div className="text-[9px]">Min: ₹40</div>
+                    <div className="text-sm mb-0.5">💬</div>
+                    <div className="font-medium text-[10px] text-emerald-200">Text Message</div>
+                    <div className="text-[9px] text-muted-foreground">Min: {currencySymbol}{currencyMins.minText}</div>
                   </div>
                 </button>
                 
                 <button
                   type="button"
                   onClick={() => handleDonationTypeChange('voice')}
-                  className={`h-20 flex flex-col items-center justify-center gap-1.5 rounded-lg border-2 transition-all ${
+                  className={`p-2 rounded-lg border-2 transition-all ${
                     donationType === 'voice'
-                      ? 'border-emerald-400 bg-gradient-to-br from-emerald-600 to-green-600 text-white shadow-lg shadow-emerald-500/50 scale-105'
-                      : 'border-emerald-500/40 hover:border-emerald-500/60 bg-black/50 hover:bg-black/70 text-emerald-200 hover:scale-105'
+                      ? 'border-emerald-400 bg-emerald-500/10'
+                      : 'border-emerald-500/30 hover:border-emerald-500/50'
                   }`}
                 >
                   <div className="text-center">
-                    <div className="text-2xl mb-0.5">🎤</div>
-                    <div className="font-medium text-[10px]">Voice Interactions</div>
-                    <div className="text-[9px]">Min: ₹150</div>
+                    <div className="text-sm mb-0.5">🎤</div>
+                    <div className="font-medium text-[10px] text-emerald-200">Voice Message</div>
+                    <div className="text-[9px] text-muted-foreground">Min: {currencySymbol}{currencyMins.minVoice}</div>
                   </div>
                 </button>
                 
-                {streamerSettings?.hyperemotes_enabled && (
-                  <button
-                    type="button"
-                    onClick={() => handleDonationTypeChange('hyperemote')}
-                    className={`relative h-20 flex flex-col items-center justify-center gap-1.5 rounded-lg border-2 transition-all overflow-hidden ${
-                      donationType === 'hyperemote'
-                        ? 'border-emerald-400 bg-gradient-to-br from-emerald-600 to-green-600 text-white shadow-lg shadow-emerald-500/50 scale-105'
-                        : 'border-emerald-500/40 hover:border-emerald-500/60 bg-black/50 hover:bg-black/70 text-emerald-200 hover:scale-105'
-                    }`}
-                  >
-                    <div className="text-center">
-                      <div className="text-2xl mb-0.5">⚡✨</div>
-                      <div className="font-bold text-[10px] mb-0.5">Thunder Rain</div>
-                      <div className="text-[9px] mb-1">Epic GIFs!</div>
-                      <div className="text-[9px] font-medium">Min: ₹50</div>
-                    </div>
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => handleDonationTypeChange('hypersound')}
+                  className={`p-2 rounded-lg border-2 transition-all ${
+                    donationType === 'hypersound'
+                      ? 'border-orange-500 bg-orange-500/10'
+                      : 'border-orange-500/30 hover:border-orange-500/50'
+                  }`}
+                >
+                  <div className="text-center">
+                    <div className="text-sm mb-0.5">🔊</div>
+                    <div className="font-medium text-[10px] text-emerald-200">HyperSounds</div>
+                    <div className="text-[9px] text-muted-foreground">Min: {currencySymbol}{currencyMins.minHypersound}</div>
+                  </div>
+                </button>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="amount" className="text-sm font-medium text-emerald-400">
-                Amount (₹) *
+            <div className="space-y-1.5">
+              <Label htmlFor="amount" className="text-xs font-medium text-emerald-400">
+                Amount *
               </Label>
-              <Input
-                id="amount"
-                name="amount"
-                type="number"
-                placeholder="Enter amount"
-                value={formData.amount}
-                onChange={handleInputChange}
-                className="border-emerald-500/30 focus:border-emerald-500 focus:ring-emerald-500/20 bg-background/50"
-                min={donationType === 'voice' ? 150 : donationType === 'hyperemote' ? 50 : 40}
-                required
-              />
-              <p className="text-xs text-muted-foreground">TTS above ₹70</p>
+              <div className="flex gap-2">
+                <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={currencyOpen}
+                      className="w-[90px] justify-between border-emerald-500/30 focus:border-emerald-500 px-2 h-9 text-xs"
+                    >
+                      {currencySymbol} {formData.currency}
+                      <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[220px] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search currency..." />
+                      <CommandList>
+                        <CommandEmpty>No currency found.</CommandEmpty>
+                        <CommandGroup>
+                          {SUPPORTED_CURRENCIES.map((currency) => (
+                            <CommandItem
+                              key={currency.code}
+                              value={currency.code}
+                              onSelect={(value) => {
+                                const newCurrency = value.toUpperCase();
+                                const newMins = getCurrencyMinimums(newCurrency);
+                                setFormData(prev => ({ 
+                                  ...prev, 
+                                  currency: newCurrency,
+                                  amount: donationType === 'text' ? newMins.minText.toString() :
+                                          donationType === 'voice' ? newMins.minVoice.toString() :
+                                          newMins.minHypersound.toString()
+                                }));
+                                setCurrencyOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  formData.currency === currency.code ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <span className="mr-2">{currency.symbol}</span>
+                              <span>{currency.name}</span>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                <Input
+                  id="amount"
+                  name="amount"
+                  type="number"
+                  placeholder="Enter amount"
+                  value={formData.amount}
+                  onChange={handleInputChange}
+                  className="border-emerald-500/30 focus:border-emerald-500 focus:ring-emerald-500/20 bg-background/50 flex-1 h-9 text-sm"
+                  min={donationType === 'voice' ? currencyMins.minVoice : donationType === 'hypersound' ? currencyMins.minHypersound : currencyMins.minText}
+                  required
+                />
+              </div>
+              <p className="text-[10px] text-muted-foreground">TTS above {currencySymbol}70 (INR equivalent)</p>
             </div>
 
             {donationType === 'text' && (
-              <div className="space-y-2">
-                <Label htmlFor="message" className="text-sm font-medium text-emerald-400">
+              <div className="space-y-1.5">
+                <Label htmlFor="message" className="text-xs font-medium text-emerald-400">
                   Your Message *
                 </Label>
                 <Textarea
@@ -342,19 +409,19 @@ const ThunderX = () => {
                   placeholder="Enter your message"
                   value={formData.message}
                   onChange={handleInputChange}
-                  className="border-emerald-500/30 focus:border-emerald-500 focus:ring-emerald-500/20 bg-background/50 min-h-[100px]"
+                  className="border-emerald-500/30 focus:border-emerald-500 focus:ring-emerald-500/20 bg-background/50 min-h-[80px] text-sm"
                   maxLength={getCharacterLimit()}
                   required
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-[10px] text-muted-foreground">
                   {formData.message.length}/{getCharacterLimit()} characters
                 </p>
               </div>
             )}
 
             {donationType === 'voice' && (
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-emerald-400">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-emerald-400">
                   Record Your Message *
                 </Label>
                 <EnhancedVoiceRecorder 
@@ -364,39 +431,37 @@ const ThunderX = () => {
                   }}
                   maxDurationSeconds={getVoiceDuration(currentAmount)}
                   brandColor="#10b981"
-                  requiredAmount={150}
+                  requiredAmount={currencyMins.minVoice}
                   currentAmount={currentAmount}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Duration: {getVoiceDuration(currentAmount)}s • ₹150-249: 15s • ₹250-499: 25s • ₹500+: 30s
+                <p className="text-[10px] text-muted-foreground">
+                  Duration: {getVoiceDuration(currentAmount)}s
                 </p>
               </div>
             )}
 
-            {donationType === 'hyperemote' && (
-              <div className="space-y-2">
-                <div className="p-4 rounded-lg border-2 border-emerald-500/30 bg-emerald-500/5">
-                  <div className="text-center space-y-2">
-                    <div className="text-4xl">⚡✨</div>
-                    <h3 className="font-bold text-emerald-400">Thunder Rain Effect</h3>
-                    <p className="text-xs text-muted-foreground">
-                      Your donation will trigger an epic full-screen animated GIF celebration!
-                    </p>
-                  </div>
-                </div>
+            {donationType === 'hypersound' && (
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-emerald-400">
+                  Select a Sound *
+                </Label>
+                <HyperSoundSelector
+                  selectedSound={selectedSound}
+                  onSoundSelect={setSelectedSound}
+                />
               </div>
             )}
 
             <Button
               type="submit"
-              className="w-full text-lg font-bold py-6"
+              className="w-full text-base font-bold py-5"
               style={{ 
                 background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                 border: '2px solid rgba(16, 185, 129, 0.3)'
               }}
               disabled={isProcessingPayment || !razorpayLoaded}
             >
-              {isProcessingPayment ? 'Processing...' : `Pay ₹${formData.amount || '0'}`}
+              {isProcessingPayment ? 'Processing...' : `Pay ${currencySymbol}${formData.amount || '0'}`}
             </Button>
           </form>
         </CardContent>
