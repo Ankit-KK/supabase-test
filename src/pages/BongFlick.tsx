@@ -9,7 +9,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import EnhancedVoiceRecorder from '@/components/EnhancedVoiceRecorder';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
-import { Flame } from 'lucide-react';
+import { Check, ChevronsUpDown } from 'lucide-react';
+import HyperSoundSelector from '@/components/HyperSoundSelector';
+import { SUPPORTED_CURRENCIES, getCurrencyMinimums, getCurrencySymbol } from '@/constants/currencies';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { cn } from '@/lib/utils';
 
 const bongflickBanner = '/lovable-uploads/bongflick-banner.jpg';
 const bongflickLogo = '/lovable-uploads/bongflick-logo.jpg';
@@ -20,16 +25,22 @@ const BongFlick = () => {
     amount: '',
     message: '',
   });
-  const [donationType, setDonationType] = useState<'text' | 'voice' | 'hyperemote'>('text');
+  const [donationType, setDonationType] = useState<'text' | 'voice' | 'hypersound'>('text');
+  const [selectedSound, setSelectedSound] = useState<string | null>(null);
+  const [selectedCurrency, setSelectedCurrency] = useState('INR');
+  const [currencyOpen, setCurrencyOpen] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
-  const [streamerSettings, setStreamerSettings] = useState<{ hyperemotes_enabled: boolean; hyperemotes_min_amount: number } | null>(null);
   const navigate = useNavigate();
 
+  const minimums = getCurrencyMinimums(selectedCurrency);
+  const currencySymbol = getCurrencySymbol(selectedCurrency);
+
   const getVoiceDuration = (amount: number) => {
-    if (amount >= 500) return 30;
-    if (amount >= 250) return 25;
-    if (amount >= 150) return 15;
+    const inrEquivalent = selectedCurrency === 'INR' ? amount : amount * 80;
+    if (inrEquivalent >= 500) return 30;
+    if (inrEquivalent >= 250) return 25;
+    if (inrEquivalent >= 150) return 15;
     return 15;
   };
 
@@ -51,18 +62,7 @@ const BongFlick = () => {
       document.body.appendChild(script);
     };
 
-    const fetchStreamerSettings = async () => {
-      const { data, error } = await supabase.rpc('get_streamer_public_settings', {
-        slug: 'bongflick'
-      });
-      
-      if (!error && data && data.length > 0) {
-        setStreamerSettings(data[0]);
-      }
-    };
-
     loadRazorpay();
-    fetchStreamerSettings();
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -84,16 +84,16 @@ const BongFlick = () => {
       return;
     }
 
-    if (donationType === 'text' && amount < 40) {
-      toast.error('Minimum amount for text message is ₹40');
+    if (donationType === 'text' && amount < minimums.minText) {
+      toast.error(`Minimum amount for text message is ${currencySymbol}${minimums.minText}`);
       return;
     }
-    if (donationType === 'voice' && amount < 150) {
-      toast.error('Minimum amount for voice message is ₹150');
+    if (donationType === 'voice' && amount < minimums.minVoice) {
+      toast.error(`Minimum amount for voice message is ${currencySymbol}${minimums.minVoice}`);
       return;
     }
-    if (donationType === 'hyperemote' && amount < 50) {
-      toast.error('Minimum amount for hyperemotes is ₹50');
+    if (donationType === 'hypersound' && amount < minimums.minHypersound) {
+      toast.error(`Minimum amount for HyperSound is ${currencySymbol}${minimums.minHypersound}`);
       return;
     }
 
@@ -104,6 +104,11 @@ const BongFlick = () => {
 
     if (donationType === 'voice' && !voiceRecorder.audioBlob) {
       toast.error('Please record a voice message');
+      return;
+    }
+
+    if (donationType === 'hypersound' && !selectedSound) {
+      toast.error('Please select a sound');
       return;
     }
 
@@ -139,9 +144,10 @@ const BongFlick = () => {
         body: {
           name: formData.name,
           amount,
+          currency: selectedCurrency,
           message: donationType === 'text' ? formData.message : null,
           voiceMessageUrl,
-          isHyperemote: donationType === 'hyperemote',
+          hypersoundUrl: donationType === 'hypersound' ? selectedSound : null,
         }
       });
 
@@ -150,9 +156,9 @@ const BongFlick = () => {
       const options = {
         key: data.razorpay_key_id,
         amount: data.amount,
-        currency: 'INR',
+        currency: selectedCurrency,
         name: 'HyperChat - BongFlick',
-        description: donationType === 'hyperemote' ? 'Flame Effect' : 
+        description: donationType === 'hypersound' ? 'HyperSound' : 
                      donationType === 'voice' ? 'Voice Interactions' : 'Text Interactions',
         order_id: data.razorpay_order_id,
         prefill: {
@@ -218,8 +224,8 @@ const BongFlick = () => {
                 >
                   <div className="text-center">
                     <div className="text-2xl mb-0.5">💬</div>
-                    <div className="font-medium text-[10px]">Text Interactions</div>
-                    <div className="text-[9px]">Min: ₹40</div>
+                    <div className="font-medium text-[10px]">Text</div>
+                    <div className="text-[9px]">Min: {currencySymbol}{minimums.minText}</div>
                   </div>
                 </button>
 
@@ -237,24 +243,24 @@ const BongFlick = () => {
                 >
                   <div className="text-center">
                     <div className="text-2xl mb-0.5">🎤</div>
-                    <div className="font-medium text-[10px]">Voice Interactions</div>
-                    <div className="text-[9px]">Min: ₹150</div>
+                    <div className="font-medium text-[10px]">Voice</div>
+                    <div className="text-[9px]">Min: {currencySymbol}{minimums.minVoice}</div>
                   </div>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setDonationType('hyperemote')}
+                  onClick={() => setDonationType('hypersound')}
                   className={`p-2 rounded-lg border transition-all ${
-                    donationType === 'hyperemote'
+                    donationType === 'hypersound'
                       ? 'bg-violet-600/80 border-violet-500/60 text-white shadow-md'
                       : 'bg-violet-900/40 border-violet-700/30 text-violet-300 hover:bg-violet-800/50'
                   }`}
                 >
                   <div className="text-center">
-                    <div className="text-2xl mb-0.5">🔥</div>
-                    <div className="font-medium text-[10px]">Flame Effect</div>
-                    <div className="text-[9px]">Min: ₹50</div>
+                    <div className="text-2xl mb-0.5">🔊</div>
+                    <div className="font-medium text-[10px]">HyperSound</div>
+                    <div className="text-[9px]">Min: {currencySymbol}{minimums.minHypersound}</div>
                   </div>
                 </button>
               </div>
@@ -275,19 +281,64 @@ const BongFlick = () => {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="amount" className="text-violet-200 text-xs">Amount (₹)</Label>
-                <Input
-                  id="amount"
-                  name="amount"
-                  type="number"
-                  value={formData.amount}
-                  onChange={handleInputChange}
-                  placeholder={`Min: ₹${donationType === 'voice' ? '150' : donationType === 'hyperemote' ? '50' : '40'}`}
-                  min={donationType === 'voice' ? '150' : donationType === 'hyperemote' ? '50' : '40'}
-                  className="bg-violet-950/40 border-violet-700/40 text-violet-100 placeholder:text-violet-500/50 focus:border-violet-500 text-sm h-9"
-                  required
-                />
-                <p className="text-xs text-violet-400">TTS above ₹70</p>
+                <Label htmlFor="amount" className="text-violet-200 text-xs">Amount</Label>
+                <div className="flex gap-2">
+                  <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={currencyOpen}
+                        className="w-[100px] justify-between bg-violet-950/40 border-violet-700/40 text-violet-100 hover:bg-violet-900/60 text-sm h-9"
+                      >
+                        {currencySymbol} {selectedCurrency}
+                        <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[200px] p-0">
+                      <Command>
+                        <CommandInput placeholder="Search currency..." />
+                        <CommandList>
+                          <CommandEmpty>No currency found.</CommandEmpty>
+                          <CommandGroup>
+                            {SUPPORTED_CURRENCIES.map((currency) => (
+                              <CommandItem
+                                key={currency.code}
+                                value={currency.code}
+                                onSelect={(value) => {
+                                  setSelectedCurrency(value.toUpperCase());
+                                  setCurrencyOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    selectedCurrency === currency.code ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {currency.symbol} {currency.code} - {currency.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  <Input
+                    id="amount"
+                    name="amount"
+                    type="number"
+                    value={formData.amount}
+                    onChange={handleInputChange}
+                    placeholder={`Min: ${currencySymbol}${donationType === 'voice' ? minimums.minVoice : donationType === 'hypersound' ? minimums.minHypersound : minimums.minText}`}
+                    min={donationType === 'voice' ? minimums.minVoice : donationType === 'hypersound' ? minimums.minHypersound : minimums.minText}
+                    className="flex-1 bg-violet-950/40 border-violet-700/40 text-violet-100 placeholder:text-violet-500/50 focus:border-violet-500 text-sm h-9"
+                    required
+                  />
+                </div>
+                {donationType === 'text' && (
+                  <p className="text-xs text-violet-400">TTS above {currencySymbol}{selectedCurrency === 'INR' ? '70' : '2'}</p>
+                )}
               </div>
 
               {donationType === 'text' && (
@@ -318,24 +369,20 @@ const BongFlick = () => {
                         toast.error('Please record a voice message');
                       }
                     }}
-                    requiredAmount={150}
+                    requiredAmount={minimums.minVoice}
                     currentAmount={currentAmount}
                     brandColor="#8b5cf6"
                   />
                 </div>
               )}
 
-              {donationType === 'hyperemote' && (
-                <div className="p-3 bg-gradient-to-br from-violet-900/50 to-purple-800/40 border border-violet-500/30 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="flex-shrink-0">
-                      <Flame className="w-10 h-10 text-violet-400" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-violet-100 font-semibold text-sm">Flame Effect</h3>
-                      <p className="text-violet-300 text-xs mt-0.5">Trigger a blazing celebration on stream!</p>
-                    </div>
-                  </div>
+              {donationType === 'hypersound' && (
+                <div className="space-y-1.5">
+                  <Label className="text-violet-200 text-xs">Select a Sound</Label>
+                  <HyperSoundSelector
+                    selectedSound={selectedSound}
+                    onSoundSelect={setSelectedSound}
+                  />
                 </div>
               )}
 
@@ -344,7 +391,7 @@ const BongFlick = () => {
                 className="w-full bg-gradient-to-r from-violet-600 to-purple-500 hover:from-violet-500 hover:to-purple-400 text-white font-semibold h-10 text-sm shadow-lg transition-all"
                 disabled={isProcessingPayment || !razorpayLoaded}
               >
-                {isProcessingPayment ? 'Processing...' : `Pay ₹${formData.amount || '0'}`}
+                {isProcessingPayment ? 'Processing...' : `Pay ${currencySymbol}${formData.amount || '0'}`}
               </Button>
             </form>
           </CardContent>
