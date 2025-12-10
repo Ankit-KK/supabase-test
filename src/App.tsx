@@ -61,21 +61,32 @@ import AnkitObsAlerts from "./pages/obs-alerts/AnkitObsAlerts";
 import AnkitGoalOverlay from "./pages/obs-alerts/AnkitGoalOverlay";
 import LooteriyaGamingGoalOverlay from "./pages/obs-alerts/LooteriyaGamingGoalOverlay";
 import ChiaGamingObsAlerts from "./pages/obs-alerts/ChiaGamingObsAlerts";
+import ChiaGamingGoalOverlay from "./pages/obs-alerts/ChiaGamingGoalOverlay";
 import LooteriyaGamingObsAlerts from "./pages/obs-alerts/LooteriyaGamingObsAlerts";
 import SizzorsObsAlerts from "./pages/obs-alerts/SizzorsObsAlerts";
+import SizzorsGoalOverlay from "./pages/obs-alerts/SizzorsGoalOverlay";
 import DamaskPlaysObsAlerts from "./pages/obs-alerts/DamaskPlaysObsAlerts";
+import DamaskPlaysGoalOverlay from "./pages/obs-alerts/DamaskPlaysGoalOverlay";
 import NekoXenpaiObsAlerts from "./pages/obs-alerts/NekoXenpaiObsAlerts";
+import NekoXenpaiGoalOverlay from "./pages/obs-alerts/NekoXenpaiGoalOverlay";
 import ThunderXObsAlerts from "./pages/obs-alerts/ThunderXObsAlerts";
 import ThunderXGoalOverlay from "./pages/obs-alerts/ThunderXGoalOverlay";
 import VIPBhaiObsAlerts from "./pages/obs-alerts/VIPBhaiObsAlerts";
 import VIPBhaiGoalOverlay from "./pages/obs-alerts/VIPBhaiGoalOverlay";
 import SagarUjjwalGamingObsAlerts from "./pages/obs-alerts/SagarUjjwalGamingObsAlerts";
+import SagarUjjwalGamingGoalOverlay from "./pages/obs-alerts/SagarUjjwalGamingGoalOverlay";
 import NotYourKweenObsAlerts from "./pages/obs-alerts/NotYourKweenObsAlerts";
+import NotYourKweenGoalOverlay from "./pages/obs-alerts/NotYourKweenGoalOverlay";
 import BongFlickObsAlerts from "./pages/obs-alerts/BongFlickObsAlerts";
+import BongFlickGoalOverlay from "./pages/obs-alerts/BongFlickGoalOverlay";
 import MrIqmasterObsAlerts from "./pages/obs-alerts/MrIqmasterObsAlerts";
+import MrIqmasterGoalOverlay from "./pages/obs-alerts/MrIqmasterGoalOverlay";
 import ABdevilObsAlerts from "./pages/obs-alerts/ABdevilObsAlerts";
+import ABdevilGoalOverlay from "./pages/obs-alerts/ABdevilGoalOverlay";
 import JhanvooObsAlerts from "./pages/obs-alerts/JhanvooObsAlerts";
+import JhanvooGoalOverlay from "./pages/obs-alerts/JhanvooGoalOverlay";
 import ClumsyGodObsAlerts from "./pages/obs-alerts/ClumsyGodObsAlerts";
+import ClumsyGodGoalOverlay from "./pages/obs-alerts/ClumsyGodGoalOverlay";
 
 // Audio Player pages (active streamers + ThunderX)
 import AnkitAudioPlayer from "./pages/audio-player/AnkitAudioPlayer";
@@ -169,22 +180,33 @@ const App = () => (
               <Route path="/ankit/obs-alerts" element={<AnkitObsAlerts />} />
               <Route path="/ankit/goal-overlay" element={<AnkitGoalOverlay />} />
               <Route path="/chiaa_gaming/obs-alerts" element={<ChiaGamingObsAlerts />} />
+              <Route path="/chiaa_gaming/goal-overlay" element={<ChiaGamingGoalOverlay />} />
               <Route path="/looteriya_gaming/obs-alerts" element={<LooteriyaGamingObsAlerts />} />
               <Route path="/looteriya_gaming/goal-overlay" element={<LooteriyaGamingGoalOverlay />} />
               <Route path="/sizzors/obs-alerts" element={<SizzorsObsAlerts />} />
+              <Route path="/sizzors/goal-overlay" element={<SizzorsGoalOverlay />} />
               <Route path="/damask_plays/obs-alerts" element={<DamaskPlaysObsAlerts />} />
+              <Route path="/damask_plays/goal-overlay" element={<DamaskPlaysGoalOverlay />} />
               <Route path="/neko_xenpai/obs-alerts" element={<NekoXenpaiObsAlerts />} />
+              <Route path="/neko_xenpai/goal-overlay" element={<NekoXenpaiGoalOverlay />} />
               <Route path="/thunderx/obs-alerts" element={<ThunderXObsAlerts />} />
               <Route path="/thunderx/goal-overlay" element={<ThunderXGoalOverlay />} />
               <Route path="/vipbhai/obs-alerts" element={<VIPBhaiObsAlerts />} />
               <Route path="/vipbhai/goal-overlay" element={<VIPBhaiGoalOverlay />} />
               <Route path="/sagarujjwalgaming/obs-alerts" element={<SagarUjjwalGamingObsAlerts />} />
+              <Route path="/sagarujjwalgaming/goal-overlay" element={<SagarUjjwalGamingGoalOverlay />} />
               <Route path="/notyourkween/obs-alerts" element={<NotYourKweenObsAlerts />} />
+              <Route path="/notyourkween/goal-overlay" element={<NotYourKweenGoalOverlay />} />
               <Route path="/bongflick/obs-alerts" element={<BongFlickObsAlerts />} />
+              <Route path="/bongflick/goal-overlay" element={<BongFlickGoalOverlay />} />
               <Route path="/mriqmaster/obs-alerts" element={<MrIqmasterObsAlerts />} />
+              <Route path="/mriqmaster/goal-overlay" element={<MrIqmasterGoalOverlay />} />
               <Route path="/abdevil/obs-alerts" element={<ABdevilObsAlerts />} />
+              <Route path="/abdevil/goal-overlay" element={<ABdevilGoalOverlay />} />
               <Route path="/jhanvoo/obs-alerts" element={<JhanvooObsAlerts />} />
+              <Route path="/jhanvoo/goal-overlay" element={<JhanvooGoalOverlay />} />
               <Route path="/clumsygod/obs-alerts" element={<ClumsyGodObsAlerts />} />
+              <Route path="/clumsygod/goal-overlay" element={<ClumsyGodGoalOverlay />} />
               
               {/* Audio Player routes */}
               <Route path="/ankit/audio-player" element={<AnkitAudioPlayer />} />
