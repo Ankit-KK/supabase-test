@@ -20,7 +20,7 @@ import {
   Maximize2,
   Volume2
 } from 'lucide-react';
-import { AnkitGoalManager } from './AnkitGoalManager';
+import { GoalManager } from './GoalManager';
 import {
   Select,
   SelectContent,
@@ -33,6 +33,7 @@ interface OBSTokenManagerProps {
   streamerId: string;
   streamerSlug: string;
   brandColor?: string;
+  tableName: string;
 }
 
 interface OBSToken {
@@ -47,7 +48,8 @@ interface OBSToken {
 const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
   streamerId,
   streamerSlug,
-  brandColor = '#3b82f6'
+  brandColor = '#3b82f6',
+  tableName
 }) => {
   const { user } = useAuth();
   const [tokens, setTokens] = useState<OBSToken[]>([]);
@@ -502,7 +504,7 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
           </div>
 
           {/* Media Source Audio (Alternative to Browser Source) */}
-          {(streamerSlug === 'ankit' || streamerSlug === 'looteriya_gaming' || streamerSlug === 'clumsygod') && activeToken && (
+          {activeToken && (
             <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
               <div className="flex items-start space-x-3">
                 <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
@@ -556,8 +558,12 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
             </div>
           )}
 
-          {/* Goal Configuration (Ankit only) */}
-          {streamerSlug === 'ankit' && <AnkitGoalManager streamerId={streamerId} />}
+          {/* Goal Configuration */}
+          <GoalManager 
+            streamerId={streamerId} 
+            streamerSlug={streamerSlug}
+            tableName={tableName}
+          />
 
           {/* Alert Box Size */}
           <div className="space-y-4 pt-6 border-t">

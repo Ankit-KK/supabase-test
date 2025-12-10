@@ -447,6 +447,7 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
               streamerId={streamerData.id}
               streamerSlug={streamerSlug}
               brandColor={brandColor}
+              tableName={tableName}
             />
           </TabsContent>
         </Tabs>
