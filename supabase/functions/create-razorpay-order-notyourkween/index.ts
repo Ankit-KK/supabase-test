@@ -6,31 +6,39 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const CURRENCY_MINIMUMS: Record<string, { text: number; voice: number; hypersound: number }> = {
+  'INR': { text: 40, voice: 150, hypersound: 30 },
+  'USD': { text: 1, voice: 3, hypersound: 1 },
+  'EUR': { text: 1, voice: 3, hypersound: 1 },
+  'GBP': { text: 1, voice: 3, hypersound: 1 },
+  'AED': { text: 4, voice: 12, hypersound: 3 },
+  'AUD': { text: 2, voice: 5, hypersound: 1.5 },
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { name, amount, message, voiceMessageUrl, isHyperemote, selectedGifId } = await req.json();
+    const { name, amount, currency = 'INR', message, voiceMessageUrl, hypersoundUrl } = await req.json();
 
-    // Validation
     if (!name || !amount) {
       throw new Error('Name and amount are required');
     }
 
-    // Validate minimum amounts
-    if (isHyperemote && amount < 50) {
-      throw new Error('Hyperemote minimum is ₹50');
+    const mins = CURRENCY_MINIMUMS[currency] || CURRENCY_MINIMUMS['INR'];
+
+    if (hypersoundUrl && amount < mins.hypersound) {
+      throw new Error(`HyperSound minimum is ${currency} ${mins.hypersound}`);
     }
-    if (voiceMessageUrl && amount < 150) {
-      throw new Error('Voice message minimum is ₹150');
+    if (voiceMessageUrl && amount < mins.voice) {
+      throw new Error(`Voice message minimum is ${currency} ${mins.voice}`);
     }
-    if (!voiceMessageUrl && !isHyperemote && amount < 40) {
-      throw new Error('Text message minimum is ₹40');
+    if (!voiceMessageUrl && !hypersoundUrl && amount < mins.text) {
+      throw new Error(`Text message minimum is ${currency} ${mins.text}`);
     }
 
-    // Get Razorpay credentials
     const razorpayKeyId = Deno.env.get('razorpay-keyid');
     const razorpayKeySecret = Deno.env.get('razorpay-keysecret');
 
@@ -43,7 +51,6 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get streamer ID
     const { data: streamer } = await supabase
       .from('streamers')
       .select('id')
@@ -54,10 +61,11 @@ serve(async (req) => {
       throw new Error('Streamer not found');
     }
 
-    // Generate order ID
     const orderId = `nyk_rp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    // Create Razorpay order using REST API
+    // Calculate amount in subunits
+    const amountInSubunits = Math.round(amount * 100);
+
     const razorpayResponse = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
       headers: {
@@ -65,8 +73,8 @@ serve(async (req) => {
         'Authorization': 'Basic ' + btoa(`${razorpayKeyId}:${razorpayKeySecret}`),
       },
       body: JSON.stringify({
-        amount: Math.round(amount * 100),
-        currency: 'INR',
+        amount: amountInSubunits,
+        currency: currency,
         receipt: orderId,
         notes: {
           product_type: 'digital_engagement',
@@ -83,21 +91,21 @@ serve(async (req) => {
 
     const razorpayOrder = await razorpayResponse.json();
 
-    // Insert donation record
     const { error: insertError } = await supabase
       .from('notyourkween_donations')
       .insert({
         streamer_id: streamer.id,
         name: name.substring(0, 100),
         amount,
+        currency,
         message: message ? message.substring(0, 500) : null,
         voice_message_url: voiceMessageUrl || null,
+        hypersound_url: hypersoundUrl || null,
         order_id: orderId,
         razorpay_order_id: razorpayOrder.id,
         payment_status: 'pending',
         moderation_status: 'pending',
-        is_hyperemote: isHyperemote || false,
-        selected_gif_id: selectedGifId || null,
+        is_hyperemote: false,
       });
 
     if (insertError) throw insertError;
