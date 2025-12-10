@@ -5,19 +5,44 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Currency minimums for validation
+const CURRENCY_MINIMUMS: Record<string, { minText: number; minVoice: number; minHypersound: number }> = {
+  'INR': { minText: 40, minVoice: 150, minHypersound: 30 },
+  'USD': { minText: 1, minVoice: 3, minHypersound: 1 },
+  'EUR': { minText: 1, minVoice: 3, minHypersound: 1 },
+  'GBP': { minText: 1, minVoice: 3, minHypersound: 1 },
+  'AED': { minText: 4, minVoice: 12, minHypersound: 3 },
+  'AUD': { minText: 2, minVoice: 5, minHypersound: 1.5 },
+};
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { name, amount, message, voiceMessageUrl, isHyperemote, selectedGifId } = await req.json();
+    const { name, amount, message, voiceMessageUrl, hypersoundUrl, currency = 'INR' } = await req.json();
 
-    console.log('[Neko Xenpai] Creating Razorpay order:', { name, amount, isHyperemote });
+    console.log('[Neko Xenpai] Creating Razorpay order:', { name, amount, currency, hasVoice: !!voiceMessageUrl, hasHypersound: !!hypersoundUrl });
+
+    // Get minimums for currency
+    const minimums = CURRENCY_MINIMUMS[currency] || CURRENCY_MINIMUMS['INR'];
+
+    // Determine donation type and validate
+    let donationType = 'text';
+    let minAmount = minimums.minText;
+
+    if (hypersoundUrl) {
+      donationType = 'hypersound';
+      minAmount = minimums.minHypersound;
+    } else if (voiceMessageUrl) {
+      donationType = 'voice';
+      minAmount = minimums.minVoice;
+    }
 
     // Validate input
-    if (!name || !amount || amount < 40) {
-      throw new Error('Invalid donation details');
+    if (!name || !amount || parseFloat(amount) < minAmount) {
+      throw new Error(`Invalid donation details. Minimum for ${donationType} is ${minAmount} ${currency}`);
     }
 
     // Initialize Supabase client
@@ -49,6 +74,10 @@ Deno.serve(async (req) => {
       throw new Error('Razorpay credentials not configured');
     }
 
+    // Calculate amount in subunits
+    const amountValue = parseFloat(amount);
+    const amountInSubunits = Math.round(amountValue * 100);
+
     const razorpayAuth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
     const razorpayResponse = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
@@ -57,8 +86,8 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        amount: Math.round(amount * 100),
-        currency: 'INR',
+        amount: amountInSubunits,
+        currency: currency,
         receipt: orderId,
       }),
     });
@@ -77,11 +106,12 @@ Deno.serve(async (req) => {
       .from('neko_xenpai_donations')
       .insert({
         name,
-        amount,
+        amount: amountValue,
+        currency: currency,
         message: message || null,
         voice_message_url: voiceMessageUrl || null,
-        is_hyperemote: isHyperemote || false,
-        selected_gif_id: selectedGifId || null,
+        hypersound_url: hypersoundUrl || null,
+        is_hyperemote: !!hypersoundUrl,
         payment_status: 'pending',
         moderation_status: 'pending',
         order_id: orderId,

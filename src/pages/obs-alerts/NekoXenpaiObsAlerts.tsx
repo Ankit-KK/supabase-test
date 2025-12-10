@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertDisplay } from '@/components/AlertDisplay';
+import NekoXenpaiAlertDisplay from '@/components/NekoXenpaiAlertDisplay';
 import { usePusherAlerts } from '@/hooks/usePusherAlerts';
 import { usePusherConfig } from '@/hooks/usePusherConfig';
 
@@ -10,12 +10,20 @@ const NekoXenpaiObsAlerts = () => {
     currentAlert,
     isVisible,
     connectionStatus,
-    triggerTestAlert,
   } = usePusherAlerts({
     channelName: 'neko_xenpai-alerts',
     pusherKey: pusherConfig?.key || '',
     pusherCluster: pusherConfig?.cluster || '',
-    delayBeforeDisplay: 60000, // 1 minute delay
+    delayByType: {
+      hypersound: 15000,
+      text: 60000,
+      voice: 60000,
+    },
+    alertDuration: {
+      text: 15000,
+      voice: 60000,
+      hyperemote: 15000,
+    },
   });
 
   if (configLoading) {
@@ -28,11 +36,9 @@ const NekoXenpaiObsAlerts = () => {
 
   return (
     <div className="fixed inset-0 bg-transparent">
-      <AlertDisplay
+      <NekoXenpaiAlertDisplay
         donation={currentAlert}
         isVisible={isVisible}
-        streamerBrandColor="#d946ef"
-        streamerName="Neko XENPAI"
       />
     </div>
   );
