@@ -70,18 +70,20 @@ Deno.serve(async (req) => {
 
     console.log(`Processing audio for streamer: ${streamerSlug}, table: ${tableName}`);
 
-    // Fetch oldest unplayed donation with audio from the last 10 minutes only
-    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-    
+    const now = new Date().toISOString();
+
+    // Fetch oldest unplayed donation whose scheduled time has passed
+    // audio_scheduled_at <= NOW() means the delay period is over and it's ready to play
     const { data: donation, error: fetchError } = await supabase
       .from(tableName)
-      .select('id, name, amount, message, tts_audio_url, voice_message_url, hypersound_url, created_at')
+      .select('id, name, amount, message, tts_audio_url, voice_message_url, hypersound_url, created_at, audio_scheduled_at')
       .is('audio_played_at', null)
       .in('moderation_status', ['approved', 'auto_approved'])
       .eq('payment_status', 'success')
       .or('tts_audio_url.not.is.null,voice_message_url.not.is.null,hypersound_url.not.is.null')
-      .gte('created_at', tenMinutesAgo)
-      .order('created_at', { ascending: true })
+      .not('audio_scheduled_at', 'is', null) // Must have a scheduled time
+      .lte('audio_scheduled_at', now) // Scheduled time has passed
+      .order('audio_scheduled_at', { ascending: true }) // Play earliest scheduled first
       .limit(1)
       .maybeSingle();
 
@@ -127,12 +129,10 @@ Deno.serve(async (req) => {
       console.error('Error marking as played:', updateError);
     }
 
-    console.log(`Serving audio for donation ${donation.id}: ${donation.name} - ₹${donation.amount}`);
+    console.log(`Serving audio for donation ${donation.id}: ${donation.name} - amount ${donation.amount} (scheduled: ${donation.audio_scheduled_at})`);
 
-    // Determine delay based on donation type (15s for HyperSounds, 60s for others)
-    const delay = donation.hypersound_url ? 15000 : 60000;
-    console.log(`Waiting ${delay / 1000} seconds for alert delay (${donation.hypersound_url ? 'HyperSound' : 'regular'})...`);
-    await new Promise(resolve => setTimeout(resolve, delay));
+    // NO DELAY - audio is served immediately since scheduled time has already passed
+    // The delay was already applied when setting audio_scheduled_at in the webhook
 
     // Fetch and proxy the audio directly to avoid redirect issues with OBS
     console.log(`Fetching audio from: ${audioUrl}`);
