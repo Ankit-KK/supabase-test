@@ -12,7 +12,7 @@ const BongFlickObsAlerts = () => {
     pusherKey: config?.key || "",
     pusherCluster: config?.cluster || "",
     channelName: "bongflick-alerts",
-    delayBeforeDisplay: 60000,
+    delayByType: { hypersound: 15000, text: 60000, voice: 60000 },
     alertDuration: { text: 5000, hyperemote: 8000, voice: 15000 },
   });
 
