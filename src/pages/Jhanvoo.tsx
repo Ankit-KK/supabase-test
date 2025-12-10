@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import VoiceRecorder from "@/components/VoiceRecorder";
+import EnhancedVoiceRecorder from "@/components/EnhancedVoiceRecorder";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import HyperSoundSelector from "@/components/HyperSoundSelector";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -341,7 +341,7 @@ const Jhanvoo = () => {
                 required
               />
             </div>
-            <p className="text-xs text-muted-foreground">TTS above ₹70</p>
+            <p className="text-xs text-muted-foreground">TTS above {currencySymbol}{currency === 'INR' ? '70' : '1'}</p>
           </div>
 
           {donationType === "text" && (
@@ -361,12 +361,13 @@ const Jhanvoo = () => {
           {donationType === "voice" && (
             <div className="space-y-2">
               <Label className="text-gray-100">Record Voice Message ({maxVoiceDuration}s max)</Label>
-              <VoiceRecorder
+              <EnhancedVoiceRecorder
                 onRecordingComplete={() => {}}
                 maxDurationSeconds={maxVoiceDuration}
                 controller={voiceRecorder}
                 requiredAmount={minimums.minVoice}
                 currentAmount={parseFloat(amount) || 0}
+                brandColor="#6366f1"
               />
             </div>
           )}

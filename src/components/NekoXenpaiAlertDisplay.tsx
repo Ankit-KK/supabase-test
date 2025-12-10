@@ -15,11 +15,13 @@ interface Donation {
 interface NekoXenpaiAlertDisplayProps {
   donation: Donation | null;
   isVisible: boolean;
+  scale?: number;
 }
 
 const NekoXenpaiAlertDisplay: React.FC<NekoXenpaiAlertDisplayProps> = ({
   donation,
   isVisible,
+  scale = 1.0,
 }) => {
   const [displayedText, setDisplayedText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -67,6 +69,8 @@ const NekoXenpaiAlertDisplay: React.FC<NekoXenpaiAlertDisplayProps> = ({
           background: 'linear-gradient(135deg, rgba(217, 70, 239, 0.95) 0%, rgba(236, 72, 153, 0.95) 100%)',
           boxShadow: '0 8px 32px rgba(217, 70, 239, 0.4)',
           maxWidth: '80%',
+          transform: `scale(${scale})`,
+          transformOrigin: 'bottom center',
         }}
       >
         <div className="text-center">

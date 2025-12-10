@@ -350,10 +350,15 @@ const LooteriyaGaming = () => {
                             <CommandItem
                               key={currency.code}
                               value={currency.code}
-                              onSelect={(value) => {
-                                setSelectedCurrency(value.toUpperCase());
-                                setCurrencyOpen(false);
-                              }}
+                          onSelect={(value) => {
+                              const newCurrency = value.toUpperCase();
+                              setSelectedCurrency(newCurrency);
+                              setCurrencyOpen(false);
+                              const newMins = getCurrencyMinimums(newCurrency);
+                              if (donationType === 'text') setFormData(prev => ({ ...prev, amount: String(newMins.minText) }));
+                              else if (donationType === 'voice') setFormData(prev => ({ ...prev, amount: String(newMins.minVoice) }));
+                              else setFormData(prev => ({ ...prev, amount: String(newMins.minHypersound) }));
+                            }}
                             >
                               <Check
                                 className={cn(
