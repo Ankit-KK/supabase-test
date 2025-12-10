@@ -65,7 +65,9 @@ import SizzorsObsAlerts from "./pages/obs-alerts/SizzorsObsAlerts";
 import DamaskPlaysObsAlerts from "./pages/obs-alerts/DamaskPlaysObsAlerts";
 import NekoXenpaiObsAlerts from "./pages/obs-alerts/NekoXenpaiObsAlerts";
 import ThunderXObsAlerts from "./pages/obs-alerts/ThunderXObsAlerts";
+import ThunderXGoalOverlay from "./pages/obs-alerts/ThunderXGoalOverlay";
 import VIPBhaiObsAlerts from "./pages/obs-alerts/VIPBhaiObsAlerts";
+import VIPBhaiGoalOverlay from "./pages/obs-alerts/VIPBhaiGoalOverlay";
 import SagarUjjwalGamingObsAlerts from "./pages/obs-alerts/SagarUjjwalGamingObsAlerts";
 import NotYourKweenObsAlerts from "./pages/obs-alerts/NotYourKweenObsAlerts";
 import BongFlickObsAlerts from "./pages/obs-alerts/BongFlickObsAlerts";
@@ -84,7 +86,9 @@ import SizzorsAudioPlayer from "./pages/audio-player/SizzorsAudioPlayer";
 import DamaskPlaysAudioPlayer from "./pages/audio-player/DamaskPlaysAudioPlayer";
 import NekoXenpaiAudioPlayer from "./pages/audio-player/NekoXenpaiAudioPlayer";
 import ThunderXAudioPlayer from "./pages/audio-player/ThunderXAudioPlayer";
+import ThunderXMediaSourcePlayer from "./pages/audio-player/ThunderXMediaSourcePlayer";
 import VIPBhaiAudioPlayer from "./pages/audio-player/VIPBhaiAudioPlayer";
+import VIPBhaiMediaSourcePlayer from "./pages/audio-player/VIPBhaiMediaSourcePlayer";
 import SagarUjjwalGamingAudioPlayer from "./pages/audio-player/SagarUjjwalGamingAudioPlayer";
 import NotYourKweenAudioPlayer from "./pages/audio-player/NotYourKweenAudioPlayer";
 import BongFlickAudioPlayer from "./pages/audio-player/BongFlickAudioPlayer";
@@ -169,7 +173,9 @@ const App = () => (
               <Route path="/damask_plays/obs-alerts" element={<DamaskPlaysObsAlerts />} />
               <Route path="/neko_xenpai/obs-alerts" element={<NekoXenpaiObsAlerts />} />
               <Route path="/thunderx/obs-alerts" element={<ThunderXObsAlerts />} />
+              <Route path="/thunderx/goal-overlay" element={<ThunderXGoalOverlay />} />
               <Route path="/vipbhai/obs-alerts" element={<VIPBhaiObsAlerts />} />
+              <Route path="/vipbhai/goal-overlay" element={<VIPBhaiGoalOverlay />} />
               <Route path="/sagarujjwalgaming/obs-alerts" element={<SagarUjjwalGamingObsAlerts />} />
               <Route path="/notyourkween/obs-alerts" element={<NotYourKweenObsAlerts />} />
               <Route path="/bongflick/obs-alerts" element={<BongFlickObsAlerts />} />
@@ -188,7 +194,9 @@ const App = () => (
               <Route path="/damask_plays/audio-player" element={<DamaskPlaysAudioPlayer />} />
               <Route path="/neko_xenpai/audio-player" element={<NekoXenpaiAudioPlayer />} />
               <Route path="/thunderx/audio-player" element={<ThunderXAudioPlayer />} />
+              <Route path="/thunderx/media-audio-player" element={<ThunderXMediaSourcePlayer />} />
               <Route path="/vipbhai/audio-player" element={<VIPBhaiAudioPlayer />} />
+              <Route path="/vipbhai/media-audio-player" element={<VIPBhaiMediaSourcePlayer />} />
               <Route path="/sagarujjwalgaming/audio-player" element={<SagarUjjwalGamingAudioPlayer />} />
               <Route path="/notyourkween/audio-player" element={<NotYourKweenAudioPlayer />} />
               <Route path="/bongflick/audio-player" element={<BongFlickAudioPlayer />} />
