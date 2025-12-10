@@ -9,7 +9,29 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import EnhancedVoiceRecorder from '@/components/EnhancedVoiceRecorder';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
-import { Crown } from 'lucide-react';
+import { Crown, Check, ChevronsUpDown } from 'lucide-react';
+import HyperSoundSelector from '@/components/HyperSoundSelector';
+import { 
+  SUPPORTED_CURRENCIES, 
+  getCurrencyByCode, 
+  getCurrencySymbol,
+  getCurrencyMinimums,
+  amountToSubunits 
+} from '@/constants/currencies';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from '@/lib/utils';
 
 const vipbhaiBanner = '/lovable-uploads/vipbhai-banner.jpg';
 const vipbhaiLogo = '/lovable-uploads/vipbhai-logo.jpg';
@@ -20,16 +42,23 @@ const VIPBhai = () => {
     amount: '',
     message: '',
   });
-  const [donationType, setDonationType] = useState<'text' | 'voice' | 'hyperemote'>('text');
+  const [donationType, setDonationType] = useState<'text' | 'voice' | 'hypersound'>('text');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [streamerSettings, setStreamerSettings] = useState<{ hyperemotes_enabled: boolean; hyperemotes_min_amount: number } | null>(null);
+  const [selectedCurrency, setSelectedCurrency] = useState('INR');
+  const [currencyOpen, setCurrencyOpen] = useState(false);
+  const [selectedHypersoundUrl, setSelectedHypersoundUrl] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  const currencyInfo = getCurrencyByCode(selectedCurrency);
+  const minimums = getCurrencyMinimums(selectedCurrency);
+
   const getVoiceDuration = (amount: number) => {
-    if (amount >= 500) return 30;
-    if (amount >= 250) return 25;
-    if (amount >= 150) return 15;
+    const inrEquivalent = selectedCurrency === 'INR' ? amount : amount * 83;
+    if (inrEquivalent >= 500) return 30;
+    if (inrEquivalent >= 250) return 25;
+    if (inrEquivalent >= 150) return 15;
     return 15;
   };
 
@@ -84,16 +113,16 @@ const VIPBhai = () => {
       return;
     }
 
-    if (donationType === 'text' && amount < 40) {
-      toast.error('Minimum amount for text message is ₹40');
+    if (donationType === 'text' && amount < minimums.minText) {
+      toast.error(`Minimum amount for text message is ${getCurrencySymbol(selectedCurrency)}${minimums.minText}`);
       return;
     }
-    if (donationType === 'voice' && amount < 150) {
-      toast.error('Minimum amount for voice message is ₹150');
+    if (donationType === 'voice' && amount < minimums.minVoice) {
+      toast.error(`Minimum amount for voice message is ${getCurrencySymbol(selectedCurrency)}${minimums.minVoice}`);
       return;
     }
-    if (donationType === 'hyperemote' && amount < 50) {
-      toast.error('Minimum amount for hyperemotes is ₹50');
+    if (donationType === 'hypersound' && amount < minimums.minHypersound) {
+      toast.error(`Minimum amount for HyperSounds is ${getCurrencySymbol(selectedCurrency)}${minimums.minHypersound}`);
       return;
     }
 
@@ -104,6 +133,11 @@ const VIPBhai = () => {
 
     if (donationType === 'voice' && !voiceRecorder.audioBlob) {
       toast.error('Please record a voice message');
+      return;
+    }
+
+    if (donationType === 'hypersound' && !selectedHypersoundUrl) {
+      toast.error('Please select a HyperSound');
       return;
     }
 
@@ -141,7 +175,8 @@ const VIPBhai = () => {
           amount,
           message: donationType === 'text' ? formData.message : null,
           voiceMessageUrl,
-          isHyperemote: donationType === 'hyperemote',
+          hypersoundUrl: donationType === 'hypersound' ? selectedHypersoundUrl : null,
+          currency: selectedCurrency,
         }
       });
 
@@ -150,9 +185,9 @@ const VIPBhai = () => {
       const options = {
         key: data.razorpay_key_id,
         amount: data.amount,
-        currency: 'INR',
+        currency: selectedCurrency,
         name: 'HyperChat - VIP BHAI',
-        description: donationType === 'hyperemote' ? 'Royal Crown Effect' : 
+        description: donationType === 'hypersound' ? 'HyperSound Effect' : 
                      donationType === 'voice' ? 'Voice Interactions' : 'Text Interactions',
         order_id: data.razorpay_order_id,
         prefill: {
@@ -218,8 +253,8 @@ const VIPBhai = () => {
                 >
                   <div className="text-center">
                     <div className="text-2xl mb-0.5">💬</div>
-                    <div className="font-medium text-[10px]">Text Interactions</div>
-                    <div className="text-[9px]">Min: ₹40</div>
+                    <div className="font-medium text-[10px]">Text</div>
+                    <div className="text-[9px]">Min: {getCurrencySymbol(selectedCurrency)}{minimums.minText}</div>
                   </div>
                 </button>
 
@@ -237,24 +272,24 @@ const VIPBhai = () => {
                 >
                   <div className="text-center">
                     <div className="text-2xl mb-0.5">🎤</div>
-                    <div className="font-medium text-[10px]">Voice Interactions</div>
-                    <div className="text-[9px]">Min: ₹150</div>
+                    <div className="font-medium text-[10px]">Voice</div>
+                    <div className="text-[9px]">Min: {getCurrencySymbol(selectedCurrency)}{minimums.minVoice}</div>
                   </div>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setDonationType('hyperemote')}
+                  onClick={() => setDonationType('hypersound')}
                   className={`p-2 rounded-lg border transition-all ${
-                    donationType === 'hyperemote'
+                    donationType === 'hypersound'
                       ? 'bg-amber-600/80 border-amber-500/60 text-white shadow-md'
                       : 'bg-amber-900/40 border-amber-700/30 text-amber-300 hover:bg-amber-800/50'
                   }`}
                 >
                   <div className="text-center">
-                    <div className="text-2xl mb-0.5">👑</div>
-                    <div className="font-medium text-[10px]">Royal Crown</div>
-                    <div className="text-[9px]">Min: ₹50</div>
+                    <div className="text-2xl mb-0.5">🔊</div>
+                    <div className="font-medium text-[10px]">HyperSounds</div>
+                    <div className="text-[9px]">Min: {getCurrencySymbol(selectedCurrency)}{minimums.minHypersound}</div>
                   </div>
                 </button>
               </div>
@@ -275,19 +310,62 @@ const VIPBhai = () => {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="amount" className="text-amber-200 text-xs">Amount (₹)</Label>
-                <Input
-                  id="amount"
-                  name="amount"
-                  type="number"
-                  value={formData.amount}
-                  onChange={handleInputChange}
-                  placeholder={`Min: ₹${donationType === 'voice' ? '150' : donationType === 'hyperemote' ? '50' : '40'}`}
-                  min={donationType === 'voice' ? '150' : donationType === 'hyperemote' ? '50' : '40'}
-                  className="bg-amber-950/40 border-amber-700/40 text-amber-100 placeholder:text-amber-500/50 focus:border-amber-500 text-sm h-9"
-                  required
-                />
-                <p className="text-xs text-amber-400/70">TTS above ₹70</p>
+                <Label htmlFor="amount" className="text-amber-200 text-xs">Amount</Label>
+                <div className="flex gap-2">
+                  <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={currencyOpen}
+                        className="w-[100px] justify-between bg-amber-950/40 border-amber-700/40 text-amber-100 hover:bg-amber-800/50 text-sm h-9"
+                      >
+                        {currencyInfo ? `${currencyInfo.symbol} ${currencyInfo.code}` : 'INR'}
+                        <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[200px] p-0">
+                      <Command>
+                        <CommandInput placeholder="Search currency..." />
+                        <CommandList>
+                          <CommandEmpty>No currency found.</CommandEmpty>
+                          <CommandGroup>
+                            {SUPPORTED_CURRENCIES.map((currency) => (
+                              <CommandItem
+                                key={currency.code}
+                                value={currency.code}
+                                onSelect={() => {
+                                  setSelectedCurrency(currency.code);
+                                  setCurrencyOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    selectedCurrency === currency.code ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {currency.symbol} {currency.code} - {currency.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  <Input
+                    id="amount"
+                    name="amount"
+                    type="number"
+                    value={formData.amount}
+                    onChange={handleInputChange}
+                    placeholder={`Min: ${getCurrencySymbol(selectedCurrency)}${donationType === 'voice' ? minimums.minVoice : donationType === 'hypersound' ? minimums.minHypersound : minimums.minText}`}
+                    min={donationType === 'voice' ? minimums.minVoice : donationType === 'hypersound' ? minimums.minHypersound : minimums.minText}
+                    className="flex-1 bg-amber-950/40 border-amber-700/40 text-amber-100 placeholder:text-amber-500/50 focus:border-amber-500 text-sm h-9"
+                    required
+                  />
+                </div>
+                <p className="text-xs text-amber-400/70">TTS above ₹70 equivalent</p>
               </div>
 
               {donationType === 'text' && (
@@ -318,24 +396,20 @@ const VIPBhai = () => {
                         toast.error('Please record a voice message');
                       }
                     }}
-                    requiredAmount={150}
+                    requiredAmount={minimums.minVoice}
                     currentAmount={currentAmount}
                     brandColor="#f59e0b"
                   />
                 </div>
               )}
 
-              {donationType === 'hyperemote' && (
-                <div className="p-3 bg-gradient-to-br from-amber-900/50 to-yellow-800/40 border border-amber-500/30 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="flex-shrink-0">
-                      <Crown className="w-10 h-10 text-amber-400" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-amber-100 font-semibold text-sm">Royal Crown Effect</h3>
-                      <p className="text-amber-300 text-xs mt-0.5">Trigger a majestic crown celebration on stream!</p>
-                    </div>
-                  </div>
+              {donationType === 'hypersound' && (
+                <div className="space-y-1.5">
+                  <Label className="text-amber-200 text-xs">Select a HyperSound</Label>
+                  <HyperSoundSelector
+                    selectedSound={selectedHypersoundUrl}
+                    onSoundSelect={setSelectedHypersoundUrl}
+                  />
                 </div>
               )}
 
@@ -344,7 +418,7 @@ const VIPBhai = () => {
                 className="w-full bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-white font-semibold h-10 text-sm shadow-lg transition-all"
                 disabled={isProcessingPayment || !razorpayLoaded}
               >
-                {isProcessingPayment ? 'Processing...' : `Pay ₹${formData.amount || '0'}`}
+                {isProcessingPayment ? 'Processing...' : `Pay ${getCurrencySymbol(selectedCurrency)}${formData.amount || '0'}`}
               </Button>
             </form>
           </CardContent>

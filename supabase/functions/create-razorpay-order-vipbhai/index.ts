@@ -6,13 +6,22 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const CURRENCY_MINIMUMS: Record<string, { minText: number; minVoice: number; minHypersound: number }> = {
+  'INR': { minText: 40, minVoice: 150, minHypersound: 30 },
+  'USD': { minText: 1, minVoice: 3, minHypersound: 1 },
+  'EUR': { minText: 1, minVoice: 3, minHypersound: 1 },
+  'GBP': { minText: 1, minVoice: 3, minHypersound: 1 },
+  'AED': { minText: 4, minVoice: 12, minHypersound: 3 },
+  'AUD': { minText: 2, minVoice: 5, minHypersound: 1.5 },
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { name, amount, message, voiceMessageUrl, isHyperemote } = await req.json();
+    const { name, amount, message, voiceMessageUrl, hypersoundUrl, currency = 'INR' } = await req.json();
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -35,17 +44,20 @@ serve(async (req) => {
       throw new Error('Valid amount is required');
     }
 
+    // Get currency minimums (default to INR if unknown)
+    const minimums = CURRENCY_MINIMUMS[currency] || CURRENCY_MINIMUMS['INR'];
+
     // Validate minimum amounts based on donation type
-    if (isHyperemote && amount < 50) {
-      throw new Error('Hyperemotes require minimum ₹50');
+    if (hypersoundUrl && amount < minimums.minHypersound) {
+      throw new Error(`HyperSounds require minimum ${currency} ${minimums.minHypersound}`);
     }
 
-    if (voiceMessageUrl && amount < 150) {
-      throw new Error('Voice messages require minimum ₹150');
+    if (voiceMessageUrl && amount < minimums.minVoice) {
+      throw new Error(`Voice messages require minimum ${currency} ${minimums.minVoice}`);
     }
 
-    if (!isHyperemote && !voiceMessageUrl && amount < 40) {
-      throw new Error('Text messages require minimum ₹40');
+    if (!hypersoundUrl && !voiceMessageUrl && amount < minimums.minText) {
+      throw new Error(`Text messages require minimum ${currency} ${minimums.minText}`);
     }
 
     // Get streamer info
@@ -65,10 +77,13 @@ serve(async (req) => {
     const randomString = Math.random().toString(36).substring(2, 10);
     const orderId = `vb_rp_${timestamp}_${randomString}`;
 
+    // Convert amount to subunits based on currency
+    const amountInSubunits = Math.round(amount * 100);
+
     // Create Razorpay order
     const razorpayOrderData = {
-      amount: Math.round(amount * 100), // Convert to paise
-      currency: 'INR',
+      amount: amountInSubunits,
+      currency: currency,
       receipt: orderId,
     };
 
@@ -96,9 +111,11 @@ serve(async (req) => {
         streamer_id: streamerData.id,
         name: name.trim(),
         amount,
+        currency: currency,
         message: message?.trim() || null,
         voice_message_url: voiceMessageUrl || null,
-        is_hyperemote: isHyperemote || false,
+        hypersound_url: hypersoundUrl || null,
+        is_hyperemote: false,
         order_id: orderId,
         razorpay_order_id: razorpayOrder.id,
         payment_status: 'pending',
