@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Flame } from "lucide-react";
+import { Flame, Check, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,9 +7,13 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { DonationTypeSelector } from "@/components/DonationTypeSelector";
 import VoiceRecorder from "@/components/VoiceRecorder";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
+import HyperSoundSelector from "@/components/HyperSoundSelector";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
+import { SUPPORTED_CURRENCIES, getCurrencyMinimums, getCurrencyByCode } from "@/constants/currencies";
 
 declare global {
   interface Window {
@@ -21,12 +25,17 @@ const ABdevil = () => {
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [message, setMessage] = useState("");
-  const [donationType, setDonationType] = useState<"message" | "voice" | "hyperemote">("message");
+  const [currency, setCurrency] = useState("INR");
+  const [currencyOpen, setCurrencyOpen] = useState(false);
+  const [donationType, setDonationType] = useState<"text" | "voice" | "hypersound">("text");
+  const [selectedSound, setSelectedSound] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [hasVoiceRecording, setHasVoiceRecording] = useState(false);
-  const [voiceDuration, setVoiceDuration] = useState(0);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const minimums = getCurrencyMinimums(currency);
+  const currencyData = getCurrencyByCode(currency);
+  const currencySymbol = currencyData?.symbol || currency;
 
   const maxVoiceDuration = getVoiceDuration();
   const voiceRecorder = useVoiceRecorder(maxVoiceDuration);
@@ -62,28 +71,29 @@ const ABdevil = () => {
     }
 
     const amountNum = parseFloat(amount);
-    if (donationType === "hyperemote" && amountNum < 50) {
+
+    if (donationType === "hypersound" && amountNum < minimums.minHypersound) {
       toast({
         title: "Invalid Amount",
-        description: "Minimum amount for hyperemote is ₹50",
+        description: `Minimum ${currencySymbol}${minimums.minHypersound} required for HyperSounds`,
         variant: "destructive",
       });
       return;
     }
 
-    if (donationType === "voice" && amountNum < 150) {
+    if (donationType === "voice" && amountNum < minimums.minVoice) {
       toast({
         title: "Invalid Amount",
-        description: "Minimum amount for voice message is ₹150",
+        description: `Minimum ${currencySymbol}${minimums.minVoice} required for voice messages`,
         variant: "destructive",
       });
       return;
     }
 
-    if (donationType === "message" && amountNum < 40) {
+    if (donationType === "text" && amountNum < minimums.minText) {
       toast({
         title: "Invalid Amount",
-        description: "Minimum amount for text message is ₹40",
+        description: `Minimum ${currencySymbol}${minimums.minText} required for text messages`,
         variant: "destructive",
       });
       return;
@@ -93,6 +103,15 @@ const ABdevil = () => {
       toast({
         title: "Voice Required",
         description: "Please record a voice message",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (donationType === "hypersound" && !selectedSound) {
+      toast({
+        title: "Sound Required",
+        description: "Please select a sound",
         variant: "destructive",
       });
       return;
@@ -127,16 +146,16 @@ const ABdevil = () => {
           throw new Error("Failed to upload voice message");
         }
         voiceMessageUrl = uploadResult.voice_message_url;
-        console.log("Voice message uploaded successfully:", voiceMessageUrl);
       }
 
       const { data: orderData, error: orderError } = await supabase.functions.invoke("create-razorpay-order-abdevil", {
         body: {
           amount: amountNum,
+          currency: currency,
           name: name.trim(),
-          message: donationType === "message" ? message.trim() : null,
+          message: donationType === "text" ? message.trim() : null,
           voiceMessageUrl,
-          donationType,
+          hypersoundUrl: donationType === "hypersound" ? selectedSound : null,
         },
       });
 
@@ -144,7 +163,7 @@ const ABdevil = () => {
 
       const options = {
         key: orderData.razorpay_key_id,
-        amount: orderData.amount * 100,
+        amount: orderData.amount,
         currency: orderData.currency,
         name: "ABdevil",
         description: "Support ABdevil",
@@ -182,14 +201,11 @@ const ABdevil = () => {
       style={{ backgroundImage: "url('/lovable-uploads/abdevil-banner.jpg')" }}
     >
       <div className="w-full max-w-md rounded-2xl shadow-2xl border border-orange-500/30 relative overflow-hidden">
-        {/* Background image layer */}
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: "url('/lovable-uploads/abdevil-logo.jpg')" }}
         />
-        {/* Dark overlay layer */}
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-        {/* Content layer */}
         <div className="relative z-10 p-8">
           <div className="flex items-center justify-center gap-3 mb-6">
             <Flame className="w-8 h-8 text-orange-500" />
@@ -211,32 +227,116 @@ const ABdevil = () => {
               />
             </div>
 
-            <DonationTypeSelector donationType={donationType} onTypeChange={setDonationType} brandColor="#f97316" />
-
-            <div>
-              <Label htmlFor="amount" className="text-gray-100">
-                Amount (₹)
+            <div className="space-y-3">
+              <Label className="text-gray-100 font-bold text-sm uppercase tracking-wide block text-center">
+                Choose Your Interaction
               </Label>
-              <Input
-                id="amount"
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder={
-                  donationType === "hyperemote" ? "Min ₹50" : donationType === "voice" ? "Min ₹150" : "Min ₹40"
-                }
-                className="bg-black/30 border-orange-500/30 text-white placeholder:text-gray-400 focus:border-orange-500"
-                min={donationType === "hyperemote" ? 50 : donationType === "voice" ? 150 : 40}
-                required
-              />
-              <p className="text-xs text-muted-foreground">TTS above ₹70</p>
+              <div className="grid grid-cols-3 gap-3">
+                <Button
+                  type="button"
+                  onClick={() => { setDonationType('text'); setAmount(String(minimums.minText)); }}
+                  variant={donationType === 'text' ? 'default' : 'outline'}
+                  className={donationType === 'text' 
+                    ? 'bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white border-2 border-orange-400 shadow-lg shadow-orange-500/50 h-auto' 
+                    : 'border-2 border-orange-500/40 text-orange-300 hover:bg-orange-950/60 hover:border-orange-400/60 bg-orange-950/20 h-auto'}
+                >
+                  <div className="flex flex-col items-center gap-1.5 py-2">
+                    <span className="text-2xl">💬</span>
+                    <span className="text-xs font-semibold">Text</span>
+                    <span className="text-[10px] opacity-80 font-medium">{currencySymbol}{minimums.minText}+</span>
+                  </div>
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => { setDonationType('voice'); setAmount(String(minimums.minVoice)); }}
+                  variant={donationType === 'voice' ? 'default' : 'outline'}
+                  className={donationType === 'voice' 
+                    ? 'bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white border-2 border-orange-400 shadow-lg shadow-orange-500/50 h-auto' 
+                    : 'border-2 border-orange-500/40 text-orange-300 hover:bg-orange-950/60 hover:border-orange-400/60 bg-orange-950/20 h-auto'}
+                >
+                  <div className="flex flex-col items-center gap-1.5 py-2">
+                    <span className="text-2xl">🎤</span>
+                    <span className="text-xs font-semibold">Voice</span>
+                    <span className="text-[10px] opacity-80 font-medium">{currencySymbol}{minimums.minVoice}+</span>
+                  </div>
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => { setDonationType('hypersound'); setAmount(String(minimums.minHypersound)); }}
+                  variant={donationType === 'hypersound' ? 'default' : 'outline'}
+                  className={donationType === 'hypersound' 
+                    ? 'bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white border-2 border-orange-400 shadow-lg shadow-orange-500/50 h-auto' 
+                    : 'border-2 border-orange-500/40 text-orange-300 hover:bg-orange-950/60 hover:border-orange-400/60 bg-orange-950/20 h-auto'}
+                >
+                  <div className="flex flex-col items-center gap-1.5 py-2">
+                    <span className="text-2xl">🔊</span>
+                    <span className="text-xs font-semibold">Sound</span>
+                    <span className="text-[10px] opacity-80 font-medium">{currencySymbol}{minimums.minHypersound}+</span>
+                  </div>
+                </Button>
+              </div>
             </div>
 
-            {donationType === "message" && (
+            <div>
+              <Label htmlFor="amount" className="text-gray-100">Amount</Label>
+              <div className="flex gap-2">
+                <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={currencyOpen}
+                      className="w-[100px] justify-between bg-black/30 border-orange-500/30 text-white hover:bg-black/50"
+                    >
+                      {currencySymbol} {currency}
+                      <ChevronsUpDown className="ml-1 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[200px] p-0">
+                    <Command>
+                      <CommandInput placeholder="Search currency..." />
+                      <CommandList>
+                        <CommandEmpty>No currency found.</CommandEmpty>
+                        <CommandGroup>
+                          {SUPPORTED_CURRENCIES.map((curr) => (
+                            <CommandItem
+                              key={curr.code}
+                              value={curr.code}
+                              onSelect={(value) => {
+                                setCurrency(value.toUpperCase());
+                                setCurrencyOpen(false);
+                                const newMins = getCurrencyMinimums(value.toUpperCase());
+                                if (donationType === 'text') setAmount(String(newMins.minText));
+                                else if (donationType === 'voice') setAmount(String(newMins.minVoice));
+                                else setAmount(String(newMins.minHypersound));
+                              }}
+                            >
+                              <Check className={cn("mr-2 h-4 w-4", currency === curr.code ? "opacity-100" : "opacity-0")} />
+                              {curr.symbol} {curr.code} - {curr.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                <Input
+                  id="amount"
+                  type="number"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="Enter amount"
+                  className="flex-1 bg-black/30 border-orange-500/30 text-white placeholder:text-gray-400 focus:border-orange-500"
+                  min={donationType === 'text' ? minimums.minText : donationType === 'voice' ? minimums.minVoice : minimums.minHypersound}
+                  required
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">TTS above ₹70</p>
+            </div>
+
+            {donationType === "text" && (
               <div>
-                <Label htmlFor="message" className="text-gray-100">
-                  Your Message
-                </Label>
+                <Label htmlFor="message" className="text-gray-100">Your Message</Label>
                 <Textarea
                   id="message"
                   value={message}
@@ -250,26 +350,22 @@ const ABdevil = () => {
 
             {donationType === "voice" && (
               <div className="space-y-3">
-                <Label className="text-gray-100">Record Voice Message *</Label>
+                <Label className="text-gray-100">Record Voice Message ({maxVoiceDuration}s max)</Label>
                 <VoiceRecorder
-                  onRecordingComplete={(hasRecording, duration) => {
-                    setHasVoiceRecording(hasRecording);
-                    setVoiceDuration(duration);
-                  }}
+                  onRecordingComplete={() => {}}
                   maxDurationSeconds={maxVoiceDuration}
                   controller={voiceRecorder}
-                  requiredAmount={150}
+                  requiredAmount={minimums.minVoice}
                   currentAmount={parseFloat(amount) || 0}
                 />
               </div>
             )}
 
-            {donationType === "hyperemote" && (
-              <div className="p-4 bg-orange-500/10 border border-orange-500/30 rounded-lg">
-                <p className="text-orange-300 text-sm text-center">
-                  🎊 Trigger a spectacular on-screen celebration effect!
-                </p>
-              </div>
+            {donationType === "hypersound" && (
+              <HyperSoundSelector
+                selectedSound={selectedSound}
+                onSoundSelect={setSelectedSound}
+              />
             )}
 
             <Button
@@ -277,7 +373,7 @@ const ABdevil = () => {
               disabled={isProcessing}
               className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-6 rounded-xl transition-all duration-200 disabled:opacity-50"
             >
-              {isProcessing ? "Processing..." : `Pay ₹${amount || "0"}`}
+              {isProcessing ? "Processing..." : `Pay ${currencySymbol}${amount || "0"}`}
             </Button>
           </form>
         </div>
