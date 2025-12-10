@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Gamepad2, Music } from 'lucide-react';
+import { Music } from 'lucide-react';
 import { getCurrencySymbol } from '@/constants/currencies';
 
 interface Donation {
@@ -97,84 +97,43 @@ export const ClumsyGodAlertDisplay: React.FC<ClumsyGodAlertDisplayProps> = ({
   const isVoiceMessage = !!donation.voice_message_url;
 
   return (
-    <div 
-      className="fixed inset-0 flex items-center justify-center pointer-events-none"
-      style={{ transform: `scale(${scale})` }}
-    >
-      {/* Regular Alert Box (for all donation types) */}
+    <div className="fixed inset-0 pointer-events-none z-50">
       <div 
-        className="relative p-6 rounded-2xl max-w-lg mx-4 animate-fade-in"
+        className="absolute bottom-[10%] left-1/2 text-white text-center flex flex-col items-center gap-1.5 px-8 py-4 rounded-xl animate-fade-in"
         style={{
-          background: `linear-gradient(135deg, rgba(139, 92, 246, 0.95) 0%, rgba(124, 58, 237, 0.95) 100%)`,
-          boxShadow: `0 0 60px rgba(139, 92, 246, 0.5), 0 0 120px rgba(124, 58, 237, 0.3), inset 0 1px 0 rgba(255,255,255,0.2)`,
-          border: '2px solid rgba(255, 255, 255, 0.2)'
+          background: 'linear-gradient(90deg, rgba(139, 92, 246, 0.6), rgba(124, 58, 237, 0.6))',
+          boxShadow: '0 0 25px rgba(139, 92, 246, 0.4)',
+          transform: `translateX(-50%) scale(${scale})`,
         }}
       >
-        {/* Glow effect */}
-        <div 
-          className="absolute inset-0 rounded-2xl opacity-50 blur-xl -z-10"
-          style={{ background: 'rgba(139, 92, 246, 0.4)' }}
-        />
-        
-        {/* Header with icon and amount */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div 
-              className="p-2 rounded-full"
-              style={{ background: 'rgba(255, 255, 255, 0.2)' }}
-            >
-              {isHyperSound ? (
-                <Music className="h-6 w-6 text-white" />
-              ) : (
-                <Gamepad2 className="h-6 w-6 text-white" />
-              )}
-            </div>
-            <div>
-              <h3 className="text-white font-bold text-xl drop-shadow-lg">
-                {donation.name}
-              </h3>
-              <p className="text-white/80 text-sm">
-                {isHyperSound ? 'sent a HyperSound!' : isVoiceMessage ? 'sent a Voice Message!' : 'sent a message'}
-              </p>
-            </div>
-          </div>
-          <div 
-            className="px-4 py-2 rounded-full font-bold text-xl text-white"
-            style={{ background: 'rgba(255, 255, 255, 0.2)' }}
-          >
-            {currencySymbol}{donation.amount}
-          </div>
+        <div className="text-[1.2rem]">
+          <span className="font-bold">{donation.name}</span> donated{' '}
+          <span className="font-bold">{currencySymbol}{donation.amount}</span>
         </div>
 
-        {/* Message content */}
-        <div 
-          className="p-4 rounded-xl"
-          style={{ background: 'rgba(0, 0, 0, 0.2)' }}
-        >
-          {isVoiceMessage ? (
-            <div className="flex items-center gap-3 text-white">
-              <Music className="h-5 w-5 animate-pulse" />
-              <span className="font-medium">🎵 Playing voice message...</span>
-            </div>
-          ) : isHyperSound ? (
-            <div className="flex items-center gap-3 text-white">
-              <Music className="h-5 w-5 animate-pulse" />
-              <span className="font-medium">🔊 Playing sound...</span>
-            </div>
-          ) : (
-            <p className="text-white text-lg leading-relaxed">
-              {displayedMessage}
-              {isTyping && <span className="animate-pulse">|</span>}
-            </p>
-          )}
-        </div>
+        {/* Voice Message Indicator */}
+        {isVoiceMessage && (
+          <div className="inline-flex items-center gap-2 text-sm">
+            <Music className="w-4 h-4" />
+            <span>🎵 Voice Message</span>
+          </div>
+        )}
 
-        {/* ClumsyGod branding */}
-        <div className="mt-4 text-center">
-          <span className="text-white/60 text-xs font-medium">
-            ClumsyGod × HyperChat
-          </span>
-        </div>
+        {/* HyperSound Indicator */}
+        {isHyperSound && (
+          <div className="inline-flex items-center gap-2 text-sm">
+            <Music className="w-4 h-4" />
+            <span>🔊 HyperSound</span>
+          </div>
+        )}
+
+        {/* Message with Typing Effect */}
+        {(displayedMessage || isTyping) && !isVoiceMessage && !isHyperSound && (
+          <div className="text-base font-normal min-h-[1.2em]">
+            "{displayedMessage}"
+            {isTyping && <span className="animate-pulse ml-1">|</span>}
+          </div>
+        )}
       </div>
     </div>
   );
