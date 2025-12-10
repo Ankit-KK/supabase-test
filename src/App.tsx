@@ -59,6 +59,7 @@ import ClumsyGodDashboard from "./pages/dashboard/ClumsyGodDashboard";
 // OBS Alert pages (active streamers + ThunderX)
 import AnkitObsAlerts from "./pages/obs-alerts/AnkitObsAlerts";
 import AnkitGoalOverlay from "./pages/obs-alerts/AnkitGoalOverlay";
+import LooteriyaGamingGoalOverlay from "./pages/obs-alerts/LooteriyaGamingGoalOverlay";
 import ChiaGamingObsAlerts from "./pages/obs-alerts/ChiaGamingObsAlerts";
 import LooteriyaGamingObsAlerts from "./pages/obs-alerts/LooteriyaGamingObsAlerts";
 import SizzorsObsAlerts from "./pages/obs-alerts/SizzorsObsAlerts";
@@ -169,6 +170,7 @@ const App = () => (
               <Route path="/ankit/goal-overlay" element={<AnkitGoalOverlay />} />
               <Route path="/chiaa_gaming/obs-alerts" element={<ChiaGamingObsAlerts />} />
               <Route path="/looteriya_gaming/obs-alerts" element={<LooteriyaGamingObsAlerts />} />
+              <Route path="/looteriya_gaming/goal-overlay" element={<LooteriyaGamingGoalOverlay />} />
               <Route path="/sizzors/obs-alerts" element={<SizzorsObsAlerts />} />
               <Route path="/damask_plays/obs-alerts" element={<DamaskPlaysObsAlerts />} />
               <Route path="/neko_xenpai/obs-alerts" element={<NekoXenpaiObsAlerts />} />
