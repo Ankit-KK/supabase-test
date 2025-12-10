@@ -17,7 +17,11 @@ const ThunderXObsAlerts = () => {
     channelName: 'thunderx-alerts',
     pusherKey: pusherConfig?.key || '',
     pusherCluster: pusherConfig?.cluster || '',
-    delayBeforeDisplay: 60000, // 1 minute delay
+    delayByType: {
+      text: 60000,    // 60 seconds for text
+      voice: 60000,   // 60 seconds for voice
+      hypersound: 15000  // 15 seconds for HyperSounds
+    },
   });
 
   // Fetch alert box scale setting and subscribe to real-time updates

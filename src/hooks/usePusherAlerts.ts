@@ -5,6 +5,7 @@ interface Donation {
   id: string;
   name: string;
   amount: number;
+  currency?: string;
   message: string | null;
   voice_message_url: string | null;
   tts_audio_url: string | null;
