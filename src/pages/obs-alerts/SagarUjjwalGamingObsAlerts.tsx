@@ -16,7 +16,11 @@ const SagarUjjwalGamingObsAlerts = () => {
     channelName: 'sagarujjwalgaming-alerts',
     pusherKey: pusherConfig?.key || '',
     pusherCluster: pusherConfig?.cluster || '',
-    delayBeforeDisplay: 60000,
+    delayByType: {
+      hypersound: 15000,
+      text: 60000,
+      voice: 60000,
+    },
   });
 
   useEffect(() => {
