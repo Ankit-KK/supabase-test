@@ -4,11 +4,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import EnhancedVoiceRecorder from '@/components/EnhancedVoiceRecorder';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
-import { Flame, MessageSquare, Mic, Crown } from 'lucide-react';
+import { Flame, MessageSquare, Mic, Volume2, Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import HyperSoundSelector from '@/components/HyperSoundSelector';
+import { SUPPORTED_CURRENCIES, getCurrencyMinimums, getCurrencySymbol } from '@/constants/currencies';
 
 declare global {
   interface Window {
@@ -23,14 +28,21 @@ const SagarUjjwalGaming = () => {
     amount: '',
     message: '',
   });
-  const [donationType, setDonationType] = useState<'text' | 'voice' | 'hyperemote'>('text');
+  const [currency, setCurrency] = useState('INR');
+  const [currencyOpen, setCurrencyOpen] = useState(false);
+  const [donationType, setDonationType] = useState<'text' | 'voice' | 'hypersound'>('text');
+  const [selectedSound, setSelectedSound] = useState<string | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
 
+  const minimums = getCurrencyMinimums(currency);
+  const currencySymbol = getCurrencySymbol(currency);
+
   const getVoiceDuration = (amount: number) => {
-    if (amount >= 500) return 30;
-    if (amount >= 250) return 25;
-    if (amount >= 150) return 15;
+    const inrEquivalent = currency === 'INR' ? amount : amount * 80;
+    if (inrEquivalent >= 500) return 30;
+    if (inrEquivalent >= 250) return 25;
+    if (inrEquivalent >= 150) return 15;
     return 15;
   };
 
@@ -54,14 +66,28 @@ const SagarUjjwalGaming = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleDonationTypeChange = (type: 'text' | 'voice' | 'hyperemote') => {
+  const handleDonationTypeChange = (type: 'text' | 'voice' | 'hypersound') => {
     setDonationType(type);
-    if (type === 'hyperemote') {
-      setFormData(prev => ({ ...prev, amount: '50', message: '' }));
+    setSelectedSound(null);
+    if (type === 'hypersound') {
+      setFormData(prev => ({ ...prev, amount: String(minimums.minHypersound), message: '' }));
     } else if (type === 'voice') {
-      setFormData(prev => ({ ...prev, amount: prev.amount || '150' }));
+      setFormData(prev => ({ ...prev, amount: String(minimums.minVoice) }));
     } else {
-      setFormData(prev => ({ ...prev, amount: prev.amount || '40' }));
+      setFormData(prev => ({ ...prev, amount: String(minimums.minText) }));
+    }
+  };
+
+  const handleCurrencyChange = (newCurrency: string) => {
+    setCurrency(newCurrency);
+    setCurrencyOpen(false);
+    const newMinimums = getCurrencyMinimums(newCurrency);
+    if (donationType === 'hypersound') {
+      setFormData(prev => ({ ...prev, amount: String(newMinimums.minHypersound) }));
+    } else if (donationType === 'voice') {
+      setFormData(prev => ({ ...prev, amount: String(newMinimums.minVoice) }));
+    } else {
+      setFormData(prev => ({ ...prev, amount: String(newMinimums.minText) }));
     }
   };
 
@@ -77,23 +103,29 @@ const SagarUjjwalGaming = () => {
 
     try {
       const amount = parseFloat(formData.amount);
-      const isHyperemote = donationType === 'hyperemote';
+      const isHypersound = donationType === 'hypersound';
 
       // Validate minimum amounts
-      if (isHyperemote && amount < 50) {
-        toast.error('Hyperemotes require minimum ₹50');
+      if (isHypersound && amount < minimums.minHypersound) {
+        toast.error(`HyperSounds require minimum ${currencySymbol}${minimums.minHypersound}`);
         setIsProcessingPayment(false);
         return;
       }
 
-      if (donationType === 'voice' && amount < 150) {
-        toast.error('Voice messages require minimum ₹150');
+      if (donationType === 'voice' && amount < minimums.minVoice) {
+        toast.error(`Voice messages require minimum ${currencySymbol}${minimums.minVoice}`);
         setIsProcessingPayment(false);
         return;
       }
 
-      if (donationType === 'text' && amount < 40) {
-        toast.error('Text messages require minimum ₹40');
+      if (donationType === 'text' && amount < minimums.minText) {
+        toast.error(`Text messages require minimum ${currencySymbol}${minimums.minText}`);
+        setIsProcessingPayment(false);
+        return;
+      }
+
+      if (isHypersound && !selectedSound) {
+        toast.error('Please select a sound to play');
         setIsProcessingPayment(false);
         return;
       }
@@ -129,9 +161,10 @@ const SagarUjjwalGaming = () => {
         body: {
           name: formData.name,
           amount,
+          currency,
           message: donationType === 'text' ? formData.message : undefined,
           voiceMessageUrl,
-          isHyperemote,
+          hypersoundUrl: isHypersound ? selectedSound : undefined,
         }
       });
 
@@ -171,10 +204,13 @@ const SagarUjjwalGaming = () => {
 
   const getCharacterLimit = () => {
     const amount = parseFloat(formData.amount) || 0;
-    if (amount >= 200) return 250;
-    if (amount >= 100) return 200;
+    const inrEquivalent = currency === 'INR' ? amount : amount * 80;
+    if (inrEquivalent >= 200) return 250;
+    if (inrEquivalent >= 100) return 200;
     return 100;
   };
+
+  const selectedCurrencyData = SUPPORTED_CURRENCIES.find(c => c.code === currency);
 
   return (
     <div 
@@ -229,7 +265,7 @@ const SagarUjjwalGaming = () => {
                 className={donationType === 'text' ? 'bg-red-600 hover:bg-red-700' : 'border-red-500/30 text-red-200 hover:bg-red-500/10'}
               >
                 <MessageSquare className="w-4 h-4 mr-2" />
-                Text (₹40+)
+                Text
               </Button>
               <Button
                 type="button"
@@ -238,34 +274,74 @@ const SagarUjjwalGaming = () => {
                 className={donationType === 'voice' ? 'bg-red-600 hover:bg-red-700' : 'border-red-500/30 text-red-200 hover:bg-red-500/10'}
               >
                 <Mic className="w-4 h-4 mr-2" />
-                Voice (₹150+)
+                Voice
               </Button>
               <Button
                 type="button"
-                variant={donationType === 'hyperemote' ? 'default' : 'outline'}
-                onClick={() => handleDonationTypeChange('hyperemote')}
-                className={donationType === 'hyperemote' ? 'bg-red-600 hover:bg-red-700' : 'border-red-500/30 text-red-200 hover:bg-red-500/10'}
+                variant={donationType === 'hypersound' ? 'default' : 'outline'}
+                onClick={() => handleDonationTypeChange('hypersound')}
+                className={donationType === 'hypersound' ? 'bg-red-600 hover:bg-red-700' : 'border-red-500/30 text-red-200 hover:bg-red-500/10'}
               >
-                <Crown className="w-4 h-4 mr-2" />
-                Fire (₹50+)
+                <Volume2 className="w-4 h-4 mr-2" />
+                Sound
               </Button>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="amount" className="text-red-100">Amount (₹)</Label>
-            <Input
-              id="amount"
-              name="amount"
-              type="number"
-              value={formData.amount}
-              onChange={handleInputChange}
-              className="bg-gray-900/50 border-red-500/30 focus:border-red-500 text-white"
-              placeholder="Enter amount"
-              min={donationType === 'hyperemote' ? 50 : donationType === 'voice' ? 150 : 40}
-              required
-            />
-            <p className="text-xs text-muted-foreground">TTS above ₹70</p>
+            <Label htmlFor="amount" className="text-red-100">Amount</Label>
+            <div className="flex gap-2">
+              <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={currencyOpen}
+                    className="w-[100px] justify-between bg-gray-900/50 border-red-500/30 text-white hover:bg-gray-800/50"
+                  >
+                    {selectedCurrencyData ? `${selectedCurrencyData.symbol} ${selectedCurrencyData.code}` : 'INR'}
+                    <ChevronsUpDown className="ml-1 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Search currency..." />
+                    <CommandList>
+                      <CommandEmpty>No currency found.</CommandEmpty>
+                      <CommandGroup>
+                        {SUPPORTED_CURRENCIES.map((curr) => (
+                          <CommandItem
+                            key={curr.code}
+                            value={curr.code}
+                            onSelect={() => handleCurrencyChange(curr.code)}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                currency === curr.code ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {curr.symbol} {curr.code} - {curr.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              <Input
+                id="amount"
+                name="amount"
+                type="number"
+                value={formData.amount}
+                onChange={handleInputChange}
+                className="bg-gray-900/50 border-red-500/30 focus:border-red-500 text-white flex-1"
+                placeholder="Enter amount"
+                min={donationType === 'hypersound' ? minimums.minHypersound : donationType === 'voice' ? minimums.minVoice : minimums.minText}
+                required
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">TTS above {currencySymbol}{currency === 'INR' ? '70' : '1'}</p>
           </div>
 
           {donationType === 'text' && (
@@ -293,25 +369,25 @@ const SagarUjjwalGaming = () => {
               onRecordingComplete={(hasRecording) => {
                 // Voice recording complete callback
               }}
-              requiredAmount={150}
+              requiredAmount={minimums.minVoice}
               currentAmount={currentAmount}
               brandColor="#ef4444"
             />
           )}
 
-          {donationType === 'hyperemote' && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-red-100 text-sm">
-              <p className="font-semibold mb-2">🔥 Fire Rain Effect</p>
-              <p>Trigger an epic fire GIF rain effect on stream!</p>
-            </div>
+          {donationType === 'hypersound' && (
+            <HyperSoundSelector
+              selectedSound={selectedSound}
+              onSoundSelect={setSelectedSound}
+            />
           )}
 
           <Button 
             type="submit" 
             className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold py-6 text-lg shadow-lg hover:shadow-red-500/50 transition-all"
-            disabled={isProcessingPayment || !razorpayLoaded || (donationType === 'voice' && !voiceRecorder.audioBlob)}
+            disabled={isProcessingPayment || !razorpayLoaded || (donationType === 'voice' && !voiceRecorder.audioBlob) || (donationType === 'hypersound' && !selectedSound)}
           >
-            {isProcessingPayment ? 'Processing...' : `Pay ₹${formData.amount || '0'}`}
+            {isProcessingPayment ? 'Processing...' : `Pay ${currencySymbol}${formData.amount || '0'}`}
           </Button>
         </form>
       </div>

@@ -6,13 +6,23 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Supported currencies and their minimums
+const CURRENCY_MINIMUMS: Record<string, { text: number; voice: number; hypersound: number }> = {
+  'INR': { text: 40, voice: 150, hypersound: 30 },
+  'USD': { text: 1, voice: 3, hypersound: 1 },
+  'EUR': { text: 1, voice: 3, hypersound: 1 },
+  'GBP': { text: 1, voice: 3, hypersound: 1 },
+  'AED': { text: 3, voice: 10, hypersound: 3 },
+  'AUD': { text: 1.5, voice: 5, hypersound: 1.5 },
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { name, amount, message, voiceMessageUrl, isHyperemote } = await req.json();
+    const { name, amount, currency = 'INR', message, voiceMessageUrl, hypersoundUrl } = await req.json();
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -26,6 +36,13 @@ serve(async (req) => {
       throw new Error('Razorpay credentials not configured');
     }
 
+    // Validate currency
+    if (!CURRENCY_MINIMUMS[currency]) {
+      throw new Error(`Unsupported currency: ${currency}`);
+    }
+
+    const minimums = CURRENCY_MINIMUMS[currency];
+
     // Validate inputs
     if (!name || name.trim().length === 0) {
       throw new Error('Name is required');
@@ -36,16 +53,16 @@ serve(async (req) => {
     }
 
     // Validate minimum amounts based on donation type
-    if (isHyperemote && amount < 50) {
-      throw new Error('Hyperemotes require minimum ₹50');
+    if (hypersoundUrl && amount < minimums.hypersound) {
+      throw new Error(`HyperSounds require minimum ${currency} ${minimums.hypersound}`);
     }
 
-    if (voiceMessageUrl && amount < 150) {
-      throw new Error('Voice messages require minimum ₹150');
+    if (voiceMessageUrl && amount < minimums.voice) {
+      throw new Error(`Voice messages require minimum ${currency} ${minimums.voice}`);
     }
 
-    if (!isHyperemote && !voiceMessageUrl && amount < 40) {
-      throw new Error('Text messages require minimum ₹40');
+    if (!hypersoundUrl && !voiceMessageUrl && amount < minimums.text) {
+      throw new Error(`Text messages require minimum ${currency} ${minimums.text}`);
     }
 
     // Get streamer info
@@ -67,8 +84,8 @@ serve(async (req) => {
 
     // Create Razorpay order
     const razorpayOrderData = {
-      amount: Math.round(amount * 100), // Convert to paise
-      currency: 'INR',
+      amount: Math.round(amount * 100), // Convert to smallest currency unit
+      currency: currency,
       receipt: orderId,
     };
 
@@ -96,9 +113,11 @@ serve(async (req) => {
         streamer_id: streamerData.id,
         name: name.trim(),
         amount,
+        currency,
         message: message?.trim() || null,
         voice_message_url: voiceMessageUrl || null,
-        is_hyperemote: isHyperemote || false,
+        hypersound_url: hypersoundUrl || null,
+        is_hyperemote: !!hypersoundUrl,
         order_id: orderId,
         razorpay_order_id: razorpayOrder.id,
         payment_status: 'pending',
@@ -112,7 +131,7 @@ serve(async (req) => {
       throw new Error('Failed to store donation');
     }
 
-    console.log('SAGAR UJJWAL GAMING donation created:', donation.id);
+    console.log('SAGAR UJJWAL GAMING donation created:', donation.id, 'currency:', currency);
 
     return new Response(
       JSON.stringify({
