@@ -12,12 +12,20 @@ const DamaskPlaysObsAlerts = () => {
     currentAlert,
     isVisible,
     connectionStatus,
-    triggerTestAlert,
   } = usePusherAlerts({
     channelName: 'damask_plays-alerts',
     pusherKey: pusherConfig?.key || '',
     pusherCluster: pusherConfig?.cluster || '',
-    delayBeforeDisplay: 60000,
+    delayByType: {
+      hypersound: 15000,
+      text: 60000,
+      voice: 60000,
+    },
+    alertDuration: {
+      text: 15000,
+      voice: 60000,
+      hyperemote: 15000,
+    },
   });
 
   useEffect(() => {
@@ -66,25 +74,8 @@ const DamaskPlaysObsAlerts = () => {
       <DamaskPlaysAlertDisplay
         donation={currentAlert}
         isVisible={isVisible}
-        streamerName="Damask plays"
-        streamerBrandColor="#10b981"
         scale={alertBoxScale}
       />
-      
-      {/* Debug panel for development */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="fixed bottom-4 left-4 bg-black/80 text-white p-2 rounded text-xs space-y-1">
-          <div>Status: {connectionStatus}</div>
-          <div>Channel: damask_plays-alerts</div>
-          <div>Group: {pusherConfig?.group || 1}</div>
-          <button 
-            onClick={triggerTestAlert}
-            className="mt-2 px-2 py-1 bg-emerald-600 rounded hover:bg-emerald-700"
-          >
-            Test Alert
-          </button>
-        </div>
-      )}
     </div>
   );
 };
