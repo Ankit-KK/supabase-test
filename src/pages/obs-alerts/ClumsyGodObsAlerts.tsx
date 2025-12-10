@@ -19,9 +19,10 @@ const ClumsyGodObsAlerts = () => {
     channelName: 'clumsygod-alerts',
     pusherKey: pusherConfig?.key || '',
     pusherCluster: pusherConfig?.cluster || '',
-    delayBeforeDisplay: 60000, // Default 1 minute for text/voice
     delayByType: {
-      hypersound: 15000, // 15 seconds for HyperSounds
+      hypersound: 15000,
+      text: 60000,
+      voice: 60000,
     },
   });
 
