@@ -24,7 +24,7 @@ const LooteriyaGamingObsAlerts = () => {
     alertDuration: {
       text: 15000,
       voice: 60000,
-      hyperemote: 12000,
+      hyperemote: 5000,
     },
   });
 
