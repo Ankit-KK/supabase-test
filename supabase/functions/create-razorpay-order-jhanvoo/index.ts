@@ -6,34 +6,45 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const CURRENCY_MINIMUMS: Record<string, { text: number; voice: number; hypersound: number }> = {
+  'INR': { text: 40, voice: 150, hypersound: 30 },
+  'USD': { text: 1, voice: 3, hypersound: 1 },
+  'EUR': { text: 1, voice: 3, hypersound: 1 },
+  'GBP': { text: 1, voice: 3, hypersound: 1 },
+  'AED': { text: 4, voice: 12, hypersound: 3 },
+  'AUD': { text: 2, voice: 5, hypersound: 1.5 },
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { name, amount, message, voiceMessageUrl, isHyperemote, selectedGifId } = await req.json();
+    const { name, amount, currency = 'INR', message, voiceMessageUrl, hypersoundUrl } = await req.json();
 
-    console.log('[Jhanvoo] Creating order:', { name, amount, isHyperemote });
+    console.log('[Jhanvoo] Creating order:', { name, amount, currency });
 
-    // Validate minimum amounts
-    if (isHyperemote && amount < 50) {
+    const mins = CURRENCY_MINIMUMS[currency] || CURRENCY_MINIMUMS['INR'];
+
+    // Validate minimum amounts based on type
+    if (hypersoundUrl && amount < mins.hypersound) {
       return new Response(
-        JSON.stringify({ error: 'Hyperemotes require minimum ₹50' }),
+        JSON.stringify({ error: `Minimum ${currency} ${mins.hypersound} required for HyperSounds` }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    if (voiceMessageUrl && amount < 150) {
+    if (voiceMessageUrl && amount < mins.voice) {
       return new Response(
-        JSON.stringify({ error: 'Voice interactions require minimum ₹150' }),
+        JSON.stringify({ error: `Minimum ${currency} ${mins.voice} required for voice messages` }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    if (!voiceMessageUrl && !isHyperemote && amount < 40) {
+    if (!voiceMessageUrl && !hypersoundUrl && amount < mins.text) {
       return new Response(
-        JSON.stringify({ error: 'Text interactions require minimum ₹40' }),
+        JSON.stringify({ error: `Minimum ${currency} ${mins.text} required for text messages` }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -75,6 +86,9 @@ serve(async (req) => {
     const randomStr = Math.random().toString(36).substring(2, 10);
     const orderId = `jv_rp_${timestamp}_${randomStr}`;
 
+    // Calculate amount in subunits
+    const amountInSubunits = Math.round(amount * 100);
+
     // Create Razorpay order
     const razorpayResponse = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
@@ -83,8 +97,8 @@ serve(async (req) => {
         'Authorization': `Basic ${btoa(`${razorpayKeyId}:${razorpayKeySecret}`)}`,
       },
       body: JSON.stringify({
-        amount: Math.round(amount * 100),
-        currency: 'INR',
+        amount: amountInSubunits,
+        currency: currency,
         receipt: orderId,
       }),
     });
@@ -107,10 +121,11 @@ serve(async (req) => {
       .insert({
         name: name.substring(0, 100),
         amount,
+        currency: currency,
         message: message?.substring(0, 500) || null,
         voice_message_url: voiceMessageUrl || null,
-        is_hyperemote: isHyperemote || false,
-        selected_gif_id: selectedGifId || null,
+        hypersound_url: hypersoundUrl || null,
+        is_hyperemote: false,
         order_id: orderId,
         razorpay_order_id: razorpayOrder.id,
         payment_status: 'pending',
