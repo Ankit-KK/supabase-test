@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
-import { Flame } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { getCurrencySymbol } from "@/constants/currencies";
 
 interface Donation {
   id?: string;
   name: string;
   amount: number;
+  currency?: string;
   message?: string;
   voice_message_url?: string;
+  hypersound_url?: string;
   is_hyperemote?: boolean;
   created_at?: string;
 }
@@ -25,42 +26,11 @@ export const ABdevilAlertDisplay = ({
 }: ABdevilAlertDisplayProps) => {
   const [displayedText, setDisplayedText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [gifs, setGifs] = useState<string[]>([]);
 
   useEffect(() => {
-    loadGifs();
-  }, []);
-
-  const loadGifs = async () => {
-    try {
-      const { data, error } = await supabase.storage
-        .from("abdevil-gifs")
-        .list();
-
-      if (error) {
-        console.error("Error loading GIFs:", error);
-        return;
-      }
-
-      if (data) {
-        const gifUrls = data
-          .filter((file) => file.name.endsWith(".gif"))
-          .map((file) => {
-            const { data: urlData } = supabase.storage
-              .from("abdevil-gifs")
-              .getPublicUrl(file.name);
-            return urlData.publicUrl;
-          });
-        setGifs(gifUrls);
-      }
-    } catch (error) {
-      console.error("Error in loadGifs:", error);
-    }
-  };
-
-  useEffect(() => {
-    if (!donation?.message || donation.voice_message_url || donation.is_hyperemote) {
-      setDisplayedText("");
+    // Skip typing effect for HyperSounds and voice messages - show full message immediately
+    if (!donation?.message || donation.hypersound_url || donation.voice_message_url) {
+      setDisplayedText(donation?.message || "");
       setIsTyping(false);
       return;
     }
@@ -85,144 +55,46 @@ export const ABdevilAlertDisplay = ({
 
   if (!isVisible || !donation) return null;
 
-  // Hyperemote full-screen rain effect
-  if (donation.is_hyperemote && gifs.length > 0) {
-    const animations = ["floatUp", "floatUpLeft", "floatUpRight", "spiralUp"];
-    
-    return (
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <style>
-          {`
-            @keyframes floatUp {
-              0% {
-                transform: translateY(0) rotate(0deg);
-                opacity: 0;
-              }
-              10% {
-                opacity: 1;
-              }
-              90% {
-                opacity: 1;
-              }
-              100% {
-                transform: translateY(-120vh) rotate(360deg);
-                opacity: 0;
-              }
-            }
+  const currencySymbol = getCurrencySymbol(donation.currency || "INR");
 
-            @keyframes floatUpLeft {
-              0% {
-                transform: translate(0, 0) rotate(0deg);
-                opacity: 0;
-              }
-              10% {
-                opacity: 1;
-              }
-              90% {
-                opacity: 1;
-              }
-              100% {
-                transform: translate(-30vw, -120vh) rotate(-360deg);
-                opacity: 0;
-              }
-            }
-
-            @keyframes floatUpRight {
-              0% {
-                transform: translate(0, 0) rotate(0deg);
-                opacity: 0;
-              }
-              10% {
-                opacity: 1;
-              }
-              90% {
-                opacity: 1;
-              }
-              100% {
-                transform: translate(30vw, -120vh) rotate(360deg);
-                opacity: 0;
-              }
-            }
-
-            @keyframes spiralUp {
-              0% {
-                transform: translate(0, 0) rotate(0deg) scale(0.5);
-                opacity: 0;
-              }
-              10% {
-                opacity: 1;
-              }
-              50% {
-                transform: translate(15vw, -60vh) rotate(720deg) scale(1);
-              }
-              90% {
-                opacity: 1;
-              }
-              100% {
-                transform: translate(-15vw, -120vh) rotate(1080deg) scale(0.5);
-                opacity: 0;
-              }
-            }
-          `}
-        </style>
-        {Array.from({ length: 20 }).map((_, index) => {
-          const randomGif = gifs[Math.floor(Math.random() * gifs.length)];
-          const randomAnimation = animations[Math.floor(Math.random() * animations.length)];
-          const randomDelay = Math.random() * 3;
-          const randomLeft = Math.random() * 100;
-          const randomSize = 80 + Math.random() * 80;
-
-          return (
-            <img
-              key={index}
-              src={randomGif}
-              alt="hyperemote"
-              className="absolute"
-              style={{
-                left: `${randomLeft}%`,
-                width: `${randomSize}px`,
-                height: `${randomSize}px`,
-                animation: `${randomAnimation} ${8 + Math.random() * 4}s ease-in-out ${randomDelay}s forwards`,
-                bottom: '-150px',
-              }}
-            />
-          );
-        })}
-      </div>
-    );
-  }
-
-  // Regular donation alert
+  // Standard bottom-positioned horizontal bar alert
   return (
     <div className="fixed inset-0 pointer-events-none z-50">
-      <div 
+      <div
         className="absolute bottom-[10%] left-1/2 text-white text-center flex flex-col items-center gap-1.5 px-8 py-4 rounded-xl opacity-100 transition-opacity duration-600"
         style={{
-          background: 'linear-gradient(90deg, rgba(0, 122, 255, 0.6), rgba(144, 0, 255, 0.6))',
-          boxShadow: '0 0 25px rgba(144, 0, 255, 0.4)',
-          letterSpacing: '0.4px',
+          background: "linear-gradient(90deg, rgba(249, 115, 22, 0.6), rgba(234, 88, 12, 0.6))",
+          boxShadow: "0 0 25px rgba(249, 115, 22, 0.4)",
+          letterSpacing: "0.4px",
           transform: `translateX(-50%) scale(${scale})`,
-          transformOrigin: 'bottom center',
+          transformOrigin: "bottom center",
         }}
       >
         {/* Name and Amount */}
         <div className="text-[1.2rem]">
-          <span className="font-bold">{donation.name}</span> donated{' '}
-          <span className="font-bold">₹{donation.amount}</span>
+          <span className="font-bold">{donation.name}</span> donated{" "}
+          <span className="font-bold">{currencySymbol}{donation.amount}</span>
         </div>
 
+        {/* HyperSound Indicator */}
+        {donation.hypersound_url && (
+          <div className="inline-flex items-center gap-2 text-sm">
+            <span>🔊 HyperSound</span>
+          </div>
+        )}
+
         {/* Voice Message Indicator */}
-        {donation.voice_message_url && (
+        {donation.voice_message_url && !donation.hypersound_url && (
           <div className="inline-flex items-center gap-2 text-sm">
             <span>🎵 Voice Message</span>
           </div>
         )}
 
-        {/* Message with Typing Effect */}
-        {donation.message && !donation.voice_message_url && (
-          <div 
+        {/* Message with Typing Effect (only for text donations) */}
+        {donation.message && !donation.voice_message_url && !donation.hypersound_url && (
+          <div
             className="text-base font-normal min-h-[1.2em]"
-            style={{ opacity: 0.9, color: '#f9f9f9' }}
+            style={{ opacity: 0.9, color: "#f9f9f9" }}
           >
             "{displayedText}"
             {isTyping && <span className="animate-pulse ml-1">|</span>}

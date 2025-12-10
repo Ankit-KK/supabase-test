@@ -17,7 +17,16 @@ const ABdevilObsAlerts = () => {
     channelName: 'abdevil-alerts',
     pusherKey: pusherConfig?.key || '',
     pusherCluster: pusherConfig?.cluster || '',
-    delayBeforeDisplay: 60000,
+    delayByType: {
+      hypersound: 15000,
+      text: 60000,
+      voice: 60000,
+    },
+    alertDuration: {
+      text: 15000,
+      voice: 60000,
+      hyperemote: 15000,
+    },
   });
 
   useEffect(() => {

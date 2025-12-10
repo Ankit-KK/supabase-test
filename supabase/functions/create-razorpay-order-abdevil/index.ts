@@ -6,25 +6,36 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const CURRENCY_MINIMUMS: Record<string, { text: number; voice: number; hypersound: number }> = {
+  'INR': { text: 40, voice: 150, hypersound: 30 },
+  'USD': { text: 1, voice: 3, hypersound: 1 },
+  'EUR': { text: 1, voice: 3, hypersound: 1 },
+  'GBP': { text: 1, voice: 3, hypersound: 1 },
+  'AED': { text: 4, voice: 12, hypersound: 3 },
+  'AUD': { text: 2, voice: 5, hypersound: 1.5 },
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { amount, name, message, voiceMessageUrl, donationType } = await req.json();
+    const { amount, currency = 'INR', name, message, voiceMessageUrl, hypersoundUrl } = await req.json();
 
-    console.log('[ABdevil Order] Creating order:', { amount, name, donationType });
+    console.log('[ABdevil Order] Creating order:', { amount, currency, name });
 
-    // Validate minimum amounts
-    if (donationType === 'hyperemote' && amount < 50) {
-      throw new Error('Minimum amount for hyperemote is ₹50');
+    const mins = CURRENCY_MINIMUMS[currency] || CURRENCY_MINIMUMS['INR'];
+
+    // Validate minimum amounts based on type
+    if (hypersoundUrl && amount < mins.hypersound) {
+      throw new Error(`Minimum ${currency} ${mins.hypersound} required for HyperSounds`);
     }
-    if (donationType === 'voice' && amount < 150) {
-      throw new Error('Minimum amount for voice message is ₹150');
+    if (voiceMessageUrl && amount < mins.voice) {
+      throw new Error(`Minimum ${currency} ${mins.voice} required for voice messages`);
     }
-    if (donationType === 'text' && amount < 40) {
-      throw new Error('Minimum amount for text message is ₹40');
+    if (!hypersoundUrl && !voiceMessageUrl && amount < mins.text) {
+      throw new Error(`Minimum ${currency} ${mins.text} required for text messages`);
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -60,6 +71,9 @@ serve(async (req) => {
       throw new Error('Razorpay credentials not configured');
     }
 
+    // Calculate amount in subunits
+    const amountInSubunits = Math.round(amount * 100);
+
     // Create Razorpay order
     const razorpayResponse = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
@@ -68,8 +82,8 @@ serve(async (req) => {
         'Authorization': `Basic ${btoa(`${razorpayKeyId}:${razorpayKeySecret}`)}`,
       },
       body: JSON.stringify({
-        amount: Math.round(amount * 100),
-        currency: 'INR',
+        amount: amountInSubunits,
+        currency: currency,
         receipt: internalOrderId,
       }),
     });
@@ -90,9 +104,11 @@ serve(async (req) => {
       .insert({
         name: name,
         amount: amount,
+        currency: currency,
         message: message || null,
         voice_message_url: voiceMessageUrl || null,
-        is_hyperemote: donationType === 'hyperemote',
+        hypersound_url: hypersoundUrl || null,
+        is_hyperemote: false,
         order_id: internalOrderId,
         razorpay_order_id: razorpayOrder.id,
         payment_status: "pending",
@@ -115,8 +131,8 @@ serve(async (req) => {
         orderId: internalOrderId,
         razorpay_order_id: razorpayOrder.id,
         razorpay_key_id: razorpayKeyId,
-        amount: amount,
-        currency: "INR",
+        amount: razorpayOrder.amount,
+        currency: razorpayOrder.currency,
         internalOrderId: internalOrderId,
       }),
       {
