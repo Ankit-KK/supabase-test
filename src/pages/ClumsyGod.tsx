@@ -2,28 +2,36 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { toast } from "@/hooks/use-toast";
-import { Gamepad2, Sparkles, Star } from "lucide-react";
+import { Gamepad2, Sparkles, Star, Check, ChevronsUpDown, Volume2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { SUPPORTED_CURRENCIES, getCurrencySymbol, getCurrencyMinimums } from "@/constants/currencies";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import VoiceRecorder from "@/components/VoiceRecorder";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
+import HyperSoundSelector from "@/components/HyperSoundSelector";
 
 const ClumsyGod = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     amount: '',
-    message: ''
+    message: '',
+    currency: 'INR'
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
-  const [donationType, setDonationType] = useState<'message' | 'voice' | 'hyperemote'>('message');
+  const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersound'>('message');
   const [streamerSettings, setStreamerSettings] = useState<any>(null);
   const [hasVoiceRecording, setHasVoiceRecording] = useState(false);
   const [voiceDuration, setVoiceDuration] = useState(0);
-  const [showHyperemoteEffect, setShowHyperemoteEffect] = useState(false);
+  const [showHypersoundEffect, setShowHypersoundEffect] = useState(false);
   const [isAmountLocked, setIsAmountLocked] = useState(false);
+  const [currencyOpen, setCurrencyOpen] = useState(false);
+  const [selectedSound, setSelectedSound] = useState<string | null>(null);
 
   const getCharacterLimit = (amount: number): number => {
     if (amount >= 200) return 250;
@@ -137,6 +145,14 @@ const ClumsyGod = () => {
       });
       return;
     }
+    if (donationType === 'hypersound' && !selectedSound) {
+      toast({
+        title: "Sound Required",
+        description: "Please select a sound for your HyperSound donation.",
+        variant: "destructive"
+      });
+      return;
+    }
     if (donationType === 'message' && !formData.message?.trim()) {
       toast({
         title: "Message Required",
@@ -167,18 +183,30 @@ const ClumsyGod = () => {
       return;
     }
 
-    if (donationType === 'message' && amount < 40) {
+    // Validate minimum amounts based on donation type and currency
+    const currencyMins = getCurrencyMinimums(formData.currency);
+    const currencySymbol = getCurrencySymbol(formData.currency);
+    
+    if (donationType === 'message' && amount < currencyMins.minText) {
       toast({
         title: "Insufficient Amount",
-        description: "Text messages require a minimum donation of ₹40.",
+        description: `Text messages require a minimum donation of ${currencySymbol}${currencyMins.minText}.`,
         variant: "destructive"
       });
       return;
     }
-    if (donationType === 'voice' && amount < 150) {
+    if (donationType === 'voice' && amount < currencyMins.minVoice) {
       toast({
         title: "Insufficient Amount",
-        description: "Voice messages require a minimum donation of ₹150.",
+        description: `Voice messages require a minimum donation of ${currencySymbol}${currencyMins.minVoice}.`,
+        variant: "destructive"
+      });
+      return;
+    }
+    if (donationType === 'hypersound' && amount < currencyMins.minHypersound) {
+      toast({
+        title: "Insufficient Amount",
+        description: `HyperSounds require a minimum donation of ${currencySymbol}${currencyMins.minHypersound}.`,
         variant: "destructive"
       });
       return;
@@ -221,9 +249,10 @@ const ClumsyGod = () => {
         body: {
           name: formData.name.trim(),
           amount: amount,
-          message: donationType === 'message' ? formData.message.trim() : donationType === 'voice' ? 'Sent a Voice message' : formData.message.trim(),
+          currency: formData.currency,
+          message: donationType === 'message' ? formData.message.trim() : donationType === 'voice' ? 'Sent a Voice message' : '🔊 HyperSound!',
           voiceMessageUrl: voiceMessageUrl,
-          isHyperemote: donationType === 'hyperemote'
+          hypersoundUrl: donationType === 'hypersound' ? selectedSound : null
         }
       });
 
@@ -236,9 +265,9 @@ const ClumsyGod = () => {
       const options = {
         key: data.razorpay_key_id,
         amount: data.amount,
-        currency: 'INR',
+        currency: formData.currency,
         name: 'HyperChat - ClumsyGod',
-        description: donationType === 'hyperemote' ? 'Hyperemote Celebration' : donationType === 'voice' ? 'Voice Message' : 'Text Message',
+        description: donationType === 'hypersound' ? 'HyperSound - Soundboard' : donationType === 'voice' ? 'Voice Message' : 'Text Message',
         order_id: data.razorpay_order_id,
         prefill: {
           name: formData.name.trim()
@@ -272,22 +301,23 @@ const ClumsyGod = () => {
     }
   };
 
-  const handleDonationTypeChange = (type: 'message' | 'voice' | 'hyperemote') => {
+  const handleDonationTypeChange = (type: 'message' | 'voice' | 'hypersound') => {
     setDonationType(type);
-    if (type === 'hyperemote') {
-      const minAmount = streamerSettings?.hyperemotes_min_amount || 50;
+    if (type === 'hypersound') {
+      const minAmount = getCurrencyMinimums(formData.currency).minHypersound;
       setFormData(prev => ({
         ...prev,
         amount: minAmount.toString(),
-        message: 'Hyperemote celebration! 🎉'
+        message: ''
       }));
-      setShowHyperemoteEffect(true);
-      setTimeout(() => setShowHyperemoteEffect(false), 3000);
+      setShowHypersoundEffect(true);
+      setTimeout(() => setShowHypersoundEffect(false), 3000);
     } else {
       setFormData(prev => ({
         ...prev,
         amount: ''
       }));
+      setSelectedSound(null);
     }
   };
 
@@ -363,7 +393,7 @@ const ClumsyGod = () => {
                   <div className="text-center">
                     <div className="text-sm mb-0.5">💬</div>
                     <div className="font-medium text-[10px]">Text Message</div>
-                    <div className="text-[9px] text-muted-foreground">Min: ₹40</div>
+                    <div className="text-[9px] text-muted-foreground">Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minText}</div>
                   </div>
                 </button>
                 <button 
@@ -374,19 +404,19 @@ const ClumsyGod = () => {
                   <div className="text-center">
                     <div className="text-sm mb-0.5">🎤</div>
                     <div className="font-medium text-[10px]">Voice Message</div>
-                    <div className="text-[9px] text-muted-foreground">Min: ₹150</div>
+                    <div className="text-[9px] text-muted-foreground">Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minVoice}</div>
                   </div>
                 </button>
                 <button 
                   type="button" 
-                  onClick={() => handleDonationTypeChange('hyperemote')} 
-                  className={`p-2 rounded-lg border-2 transition-all ${donationType === 'hyperemote' ? 'border-purple-500 bg-purple-500/10' : 'border-purple-500/30 hover:border-purple-500/50'}`}
+                  onClick={() => handleDonationTypeChange('hypersound')} 
+                  className={`p-2 rounded-lg border-2 transition-all ${donationType === 'hypersound' ? 'border-orange-500 bg-orange-500/10' : 'border-orange-500/30 hover:border-orange-500/50'}`}
                 >
                   <div className="text-center">
-                    <div className="text-sm mb-0.5">🎉</div>
-                    <div className="font-medium text-[10px]">Hyperemotes</div>
+                    <div className="text-sm mb-0.5">🔊</div>
+                    <div className="font-medium text-[10px]">HyperSounds</div>
                     <div className="text-[9px] text-muted-foreground">
-                      ₹{streamerSettings?.hyperemotes_min_amount || 50}+
+                      Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minHypersound}
                     </div>
                   </div>
                 </button>
@@ -395,36 +425,79 @@ const ClumsyGod = () => {
 
             <div className="space-y-1.5">
               <label htmlFor="amount" className="text-xs font-medium text-violet-400">
-                Amount (₹) *
+                Amount *
               </label>
-              <Input 
-                id="amount" 
-                name="amount" 
-                type="number" 
-                placeholder={donationType === 'message' ? 'Min: ₹40' : donationType === 'voice' ? 'Min: ₹150' : 'Enter amount'} 
-                value={formData.amount} 
-                onChange={handleInputChange} 
-                className="border-violet-500/30 focus:border-violet-500 focus:ring-violet-500/20 h-9 text-sm" 
-                min="1" 
-                max="100000" 
-                disabled={donationType === 'hyperemote' || isAmountLocked} 
-                required 
-              />
+              <div className="flex gap-2">
+                <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={currencyOpen}
+                      className="w-[90px] justify-between border-violet-500/30 focus:border-violet-500 px-2 h-9 text-xs"
+                    >
+                      {getCurrencySymbol(formData.currency)} {formData.currency}
+                      <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[220px] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search currency..." />
+                      <CommandList>
+                        <CommandEmpty>No currency found.</CommandEmpty>
+                        <CommandGroup>
+                          {SUPPORTED_CURRENCIES.map((currency) => (
+                            <CommandItem
+                              key={currency.code}
+                              value={`${currency.code} ${currency.name}`}
+                              onSelect={() => {
+                                setFormData(prev => ({ ...prev, currency: currency.code }));
+                                setCurrencyOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  formData.currency === currency.code ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {currency.symbol} {currency.code} - {currency.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                <Input 
+                  id="amount" 
+                  name="amount" 
+                  type="number" 
+                  placeholder={donationType === 'message' ? `Min: ${getCurrencyMinimums(formData.currency).minText}` : donationType === 'voice' ? `Min: ${getCurrencyMinimums(formData.currency).minVoice}` : `Min: ${getCurrencyMinimums(formData.currency).minHypersound}`} 
+                  value={formData.amount} 
+                  onChange={handleInputChange} 
+                  className="flex-1 border-violet-500/30 focus:border-violet-500 focus:ring-violet-500/20 h-9 text-sm" 
+                  min="1" 
+                  max="100000" 
+                  disabled={isAmountLocked} 
+                  required 
+                />
+              </div>
               {isAmountLocked && (
                 <p className="text-[10px] text-yellow-600 flex items-center gap-1">
                   🔒 Amount locked during voice recording
                 </p>
               )}
-              <p className="text-[10px] text-muted-foreground">TTS above ₹70</p>
-              {donationType === 'voice' && currentAmount >= 150 && (
+              {formData.currency === 'INR' && donationType === 'message' && <p className="text-[10px] text-muted-foreground">TTS above ₹70</p>}
+              {donationType === 'voice' && currentAmount >= getCurrencyMinimums(formData.currency).minVoice && (
                 <p className="text-[10px] text-muted-foreground">
                   Voice duration: {getVoiceDuration(currentAmount)}s
-                  {currentAmount < 200 && ' (₹200+ for 20s, ₹250+ for 30s)'}
+                  {formData.currency === 'INR' && currentAmount < 200 && ' (₹200+ for 20s, ₹250+ for 30s)'}
                 </p>
               )}
-              {donationType === 'hyperemote' && (
+              {donationType === 'hypersound' && (
                 <p className="text-[10px] text-muted-foreground">
-                  Hyperemotes start at ₹{streamerSettings?.hyperemotes_min_amount || 50}
+                  HyperSounds start at {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minHypersound}
                 </p>
               )}
             </div>
@@ -459,13 +532,32 @@ const ClumsyGod = () => {
                 <VoiceRecorder
                   controller={voiceRecorder}
                   maxDurationSeconds={maxVoiceDuration}
-                  requiredAmount={150}
+                  requiredAmount={getCurrencyMinimums(formData.currency).minVoice}
                   currentAmount={currentAmount}
                   onRecordingComplete={(hasRecording, duration) => {
                     setHasVoiceRecording(hasRecording);
                     setVoiceDuration(duration);
                   }}
                 />
+              </div>
+            )}
+
+            {/* HyperSound Selector */}
+            {donationType === 'hypersound' && (
+              <div className="space-y-2">
+                <div className="p-3 rounded-lg border border-orange-500/30 bg-orange-500/5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Volume2 className="h-4 w-4 text-orange-500" />
+                    <span className="font-medium text-xs text-orange-500">HyperSounds</span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mb-3">
+                    You control the soundboard! Pick a sound to play on stream.
+                  </p>
+                  <HyperSoundSelector 
+                    selectedSound={selectedSound}
+                    onSoundSelect={setSelectedSound}
+                  />
+                </div>
               </div>
             )}
 
@@ -480,12 +572,19 @@ const ClumsyGod = () => {
                   <span>Processing...</span>
                 </div>
               ) : (
-                `Donate ₹${formData.amount || '0'}`
+                `Donate ${getCurrencySymbol(formData.currency)}${formData.amount || '0'}`
               )}
             </Button>
           </form>
         </CardContent>
       </Card>
+
+      {/* HyperSound Effect */}
+      {showHypersoundEffect && (
+        <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
+          <div className="animate-bounce text-6xl">🔊</div>
+        </div>
+      )}
     </div>
   );
 };

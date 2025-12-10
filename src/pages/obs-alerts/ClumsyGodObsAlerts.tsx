@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AlertDisplay } from '@/components/AlertDisplay';
+import { ClumsyGodAlertDisplay } from '@/components/ClumsyGodAlertDisplay';
 import { usePusherAlerts } from '@/hooks/usePusherAlerts';
 import { usePusherConfig } from '@/hooks/usePusherConfig';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,7 +19,10 @@ const ClumsyGodObsAlerts = () => {
     channelName: 'clumsygod-alerts',
     pusherKey: pusherConfig?.key || '',
     pusherCluster: pusherConfig?.cluster || '',
-    delayBeforeDisplay: 60000,
+    delayBeforeDisplay: 60000, // Default 1 minute for text/voice
+    delayByType: {
+      hypersound: 15000, // 15 seconds for HyperSounds
+    },
   });
 
   useEffect(() => {
@@ -68,17 +71,15 @@ const ClumsyGodObsAlerts = () => {
 
   return (
     <div className="fixed inset-0 bg-transparent">
-      <AlertDisplay
+      <ClumsyGodAlertDisplay
         donation={currentAlert}
         isVisible={isVisible}
-        streamerBrandColor="#ef4444"
-        streamerName="ClumsyGod"
         scale={alertBoxScale}
       />
       
       {process.env.NODE_ENV === 'development' && (
         <div className="fixed bottom-4 left-4 bg-black/80 text-white p-3 rounded-lg text-xs space-y-2 max-w-xs">
-          <div className="font-bold text-red-400">🔧 Pusher Debug Panel</div>
+          <div className="font-bold text-violet-400">🔧 Pusher Debug Panel</div>
           <div className="flex items-center gap-2">
             <span className="font-semibold">Status:</span>
             <span className={`px-2 py-0.5 rounded ${
@@ -94,7 +95,7 @@ const ClumsyGodObsAlerts = () => {
           <div>Alert: {currentAlert ? `🔔 ${currentAlert.name}` : '⏸️ None'}</div>
           <button 
             onClick={triggerTestAlert}
-            className="w-full px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-medium transition-colors"
+            className="w-full px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded text-xs font-medium transition-colors"
           >
             🧪 Test Alert
           </button>

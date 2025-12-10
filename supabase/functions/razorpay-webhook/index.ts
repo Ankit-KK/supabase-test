@@ -401,6 +401,7 @@ serve(async (req) => {
         currency: paymentCurrency,
         message: donation.message,
         is_hyperemote: donation.is_hyperemote,
+        hypersound_url: donation.hypersound_url,
         voice_message_url: donation.voice_message_url,
         created_at: donation.created_at
       })
