@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -7,9 +7,25 @@ import { Label } from '@/components/ui/label';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-// Razorpay - loaded via script tag
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import EnhancedVoiceRecorder from '@/components/EnhancedVoiceRecorder';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
+import HyperSoundSelector from '@/components/HyperSoundSelector';
+import { SUPPORTED_CURRENCIES, getCurrencyMinimums, getCurrencySymbol } from '@/constants/currencies';
 import damaskBanner from '@/assets/damask-banner.jpg';
 import damaskProfile from '@/assets/damask-profile.jpg';
 import damaskLogo from '@/assets/damask-logo.jpg';
@@ -20,15 +36,25 @@ const DamaskPlays = () => {
     amount: '',
     message: '',
   });
-  const [donationType, setDonationType] = useState<'text' | 'voice' | 'hyperemote'>('text');
+  const [selectedCurrency, setSelectedCurrency] = useState('INR');
+  const [currencyOpen, setCurrencyOpen] = useState(false);
+  const [donationType, setDonationType] = useState<'text' | 'voice' | 'hypersound'>('text');
+  const [selectedHypersound, setSelectedHypersound] = useState<string | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [streamerSettings, setStreamerSettings] = useState<{ hyperemotes_enabled: boolean; hyperemotes_min_amount: number } | null>(null);
   const navigate = useNavigate();
-  
+
+  const minimums = getCurrencyMinimums(selectedCurrency);
+  const currencySymbol = getCurrencySymbol(selectedCurrency);
+
   const getVoiceDuration = (amount: number) => {
-    if (amount >= 500) return 30;
-    if (amount >= 250) return 25;
-    if (amount >= 150) return 15;
+    if (selectedCurrency === 'INR') {
+      if (amount >= 500) return 30;
+      if (amount >= 250) return 25;
+      if (amount >= 150) return 15;
+      return 15;
+    }
+    if (amount >= 6) return 30;
+    if (amount >= 3) return 25;
     return 15;
   };
 
@@ -36,32 +62,10 @@ const DamaskPlays = () => {
   const voiceRecorder = useVoiceRecorder(getVoiceDuration(currentAmount));
 
   useEffect(() => {
-    // Load Razorpay script
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
     script.async = true;
     document.body.appendChild(script);
-
-    const fetchStreamerSettings = async () => {
-      try {
-        const { data, error } = await supabase.rpc('get_streamer_public_settings', {
-          slug: 'damask_plays'
-        });
-        
-        if (error) {
-          console.error('Error fetching streamer settings:', error);
-          return;
-        }
-
-        if (data && data.length > 0) {
-          setStreamerSettings(data[0]);
-        }
-      } catch (err) {
-        console.error('Failed to fetch streamer settings:', err);
-      }
-    };
-
-    fetchStreamerSettings();
 
     return () => {
       document.body.removeChild(script);
@@ -77,31 +81,26 @@ const DamaskPlays = () => {
     }
 
     const amountNum = parseFloat(formData.amount);
+    const minAmount = donationType === 'voice' ? minimums.minVoice : donationType === 'hypersound' ? minimums.minHypersound : minimums.minText;
     
-    if (donationType === 'hyperemote') {
-      const minAmount = streamerSettings?.hyperemotes_min_amount || 50;
-      if (amountNum < minAmount) {
-        toast.error(`Minimum amount for hyperemotes is ₹${minAmount}`);
-        return;
-      }
-    } else if (donationType === 'voice') {
-      if (amountNum < 150) {
-        toast.error('Minimum amount for voice messages is ₹150');
-        return;
-      }
-      if (!voiceRecorder.audioBlob) {
-        toast.error('Please record a voice message');
-        return;
-      }
-    } else if (donationType === 'text') {
-      if (amountNum < 40) {
-        toast.error('Minimum amount for text messages is ₹40');
-        return;
-      }
-      if (!formData.message || formData.message.trim().length === 0) {
-        toast.error('Please enter a message');
-        return;
-      }
+    if (amountNum < minAmount) {
+      toast.error(`Minimum amount for ${donationType} is ${currencySymbol}${minAmount}`);
+      return;
+    }
+
+    if (donationType === 'voice' && !voiceRecorder.audioBlob) {
+      toast.error('Please record a voice message');
+      return;
+    }
+
+    if (donationType === 'text' && (!formData.message || formData.message.trim().length === 0)) {
+      toast.error('Please enter a message');
+      return;
+    }
+
+    if (donationType === 'hypersound' && !selectedHypersound) {
+      toast.error('Please select a sound');
+      return;
     }
 
     await processPayment();
@@ -113,7 +112,6 @@ const DamaskPlays = () => {
     try {
       let voiceMessageUrl = null;
 
-      // Upload voice message BEFORE creating payment order
       if (donationType === 'voice' && voiceRecorder.audioBlob) {
         console.log('Uploading voice message before payment...', { 
           blobSize: voiceRecorder.audioBlob.size,
@@ -124,7 +122,6 @@ const DamaskPlays = () => {
           throw new Error('No voice recording found. Please record your message again.');
         }
 
-        // Convert blob to base64
         const voiceDataBase64 = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           
@@ -152,7 +149,6 @@ const DamaskPlays = () => {
 
         console.log('Invoking upload-voice-message-direct...');
 
-        // Upload voice message using edge function
         const { data: uploadResult, error: uploadError } = await supabase.functions.invoke(
           'upload-voice-message-direct',
           {
@@ -182,7 +178,8 @@ const DamaskPlays = () => {
           amount: parseFloat(formData.amount),
           message: donationType === 'text' ? formData.message : null,
           voiceMessageUrl: voiceMessageUrl,
-          isHyperemote: donationType === 'hyperemote',
+          hypersoundUrl: donationType === 'hypersound' ? selectedHypersound : null,
+          currency: selectedCurrency,
         },
       });
 
@@ -192,7 +189,6 @@ const DamaskPlays = () => {
 
       const data = response.data;
 
-      // Initialize Razorpay checkout
       const options = {
         key: data.razorpay_key_id,
         amount: data.amount,
@@ -225,24 +221,17 @@ const DamaskPlays = () => {
     }
   };
 
-  const getMinAmount = () => {
-    switch (donationType) {
-      case 'voice':
-        return 150;
-      case 'hyperemote':
-        return streamerSettings?.hyperemotes_min_amount || 50;
-      case 'text':
-      default:
-        return 40;
-    }
-  };
-
   const getCharacterLimit = () => {
     const amount = parseFloat(formData.amount) || 0;
-    if (amount >= 250) return 500;
-    if (amount >= 100) return 250;
-    if (amount >= 70) return 150;
-    return 100;
+    if (selectedCurrency === 'INR') {
+      if (amount >= 250) return 500;
+      if (amount >= 100) return 250;
+      if (amount >= 70) return 150;
+      return 100;
+    }
+    if (amount >= 3) return 500;
+    if (amount >= 1.5) return 250;
+    return 150;
   };
 
   const currentCharLimit = getCharacterLimit();
@@ -263,12 +252,8 @@ const DamaskPlays = () => {
           backgroundPosition: 'center'
         }}
       >
-        {/* Dark overlay for readability */}
         <div className="absolute inset-0 bg-black/50"></div>
-        
-        {/* Card glow effect */}
         <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 via-emerald-600/20 to-emerald-400/20 opacity-50 blur-xl"></div>
-        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-emerald-600/10 to-emerald-400/10 opacity-50 blur-xl"></div>
         
         <CardHeader className="text-center space-y-3 relative z-10">
           <div className="flex justify-center">
@@ -289,7 +274,7 @@ const DamaskPlays = () => {
         <CardContent className="space-y-4 relative z-10">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-3">
-              <Label htmlFor="donationType" className="text-sm font-semibold text-emerald-500">
+              <Label className="text-sm font-semibold text-emerald-500">
                 Choose Donation Type
               </Label>
               <div className="grid grid-cols-3 gap-3">
@@ -304,7 +289,7 @@ const DamaskPlays = () => {
                 >
                   <span className="text-3xl">💬</span>
                   <span className="text-xs font-bold tracking-wide">Text</span>
-                  <span className="text-[10px] opacity-80 font-medium">Min ₹40</span>
+                  <span className="text-[10px] opacity-80 font-medium">Min {currencySymbol}{minimums.minText}</span>
                 </button>
                 <button
                   type="button"
@@ -317,22 +302,20 @@ const DamaskPlays = () => {
                 >
                   <span className="text-3xl">🎤</span>
                   <span className="text-xs font-bold tracking-wide">Voice</span>
-                  <span className="text-[10px] opacity-80 font-medium">Min ₹150</span>
+                  <span className="text-[10px] opacity-80 font-medium">Min {currencySymbol}{minimums.minVoice}</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => setDonationType('hyperemote')}
+                  onClick={() => setDonationType('hypersound')}
                   className={`h-20 flex flex-col items-center justify-center gap-1.5 rounded-lg border-2 transition-all ${
-                    donationType === 'hyperemote'
+                    donationType === 'hypersound'
                       ? 'border-emerald-400 bg-gradient-to-br from-emerald-600 to-green-600 text-white shadow-lg shadow-emerald-500/50 scale-105'
                       : 'border-emerald-500/40 hover:border-emerald-500/60 bg-black/50 hover:bg-black/70 text-emerald-200 hover:scale-105'
                   }`}
                 >
-                  <span className="text-3xl">🎁</span>
-                  <span className="text-xs font-bold tracking-wide">Effects</span>
-                  <span className="text-[10px] opacity-80 font-medium">
-                    Min ₹{streamerSettings?.hyperemotes_min_amount || 50}
-                  </span>
+                  <span className="text-3xl">🔊</span>
+                  <span className="text-xs font-bold tracking-wide">Sound</span>
+                  <span className="text-[10px] opacity-80 font-medium">Min {currencySymbol}{minimums.minHypersound}</span>
                 </button>
               </div>
             </div>
@@ -350,18 +333,60 @@ const DamaskPlays = () => {
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="amount" className="text-sm text-emerald-500">Amount (₹)</Label>
-              <Input
-                id="amount"
-                type="number"
-                value={formData.amount}
-                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                placeholder="Enter amount"
-                min={getMinAmount()}
-                required
-                className="border-emerald-500/30 focus:border-emerald-500 bg-background"
-              />
-              <p className="text-xs text-muted-foreground">TTS above ₹70</p>
+              <Label htmlFor="amount" className="text-sm text-emerald-500">Amount</Label>
+              <div className="flex gap-2">
+                <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={currencyOpen}
+                      className="w-[100px] justify-between border-emerald-500/30 hover:bg-emerald-500/10"
+                    >
+                      {currencySymbol} {selectedCurrency}
+                      <ChevronsUpDown className="ml-1 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[200px] p-0">
+                    <Command>
+                      <CommandInput placeholder="Search currency..." />
+                      <CommandList>
+                        <CommandEmpty>No currency found.</CommandEmpty>
+                        <CommandGroup>
+                          {SUPPORTED_CURRENCIES.map((currency) => (
+                            <CommandItem
+                              key={currency.code}
+                              value={currency.code}
+                              onSelect={(value) => {
+                                setSelectedCurrency(value.toUpperCase());
+                                setCurrencyOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  selectedCurrency === currency.code ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {currency.symbol} {currency.code} - {currency.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                <Input
+                  id="amount"
+                  type="number"
+                  value={formData.amount}
+                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                  placeholder="Enter amount"
+                  required
+                  className="flex-1 border-emerald-500/30 focus:border-emerald-500 bg-background"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">TTS above {currencySymbol}{selectedCurrency === 'INR' ? '70' : '1'}</p>
             </div>
 
             {donationType === 'text' && (
@@ -381,45 +406,26 @@ const DamaskPlays = () => {
               </div>
             )}
 
-            {donationType === 'hyperemote' && (
-              <div className="space-y-2">
-                <Label className="text-sm text-emerald-500">Hyperemote Effect Preview</Label>
-                <div className="p-4 rounded-lg border-2 border-emerald-500 bg-emerald-500/10">
-                  <div className="flex items-start gap-3">
-                    <span className="text-3xl">🌧️</span>
-                    <div className="flex-1">
-                      <p className="font-bold text-emerald-100 text-base">
-                        GIF Rain Effect
-                      </p>
-                      <p className="text-sm text-emerald-300/80 mt-2">
-                        All animated GIFs will rain down from the top of the screen with spiraling and floating animations! 
-                        Your donation triggers an epic visual spectacle for the stream.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {donationType === 'voice' && (
               <div className="space-y-1">
                 <Label className="text-sm text-emerald-500">Record Voice Message</Label>
                 <EnhancedVoiceRecorder 
                   controller={voiceRecorder}
                   currentAmount={currentAmount}
-                  requiredAmount={150}
+                  requiredAmount={minimums.minVoice}
                   brandColor="#10b981"
                   onRecordingComplete={() => {}}
                 />
               </div>
             )}
 
-            {donationType === 'hyperemote' && (
-              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-2">
-                <p className="text-xs text-muted-foreground">
-                  Hyperemotes will trigger special visual effects during the stream!
-                  Minimum amount: ₹{streamerSettings?.hyperemotes_min_amount || 50}
-                </p>
+            {donationType === 'hypersound' && (
+              <div className="space-y-2">
+                <Label className="text-sm text-emerald-500">Select a Sound</Label>
+                <HyperSoundSelector
+                  selectedSound={selectedHypersound}
+                  onSoundSelect={setSelectedHypersound}
+                />
               </div>
             )}
 
@@ -428,7 +434,7 @@ const DamaskPlays = () => {
               className="w-full bg-emerald-500 hover:bg-emerald-600"
               disabled={isProcessingPayment}
             >
-              {isProcessingPayment ? 'Processing...' : 'Continue to Payment'}
+              {isProcessingPayment ? 'Processing...' : `Support with ${currencySymbol}${formData.amount || '0'}`}
             </Button>
           </form>
         </CardContent>
