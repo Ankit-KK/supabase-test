@@ -109,6 +109,16 @@ import ABdevilAudioPlayer from "./pages/audio-player/ABdevilAudioPlayer";
 import JhanvooAudioPlayer from "./pages/audio-player/JhanvooAudioPlayer";
 import ClumsyGodAudioPlayer from "./pages/audio-player/ClumsyGodAudioPlayer";
 import ClumsyGodMediaSourcePlayer from "./pages/audio-player/ClumsyGodMediaSourcePlayer";
+import ChiaGamingMediaSourcePlayer from "./pages/audio-player/ChiaGamingMediaSourcePlayer";
+import SizzorsMediaSourcePlayer from "./pages/audio-player/SizzorsMediaSourcePlayer";
+import DamaskPlaysMediaSourcePlayer from "./pages/audio-player/DamaskPlaysMediaSourcePlayer";
+import NekoXenpaiMediaSourcePlayer from "./pages/audio-player/NekoXenpaiMediaSourcePlayer";
+import SagarUjjwalGamingMediaSourcePlayer from "./pages/audio-player/SagarUjjwalGamingMediaSourcePlayer";
+import NotYourKweenMediaSourcePlayer from "./pages/audio-player/NotYourKweenMediaSourcePlayer";
+import BongFlickMediaSourcePlayer from "./pages/audio-player/BongFlickMediaSourcePlayer";
+import MrIqmasterMediaSourcePlayer from "./pages/audio-player/MrIqmasterMediaSourcePlayer";
+import ABdevilMediaSourcePlayer from "./pages/audio-player/ABdevilMediaSourcePlayer";
+import JhanvooMediaSourcePlayer from "./pages/audio-player/JhanvooMediaSourcePlayer";
 
 const queryClient = new QueryClient();
 
@@ -229,6 +239,16 @@ const App = () => (
               <Route path="/jhanvoo/audio-player" element={<JhanvooAudioPlayer />} />
               <Route path="/clumsygod/audio-player" element={<ClumsyGodAudioPlayer />} />
               <Route path="/clumsygod/media-audio-player" element={<ClumsyGodMediaSourcePlayer />} />
+              <Route path="/chiaa_gaming/media-audio-player" element={<ChiaGamingMediaSourcePlayer />} />
+              <Route path="/sizzors/media-audio-player" element={<SizzorsMediaSourcePlayer />} />
+              <Route path="/damask_plays/media-audio-player" element={<DamaskPlaysMediaSourcePlayer />} />
+              <Route path="/neko_xenpai/media-audio-player" element={<NekoXenpaiMediaSourcePlayer />} />
+              <Route path="/sagarujjwalgaming/media-audio-player" element={<SagarUjjwalGamingMediaSourcePlayer />} />
+              <Route path="/notyourkween/media-audio-player" element={<NotYourKweenMediaSourcePlayer />} />
+              <Route path="/bongflick/media-audio-player" element={<BongFlickMediaSourcePlayer />} />
+              <Route path="/mriqmaster/media-audio-player" element={<MrIqmasterMediaSourcePlayer />} />
+              <Route path="/abdevil/media-audio-player" element={<ABdevilMediaSourcePlayer />} />
+              <Route path="/jhanvoo/media-audio-player" element={<JhanvooMediaSourcePlayer />} />
               
               {/* Catch all 404 */}
               <Route path="*" element={<NotFound />} />
