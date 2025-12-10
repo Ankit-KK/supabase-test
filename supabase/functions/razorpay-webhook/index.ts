@@ -313,14 +313,22 @@ serve(async (req) => {
 
     console.log('Updating payment status to:', newStatus)
 
+    // Calculate audio_scheduled_at based on donation type
+    // HyperSounds: 15 second delay, everything else: 60 second delay
+    const audioDelay = donation.hypersound_url ? 15000 : 60000;
+    const audioScheduledAt = new Date(Date.now() + audioDelay).toISOString();
+
     // Update donation status
     const updateData: any = {
       payment_status: newStatus,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      audio_scheduled_at: isSuccess ? audioScheduledAt : null // Only schedule audio for successful payments
     }
 
     // Note: moderation_status is handled by database trigger
     // All donations are auto-approved by auto_approve_ankit_hyperemotes_iu()
+
+    console.log(`Setting audio_scheduled_at to ${audioScheduledAt} (${audioDelay/1000}s delay for ${donation.hypersound_url ? 'HyperSound' : 'regular'})`)
 
     const { error: updateError } = await supabase
       .from(tableName)

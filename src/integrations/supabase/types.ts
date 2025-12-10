@@ -20,6 +20,7 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           audio_played_at: string | null
+          audio_scheduled_at: string | null
           created_at: string | null
           id: string
           is_hyperemote: boolean | null
@@ -43,6 +44,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
+          audio_scheduled_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -66,6 +68,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
+          audio_scheduled_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -118,6 +121,7 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           audio_played_at: string | null
+          audio_scheduled_at: string | null
           created_at: string | null
           currency: string
           hypersound_url: string | null
@@ -142,6 +146,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
+          audio_scheduled_at?: string | null
           created_at?: string | null
           currency?: string
           hypersound_url?: string | null
@@ -166,6 +171,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
+          audio_scheduled_at?: string | null
           created_at?: string | null
           currency?: string
           hypersound_url?: string | null
@@ -277,6 +283,7 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           audio_played_at: string | null
+          audio_scheduled_at: string | null
           created_at: string | null
           id: string
           is_hyperemote: boolean | null
@@ -300,6 +307,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
+          audio_scheduled_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -323,6 +331,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
+          audio_scheduled_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -357,6 +366,7 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           audio_played_at: string | null
+          audio_scheduled_at: string | null
           created_at: string | null
           id: string
           is_hyperemote: boolean | null
@@ -378,6 +388,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
+          audio_scheduled_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -399,6 +410,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
+          audio_scheduled_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -431,6 +443,7 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           audio_played_at: string | null
+          audio_scheduled_at: string | null
           created_at: string | null
           currency: string
           hypersound_url: string | null
@@ -456,6 +469,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
+          audio_scheduled_at?: string | null
           created_at?: string | null
           currency?: string
           hypersound_url?: string | null
@@ -481,6 +495,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
+          audio_scheduled_at?: string | null
           created_at?: string | null
           currency?: string
           hypersound_url?: string | null
@@ -517,6 +532,7 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           audio_played_at: string | null
+          audio_scheduled_at: string | null
           created_at: string | null
           id: string
           is_hyperemote: boolean | null
@@ -540,6 +556,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
+          audio_scheduled_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -563,6 +580,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
+          audio_scheduled_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -597,6 +615,7 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           audio_played_at: string | null
+          audio_scheduled_at: string | null
           created_at: string | null
           id: string
           is_hyperemote: boolean | null
@@ -620,6 +639,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
+          audio_scheduled_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -643,6 +663,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
+          audio_scheduled_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -677,6 +698,7 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           audio_played_at: string | null
+          audio_scheduled_at: string | null
           created_at: string | null
           id: string
           is_hyperemote: boolean | null
@@ -700,6 +722,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
+          audio_scheduled_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -723,6 +746,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
+          audio_scheduled_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -757,6 +781,7 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           audio_played_at: string | null
+          audio_scheduled_at: string | null
           created_at: string | null
           id: string
           is_hyperemote: boolean | null
@@ -780,6 +805,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
+          audio_scheduled_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -803,6 +829,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
+          audio_scheduled_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -837,6 +864,7 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           audio_played_at: string | null
+          audio_scheduled_at: string | null
           created_at: string | null
           id: string
           is_hyperemote: boolean | null
@@ -860,6 +888,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
+          audio_scheduled_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -883,6 +912,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
+          audio_scheduled_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -917,6 +947,7 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           audio_played_at: string | null
+          audio_scheduled_at: string | null
           created_at: string | null
           id: string
           is_hyperemote: boolean | null
@@ -940,6 +971,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
+          audio_scheduled_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -963,6 +995,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
+          audio_scheduled_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -1089,6 +1122,7 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           audio_played_at: string | null
+          audio_scheduled_at: string | null
           created_at: string | null
           id: string
           is_hyperemote: boolean | null
@@ -1112,6 +1146,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
+          audio_scheduled_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -1135,6 +1170,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
+          audio_scheduled_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -1169,6 +1205,7 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           audio_played_at: string | null
+          audio_scheduled_at: string | null
           created_at: string | null
           id: string
           is_hyperemote: boolean | null
@@ -1190,6 +1227,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
+          audio_scheduled_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -1211,6 +1249,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
+          audio_scheduled_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -1327,6 +1366,7 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           audio_played_at: string | null
+          audio_scheduled_at: string | null
           created_at: string | null
           id: string
           is_hyperemote: boolean | null
@@ -1350,6 +1390,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
+          audio_scheduled_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -1373,6 +1414,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
+          audio_scheduled_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -1458,6 +1500,7 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           audio_played_at: string | null
+          audio_scheduled_at: string | null
           created_at: string | null
           id: string
           is_hyperemote: boolean | null
@@ -1481,6 +1524,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
+          audio_scheduled_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
@@ -1504,6 +1548,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
+          audio_scheduled_at?: string | null
           created_at?: string | null
           id?: string
           is_hyperemote?: boolean | null
