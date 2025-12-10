@@ -9,7 +9,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import EnhancedVoiceRecorder from '@/components/EnhancedVoiceRecorder';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
-import { Brain } from 'lucide-react';
+import HyperSoundSelector from '@/components/HyperSoundSelector';
+import { Brain, Check, ChevronsUpDown } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { cn } from '@/lib/utils';
+import { SUPPORTED_CURRENCIES, getCurrencyMinimums, getCurrencyByCode } from '@/constants/currencies';
 
 const MrIqmaster = () => {
   const [formData, setFormData] = useState({
@@ -17,11 +22,17 @@ const MrIqmaster = () => {
     amount: '',
     message: '',
   });
-  const [donationType, setDonationType] = useState<'text' | 'voice' | 'hyperemote'>('text');
+  const [currency, setCurrency] = useState('INR');
+  const [currencyOpen, setCurrencyOpen] = useState(false);
+  const [donationType, setDonationType] = useState<'text' | 'voice' | 'hypersound'>('text');
+  const [selectedSound, setSelectedSound] = useState<string | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
-  const [streamerSettings, setStreamerSettings] = useState<{ hyperemotes_enabled: boolean; hyperemotes_min_amount: number } | null>(null);
   const navigate = useNavigate();
+
+  const minimums = getCurrencyMinimums(currency);
+  const currencyData = getCurrencyByCode(currency);
+  const currencySymbol = currencyData?.symbol || currency;
 
   const getVoiceDuration = (amount: number) => {
     if (amount >= 500) return 30;
@@ -49,21 +60,6 @@ const MrIqmaster = () => {
     };
 
     loadRazorpay();
-
-    const fetchStreamerSettings = async () => {
-      const { data, error } = await supabase.functions.invoke('get-pusher-config', {
-        body: { streamer_slug: 'mriqmaster' }
-      });
-      
-      if (!error && data) {
-        setStreamerSettings({
-          hyperemotes_enabled: true,
-          hyperemotes_min_amount: 50
-        });
-      }
-    };
-
-    fetchStreamerSettings();
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -84,23 +80,28 @@ const MrIqmaster = () => {
       return;
     }
 
-    if (donationType === 'text' && amount < 40) {
-      toast.error('Minimum ₹40 required for text messages');
+    if (donationType === 'text' && amount < minimums.minText) {
+      toast.error(`Minimum ${currencySymbol}${minimums.minText} required for text messages`);
       return;
     }
 
-    if (donationType === 'voice' && amount < 150) {
-      toast.error('Minimum ₹150 required for voice messages');
+    if (donationType === 'voice' && amount < minimums.minVoice) {
+      toast.error(`Minimum ${currencySymbol}${minimums.minVoice} required for voice messages`);
       return;
     }
 
-    if (donationType === 'hyperemote' && amount < 50) {
-      toast.error('Minimum ₹50 required for hyperemotes');
+    if (donationType === 'hypersound' && amount < minimums.minHypersound) {
+      toast.error(`Minimum ${currencySymbol}${minimums.minHypersound} required for HyperSounds`);
       return;
     }
 
     if (donationType === 'voice' && !voiceRecorder.audioBlob) {
       toast.error('Please record a voice message');
+      return;
+    }
+
+    if (donationType === 'hypersound' && !selectedSound) {
+      toast.error('Please select a sound');
       return;
     }
 
@@ -155,9 +156,10 @@ const MrIqmaster = () => {
           body: {
             name: formData.name,
             amount: amount,
+            currency: currency,
             message: formData.message || null,
-            donationType: donationType,
             voiceMessageUrl: voiceMessageUrl,
+            hypersoundUrl: donationType === 'hypersound' ? selectedSound : null,
           }
         }
       );
@@ -169,7 +171,6 @@ const MrIqmaster = () => {
         throw new Error(orderError.message || 'Failed to create order');
       }
 
-      // Handle both camelCase (orderId) and snake_case (order_id) for backward compatibility
       const internalOrderId = orderData.orderId || orderData.order_id;
       
       if (!orderData || !internalOrderId) {
@@ -261,7 +262,7 @@ const MrIqmaster = () => {
               <div className="grid grid-cols-3 gap-3">
                 <Button
                   type="button"
-                  onClick={() => { setDonationType('text'); setFormData({ ...formData, amount: '40' }); }}
+                  onClick={() => { setDonationType('text'); setFormData({ ...formData, amount: String(minimums.minText) }); }}
                   variant={donationType === 'text' ? 'default' : 'outline'}
                   className={donationType === 'text' 
                     ? 'bg-gradient-to-br from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white border-2 border-cyan-400 shadow-lg shadow-cyan-500/50 transition-all duration-300 h-auto' 
@@ -270,12 +271,12 @@ const MrIqmaster = () => {
                   <div className="flex flex-col items-center gap-1.5 py-2">
                     <span className="text-2xl">💬</span>
                     <span className="text-xs font-semibold">Text</span>
-                    <span className="text-[10px] opacity-80 font-medium">₹40+</span>
+                    <span className="text-[10px] opacity-80 font-medium">{currencySymbol}{minimums.minText}+</span>
                   </div>
                 </Button>
                 <Button
                   type="button"
-                  onClick={() => { setDonationType('voice'); setFormData({ ...formData, amount: '150' }); }}
+                  onClick={() => { setDonationType('voice'); setFormData({ ...formData, amount: String(minimums.minVoice) }); }}
                   variant={donationType === 'voice' ? 'default' : 'outline'}
                   className={donationType === 'voice' 
                     ? 'bg-gradient-to-br from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white border-2 border-cyan-400 shadow-lg shadow-cyan-500/50 transition-all duration-300 h-auto' 
@@ -284,41 +285,82 @@ const MrIqmaster = () => {
                   <div className="flex flex-col items-center gap-1.5 py-2">
                     <span className="text-2xl">🎤</span>
                     <span className="text-xs font-semibold">Voice</span>
-                    <span className="text-[10px] opacity-80 font-medium">₹150+</span>
+                    <span className="text-[10px] opacity-80 font-medium">{currencySymbol}{minimums.minVoice}+</span>
                   </div>
                 </Button>
                 <Button
                   type="button"
-                  onClick={() => { setDonationType('hyperemote'); setFormData({ ...formData, amount: '50' }); }}
-                  variant={donationType === 'hyperemote' ? 'default' : 'outline'}
-                  className={donationType === 'hyperemote' 
+                  onClick={() => { setDonationType('hypersound'); setFormData({ ...formData, amount: String(minimums.minHypersound) }); }}
+                  variant={donationType === 'hypersound' ? 'default' : 'outline'}
+                  className={donationType === 'hypersound' 
                     ? 'bg-gradient-to-br from-cyan-500 to-cyan-600 hover:from-cyan-600 hover:to-cyan-700 text-white border-2 border-cyan-400 shadow-lg shadow-cyan-500/50 transition-all duration-300 h-auto' 
                     : 'border-2 border-cyan-500/40 text-cyan-300 hover:bg-cyan-950/60 hover:border-cyan-400/60 hover:text-cyan-200 hover:shadow-lg hover:shadow-cyan-500/20 transition-all duration-300 bg-cyan-950/20 h-auto'}
-                  disabled={!streamerSettings?.hyperemotes_enabled}
                 >
                   <div className="flex flex-col items-center gap-1.5 py-2">
-                    <Brain className="w-6 h-6" />
-                    <span className="text-xs font-semibold">Brain</span>
-                    <span className="text-[10px] opacity-80 font-medium">₹50+</span>
+                    <span className="text-2xl">🔊</span>
+                    <span className="text-xs font-semibold">Sound</span>
+                    <span className="text-[10px] opacity-80 font-medium">{currencySymbol}{minimums.minHypersound}+</span>
                   </div>
                 </Button>
               </div>
             </div>
 
             <div>
-              <Label htmlFor="amount" className="text-cyan-400 font-semibold">Amount (₹)</Label>
-              <Input
-                id="amount"
-                name="amount"
-                type="number"
-                value={formData.amount}
-                onChange={handleInputChange}
-                placeholder="Enter amount"
-                required
-                min={donationType === 'text' ? 40 : donationType === 'voice' ? 150 : 50}
-                className="bg-cyan-950/50 border-cyan-500/30 text-white placeholder:text-cyan-400/50 focus:border-cyan-400"
-              />
-              <p className="text-xs text-muted-foreground">TTS above ₹70</p>
+              <Label htmlFor="amount" className="text-cyan-400 font-semibold">Amount</Label>
+              <div className="flex gap-2">
+                <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={currencyOpen}
+                      className="w-[100px] justify-between bg-cyan-950/50 border-cyan-500/30 text-white hover:bg-cyan-950/70"
+                    >
+                      {currencySymbol} {currency}
+                      <ChevronsUpDown className="ml-1 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[200px] p-0">
+                    <Command>
+                      <CommandInput placeholder="Search currency..." />
+                      <CommandList>
+                        <CommandEmpty>No currency found.</CommandEmpty>
+                        <CommandGroup>
+                          {SUPPORTED_CURRENCIES.map((curr) => (
+                            <CommandItem
+                              key={curr.code}
+                              value={curr.code}
+                              onSelect={(value) => {
+                                setCurrency(value.toUpperCase());
+                                setCurrencyOpen(false);
+                                const newMins = getCurrencyMinimums(value.toUpperCase());
+                                if (donationType === 'text') setFormData({ ...formData, amount: String(newMins.minText) });
+                                else if (donationType === 'voice') setFormData({ ...formData, amount: String(newMins.minVoice) });
+                                else setFormData({ ...formData, amount: String(newMins.minHypersound) });
+                              }}
+                            >
+                              <Check className={cn("mr-2 h-4 w-4", currency === curr.code ? "opacity-100" : "opacity-0")} />
+                              {curr.symbol} {curr.code} - {curr.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                <Input
+                  id="amount"
+                  name="amount"
+                  type="number"
+                  value={formData.amount}
+                  onChange={handleInputChange}
+                  placeholder="Enter amount"
+                  required
+                  min={donationType === 'text' ? minimums.minText : donationType === 'voice' ? minimums.minVoice : minimums.minHypersound}
+                  className="flex-1 bg-cyan-950/50 border-cyan-500/30 text-white placeholder:text-cyan-400/50 focus:border-cyan-400"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">TTS above ₹70</p>
             </div>
 
             {donationType === 'text' && (
@@ -349,19 +391,17 @@ const MrIqmaster = () => {
                       toast.error('Please record a voice message');
                     }
                   }}
-                  requiredAmount={150}
+                  requiredAmount={minimums.minVoice}
                   currentAmount={currentAmount}
                 />
               </div>
             )}
 
-            {donationType === 'hyperemote' && (
-              <div className="text-cyan-300 text-sm bg-cyan-950/30 p-3 rounded-lg border border-cyan-500/20">
-                <p className="flex items-center gap-2">
-                  <Brain className="w-4 h-4" />
-                  Trigger a special brain rain effect on stream!
-                </p>
-              </div>
+            {donationType === 'hypersound' && (
+              <HyperSoundSelector
+                selectedSound={selectedSound}
+                onSoundSelect={setSelectedSound}
+              />
             )}
 
             <Button 
