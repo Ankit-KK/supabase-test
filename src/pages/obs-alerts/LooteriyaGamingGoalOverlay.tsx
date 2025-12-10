@@ -169,7 +169,7 @@ const LooteriyaGamingGoalOverlay = () => {
         <div 
           className="relative px-7 py-5 rounded-[1.25rem] text-white"
           style={{
-            background: 'transparent',
+            background: 'rgba(45, 20, 60, 0.75)',
             border: '1px solid rgba(168, 85, 247, 0.4)',
             boxShadow: '0 18px 35px rgba(0, 0, 0, 0.6), 0 0 40px rgba(147, 51, 234, 0.3)',
           }}
