@@ -1,16 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-// Razorpay - loaded via script tag
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import EnhancedVoiceRecorder from '@/components/EnhancedVoiceRecorder';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
+import HyperSoundSelector from '@/components/HyperSoundSelector';
+import { SUPPORTED_CURRENCIES, getCurrencyMinimums, getCurrencySymbol } from '@/constants/currencies';
 import looteriyaLogo from '@/assets/looteriya-logo.jpg';
 import looteriyaCardBg from '@/assets/looteriya-card-bg.jpg';
 import looteriyaMainBanner from '@/assets/looteriya-main-banner.jpg';
@@ -21,39 +35,36 @@ const LooteriyaGaming = () => {
     amount: '',
     message: '',
   });
-  const [donationType, setDonationType] = useState<'text' | 'voice' | 'hyperemote'>('text');
+  const [selectedCurrency, setSelectedCurrency] = useState('INR');
+  const [currencyOpen, setCurrencyOpen] = useState(false);
+  const [donationType, setDonationType] = useState<'text' | 'voice' | 'hypersound'>('text');
+  const [selectedHypersound, setSelectedHypersound] = useState<string | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [streamerSettings, setStreamerSettings] = useState<{ hyperemotes_enabled: boolean; hyperemotes_min_amount: number } | null>(null);
   const navigate = useNavigate();
-  // Calculate voice duration based on amount
+
+  const minimums = getCurrencyMinimums(selectedCurrency);
+  const currencySymbol = getCurrencySymbol(selectedCurrency);
+
   const getVoiceDuration = (amount: number) => {
-    if (amount >= 500) return 30;
-    if (amount >= 250) return 25;
-    if (amount >= 150) return 15;
-    return 15; // default
+    if (selectedCurrency === 'INR') {
+      if (amount >= 500) return 30;
+      if (amount >= 250) return 25;
+      if (amount >= 150) return 15;
+      return 15;
+    }
+    if (amount >= 6) return 30;
+    if (amount >= 3) return 25;
+    return 15;
   };
 
   const currentAmount = parseFloat(formData.amount) || 0;
   const voiceRecorder = useVoiceRecorder(getVoiceDuration(currentAmount));
 
   useEffect(() => {
-    // Load Razorpay script
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
     script.async = true;
     document.body.appendChild(script);
-
-    const fetchStreamerSettings = async () => {
-      const { data, error } = await supabase.rpc('get_streamer_public_settings', {
-        slug: 'looteriya_gaming'
-      });
-      
-      if (!error && data && data.length > 0) {
-        setStreamerSettings(data[0]);
-      }
-    };
-
-    fetchStreamerSettings();
 
     return () => {
       document.body.removeChild(script);
@@ -79,22 +90,19 @@ const LooteriyaGaming = () => {
       return;
     }
 
-    // Validate minimum amounts based on donation type
-    if (donationType === 'text' && amount < 40) {
-      toast.error('Minimum amount for text message is ₹40');
-      return;
-    }
-    if (donationType === 'voice' && amount < 150) {
-      toast.error('Minimum amount for voice message is ₹150');
-      return;
-    }
-    if (donationType === 'hyperemote' && amount < 50) {
-      toast.error('Minimum amount for hyperemotes is ₹50');
+    const minAmount = donationType === 'voice' ? minimums.minVoice : donationType === 'hypersound' ? minimums.minHypersound : minimums.minText;
+    if (amount < minAmount) {
+      toast.error(`Minimum amount for ${donationType} is ${currencySymbol}${minAmount}`);
       return;
     }
 
     if (donationType === 'voice' && !voiceRecorder.audioBlob) {
       toast.error('Please record a voice message');
+      return;
+    }
+
+    if (donationType === 'hypersound' && !selectedHypersound) {
+      toast.error('Please select a sound');
       return;
     }
 
@@ -105,7 +113,6 @@ const LooteriyaGaming = () => {
     setIsProcessingPayment(true);
 
     try {
-      // Upload voice message BEFORE creating payment order
       let voiceMessageUrl: string | null = null;
       if (donationType === 'voice' && voiceRecorder.audioBlob) {
         console.log('Uploading voice message before payment...', { 
@@ -113,12 +120,10 @@ const LooteriyaGaming = () => {
           blobType: voiceRecorder.audioBlob.type 
         });
 
-        // Validate blob has data
         if (!voiceRecorder.audioBlob || voiceRecorder.audioBlob.size === 0) {
           throw new Error('No voice recording found. Please record your message again.');
         }
 
-        // Convert blob to base64 with proper error handling
         const voiceDataBase64 = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           
@@ -140,7 +145,6 @@ const LooteriyaGaming = () => {
           reader.readAsDataURL(voiceRecorder.audioBlob!);
         });
 
-        // Upload voice message directly
         const { data: uploadResult, error: uploadError } = await supabase.functions.invoke(
           'upload-voice-message-direct',
           {
@@ -166,13 +170,13 @@ const LooteriyaGaming = () => {
           amount: parseFloat(formData.amount),
           message: donationType === 'text' ? formData.message : null,
           voiceMessageUrl: voiceMessageUrl,
-          isHyperemote: donationType === 'hyperemote',
+          hypersoundUrl: donationType === 'hypersound' ? selectedHypersound : null,
+          currency: selectedCurrency,
         },
       });
 
       if (error) throw error;
 
-      // Initialize Razorpay checkout
       const options = {
         key: data.razorpay_key_id,
         amount: data.amount,
@@ -206,25 +210,22 @@ const LooteriyaGaming = () => {
     }
   };
 
-  const handleDonationTypeChange = (value: string) => {
-    setDonationType(value as 'text' | 'voice' | 'hyperemote');
-    if (value === 'hyperemote') {
-      setFormData(prev => ({ ...prev, amount: '50', message: '' }));
+  const handleDonationTypeChange = (value: 'text' | 'voice' | 'hypersound') => {
+    setDonationType(value);
+    if (value === 'hypersound') {
+      setFormData(prev => ({ ...prev, amount: String(minimums.minHypersound), message: '' }));
     } else if (value === 'voice') {
-      setFormData(prev => ({ ...prev, amount: '150', message: '' }));
+      setFormData(prev => ({ ...prev, amount: String(minimums.minVoice), message: '' }));
     } else {
-      setFormData(prev => ({ ...prev, amount: '40', message: '' }));
+      setFormData(prev => ({ ...prev, amount: String(minimums.minText), message: '' }));
     }
   };
 
   return (
     <div 
       className="min-h-screen flex items-center justify-center p-4 relative bg-cover bg-center bg-no-repeat"
-      style={{ 
-        backgroundImage: `url(${looteriyaMainBanner})`
-      }}
+      style={{ backgroundImage: `url(${looteriyaMainBanner})` }}
     >
-      {/* Dark overlay for better card visibility */}
       <div className="absolute inset-0 bg-black/20"></div>
 
       <Card 
@@ -235,10 +236,7 @@ const LooteriyaGaming = () => {
           backgroundPosition: 'center'
         }}
       >
-        {/* Dark overlay for readability */}
         <div className="absolute inset-0 bg-black/50"></div>
-        
-        {/* Card glow effect */}
         <div className="absolute inset-0 bg-gradient-to-r from-amber-500/20 via-amber-600/20 to-amber-400/20 opacity-50 blur-xl"></div>
         
         <CardHeader className="text-center relative z-10">
@@ -257,7 +255,6 @@ const LooteriyaGaming = () => {
 
         <CardContent className="space-y-6 relative z-10">
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Name Field */}
             <div className="space-y-2">
               <label htmlFor="name" className="text-sm font-medium text-amber-500">
                 Your Name *
@@ -273,7 +270,6 @@ const LooteriyaGaming = () => {
               />
             </div>
 
-            {/* Donation Type Selection */}
             <div className="space-y-2">
               <label className="text-xs font-medium text-amber-500">
                 Choose your donation type
@@ -291,7 +287,7 @@ const LooteriyaGaming = () => {
                   <div className="text-center">
                     <div className="text-sm mb-0.5">💬</div>
                     <div className="font-medium text-[10px]">Text Message</div>
-                    <div className="text-[9px] text-muted-foreground">Min: ₹40</div>
+                    <div className="text-[9px] text-muted-foreground">Min: {currencySymbol}{minimums.minText}</div>
                   </div>
                 </button>
                 <button
@@ -306,56 +302,88 @@ const LooteriyaGaming = () => {
                   <div className="text-center">
                     <div className="text-sm mb-0.5">🎤</div>
                     <div className="font-medium text-[10px]">Voice Message</div>
-                    <div className="text-[9px] text-muted-foreground">Min: ₹150</div>
+                    <div className="text-[9px] text-muted-foreground">Min: {currencySymbol}{minimums.minVoice}</div>
                   </div>
                 </button>
-                {streamerSettings?.hyperemotes_enabled && (
-                  <button
-                    type="button"
-                    onClick={() => handleDonationTypeChange('hyperemote')}
-                    className={`relative p-2 rounded-lg border-2 transition-all overflow-hidden ${
-                      donationType === 'hyperemote'
-                        ? 'border-amber-500 bg-amber-500/10'
-                        : 'border-amber-500/30 hover:border-amber-500/50'
-                    }`}
-                  >
-                    <div 
-                      className="absolute inset-0 opacity-10"
-                      style={{
-                        background: 'linear-gradient(135deg, #f59e0b 0%, #fb923c 100%)'
-                      }}
-                    />
-                    <div className="relative text-center">
-                      <div className="text-base mb-0.5">✨🎉</div>
-                      <div className="font-bold text-[10px] mb-0.5">Hyperemote Rain</div>
-                      <div className="text-[9px] text-muted-foreground mb-1">Animated GIFs!</div>
-                      <div className="text-[9px] font-medium text-amber-500">Min: ₹50</div>
-                    </div>
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => handleDonationTypeChange('hypersound')}
+                  className={`p-2 rounded-lg border-2 transition-all ${
+                    donationType === 'hypersound'
+                      ? 'border-amber-500 bg-amber-500/10'
+                      : 'border-amber-500/30 hover:border-amber-500/50'
+                  }`}
+                >
+                  <div className="text-center">
+                    <div className="text-sm mb-0.5">🔊</div>
+                    <div className="font-medium text-[10px]">HyperSound</div>
+                    <div className="text-[9px] text-muted-foreground">Min: {currencySymbol}{minimums.minHypersound}</div>
+                  </div>
+                </button>
               </div>
             </div>
 
-            {/* Amount Field */}
             <div className="space-y-2">
               <label htmlFor="amount" className="text-sm font-medium text-amber-500">
-                Amount (₹) *
+                Amount *
               </label>
-              <Input
-                id="amount"
-                name="amount"
-                type="number"
-                placeholder="Enter amount"
-                value={formData.amount}
-                onChange={handleInputChange}
-                className="border-amber-500/30 focus:border-amber-500 focus:ring-amber-500/20"
-                required
-                min="1"
-              />
-              <p className="text-xs text-muted-foreground">TTS above ₹70</p>
+              <div className="flex gap-2">
+                <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={currencyOpen}
+                      className="w-[100px] justify-between border-amber-500/30 hover:bg-amber-500/10"
+                    >
+                      {currencySymbol} {selectedCurrency}
+                      <ChevronsUpDown className="ml-1 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[200px] p-0">
+                    <Command>
+                      <CommandInput placeholder="Search currency..." />
+                      <CommandList>
+                        <CommandEmpty>No currency found.</CommandEmpty>
+                        <CommandGroup>
+                          {SUPPORTED_CURRENCIES.map((currency) => (
+                            <CommandItem
+                              key={currency.code}
+                              value={currency.code}
+                              onSelect={(value) => {
+                                setSelectedCurrency(value.toUpperCase());
+                                setCurrencyOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  selectedCurrency === currency.code ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {currency.symbol} {currency.code} - {currency.name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                <Input
+                  id="amount"
+                  name="amount"
+                  type="number"
+                  placeholder="Enter amount"
+                  value={formData.amount}
+                  onChange={handleInputChange}
+                  className="flex-1 border-amber-500/30 focus:border-amber-500 focus:ring-amber-500/20"
+                  required
+                  min="1"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">TTS above {currencySymbol}{selectedCurrency === 'INR' ? '70' : '1'}</p>
             </div>
 
-            {/* Message/Voice Field */}
             {donationType === 'text' && (
               <div className="space-y-2">
                 <label htmlFor="message" className="text-sm font-medium text-amber-500">
@@ -385,8 +413,18 @@ const LooteriyaGaming = () => {
                   }}
                   maxDurationSeconds={getVoiceDuration(currentAmount)}
                   brandColor="#f59e0b"
-                  requiredAmount={150}
+                  requiredAmount={minimums.minVoice}
                   currentAmount={currentAmount}
+                />
+              </div>
+            )}
+
+            {donationType === 'hypersound' && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-amber-500">Select a Sound</Label>
+                <HyperSoundSelector
+                  selectedSound={selectedHypersound}
+                  onSoundSelect={setSelectedHypersound}
                 />
               </div>
             )}
@@ -397,7 +435,7 @@ const LooteriyaGaming = () => {
               style={{ backgroundColor: '#f59e0b' }}
               disabled={isProcessingPayment}
             >
-              {isProcessingPayment ? 'Processing...' : 'Continue to Payment'}
+              {isProcessingPayment ? 'Processing...' : `Support with ${currencySymbol}${formData.amount || '0'}`}
             </Button>
           </form>
         </CardContent>
