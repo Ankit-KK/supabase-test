@@ -7,9 +7,25 @@ import { Label } from '@/components/ui/label';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-// Razorpay - loaded via script tag
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import EnhancedVoiceRecorder from '@/components/EnhancedVoiceRecorder';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
+import HyperSoundSelector from '@/components/HyperSoundSelector';
+import { SUPPORTED_CURRENCIES, getCurrencyByCode, getCurrencyMinimums, getCurrencySymbol } from '@/constants/currencies';
 import nekoXenpaiBanner from '@/assets/neko-xenpai-banner-new.jpg';
 import nekoXenpaiProfile from '@/assets/neko-xenpai-profile-new.jpg';
 import nekoXenpaiLogo from '@/assets/neko-xenpai-profile-new.jpg';
@@ -20,24 +36,41 @@ const NekoXenpai = () => {
     amount: '',
     message: '',
   });
-  const [donationType, setDonationType] = useState<'text' | 'voice' | 'hyperemote'>('text');
+  const [selectedCurrency, setSelectedCurrency] = useState('INR');
+  const [currencyOpen, setCurrencyOpen] = useState(false);
+  const [donationType, setDonationType] = useState<'text' | 'voice' | 'hypersound'>('text');
+  const [selectedHypersound, setSelectedHypersound] = useState<string | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [streamerSettings, setStreamerSettings] = useState<{ hyperemotes_enabled: boolean; hyperemotes_min_amount: number } | null>(null);
   const navigate = useNavigate();
   
+  const minimums = getCurrencyMinimums(selectedCurrency);
+  const currencySymbol = getCurrencySymbol(selectedCurrency);
+
   const getVoiceDuration = (amount: number) => {
-    if (amount >= 500) return 30;
-    if (amount >= 250) return 25;
-    if (amount >= 150) return 15;
+    if (selectedCurrency === 'INR') {
+      if (amount >= 500) return 30;
+      if (amount >= 250) return 25;
+      if (amount >= 150) return 15;
+      return 15;
+    }
+    // For other currencies, use equivalent tiers
+    if (amount >= 6) return 30;
+    if (amount >= 3) return 25;
     return 15;
   };
 
   const getCharacterLimit = () => {
     const amount = parseFloat(formData.amount) || 0;
-    if (amount >= 250) return 500;
-    if (amount >= 100) return 250;
-    if (amount >= 70) return 150;
-    return 100;
+    if (selectedCurrency === 'INR') {
+      if (amount >= 250) return 500;
+      if (amount >= 100) return 250;
+      if (amount >= 70) return 150;
+      return 100;
+    }
+    // For other currencies
+    if (amount >= 3) return 500;
+    if (amount >= 1.5) return 250;
+    return 150;
   };
 
   const currentAmount = parseFloat(formData.amount) || 0;
@@ -50,27 +83,6 @@ const NekoXenpai = () => {
     script.async = true;
     document.body.appendChild(script);
 
-    const fetchStreamerSettings = async () => {
-      try {
-        const { data, error } = await supabase.rpc('get_streamer_public_settings', {
-          slug: 'neko_xenpai'
-        });
-        
-        if (error) {
-          console.error('Error fetching streamer settings:', error);
-          return;
-        }
-
-        if (data && data.length > 0) {
-          setStreamerSettings(data[0]);
-        }
-      } catch (err) {
-        console.error('Failed to fetch streamer settings:', err);
-      }
-    };
-
-    fetchStreamerSettings();
-
     return () => {
       document.body.removeChild(script);
     };
@@ -82,7 +94,7 @@ const NekoXenpai = () => {
   };
 
   const validateDonation = () => {
-    const minAmount = donationType === 'voice' ? 150 : donationType === 'hyperemote' ? 50 : 40;
+    const minAmount = donationType === 'voice' ? minimums.minVoice : donationType === 'hypersound' ? minimums.minHypersound : minimums.minText;
     const amount = parseFloat(formData.amount);
 
     if (!formData.name.trim()) {
@@ -91,7 +103,7 @@ const NekoXenpai = () => {
     }
 
     if (isNaN(amount) || amount < minAmount) {
-      toast.error(`Minimum amount for ${donationType} is ₹${minAmount}`);
+      toast.error(`Minimum amount for ${donationType} is ${currencySymbol}${minAmount}`);
       return false;
     }
 
@@ -102,6 +114,11 @@ const NekoXenpai = () => {
 
     if (donationType === 'voice' && !voiceRecorder.audioBlob) {
       toast.error('Please record a voice message');
+      return false;
+    }
+
+    if (donationType === 'hypersound' && !selectedHypersound) {
+      toast.error('Please select a sound');
       return false;
     }
 
@@ -191,7 +208,8 @@ const NekoXenpai = () => {
           amount: formData.amount,
           message: donationType === 'text' ? formData.message : null,
           voiceMessageUrl,
-          isHyperemote: donationType === 'hyperemote',
+          hypersoundUrl: donationType === 'hypersound' ? selectedHypersound : null,
+          currency: selectedCurrency,
         },
       });
 
@@ -287,7 +305,7 @@ const NekoXenpai = () => {
               >
                 <span className="text-4xl">💬</span>
                 <span className="text-sm font-bold tracking-wide uppercase">Text</span>
-                <span className="text-xs opacity-90 font-semibold">Min ₹40</span>
+                <span className="text-xs opacity-90 font-semibold">Min {currencySymbol}{minimums.minText}</span>
               </Button>
 
               <Button
@@ -302,23 +320,22 @@ const NekoXenpai = () => {
               >
                 <span className="text-4xl">🎤</span>
                 <span className="text-sm font-bold tracking-wide uppercase">Voice</span>
-                <span className="text-xs opacity-90 font-semibold">Min ₹150</span>
+                <span className="text-xs opacity-90 font-semibold">Min {currencySymbol}{minimums.minVoice}</span>
               </Button>
 
               <Button
                 type="button"
-                variant={donationType === 'hyperemote' ? 'default' : 'outline'}
-                onClick={() => setDonationType('hyperemote')}
-                disabled={!streamerSettings?.hyperemotes_enabled}
+                variant={donationType === 'hypersound' ? 'default' : 'outline'}
+                onClick={() => setDonationType('hypersound')}
                 className={`h-24 flex flex-col items-center justify-center gap-2 transition-all duration-300 ${
-                  donationType === 'hyperemote'
+                  donationType === 'hypersound'
                     ? 'bg-gradient-to-br from-fuchsia-600 via-fuchsia-500 to-pink-600 hover:from-fuchsia-700 hover:via-fuchsia-600 hover:to-pink-700 text-white border-2 border-fuchsia-300 shadow-xl shadow-fuchsia-500/60 scale-105 ring-2 ring-fuchsia-400/30'
-                    : 'bg-gradient-to-br from-black/60 to-black/40 hover:from-black/70 hover:to-black/50 text-fuchsia-200 border-2 border-fuchsia-500/50 hover:border-fuchsia-400/70 hover:shadow-lg hover:shadow-fuchsia-500/30 hover:scale-105 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100'
+                    : 'bg-gradient-to-br from-black/60 to-black/40 hover:from-black/70 hover:to-black/50 text-fuchsia-200 border-2 border-fuchsia-500/50 hover:border-fuchsia-400/70 hover:shadow-lg hover:shadow-fuchsia-500/30 hover:scale-105'
                 }`}
               >
-                <span className="text-4xl">🎁</span>
-                <span className="text-sm font-bold tracking-wide uppercase">Effects</span>
-                <span className="text-xs opacity-90 font-semibold">Min ₹{streamerSettings?.hyperemotes_min_amount || 50}</span>
+                <span className="text-4xl">🔊</span>
+                <span className="text-sm font-bold tracking-wide uppercase">Sound</span>
+                <span className="text-xs opacity-90 font-semibold">Min {currencySymbol}{minimums.minHypersound}</span>
               </Button>
             </div>
           </div>
@@ -338,19 +355,62 @@ const NekoXenpai = () => {
           </div>
 
           <div className="space-y-1">
-            <Label htmlFor="amount" className="text-sm text-fuchsia-200">Amount (₹)</Label>
-            <Input
-              id="amount"
-              name="amount"
-              type="number"
-              placeholder="Enter amount"
-              value={formData.amount}
-              onChange={handleInputChange}
-              className="bg-black/40 border-fuchsia-500/30 text-white placeholder:text-fuchsia-300/50 focus:border-fuchsia-500 focus:ring-fuchsia-500/20"
-              min="1"
-              required
-            />
-            <p className="text-xs text-muted-foreground">TTS above ₹70</p>
+            <Label htmlFor="amount" className="text-sm text-fuchsia-200">Amount</Label>
+            <div className="flex gap-2">
+              <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={currencyOpen}
+                    className="w-[100px] justify-between bg-black/40 border-fuchsia-500/30 text-white hover:bg-black/60"
+                  >
+                    {currencySymbol} {selectedCurrency}
+                    <ChevronsUpDown className="ml-1 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Search currency..." />
+                    <CommandList>
+                      <CommandEmpty>No currency found.</CommandEmpty>
+                      <CommandGroup>
+                        {SUPPORTED_CURRENCIES.map((currency) => (
+                          <CommandItem
+                            key={currency.code}
+                            value={currency.code}
+                            onSelect={(value) => {
+                              setSelectedCurrency(value.toUpperCase());
+                              setCurrencyOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedCurrency === currency.code ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {currency.symbol} {currency.code} - {currency.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              <Input
+                id="amount"
+                name="amount"
+                type="number"
+                placeholder="Enter amount"
+                value={formData.amount}
+                onChange={handleInputChange}
+                className="flex-1 bg-black/40 border-fuchsia-500/30 text-white placeholder:text-fuchsia-300/50 focus:border-fuchsia-500 focus:ring-fuchsia-500/20"
+                min="1"
+                required
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">TTS above {currencySymbol}{selectedCurrency === 'INR' ? '70' : '1'}</p>
           </div>
 
           {donationType === 'text' && (
@@ -384,7 +444,7 @@ const NekoXenpai = () => {
                 onRecordingComplete={(hasRecording, duration) => {}}
                 maxDurationSeconds={getVoiceDuration(parseFloat(formData.amount) || 0)}
                 controller={voiceRecorder}
-                requiredAmount={150}
+                requiredAmount={minimums.minVoice}
                 currentAmount={parseFloat(formData.amount) || 0}
                 brandColor="#d946ef"
               />
@@ -394,23 +454,13 @@ const NekoXenpai = () => {
             </div>
           )}
 
-          {donationType === 'hyperemote' && (
+          {donationType === 'hypersound' && (
             <div className="space-y-2">
-              <Label className="text-sm text-fuchsia-200">Hyperemote Effect Preview</Label>
-              <div className="p-4 rounded-lg border-2 border-fuchsia-500 bg-fuchsia-500/10">
-                <div className="flex items-start gap-3">
-                  <span className="text-3xl">🌧️</span>
-                  <div className="flex-1">
-                    <p className="font-bold text-fuchsia-100 text-base">
-                      Hyperemote Rain Effect
-                    </p>
-                    <p className="text-sm text-fuchsia-300/80 mt-2">
-                      Adorable emotes will rain down across the screen with beautiful animations! 
-                      Your donation will trigger a spectacular visual display that everyone will love.
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <Label className="text-sm text-fuchsia-200">Select a Sound</Label>
+              <HyperSoundSelector
+                selectedSound={selectedHypersound}
+                onSoundSelect={setSelectedHypersound}
+              />
             </div>
           )}
 
@@ -419,7 +469,7 @@ const NekoXenpai = () => {
             disabled={isProcessingPayment}
             className="w-full bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-700 hover:to-pink-700 text-white font-semibold py-4 text-base shadow-lg shadow-fuchsia-500/30 transition-all"
           >
-            {isProcessingPayment ? 'Processing...' : `Support with ₹${formData.amount || '0'}`}
+            {isProcessingPayment ? 'Processing...' : `Support with ${currencySymbol}${formData.amount || '0'}`}
           </Button>
         </CardContent>
       </Card>
