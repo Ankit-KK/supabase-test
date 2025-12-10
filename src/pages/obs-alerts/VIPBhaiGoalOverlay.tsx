@@ -1,0 +1,125 @@
+import React, { useEffect, useState, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import GoalOverlay from '@/components/GoalOverlay';
+import Pusher from 'pusher-js';
+
+const VIPBHAI_STREAMER_ID = 'b66f7798-29eb-499a-8351-7e8e4de991aa';
+
+interface GoalData {
+  goal_name: string;
+  goal_target_amount: number;
+  goal_activated_at: string;
+  goal_is_active: boolean;
+}
+
+const VIPBhaiGoalOverlay = () => {
+  const [goalData, setGoalData] = useState<GoalData | null>(null);
+  const [currentAmount, setCurrentAmount] = useState(0);
+  const [pusherConfig, setPusherConfig] = useState<{
+    key: string;
+    cluster: string;
+  } | null>(null);
+  const pusherRef = useRef<Pusher | null>(null);
+
+  useEffect(() => {
+    const fetchPusherConfig = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-pusher-config', {
+          body: { streamer_slug: 'vipbhai' }
+        });
+
+        if (error) throw error;
+        if (data?.key && data?.cluster) {
+          setPusherConfig({ key: data.key, cluster: data.cluster });
+        }
+      } catch (error) {
+        console.error('Error fetching Pusher config:', error);
+      }
+    };
+
+    fetchPusherConfig();
+  }, []);
+
+  const fetchGoalData = async () => {
+    try {
+      const { data: streamer, error } = await supabase
+        .from('streamers')
+        .select('goal_name, goal_target_amount, goal_activated_at, goal_is_active')
+        .eq('id', VIPBHAI_STREAMER_ID)
+        .single();
+
+      if (error) throw error;
+
+      if (!streamer?.goal_is_active || !streamer.goal_activated_at) {
+        setGoalData(null);
+        return;
+      }
+
+      setGoalData({
+        goal_name: streamer.goal_name!,
+        goal_target_amount: Number(streamer.goal_target_amount!),
+        goal_activated_at: streamer.goal_activated_at,
+        goal_is_active: streamer.goal_is_active,
+      });
+
+      const { data: donations, error: donError } = await supabase
+        .from('vipbhai_donations')
+        .select('amount')
+        .eq('streamer_id', VIPBHAI_STREAMER_ID)
+        .eq('payment_status', 'success')
+        .gte('created_at', streamer.goal_activated_at);
+
+      if (!donError && donations) {
+        const total = donations.reduce((sum, d) => sum + Number(d.amount), 0);
+        setCurrentAmount(total);
+      }
+    } catch (error) {
+      console.error('Error fetching goal data:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchGoalData();
+    const interval = setInterval(fetchGoalData, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (!pusherConfig || pusherRef.current) return;
+
+    const pusher = new Pusher(pusherConfig.key, { cluster: pusherConfig.cluster });
+    pusherRef.current = pusher;
+
+    const channel = pusher.subscribe('vipbhai-goal');
+    channel.bind('goal-progress', (data: { currentAmount: number }) => {
+      setCurrentAmount(data.currentAmount);
+    });
+
+    return () => {
+      if (pusherRef.current) {
+        try {
+          channel.unbind_all();
+          channel.unsubscribe();
+          pusherRef.current.disconnect();
+        } catch (e) {
+          console.log('Pusher cleanup:', e);
+        }
+        pusherRef.current = null;
+      }
+    };
+  }, [pusherConfig]);
+
+  if (!goalData) return null;
+
+  return (
+    <div className="w-screen h-screen bg-transparent overflow-hidden flex items-center justify-center">
+      <GoalOverlay
+        goalName={goalData.goal_name}
+        currentAmount={currentAmount}
+        targetAmount={goalData.goal_target_amount}
+      />
+    </div>
+  );
+};
+
+export default VIPBhaiGoalOverlay;
