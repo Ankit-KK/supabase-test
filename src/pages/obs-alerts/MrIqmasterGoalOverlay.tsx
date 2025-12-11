@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import GoalOverlay from '@/components/GoalOverlay';
 import { supabase } from '@/integrations/supabase/client';
 import Pusher from 'pusher-js';
+import { convertToINR } from '@/constants/currencies';
 
 interface GoalData {
   goalName: string;
@@ -46,12 +47,12 @@ const MrIqmasterGoalOverlay = () => {
         if (streamerData.goal_is_active && streamerData.goal_activated_at) {
           const { data: donations } = await supabase
             .from('mriqmaster_donations')
-            .select('amount')
+            .select('amount, currency')
             .gte('created_at', streamerData.goal_activated_at)
             .in('payment_status', ['success', 'completed'])
             .in('moderation_status', ['approved', 'auto_approved']);
 
-          const total = donations?.reduce((sum, d) => sum + Number(d.amount), 0) || 0;
+          const total = donations?.reduce((sum, d) => sum + convertToINR(Number(d.amount), d.currency || 'INR'), 0) || 0;
           setCurrentAmount(total);
         }
       }

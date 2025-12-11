@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import GoalOverlay from '@/components/GoalOverlay';
 import Pusher from 'pusher-js';
+import { convertToINR } from '@/constants/currencies';
 
 const ANKIT_STREAMER_ID = 'b111b82a-9fec-4e74-8a17-f81ee0e1c912'; // From streamers table
 
@@ -71,13 +72,13 @@ const AnkitGoalOverlay = () => {
       // Calculate donations since goal activation
       const { data: donations, error: donError } = await supabase
         .from('ankit_donations')
-        .select('amount')
+        .select('amount, currency')
         .eq('streamer_id', ANKIT_STREAMER_ID)
         .eq('payment_status', 'success')
         .gte('created_at', streamer.goal_activated_at);
 
       if (!donError && donations) {
-        const total = donations.reduce((sum, d) => sum + Number(d.amount), 0);
+        const total = donations.reduce((sum, d) => sum + convertToINR(Number(d.amount), d.currency || 'INR'), 0);
         setCurrentAmount(total);
       }
     } catch (error) {

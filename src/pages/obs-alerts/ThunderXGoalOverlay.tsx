@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import GoalOverlay from '@/components/GoalOverlay';
 import Pusher from 'pusher-js';
+import { convertToINR } from '@/constants/currencies';
 
 const THUNDERX_STREAMER_ID = 'f77658bf-d997-4112-8e71-9ca1cec5ccbe';
 
@@ -64,13 +65,13 @@ const ThunderXGoalOverlay = () => {
 
       const { data: donations, error: donError } = await supabase
         .from('thunderx_donations')
-        .select('amount')
+        .select('amount, currency')
         .eq('streamer_id', THUNDERX_STREAMER_ID)
         .eq('payment_status', 'success')
         .gte('created_at', streamer.goal_activated_at);
 
       if (!donError && donations) {
-        const total = donations.reduce((sum, d) => sum + Number(d.amount), 0);
+        const total = donations.reduce((sum, d) => sum + convertToINR(Number(d.amount), d.currency || 'INR'), 0);
         setCurrentAmount(total);
       }
     } catch (error) {
