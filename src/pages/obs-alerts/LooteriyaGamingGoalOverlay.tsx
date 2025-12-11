@@ -177,7 +177,7 @@ const LooteriyaGamingGoalOverlay = () => {
             </div>
 
             {/* Amount Text - positioned 25% right from center */}
-            <span className="text-3xl font-bold opacity-95 absolute left-[75%] transform -translate-x-1/2">
+            <span className="text-4xl font-extrabold opacity-95 absolute left-[75%] transform -translate-x-1/2 whitespace-nowrap drop-shadow-lg">
               {formatAmount(currentAmount)} / {formatAmount(goalData.goal_target_amount)}
             </span>
           </div>
