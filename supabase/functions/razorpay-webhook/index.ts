@@ -7,6 +7,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-razorpay-signature',
 }
 
+// Exchange rates to INR for TTS threshold conversion
+const EXCHANGE_RATES_TO_INR: Record<string, number> = {
+  'INR': 1, 'USD': 89, 'EUR': 94, 'GBP': 113, 'AED': 24, 'AUD': 57
+};
+
+const convertToINR = (amount: number, currency: string): number => {
+  return amount * (EXCHANGE_RATES_TO_INR[currency] || 1);
+};
+
 // Mapping from streamerType to correct streamer_slug (for database lookup)
 const streamerSlugMap: Record<string, string> = {
   'looteriyagaming': 'looteriya_gaming',
@@ -683,17 +692,20 @@ serve(async (req) => {
         }
       }
       
-      // 3. TEXT MESSAGES - Conditional TTS based on amount
+      // 3. TEXT MESSAGES - Conditional TTS based on amount (converted to INR)
       else if (donation.message) {
-        // ₹40-69: Display only, NO TTS
-        if (donation.amount >= 40 && donation.amount < 70) {
-          console.log('Text donation ₹40-69 - displaying without TTS')
+        // Convert amount to INR equivalent for threshold comparison
+        const amountInINR = convertToINR(donation.amount, paymentCurrency);
+        
+        // ₹40-69 (INR equivalent): Display only, NO TTS
+        if (amountInINR >= 40 && amountInINR < 70) {
+          console.log(`Text donation ${paymentCurrency} ${donation.amount} (₹${amountInINR}) - displaying without TTS`)
           // Alert already sent to dashboard, no audio event needed
         }
         
-        // ₹70+: Display + Generate TTS
-        else if (donation.amount >= 70) {
-          console.log('Text donation ₹70+ - generating TTS')
+        // ₹70+ (INR equivalent): Display + Generate TTS
+        else if (amountInINR >= 70) {
+          console.log(`Text donation ${paymentCurrency} ${donation.amount} (₹${amountInINR}) - generating TTS`)
           
           try {
             const { data: ttsData, error: ttsError } = await supabase.functions.invoke('generate-donation-tts', {

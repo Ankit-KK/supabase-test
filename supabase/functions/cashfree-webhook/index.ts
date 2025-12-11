@@ -8,6 +8,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Exchange rates to INR for TTS threshold conversion
+const EXCHANGE_RATES_TO_INR: Record<string, number> = {
+  'INR': 1, 'USD': 89, 'EUR': 94, 'GBP': 113, 'AED': 24, 'AUD': 57
+};
+
+const convertToINR = (amount: number, currency: string): number => {
+  return amount * (EXCHANGE_RATES_TO_INR[currency] || 1);
+};
+
 // Pusher client for Deno
 class PusherClient {
   private appId: string;
@@ -424,17 +433,22 @@ serve(async (req) => {
           }
         }
         
-        // 3. TEXT MESSAGES - Conditional TTS based on amount
+        // 3. TEXT MESSAGES - Conditional TTS based on amount (converted to INR)
         else if (updatedDonation.message) {
-          // ₹40-69: Display only, NO TTS
-          if (updatedDonation.amount >= 40 && updatedDonation.amount < 70) {
-            console.log('Text donation ₹40-69 - displaying without TTS:', order_id);
+          // Get currency from donation or default to INR
+          const donationCurrency = updatedDonation.currency || 'INR';
+          // Convert amount to INR equivalent for threshold comparison
+          const amountInINR = convertToINR(updatedDonation.amount, donationCurrency);
+          
+          // ₹40-69 (INR equivalent): Display only, NO TTS
+          if (amountInINR >= 40 && amountInINR < 70) {
+            console.log(`Text donation ${donationCurrency} ${updatedDonation.amount} (₹${amountInINR}) - displaying without TTS:`, order_id);
             // Alert already sent to dashboard, no audio event needed
           }
           
-          // ₹70+: Display + Generate TTS
-          else if (updatedDonation.amount >= 70) {
-            console.log('Text donation ₹70+ - generating TTS:', order_id);
+          // ₹70+ (INR equivalent): Display + Generate TTS
+          else if (amountInINR >= 70) {
+            console.log(`Text donation ${donationCurrency} ${updatedDonation.amount} (₹${amountInINR}) - generating TTS:`, order_id);
             
             try {
               const { data: ttsData, error: ttsError } = await supabase.functions.invoke('generate-donation-tts', {
