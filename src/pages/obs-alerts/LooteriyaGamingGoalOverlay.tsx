@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import Pusher from "pusher-js";
 import hyperchatLogo from "@/assets/hyperchat-logo-short.png";
+import { convertToINR } from "@/constants/currencies";
 
 const LOOTERIYA_GAMING_STREAMER_ID = "cfa7c983-be49-4be0-ab99-d20fd4301a11";
 
@@ -73,13 +74,13 @@ const LooteriyaGamingGoalOverlay = () => {
       // Calculate donations since goal activation
       const { data: donations, error: donError } = await supabase
         .from("looteriya_gaming_donations")
-        .select("amount")
+        .select("amount, currency")
         .eq("streamer_id", LOOTERIYA_GAMING_STREAMER_ID)
         .eq("payment_status", "success")
         .gte("created_at", streamer.goal_activated_at);
 
       if (!donError && donations) {
-        const total = donations.reduce((sum, d) => sum + Number(d.amount), 0);
+        const total = donations.reduce((sum, d) => sum + convertToINR(Number(d.amount), d.currency || 'INR'), 0);
         setCurrentAmount(total);
       }
     } catch (error) {
