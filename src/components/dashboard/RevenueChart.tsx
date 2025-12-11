@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import { TrendingUp, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { convertToINR } from '@/constants/currencies';
 
 interface RevenueChartProps {
   streamerId: string;
@@ -21,6 +22,7 @@ interface ChartData {
 
 interface DonationRecord {
   amount: number;
+  currency?: string;
   created_at: string;
   payment_status: string;
 }
@@ -47,7 +49,7 @@ const RevenueChart: React.FC<RevenueChartProps> = ({
 
         const { data: donations, error } = await supabase
           .from(tableName as any)
-          .select('amount, created_at, payment_status')
+          .select('amount, currency, created_at, payment_status')
           .eq('streamer_id', streamerId)
           .eq('payment_status', 'success')
           .gte('created_at', startDate.toISOString())
@@ -65,14 +67,15 @@ const RevenueChart: React.FC<RevenueChartProps> = ({
           revenueByDay.set(dateKey, { revenue: 0, donations: 0 });
         }
 
-        // Populate with actual data
+        // Populate with actual data (convert to INR)
         donations?.forEach(donation => {
           const dateKey = format(new Date(donation.created_at), 'yyyy-MM-dd');
           const existing = revenueByDay.get(dateKey) || { revenue: 0, donations: 0 };
           const amount = parseFloat(donation.amount.toString()) || 0;
+          const amountInINR = convertToINR(amount, donation.currency || 'INR');
           
           revenueByDay.set(dateKey, {
-            revenue: existing.revenue + amount,
+            revenue: existing.revenue + amountInINR,
             donations: existing.donations + 1
           });
         });
