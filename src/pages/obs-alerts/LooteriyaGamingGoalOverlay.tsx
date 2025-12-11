@@ -168,7 +168,7 @@ const LooteriyaGamingGoalOverlay = () => {
           }}
         >
           {/* Title Row */}
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center mb-3">
             {/* Static Logo + Goal Name */}
             <div className="flex items-center gap-4">
               <img 
@@ -181,8 +181,8 @@ const LooteriyaGamingGoalOverlay = () => {
               </span>
             </div>
             
-            {/* Amount Text */}
-            <span className="text-2xl font-semibold opacity-95 ml-[25%]">
+            {/* Amount Text - positioned at ~50% from left */}
+            <span className="text-2xl font-semibold opacity-95 absolute left-1/2 transform -translate-x-1/2">
               {formatAmount(currentAmount)} / {formatAmount(goalData.goal_target_amount)}
             </span>
           </div>
