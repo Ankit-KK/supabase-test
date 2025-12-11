@@ -45,6 +45,22 @@ export const getCurrencyMinimums = (code: string): { minText: number; minVoice: 
     : { minText: 40, minVoice: 150, minHypersound: 30 }; // Default to INR
 };
 
+// Hardcoded exchange rates (approximate, for dashboard display)
+export const EXCHANGE_RATES_TO_INR: Record<string, number> = {
+  'INR': 1,
+  'USD': 89,
+  'EUR': 94,
+  'GBP': 113,
+  'AED': 24,
+  'AUD': 57,
+};
+
+// Convert any currency amount to INR equivalent
+export const convertToINR = (amount: number, currency: string = 'INR'): number => {
+  const rate = EXCHANGE_RATES_TO_INR[currency] || 1;
+  return amount * rate;
+};
+
 // Convert amount to subunits based on currency exponent
 export const amountToSubunits = (amount: number, currencyCode: string): number => {
   const exponent = getCurrencyExponent(currencyCode);

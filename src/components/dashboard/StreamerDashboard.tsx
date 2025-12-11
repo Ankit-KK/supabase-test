@@ -14,6 +14,7 @@ import OBSTokenManager from './OBSTokenManager';
 import CSVExportButton from './CSVExportButton';
 import { usePusherDashboard } from '@/hooks/usePusherDashboard';
 import { usePusherConfig } from '@/hooks/usePusherConfig';
+import { convertToINR } from '@/constants/currencies';
 
 
 interface StreamerDashboardProps {
@@ -36,6 +37,7 @@ interface DonationRecord {
   id: string;
   name: string;
   amount: number;
+  currency?: string;
   message?: string;
   voice_message_url?: string;
   is_hyperemote?: boolean;
@@ -180,7 +182,7 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
         // Fetch donation statistics
         const { data: donations, error } = await supabase
           .from(tableName as any)
-          .select('amount, created_at, moderation_status, payment_status')
+          .select('amount, currency, created_at, moderation_status, payment_status')
           .eq('streamer_id', streamerData.id) as { data: DonationRecord[] | null, error: any };
 
         if (error) throw error;
@@ -193,9 +195,10 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
           new Date(d.created_at).toDateString() === today
         );
 
-        const totalRevenue = successfulDonations.reduce((sum, d) => sum + (parseFloat(d.amount.toString()) || 0), 0);
-        const todayRevenue = todayDonations.reduce((sum, d) => sum + (parseFloat(d.amount.toString()) || 0), 0);
-        const amounts = successfulDonations.map(d => parseFloat(d.amount.toString()) || 0);
+        // Convert all amounts to INR for accurate revenue calculation
+        const totalRevenue = successfulDonations.reduce((sum, d) => sum + convertToINR(parseFloat(d.amount.toString()) || 0, d.currency || 'INR'), 0);
+        const todayRevenue = todayDonations.reduce((sum, d) => sum + convertToINR(parseFloat(d.amount.toString()) || 0, d.currency || 'INR'), 0);
+        const amounts = successfulDonations.map(d => convertToINR(parseFloat(d.amount.toString()) || 0, d.currency || 'INR'));
 
         setStats({
           totalRevenue,

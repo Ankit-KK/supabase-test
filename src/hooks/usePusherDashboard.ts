@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import Pusher from 'pusher-js';
+import { convertToINR } from '@/constants/currencies';
 
 interface DashboardStats {
   totalRevenue: number;
@@ -12,6 +13,7 @@ interface DonationUpdate {
   id: string;
   name: string;
   amount: number;
+  currency?: string;
   message?: string;
   created_at: string;
   moderation_status: string;
@@ -100,10 +102,10 @@ export const usePusherDashboard = ({
       if (onNewDonationRef.current) {
         onNewDonationRef.current(data);
       }
-      // Update stats locally
+      // Update stats locally (convert to INR for accurate revenue)
       setStats(prev => ({
         ...prev,
-        totalRevenue: (prev.totalRevenue || 0) + data.amount,
+        totalRevenue: (prev.totalRevenue || 0) + convertToINR(data.amount, data.currency || 'INR'),
         totalDonations: (prev.totalDonations || 0) + 1,
         pendingCount: (prev.pendingCount || 0) + 1
       }));
