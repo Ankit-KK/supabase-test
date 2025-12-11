@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import GoalOverlay from '@/components/GoalOverlay';
 import Pusher from 'pusher-js';
+import { convertToINR } from '@/constants/currencies';
 
 const VIPBHAI_STREAMER_ID = 'b66f7798-29eb-499a-8351-7e8e4de991aa';
 
@@ -64,13 +65,13 @@ const VIPBhaiGoalOverlay = () => {
 
       const { data: donations, error: donError } = await supabase
         .from('vipbhai_donations')
-        .select('amount')
+        .select('amount, currency')
         .eq('streamer_id', VIPBHAI_STREAMER_ID)
         .eq('payment_status', 'success')
         .gte('created_at', streamer.goal_activated_at);
 
       if (!donError && donations) {
-        const total = donations.reduce((sum, d) => sum + Number(d.amount), 0);
+        const total = donations.reduce((sum, d) => sum + convertToINR(Number(d.amount), d.currency || 'INR'), 0);
         setCurrentAmount(total);
       }
     } catch (error) {
