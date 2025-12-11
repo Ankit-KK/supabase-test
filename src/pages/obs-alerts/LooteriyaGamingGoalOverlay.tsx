@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import Pusher from 'pusher-js';
-import hyperchatLogo from '@/assets/hyperchat-logo-short.png';
+import React, { useEffect, useState, useRef } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import Pusher from "pusher-js";
+import hyperchatLogo from "@/assets/hyperchat-logo-short.png";
 
-const LOOTERIYA_GAMING_STREAMER_ID = 'cfa7c983-be49-4be0-ab99-d20fd4301a11';
+const LOOTERIYA_GAMING_STREAMER_ID = "cfa7c983-be49-4be0-ab99-d20fd4301a11";
 
 interface GoalData {
   goal_name: string;
@@ -27,8 +27,8 @@ const LooteriyaGamingGoalOverlay = () => {
   useEffect(() => {
     const fetchPusherConfig = async () => {
       try {
-        const { data, error } = await supabase.functions.invoke('get-pusher-config', {
-          body: { streamer_slug: 'looteriya_gaming' }
+        const { data, error } = await supabase.functions.invoke("get-pusher-config", {
+          body: { streamer_slug: "looteriya_gaming" },
         });
 
         if (error) throw error;
@@ -39,7 +39,7 @@ const LooteriyaGamingGoalOverlay = () => {
           });
         }
       } catch (error) {
-        console.error('Error fetching Pusher config:', error);
+        console.error("Error fetching Pusher config:", error);
       }
     };
 
@@ -50,9 +50,9 @@ const LooteriyaGamingGoalOverlay = () => {
   const fetchGoalData = async () => {
     try {
       const { data: streamer, error } = await supabase
-        .from('streamers')
-        .select('goal_name, goal_target_amount, goal_activated_at, goal_is_active')
-        .eq('id', LOOTERIYA_GAMING_STREAMER_ID)
+        .from("streamers")
+        .select("goal_name, goal_target_amount, goal_activated_at, goal_is_active")
+        .eq("id", LOOTERIYA_GAMING_STREAMER_ID)
         .single();
 
       if (error) throw error;
@@ -72,18 +72,18 @@ const LooteriyaGamingGoalOverlay = () => {
 
       // Calculate donations since goal activation
       const { data: donations, error: donError } = await supabase
-        .from('looteriya_gaming_donations')
-        .select('amount')
-        .eq('streamer_id', LOOTERIYA_GAMING_STREAMER_ID)
-        .eq('payment_status', 'success')
-        .gte('created_at', streamer.goal_activated_at);
+        .from("looteriya_gaming_donations")
+        .select("amount")
+        .eq("streamer_id", LOOTERIYA_GAMING_STREAMER_ID)
+        .eq("payment_status", "success")
+        .gte("created_at", streamer.goal_activated_at);
 
       if (!donError && donations) {
         const total = donations.reduce((sum, d) => sum + Number(d.amount), 0);
         setCurrentAmount(total);
       }
     } catch (error) {
-      console.error('Error fetching goal data:', error);
+      console.error("Error fetching goal data:", error);
     }
   };
 
@@ -99,20 +99,20 @@ const LooteriyaGamingGoalOverlay = () => {
   // Setup Pusher for real-time updates
   useEffect(() => {
     if (!pusherConfig) return;
-    
+
     // Prevent duplicate connections
     if (pusherRef.current) return;
 
     const pusher = new Pusher(pusherConfig.key, {
       cluster: pusherConfig.cluster,
     });
-    
+
     pusherRef.current = pusher;
 
-    const channel = pusher.subscribe('looteriya_gaming-goal');
+    const channel = pusher.subscribe("looteriya_gaming-goal");
 
-    channel.bind('goal-progress', (data: { currentAmount: number }) => {
-      console.log('Goal progress update:', data);
+    channel.bind("goal-progress", (data: { currentAmount: number }) => {
+      console.log("Goal progress update:", data);
       setCurrentAmount(data.currentAmount);
     });
 
@@ -123,13 +123,12 @@ const LooteriyaGamingGoalOverlay = () => {
           channel.unsubscribe();
           pusherRef.current.disconnect();
         } catch (e) {
-          console.log('Pusher cleanup:', e);
+          console.log("Pusher cleanup:", e);
         }
         pusherRef.current = null;
       }
     };
   }, [pusherConfig]);
-
 
   // Check if goal is reached
   const isGoalReached = goalData ? currentAmount >= goalData.goal_target_amount : false;
@@ -141,9 +140,9 @@ const LooteriyaGamingGoalOverlay = () => {
   }, [isGoalReached, showCelebration]);
 
   const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
       maximumFractionDigits: 0,
     }).format(amount);
   };
@@ -159,46 +158,39 @@ const LooteriyaGamingGoalOverlay = () => {
     <div className="w-screen h-screen bg-transparent overflow-hidden flex items-center justify-center">
       <div className="relative w-[min(80vw,900px)]">
         {/* Goal Card - Purple Theme */}
-        <div 
+        <div
           className="relative px-7 py-5 rounded-[1.25rem] text-white"
           style={{
-            background: 'rgba(45, 20, 60, 0.75)',
-            border: '1px solid rgba(168, 85, 247, 0.4)',
-            boxShadow: '0 18px 35px rgba(0, 0, 0, 0.6), 0 0 40px rgba(147, 51, 234, 0.3)',
+            background: "rgba(45, 20, 60, 0.75)",
+            border: "1px solid rgba(168, 85, 247, 0.4)",
+            boxShadow: "0 18px 35px rgba(0, 0, 0, 0.6), 0 0 40px rgba(147, 51, 234, 0.3)",
           }}
         >
           {/* Title Row */}
           <div className="flex items-center mb-3">
             {/* Static Logo + Goal Name */}
             <div className="flex items-center gap-4">
-              <img 
-                src={hyperchatLogo} 
-                alt="HyperChat logo"
-                className="h-10 w-auto"
-              />
+              <img src={hyperchatLogo} alt="HyperChat logo" className="h-10 w-auto" />
               <span className="text-[clamp(1.2rem,2.1vw,1.6rem)] font-semibold tracking-wider uppercase whitespace-nowrap">
                 {goalData.goal_name}
               </span>
             </div>
-            
+
             {/* Amount Text - positioned 25% right from center */}
-            <span className="text-3xl font-bold opacity-95 absolute left-[75%] transform -translate-x-1/2">
+            <span className="text-4xl font-bold opacity-95 absolute left-[75%] transform -translate-x-1/2">
               {formatAmount(currentAmount)} / {formatAmount(goalData.goal_target_amount)}
             </span>
           </div>
 
           {/* Divider - Purple */}
-          <div 
-            className="w-full h-px mb-3"
-            style={{ background: 'rgba(168, 85, 247, 0.35)' }}
-          />
+          <div className="w-full h-px mb-3" style={{ background: "rgba(168, 85, 247, 0.35)" }} />
 
           {/* Progress Bar Track - Purple */}
-          <div 
+          <div
             className="relative w-full h-[18px] rounded-full overflow-hidden"
             style={{
-              background: 'rgba(30, 15, 40, 1)',
-              border: '1px solid rgba(168, 85, 247, 0.6)',
+              background: "rgba(30, 15, 40, 1)",
+              border: "1px solid rgba(168, 85, 247, 0.6)",
             }}
           >
             {/* Progress Fill - Purple Gradient */}
@@ -206,17 +198,18 @@ const LooteriyaGamingGoalOverlay = () => {
               className="relative h-full rounded-full transition-[width] duration-1000"
               style={{
                 width: `${percentage}%`,
-                background: 'linear-gradient(90deg, #9333ea, #c084fc)',
-                boxShadow: '0 0 14px rgba(147, 51, 234, 0.8), 0 0 26px rgba(192, 132, 252, 0.7)',
-                transitionTimingFunction: 'cubic-bezier(0.23, 0.9, 0.32, 1.01)',
+                background: "linear-gradient(90deg, #9333ea, #c084fc)",
+                boxShadow: "0 0 14px rgba(147, 51, 234, 0.8), 0 0 26px rgba(192, 132, 252, 0.7)",
+                transitionTimingFunction: "cubic-bezier(0.23, 0.9, 0.32, 1.01)",
               }}
             >
               {/* Shimmer Overlay */}
-              <div 
+              <div
                 className="absolute inset-0 opacity-35 mix-blend-screen"
                 style={{
-                  background: 'repeating-linear-gradient(120deg, rgba(255, 255, 255, 0.18) 0, rgba(255, 255, 255, 0.18) 5px, transparent 5px, transparent 10px)',
-                  animation: 'shimmer 1.3s linear infinite',
+                  background:
+                    "repeating-linear-gradient(120deg, rgba(255, 255, 255, 0.18) 0, rgba(255, 255, 255, 0.18) 5px, transparent 5px, transparent 10px)",
+                  animation: "shimmer 1.3s linear infinite",
                 }}
               />
             </div>
@@ -232,9 +225,9 @@ const LooteriyaGamingGoalOverlay = () => {
                 key={i}
                 className="absolute w-3 h-3 rounded-full"
                 style={{
-                  background: i % 3 === 0 ? '#9333ea' : i % 3 === 1 ? '#c084fc' : '#ffffff',
-                  left: '50%',
-                  top: '50%',
+                  background: i % 3 === 0 ? "#9333ea" : i % 3 === 1 ? "#c084fc" : "#ffffff",
+                  left: "50%",
+                  top: "50%",
                   animation: `confettiBurst 1.5s ease-out ${i * 0.05}s forwards`,
                   transform: `rotate(${i * 18}deg) translateY(0)`,
                 }}
@@ -245,9 +238,9 @@ const LooteriyaGamingGoalOverlay = () => {
             <div
               className="absolute rounded-full bg-gradient-to-r from-[#9333ea] to-[#c084fc] opacity-50"
               style={{
-                width: '100px',
-                height: '100px',
-                animation: 'rippleExpand 1.5s ease-out infinite',
+                width: "100px",
+                height: "100px",
+                animation: "rippleExpand 1.5s ease-out infinite",
               }}
             />
 
