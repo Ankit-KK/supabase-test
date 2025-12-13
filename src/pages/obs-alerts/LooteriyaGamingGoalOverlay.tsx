@@ -193,7 +193,7 @@ const LooteriyaGamingGoalOverlay = () => {
               {(() => {
                 const target = formatCompactTarget(goalData.goal_target_amount);
                 return (
-                  <span className="text-4xl font-normal opacity-60">
+                  <span className="text-5xl font-normal opacity-60">
                     {target.number}
                     {target.suffix}
                   </span>
