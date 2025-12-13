@@ -148,6 +148,15 @@ const LooteriyaGamingGoalOverlay = () => {
     }).format(amount);
   };
 
+  const formatCompactTarget = (amount: number) => {
+    if (amount >= 1000) {
+      const thousands = amount / 1000;
+      const formatted = thousands % 1 === 0 ? thousands.toString() : thousands.toFixed(1);
+      return { number: `₹${formatted}`, suffix: 'k' };
+    }
+    return { number: `₹${amount}`, suffix: '' };
+  };
+
   // Don't render anything if no active goal
   if (!goalData) {
     return null;
@@ -179,7 +188,15 @@ const LooteriyaGamingGoalOverlay = () => {
 
             {/* Amount Text - positioned 25% right from center */}
             <span className="text-5xl font-black opacity-95 absolute left-[75%] transform -translate-x-1/2 whitespace-nowrap drop-shadow-lg">
-              {formatAmount(currentAmount)} / {formatAmount(goalData.goal_target_amount)}
+              {formatAmount(currentAmount)} / {(() => {
+                const target = formatCompactTarget(goalData.goal_target_amount);
+                return (
+                  <>
+                    <span>{target.number}</span>
+                    <span className="opacity-60">{target.suffix}</span>
+                  </>
+                );
+              })()}
             </span>
           </div>
 
