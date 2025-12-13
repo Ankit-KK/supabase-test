@@ -80,7 +80,7 @@ const LooteriyaGamingGoalOverlay = () => {
         .gte("created_at", streamer.goal_activated_at);
 
       if (!donError && donations) {
-        const total = donations.reduce((sum, d) => sum + convertToINR(Number(d.amount), d.currency || 'INR'), 0);
+        const total = donations.reduce((sum, d) => sum + convertToINR(Number(d.amount), d.currency || "INR"), 0);
         setCurrentAmount(total);
       }
     } catch (error) {
@@ -152,9 +152,9 @@ const LooteriyaGamingGoalOverlay = () => {
     if (amount >= 1000) {
       const thousands = amount / 1000;
       const formatted = thousands % 1 === 0 ? thousands.toString() : thousands.toFixed(1);
-      return { number: `₹${formatted}`, suffix: 'k' };
+      return { number: `₹${formatted}`, suffix: "k" };
     }
-    return { number: `₹${amount}`, suffix: '' };
+    return { number: `₹${amount}`, suffix: "" };
   };
 
   // Don't render anything if no active goal
@@ -188,11 +188,14 @@ const LooteriyaGamingGoalOverlay = () => {
 
             {/* Amount Text - positioned 25% right from center */}
             <span className="text-5xl font-black opacity-95 absolute left-[75%] transform -translate-x-1/2 whitespace-nowrap drop-shadow-lg">
-              {formatAmount(currentAmount)} / {(() => {
+              <span className="font-extrabold">{formatAmount(currentAmount)}</span>
+              {" / "}
+              {(() => {
                 const target = formatCompactTarget(goalData.goal_target_amount);
                 return (
                   <span className="opacity-60">
-                    {target.number}{target.suffix}
+                    {target.number}
+                    {target.suffix}
                   </span>
                 );
               })()}
