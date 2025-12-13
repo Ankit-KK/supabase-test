@@ -187,19 +187,17 @@ const LooteriyaGamingGoalOverlay = () => {
             </div>
 
             {/* Amount Text - positioned 25% right from center */}
-<span className="absolute left-[75%] transform -translate-x-1/2 whitespace-nowrap drop-shadow-lg opacity-95">
-  <span className="text-5xl font-extrabold">
-    {formatAmount(currentAmount)}
-  </span>
-  <span className="text-3xl opacity-60 ml-2">
-    /
-    {(() => {
-      const target = formatCompactTarget(goalData.goal_target_amount);
-      return ` ${target.number}${target.suffix}`;
-    })()}
-  </span>
-</span>
-
+            <span className="text-5xl font-black opacity-95 absolute left-[75%] transform -translate-x-1/2 whitespace-nowrap drop-shadow-lg">
+              {formatAmount(currentAmount)} / {(() => {
+                const target = formatCompactTarget(goalData.goal_target_amount);
+                return (
+                  <span className="opacity-60">
+                    {target.number}{target.suffix}
+                  </span>
+                );
+              })()}
+            </span>
+          </div>
 
           {/* Divider - Purple */}
           <div className="w-full h-px mb-3" style={{ background: "rgba(168, 85, 247, 0.35)" }} />
