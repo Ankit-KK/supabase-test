@@ -143,3 +143,9 @@ verify_jwt = false
 
 [functions.check-payment-status-clumsygod]
 verify_jwt = false
+
+[functions.create-razorpay-order-jimmygaming]
+verify_jwt = false
+
+[functions.check-payment-status-jimmygaming]
+verify_jwt = false
