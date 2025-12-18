@@ -345,7 +345,7 @@ const JimmyGaming = () => {
             <img 
               src={jimmyLogo} 
               alt="Jimmy Gaming" 
-              className="w-20 h-20 rounded-full border-2 border-red-500/50 shadow-lg shadow-red-500/30"
+              className="w-24 h-24 object-cover shadow-lg shadow-red-500/30"
             />
           </div>
           <CardTitle className="text-xl font-bold bg-gradient-to-r from-red-400 via-orange-400 to-yellow-500 bg-clip-text text-transparent">
