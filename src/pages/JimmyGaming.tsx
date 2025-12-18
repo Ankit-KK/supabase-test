@@ -326,11 +326,8 @@ const JimmyGaming = () => {
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
       {/* Banner Background */}
       <div 
-        className="absolute inset-0 bg-center bg-no-repeat"
-        style={{ 
-          backgroundImage: `url(${jimmyBanner})`,
-          backgroundSize: '100% auto'
-        }}
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: `url(${jimmyBanner})` }}
       >
         <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-red-950/70 to-black/80"></div>
       </div>
