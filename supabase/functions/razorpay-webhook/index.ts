@@ -21,6 +21,7 @@ const streamerSlugMap: Record<string, string> = {
   'looteriyagaming': 'looteriya_gaming',
   'damaskplays': 'damask_plays',
   'nekoxenpai': 'neko_xenpai',
+  'jimmygaming': 'jimmy_gaming',
   // Other streamers stay as-is since they match
 };
 
@@ -304,6 +305,7 @@ serve(async (req) => {
                                 fetchError = ankitResult.error || thunderxResult.error || vipbhaiResult.error || sagarujjwalgamingResult.error || notyourkweenResult.error || bongflickResult.error || mriqmasterResult.error || abdevilResult.error || looteriyaGamingResult.error || damaskPlaysResult.error || nekoXenpaiResult.error || jhanvooResult.error || clumsygodResult.error || jimmyGamingResult.error
                               }
                             }
+                          }
                         }
                       }
                     }
