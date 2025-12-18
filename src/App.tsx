@@ -36,6 +36,7 @@ import MrIqmaster from "./pages/MrIqmaster";
 import ABdevil from "./pages/ABdevil";
 import Jhanvoo from "./pages/Jhanvoo";
 import ClumsyGod from "./pages/ClumsyGod";
+import JimmyGaming from "./pages/JimmyGaming";
 
 // Dashboard pages (active streamers + ThunderX)
 import Dashboard from "./pages/dashboard/Dashboard";
@@ -55,6 +56,7 @@ import MrIqmasterDashboard from "./pages/dashboard/MrIqmasterDashboard";
 import ABdevilDashboard from "./pages/dashboard/ABdevilDashboard";
 import JhanvooDashboard from "./pages/dashboard/JhanvooDashboard";
 import ClumsyGodDashboard from "./pages/dashboard/ClumsyGodDashboard";
+import JimmyGamingDashboard from "./pages/dashboard/JimmyGamingDashboard";
 
 // OBS Alert pages (active streamers + ThunderX)
 import AnkitObsAlerts from "./pages/obs-alerts/AnkitObsAlerts";
@@ -87,6 +89,8 @@ import JhanvooObsAlerts from "./pages/obs-alerts/JhanvooObsAlerts";
 import JhanvooGoalOverlay from "./pages/obs-alerts/JhanvooGoalOverlay";
 import ClumsyGodObsAlerts from "./pages/obs-alerts/ClumsyGodObsAlerts";
 import ClumsyGodGoalOverlay from "./pages/obs-alerts/ClumsyGodGoalOverlay";
+import JimmyGamingObsAlerts from "./pages/obs-alerts/JimmyGamingObsAlerts";
+import JimmyGamingGoalOverlay from "./pages/obs-alerts/JimmyGamingGoalOverlay";
 
 // Audio Player pages (active streamers + ThunderX)
 import AnkitAudioPlayer from "./pages/audio-player/AnkitAudioPlayer";
@@ -109,6 +113,8 @@ import ABdevilAudioPlayer from "./pages/audio-player/ABdevilAudioPlayer";
 import JhanvooAudioPlayer from "./pages/audio-player/JhanvooAudioPlayer";
 import ClumsyGodAudioPlayer from "./pages/audio-player/ClumsyGodAudioPlayer";
 import ClumsyGodMediaSourcePlayer from "./pages/audio-player/ClumsyGodMediaSourcePlayer";
+import JimmyGamingAudioPlayer from "./pages/audio-player/JimmyGamingAudioPlayer";
+import JimmyGamingMediaSourcePlayer from "./pages/audio-player/JimmyGamingMediaSourcePlayer";
 import ChiaGamingMediaSourcePlayer from "./pages/audio-player/ChiaGamingMediaSourcePlayer";
 import SizzorsMediaSourcePlayer from "./pages/audio-player/SizzorsMediaSourcePlayer";
 import DamaskPlaysMediaSourcePlayer from "./pages/audio-player/DamaskPlaysMediaSourcePlayer";
@@ -164,6 +170,7 @@ const App = () => (
               <Route path="/abdevil" element={<ABdevil />} />
               <Route path="/jhanvoo" element={<Jhanvoo />} />
               <Route path="/clumsygod" element={<ClumsyGod />} />
+              <Route path="/jimmy_gaming" element={<JimmyGaming />} />
               
               {/* Authentication */}
               <Route path="/auth" element={<Auth />} />
@@ -185,6 +192,7 @@ const App = () => (
               <Route path="/dashboard/abdevil" element={<ABdevilDashboard />} />
               <Route path="/dashboard/jhanvoo" element={<JhanvooDashboard />} />
               <Route path="/dashboard/clumsygod" element={<ClumsyGodDashboard />} />
+              <Route path="/dashboard/jimmy_gaming" element={<JimmyGamingDashboard />} />
               
               {/* OBS Alert routes */}
               <Route path="/ankit/obs-alerts" element={<AnkitObsAlerts />} />
@@ -217,6 +225,8 @@ const App = () => (
               <Route path="/jhanvoo/goal-overlay" element={<JhanvooGoalOverlay />} />
               <Route path="/clumsygod/obs-alerts" element={<ClumsyGodObsAlerts />} />
               <Route path="/clumsygod/goal-overlay" element={<ClumsyGodGoalOverlay />} />
+              <Route path="/jimmy_gaming/obs-alerts" element={<JimmyGamingObsAlerts />} />
+              <Route path="/jimmy_gaming/goal-overlay" element={<JimmyGamingGoalOverlay />} />
               
               {/* Audio Player routes */}
               <Route path="/ankit/audio-player" element={<AnkitAudioPlayer />} />
@@ -239,6 +249,8 @@ const App = () => (
               <Route path="/jhanvoo/audio-player" element={<JhanvooAudioPlayer />} />
               <Route path="/clumsygod/audio-player" element={<ClumsyGodAudioPlayer />} />
               <Route path="/clumsygod/media-audio-player" element={<ClumsyGodMediaSourcePlayer />} />
+              <Route path="/jimmy_gaming/audio-player" element={<JimmyGamingAudioPlayer />} />
+              <Route path="/jimmy_gaming/media-audio-player" element={<JimmyGamingMediaSourcePlayer />} />
               <Route path="/chiaa_gaming/media-audio-player" element={<ChiaGamingMediaSourcePlayer />} />
               <Route path="/sizzors/media-audio-player" element={<SizzorsMediaSourcePlayer />} />
               <Route path="/damask_plays/media-audio-player" element={<DamaskPlaysMediaSourcePlayer />} />

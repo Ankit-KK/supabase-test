@@ -126,7 +126,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // Determine table based on order ID prefix (supports both old and new formats)
-    let streamerType: 'ankit' | 'thunderx' | 'vipbhai' | 'sagarujjwalgaming' | 'notyourkween' | 'bongflick' | 'mriqmaster' | 'abdevil' | 'looteriyagaming' | 'damaskplays' | 'nekoxenpai' | 'jhanvoo' | 'clumsygod'
+    let streamerType: 'ankit' | 'thunderx' | 'vipbhai' | 'sagarujjwalgaming' | 'notyourkween' | 'bongflick' | 'mriqmaster' | 'abdevil' | 'looteriyagaming' | 'damaskplays' | 'nekoxenpai' | 'jhanvoo' | 'clumsygod' | 'jimmygaming'
     let tableName: string
     
     // Get donation from the appropriate table using Razorpay order ID
@@ -289,9 +289,21 @@ serve(async (req) => {
                               streamerType = 'clumsygod'
                               tableName = 'clumsygod_donations'
                             } else {
-                              fetchError = ankitResult.error || thunderxResult.error || vipbhaiResult.error || sagarujjwalgamingResult.error || notyourkweenResult.error || bongflickResult.error || mriqmasterResult.error || abdevilResult.error || looteriyaGamingResult.error || damaskPlaysResult.error || nekoXenpaiResult.error || jhanvooResult.error || clumsygodResult.error
+                              // Try jimmy_gaming
+                              const jimmyGamingResult = await supabase
+                                .from('jimmy_gaming_donations')
+                                .select('*')
+                                .eq('razorpay_order_id', razorpayOrderId)
+                                .maybeSingle()
+                              
+                              if (jimmyGamingResult.data) {
+                                donation = jimmyGamingResult.data
+                                streamerType = 'jimmygaming'
+                                tableName = 'jimmy_gaming_donations'
+                              } else {
+                                fetchError = ankitResult.error || thunderxResult.error || vipbhaiResult.error || sagarujjwalgamingResult.error || notyourkweenResult.error || bongflickResult.error || mriqmasterResult.error || abdevilResult.error || looteriyaGamingResult.error || damaskPlaysResult.error || nekoXenpaiResult.error || jhanvooResult.error || clumsygodResult.error || jimmyGamingResult.error
+                              }
                             }
-                          }
                         }
                       }
                     }
@@ -409,6 +421,8 @@ serve(async (req) => {
         ? ['jhanvoo-alerts', 'jhanvoo-dashboard']
         : streamerType === 'clumsygod'
         ? ['clumsygod-alerts', 'clumsygod-dashboard']
+        : streamerType === 'jimmygaming'
+        ? ['jimmy_gaming-alerts', 'jimmy_gaming-dashboard']
         : ['ankit-alerts', 'ankit-dashboard']
       
       await sendPusherEvent(alertChannels, 'new-donation', {
@@ -603,6 +617,8 @@ serve(async (req) => {
           ? ['jhanvoo-audio']
           : streamerType === 'clumsygod'
           ? ['clumsygod-audio']
+          : streamerType === 'jimmygaming'
+          ? ['jimmy_gaming-audio']
           : ['ankit-audio']
         
         await sendPusherEvent(audioChannel, 'new-audio-message', {
@@ -673,6 +689,8 @@ serve(async (req) => {
               ? ['jhanvoo-audio']
               : streamerType === 'clumsygod'
               ? ['clumsygod-audio']
+              : streamerType === 'jimmygaming'
+              ? ['jimmy_gaming-audio']
               : ['ankit-audio']
             await sendPusherEvent(audioChannel, 'new-audio-message', {
               id: donation.id,
@@ -750,6 +768,8 @@ serve(async (req) => {
               ? ['jhanvoo-audio']
               : streamerType === 'clumsygod'
               ? ['clumsygod-audio']
+              : streamerType === 'jimmygaming'
+              ? ['jimmy_gaming-audio']
               : ['ankit-audio']
               await sendPusherEvent(audioChannel, 'new-audio-message', {
                 id: donation.id,

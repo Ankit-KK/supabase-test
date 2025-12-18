@@ -22,6 +22,7 @@ const STREAMER_TABLE_MAP: Record<string, string> = {
   'damask_plays': 'damask_plays_donations',
   'neko_xenpai': 'neko_xenpai_donations',
   'clumsygod': 'clumsygod_donations',
+  'jimmy_gaming': 'jimmy_gaming_donations',
 };
 
 Deno.serve(async (req) => {
