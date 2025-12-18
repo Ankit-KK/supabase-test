@@ -42,6 +42,7 @@ export default function Status() {
           if (orderId.startsWith('dp_rp_')) return 'check-payment-status-damask-plays';
           if (orderId.startsWith('nx_rp_')) return 'check-payment-status-neko-xenpai';
           if (orderId.startsWith('cg_rp_')) return 'check-payment-status-clumsygod';
+          if (orderId.startsWith('jg_rp_')) return 'check-payment-status-jimmygaming';
           if (orderId.startsWith('musicstream_')) return 'check-payment-status';
           if (orderId.startsWith('techgamer_')) return 'check-payment-status';
           if (orderId.startsWith('fitnessflow_')) return 'check-payment-status';
@@ -110,7 +111,7 @@ export default function Status() {
         if (backendStatus === 'success') {
           const shouldSkipVoiceUpload = (orderId: string) => {
             // Razorpay streamers upload voice messages before payment via upload-voice-message-direct
-            if (orderId.startsWith('ak_rp_') || orderId.startsWith('tx_rp_') || orderId.startsWith('vb_rp_') || orderId.startsWith('sug_rp_') || orderId.startsWith('nyk_rp_') || orderId.startsWith('bf_rp_') || orderId.startsWith('miq_rp_') || orderId.startsWith('abd_rp_') || orderId.startsWith('jv_rp_') || orderId.startsWith('lg_rp_') || orderId.startsWith('dp_rp_') || orderId.startsWith('nx_rp_') || orderId.startsWith('cg_rp_')) return true;
+            if (orderId.startsWith('ak_rp_') || orderId.startsWith('tx_rp_') || orderId.startsWith('vb_rp_') || orderId.startsWith('sug_rp_') || orderId.startsWith('nyk_rp_') || orderId.startsWith('bf_rp_') || orderId.startsWith('miq_rp_') || orderId.startsWith('abd_rp_') || orderId.startsWith('jv_rp_') || orderId.startsWith('lg_rp_') || orderId.startsWith('dp_rp_') || orderId.startsWith('nx_rp_') || orderId.startsWith('cg_rp_') || orderId.startsWith('jg_rp_')) return true;
             if (orderId.startsWith('ankit_razorpay_') || orderId.startsWith('thunderx_razorpay_')) return true;
             return false;
           };
@@ -253,6 +254,7 @@ export default function Status() {
                 if (orderId.startsWith('dp_rp_')) return "/damask_plays";
                 if (orderId.startsWith('nx_rp_')) return "/neko_xenpai";
                 if (orderId.startsWith('cg_rp_')) return "/clumsygod";
+                if (orderId.startsWith('jg_rp_')) return "/jimmy_gaming";
                 if (orderId.startsWith('musicstream_')) return "/music_stream";
                 if (orderId.startsWith('techgamer_')) return "/tech_gamer";
                 if (orderId.startsWith('sizzors_')) return "/sizzors";
