@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { toast } from "@/hooks/use-toast";
-import { Gamepad2, Sparkles, Star, Check, ChevronsUpDown, Volume2 } from "lucide-react";
+import { Sparkles, Star, Check, ChevronsUpDown, Volume2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SUPPORTED_CURRENCIES, getCurrencySymbol, getCurrencyMinimums } from "@/constants/currencies";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +13,8 @@ import { useNavigate } from "react-router-dom";
 import VoiceRecorder from "@/components/VoiceRecorder";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import HyperSoundSelector from "@/components/HyperSoundSelector";
+import jimmyLogo from "@/assets/jimmy-gaming-logo.jpg";
+import jimmyBanner from "@/assets/jimmy-gaming-banner.jpg";
 
 const JimmyGaming = () => {
   const navigate = useNavigate();
@@ -321,24 +323,32 @@ const JimmyGaming = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-green-900 via-emerald-900 to-teal-900">
-      {/* Animated glow effects */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-20 w-32 h-32 bg-green-500/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-20 w-40 h-40 bg-emerald-600/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-teal-400/15 rounded-full blur-2xl animate-pulse"></div>
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Banner Background */}
+      <div 
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: `url(${jimmyBanner})` }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-red-950/70 to-black/80"></div>
       </div>
 
-      <Card className="w-full max-w-[21rem] mx-auto relative overflow-hidden border-green-500/30 shadow-2xl shadow-green-500/20 bg-background/90 backdrop-blur-sm">
+      {/* Animated glow effects */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-20 w-32 h-32 bg-red-500/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-20 w-40 h-40 bg-orange-600/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-yellow-400/15 rounded-full blur-2xl animate-pulse"></div>
+      </div>
+
+      <Card className="w-full max-w-[21rem] mx-auto relative overflow-hidden border-red-500/30 shadow-2xl shadow-red-500/20 bg-background/90 backdrop-blur-sm">
         <CardHeader className="text-center relative z-10 pb-3">
           <div className="flex items-center justify-center mb-3">
-            <div className="flex items-center space-x-2 text-green-400">
-              <Gamepad2 className="h-7 w-7" />
-              <Sparkles className="h-5 w-5 animate-pulse" />
-              <Star className="h-5 w-5 text-emerald-400" />
-            </div>
+            <img 
+              src={jimmyLogo} 
+              alt="Jimmy Gaming" 
+              className="w-20 h-20 rounded-full border-2 border-red-500/50 shadow-lg shadow-red-500/30"
+            />
           </div>
-          <CardTitle className="text-xl font-bold bg-gradient-to-r from-green-400 to-emerald-500 bg-clip-text text-transparent">
+          <CardTitle className="text-xl font-bold bg-gradient-to-r from-red-400 via-orange-400 to-yellow-500 bg-clip-text text-transparent">
             Jimmy Gaming
           </CardTitle>
           <p className="text-muted-foreground text-xs">
@@ -349,7 +359,7 @@ const JimmyGaming = () => {
         <CardContent className="space-y-4 relative z-10 pt-0">
           <form onSubmit={handleSubmit} className="space-y-3">
             <div className="space-y-1.5">
-              <label htmlFor="name" className="text-xs font-medium text-green-400">
+              <label htmlFor="name" className="text-xs font-medium text-red-400">
                 Your Name *
               </label>
               <Input 
@@ -358,20 +368,20 @@ const JimmyGaming = () => {
                 placeholder="Enter your name" 
                 value={formData.name} 
                 onChange={handleInputChange} 
-                className="border-green-500/30 focus:border-green-500 focus:ring-green-500/20 h-9 text-sm" 
+                className="border-red-500/30 focus:border-red-500 focus:ring-red-500/20 h-9 text-sm" 
                 required 
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-medium text-green-400">
+              <label className="text-xs font-medium text-red-400">
                 Choose your donation type
               </label>
               <div className="grid grid-cols-3 gap-1.5">
                 <button 
                   type="button" 
                   onClick={() => handleDonationTypeChange('message')} 
-                  className={`p-2 rounded-lg border-2 transition-all ${donationType === 'message' ? 'border-green-500 bg-green-500/10' : 'border-green-500/30 hover:border-green-500/50'}`}
+                  className={`p-2 rounded-lg border-2 transition-all ${donationType === 'message' ? 'border-red-500 bg-red-500/10' : 'border-red-500/30 hover:border-red-500/50'}`}
                 >
                   <div className="text-center">
                     <div className="text-sm mb-0.5">💬</div>
@@ -382,7 +392,7 @@ const JimmyGaming = () => {
                 <button 
                   type="button" 
                   onClick={() => handleDonationTypeChange('voice')} 
-                  className={`p-2 rounded-lg border-2 transition-all ${donationType === 'voice' ? 'border-green-500 bg-green-500/10' : 'border-green-500/30 hover:border-green-500/50'}`}
+                  className={`p-2 rounded-lg border-2 transition-all ${donationType === 'voice' ? 'border-red-500 bg-red-500/10' : 'border-red-500/30 hover:border-red-500/50'}`}
                 >
                   <div className="text-center">
                     <div className="text-sm mb-0.5">🎤</div>
@@ -407,7 +417,7 @@ const JimmyGaming = () => {
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="amount" className="text-xs font-medium text-green-400">
+              <label htmlFor="amount" className="text-xs font-medium text-red-400">
                 Amount *
               </label>
               <div className="flex gap-2">
@@ -417,7 +427,7 @@ const JimmyGaming = () => {
                       variant="outline"
                       role="combobox"
                       aria-expanded={currencyOpen}
-                      className="w-[90px] justify-between border-green-500/30 focus:border-green-500 px-2 h-9 text-xs"
+                      className="w-[90px] justify-between border-red-500/30 focus:border-red-500 px-2 h-9 text-xs"
                     >
                       {getCurrencySymbol(formData.currency)} {formData.currency}
                       <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
@@ -460,7 +470,7 @@ const JimmyGaming = () => {
                   value={formData.amount} 
                   onChange={handleInputChange}
                   disabled={isAmountLocked}
-                  className="flex-1 border-green-500/30 focus:border-green-500 focus:ring-green-500/20 h-9 text-sm" 
+                  className="flex-1 border-red-500/30 focus:border-red-500 focus:ring-red-500/20 h-9 text-sm" 
                   required 
                 />
               </div>
@@ -471,7 +481,7 @@ const JimmyGaming = () => {
 
             {donationType === 'message' && (
               <div className="space-y-1.5">
-                <label htmlFor="message" className="text-xs font-medium text-green-400">
+                <label htmlFor="message" className="text-xs font-medium text-red-400">
                   Your Message * ({formData.message.length}/{getCharacterLimit(currentAmount)})
                 </label>
                 <textarea
@@ -481,7 +491,7 @@ const JimmyGaming = () => {
                   value={formData.message}
                   onChange={handleInputChange}
                   maxLength={getCharacterLimit(currentAmount)}
-                  className="w-full min-h-[80px] px-3 py-2 text-sm border border-green-500/30 rounded-md bg-background focus:border-green-500 focus:ring-1 focus:ring-green-500/20 resize-none"
+                  className="w-full min-h-[80px] px-3 py-2 text-sm border border-red-500/30 rounded-md bg-background focus:border-red-500 focus:ring-1 focus:ring-red-500/20 resize-none"
                   required
                 />
               </div>
@@ -489,7 +499,7 @@ const JimmyGaming = () => {
 
             {donationType === 'voice' && (
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-green-400">
+                <label className="text-xs font-medium text-red-400">
                   Record Voice Message (Max {maxVoiceDuration}s)
                 </label>
                 <VoiceRecorder
@@ -520,7 +530,7 @@ const JimmyGaming = () => {
             <Button 
               type="submit" 
               disabled={isProcessing || !razorpayLoaded}
-              className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold h-10"
+              className="w-full bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700 text-white font-semibold h-10"
             >
               {isProcessing ? "Processing..." : `Donate ${getCurrencySymbol(formData.currency)}${formData.amount || '0'}`}
             </Button>
