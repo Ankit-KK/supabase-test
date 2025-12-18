@@ -339,16 +339,15 @@ const JimmyGaming = () => {
         <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-yellow-400/15 rounded-full blur-2xl animate-pulse"></div>
       </div>
 
-      <Card className="w-full max-w-[21rem] mx-auto relative overflow-hidden border-red-500/30 shadow-2xl shadow-red-500/20">
-        {/* Profile image as card background */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${jimmyLogo})` }}
-        >
-          <div className="absolute inset-0 bg-black/75 backdrop-blur-sm"></div>
-        </div>
-        
+      <Card className="w-full max-w-[21rem] mx-auto relative overflow-hidden border-red-500/30 shadow-2xl shadow-red-500/20 bg-background/90 backdrop-blur-sm">
         <CardHeader className="text-center relative z-10 pb-3">
+          <div className="flex items-center justify-center mb-3">
+            <img 
+              src={jimmyLogo} 
+              alt="Jimmy Gaming" 
+              className="w-20 h-20 rounded-full border-2 border-red-500/50 shadow-lg shadow-red-500/30"
+            />
+          </div>
           <CardTitle className="text-xl font-bold bg-gradient-to-r from-red-400 via-orange-400 to-yellow-500 bg-clip-text text-transparent">
             Jimmy Gaming
           </CardTitle>
