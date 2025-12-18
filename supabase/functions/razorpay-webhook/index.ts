@@ -764,13 +764,13 @@ serve(async (req) => {
                 ? ['damask_plays-audio']
                 : streamerType === 'nekoxenpai'
                 ? ['neko_xenpai-audio']
-              : streamerType === 'jhanvoo'
-              ? ['jhanvoo-audio']
-              : streamerType === 'clumsygod'
-              ? ['clumsygod-audio']
-              : streamerType === 'jimmygaming'
-              ? ['jimmy_gaming-audio']
-              : ['ankit-audio']
+                : streamerType === 'jhanvoo'
+                ? ['jhanvoo-audio']
+                : streamerType === 'clumsygod'
+                ? ['clumsygod-audio']
+                : streamerType === 'jimmygaming'
+                ? ['jimmy_gaming-audio']
+                : ['ankit-audio']
               await sendPusherEvent(audioChannel, 'new-audio-message', {
                 id: donation.id,
                 name: donation.name,
