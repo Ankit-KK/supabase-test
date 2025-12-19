@@ -131,14 +131,6 @@ const ResizableWidget = ({
     };
   }, [isDragging, isResizing, handleMouseMove, handleMouseUp]);
 
-  const resizeHandleStyle = (cursor: string): React.CSSProperties => ({
-    position: 'absolute',
-    width: '12px',
-    height: '12px',
-    cursor,
-    zIndex: 10
-  });
-
   return (
     <div
       style={{
@@ -163,11 +155,41 @@ const ResizableWidget = ({
         {children}
       </div>
       
-      {/* Invisible corner resize handles */}
-      <div style={{ ...resizeHandleStyle('nw-resize'), top: 0, left: 0 }} onMouseDown={(e) => handleResizeStart(e, 'nw')} />
-      <div style={{ ...resizeHandleStyle('ne-resize'), top: 0, right: 0 }} onMouseDown={(e) => handleResizeStart(e, 'ne')} />
-      <div style={{ ...resizeHandleStyle('sw-resize'), bottom: 0, left: 0 }} onMouseDown={(e) => handleResizeStart(e, 'sw')} />
-      <div style={{ ...resizeHandleStyle('se-resize'), bottom: 0, right: 0 }} onMouseDown={(e) => handleResizeStart(e, 'se')} />
+      {/* Edge resize handles */}
+      <div 
+        style={{ position: 'absolute', top: 0, left: 16, right: 16, height: 8, cursor: 'ns-resize', zIndex: 10 }} 
+        onMouseDown={(e) => handleResizeStart(e, 'n')} 
+      />
+      <div 
+        style={{ position: 'absolute', bottom: 0, left: 16, right: 16, height: 8, cursor: 'ns-resize', zIndex: 10 }} 
+        onMouseDown={(e) => handleResizeStart(e, 's')} 
+      />
+      <div 
+        style={{ position: 'absolute', left: 0, top: 16, bottom: 16, width: 8, cursor: 'ew-resize', zIndex: 10 }} 
+        onMouseDown={(e) => handleResizeStart(e, 'w')} 
+      />
+      <div 
+        style={{ position: 'absolute', right: 0, top: 16, bottom: 16, width: 8, cursor: 'ew-resize', zIndex: 10 }} 
+        onMouseDown={(e) => handleResizeStart(e, 'e')} 
+      />
+      
+      {/* Corner resize handles */}
+      <div 
+        style={{ position: 'absolute', top: 0, left: 0, width: 16, height: 16, cursor: 'nw-resize', zIndex: 11 }} 
+        onMouseDown={(e) => handleResizeStart(e, 'nw')} 
+      />
+      <div 
+        style={{ position: 'absolute', top: 0, right: 0, width: 16, height: 16, cursor: 'ne-resize', zIndex: 11 }} 
+        onMouseDown={(e) => handleResizeStart(e, 'ne')} 
+      />
+      <div 
+        style={{ position: 'absolute', bottom: 0, left: 0, width: 16, height: 16, cursor: 'sw-resize', zIndex: 11 }} 
+        onMouseDown={(e) => handleResizeStart(e, 'sw')} 
+      />
+      <div 
+        style={{ position: 'absolute', bottom: 0, right: 0, width: 16, height: 16, cursor: 'se-resize', zIndex: 11 }} 
+        onMouseDown={(e) => handleResizeStart(e, 'se')} 
+      />
     </div>
   );
 };
