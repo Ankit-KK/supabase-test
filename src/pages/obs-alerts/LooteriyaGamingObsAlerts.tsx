@@ -323,23 +323,6 @@ const LeaderboardWidget = ({
               }}>
                 {getCurrencySymbol(currentDonation.currency)}{currentDonation.amount.toLocaleString('en-IN')}
               </span>
-              {/* Progress dots */}
-              <div style={{ display: 'flex', gap: '4px', marginLeft: '8px' }}>
-                {latestDonations.map((_, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      width: '6px',
-                      height: '6px',
-                      borderRadius: '50%',
-                      background: index === currentIndex
-                        ? 'linear-gradient(90deg, #9333ea, #c084fc)'
-                        : 'rgba(168, 85, 247, 0.3)',
-                      transition: 'all 0.3s ease'
-                    }}
-                  />
-                ))}
-              </div>
             </>
           ) : (
             <span style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '14px' }}>
