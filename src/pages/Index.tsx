@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import HeroWithCanyonAnimation from "@/components/HeroWithCanyonAnimation";
+import PartnershipSection from "@/components/PartnershipSection";
 import Features from "@/components/Features";
 import Services from "@/components/Services";
 import Footer from "@/components/Footer";
@@ -37,6 +38,7 @@ const Index = () => {
       <div className="content-overlay">
         <Navbar />
         <HeroWithCanyonAnimation />
+        <PartnershipSection />
         <Features />
         <Services />
         <AudienceValue />
