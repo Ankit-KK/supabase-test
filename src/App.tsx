@@ -62,6 +62,7 @@ import JimmyGamingDashboard from "./pages/dashboard/JimmyGamingDashboard";
 import AnkitObsAlerts from "./pages/obs-alerts/AnkitObsAlerts";
 import AnkitGoalOverlay from "./pages/obs-alerts/AnkitGoalOverlay";
 import LooteriyaGamingGoalOverlay from "./pages/obs-alerts/LooteriyaGamingGoalOverlay";
+import LooteriyaGamingLeaderboardOverlay from "./pages/obs-alerts/LooteriyaGamingLeaderboardOverlay";
 import ChiaGamingObsAlerts from "./pages/obs-alerts/ChiaGamingObsAlerts";
 import ChiaGamingGoalOverlay from "./pages/obs-alerts/ChiaGamingGoalOverlay";
 import LooteriyaGamingObsAlerts from "./pages/obs-alerts/LooteriyaGamingObsAlerts";
@@ -201,6 +202,7 @@ const App = () => (
               <Route path="/chiaa_gaming/goal-overlay" element={<ChiaGamingGoalOverlay />} />
               <Route path="/looteriya_gaming/obs-alerts" element={<LooteriyaGamingObsAlerts />} />
               <Route path="/looteriya_gaming/goal-overlay" element={<LooteriyaGamingGoalOverlay />} />
+              <Route path="/looteriya_gaming/leaderboard" element={<LooteriyaGamingLeaderboardOverlay />} />
               <Route path="/sizzors/obs-alerts" element={<SizzorsObsAlerts />} />
               <Route path="/sizzors/goal-overlay" element={<SizzorsGoalOverlay />} />
               <Route path="/damask_plays/obs-alerts" element={<DamaskPlaysObsAlerts />} />
