@@ -28,29 +28,31 @@ interface WidgetState {
 
 const ROTATION_INTERVAL = 5000;
 
-const DraggableWidget = ({
+const ResizableWidget = ({
   id,
   children,
-  defaultPosition = { x: 50, y: 50 }
+  defaultState = { x: 50, y: 50, width: 400, height: 120 }
 }: {
   id: string;
   children: React.ReactNode;
-  defaultPosition?: { x: number; y: number };
+  defaultState?: WidgetState;
 }) => {
-  const [position, setPosition] = useState(() => {
+  const [state, setState] = useState<WidgetState>(() => {
     const saved = localStorage.getItem(`looteriya-widget-${id}`);
     if (saved) {
       return JSON.parse(saved);
     }
-    return defaultPosition;
+    return defaultState;
   });
   
   const [isDragging, setIsDragging] = useState(false);
-  const dragRef = useRef<{ startX: number; startY: number; startPos: { x: number; y: number } } | null>(null);
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizeCorner, setResizeCorner] = useState<string | null>(null);
+  const dragRef = useRef<{ startX: number; startY: number; startState: WidgetState } | null>(null);
 
   useEffect(() => {
-    localStorage.setItem(`looteriya-widget-${id}`, JSON.stringify(position));
-  }, [id, position]);
+    localStorage.setItem(`looteriya-widget-${id}`, JSON.stringify(state));
+  }, [id, state]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -58,29 +60,68 @@ const DraggableWidget = ({
     dragRef.current = {
       startX: e.clientX,
       startY: e.clientY,
-      startPos: { ...position }
+      startState: { ...state }
+    };
+  };
+
+  const handleResizeStart = (e: React.MouseEvent, corner: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsResizing(true);
+    setResizeCorner(corner);
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      startState: { ...state }
     };
   };
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!isDragging || !dragRef.current) return;
+    if (!dragRef.current) return;
     
     const deltaX = e.clientX - dragRef.current.startX;
     const deltaY = e.clientY - dragRef.current.startY;
 
-    setPosition({
-      x: dragRef.current.startPos.x + deltaX,
-      y: dragRef.current.startPos.y + deltaY
-    });
-  }, [isDragging]);
+    if (isDragging) {
+      setState(prev => ({
+        ...prev,
+        x: dragRef.current!.startState.x + deltaX,
+        y: dragRef.current!.startState.y + deltaY
+      }));
+    } else if (isResizing && resizeCorner) {
+      const { startState } = dragRef.current;
+      let newState = { ...startState };
+
+      if (resizeCorner.includes('e')) {
+        newState.width = Math.max(200, startState.width + deltaX);
+      }
+      if (resizeCorner.includes('w')) {
+        const newWidth = Math.max(200, startState.width - deltaX);
+        newState.width = newWidth;
+        newState.x = startState.x + (startState.width - newWidth);
+      }
+      if (resizeCorner.includes('s')) {
+        newState.height = Math.max(80, startState.height + deltaY);
+      }
+      if (resizeCorner.includes('n')) {
+        const newHeight = Math.max(80, startState.height - deltaY);
+        newState.height = newHeight;
+        newState.y = startState.y + (startState.height - newHeight);
+      }
+
+      setState(newState);
+    }
+  }, [isDragging, isResizing, resizeCorner]);
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
+    setIsResizing(false);
+    setResizeCorner(null);
     dragRef.current = null;
   }, []);
 
   useEffect(() => {
-    if (isDragging) {
+    if (isDragging || isResizing) {
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
     }
@@ -88,21 +129,45 @@ const DraggableWidget = ({
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, handleMouseMove, handleMouseUp]);
+  }, [isDragging, isResizing, handleMouseMove, handleMouseUp]);
+
+  const resizeHandleStyle = (cursor: string): React.CSSProperties => ({
+    position: 'absolute',
+    width: '12px',
+    height: '12px',
+    cursor,
+    zIndex: 10
+  });
 
   return (
     <div
-      onMouseDown={handleMouseDown}
       style={{
         position: 'absolute',
-        left: position.x,
-        top: position.y,
-        cursor: isDragging ? 'grabbing' : 'grab',
+        left: state.x,
+        top: state.y,
+        width: state.width,
+        height: state.height,
         userSelect: 'none',
-        zIndex: isDragging ? 1000 : 1
+        zIndex: isDragging || isResizing ? 1000 : 1
       }}
     >
-      {children}
+      {/* Main draggable area */}
+      <div
+        onMouseDown={handleMouseDown}
+        style={{
+          width: '100%',
+          height: '100%',
+          cursor: isDragging ? 'grabbing' : 'grab'
+        }}
+      >
+        {children}
+      </div>
+      
+      {/* Invisible corner resize handles */}
+      <div style={{ ...resizeHandleStyle('nw-resize'), top: 0, left: 0 }} onMouseDown={(e) => handleResizeStart(e, 'nw')} />
+      <div style={{ ...resizeHandleStyle('ne-resize'), top: 0, right: 0 }} onMouseDown={(e) => handleResizeStart(e, 'ne')} />
+      <div style={{ ...resizeHandleStyle('sw-resize'), bottom: 0, left: 0 }} onMouseDown={(e) => handleResizeStart(e, 'sw')} />
+      <div style={{ ...resizeHandleStyle('se-resize'), bottom: 0, right: 0 }} onMouseDown={(e) => handleResizeStart(e, 'se')} />
     </div>
   );
 };
@@ -414,9 +479,9 @@ const LooteriyaGamingObsAlerts = () => {
         scale={alertBoxScale}
       />
 
-      <DraggableWidget id="leaderboard" defaultPosition={{ x: 50, y: 50 }}>
+      <ResizableWidget id="leaderboard" defaultState={{ x: 50, y: 50, width: 400, height: 120 }}>
         <LeaderboardWidget topDonator={topDonator} latestDonations={latestDonations} />
-      </DraggableWidget>
+      </ResizableWidget>
     </div>
   );
 };
