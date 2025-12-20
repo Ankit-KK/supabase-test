@@ -250,9 +250,7 @@ const LeaderboardWidget = ({
             fontWeight: '600',
             textTransform: 'uppercase',
             letterSpacing: '1px',
-            background: 'linear-gradient(90deg, #9333ea, #c084fc)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent'
+            color: '#ffffff'
           }}>
             Top Donator
           </span>
@@ -292,9 +290,7 @@ const LeaderboardWidget = ({
             fontSize: '14px',
             fontWeight: '600',
             letterSpacing: '1px',
-            background: 'linear-gradient(90deg, #9333ea, #c084fc)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent'
+            color: '#ffffff'
           }}>
             !hyperchat
           </span>
