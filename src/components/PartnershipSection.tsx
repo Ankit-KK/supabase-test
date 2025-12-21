@@ -24,11 +24,8 @@ const PartnershipSection = () => {
 
         {/* Partnership Image */}
         <div className="flex justify-center mb-8">
-          <div className="relative group">
-            {/* Glow effect behind image */}
-            <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 via-purple-500/20 to-pink-500/20 rounded-2xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity duration-500" />
-            
-            <img alt="Vritra Esports x HyperChat Partnership" className="relative w-full max-w-lg md:max-w-xl lg:max-w-2xl rounded-xl shadow-2xl shadow-primary/10 border border-border/50" src="/lovable-uploads/f58b22f3-9b00-4c05-b212-3d4e82299080.png" />
+        <div className="relative">
+            <img alt="Vritra Esports x HyperChat Partnership" className="w-full max-w-lg md:max-w-xl lg:max-w-2xl rounded-xl shadow-2xl shadow-primary/10" src="/lovable-uploads/f58b22f3-9b00-4c05-b212-3d4e82299080.png" />
           </div>
         </div>
 
