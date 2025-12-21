@@ -1,9 +1,7 @@
 import React from "react";
 import partnershipImage from "@/assets/vritra-hyperchat-partnership.png";
-
 const PartnershipSection = () => {
-  return (
-    <section className="py-16 md:py-24 relative overflow-hidden">
+  return <section className="py-16 md:py-24 relative overflow-hidden">
       {/* Subtle background gradient */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent pointer-events-none" />
       
@@ -30,11 +28,7 @@ const PartnershipSection = () => {
             {/* Glow effect behind image */}
             <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 via-purple-500/20 to-pink-500/20 rounded-2xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity duration-500" />
             
-            <img
-              src={partnershipImage}
-              alt="Vritra Esports x HyperChat Partnership"
-              className="relative w-full max-w-lg md:max-w-xl lg:max-w-2xl rounded-xl shadow-2xl shadow-primary/10 border border-border/50"
-            />
+            <img alt="Vritra Esports x HyperChat Partnership" className="relative w-full max-w-lg md:max-w-xl lg:max-w-2xl rounded-xl shadow-2xl shadow-primary/10 border border-border/50" src="/lovable-uploads/f58b22f3-9b00-4c05-b212-3d4e82299080.png" />
           </div>
         </div>
 
@@ -48,8 +42,6 @@ const PartnershipSection = () => {
           </span>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default PartnershipSection;
