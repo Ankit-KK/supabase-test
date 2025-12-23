@@ -362,7 +362,8 @@ const LooteriyaGamingObsAlerts = () => {
       today.setHours(0, 0, 0, 0);
       const todayISO = today.toISOString();
 
-      const { data: donations, error } = await supabase
+      // Query 1: Fetch today's donations for Top Donator calculation
+      const { data: todayDonations, error: todayError } = await supabase
         .from('looteriya_gaming_donations')
         .select('name, amount, currency, created_at')
         .eq('payment_status', 'success')
@@ -370,33 +371,42 @@ const LooteriyaGamingObsAlerts = () => {
         .gte('created_at', todayISO)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('[OBS] Error fetching donations:', error);
-        return;
+      // Query 2: Fetch latest 5 donations from all time for !hyperchat
+      const { data: latestDonationsData, error: latestError } = await supabase
+        .from('looteriya_gaming_donations')
+        .select('name, amount, currency, created_at')
+        .eq('payment_status', 'success')
+        .in('moderation_status', ['approved', 'auto_approved'])
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (todayError) {
+        console.error('[OBS] Error fetching today donations:', todayError);
+      }
+      if (latestError) {
+        console.error('[OBS] Error fetching latest donations:', latestError);
       }
 
-      if (!donations || donations.length === 0) {
+      // Calculate top donator from today's donations only
+      if (todayDonations && todayDonations.length > 0) {
+        const donatorTotals: Record<string, { name: string; totalAmount: number }> = {};
+        todayDonations.forEach(d => {
+          const key = d.name.toLowerCase();
+          const amountInINR = convertToINR(d.amount, d.currency || 'INR');
+          if (!donatorTotals[key]) {
+            donatorTotals[key] = { name: d.name, totalAmount: 0 };
+          }
+          donatorTotals[key].totalAmount += amountInINR;
+        });
+
+        const sortedDonators = Object.values(donatorTotals).sort((a, b) => b.totalAmount - a.totalAmount);
+        setTopDonator(sortedDonators[0] || null);
+      } else {
         setTopDonator(null);
-        setLatestDonations([]);
-        return;
       }
 
-      // Calculate top donator (sum by name)
-      const donatorTotals: Record<string, { name: string; totalAmount: number }> = {};
-      donations.forEach(d => {
-        const key = d.name.toLowerCase();
-        const amountInINR = convertToINR(d.amount, d.currency || 'INR');
-        if (!donatorTotals[key]) {
-          donatorTotals[key] = { name: d.name, totalAmount: 0 };
-        }
-        donatorTotals[key].totalAmount += amountInINR;
-      });
-
-      const sortedDonators = Object.values(donatorTotals).sort((a, b) => b.totalAmount - a.totalAmount);
-      setTopDonator(sortedDonators[0] || null);
-
-      // Get latest 5 donations (already sorted by created_at desc)
-      setLatestDonations(donations.slice(0, 5));
+      // Set latest 5 donations from all time for !hyperchat rotation
+      setLatestDonations(latestDonationsData || []);
     } catch (error) {
       console.error('[OBS] Error processing donations:', error);
     }
