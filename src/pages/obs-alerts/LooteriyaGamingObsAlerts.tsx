@@ -472,14 +472,7 @@ const LooteriyaGamingObsAlerts = () => {
   }, [pusherConfig, fetchDonations]);
 
   if (configLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-black text-white">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p>Loading Pusher configuration...</p>
-        </div>
-      </div>
-    );
+    return <div className="min-h-screen bg-transparent" />;
   }
 
   return (
