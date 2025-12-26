@@ -319,42 +319,44 @@ export const useVoiceRecorder = (maxDurationSeconds: number = 60) => {
     });
   }, [state.audioUrl]);
 
-  const uploadRecording = useCallback(async (donationId: string): Promise<string | null> => {
+  const uploadRecording = useCallback(async (donationId: string, streamerSlug: string): Promise<string | null> => {
     if (!state.audioBlob) {
       console.error('No audio blob available');
       return null;
     }
 
     try {
-      // Generate unique filename
-      const timestamp = Date.now();
-      const random = Math.random().toString(36).substring(7);
-      const mimeType = state.audioBlob.type || 'audio/webm';
-      const extension = mimeType.includes('ogg') ? 'ogg' : 'webm';
-      const fileName = `voice_${donationId}_${timestamp}_${random}.${extension}`;
+      // Convert blob to base64
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          const base64 = result.split(',')[1];
+          resolve(base64);
+        };
+        reader.onerror = reject;
+      });
+      reader.readAsDataURL(state.audioBlob);
+      const voiceData = await base64Promise;
 
-      console.log('Uploading voice message:', fileName, mimeType);
+      console.log('Uploading voice message via edge function to R2');
 
-      // Upload to storage
-      const { data, error } = await supabase.storage
-        .from('voice-messages')
-        .upload(fileName, state.audioBlob, {
-          contentType: mimeType,
-          upsert: false
-        });
+      // Upload via edge function (uses R2)
+      const { data, error } = await supabase.functions.invoke('upload-voice-message-direct', {
+        body: { voiceData, streamerSlug }
+      });
 
       if (error) {
         console.error('Upload error:', error);
         throw error;
       }
+      
+      if (!data?.voice_message_url) {
+        throw new Error('No URL returned from upload');
+      }
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('voice-messages')
-        .getPublicUrl(fileName);
-
-      console.log('Voice message uploaded successfully:', publicUrl);
-      return publicUrl;
+      console.log('Voice message uploaded to R2:', data.voice_message_url);
+      return data.voice_message_url;
 
     } catch (error) {
       console.error('Error uploading voice message:', error);

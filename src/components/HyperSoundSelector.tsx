@@ -36,22 +36,18 @@ const HyperSoundSelector: React.FC<HyperSoundSelectorProps> = ({ selectedSound, 
   useEffect(() => {
     const fetchSounds = async () => {
       try {
-        const { data, error } = await supabase.storage
-          .from('hypersounds')
-          .list('', { limit: 100 });
+        const { data, error } = await supabase.functions.invoke('list-hypersounds');
 
         if (error) {
           console.error('Error fetching sounds:', error);
           return;
         }
 
-        const soundList: Sound[] = (data || [])
-          .filter(file => file.name.endsWith('.mp3'))
-          .map(file => ({
-            name: file.name,
-            url: supabase.storage.from('hypersounds').getPublicUrl(file.name).data.publicUrl,
-            displayName: formatSoundName(file.name)
-          }));
+        const soundList: Sound[] = (data?.sounds || []).map((file: { name: string; url: string }) => ({
+          name: file.name,
+          url: file.url,
+          displayName: formatSoundName(file.name)
+        }));
 
         setSounds(soundList);
       } catch (err) {
