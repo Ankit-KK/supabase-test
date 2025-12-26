@@ -149,3 +149,6 @@ verify_jwt = false
 
 [functions.check-payment-status-jimmygaming]
 verify_jwt = false
+
+[functions.list-hypersounds]
+verify_jwt = false

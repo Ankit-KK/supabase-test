@@ -29,7 +29,7 @@ interface AudioPlayerProps {
   tableName: string;
 }
 
-const SILENT_AUDIO_URL = 'https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/voice-messages/test/looteriya_gaming_1764283000518_vrm0ib.webm';
+const SILENT_AUDIO_URL = 'https://pub-5e2831af5b324b8c88f6848e4e58dfff.r2.dev/static/silent.webm';
 
 export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   donation,
