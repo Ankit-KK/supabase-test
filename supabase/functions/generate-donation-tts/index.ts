@@ -1,7 +1,8 @@
-// Updated: 2025-10-19 22:45 - Force redeploy to apply ChiaGaming table mapping fixes
+// Updated: 2025-12-26 - Migrated to Cloudflare R2 storage
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 import { Hash } from 'https://deno.land/x/checksum@1.4.0/mod.ts'
+import { S3Client, PutObjectCommand } from "npm:@aws-sdk/client-s3@3.525.0"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -9,6 +10,26 @@ const corsHeaders = {
   'Permissions-Policy': 'autoplay=*, speaker=*',
   'Feature-Policy': 'autoplay *; speaker *',
 };
+
+// Initialize R2 client
+const getR2Client = () => {
+  const accountId = Deno.env.get('R2_ACCOUNT_ID')
+  const accessKeyId = Deno.env.get('R2_ACCESS_KEY_ID')
+  const secretAccessKey = Deno.env.get('R2_SECRET_ACCESS_KEY')
+
+  if (!accountId || !accessKeyId || !secretAccessKey) {
+    throw new Error('R2 credentials not configured')
+  }
+
+  return new S3Client({
+    region: 'auto',
+    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId,
+      secretAccessKey,
+    },
+  })
+}
 
 // Pusher client for Deno
 class PusherClient {
@@ -93,7 +114,15 @@ serve(async (req) => {
       throw new Error('SARVAM_API_KEY is not configured');
     }
 
-    // Initialize Supabase client with service role key
+    // Get R2 configuration
+    const bucketName = Deno.env.get('R2_BUCKET_NAME')
+    const r2PublicUrl = Deno.env.get('R2_PUBLIC_URL')
+
+    if (!bucketName || !r2PublicUrl) {
+      throw new Error('R2 bucket configuration not set')
+    }
+
+    // Initialize Supabase client with service role key (for database operations only)
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -265,30 +294,24 @@ serve(async (req) => {
     // Convert base64 to binary for storage upload
     const binaryAudio = Uint8Array.from(atob(base64Audio), c => c.charCodeAt(0));
     
-    // Upload to Supabase Storage
-    const storagePath = `${streamerId}/${donationId}.wav`;
-    console.log('Uploading to storage:', storagePath);
+    // Upload to Cloudflare R2
+    const storagePath = `tts-audio/${streamerId}/${donationId}.wav`;
+    console.log('Uploading to R2:', storagePath);
     
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('tts-audio')
-      .upload(storagePath, binaryAudio, {
-        contentType: 'audio/wav',
-        upsert: true // Overwrite if exists
-      });
+    // Initialize R2 client
+    const r2Client = getR2Client()
 
-    if (uploadError) {
-      console.error('Storage upload error:', uploadError);
-      throw new Error(`Failed to upload audio to storage: ${uploadError.message}`);
-    }
+    await r2Client.send(new PutObjectCommand({
+      Bucket: bucketName,
+      Key: storagePath,
+      Body: binaryAudio,
+      ContentType: 'audio/wav',
+    }))
 
-    console.log('Upload successful:', uploadData);
+    console.log('R2 upload successful');
 
-    // Get public URL
-    const { data: urlData } = supabase.storage
-      .from('tts-audio')
-      .getPublicUrl(storagePath);
-
-    const publicUrl = urlData.publicUrl;
+    // Generate public URL
+    const publicUrl = `${r2PublicUrl}/${storagePath}`;
     console.log('Public URL:', publicUrl);
 
     // Update donation record with TTS audio URL
@@ -302,7 +325,7 @@ serve(async (req) => {
       // Don't throw - we still have the URL
     }
 
-    console.log('TTS generation and storage successful');
+    console.log('TTS generation and R2 storage successful');
 
     return new Response(
       JSON.stringify({ audioUrl: publicUrl }),

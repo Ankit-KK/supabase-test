@@ -1,9 +1,29 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { S3Client, PutObjectCommand } from "npm:@aws-sdk/client-s3@3.525.0"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+// Initialize R2 client
+const getR2Client = () => {
+  const accountId = Deno.env.get('R2_ACCOUNT_ID')
+  const accessKeyId = Deno.env.get('R2_ACCESS_KEY_ID')
+  const secretAccessKey = Deno.env.get('R2_SECRET_ACCESS_KEY')
+
+  if (!accountId || !accessKeyId || !secretAccessKey) {
+    throw new Error('R2 credentials not configured')
+  }
+
+  return new S3Client({
+    region: 'auto',
+    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId,
+      secretAccessKey,
+    },
+  })
 }
 
 serve(async (req) => {
@@ -18,11 +38,16 @@ serve(async (req) => {
       throw new Error('Voice data and streamer slug are required')
     }
 
-    // Initialize Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    // Get R2 configuration
+    const bucketName = Deno.env.get('R2_BUCKET_NAME')
+    const publicUrl = Deno.env.get('R2_PUBLIC_URL')
+
+    if (!bucketName || !publicUrl) {
+      throw new Error('R2 bucket configuration not set')
+    }
+
+    // Initialize R2 client
+    const r2Client = getR2Client()
 
     // Convert base64 to Uint8Array
     const audioData = Uint8Array.from(atob(voiceData), c => c.charCodeAt(0))
@@ -30,34 +55,27 @@ serve(async (req) => {
     // Generate unique filename
     const timestamp = Date.now()
     const random = Math.random().toString(36).substring(7)
-    const fileName = `${streamerSlug}_${timestamp}_${random}.webm`
+    const fileName = `voice-messages/${streamerSlug}_${timestamp}_${random}.webm`
 
-    // Upload to storage
-    const { data: uploadData, error: uploadError } = await supabaseClient
-      .storage
-      .from('voice-messages')
-      .upload(fileName, audioData, {
-        contentType: 'audio/webm',
-        upsert: false
-      })
+    console.log('Uploading voice message to R2:', fileName)
 
-    if (uploadError) {
-      console.error('Upload error:', uploadError)
-      throw new Error(`Failed to upload voice message: ${uploadError.message}`)
-    }
+    // Upload to R2
+    await r2Client.send(new PutObjectCommand({
+      Bucket: bucketName,
+      Key: fileName,
+      Body: audioData,
+      ContentType: 'audio/webm',
+    }))
 
-    // Get public URL
-    const { data: { publicUrl } } = supabaseClient
-      .storage
-      .from('voice-messages')
-      .getPublicUrl(fileName)
+    // Generate public URL
+    const voiceMessageUrl = `${publicUrl}/${fileName}`
 
-    console.log('Voice message uploaded successfully:', publicUrl)
+    console.log('Voice message uploaded successfully to R2:', voiceMessageUrl)
 
     return new Response(
       JSON.stringify({
         success: true,
-        voice_message_url: publicUrl
+        voice_message_url: voiceMessageUrl
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
