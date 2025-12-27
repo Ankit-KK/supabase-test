@@ -387,7 +387,7 @@ const LooteriyaGaming = () => {
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                TTS in Riya Voice above {currencySymbol}
+                TTS in Riya's Voice above {currencySymbol}
                 {selectedCurrency === "INR" ? "70" : "1"}
               </p>
             </div>
