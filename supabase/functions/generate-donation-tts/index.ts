@@ -233,7 +233,7 @@ serve(async (req) => {
         model: 'speech-2.6-hd',
         text: donationText,
         stream: false,
-        language_boost: 'auto',
+        language_boost: 'Hindi',
         output_format: 'hex',
         voice_setting: {
           voice_id: 'moss_audio_3e9334b7-e32a-11f0-ba34-ee3bcee0a7c9',
