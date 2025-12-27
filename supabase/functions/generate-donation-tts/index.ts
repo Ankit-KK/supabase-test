@@ -109,9 +109,9 @@ serve(async (req) => {
       throw new Error('Donation ID and Streamer ID are required for storage');
     }
 
-    const SARVAM_API_KEY = Deno.env.get('SARVAM_API_KEY');
-    if (!SARVAM_API_KEY) {
-      throw new Error('SARVAM_API_KEY is not configured');
+    const MINIMAX_API_KEY = Deno.env.get('MINIMAX_API_KEY');
+    if (!MINIMAX_API_KEY) {
+      throw new Error('MINIMAX_API_KEY is not configured');
     }
 
     // Get R2 configuration
@@ -215,49 +215,43 @@ serve(async (req) => {
       donationText = `${username} donated ${amount} ${spokenCurrency}. Thank you!`;
     }
 
-    console.log('Generating TTS with Sarvam AI for:', donationText);
+    console.log('Generating TTS with MiniMax API for:', donationText);
 
-    // Detect Hindi text (Devanagari script)
-    const containsHindi = /[\u0900-\u097F]/.test(donationText);
-    const targetLanguage = containsHindi ? "hi-IN" : "en-IN";
-
-    console.log('Detected language:', targetLanguage);
-
-    // Test API key configuration
-    console.log('SARVAM_API_KEY configured:', SARVAM_API_KEY ? `Yes (length: ${SARVAM_API_KEY.length})` : 'No');
-
-    // Prepare request payload
-    const requestPayload = {
-      text: donationText,
-      target_language_code: targetLanguage,
-      speaker: "manisha",
-      pitch: 0,
-      pace: 0.85,
-      loudness: 1.2,
-      speech_sample_rate: 22050,
-      enable_preprocessing: true,
-      model: "bulbul:v2",
-      output_audio_codec: "wav"
-    };
-    console.log('Sarvam AI request payload:', JSON.stringify(requestPayload));
-
-    // Call Sarvam AI API with timeout
+    // Call MiniMax TTS API
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-    console.log('Calling Sarvam AI API...');
-    const response = await fetch('https://api.sarvam.ai/text-to-speech', {
+    console.log('Calling MiniMax TTS API...');
+    const response = await fetch('https://api-uw.minimax.io/v1/t2a_v2', {
       signal: controller.signal,
       method: 'POST',
       headers: {
-        'API-Subscription-Key': SARVAM_API_KEY,
+        'Authorization': `Bearer ${MINIMAX_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(requestPayload),
+      body: JSON.stringify({
+        model: 'speech-2.6-hd',
+        text: donationText,
+        stream: false,
+        language_boost: 'auto',
+        output_format: 'hex',
+        voice_setting: {
+          voice_id: 'moss_audio_3e9334b7-e32a-11f0-ba34-ee3bcee0a7c9',
+          speed: 1,
+          vol: 1,
+          pitch: 0
+        },
+        audio_setting: {
+          sample_rate: 32000,
+          bitrate: 128000,
+          format: 'mp3',
+          channel: 1
+        }
+      }),
     });
 
     clearTimeout(timeoutId);
-    console.log('Sarvam AI API response received:', {
+    console.log('MiniMax API response received:', {
       status: response.status,
       statusText: response.statusText,
       contentType: response.headers.get('content-type')
@@ -265,37 +259,49 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Sarvam AI API error details:', {
+      console.error('MiniMax API error details:', {
         status: response.status,
         statusText: response.statusText,
         body: errorText,
         headers: Object.fromEntries(response.headers.entries())
       });
-      throw new Error(`Sarvam AI API error: ${response.status} - ${errorText}`);
+      throw new Error(`MiniMax API error: ${response.status} - ${errorText}`);
     }
 
-    // Sarvam AI returns JSON with base64-encoded audio in the 'audios' array
-    console.log('Parsing JSON response...');
+    // Parse response
     const jsonResponse = await response.json();
-    console.log('JSON response structure:', {
-      hasRequestId: !!jsonResponse.request_id,
-      hasAudios: !!jsonResponse.audios,
-      audiosLength: jsonResponse.audios?.length
+    console.log('MiniMax response:', {
+      hasBaseResp: !!jsonResponse.base_resp,
+      statusCode: jsonResponse.base_resp?.status_code,
+      hasData: !!jsonResponse.data,
+      dataStatus: jsonResponse.data?.status
     });
 
-    if (!jsonResponse.audios || jsonResponse.audios.length === 0) {
+    // Check for API errors
+    if (jsonResponse.base_resp?.status_code !== 0) {
+      throw new Error(`MiniMax API error: ${jsonResponse.base_resp?.status_msg || 'Unknown error'}`);
+    }
+
+    // Check if synthesis is complete (status === 2)
+    if (jsonResponse.data?.status !== 2) {
+      throw new Error('TTS synthesis incomplete');
+    }
+
+    if (!jsonResponse.data?.audio) {
       throw new Error('No audio data in response');
     }
 
-    // The audio is already base64-encoded in the response
-    const base64Audio = jsonResponse.audios[0];
-    console.log('Base64 audio length:', base64Audio.length, 'characters');
-
-    // Convert base64 to binary for storage upload
-    const binaryAudio = Uint8Array.from(atob(base64Audio), c => c.charCodeAt(0));
+    // Decode hex string to binary
+    const hexAudio = jsonResponse.data.audio;
+    console.log('Hex audio length:', hexAudio.length, 'characters');
     
-    // Upload to Cloudflare R2
-    const storagePath = `tts-audio/${streamerId}/${donationId}.wav`;
+    const binaryAudio = new Uint8Array(
+      hexAudio.match(/.{1,2}/g).map((byte: string) => parseInt(byte, 16))
+    );
+    console.log('Binary audio size:', binaryAudio.length, 'bytes');
+    
+    // Upload to Cloudflare R2 (now as MP3)
+    const storagePath = `tts-audio/${streamerId}/${donationId}.mp3`;
     console.log('Uploading to R2:', storagePath);
     
     // Initialize R2 client
@@ -305,7 +311,7 @@ serve(async (req) => {
       Bucket: bucketName,
       Key: storagePath,
       Body: binaryAudio,
-      ContentType: 'audio/wav',
+      ContentType: 'audio/mpeg',
     }))
 
     console.log('R2 upload successful');
