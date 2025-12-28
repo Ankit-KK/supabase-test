@@ -11,6 +11,14 @@ const corsHeaders = {
   "Feature-Policy": "autoplay *; speaker *",
 };
 
+// Get client IP from request headers
+const getClientIP = (req: Request): string => {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+         req.headers.get('x-real-ip') ||
+         req.headers.get('cf-connecting-ip') ||
+         'unknown';
+};
+
 // Initialize R2 client
 const getR2Client = () => {
   const accountId = Deno.env.get("R2_ACCOUNT_ID");
@@ -93,6 +101,35 @@ serve(async (req) => {
   }
 
   try {
+    // Initialize Supabase client with service role key (for database operations only)
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Get client IP for rate limiting
+    const clientIP = getClientIP(req);
+    console.log('TTS request from IP:', clientIP);
+
+    // Check rate limit (10 TTS requests per minute)
+    const { data: rateLimitOk, error: rateLimitError } = await supabase.rpc('check_rate_limit_v2', {
+      p_ip_address: clientIP,
+      p_endpoint: 'generate-donation-tts',
+      p_max_requests: 10,
+      p_window_seconds: 60
+    });
+
+    if (rateLimitError) {
+      console.error('Rate limit check error:', rateLimitError);
+    }
+
+    if (rateLimitOk === false) {
+      console.log('Rate limit exceeded for IP:', clientIP);
+      return new Response(
+        JSON.stringify({ error: 'Too many requests. Please try again later.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const {
       username,
       amount,
@@ -123,11 +160,6 @@ serve(async (req) => {
     if (!bucketName || !r2PublicUrl) {
       throw new Error("R2 bucket configuration not set");
     }
-
-    // Initialize Supabase client with service role key (for database operations only)
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get streamer slug to determine correct table and Pusher channel
     const { data: streamerData, error: streamerError } = await supabase

@@ -6,6 +6,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Get client IP from request headers
+const getClientIP = (req: Request): string => {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+         req.headers.get('x-real-ip') ||
+         req.headers.get('cf-connecting-ip') ||
+         'unknown';
+};
+
 const CURRENCY_MINIMUMS: Record<string, { text: number; voice: number; hypersound: number }> = {
   'INR': { text: 40, voice: 150, hypersound: 30 },
   'USD': { text: 1, voice: 3, hypersound: 1 },
@@ -21,6 +29,35 @@ serve(async (req) => {
   }
 
   try {
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Get client IP for rate limiting
+    const clientIP = getClientIP(req);
+    console.log('[Bongflick] Payment request from IP:', clientIP);
+
+    // Check rate limit (10 requests per minute)
+    const { data: rateLimitOk, error: rateLimitError } = await supabase.rpc('check_rate_limit_v2', {
+      p_ip_address: clientIP,
+      p_endpoint: 'create-razorpay-order-bongflick',
+      p_max_requests: 10,
+      p_window_seconds: 60
+    });
+
+    if (rateLimitError) {
+      console.error('[Bongflick] Rate limit check error:', rateLimitError);
+    }
+
+    if (rateLimitOk === false) {
+      console.log('[Bongflick] Rate limit exceeded for IP:', clientIP);
+      return new Response(
+        JSON.stringify({ error: 'Too many requests. Please try again later.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { name, amount, currency = 'INR', message, voiceMessageUrl, hypersoundUrl } = await req.json();
 
     if (!name || !amount) {
@@ -45,11 +82,6 @@ serve(async (req) => {
     if (!razorpayKeyId || !razorpayKeySecret) {
       throw new Error('Razorpay credentials not configured');
     }
-
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
 
     const { data: streamer } = await supabase
       .from('streamers')
