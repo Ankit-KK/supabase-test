@@ -161,10 +161,10 @@ serve(async (req) => {
       throw new Error("R2 bucket configuration not set");
     }
 
-    // Get streamer slug to determine correct table and Pusher channel
+    // Get streamer slug and TTS configuration
     const { data: streamerData, error: streamerError } = await supabase
       .from("streamers")
-      .select("streamer_slug")
+      .select("streamer_slug, tts_voice_id, tts_enabled")
       .eq("id", streamerId)
       .single();
 
@@ -173,8 +173,19 @@ serve(async (req) => {
       throw new Error("Streamer not found");
     }
 
+    // Check if TTS is enabled for this streamer
+    if (streamerData.tts_enabled === false) {
+      console.log("TTS is disabled for streamer:", streamerId);
+      return new Response(
+        JSON.stringify({ error: "TTS is disabled for this streamer" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const streamerSlug = streamerData.streamer_slug;
-    console.log("Processing TTS for streamer:", streamerSlug);
+    const DEFAULT_VOICE_ID = "moss_audio_3e9334b7-e32a-11f0-ba34-ee3bcee0a7c9";
+    const voiceId = streamerData.tts_voice_id || DEFAULT_VOICE_ID;
+    console.log("Processing TTS for streamer:", streamerSlug, "with voice:", voiceId);
 
     // Determine donation table name based on streamer slug
     const donationTableMap: Record<string, string> = {
@@ -292,7 +303,7 @@ serve(async (req) => {
         language_boost: "Hindi",
         output_format: "hex",
         voice_setting: {
-          voice_id: "moss_audio_3e9334b7-e32a-11f0-ba34-ee3bcee0a7c9",
+          voice_id: voiceId,
           speed: 1.1,
           vol: 1,
           pitch: 0,
