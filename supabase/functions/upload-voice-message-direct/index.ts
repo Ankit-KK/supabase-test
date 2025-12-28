@@ -1,10 +1,19 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { S3Client, PutObjectCommand } from "npm:@aws-sdk/client-s3@3.525.0"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
+
+// Get client IP from request headers
+const getClientIP = (req: Request): string => {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+         req.headers.get('x-real-ip') ||
+         req.headers.get('cf-connecting-ip') ||
+         'unknown';
+};
 
 // Initialize R2 client
 const getR2Client = () => {
@@ -32,6 +41,38 @@ serve(async (req) => {
   }
 
   try {
+    // Initialize Supabase client for rate limiting
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+    // Get client IP for rate limiting
+    const clientIP = getClientIP(req)
+    console.log('Voice upload request from IP:', clientIP)
+
+    // Check rate limit (5 uploads per minute)
+    const { data: rateLimitOk, error: rateLimitError } = await supabase.rpc('check_rate_limit_v2', {
+      p_ip_address: clientIP,
+      p_endpoint: 'upload-voice-message-direct',
+      p_max_requests: 5,
+      p_window_seconds: 60
+    })
+
+    if (rateLimitError) {
+      console.error('Rate limit check error:', rateLimitError)
+    }
+
+    if (rateLimitOk === false) {
+      console.log('Rate limit exceeded for IP:', clientIP)
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'Too many uploads. Please try again later.' 
+        }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const { voiceData, streamerSlug } = await req.json()
 
     if (!voiceData || !streamerSlug) {

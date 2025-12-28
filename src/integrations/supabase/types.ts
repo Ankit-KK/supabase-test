@@ -243,8 +243,10 @@ export type Database = {
         Row: {
           created_at: string
           email: string
+          failed_login_attempts: number | null
           id: string
           is_active: boolean
+          locked_until: string | null
           password_hash: string
           role: string
           streamer_id: string | null
@@ -254,8 +256,10 @@ export type Database = {
         Insert: {
           created_at?: string
           email: string
+          failed_login_attempts?: number | null
           id?: string
           is_active?: boolean
+          locked_until?: string | null
           password_hash: string
           role?: string
           streamer_id?: string | null
@@ -265,8 +269,10 @@ export type Database = {
         Update: {
           created_at?: string
           email?: string
+          failed_login_attempts?: number | null
           id?: string
           is_active?: boolean
+          locked_until?: string | null
           password_hash?: string
           role?: string
           streamer_id?: string | null
@@ -1238,6 +1244,33 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limits: {
+        Row: {
+          created_at: string | null
+          endpoint: string
+          id: string
+          ip_address: string
+          request_count: number | null
+          window_start: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          endpoint: string
+          id?: string
+          ip_address: string
+          request_count?: number | null
+          window_start?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          endpoint?: string
+          id?: string
+          ip_address?: string
+          request_count?: number | null
+          window_start?: string | null
+        }
+        Relationships: []
+      }
       reviews: {
         Row: {
           content: string
@@ -1901,6 +1934,15 @@ export type Database = {
           p_ip_address: string
           p_max_requests?: number
           p_window_minutes?: number
+        }
+        Returns: boolean
+      }
+      check_rate_limit_v2: {
+        Args: {
+          p_endpoint: string
+          p_ip_address: string
+          p_max_requests?: number
+          p_window_seconds?: number
         }
         Returns: boolean
       }

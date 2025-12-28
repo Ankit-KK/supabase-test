@@ -6,6 +6,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Get client IP from request headers
+const getClientIP = (req: Request): string => {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+         req.headers.get('x-real-ip') ||
+         req.headers.get('cf-connecting-ip') ||
+         'unknown';
+};
+
 // Currency minimums (matching frontend)
 const CURRENCY_MINIMUMS: Record<string, { minText: number; minVoice: number; minHypersound: number }> = {
   'INR': { minText: 40, minVoice: 150, minHypersound: 30 },
@@ -22,14 +30,38 @@ serve(async (req) => {
   }
 
   try {
-    const { name, amount, message, voiceMessageUrl, hypersoundUrl, currency = 'INR' } = await req.json()
-
-    console.log('Create Razorpay order request:', { name, amount, currency, hasVoice: !!voiceMessageUrl, hasHypersound: !!hypersoundUrl })
-
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+    // Get client IP for rate limiting
+    const clientIP = getClientIP(req)
+    console.log('[ClumsyGod] Payment request from IP:', clientIP)
+
+    // Check rate limit (10 requests per minute)
+    const { data: rateLimitOk, error: rateLimitError } = await supabase.rpc('check_rate_limit_v2', {
+      p_ip_address: clientIP,
+      p_endpoint: 'create-razorpay-order-clumsygod',
+      p_max_requests: 10,
+      p_window_seconds: 60
+    })
+
+    if (rateLimitError) {
+      console.error('[ClumsyGod] Rate limit check error:', rateLimitError)
+    }
+
+    if (rateLimitOk === false) {
+      console.log('[ClumsyGod] Rate limit exceeded for IP:', clientIP)
+      return new Response(
+        JSON.stringify({ success: false, error: 'Too many requests. Please try again later.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const { name, amount, message, voiceMessageUrl, hypersoundUrl, currency = 'INR' } = await req.json()
+
+    console.log('Create Razorpay order request:', { name, amount, currency, hasVoice: !!voiceMessageUrl, hasHypersound: !!hypersoundUrl })
 
     // Get Razorpay credentials
     const razorpayKeyId = Deno.env.get('razorpay-keyid')!

@@ -13,6 +13,18 @@ interface AuthRequest {
   username?: string;
 }
 
+// Get client IP from request headers
+const getClientIP = (req: Request): string => {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+         req.headers.get('x-real-ip') ||
+         req.headers.get('cf-connecting-ip') ||
+         'unknown';
+};
+
+// Account lockout configuration
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MINUTES = 15;
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -23,6 +35,30 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
+
+    // Get client IP for rate limiting
+    const clientIP = getClientIP(req);
+    console.log('Auth request from IP:', clientIP);
+
+    // Check rate limit (5 attempts per minute for auth endpoints)
+    const { data: rateLimitOk, error: rateLimitError } = await supabase.rpc('check_rate_limit_v2', {
+      p_ip_address: clientIP,
+      p_endpoint: 'authenticate-user',
+      p_max_requests: 5,
+      p_window_seconds: 60
+    });
+
+    if (rateLimitError) {
+      console.error('Rate limit check error:', rateLimitError);
+    }
+
+    if (rateLimitOk === false) {
+      console.log('Rate limit exceeded for IP:', clientIP);
+      return new Response(
+        JSON.stringify({ error: 'Too many attempts. Please try again later.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     const { action, email, password, username }: AuthRequest = await req.json();
 
@@ -108,12 +144,11 @@ serve(async (req) => {
     }
 
     if (action === 'login') {
-      // Get user by email and check password
+      // Get user by email
       const { data: user, error: userError } = await supabase
         .from('auth_users')
         .select('*')
         .eq('email', email.toLowerCase())
-        .eq('is_active', true)
         .single();
 
       if (userError || !user) {
@@ -123,13 +158,61 @@ serve(async (req) => {
         );
       }
 
-      // Simple password verification (in production, use proper hashing)
-      if (user.password_hash !== password) {
+      // Check if account is locked
+      if (user.locked_until && new Date(user.locked_until) > new Date()) {
+        const remainingMinutes = Math.ceil((new Date(user.locked_until).getTime() - Date.now()) / 60000);
+        console.log('Account locked for user:', user.email, 'remaining minutes:', remainingMinutes);
         return new Response(
-          JSON.stringify({ error: 'Invalid email or password' }),
+          JSON.stringify({ error: `Account is locked. Try again in ${remainingMinutes} minute(s).` }),
+          { status: 423, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Check if account is active
+      if (!user.is_active) {
+        return new Response(
+          JSON.stringify({ error: 'Account is deactivated' }),
           { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
+
+      // Simple password verification (in production, use proper hashing)
+      if (user.password_hash !== password) {
+        // Increment failed login attempts
+        const newFailedAttempts = (user.failed_login_attempts || 0) + 1;
+        const updates: any = { failed_login_attempts: newFailedAttempts };
+
+        // Lock account if max attempts reached
+        if (newFailedAttempts >= MAX_FAILED_ATTEMPTS) {
+          const lockUntil = new Date(Date.now() + LOCKOUT_DURATION_MINUTES * 60 * 1000);
+          updates.locked_until = lockUntil.toISOString();
+          console.log('Locking account for user:', user.email, 'until:', lockUntil);
+        }
+
+        await supabase
+          .from('auth_users')
+          .update(updates)
+          .eq('id', user.id);
+
+        const attemptsRemaining = MAX_FAILED_ATTEMPTS - newFailedAttempts;
+        const errorMessage = attemptsRemaining > 0 
+          ? `Invalid email or password. ${attemptsRemaining} attempt(s) remaining.`
+          : `Account locked for ${LOCKOUT_DURATION_MINUTES} minutes due to too many failed attempts.`;
+
+        return new Response(
+          JSON.stringify({ error: errorMessage }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Successful login - reset failed attempts and unlock
+      await supabase
+        .from('auth_users')
+        .update({ 
+          failed_login_attempts: 0, 
+          locked_until: null 
+        })
+        .eq('id', user.id);
 
       // Generate new session token
       const { data: sessionToken, error: tokenError } = await supabase

@@ -5,6 +5,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Get client IP from request headers
+const getClientIP = (req: Request): string => {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+         req.headers.get('x-real-ip') ||
+         req.headers.get('cf-connecting-ip') ||
+         'unknown';
+};
+
 // Currency minimums for validation
 const CURRENCY_MINIMUMS: Record<string, { minText: number; minVoice: number; minHypersound: number }> = {
   'INR': { minText: 40, minVoice: 150, minHypersound: 30 },
@@ -21,6 +29,35 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Get client IP for rate limiting
+    const clientIP = getClientIP(req);
+    console.log('[Damask Plays] Payment request from IP:', clientIP);
+
+    // Check rate limit (10 requests per minute)
+    const { data: rateLimitOk, error: rateLimitError } = await supabase.rpc('check_rate_limit_v2', {
+      p_ip_address: clientIP,
+      p_endpoint: 'create-razorpay-order-damask-plays',
+      p_max_requests: 10,
+      p_window_seconds: 60
+    });
+
+    if (rateLimitError) {
+      console.error('[Damask Plays] Rate limit check error:', rateLimitError);
+    }
+
+    if (rateLimitOk === false) {
+      console.log('[Damask Plays] Rate limit exceeded for IP:', clientIP);
+      return new Response(
+        JSON.stringify({ error: 'Too many requests. Please try again later.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { name, amount, message, voiceMessageUrl, hypersoundUrl, currency = 'INR' } = await req.json();
 
     console.log('[Damask Plays] Creating Razorpay order:', { name, amount, currency, hasVoice: !!voiceMessageUrl, hasHypersound: !!hypersoundUrl });
@@ -44,11 +81,6 @@ Deno.serve(async (req) => {
     if (!name || !amount || parseFloat(amount) < minAmount) {
       throw new Error(`Invalid donation details. Minimum for ${donationType} is ${minAmount} ${currency}`);
     }
-
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Get streamer info
     const { data: streamer } = await supabase
