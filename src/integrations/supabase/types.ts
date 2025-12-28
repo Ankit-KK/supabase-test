@@ -1472,6 +1472,8 @@ export type Database = {
           pusher_group: number | null
           streamer_name: string
           streamer_slug: string
+          tts_enabled: boolean | null
+          tts_voice_id: string | null
           updated_at: string | null
           user_id: string | null
         }
@@ -1490,6 +1492,8 @@ export type Database = {
           pusher_group?: number | null
           streamer_name: string
           streamer_slug: string
+          tts_enabled?: boolean | null
+          tts_voice_id?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
@@ -1508,6 +1512,8 @@ export type Database = {
           pusher_group?: number | null
           streamer_name?: string
           streamer_slug?: string
+          tts_enabled?: boolean | null
+          tts_voice_id?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
