@@ -152,3 +152,6 @@ verify_jwt = false
 
 [functions.list-hypersounds]
 verify_jwt = false
+
+[functions.notify-pending-donations]
+verify_jwt = false

@@ -88,19 +88,206 @@ async function handleCallbackQuery(callbackQuery: any, supabase: any, botToken: 
   const messageId = callbackQuery.message.message_id;
   const data = callbackQuery.data;
   const userId = callbackQuery.from.id.toString();
+  const username = callbackQuery.from.username || callbackQuery.from.first_name || 'Moderator';
 
   console.log('Handling callback query:', { chatId, messageId, data, userId });
 
-  if (data.startsWith('play_')) {
-    const donationId = data.replace('play_', '');
-    await playVoiceMessage(donationId, userId, chatId, messageId, supabase, botToken);
-  } else if (data.startsWith('dashboard_')) {
-    const streamerSlug = data.replace('dashboard_', '');
-    await sendMessage(chatId, `📊 View full dashboard: https://your-domain.com/dashboard/${streamerSlug}`, botToken);
+  try {
+    if (data.startsWith('approve_')) {
+      // Format: approve_tableName_donationId
+      const parts = data.replace('approve_', '').split('_');
+      const donationId = parts.pop(); // Last part is donation ID
+      const tableName = parts.join('_'); // Rest is table name
+      await handleApproval(tableName, donationId, userId, username, chatId, messageId, supabase, botToken);
+    } else if (data.startsWith('reject_')) {
+      const parts = data.replace('reject_', '').split('_');
+      const donationId = parts.pop();
+      const tableName = parts.join('_');
+      await handleRejection(tableName, donationId, userId, username, chatId, messageId, supabase, botToken);
+    } else if (data.startsWith('hide_')) {
+      const parts = data.replace('hide_', '').split('_');
+      const donationId = parts.pop();
+      const tableName = parts.join('_');
+      await handleHideMessage(tableName, donationId, userId, username, chatId, messageId, supabase, botToken);
+    } else if (data.startsWith('play_')) {
+      const donationId = data.replace('play_', '');
+      await playVoiceMessage(donationId, userId, chatId, messageId, supabase, botToken);
+    } else if (data.startsWith('dashboard_')) {
+      const streamerSlug = data.replace('dashboard_', '');
+      await sendMessage(chatId, `📊 View full dashboard: https://hyperchat.in/dashboard/${streamerSlug}`, botToken);
+    }
+  } catch (error) {
+    console.error('Error handling callback:', error);
+    await sendMessage(chatId, '❌ An error occurred while processing your request.', botToken);
   }
 
   // Answer the callback query to remove the loading indicator
   await answerCallbackQuery(callbackQuery.id, botToken);
+}
+
+// Handle approval from Telegram
+async function handleApproval(tableName: string, donationId: string, userId: string, username: string, chatId: number, messageId: number, supabase: any, botToken: string) {
+  console.log('Handling approval:', { tableName, donationId, userId });
+  
+  // Verify user is a moderator for this donation's streamer
+  const isAuthorized = await verifyModeratorAccess(tableName, donationId, userId, supabase);
+  if (!isAuthorized) {
+    await editMessage(chatId, messageId, '❌ You are not authorized to moderate this donation.', botToken);
+    return;
+  }
+
+  // Update donation status
+  const { error } = await supabase
+    .from(tableName)
+    .update({
+      moderation_status: 'approved',
+      approved_by: `telegram:${username}`,
+      approved_at: new Date().toISOString()
+    })
+    .eq('id', donationId);
+
+  if (error) {
+    console.error('Error approving donation:', error);
+    await editMessage(chatId, messageId, '❌ Failed to approve donation. Please try again.', botToken);
+    return;
+  }
+
+  // Get donation details for confirmation message
+  const { data: donation } = await supabase
+    .from(tableName)
+    .select('name, amount, message')
+    .eq('id', donationId)
+    .single();
+
+  const confirmationMessage = 
+    `✅ <b>APPROVED</b> by @${escapeHtml(username)}\n\n` +
+    `💰 <b>Amount:</b> ₹${donation?.amount || 'N/A'}\n` +
+    `👤 <b>From:</b> ${escapeHtml(donation?.name || 'Unknown')}\n` +
+    `💬 <b>Message:</b> ${donation?.message ? escapeHtml(donation.message.substring(0, 100)) : '<i>No message</i>'}\n\n` +
+    `⏰ ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`;
+
+  await editMessage(chatId, messageId, confirmationMessage, botToken);
+  console.log('Donation approved successfully:', donationId);
+}
+
+// Handle rejection from Telegram
+async function handleRejection(tableName: string, donationId: string, userId: string, username: string, chatId: number, messageId: number, supabase: any, botToken: string) {
+  console.log('Handling rejection:', { tableName, donationId, userId });
+  
+  const isAuthorized = await verifyModeratorAccess(tableName, donationId, userId, supabase);
+  if (!isAuthorized) {
+    await editMessage(chatId, messageId, '❌ You are not authorized to moderate this donation.', botToken);
+    return;
+  }
+
+  const { error } = await supabase
+    .from(tableName)
+    .update({
+      moderation_status: 'rejected',
+      approved_by: `telegram:${username}`,
+      approved_at: new Date().toISOString()
+    })
+    .eq('id', donationId);
+
+  if (error) {
+    console.error('Error rejecting donation:', error);
+    await editMessage(chatId, messageId, '❌ Failed to reject donation. Please try again.', botToken);
+    return;
+  }
+
+  const { data: donation } = await supabase
+    .from(tableName)
+    .select('name, amount')
+    .eq('id', donationId)
+    .single();
+
+  const confirmationMessage = 
+    `❌ <b>REJECTED</b> by @${escapeHtml(username)}\n\n` +
+    `💰 <b>Amount:</b> ₹${donation?.amount || 'N/A'}\n` +
+    `👤 <b>From:</b> ${escapeHtml(donation?.name || 'Unknown')}\n\n` +
+    `⏰ ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`;
+
+  await editMessage(chatId, messageId, confirmationMessage, botToken);
+  console.log('Donation rejected successfully:', donationId);
+}
+
+// Handle hide message from Telegram
+async function handleHideMessage(tableName: string, donationId: string, userId: string, username: string, chatId: number, messageId: number, supabase: any, botToken: string) {
+  console.log('Handling hide message:', { tableName, donationId, userId });
+  
+  const isAuthorized = await verifyModeratorAccess(tableName, donationId, userId, supabase);
+  if (!isAuthorized) {
+    await editMessage(chatId, messageId, '❌ You are not authorized to moderate this donation.', botToken);
+    return;
+  }
+
+  const { error } = await supabase
+    .from(tableName)
+    .update({
+      message_visible: false,
+      moderation_status: 'approved',
+      approved_by: `telegram:${username}`,
+      approved_at: new Date().toISOString()
+    })
+    .eq('id', donationId);
+
+  if (error) {
+    console.error('Error hiding message:', error);
+    await editMessage(chatId, messageId, '❌ Failed to hide message. Please try again.', botToken);
+    return;
+  }
+
+  const { data: donation } = await supabase
+    .from(tableName)
+    .select('name, amount')
+    .eq('id', donationId)
+    .single();
+
+  const confirmationMessage = 
+    `👁️ <b>MESSAGE HIDDEN & APPROVED</b> by @${escapeHtml(username)}\n\n` +
+    `💰 <b>Amount:</b> ₹${donation?.amount || 'N/A'}\n` +
+    `👤 <b>From:</b> ${escapeHtml(donation?.name || 'Unknown')}\n` +
+    `📝 Message will not be shown on stream\n\n` +
+    `⏰ ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`;
+
+  await editMessage(chatId, messageId, confirmationMessage, botToken);
+  console.log('Message hidden successfully:', donationId);
+}
+
+// Verify that a user is a moderator for the streamer who owns this donation
+async function verifyModeratorAccess(tableName: string, donationId: string, telegramUserId: string, supabase: any): Promise<boolean> {
+  try {
+    // Get the streamer_id from the donation
+    const { data: donation, error: donationError } = await supabase
+      .from(tableName)
+      .select('streamer_id')
+      .eq('id', donationId)
+      .single();
+
+    if (donationError || !donation?.streamer_id) {
+      console.error('Donation not found or no streamer_id:', donationError);
+      return false;
+    }
+
+    // Check if user is a moderator for this streamer
+    const { data: moderator, error: modError } = await supabase
+      .from('streamers_moderators')
+      .select('id')
+      .eq('streamer_id', donation.streamer_id)
+      .eq('telegram_user_id', telegramUserId)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (modError) {
+      console.error('Error checking moderator status:', modError);
+      return false;
+    }
+
+    return !!moderator;
+  } catch (error) {
+    console.error('Error in verifyModeratorAccess:', error);
+    return false;
+  }
 }
 
 async function showModeratorStatus(chatId: number, userId: string, supabase: any, botToken: string) {
