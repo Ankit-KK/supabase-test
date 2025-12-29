@@ -21,7 +21,7 @@ const HeroWithCanyonAnimation = () => {
             </h2>
             
             <div className="mt-8">
-              <Button size="lg" className="bg-hero-gradient hover:opacity-90 transition-opacity text-sm sm:text-base lg:text-lg px-4 sm:px-6 lg:px-8" onClick={() => setShowSignupDialog(true)}>
+              <Button size="lg" className="bg-hero-gradient hover:opacity-90 transition-opacity text-sm sm:text-base lg:text-lg px-4 sm:px-6 lg:px-8 text-white" onClick={() => setShowSignupDialog(true)}>
                 Get Connected
               </Button>
             </div>

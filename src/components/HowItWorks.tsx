@@ -8,25 +8,25 @@ const HowItWorks = () => {
       icon: <Play className="text-white" size={24} />,
       title: "Join a Live Session",
       description: "Connect to a creator's live broadcast on their platform",
-      gradient: "bg-gradient-to-br from-hyperchat-purple to-hyperchat-blue",
+      gradient: "bg-gradient-to-br from-hyperchat-blue to-hyperchat-dark-blue",
     },
     {
       icon: <MessageCircle className="text-white" size={24} />,
       title: "Engage with HyperChat",
       description: "Use HyperChat to express yourself and participate meaningfully",
-      gradient: "bg-gradient-to-br from-hyperchat-pink to-hyperchat-purple",
+      gradient: "bg-gradient-to-br from-hyperchat-purple to-hyperchat-blue",
     },
     {
       icon: <Sparkles className="text-white" size={24} />,
       title: "Your Presence is Elevated",
       description: "Experience real-time recognition in the live environment",
-      gradient: "bg-gradient-to-br from-hyperchat-orange to-hyperchat-pink",
+      gradient: "bg-gradient-to-br from-hyperchat-orange to-hyperchat-purple",
     },
     {
       icon: <Heart className="text-white" size={24} />,
       title: "Create Memorable Moments",
       description: "Be part of something special with creators and communities you care about",
-      gradient: "bg-gradient-to-br from-hyperchat-blue to-hyperchat-purple",
+      gradient: "bg-gradient-to-br from-hyperchat-dark-blue to-hyperchat-purple",
     },
   ];
 
@@ -49,7 +49,7 @@ const HowItWorks = () => {
                 <div className={`w-16 h-16 rounded-full ${step.gradient} flex items-center justify-center mb-4`}>
                   {step.icon}
                 </div>
-                <div className="absolute -top-2 -right-2 w-8 h-8 bg-white text-black rounded-full flex items-center justify-center font-bold text-sm">
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-sm">
                   {index + 1}
                 </div>
               </div>
@@ -60,23 +60,23 @@ const HowItWorks = () => {
         </div>
 
         <div className="mt-16 text-center">
-          <div className="bg-secondary/50 p-8 rounded-xl border border-white/10 max-w-4xl mx-auto">
-            <h3 className="text-2xl font-bold mb-4">Ready to Experience Deeper Engagement?</h3>
+          <div className="bg-card p-8 rounded-xl border border-border shadow-sm max-w-4xl mx-auto">
+            <h3 className="text-2xl font-bold mb-4 text-foreground">Ready to Experience Deeper Engagement?</h3>
             <p className="text-muted-foreground mb-6">
               Join creators and audiences who value authentic connection
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
               <div className="flex items-center justify-center space-x-2">
-                <div className="w-2 h-2 bg-hyperchat-pink rounded-full"></div>
-                <span>Meaningful Expression</span>
+                <div className="w-2 h-2 bg-hyperchat-blue rounded-full"></div>
+                <span className="text-foreground">Meaningful Expression</span>
               </div>
               <div className="flex items-center justify-center space-x-2">
                 <div className="w-2 h-2 bg-hyperchat-purple rounded-full"></div>
-                <span>Community Building</span>
+                <span className="text-foreground">Community Building</span>
               </div>
               <div className="flex items-center justify-center space-x-2">
-                <div className="w-2 h-2 bg-hyperchat-pink rounded-full"></div>
-                <span>Authentic Connection</span>
+                <div className="w-2 h-2 bg-hyperchat-blue rounded-full"></div>
+                <span className="text-foreground">Authentic Connection</span>
               </div>
             </div>
           </div>

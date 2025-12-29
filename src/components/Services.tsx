@@ -17,48 +17,48 @@ const Services: React.FC = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-          <div className="flex flex-col p-6 space-y-4 rounded-xl border border-white/10 bg-secondary/50 hover:bg-secondary/80 transition-colors">
+          <div className="flex flex-col p-6 space-y-4 rounded-xl border border-border bg-card shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-hyperchat-purple to-hyperchat-pink p-2 rounded-lg">
+              <div className="bg-gradient-to-br from-hyperchat-blue to-hyperchat-purple p-2 rounded-lg">
                 <Users className="text-white h-5 w-5" />
               </div>
-              <h3 className="text-xl font-semibold">Meaningful Participation</h3>
+              <h3 className="text-xl font-semibold text-foreground">Meaningful Participation</h3>
             </div>
             <p className="text-muted-foreground">
               Your audience doesn't just watch — they actively participate and shape the experience
             </p>
           </div>
           
-          <div className="flex flex-col p-6 space-y-4 rounded-xl border border-white/10 bg-secondary/50 hover:bg-secondary/80 transition-colors">
+          <div className="flex flex-col p-6 space-y-4 rounded-xl border border-border bg-card shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-hyperchat-purple to-hyperchat-pink p-2 rounded-lg">
+              <div className="bg-gradient-to-br from-hyperchat-blue to-hyperchat-purple p-2 rounded-lg">
                 <Heart className="text-white h-5 w-5" />
               </div>
-              <h3 className="text-xl font-semibold">Stronger Community</h3>
+              <h3 className="text-xl font-semibold text-foreground">Stronger Community</h3>
             </div>
             <p className="text-muted-foreground">
               Build deeper relationships with engaged audiences who feel truly connected to your content
             </p>
           </div>
           
-          <div className="flex flex-col p-6 space-y-4 rounded-xl border border-white/10 bg-secondary/50 hover:bg-secondary/80 transition-colors">
+          <div className="flex flex-col p-6 space-y-4 rounded-xl border border-border bg-card shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-hyperchat-purple to-hyperchat-pink p-2 rounded-lg">
+              <div className="bg-gradient-to-br from-hyperchat-blue to-hyperchat-purple p-2 rounded-lg">
                 <MessageCircle className="text-white h-5 w-5" />
               </div>
-              <h3 className="text-xl font-semibold">Enhanced Communication</h3>
+              <h3 className="text-xl font-semibold text-foreground">Enhanced Communication</h3>
             </div>
             <p className="text-muted-foreground">
               Real-time interaction tools that make your live sessions more dynamic and responsive
             </p>
           </div>
           
-          <div className="flex flex-col p-6 space-y-4 rounded-xl border border-white/10 bg-secondary/50 hover:bg-secondary/80 transition-colors">
+          <div className="flex flex-col p-6 space-y-4 rounded-xl border border-border bg-card shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-hyperchat-purple to-hyperchat-pink p-2 rounded-lg">
+              <div className="bg-gradient-to-br from-hyperchat-blue to-hyperchat-purple p-2 rounded-lg">
                 <Sparkles className="text-white h-5 w-5" />
               </div>
-              <h3 className="text-xl font-semibold">Audience Personality</h3>
+              <h3 className="text-xl font-semibold text-foreground">Audience Personality</h3>
             </div>
             <p className="text-muted-foreground">
               Let your community express themselves and create memorable moments together
@@ -68,7 +68,7 @@ const Services: React.FC = () => {
         
         <div className="mt-12 text-center">
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="bg-hero-gradient hover:opacity-90 transition-opacity" onClick={() => setShowSignupDialog(true)}>
+            <Button size="lg" className="bg-hero-gradient hover:opacity-90 transition-opacity text-white" onClick={() => setShowSignupDialog(true)}>
               Get Connected
             </Button>
             <Button variant="outline" size="lg" asChild>

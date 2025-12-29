@@ -2,64 +2,69 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
+
 @layer base {
   :root {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
- 
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
- 
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
- 
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
- 
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
- 
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
- 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
- 
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 214 32% 91%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 262 83% 58%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 221 83% 53%;
     --radius: 0.5rem;
+    
+    /* Blue theme colors */
+    --blue-primary: 221 83% 53%;
+    --blue-secondary: 224 76% 48%;
+    --blue-light: 214 95% 93%;
+    --purple-accent: 262 83% 58%;
+  }
 
-    /* Pink gaming theme colors */
-    --pink-primary: 333 71% 68%;
-    --pink-primary-foreground: 0 0% 98%;
-    --pink-secondary: 316 73% 69%;
-    --pink-accent: 320 85% 60%;
-    --pink-light: 324 100% 95%;
-    --pink-gradient: linear-gradient(135deg, hsl(var(--pink-primary)), hsl(var(--pink-secondary)));
+  .dark {
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 15%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 15%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 262 83% 58%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 221 83% 53%;
   }
 }
- 
+
 @layer base {
   * {
     @apply border-border;
+    box-sizing: border-box;
   }
   body {
     @apply bg-background text-foreground;
-    margin: 0;
-    font-family: "Comfortaa", sans-serif;
+    font-family: 'Inter', system-ui, sans-serif;
     overflow-x: hidden;
-    width: 100%;
-    max-width: 100vw;
-  }
-  
-  * {
-    box-sizing: border-box;
   }
 }
 
@@ -156,11 +161,11 @@
   margin-top: -30px;
   transition: 0.3s cubic-bezier(0.23, 1, 0.32, 1);
   z-index: 0;
-  color: #B967F1;
+  color: hsl(221 83% 53%);
   font-family: 'Montserrat', sans-serif;
   font-weight: 900;
   font-size: clamp(18px, 5vw, 40px);
-  text-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 10px 25px hsla(221, 83%, 53%, 0.3);
   text-transform: uppercase;
 }
 
@@ -174,13 +179,13 @@
   z-index: -1;
   object-fit: cover;
   transition: opacity 0.5s ease-in-out;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, hsl(210 40% 98%) 0%, hsl(214 95% 93%) 50%, hsl(210 40% 98%) 100%);
 }
 
 .content-overlay {
   position: relative;
   z-index: 1;
-  background-color: rgba(0, 0, 0, 0.45);
+  background-color: rgba(255, 255, 255, 0.95);
   min-height: 100vh;
 }
 
@@ -232,7 +237,7 @@
   left: -2px;
   right: -2px;
   bottom: -2px;
-  background: linear-gradient(90deg, #9b87f5 0%, #D946EF 100%);
+  background: linear-gradient(90deg, #2563EB 0%, #7C3AED 100%);
   z-index: -1;
   border-radius: inherit;
 }
