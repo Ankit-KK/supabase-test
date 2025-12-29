@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { Hash } from 'https://deno.land/x/checksum@1.4.0/mod.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,6 +8,122 @@ const corsHeaders = {
 };
 
 console.log('telegram-webhook: function loaded');
+
+// Pusher client for Deno
+class PusherClient {
+  private appId: string;
+  private key: string;
+  private secret: string;
+  private cluster: string;
+
+  constructor(appId: string, key: string, secret: string, cluster: string) {
+    this.appId = appId;
+    this.key = key;
+    this.secret = secret;
+    this.cluster = cluster;
+  }
+
+  async trigger(channel: string, event: string, data: any) {
+    const body = JSON.stringify({ name: event, data: JSON.stringify(data), channel });
+    const timestamp = Math.floor(Date.now() / 1000);
+    
+    const hash = new Hash("md5");
+    const bodyMd5 = hash.digest(new TextEncoder().encode(body)).hex();
+    
+    const authString = `POST\n/apps/${this.appId}/events\nauth_key=${this.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${bodyMd5}`;
+    const authSignature = await this.hmacSha256(authString, this.secret);
+    
+    const url = `https://api-${this.cluster}.pusher.com/apps/${this.appId}/events?auth_key=${this.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${bodyMd5}&auth_signature=${authSignature}`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Pusher trigger failed: ${error}`);
+    }
+
+    return response.json();
+  }
+
+  private async hmacSha256(message: string, secret: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(secret);
+    const messageData = encoder.encode(message);
+    
+    const key = await crypto.subtle.importKey(
+      'raw',
+      keyData,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    
+    const signature = await crypto.subtle.sign('HMAC', key, messageData);
+    return Array.from(new Uint8Array(signature))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+}
+
+// Helper function to get Pusher credentials based on streamer_slug
+async function getPusherCredentials(streamerSlug: string, supabase: any) {
+  try {
+    const { data: streamer, error } = await supabase
+      .from('streamers')
+      .select('pusher_group, streamer_name')
+      .eq('streamer_slug', streamerSlug)
+      .single();
+
+    if (error || !streamer) {
+      console.error(`[Pusher] Failed to fetch pusher_group for ${streamerSlug}:`, error);
+      return {
+        appId: Deno.env.get('PUSHER_APP_ID_1') || Deno.env.get('PUSHER_APP_ID'),
+        key: Deno.env.get('PUSHER_KEY_1') || Deno.env.get('PUSHER_KEY'),
+        secret: Deno.env.get('PUSHER_SECRET_1') || Deno.env.get('PUSHER_SECRET'),
+        cluster: Deno.env.get('PUSHER_CLUSTER_1') || Deno.env.get('PUSHER_CLUSTER'),
+        group: 1
+      };
+    }
+
+    const group = streamer.pusher_group || 1;
+    
+    const credentials = {
+      appId: Deno.env.get(`PUSHER_APP_ID_${group}`),
+      key: Deno.env.get(`PUSHER_KEY_${group}`),
+      secret: Deno.env.get(`PUSHER_SECRET_${group}`),
+      cluster: Deno.env.get(`PUSHER_CLUSTER_${group}`),
+      group
+    };
+
+    if (!credentials.appId || !credentials.key || !credentials.secret || !credentials.cluster) {
+      console.error(`[Pusher] Missing credentials for Group ${group}`);
+      throw new Error(`Pusher Group ${group} credentials not configured`);
+    }
+
+    console.log(`[Pusher] Using Group ${group} for streamer: ${streamerSlug}`);
+    return credentials;
+  } catch (error) {
+    console.error('[Pusher] Error fetching credentials:', error);
+    throw error;
+  }
+}
+
+// Helper function to get streamer slug from table name
+function getStreamerSlugFromTable(tableName: string): string {
+  // Remove '_donations' suffix and handle special cases
+  const slug = tableName.replace('_donations', '');
+  // Handle special mappings
+  if (slug === 'chiaa_gaming') return 'chiaa_gaming';
+  if (slug === 'looteriya_gaming') return 'looteriya_gaming';
+  if (slug === 'damask_plays') return 'damask_plays';
+  if (slug === 'neko_xenpai') return 'neko_xenpai';
+  if (slug === 'jimmy_gaming') return 'jimmy_gaming';
+  return slug;
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -152,18 +269,68 @@ async function handleApproval(tableName: string, donationId: string, userId: str
     return;
   }
 
-  // Get donation details for confirmation message
+  // Get full donation details for OBS alert
   const { data: donation } = await supabase
     .from(tableName)
-    .select('name, amount, message')
+    .select('*')
     .eq('id', donationId)
     .single();
+
+  if (donation) {
+    // Trigger OBS alert via Pusher
+    try {
+      const streamerSlug = getStreamerSlugFromTable(tableName);
+      console.log(`[Approval] Triggering OBS alert for streamer: ${streamerSlug}`);
+      
+      const pusherCreds = await getPusherCredentials(streamerSlug, supabase);
+      const pusher = new PusherClient(
+        pusherCreds.appId,
+        pusherCreds.key,
+        pusherCreds.secret,
+        pusherCreds.cluster
+      );
+      
+      const alertsChannel = `${streamerSlug}-alerts`;
+      await pusher.trigger(alertsChannel, 'new-donation', {
+        id: donation.id,
+        name: donation.name,
+        amount: donation.amount,
+        message: donation.message,
+        voice_message_url: donation.voice_message_url,
+        tts_audio_url: donation.tts_audio_url,
+        is_hyperemote: donation.is_hyperemote,
+        created_at: donation.created_at,
+        streamer_id: donation.streamer_id,
+      });
+      
+      console.log(`✅ OBS alert triggered on ${alertsChannel} after approval`);
+      
+      // Also send to audio channel if there's voice/TTS
+      if (donation.voice_message_url || donation.tts_audio_url) {
+        const audioChannel = `${streamerSlug}-audio`;
+        await pusher.trigger(audioChannel, 'new-audio-message', {
+          id: donation.id,
+          name: donation.name,
+          amount: donation.amount,
+          message: donation.message,
+          voice_message_url: donation.voice_message_url,
+          tts_audio_url: donation.tts_audio_url,
+          announcement_tts_url: null,
+          created_at: donation.created_at,
+        });
+        console.log(`✅ Audio event sent to ${audioChannel}`);
+      }
+    } catch (pusherError) {
+      console.error('❌ Failed to trigger OBS alert:', pusherError);
+    }
+  }
 
   const confirmationMessage = 
     `✅ <b>APPROVED</b> by @${escapeHtml(username)}\n\n` +
     `💰 <b>Amount:</b> ₹${donation?.amount || 'N/A'}\n` +
     `👤 <b>From:</b> ${escapeHtml(donation?.name || 'Unknown')}\n` +
     `💬 <b>Message:</b> ${donation?.message ? escapeHtml(donation.message.substring(0, 100)) : '<i>No message</i>'}\n\n` +
+    `🎬 <b>Alert sent to OBS!</b>\n` +
     `⏰ ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`;
 
   await editMessage(chatId, messageId, confirmationMessage, botToken);

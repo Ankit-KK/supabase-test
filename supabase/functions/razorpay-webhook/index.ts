@@ -336,20 +336,34 @@ serve(async (req) => {
 
     console.log('Updating payment status to:', newStatus)
 
+    // Fetch streamer settings to check if moderation is enabled
+    const pusherSlug = streamerSlugMap[streamerType] || streamerType;
+    const { data: streamerSettings } = await supabase
+      .from('streamers')
+      .select('telegram_moderation_enabled')
+      .eq('streamer_slug', pusherSlug)
+      .single();
+
+    const requiresModeration = streamerSettings?.telegram_moderation_enabled === true;
+    console.log(`[Moderation] Streamer ${pusherSlug}: telegram_moderation_enabled=${requiresModeration}`);
+
     // Calculate audio_scheduled_at based on donation type
     // HyperSounds: 15 second delay, everything else: 60 second delay
     const audioDelay = donation.hypersound_url ? 15000 : 60000;
     const audioScheduledAt = new Date(Date.now() + audioDelay).toISOString();
 
+    // Determine moderation status based on settings
+    const moderationStatus = requiresModeration ? 'pending' : 'auto_approved';
+
     // Update donation status
     const updateData: any = {
       payment_status: newStatus,
+      moderation_status: isSuccess ? moderationStatus : undefined,
+      approved_at: isSuccess && !requiresModeration ? new Date().toISOString() : null,
+      approved_by: isSuccess && !requiresModeration ? 'system' : null,
       updated_at: new Date().toISOString(),
       audio_scheduled_at: isSuccess ? audioScheduledAt : null // Only schedule audio for successful payments
     }
-
-    // Note: moderation_status is handled by database trigger
-    // All donations are auto-approved by auto_approve_ankit_hyperemotes_iu()
 
     console.log(`Setting audio_scheduled_at to ${audioScheduledAt} (${audioDelay/1000}s delay for ${donation.hypersound_url ? 'HyperSound' : 'regular'})`)
 
@@ -398,36 +412,24 @@ serve(async (req) => {
         })
       }
 
-      // Send new-donation event to alerts and dashboard channels based on streamer type
-      const alertChannels = streamerType === 'thunderx' 
-        ? ['thunderx-alerts', 'thunderx-dashboard'] 
-        : streamerType === 'vipbhai'
-        ? ['vipbhai-alerts', 'vipbhai-dashboard']
-        : streamerType === 'sagarujjwalgaming'
-        ? ['sagarujjwalgaming-alerts', 'sagarujjwalgaming-dashboard']
-        : streamerType === 'notyourkween'
-        ? ['notyourkween-alerts', 'notyourkween-dashboard']
-        : streamerType === 'bongflick'
-        ? ['bongflick-alerts', 'bongflick-dashboard']
-        : streamerType === 'mriqmaster'
-        ? ['mriqmaster-alerts', 'mriqmaster-dashboard']
-        : streamerType === 'abdevil'
-        ? ['abdevil-alerts', 'abdevil-dashboard']
-        : streamerType === 'looteriyagaming'
-        ? ['looteriya_gaming-alerts', 'looteriya_gaming-dashboard']
-        : streamerType === 'damaskplays'
-        ? ['damask_plays-alerts', 'damask_plays-dashboard']
-        : streamerType === 'nekoxenpai'
-        ? ['neko_xenpai-alerts', 'neko_xenpai-dashboard']
-        : streamerType === 'jhanvoo'
-        ? ['jhanvoo-alerts', 'jhanvoo-dashboard']
-        : streamerType === 'clumsygod'
-        ? ['clumsygod-alerts', 'clumsygod-dashboard']
-        : streamerType === 'jimmygaming'
-        ? ['jimmy_gaming-alerts', 'jimmy_gaming-dashboard']
-        : ['ankit-alerts', 'ankit-dashboard']
-      
-      await sendPusherEvent(alertChannels, 'new-donation', {
+      // Get streamer slug for channel names
+      const channelSlug = streamerType === 'thunderx' ? 'thunderx'
+        : streamerType === 'vipbhai' ? 'vipbhai'
+        : streamerType === 'sagarujjwalgaming' ? 'sagarujjwalgaming'
+        : streamerType === 'notyourkween' ? 'notyourkween'
+        : streamerType === 'bongflick' ? 'bongflick'
+        : streamerType === 'mriqmaster' ? 'mriqmaster'
+        : streamerType === 'abdevil' ? 'abdevil'
+        : streamerType === 'looteriyagaming' ? 'looteriya_gaming'
+        : streamerType === 'damaskplays' ? 'damask_plays'
+        : streamerType === 'nekoxenpai' ? 'neko_xenpai'
+        : streamerType === 'jhanvoo' ? 'jhanvoo'
+        : streamerType === 'clumsygod' ? 'clumsygod'
+        : streamerType === 'jimmygaming' ? 'jimmy_gaming'
+        : 'ankit';
+
+      // Always send to dashboard channel (for moderators to see pending donations)
+      await sendPusherEvent([`${channelSlug}-dashboard`], 'new-donation', {
         id: donation.id,
         name: donation.name,
         amount: donation.amount,
@@ -436,10 +438,43 @@ serve(async (req) => {
         is_hyperemote: donation.is_hyperemote,
         hypersound_url: donation.hypersound_url,
         voice_message_url: donation.voice_message_url,
-        created_at: donation.created_at
-      })
+        created_at: donation.created_at,
+        moderation_status: moderationStatus
+      });
+      console.log(`✅ Pusher dashboard event sent to ${channelSlug}-dashboard`);
 
-      console.log('Pusher events sent to alerts and dashboard')
+      // Only send to OBS alerts channel if moderation is NOT required
+      if (!requiresModeration) {
+        await sendPusherEvent([`${channelSlug}-alerts`], 'new-donation', {
+          id: donation.id,
+          name: donation.name,
+          amount: donation.amount,
+          currency: paymentCurrency,
+          message: donation.message,
+          is_hyperemote: donation.is_hyperemote,
+          hypersound_url: donation.hypersound_url,
+          voice_message_url: donation.voice_message_url,
+          created_at: donation.created_at
+        });
+        console.log(`✅ Pusher alerts event sent to ${channelSlug}-alerts`);
+      } else {
+        console.log(`⏳ Skipping OBS alert - waiting for moderation approval`);
+        
+        // Notify Telegram moderators
+        try {
+          console.log(`📢 Notifying moderators for pending donation: ${donation.id}`);
+          await supabase.functions.invoke('notify-pending-donations', {
+            body: {
+              donationId: donation.id,
+              tableName: tableName,
+              streamerId: donation.streamer_id
+            }
+          });
+          console.log(`✅ Moderator notification sent`);
+        } catch (notifyError) {
+          console.error('❌ Failed to notify moderators:', notifyError);
+        }
+      }
 
       // For Ankit, check if there's an active goal and send progress update
       if (streamerType === 'ankit') {
