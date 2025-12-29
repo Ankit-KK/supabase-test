@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { DollarSign, Users, TrendingUp, Clock, AlertCircle, LogOut } from 'lucide-react';
 import DonationCard from './DonationCard';
 import TelegramDashboard from './telegram/TelegramDashboard';
+import TelegramModerationWidget from './telegram/TelegramModerationWidget';
 import OBSTokenManager from './OBSTokenManager';
 import CSVExportButton from './CSVExportButton';
 import { usePusherDashboard } from '@/hooks/usePusherDashboard';
@@ -436,6 +437,13 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
           </TabsContent>
 
           <TabsContent value="telegram" className="space-y-6 data-[state=inactive]:hidden" forceMount>
+            <TelegramModerationWidget 
+              streamerId={streamerData.id}
+              streamerSlug={streamerSlug}
+              tableName={tableName}
+              onModerationAction={() => setRefreshKey(prev => prev + 1)}
+              showPendingCount={true}
+            />
             <TelegramDashboard 
               donations={pendingDonations}
               tableName={tableName}
