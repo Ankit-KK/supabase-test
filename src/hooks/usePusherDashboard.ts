@@ -24,8 +24,6 @@ interface UsePusherDashboardConfig {
   pusherKey?: string;
   pusherCluster?: string;
   onNewDonation?: (donation: DonationUpdate) => void;
-  onDonationApproved?: (donationId: string) => void;
-  onDonationRejected?: (donationId: string) => void;
   onStatsUpdate?: (stats: Partial<DashboardStats>) => void;
 }
 
@@ -34,8 +32,6 @@ export const usePusherDashboard = ({
   pusherKey,
   pusherCluster,
   onNewDonation,
-  onDonationApproved,
-  onDonationRejected,
   onStatsUpdate
 }: UsePusherDashboardConfig) => {
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('connecting');
@@ -43,17 +39,13 @@ export const usePusherDashboard = ({
 
   // Store callbacks in refs to prevent reconnection loop
   const onNewDonationRef = useRef(onNewDonation);
-  const onDonationApprovedRef = useRef(onDonationApproved);
-  const onDonationRejectedRef = useRef(onDonationRejected);
   const onStatsUpdateRef = useRef(onStatsUpdate);
 
   // Update refs when callbacks change
   useEffect(() => {
     onNewDonationRef.current = onNewDonation;
-    onDonationApprovedRef.current = onDonationApproved;
-    onDonationRejectedRef.current = onDonationRejected;
     onStatsUpdateRef.current = onStatsUpdate;
-  }, [onNewDonation, onDonationApproved, onDonationRejected, onStatsUpdate]);
+  }, [onNewDonation, onStatsUpdate]);
 
   useEffect(() => {
     // Wait for pusher config to be available
@@ -106,32 +98,7 @@ export const usePusherDashboard = ({
       setStats(prev => ({
         ...prev,
         totalRevenue: (prev.totalRevenue || 0) + convertToINR(data.amount, data.currency || 'INR'),
-        totalDonations: (prev.totalDonations || 0) + 1,
-        pendingCount: (prev.pendingCount || 0) + 1
-      }));
-    });
-
-    // Donation approved
-    channel.bind('donation-approved', (data: { id: string }) => {
-      console.log('[PusherDashboard] Donation approved:', data.id);
-      if (onDonationApprovedRef.current) {
-        onDonationApprovedRef.current(data.id);
-      }
-      setStats(prev => ({
-        ...prev,
-        pendingCount: Math.max(0, (prev.pendingCount || 0) - 1)
-      }));
-    });
-
-    // Donation rejected
-    channel.bind('donation-rejected', (data: { id: string }) => {
-      console.log('[PusherDashboard] Donation rejected:', data.id);
-      if (onDonationRejectedRef.current) {
-        onDonationRejectedRef.current(data.id);
-      }
-      setStats(prev => ({
-        ...prev,
-        pendingCount: Math.max(0, (prev.pendingCount || 0) - 1)
+        totalDonations: (prev.totalDonations || 0) + 1
       }));
     });
 

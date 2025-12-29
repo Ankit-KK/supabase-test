@@ -1,4 +1,4 @@
-// Updated: 2025-10-19 22:45 - Force redeploy to apply ChiaGaming channel mapping fixes
+// Updated: 2025-12-29 - Removed moderation system, all donations auto-approved
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0'
 import { Hash } from 'https://deno.land/x/checksum@1.4.0/mod.ts'
@@ -162,38 +162,12 @@ serve(async (req) => {
       throw new Error('Order ID not found in webhook data')
     }
 
-    // Map order_id prefix to correct streamer slug for fetching settings
-    const getStreamerSlugFromOrderId = (orderId: string): string => {
-      if (orderId.startsWith('ankit_')) return 'ankit';
-      if (orderId.startsWith('looteriya_gaming_')) return 'looteriya_gaming';
-      if (orderId.startsWith('chia_') || orderId.startsWith('chiagaming_')) return 'chiaa_gaming';
-      if (orderId.startsWith('sizzors_')) return 'sizzors';
-      if (orderId.startsWith('damask_plays_')) return 'damask_plays';
-      if (orderId.startsWith('neko_xenpai_')) return 'neko_xenpai';
-      if (orderId.startsWith('thunderx_')) return 'thunderx';
-      // Add other streamers as needed
-      return orderId.split('_')[0];
-    };
-
-    // Fetch streamer settings to check if moderation is enabled
-    const streamerSlugForSettings = getStreamerSlugFromOrderId(order_id);
-    const { data: streamerSettings } = await supabase
-      .from('streamers')
-      .select('telegram_moderation_enabled')
-      .eq('streamer_slug', streamerSlugForSettings)
-      .single();
-
-    const requiresModeration = streamerSettings?.telegram_moderation_enabled === true;
-    console.log(`[Moderation] Streamer ${streamerSlugForSettings}: telegram_moderation_enabled=${requiresModeration}`);
-
-    // Determine database status
+    // Determine database status - ALL DONATIONS AUTO-APPROVED
     let dbStatus = 'pending'
-    let moderationStatus = 'pending'
+    let moderationStatus = 'auto_approved' // Always auto-approve
     
     if (order_status === 'PAID' || payment_status === 'SUCCESS') {
       dbStatus = 'success'
-      // Only auto-approve if moderation is NOT enabled
-      moderationStatus = requiresModeration ? 'pending' : 'auto_approved'
     } else if (order_status === 'CANCELLED' || order_status === 'TERMINATED' || payment_status === 'FAILED') {
       dbStatus = 'failed'
     }
@@ -258,7 +232,6 @@ serve(async (req) => {
     const tableName = getTableName(order_id);
 
     // Atomic update with conditional check: only update if payment_status is NOT already 'success'
-    // This prevents race conditions when multiple webhooks arrive simultaneously
     const { data: updatedDonation, error: updateError } = await supabase
       .from(tableName)
       .update({ 
@@ -269,24 +242,22 @@ serve(async (req) => {
         updated_at: new Date().toISOString()
       })
       .eq('order_id', order_id)
-      .neq('payment_status', 'success')  // Only update if NOT already success (race condition guard)
+      .neq('payment_status', 'success')
       .select()
-      .maybeSingle()  // Use maybeSingle instead of single to handle case where no rows match
+      .maybeSingle()
 
     if (updateError) {
       console.error('Database update error:', updateError)
       throw new Error('Failed to update donation record')
     }
 
-    // If updatedDonation is null, it means the status was already 'success' (another webhook got there first)
-    // Only the FIRST webhook that successfully updates the status will trigger Pusher
+    // If updatedDonation is null, it means the status was already 'success'
     const isFirstSuccess = updatedDonation !== null && dbStatus === 'success';
 
-    console.log(`Idempotency check: order_id=${order_id}, dbStatus=${dbStatus}, isFirstSuccess=${isFirstSuccess}, updatedRecord=${updatedDonation !== null}`);
+    console.log(`Idempotency check: order_id=${order_id}, dbStatus=${dbStatus}, isFirstSuccess=${isFirstSuccess}`);
 
     // Map order_id prefix to correct streamer slug for Pusher channels
     const getStreamerSlug = (orderId: string): string => {
-      // Existing 16 streamers
       if (orderId.startsWith('ankit_')) return 'ankit';
       if (orderId.startsWith('musicstream_')) return 'musicstream';
       if (orderId.startsWith('techgamer_')) return 'techgamer';
@@ -304,7 +275,6 @@ serve(async (req) => {
       if (orderId.startsWith('lofibeats_')) return 'lofibeats';
       if (orderId.startsWith('valorantpro_')) return 'valorantpro';
       if (orderId.startsWith('yogatime_')) return 'yogatime';
-      // New streamers (17-46)
       if (orderId.startsWith('streamer17_')) return 'streamer17';
       if (orderId.startsWith('streamer18_')) return 'streamer18';
       if (orderId.startsWith('streamer19_')) return 'streamer19';
@@ -338,7 +308,7 @@ serve(async (req) => {
       if (orderId.startsWith('damask_plays_')) return 'damask_plays';
       if (orderId.startsWith('neko_xenpai_')) return 'neko_xenpai';
       if (orderId.startsWith('thunderx_')) return 'thunderx';
-      return 'chiaa_gaming'; // default
+      return 'chiaa_gaming';
     };
 
     // If payment was successful AND this is the first success, trigger Pusher events and handle voice/TTS
@@ -348,7 +318,6 @@ serve(async (req) => {
       console.log(`Processing order: ${order_id}`);
       console.log(`Extracted streamer slug: ${streamerSlug}`);
       console.log(`Table name: ${tableName}`);
-      console.log(`Requires moderation: ${requiresModeration}`);
       
       // Get Pusher credentials dynamically based on streamer's group
       const pusherCreds = await getPusherCredentials(streamerSlug, supabase);
@@ -361,33 +330,29 @@ serve(async (req) => {
         pusherCreds.cluster
       );
       
-      // 1. Trigger OBS alerts channel - ONLY if moderation is NOT required
-      if (!requiresModeration) {
-        try {
-          const alertsChannel = `${streamerSlug}-alerts`;
-          console.log(`Publishing to alerts channel: ${alertsChannel}`);
-          
-          await pusher.trigger(alertsChannel, 'new-donation', {
-            id: updatedDonation.id,
-            name: updatedDonation.name,
-            amount: updatedDonation.amount,
-            message: updatedDonation.message,
-            voice_message_url: updatedDonation.voice_message_url,
-            tts_audio_url: updatedDonation.tts_audio_url,
-            is_hyperemote: updatedDonation.is_hyperemote,
-            created_at: updatedDonation.created_at,
-            streamer_id: updatedDonation.streamer_id,
-          });
-          
-          console.log(`✅ Pusher alerts event sent to ${alertsChannel}`);
-        } catch (pusherError) {
-          console.error('❌ Pusher (alerts) trigger error:', pusherError);
-        }
-      } else {
-        console.log(`⏳ Skipping OBS alert - waiting for moderation approval`);
+      // 1. ALWAYS trigger OBS alerts channel immediately (no moderation)
+      try {
+        const alertsChannel = `${streamerSlug}-alerts`;
+        console.log(`Publishing to alerts channel: ${alertsChannel}`);
+        
+        await pusher.trigger(alertsChannel, 'new-donation', {
+          id: updatedDonation.id,
+          name: updatedDonation.name,
+          amount: updatedDonation.amount,
+          message: updatedDonation.message,
+          voice_message_url: updatedDonation.voice_message_url,
+          tts_audio_url: updatedDonation.tts_audio_url,
+          is_hyperemote: updatedDonation.is_hyperemote,
+          created_at: updatedDonation.created_at,
+          streamer_id: updatedDonation.streamer_id,
+        });
+        
+        console.log(`✅ Pusher alerts event sent to ${alertsChannel}`);
+      } catch (pusherError) {
+        console.error('❌ Pusher (alerts) trigger error:', pusherError);
       }
       
-      // 2. Always trigger dashboard channel (for moderators to see pending donations)
+      // 2. Trigger dashboard channel for real-time updates
       try {
         const dashboardChannel = `${streamerSlug}-dashboard`;
         console.log(`Publishing to dashboard channel: ${dashboardChannel}`);
@@ -406,34 +371,13 @@ serve(async (req) => {
         console.error('❌ Pusher (dashboard) trigger error:', pusherError);
       }
 
-      // 3. If moderation is required, notify Telegram moderators
-      if (requiresModeration) {
-        try {
-          console.log(`📢 Notifying moderators for pending donation: ${updatedDonation.id}`);
-          await supabase.functions.invoke('notify-pending-donations', {
-            body: {
-              donationId: updatedDonation.id,
-              tableName: tableName,
-              streamerId: updatedDonation.streamer_id
-            }
-          });
-          console.log(`✅ Moderator notification sent`);
-        } catch (notifyError) {
-          console.error('❌ Failed to notify moderators:', notifyError);
-        }
-      }
-
-      // Audio channel events are now sent AFTER voice/TTS processing completes below
-
-      // NEW DONATION LOGIC - Only for looteriya_gaming, chiaa_gaming, sizzors, damask_plays, and neko_xenpai
+      // NEW DONATION LOGIC - Only for specific streamers with TTS
       const isNewStreamer = ['looteriya_gaming', 'chiaa_gaming', 'sizzors', 'damask_plays', 'neko_xenpai'].includes(streamerSlug);
       
       if (isNewStreamer) {
         // 1. HYPEREMOTES - NO TTS, just visual effects
         if (updatedDonation.is_hyperemote) {
           console.log('Hyperemote donation - skipping TTS, visual alert only:', order_id);
-          // Alert already sent to dashboard via Pusher above
-          // NO TTS or audio channel events for hyperemotes
         }
         
         // 2. VOICE MESSAGES - Generate announcement TTS + play voice
@@ -441,7 +385,6 @@ serve(async (req) => {
           console.log('Voice message donation - generating announcement TTS:', order_id);
           
           try {
-            // Generate announcement TTS: "{Username} sent a Voice message"
             const { data: announcementTTS, error: announcementError } = await supabase.functions.invoke('generate-donation-tts', {
               body: {
                 username: updatedDonation.name,
@@ -458,7 +401,6 @@ serve(async (req) => {
             } else if (announcementTTS?.audioUrl) {
               console.log('Announcement TTS generated successfully, sending to audio channel');
               
-              // Send audio event with BOTH announcement TTS and voice URL
               const audioSlug = streamerSlug === 'chiaa_gaming' ? 'chia_gaming' : streamerSlug;
               const audioChannel = `${audioSlug}-audio`;
               
@@ -467,8 +409,8 @@ serve(async (req) => {
                 name: updatedDonation.name,
                 amount: updatedDonation.amount,
                 message: null,
-                announcement_tts_url: announcementTTS.audioUrl, // Play this first
-                voice_message_url: updatedDonation.voice_message_url, // Then play this
+                announcement_tts_url: announcementTTS.audioUrl,
+                voice_message_url: updatedDonation.voice_message_url,
                 tts_audio_url: null,
                 created_at: updatedDonation.created_at,
               });
@@ -482,15 +424,12 @@ serve(async (req) => {
         
         // 3. TEXT MESSAGES - Conditional TTS based on amount (converted to INR)
         else if (updatedDonation.message) {
-          // Get currency from donation or default to INR
           const donationCurrency = updatedDonation.currency || 'INR';
-          // Convert amount to INR equivalent for threshold comparison
           const amountInINR = convertToINR(updatedDonation.amount, donationCurrency);
           
           // ₹40-69 (INR equivalent): Display only, NO TTS
           if (amountInINR >= 40 && amountInINR < 70) {
             console.log(`Text donation ${donationCurrency} ${updatedDonation.amount} (₹${amountInINR}) - displaying without TTS:`, order_id);
-            // Alert already sent to dashboard, no audio event needed
           }
           
           // ₹70+ (INR equivalent): Display + Generate TTS
@@ -504,17 +443,20 @@ serve(async (req) => {
                   amount: updatedDonation.amount,
                   message: updatedDonation.message,
                   donationId: updatedDonation.id,
-                  streamerId: updatedDonation.streamer_id,
-                  isVoiceAnnouncement: false
+                  streamerId: updatedDonation.streamer_id
                 }
               });
               
               if (ttsError) {
                 console.error('TTS generation error:', ttsError);
               } else if (ttsData?.audioUrl) {
-                console.log('TTS generation completed successfully');
+                console.log('TTS generated successfully, updating donation and sending to audio channel');
                 
-                // Send audio event with TTS
+                await supabase
+                  .from(tableName)
+                  .update({ tts_audio_url: ttsData.audioUrl })
+                  .eq('id', updatedDonation.id);
+                
                 const audioSlug = streamerSlug === 'chiaa_gaming' ? 'chia_gaming' : streamerSlug;
                 const audioChannel = `${audioSlug}-audio`;
                 
@@ -523,9 +465,9 @@ serve(async (req) => {
                   name: updatedDonation.name,
                   amount: updatedDonation.amount,
                   message: updatedDonation.message,
-                  tts_audio_url: ttsData.audioUrl,
-                  voice_message_url: null,
                   announcement_tts_url: null,
+                  voice_message_url: null,
+                  tts_audio_url: ttsData.audioUrl,
                   created_at: updatedDonation.created_at,
                 });
                 
@@ -535,100 +477,23 @@ serve(async (req) => {
               console.error('TTS generation error:', error);
             }
           }
-        }
-      } 
-      // OLD STREAMERS LOGIC (ankit, etc.) - Keep existing behavior
-      else {
-        // Handle voice message upload if voice data exists
-        if (updatedDonation?.temp_voice_data) {
-          try {
-            const getVoiceUploadFunction = (orderId: string) => {
-              if (orderId.startsWith('ankit_')) return 'upload-voice-message-ankit';
-              if (orderId.startsWith('musicstream_')) return 'upload-voice-message-musicstream';
-              if (orderId.startsWith('techgamer_')) return 'upload-voice-message-techgamer';
-              if (orderId.startsWith('artcreate_')) return 'upload-voice-message-artcreate';
-              if (orderId.startsWith('demostreamer_')) return 'upload-voice-message-demostreamer';
-              if (orderId.startsWith('demo2_')) return 'upload-voice-message-demo2';
-              if (orderId.startsWith('demo3_')) return 'upload-voice-message-demo3';
-              if (orderId.startsWith('demo4_')) return 'upload-voice-message-demo4';
-              if (orderId.startsWith('streamer17_')) return 'upload-voice-message-streamer17';
-              if (orderId.startsWith('streamer18_')) return 'upload-voice-message-streamer18';
-              if (orderId.startsWith('streamer19_')) return 'upload-voice-message-streamer19';
-              if (orderId.startsWith('streamer20_')) return 'upload-voice-message-streamer20';
-              if (orderId.startsWith('streamer21_')) return 'upload-voice-message-streamer21';
-              if (orderId.startsWith('streamer22_')) return 'upload-voice-message-streamer22';
-              if (orderId.startsWith('streamer23_')) return 'upload-voice-message-streamer23';
-              if (orderId.startsWith('streamer24_')) return 'upload-voice-message-streamer24';
-              if (orderId.startsWith('streamer25_')) return 'upload-voice-message-streamer25';
-              if (orderId.startsWith('streamer26_')) return 'upload-voice-message-streamer26';
-              if (orderId.startsWith('streamer27_')) return 'upload-voice-message-streamer27';
-              if (orderId.startsWith('streamer28_')) return 'upload-voice-message-streamer28';
-              if (orderId.startsWith('streamer29_')) return 'upload-voice-message-streamer29';
-              if (orderId.startsWith('streamer30_')) return 'upload-voice-message-streamer30';
-              if (orderId.startsWith('streamer31_')) return 'upload-voice-message-streamer31';
-              if (orderId.startsWith('streamer32_')) return 'upload-voice-message-streamer32';
-              if (orderId.startsWith('streamer33_')) return 'upload-voice-message-streamer33';
-              if (orderId.startsWith('streamer34_')) return 'upload-voice-message-streamer34';
-              if (orderId.startsWith('streamer35_')) return 'upload-voice-message-streamer35';
-              if (orderId.startsWith('streamer36_')) return 'upload-voice-message-streamer36';
-              if (orderId.startsWith('streamer37_')) return 'upload-voice-message-streamer37';
-              if (orderId.startsWith('streamer38_')) return 'upload-voice-message-streamer38';
-              if (orderId.startsWith('streamer39_')) return 'upload-voice-message-streamer39';
-              if (orderId.startsWith('streamer40_')) return 'upload-voice-message-streamer40';
-              if (orderId.startsWith('streamer41_')) return 'upload-voice-message-streamer41';
-              if (orderId.startsWith('streamer42_')) return 'upload-voice-message-streamer42';
-              if (orderId.startsWith('streamer43_')) return 'upload-voice-message-streamer43';
-              if (orderId.startsWith('streamer44_')) return 'upload-voice-message-streamer44';
-              if (orderId.startsWith('streamer45_')) return 'upload-voice-message-streamer45';
-              if (orderId.startsWith('streamer46_')) return 'upload-voice-message-streamer46';
-              return 'upload-voice-message-chiagaming'; // default
-            };
-
-            const uploadFunction = getVoiceUploadFunction(order_id);
-            console.log(`Uploading voice message using function: ${uploadFunction}`)
-
-            const { data: voiceData, error: voiceError } = await supabase.functions.invoke(uploadFunction, {
-              body: {
-                voiceData: updatedDonation.temp_voice_data,
-                donationId: updatedDonation.id,
-                orderId: order_id
-              }
-            })
-
-            if (voiceError) {
-              console.error('Voice upload error:', voiceError)
-            } else if (voiceData?.voice_message_url) {
-              // Send audio event now that voice URL is ready
-              try {
-                const audioSlug = streamerSlug === 'chiaa_gaming' ? 'chia_gaming' : streamerSlug;
-                const audioChannel = `${audioSlug}-audio`;
-                console.log(`Publishing voice audio to channel: ${audioChannel}`);
-                
-                await pusher.trigger(audioChannel, 'new-audio-message', {
-                  id: updatedDonation.id,
-                  name: updatedDonation.name,
-                  amount: updatedDonation.amount,
-                  message: updatedDonation.message,
-                  voice_message_url: voiceData.voice_message_url,
-                  tts_audio_url: null,
-                  created_at: updatedDonation.created_at,
-                });
-                
-                console.log(`✅ Pusher voice audio event sent to ${audioChannel}`);
-              } catch (pusherError) {
-                console.error('❌ Pusher (voice audio) trigger error:', pusherError);
-              }
-            }
-          } catch (voiceError) {
-            console.error('Voice upload trigger error:', voiceError)
+          // Under ₹40: No TTS
+          else {
+            console.log(`Text donation ₹${amountInINR} below threshold - no TTS:`, order_id);
           }
         }
-        // Handle TTS generation for text-only donations (₹2+)
-        else if (updatedDonation?.message && !updatedDonation?.tts_audio_url && updatedDonation.amount >= 2) {
+        
+        // 4. NO MESSAGE - Just alert, no TTS
+        else {
+          console.log('No message donation - alert only, no TTS:', order_id);
+        }
+      }
+      // For other streamers, use original logic
+      else {
+        // Original TTS logic for ankit and other streamers
+        if (updatedDonation.message && !updatedDonation.is_hyperemote && !updatedDonation.voice_message_url) {
+          console.log('Generating TTS for text message:', order_id);
           try {
-            console.log('Triggering TTS generation for text donation (₹2+):', order_id)
-            
-            // Wait for TTS generation to complete
             const { data: ttsData, error: ttsError } = await supabase.functions.invoke('generate-donation-tts', {
               body: {
                 username: updatedDonation.name,
@@ -637,182 +502,23 @@ serve(async (req) => {
                 donationId: updatedDonation.id,
                 streamerId: updatedDonation.streamer_id
               }
-            })
-
+            });
+            
             if (ttsError) {
-              console.error('TTS generation error:', ttsError)
+              console.error('TTS generation error:', ttsError);
             } else if (ttsData?.audioUrl) {
-              console.log('TTS generation completed successfully for:', order_id)
-              
-              // Send audio event now that TTS URL is ready
-              try {
-                const audioSlug = streamerSlug === 'chiaa_gaming' ? 'chia_gaming' : streamerSlug;
-                const audioChannel = `${audioSlug}-audio`;
-                console.log(`Publishing TTS audio to channel: ${audioChannel}`);
-                
-                await pusher.trigger(audioChannel, 'new-audio-message', {
-                  id: updatedDonation.id,
-                  name: updatedDonation.name,
-                  amount: updatedDonation.amount,
-                  message: updatedDonation.message,
-                  voice_message_url: null,
-                  tts_audio_url: ttsData.audioUrl,
-                  created_at: updatedDonation.created_at,
-                });
-                
-                console.log(`✅ Pusher TTS audio event sent to ${audioChannel}`);
-              } catch (pusherError) {
-                console.error('❌ Pusher (TTS audio) trigger error:', pusherError);
-              }
+              await supabase
+                .from(tableName)
+                .update({ tts_audio_url: ttsData.audioUrl })
+                .eq('id', updatedDonation.id);
+              console.log('TTS audio saved successfully');
             }
-          } catch (ttsError) {
-            console.error('TTS generation trigger error:', ttsError)
+          } catch (error) {
+            console.error('TTS invocation error:', error);
           }
         }
-        // Handle text-only donations below ₹70 (no TTS)
-        else if (updatedDonation?.message && updatedDonation.amount < 70) {
-          console.log('Text donation below ₹70 - skipping TTS generation:', order_id)
-          // Donation is already sent to dashboard via line 241, no additional processing needed
-        }
-      }
-
-      // Send Telegram notification to moderators
-      try {
-        console.log('Sending Telegram notification to moderators for:', order_id);
-        
-        // Get Telegram bot token
-        const telegramBotToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
-        if (!telegramBotToken) {
-          console.error('TELEGRAM_BOT_TOKEN not configured');
-          throw new Error('Telegram bot token not configured');
-        }
-
-        // Get active moderators for this streamer
-        const { data: moderators, error: modError } = await supabase
-          .from('streamers_moderators')
-          .select('telegram_user_id, mod_name')
-          .eq('streamer_id', updatedDonation.streamer_id)
-          .eq('is_active', true);
-
-        if (modError) {
-          console.error('Error fetching moderators:', modError);
-        } else if (moderators && moderators.length > 0) {
-          console.log(`Found ${moderators.length} active moderators for streamer ${updatedDonation.streamer_id}`);
-
-          // Prepare notification message
-          const messageText = `🎉 *New Donation Received!*\n\n` +
-            `👤 From: *${updatedDonation.name}*\n` +
-            `💰 Amount: ₹${updatedDonation.amount}\n` +
-            (updatedDonation.message ? `💬 Message: "${updatedDonation.message}"\n` : '') +
-            `📅 Time: ${new Date(updatedDonation.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`;
-
-          // Send notification to each moderator
-          for (const mod of moderators) {
-            try {
-              // Send text notification
-              const textResponse = await fetch(
-                `https://api.telegram.org/bot${telegramBotToken}/sendMessage`,
-                {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    chat_id: mod.telegram_user_id,
-                    text: messageText,
-                    parse_mode: 'Markdown',
-                    reply_markup: {
-                      inline_keyboard: [[
-                        {
-                          text: '📊 View Dashboard',
-                          url: `https://${Deno.env.get('SUPABASE_URL')?.replace('https://', '')}/dashboard/${streamerSlug}`
-                        }
-                      ]]
-                    }
-                  })
-                }
-              );
-
-              if (!textResponse.ok) {
-                const errorText = await textResponse.text();
-                console.error(`Failed to send text to ${mod.mod_name}:`, errorText);
-                continue;
-              }
-
-              console.log(`✅ Text notification sent to ${mod.mod_name}`);
-
-              // Send voice message if available
-              if (updatedDonation.voice_message_url) {
-                const voiceResponse = await fetch(
-                  `https://api.telegram.org/bot${telegramBotToken}/sendVoice`,
-                  {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      chat_id: mod.telegram_user_id,
-                      voice: updatedDonation.voice_message_url,
-                      caption: `🎤 Voice message from ${updatedDonation.name}`
-                    })
-                  }
-                );
-
-                if (voiceResponse.ok) {
-                  console.log(`✅ Voice message sent to ${mod.mod_name}`);
-                } else {
-                  const errorText = await voiceResponse.text();
-                  console.error(`Failed to send voice to ${mod.mod_name}:`, errorText);
-                }
-              }
-              // Send TTS audio if available (and no voice message)
-              else if (updatedDonation.tts_audio_url) {
-                const audioResponse = await fetch(
-                  `https://api.telegram.org/bot${telegramBotToken}/sendVoice`,
-                  {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      chat_id: mod.telegram_user_id,
-                      voice: updatedDonation.tts_audio_url,
-                      caption: `🔊 TTS Audio: "${updatedDonation.message?.substring(0, 50)}..."`
-                    })
-                  }
-                );
-
-                if (audioResponse.ok) {
-                  console.log(`✅ TTS audio sent to ${mod.mod_name}`);
-                } else {
-                  const errorText = await audioResponse.text();
-                  console.error(`Failed to send TTS to ${mod.mod_name}:`, errorText);
-                }
-              }
-
-              // Small delay to avoid rate limits
-              await new Promise(resolve => setTimeout(resolve, 100));
-
-            } catch (modError) {
-              console.error(`Error notifying moderator ${mod.mod_name}:`, modError);
-            }
-          }
-
-          // Mark donation as notified
-          const { error: updateNotifiedError } = await supabase
-            .from(tableName)
-            .update({ mod_notified: true })
-            .eq('id', updatedDonation.id);
-
-          if (updateNotifiedError) {
-            console.error('Error updating mod_notified:', updateNotifiedError);
-          } else {
-            console.log(`✅ Donation ${updatedDonation.id} marked as notified`);
-          }
-        } else {
-          console.log('No active moderators found for this streamer');
-        }
-      } catch (telegramError) {
-        console.error('Telegram notification error:', telegramError);
-        // Don't throw - we don't want to fail the webhook if Telegram fails
       }
     }
-
-    console.log(`Payment webhook processed successfully: ${order_id} -> ${dbStatus}`)
 
     return new Response(
       JSON.stringify({
@@ -820,7 +526,7 @@ serve(async (req) => {
         message: 'Webhook processed successfully',
         order_id,
         status: dbStatus,
-        updated_donation: updatedDonation
+        was_first_update: isFirstSuccess
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -829,10 +535,11 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Webhook processing error:', error)
+    console.error('Cashfree webhook error:', error)
+    
     return new Response(
-      JSON.stringify({ 
-        success: false, 
+      JSON.stringify({
+        success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
       }),
       {
