@@ -155,3 +155,6 @@ verify_jwt = false
 
 [functions.notify-pending-donations]
 verify_jwt = false
+
+[functions.get-telegram-settings]
+verify_jwt = false

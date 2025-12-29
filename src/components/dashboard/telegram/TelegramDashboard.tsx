@@ -37,7 +37,7 @@ const TelegramDashboard: React.FC<TelegramDashboardProps> = ({
   const [loading, setLoading] = useState(false);
   const [fetchingData, setFetchingData] = useState(true);
 
-  // Fetch existing Telegram user ID
+  // Fetch existing Telegram user ID via edge function
   useEffect(() => {
     const fetchTelegramUserId = async () => {
       if (!streamerId) {
@@ -50,23 +50,20 @@ const TelegramDashboard: React.FC<TelegramDashboardProps> = ({
       setFetchingData(true);
       
       try {
-        const { data, error } = await supabase
-          .from('streamers_moderators')
-          .select('telegram_user_id, mod_name, is_active')
-          .eq('streamer_id', streamerId)
-          .eq('is_active', true)
-          .maybeSingle();
+        const { data, error } = await supabase.functions.invoke('get-telegram-settings', {
+          body: { streamerId }
+        });
 
-        console.log('Fetch result:', { data, error });
+        console.log('Edge function result:', { data, error });
 
         if (error) {
-          console.error('Database error:', error);
+          console.error('Edge function error:', error);
           throw error;
         }
         
-        if (data && data.telegram_user_id) {
-          console.log('Found existing Telegram user ID:', data.telegram_user_id);
-          setTelegramUserId(data.telegram_user_id);
+        if (data && data.telegramUserId) {
+          console.log('Found existing Telegram user ID:', data.telegramUserId);
+          setTelegramUserId(data.telegramUserId);
         } else {
           console.log('No Telegram user ID found for this streamer');
           setTelegramUserId('');
