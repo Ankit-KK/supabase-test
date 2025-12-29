@@ -326,11 +326,16 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
                 Manage your donations and settings
               </p>
               <div className="flex items-center mt-2 space-x-2">
-                <Badge variant="secondary">
-                  🔄 Auto-refresh (30s)
+                <Badge 
+                  variant={pusherStatus === 'connected' ? 'default' : 'secondary'}
+                  className={pusherStatus === 'connected' ? 'bg-green-600' : pusherStatus === 'connecting' ? 'bg-yellow-500' : 'bg-red-500'}
+                >
+                  {pusherStatus === 'connected' ? '🟢 Live' : 
+                   pusherStatus === 'connecting' ? '🟡 Connecting...' : 
+                   '🔴 Disconnected'}
                 </Badge>
                 <span className="text-sm text-muted-foreground">
-                  Updates every 30 seconds
+                  {pusherStatus === 'connected' ? 'Real-time updates active' : 'Click refresh for latest data'}
                 </span>
               </div>
             </div>
@@ -437,16 +442,14 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
           </TabsContent>
 
           <TabsContent value="telegram" className="space-y-6 data-[state=inactive]:hidden" forceMount>
-            {streamerData.telegram_moderation_enabled && (
-              <TelegramModerationWidget 
-                streamerId={streamerData.id}
-                streamerSlug={streamerSlug}
-                tableName={tableName}
-                onModerationAction={() => setRefreshKey(prev => prev + 1)}
-                showPendingCount={true}
-              />
-            )}
-            <TelegramDashboard 
+            <TelegramModerationWidget 
+              streamerId={streamerData.id}
+              streamerSlug={streamerSlug}
+              tableName={tableName}
+              onModerationAction={() => setRefreshKey(prev => prev + 1)}
+              showPendingCount={true}
+            />
+            <TelegramDashboard
               donations={pendingDonations}
               tableName={tableName}
               onModerationAction={() => setRefreshKey(prev => prev + 1)}
