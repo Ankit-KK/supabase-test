@@ -50,14 +50,14 @@ const TelegramModerationWidget: React.FC<TelegramModerationWidgetProps> = ({
       if (streamerError) throw streamerError;
       setModerationEnabled(streamerData?.telegram_moderation_enabled ?? true);
 
-      // Fetch moderator count
-      const { count: modCount, error: modError } = await supabase
-        .from('streamers_moderators')
-        .select('*', { count: 'exact', head: true })
-        .eq('streamer_id', streamerId)
-        .eq('is_active', true);
+      // Fetch moderator count via edge function (bypasses RLS)
+      const { data: telegramSettings, error: telegramError } = await supabase.functions.invoke('get-telegram-settings', {
+        body: { streamerId }
+      });
 
-      if (!modError) setModeratorCount(modCount || 0);
+      if (!telegramError && telegramSettings) {
+        setModeratorCount(telegramSettings.moderatorCount || 0);
+      }
 
       // Fetch pending donations count if needed
       if (showPendingCount) {
