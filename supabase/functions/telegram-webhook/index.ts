@@ -320,6 +320,13 @@ async function handleApproval(tableName: string, donationId: string, userId: str
         });
         console.log(`✅ Audio event sent to ${audioChannel}`);
       }
+      
+      // Send dashboard update event for real-time refresh
+      const dashboardChannel = `${streamerSlug}-dashboard`;
+      await pusher.trigger(dashboardChannel, 'donation-approved', {
+        id: donationId
+      });
+      console.log(`✅ Dashboard approval event sent to ${dashboardChannel}`);
     } catch (pusherError) {
       console.error('❌ Failed to trigger OBS alert:', pusherError);
     }
@@ -368,6 +375,26 @@ async function handleRejection(tableName: string, donationId: string, userId: st
     .eq('id', donationId)
     .single();
 
+  // Send dashboard update event for real-time refresh
+  try {
+    const streamerSlug = getStreamerSlugFromTable(tableName);
+    const pusherCreds = await getPusherCredentials(streamerSlug, supabase);
+    const pusher = new PusherClient(
+      pusherCreds.appId,
+      pusherCreds.key,
+      pusherCreds.secret,
+      pusherCreds.cluster
+    );
+    
+    const dashboardChannel = `${streamerSlug}-dashboard`;
+    await pusher.trigger(dashboardChannel, 'donation-rejected', {
+      id: donationId
+    });
+    console.log(`✅ Dashboard rejection event sent to ${dashboardChannel}`);
+  } catch (pusherError) {
+    console.error('❌ Failed to send dashboard rejection event:', pusherError);
+  }
+
   const confirmationMessage = 
     `❌ <b>REJECTED</b> by @${escapeHtml(username)}\n\n` +
     `💰 <b>Amount:</b> ₹${donation?.amount || 'N/A'}\n` +
@@ -409,6 +436,26 @@ async function handleHideMessage(tableName: string, donationId: string, userId: 
     .select('name, amount')
     .eq('id', donationId)
     .single();
+
+  // Send dashboard update event for real-time refresh (hide = approve with hidden message)
+  try {
+    const streamerSlug = getStreamerSlugFromTable(tableName);
+    const pusherCreds = await getPusherCredentials(streamerSlug, supabase);
+    const pusher = new PusherClient(
+      pusherCreds.appId,
+      pusherCreds.key,
+      pusherCreds.secret,
+      pusherCreds.cluster
+    );
+    
+    const dashboardChannel = `${streamerSlug}-dashboard`;
+    await pusher.trigger(dashboardChannel, 'donation-approved', {
+      id: donationId
+    });
+    console.log(`✅ Dashboard approval (hidden) event sent to ${dashboardChannel}`);
+  } catch (pusherError) {
+    console.error('❌ Failed to send dashboard hide event:', pusherError);
+  }
 
   const confirmationMessage = 
     `👁️ <b>MESSAGE HIDDEN & APPROVED</b> by @${escapeHtml(username)}\n\n` +
