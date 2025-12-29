@@ -44,13 +44,21 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Found moderator:`, moderator);
+    // Fetch count of all active moderators
+    const { count: moderatorCount } = await supabase
+      .from('streamers_moderators')
+      .select('*', { count: 'exact', head: true })
+      .eq('streamer_id', streamerId)
+      .eq('is_active', true);
+
+    console.log(`Found moderator:`, moderator, `Total count:`, moderatorCount);
 
     return new Response(
       JSON.stringify({ 
         telegramUserId: moderator?.telegram_user_id || null,
         modName: moderator?.mod_name || null,
-        isActive: moderator?.is_active || false
+        isActive: moderator?.is_active || false,
+        moderatorCount: moderatorCount || 0
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
