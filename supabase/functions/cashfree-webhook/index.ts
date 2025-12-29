@@ -162,13 +162,38 @@ serve(async (req) => {
       throw new Error('Order ID not found in webhook data')
     }
 
+    // Map order_id prefix to correct streamer slug for fetching settings
+    const getStreamerSlugFromOrderId = (orderId: string): string => {
+      if (orderId.startsWith('ankit_')) return 'ankit';
+      if (orderId.startsWith('looteriya_gaming_')) return 'looteriya_gaming';
+      if (orderId.startsWith('chia_') || orderId.startsWith('chiagaming_')) return 'chiaa_gaming';
+      if (orderId.startsWith('sizzors_')) return 'sizzors';
+      if (orderId.startsWith('damask_plays_')) return 'damask_plays';
+      if (orderId.startsWith('neko_xenpai_')) return 'neko_xenpai';
+      if (orderId.startsWith('thunderx_')) return 'thunderx';
+      // Add other streamers as needed
+      return orderId.split('_')[0];
+    };
+
+    // Fetch streamer settings to check if moderation is enabled
+    const streamerSlugForSettings = getStreamerSlugFromOrderId(order_id);
+    const { data: streamerSettings } = await supabase
+      .from('streamers')
+      .select('telegram_moderation_enabled')
+      .eq('streamer_slug', streamerSlugForSettings)
+      .single();
+
+    const requiresModeration = streamerSettings?.telegram_moderation_enabled === true;
+    console.log(`[Moderation] Streamer ${streamerSlugForSettings}: telegram_moderation_enabled=${requiresModeration}`);
+
     // Determine database status
     let dbStatus = 'pending'
     let moderationStatus = 'pending'
     
     if (order_status === 'PAID' || payment_status === 'SUCCESS') {
       dbStatus = 'success'
-      moderationStatus = 'auto_approved'
+      // Only auto-approve if moderation is NOT enabled
+      moderationStatus = requiresModeration ? 'pending' : 'auto_approved'
     } else if (order_status === 'CANCELLED' || order_status === 'TERMINATED' || payment_status === 'FAILED') {
       dbStatus = 'failed'
     }
@@ -323,6 +348,7 @@ serve(async (req) => {
       console.log(`Processing order: ${order_id}`);
       console.log(`Extracted streamer slug: ${streamerSlug}`);
       console.log(`Table name: ${tableName}`);
+      console.log(`Requires moderation: ${requiresModeration}`);
       
       // Get Pusher credentials dynamically based on streamer's group
       const pusherCreds = await getPusherCredentials(streamerSlug, supabase);
@@ -335,29 +361,33 @@ serve(async (req) => {
         pusherCreds.cluster
       );
       
-      // 1. Trigger OBS alerts channel
-      try {
-        const alertsChannel = `${streamerSlug}-alerts`;
-        console.log(`Publishing to alerts channel: ${alertsChannel}`);
-        
-        await pusher.trigger(alertsChannel, 'new-donation', {
-          id: updatedDonation.id,
-          name: updatedDonation.name,
-          amount: updatedDonation.amount,
-          message: updatedDonation.message,
-          voice_message_url: updatedDonation.voice_message_url,
-          tts_audio_url: updatedDonation.tts_audio_url,
-          is_hyperemote: updatedDonation.is_hyperemote,
-          created_at: updatedDonation.created_at,
-          streamer_id: updatedDonation.streamer_id,
-        });
-        
-        console.log(`✅ Pusher alerts event sent to ${alertsChannel}`);
-      } catch (pusherError) {
-        console.error('❌ Pusher (alerts) trigger error:', pusherError);
+      // 1. Trigger OBS alerts channel - ONLY if moderation is NOT required
+      if (!requiresModeration) {
+        try {
+          const alertsChannel = `${streamerSlug}-alerts`;
+          console.log(`Publishing to alerts channel: ${alertsChannel}`);
+          
+          await pusher.trigger(alertsChannel, 'new-donation', {
+            id: updatedDonation.id,
+            name: updatedDonation.name,
+            amount: updatedDonation.amount,
+            message: updatedDonation.message,
+            voice_message_url: updatedDonation.voice_message_url,
+            tts_audio_url: updatedDonation.tts_audio_url,
+            is_hyperemote: updatedDonation.is_hyperemote,
+            created_at: updatedDonation.created_at,
+            streamer_id: updatedDonation.streamer_id,
+          });
+          
+          console.log(`✅ Pusher alerts event sent to ${alertsChannel}`);
+        } catch (pusherError) {
+          console.error('❌ Pusher (alerts) trigger error:', pusherError);
+        }
+      } else {
+        console.log(`⏳ Skipping OBS alert - waiting for moderation approval`);
       }
       
-      // 2. Trigger dashboard channel
+      // 2. Always trigger dashboard channel (for moderators to see pending donations)
       try {
         const dashboardChannel = `${streamerSlug}-dashboard`;
         console.log(`Publishing to dashboard channel: ${dashboardChannel}`);
@@ -374,6 +404,23 @@ serve(async (req) => {
         console.log(`✅ Pusher dashboard event sent to ${dashboardChannel}`);
       } catch (pusherError) {
         console.error('❌ Pusher (dashboard) trigger error:', pusherError);
+      }
+
+      // 3. If moderation is required, notify Telegram moderators
+      if (requiresModeration) {
+        try {
+          console.log(`📢 Notifying moderators for pending donation: ${updatedDonation.id}`);
+          await supabase.functions.invoke('notify-pending-donations', {
+            body: {
+              donationId: updatedDonation.id,
+              tableName: tableName,
+              streamerId: updatedDonation.streamer_id
+            }
+          });
+          console.log(`✅ Moderator notification sent`);
+        } catch (notifyError) {
+          console.error('❌ Failed to notify moderators:', notifyError);
+        }
       }
 
       // Audio channel events are now sent AFTER voice/TTS processing completes below
