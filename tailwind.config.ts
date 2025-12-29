@@ -63,13 +63,15 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				hyperchat: {
-					purple: '#9b87f5',
-					'dark-purple': '#7E69AB',
-					pink: '#D946EF',
-					blue: '#0EA5E9',
+			hyperchat: {
+					purple: '#7C3AED',
+					'dark-purple': '#5B21B6',
+					pink: '#8B5CF6',
+					blue: '#2563EB',
+					'dark-blue': '#1E40AF',
+					'light-blue': '#DBEAFE',
 					orange: '#F97316',
-					'light-purple': '#D6BCFA',
+					'light-purple': '#C4B5FD',
 				},
 				gaming: {
 					pink: {
@@ -156,9 +158,9 @@ export default {
 				'jump-out': 'jump-out 0.6s ease forwards',
 				'gradient-x': 'gradient-x 15s ease infinite'
 			},
-			backgroundImage: {
+		backgroundImage: {
 				'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-				'hero-gradient': 'linear-gradient(90deg, #9b87f5 0%, #D946EF 100%)',
+				'hero-gradient': 'linear-gradient(90deg, #2563EB 0%, #7C3AED 100%)',
 				'shimmer-gradient': 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 25%, rgba(255,255,255,0.2) 75%, rgba(255,255,255,0) 100%)',
 			}
 		}

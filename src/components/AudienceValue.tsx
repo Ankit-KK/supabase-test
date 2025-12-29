@@ -7,25 +7,25 @@ const AudienceValue: React.FC = () => {
       icon: <Eye className="text-white" size={24} />,
       title: "Your Presence is Noticed",
       description: "Stand out in the moment and make your participation meaningful",
-      gradient: "bg-gradient-to-br from-hyperchat-purple to-hyperchat-blue",
+      gradient: "bg-gradient-to-br from-hyperchat-blue to-hyperchat-dark-blue",
     },
     {
       icon: <Heart className="text-white" size={24} />,
       title: "Feel Connected",
       description: "Become part of the live experience, not just a viewer",
-      gradient: "bg-gradient-to-br from-hyperchat-pink to-hyperchat-purple",
+      gradient: "bg-gradient-to-br from-hyperchat-purple to-hyperchat-blue",
     },
     {
       icon: <Sparkles className="text-white" size={24} />,
       title: "Express Yourself",
       description: "Share your energy and personality with creators you love",
-      gradient: "bg-gradient-to-br from-hyperchat-orange to-hyperchat-pink",
+      gradient: "bg-gradient-to-br from-hyperchat-orange to-hyperchat-purple",
     },
     {
       icon: <Award className="text-white" size={24} />,
       title: "Be Recognized",
       description: "Build your identity within the community",
-      gradient: "bg-gradient-to-br from-hyperchat-blue to-hyperchat-purple",
+      gradient: "bg-gradient-to-br from-hyperchat-dark-blue to-hyperchat-purple",
     },
   ];
 
@@ -45,12 +45,12 @@ const AudienceValue: React.FC = () => {
           {benefits.map((benefit, index) => (
             <div 
               key={index}
-              className="flex flex-col p-6 space-y-4 rounded-xl border border-white/10 bg-secondary/50 hover:bg-secondary/80 transition-colors"
+              className="flex flex-col p-6 space-y-4 rounded-xl border border-border bg-card shadow-sm hover:shadow-md transition-shadow"
             >
               <div className={`w-12 h-12 rounded-lg ${benefit.gradient} flex items-center justify-center`}>
                 {benefit.icon}
               </div>
-              <h3 className="text-xl font-bold">{benefit.title}</h3>
+              <h3 className="text-xl font-bold text-foreground">{benefit.title}</h3>
               <p className="text-muted-foreground">{benefit.description}</p>
             </div>
           ))}
