@@ -259,7 +259,7 @@ const NekoXenpai = () => {
       <div className="absolute inset-0 bg-black/40"></div>
       
       <Card 
-        className="w-full max-w-md mx-auto bg-card/95 backdrop-blur-sm border-fuchsia-500/20 shadow-2xl relative overflow-hidden"
+        className="w-full max-w-sm mx-auto bg-card/95 backdrop-blur-sm border-fuchsia-500/20 shadow-2xl relative overflow-hidden"
         style={{ 
           backgroundImage: `url(${nekoXenpaiProfile})`,
           backgroundSize: 'cover',
@@ -271,9 +271,9 @@ const NekoXenpai = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-500/20 via-pink-600/20 to-fuchsia-400/20 opacity-50 blur-xl"></div>
         <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-500/10 via-pink-600/10 to-fuchsia-400/10 opacity-50 blur-xl"></div>
         
-        <CardHeader className="text-center space-y-3 relative z-10">
+        <CardHeader className="text-center space-y-2 relative z-10 pb-2">
           <div className="flex justify-center">
-            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-fuchsia-500 shadow-xl">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-4 border-fuchsia-500 shadow-xl">
               <img 
                 src={nekoXenpaiLogo} 
                 alt="Neko XENPAI"
@@ -281,15 +281,15 @@ const NekoXenpai = () => {
               />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-fuchsia-400 to-pink-400 bg-clip-text text-transparent">
+          <CardTitle className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-fuchsia-400 to-pink-400 bg-clip-text text-transparent">
             Neko XENPAI
           </CardTitle>
-          <CardDescription className="text-base text-fuchsia-200">
+          <CardDescription className="text-xs text-fuchsia-200">
             Support your favorite streamer!
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="relative z-10 space-y-4">
+        <CardContent className="relative z-10 space-y-3">
           <div className="space-y-4">
             <Label className="text-sm font-bold text-fuchsia-200 text-center block uppercase tracking-wider">Choose Donation Type</Label>
             <div className="grid grid-cols-3 gap-4">

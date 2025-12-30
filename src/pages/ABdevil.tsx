@@ -200,19 +200,19 @@ const ABdevil = () => {
       className="min-h-screen flex items-center justify-center p-4 bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: "url('/lovable-uploads/abdevil-banner.jpg')" }}
     >
-      <div className="w-full max-w-md rounded-2xl shadow-2xl border border-orange-500/30 relative overflow-hidden">
+      <div className="w-full max-w-sm rounded-2xl shadow-2xl border border-orange-500/30 relative overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: "url('/lovable-uploads/abdevil-logo.jpg')" }}
         />
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-        <div className="relative z-10 p-8">
-          <div className="flex items-center justify-center gap-3 mb-6">
-            <Flame className="w-8 h-8 text-orange-500" />
-            <h1 className="text-3xl font-bold text-white">ABdevil</h1>
+        <div className="relative z-10 p-4 sm:p-6">
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <Flame className="w-6 h-6 text-orange-500" />
+            <h1 className="text-xl sm:text-2xl font-bold text-white">ABdevil</h1>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <Label htmlFor="name" className="text-gray-100">
                 Your Name
