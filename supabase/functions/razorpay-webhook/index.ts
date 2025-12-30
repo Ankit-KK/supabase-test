@@ -445,6 +445,87 @@ serve(async (req) => {
       });
       console.log(`✅ Pusher alerts event sent to ${channelSlug}-alerts`);
 
+      // TTS Generation Logic
+      const donationCurrency = paymentCurrency || 'INR';
+      const amountInINR = convertToINR(donation.amount, donationCurrency);
+
+      // Skip TTS for HyperSounds/HyperEmotes
+      if (!donation.hypersound_url && !donation.is_hyperemote) {
+        
+        // Voice Messages - Generate announcement TTS
+        if (donation.voice_message_url) {
+          console.log('Voice message donation - generating announcement TTS');
+          try {
+            const ttsResponse = await fetch(`${supabaseUrl}/functions/v1/generate-donation-tts`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseServiceKey}`
+              },
+              body: JSON.stringify({
+                username: donation.name,
+                amount: donation.amount,
+                message: null,
+                donationId: donation.id,
+                streamerId: donation.streamer_id,
+                isVoiceAnnouncement: true,
+                currency: donationCurrency
+              })
+            });
+            
+            if (!ttsResponse.ok) {
+              const errorText = await ttsResponse.text();
+              console.error('Announcement TTS error:', errorText);
+            } else {
+              const ttsData = await ttsResponse.json();
+              if (ttsData?.audioUrl) {
+                console.log('Announcement TTS generated:', ttsData.audioUrl);
+              }
+            }
+          } catch (error) {
+            console.error('TTS generation error:', error);
+          }
+        }
+        
+        // Text Messages - Generate full TTS for ₹70+ (INR equivalent)
+        else if (donation.message && amountInINR >= 70) {
+          console.log(`Generating TTS for ₹${amountInINR} text donation`);
+          try {
+            const ttsResponse = await fetch(`${supabaseUrl}/functions/v1/generate-donation-tts`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseServiceKey}`
+              },
+              body: JSON.stringify({
+                username: donation.name,
+                amount: donation.amount,
+                message: donation.message,
+                donationId: donation.id,
+                streamerId: donation.streamer_id,
+                currency: donationCurrency
+              })
+            });
+            
+            if (!ttsResponse.ok) {
+              const errorText = await ttsResponse.text();
+              console.error('TTS error:', errorText);
+            } else {
+              const ttsData = await ttsResponse.json();
+              if (ttsData?.audioUrl) {
+                console.log('TTS generated successfully:', ttsData.audioUrl);
+              }
+            }
+          } catch (error) {
+            console.error('TTS generation error:', error);
+          }
+        } else {
+          console.log(`Donation ₹${amountInINR} - below TTS threshold or no message`);
+        }
+      } else {
+        console.log('HyperSound/HyperEmote donation - skipping TTS');
+      }
+
       // For Ankit, check if there's an active goal and send progress update
       if (streamerType === 'ankit') {
         try {
