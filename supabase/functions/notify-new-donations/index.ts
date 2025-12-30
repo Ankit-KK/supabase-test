@@ -137,7 +137,7 @@ serve(async (req) => {
           .from(tableName)
           .select('*, table_name')
           .eq('payment_status', 'success')
-          .in('moderation_status', ['approved', 'auto_approved'])
+          .eq('moderation_status', 'auto_approved')
           .eq('mod_notified', false)
           .not('streamer_id', 'is', null);
 

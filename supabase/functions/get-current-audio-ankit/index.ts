@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
       .from('ankit_donations')
       .select('id, name, amount, message, tts_audio_url, voice_message_url, hypersound_url, created_at, audio_scheduled_at')
       .is('audio_played_at', null)
-      .in('moderation_status', ['approved', 'auto_approved'])
+      .eq('moderation_status', 'auto_approved')
       .eq('payment_status', 'success')
       .or('tts_audio_url.not.is.null,voice_message_url.not.is.null,hypersound_url.not.is.null')
       .not('audio_scheduled_at', 'is', null) // Must have a scheduled time
