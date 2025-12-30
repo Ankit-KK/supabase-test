@@ -28,7 +28,6 @@ interface DashboardStats {
   totalRevenue: number;
   todayRevenue: number;
   totalDonations: number;
-  pendingModeration: number;
   averageDonation: number;
   topDonation: number;
 }
@@ -62,7 +61,6 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
     totalRevenue: 0,
     todayRevenue: 0,
     totalDonations: 0,
-    pendingModeration: 0,
     averageDonation: 0,
     topDonation: 0
   });
@@ -180,7 +178,6 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
 
         // Calculate stats
         const successfulDonations = donations?.filter(d => d.payment_status === 'success') || [];
-        const pendingMod = donations?.filter(d => d.moderation_status === 'pending') || [];
         const today = new Date().toDateString();
         const todayDonations = successfulDonations.filter(d => 
           new Date(d.created_at).toDateString() === today
@@ -195,7 +192,6 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
           totalRevenue,
           todayRevenue,
           totalDonations: successfulDonations.length,
-          pendingModeration: pendingMod.length,
           averageDonation: amounts.length ? totalRevenue / amounts.length : 0,
           topDonation: amounts.length ? Math.max(...amounts) : 0
         });
@@ -409,9 +405,6 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
 
           <TabsContent value="telegram" className="space-y-6 data-[state=inactive]:hidden" forceMount>
             <TelegramDashboard
-              donations={approvedDonations}
-              tableName={tableName}
-              onModerationAction={() => setRefreshKey(prev => prev + 1)}
               streamerId={streamerData.id}
               streamerSlug={streamerSlug}
             />

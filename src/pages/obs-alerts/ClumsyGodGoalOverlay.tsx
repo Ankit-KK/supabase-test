@@ -50,7 +50,7 @@ const ClumsyGodGoalOverlay = () => {
             .select('amount, currency')
             .gte('created_at', streamerData.goal_activated_at)
             .in('payment_status', ['success', 'completed'])
-            .in('moderation_status', ['approved', 'auto_approved']);
+            .eq('moderation_status', 'auto_approved');
 
           const total = donations?.reduce((sum, d) => sum + convertToINR(Number(d.amount), d.currency || 'INR'), 0) || 0;
           setCurrentAmount(total);

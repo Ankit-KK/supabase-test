@@ -9,20 +9,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { MessageCircle, Trash2, Bot } from 'lucide-react';
 
 interface TelegramDashboardProps {
-  donations: Array<{
-    id: string;
-    name: string;
-    amount: number;
-    message?: string;
-    voice_message_url?: string;
-    is_hyperemote?: boolean;
-    moderation_status: string;
-    payment_status: string;
-    created_at: string;
-    message_visible?: boolean;
-  }>;
-  tableName: string;
-  onModerationAction: () => void;
   streamerId: string;
   streamerSlug: string;
 }
