@@ -43,14 +43,6 @@ export default function Status() {
           if (orderId.startsWith('nx_rp_')) return 'check-payment-status-neko-xenpai';
           if (orderId.startsWith('cg_rp_')) return 'check-payment-status-clumsygod';
           if (orderId.startsWith('jg_rp_')) return 'check-payment-status-jimmygaming';
-          if (orderId.startsWith('musicstream_')) return 'check-payment-status';
-          if (orderId.startsWith('techgamer_')) return 'check-payment-status';
-          if (orderId.startsWith('fitnessflow_')) return 'check-payment-status';
-          if (orderId.startsWith('artcreate_')) return 'check-payment-status';
-          if (orderId.startsWith('looteriya_gaming_')) return 'check-payment-status';
-          if (orderId.startsWith('demostreamer_')) return 'check-payment-status';
-          if (orderId.startsWith('damask_plays_')) return 'check-payment-status';
-          if (orderId.startsWith('neko_xenpai_')) return 'check-payment-status';
           
           console.warn('[Status] Unknown order_id prefix, defaulting to check-payment-status:', orderId);
           return 'check-payment-status'; // default fallback
@@ -119,17 +111,11 @@ export default function Status() {
           if (!shouldSkipVoiceUpload(orderId)) {
             try {
               console.log('Payment successful, checking for voice message upload...');
-              const getVoiceUploadFunction = (orderId: string) => {
-                if (orderId.startsWith('musicstream_')) return 'upload-voice-message-musicstream';
-                if (orderId.startsWith('techgamer_')) return 'upload-voice-message-techgamer';
-                if (orderId.startsWith('sizzors_')) return 'upload-voice-message-sizzors';
-                if (orderId.startsWith('artcreate_')) return 'upload-voice-message-artcreate';
-                if (orderId.startsWith('looteriya_gaming_')) return 'upload-voice-message-looteriya-gaming';
-                if (orderId.startsWith('demostreamer_')) return 'upload-voice-message-demostreamer';
-                return 'upload-voice-message'; // default for chia_gaming
+              const getVoiceUploadFunction = () => {
+                return 'upload-voice-message'; // default for chia_gaming (only Cashfree streamer)
               };
               
-              const voiceFunctionName = getVoiceUploadFunction(orderId);
+              const voiceFunctionName = getVoiceUploadFunction();
               console.log(`Voice upload function determined: ${voiceFunctionName} for order: ${orderId}`);
               
               // Add a small delay to ensure webhook has completed
@@ -255,14 +241,7 @@ export default function Status() {
                 if (orderId.startsWith('nx_rp_')) return "/neko_xenpai";
                 if (orderId.startsWith('cg_rp_')) return "/clumsygod";
                 if (orderId.startsWith('jg_rp_')) return "/jimmy_gaming";
-                if (orderId.startsWith('musicstream_')) return "/music_stream";
-                if (orderId.startsWith('techgamer_')) return "/tech_gamer";
                 if (orderId.startsWith('sizzors_')) return "/sizzors";
-                if (orderId.startsWith('artcreate_')) return "/art_create";
-                if (orderId.startsWith('looteriya_gaming_')) return "/looteriya_gaming";
-                if (orderId.startsWith('demostreamer_')) return "/demo_streamer";
-                if (orderId.startsWith('damask_plays_')) return "/damask_plays";
-                if (orderId.startsWith('neko_xenpai_')) return "/neko_xenpai";
                 
                 console.warn('[Status] Unknown order_id prefix for navigation, redirecting to homepage:', orderId);
                 return "/"; // default to homepage for unknown order prefixes
