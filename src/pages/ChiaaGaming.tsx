@@ -364,27 +364,27 @@ const ChiaGaming = () => {
         <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-gaming-pink-accent/10 rounded-full blur-2xl animate-pulse-glow"></div>
       </div>
 
-      <Card className="w-full max-w-md mx-auto bg-card/95 backdrop-blur-sm border-gaming-pink-primary/20 shadow-2xl relative overflow-hidden">
+      <Card className="w-full max-w-sm mx-auto bg-card/95 backdrop-blur-sm border-gaming-pink-primary/20 shadow-2xl relative overflow-hidden">
         {/* Card glow effect */}
         <div className="absolute inset-0 bg-gradient-to-r from-gaming-pink-primary/20 via-gaming-pink-secondary/20 to-gaming-pink-accent/20 opacity-50 blur-xl"></div>
         
-        <CardHeader className="text-center relative z-10">
-          <div className="flex items-center justify-center mb-4">
+        <CardHeader className="text-center relative z-10 pb-2">
+          <div className="flex items-center justify-center mb-2">
             <div className="flex items-center space-x-2 text-gaming-pink-primary">
-              <Gamepad2 className="h-8 w-8" />
-              <Sparkles className="h-6 w-6 animate-pulse-glow" />
-              <Heart className="h-6 w-6 text-gaming-pink-accent" />
+              <Gamepad2 className="h-6 w-6" />
+              <Sparkles className="h-5 w-5 animate-pulse-glow" />
+              <Heart className="h-5 w-5 text-gaming-pink-accent" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-gaming-pink-primary to-gaming-pink-secondary bg-clip-text text-transparent">
+          <CardTitle className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-gaming-pink-primary to-gaming-pink-secondary bg-clip-text text-transparent">
             Chia Gaming
           </CardTitle>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-muted-foreground text-xs">
             Support the gaming community with your donation
           </p>
         </CardHeader>
 
-        <CardContent className="space-y-6 relative z-10">
+        <CardContent className="space-y-4 relative z-10">
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Name Field */}
             <div className="space-y-2">

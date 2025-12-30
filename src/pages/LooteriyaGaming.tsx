@@ -222,7 +222,7 @@ const LooteriyaGaming = () => {
       <div className="absolute inset-0 bg-black/20"></div>
 
       <Card
-        className="w-full max-w-md mx-auto bg-card/95 backdrop-blur-sm border-amber-500/20 shadow-2xl relative overflow-hidden"
+        className="w-full max-w-sm mx-auto bg-card/95 backdrop-blur-sm border-amber-500/20 shadow-2xl relative overflow-hidden"
         style={{
           backgroundImage: `url(${looteriyaCardBg})`,
           backgroundSize: "cover",
@@ -232,19 +232,19 @@ const LooteriyaGaming = () => {
         <div className="absolute inset-0 bg-black/50"></div>
         <div className="absolute inset-0 bg-gradient-to-r from-amber-500/20 via-amber-600/20 to-amber-400/20 opacity-50 blur-xl"></div>
 
-        <CardHeader className="text-center relative z-10">
-          <div className="flex justify-center mb-4">
-            <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-amber-500 shadow-xl">
+        <CardHeader className="text-center relative z-10 pb-2">
+          <div className="flex justify-center mb-2">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-4 border-amber-500 shadow-xl">
               <img src={looteriyaLogo} alt="Looteriya Gaming Logo" className="w-full h-full object-cover" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent">
+          <CardTitle className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent">
             Looteriya Gaming
           </CardTitle>
-          <p className="text-muted-foreground text-sm">Support Looteriya Gaming with your donation</p>
+          <p className="text-muted-foreground text-xs">Support Looteriya Gaming with your donation</p>
         </CardHeader>
 
-        <CardContent className="space-y-6 relative z-10">
+        <CardContent className="space-y-4 relative z-10">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <label htmlFor="name" className="text-sm font-medium text-amber-500">

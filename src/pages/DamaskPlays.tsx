@@ -245,7 +245,7 @@ const DamaskPlays = () => {
       <div className="absolute inset-0 bg-black/40"></div>
       
       <Card 
-        className="w-full max-w-md mx-auto bg-card/95 backdrop-blur-sm border-emerald-500/20 shadow-2xl relative overflow-hidden"
+        className="w-full max-w-sm mx-auto bg-card/95 backdrop-blur-sm border-emerald-500/20 shadow-2xl relative overflow-hidden"
         style={{ 
           backgroundImage: `url(${damaskProfile})`,
           backgroundSize: 'cover',
@@ -255,23 +255,23 @@ const DamaskPlays = () => {
         <div className="absolute inset-0 bg-black/50"></div>
         <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 via-emerald-600/20 to-emerald-400/20 opacity-50 blur-xl"></div>
         
-        <CardHeader className="text-center space-y-3 relative z-10">
+        <CardHeader className="text-center space-y-2 relative z-10 pb-2">
           <div className="flex justify-center">
-            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-emerald-500 shadow-xl">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-4 border-emerald-500 shadow-xl">
               <img src={damaskLogo} alt="Damask plays" className="w-full h-full object-cover" />
             </div>
           </div>
           <div>
-            <CardTitle className="text-xl font-bold bg-gradient-to-r from-emerald-500 to-emerald-600 bg-clip-text text-transparent">
+            <CardTitle className="text-lg sm:text-xl font-bold bg-gradient-to-r from-emerald-500 to-emerald-600 bg-clip-text text-transparent">
               Damask Plays
             </CardTitle>
-            <p className="text-muted-foreground text-sm mt-1">
+            <p className="text-muted-foreground text-xs mt-1">
               Support Damask Plays with your donation
             </p>
           </div>
         </CardHeader>
         
-        <CardContent className="space-y-4 relative z-10">
+        <CardContent className="space-y-3 relative z-10">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-3">
               <Label className="text-sm font-semibold text-emerald-500">

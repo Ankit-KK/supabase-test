@@ -358,27 +358,27 @@ const Ankit = () => {
         <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-blue-400/10 rounded-full blur-2xl animate-pulse"></div>
       </div>
 
-      <Card className="w-full max-w-md mx-auto bg-card/95 backdrop-blur-sm border-blue-500/20 shadow-2xl relative overflow-hidden">
+      <Card className="w-full max-w-sm mx-auto bg-card/95 backdrop-blur-sm border-blue-500/20 shadow-2xl relative overflow-hidden">
         {/* Card glow effect */}
         <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-blue-600/20 to-blue-400/20 opacity-50 blur-xl"></div>
         
-        <CardHeader className="text-center relative z-10">
-          <div className="flex items-center justify-center mb-4">
+        <CardHeader className="text-center relative z-10 pb-2">
+          <div className="flex items-center justify-center mb-2">
             <div className="flex items-center space-x-2 text-blue-500">
-              <Gamepad2 className="h-8 w-8" />
-              <Sparkles className="h-6 w-6 animate-pulse" />
-              <Heart className="h-6 w-6 text-blue-400" />
+              <Gamepad2 className="h-6 w-6" />
+              <Sparkles className="h-5 w-5 animate-pulse" />
+              <Heart className="h-5 w-5 text-blue-400" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent">
+          <CardTitle className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent">
             Ankit
           </CardTitle>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-muted-foreground text-xs">
             Support Ankit with your donation
           </p>
         </CardHeader>
 
-        <CardContent className="space-y-6 relative z-10">
+        <CardContent className="space-y-4 relative z-10">
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Name Field */}
             <div className="space-y-2">

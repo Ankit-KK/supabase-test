@@ -212,17 +212,17 @@ const Jhanvoo = () => {
       style={{ backgroundImage: `url(${jhanvooBanner})` }}
     >
       <div 
-        className="max-w-md w-full bg-black/40 backdrop-blur-sm rounded-2xl shadow-2xl p-8 border border-indigo-500/20 bg-cover bg-center bg-no-repeat"
+        className="max-w-sm w-full bg-black/40 backdrop-blur-sm rounded-2xl shadow-2xl p-4 sm:p-6 border border-indigo-500/20 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: `url(${jhanvooLogo})` }}
       >
-        <div className="flex flex-col items-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Jhanvoo</h1>
-          <p className="text-gray-100 text-center text-sm">
+        <div className="flex flex-col items-center mb-4">
+          <h1 className="text-xl sm:text-2xl font-bold text-white mb-1">Jhanvoo</h1>
+          <p className="text-gray-100 text-center text-xs">
             Support with your interaction
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name" className="text-gray-100">Your Name</Label>
             <Input

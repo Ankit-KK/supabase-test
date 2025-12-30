@@ -357,15 +357,15 @@ const Sizzors = () => {
       <div className="absolute inset-0 bg-black/40"></div>
 
       <Card 
-        className="w-full max-w-md mx-auto backdrop-blur-sm border-purple-500/20 shadow-2xl relative overflow-hidden z-10 bg-cover bg-center"
+        className="w-full max-w-sm mx-auto backdrop-blur-sm border-purple-500/20 shadow-2xl relative overflow-hidden z-10 bg-cover bg-center"
         style={{ backgroundImage: `url(${sizzorsProfile})` }}
       >
         {/* Card overlay for readability */}
         <div className="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
         
-        <CardHeader className="text-center relative z-10">
-          <div className="flex items-center justify-center mb-4">
-            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-purple-500 shadow-lg shadow-purple-500/50">
+        <CardHeader className="text-center relative z-10 pb-2">
+          <div className="flex items-center justify-center mb-2">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border-4 border-purple-500 shadow-lg shadow-purple-500/50">
               <img 
                 src={sizzorsLogo} 
                 alt="Sizzors Logo" 
@@ -373,15 +373,15 @@ const Sizzors = () => {
               />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-purple-500 to-purple-600 bg-clip-text text-transparent">
+          <CardTitle className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-500 to-purple-600 bg-clip-text text-transparent">
             Sizzors
           </CardTitle>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-muted-foreground text-xs">
             Support Sizzors with your donation
           </p>
         </CardHeader>
 
-        <CardContent className="space-y-6 relative z-10">
+        <CardContent className="space-y-4 relative z-10">
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Name Field */}
             <div className="space-y-2">
