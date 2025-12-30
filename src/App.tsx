@@ -18,8 +18,6 @@ import NotFound from "./pages/NotFound";
 import FeatureShowcase from "./pages/FeatureShowcase";
 import Status from "./pages/Status";
 import UpiSecurityBestPractices from "./pages/blog/UpiSecurityBestPractices";
-import TestAlerts from "./pages/TestAlerts";
-
 // Individual streamer donation pages (only active streamers + ThunderX)
 import Ankit from "./pages/Ankit";
 import ChiaaGaming from "./pages/ChiaaGaming";
@@ -149,7 +147,6 @@ const App = () => (
               <Route path="/sitemap.xml" element={<SitemapXml />} />
               <Route path="/feature-showcase" element={<FeatureShowcase />} />
               <Route path="/status" element={<Status />} />
-              <Route path="/test-alerts" element={<TestAlerts />} />
               
               {/* Blog posts */}
               <Route path="/blog/upi-security-best-practices" element={<UpiSecurityBestPractices />} />
