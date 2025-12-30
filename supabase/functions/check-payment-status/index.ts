@@ -81,15 +81,19 @@ serve(async (req) => {
     }
 
     // Determine which table to update based on order_id prefix
-    let tableName = 'chia_gaming_donations' // default
+    let tableName = 'chiaa_gaming_donations' // default
     if (order_id.startsWith('ankit_')) {
       tableName = 'ankit_donations'
-    } else if (order_id.startsWith('demostreamer_')) {
-      tableName = 'demostreamer_donations'
     } else if (order_id.startsWith('damask_plays_')) {
       tableName = 'damask_plays_donations'
     } else if (order_id.startsWith('neko_xenpai_')) {
       tableName = 'neko_xenpai_donations'
+    } else if (order_id.startsWith('looteriya_gaming_')) {
+      tableName = 'looteriya_gaming_donations'
+    } else if (order_id.startsWith('sizzors_')) {
+      tableName = 'sizzors_donations'
+    } else if (order_id.startsWith('thunderx_')) {
+      tableName = 'thunderx_donations'
     }
 
     // Update the donation record

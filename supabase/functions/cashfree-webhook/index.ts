@@ -174,59 +174,24 @@ serve(async (req) => {
 
     // Determine which table to update based on order_id prefix
     const getTableName = (orderId: string) => {
-      // Existing 16 streamers
       if (orderId.startsWith('ankit_')) return 'ankit_donations';
-      if (orderId.startsWith('musicstream_')) return 'musicstream_donations';
-      if (orderId.startsWith('techgamer_')) return 'techgamer_donations';
       if (orderId.startsWith('sizzors_')) return 'sizzors_donations';
-      if (orderId.startsWith('artcreate_')) return 'artcreate_donations';
       if (orderId.startsWith('looteriya_gaming_')) return 'looteriya_gaming_donations';
-      if (orderId.startsWith('demostreamer_')) return 'demostreamer_donations';
-      if (orderId.startsWith('demo2_')) return 'demo2_donations';
-      if (orderId.startsWith('demo3_')) return 'demo3_donations';
-      if (orderId.startsWith('demo4_')) return 'demo4_donations';
       if (orderId.startsWith('chia_')) return 'chiaa_gaming_donations';
       if (orderId.startsWith('chiagaming_')) return 'chiaa_gaming_donations';
-      if (orderId.startsWith('apexlegend_')) return 'apexlegend_donations';
-      if (orderId.startsWith('craftmaster_')) return 'craftmaster_donations';
-      if (orderId.startsWith('lofibeats_')) return 'lofibeats_donations';
-      if (orderId.startsWith('valorantpro_')) return 'valorantpro_donations';
-      if (orderId.startsWith('yogatime_')) return 'yogatime_donations';
-      // New streamers (17-46)
-      if (orderId.startsWith('streamer17_')) return 'streamer17_donations';
-      if (orderId.startsWith('streamer18_')) return 'streamer18_donations';
-      if (orderId.startsWith('streamer19_')) return 'streamer19_donations';
-      if (orderId.startsWith('streamer20_')) return 'streamer20_donations';
-      if (orderId.startsWith('streamer21_')) return 'streamer21_donations';
-      if (orderId.startsWith('streamer22_')) return 'streamer22_donations';
-      if (orderId.startsWith('streamer23_')) return 'streamer23_donations';
-      if (orderId.startsWith('streamer24_')) return 'streamer24_donations';
-      if (orderId.startsWith('streamer25_')) return 'streamer25_donations';
-      if (orderId.startsWith('streamer26_')) return 'streamer26_donations';
-      if (orderId.startsWith('streamer27_')) return 'streamer27_donations';
-      if (orderId.startsWith('streamer28_')) return 'streamer28_donations';
-      if (orderId.startsWith('streamer29_')) return 'streamer29_donations';
-      if (orderId.startsWith('streamer30_')) return 'streamer30_donations';
-      if (orderId.startsWith('streamer31_')) return 'streamer31_donations';
-      if (orderId.startsWith('streamer32_')) return 'streamer32_donations';
-      if (orderId.startsWith('streamer33_')) return 'streamer33_donations';
-      if (orderId.startsWith('streamer34_')) return 'streamer34_donations';
-      if (orderId.startsWith('streamer35_')) return 'streamer35_donations';
-      if (orderId.startsWith('streamer36_')) return 'streamer36_donations';
-      if (orderId.startsWith('streamer37_')) return 'streamer37_donations';
-      if (orderId.startsWith('streamer38_')) return 'streamer38_donations';
-      if (orderId.startsWith('streamer39_')) return 'streamer39_donations';
-      if (orderId.startsWith('streamer40_')) return 'streamer40_donations';
-      if (orderId.startsWith('streamer41_')) return 'streamer41_donations';
-      if (orderId.startsWith('streamer42_')) return 'streamer42_donations';
-      if (orderId.startsWith('streamer43_')) return 'streamer43_donations';
-      if (orderId.startsWith('streamer44_')) return 'streamer44_donations';
-      if (orderId.startsWith('streamer45_')) return 'streamer45_donations';
-      if (orderId.startsWith('streamer46_')) return 'streamer46_donations';
       if (orderId.startsWith('damask_plays_')) return 'damask_plays_donations';
       if (orderId.startsWith('neko_xenpai_')) return 'neko_xenpai_donations';
       if (orderId.startsWith('thunderx_')) return 'thunderx_donations';
-      return 'chiaa_gaming_donations'; // default for chia_gaming
+      if (orderId.startsWith('vipbhai_')) return 'vipbhai_donations';
+      if (orderId.startsWith('sagarujjwalgaming_')) return 'sagarujjwalgaming_donations';
+      if (orderId.startsWith('notyourkween_')) return 'notyourkween_donations';
+      if (orderId.startsWith('bongflick_')) return 'bongflick_donations';
+      if (orderId.startsWith('mriqmaster_')) return 'mriqmaster_donations';
+      if (orderId.startsWith('abdevil_')) return 'abdevil_donations';
+      if (orderId.startsWith('jhanvoo_')) return 'jhanvoo_donations';
+      if (orderId.startsWith('clumsygod_')) return 'clumsygod_donations';
+      if (orderId.startsWith('jimmy_gaming_')) return 'jimmy_gaming_donations';
+      return 'chiaa_gaming_donations'; // default
     };
     
     const tableName = getTableName(order_id);
@@ -259,55 +224,22 @@ serve(async (req) => {
     // Map order_id prefix to correct streamer slug for Pusher channels
     const getStreamerSlug = (orderId: string): string => {
       if (orderId.startsWith('ankit_')) return 'ankit';
-      if (orderId.startsWith('musicstream_')) return 'musicstream';
-      if (orderId.startsWith('techgamer_')) return 'techgamer';
       if (orderId.startsWith('sizzors_')) return 'sizzors';
-      if (orderId.startsWith('artcreate_')) return 'artcreate';
       if (orderId.startsWith('looteriya_gaming_')) return 'looteriya_gaming';
-      if (orderId.startsWith('demostreamer_')) return 'demostreamer';
-      if (orderId.startsWith('demo2_')) return 'demo2';
-      if (orderId.startsWith('demo3_')) return 'demo3';
-      if (orderId.startsWith('demo4_')) return 'demo4';
       if (orderId.startsWith('chia_')) return 'chiaa_gaming';
       if (orderId.startsWith('chiagaming_')) return 'chiaa_gaming';
-      if (orderId.startsWith('apexlegend_')) return 'apexlegend';
-      if (orderId.startsWith('craftmaster_')) return 'craftmaster';
-      if (orderId.startsWith('lofibeats_')) return 'lofibeats';
-      if (orderId.startsWith('valorantpro_')) return 'valorantpro';
-      if (orderId.startsWith('yogatime_')) return 'yogatime';
-      if (orderId.startsWith('streamer17_')) return 'streamer17';
-      if (orderId.startsWith('streamer18_')) return 'streamer18';
-      if (orderId.startsWith('streamer19_')) return 'streamer19';
-      if (orderId.startsWith('streamer20_')) return 'streamer20';
-      if (orderId.startsWith('streamer21_')) return 'streamer21';
-      if (orderId.startsWith('streamer22_')) return 'streamer22';
-      if (orderId.startsWith('streamer23_')) return 'streamer23';
-      if (orderId.startsWith('streamer24_')) return 'streamer24';
-      if (orderId.startsWith('streamer25_')) return 'streamer25';
-      if (orderId.startsWith('streamer26_')) return 'streamer26';
-      if (orderId.startsWith('streamer27_')) return 'streamer27';
-      if (orderId.startsWith('streamer28_')) return 'streamer28';
-      if (orderId.startsWith('streamer29_')) return 'streamer29';
-      if (orderId.startsWith('streamer30_')) return 'streamer30';
-      if (orderId.startsWith('streamer31_')) return 'streamer31';
-      if (orderId.startsWith('streamer32_')) return 'streamer32';
-      if (orderId.startsWith('streamer33_')) return 'streamer33';
-      if (orderId.startsWith('streamer34_')) return 'streamer34';
-      if (orderId.startsWith('streamer35_')) return 'streamer35';
-      if (orderId.startsWith('streamer36_')) return 'streamer36';
-      if (orderId.startsWith('streamer37_')) return 'streamer37';
-      if (orderId.startsWith('streamer38_')) return 'streamer38';
-      if (orderId.startsWith('streamer39_')) return 'streamer39';
-      if (orderId.startsWith('streamer40_')) return 'streamer40';
-      if (orderId.startsWith('streamer41_')) return 'streamer41';
-      if (orderId.startsWith('streamer42_')) return 'streamer42';
-      if (orderId.startsWith('streamer43_')) return 'streamer43';
-      if (orderId.startsWith('streamer44_')) return 'streamer44';
-      if (orderId.startsWith('streamer45_')) return 'streamer45';
-      if (orderId.startsWith('streamer46_')) return 'streamer46';
       if (orderId.startsWith('damask_plays_')) return 'damask_plays';
       if (orderId.startsWith('neko_xenpai_')) return 'neko_xenpai';
       if (orderId.startsWith('thunderx_')) return 'thunderx';
+      if (orderId.startsWith('vipbhai_')) return 'vipbhai';
+      if (orderId.startsWith('sagarujjwalgaming_')) return 'sagarujjwalgaming';
+      if (orderId.startsWith('notyourkween_')) return 'notyourkween';
+      if (orderId.startsWith('bongflick_')) return 'bongflick';
+      if (orderId.startsWith('mriqmaster_')) return 'mriqmaster';
+      if (orderId.startsWith('abdevil_')) return 'abdevil';
+      if (orderId.startsWith('jhanvoo_')) return 'jhanvoo';
+      if (orderId.startsWith('clumsygod_')) return 'clumsygod';
+      if (orderId.startsWith('jimmy_gaming_')) return 'jimmy_gaming';
       return 'chiaa_gaming';
     };
 
