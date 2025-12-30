@@ -1,7 +1,6 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
 import { DollarSign, MessageSquare, Mic, Heart } from 'lucide-react';
@@ -24,15 +23,11 @@ interface DonationCardProps {
     message_visible?: boolean;
   };
   brandColor?: string;
-  showModerationActions?: boolean;
-  onModerationAction?: (donationId: string, action: 'approve' | 'reject') => void;
 }
 
 const DonationCard: React.FC<DonationCardProps> = ({
   donation,
-  brandColor = '#3b82f6',
-  showModerationActions = false,
-  onModerationAction
+  brandColor = '#3b82f6'
 }) => {
   // Check if donation is less than 2 minutes old
   const isNew = () => {
@@ -153,26 +148,6 @@ const DonationCard: React.FC<DonationCardProps> = ({
                 {formatDistanceToNow(new Date(donation.created_at), { addSuffix: true })}
               </span>
             </div>
-
-            {/* Moderation Actions */}
-            {showModerationActions && donation.moderation_status === 'pending' && onModerationAction && (
-              <div className="flex items-center space-x-2 mt-3 pt-3 border-t">
-                <Button
-                  size="sm"
-                  onClick={() => onModerationAction(donation.id, 'approve')}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  Approve
-                </Button>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => onModerationAction(donation.id, 'reject')}
-                >
-                  Reject
-                </Button>
-              </div>
-            )}
           </div>
         </div>
       </CardContent>
