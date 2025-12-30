@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
     if (donation.payment_status === 'success') {
       return new Response(
         JSON.stringify({
-          order_id: orderId,
+          order_id: order_id,
           final_status: 'SUCCESS',
           payment_status: 'success',
           order_status: 'PAID',
@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        order_id: orderId,
+        order_id: order_id,
         final_status: razorpayOrder.status === 'paid' ? 'SUCCESS' : 'PENDING',
         payment_status: donation.payment_status,
         order_status: razorpayOrder.status.toUpperCase(),
