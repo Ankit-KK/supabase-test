@@ -51,7 +51,7 @@ const ChiaGamingGoalOverlay = () => {
             .from('chiaa_gaming_donations')
             .select('amount, currency')
             .gte('created_at', streamerData.goal_activated_at)
-            .in('payment_status', ['success', 'completed'])
+            .eq('payment_status', 'success')
             .eq('moderation_status', 'auto_approved');
 
           const total = donations?.reduce((sum, d) => sum + convertToINR(Number(d.amount), d.currency || 'INR'), 0) || 0;
