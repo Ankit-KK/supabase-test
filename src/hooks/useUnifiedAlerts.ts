@@ -148,7 +148,7 @@ export function useUnifiedAlerts(config: UnifiedAlertsConfig) {
         .select('*')
         .eq('streamer_id', streamerId)
         .eq('payment_status', 'success')
-        .in('moderation_status', ['approved', 'auto_approved'])
+        .eq('moderation_status', 'auto_approved')
         .eq('message_visible', true)
         .gte('created_at', fiveMinutesAgo)
         .order('created_at', { ascending: true });
@@ -174,7 +174,7 @@ export function useUnifiedAlerts(config: UnifiedAlertsConfig) {
         .select('*')
         .eq('streamer_id', streamerId)
         .eq('payment_status', 'success')
-        .in('moderation_status', ['approved', 'auto_approved'])
+        .eq('moderation_status', 'auto_approved')
         .eq('message_visible', true)
         .order('created_at', { ascending: false })
         .limit(10);
@@ -255,11 +255,10 @@ export function useUnifiedAlerts(config: UnifiedAlertsConfig) {
 
             const donation = payload.new as unknown as Donation;
 
-            // Filter for approved and successful payments
+            // Filter for auto_approved and successful payments
             if (
               donation.payment_status === 'success' &&
-              (donation.moderation_status === 'approved' || 
-               donation.moderation_status === 'auto_approved') &&
+              donation.moderation_status === 'auto_approved' &&
               donation.message_visible !== false
             ) {
               await addToQueue(donation);
