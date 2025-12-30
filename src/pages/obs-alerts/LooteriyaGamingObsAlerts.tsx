@@ -368,7 +368,7 @@ const LooteriyaGamingObsAlerts = () => {
         .from("looteriya_gaming_donations")
         .select("name, amount, currency, created_at")
         .eq("payment_status", "success")
-        .in("moderation_status", ["approved", "auto_approved"])
+        .eq("moderation_status", "auto_approved")
         .order("created_at", { ascending: false });
 
       // Query 2: Fetch latest 5 donations from all time for !hyperchat
@@ -376,7 +376,7 @@ const LooteriyaGamingObsAlerts = () => {
         .from("looteriya_gaming_donations")
         .select("name, amount, currency, created_at")
         .eq("payment_status", "success")
-        .in("moderation_status", ["approved", "auto_approved"])
+        .eq("moderation_status", "auto_approved")
         .order("created_at", { ascending: false })
         .limit(5);
 
