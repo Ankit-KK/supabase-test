@@ -141,19 +141,13 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
                       </Badge>
                     )}
                     
-                    {donation.moderation_status === 'approved' || donation.moderation_status === 'auto_approved' ? (
+                    {(donation.moderation_status === 'approved' || donation.moderation_status === 'auto_approved') && (
                       <Badge 
                         className="bg-blue-500/10 text-blue-600 border-blue-500/20 text-xs"
                       >
                         Live
                       </Badge>
-                    ) : donation.moderation_status === 'pending' ? (
-                      <Badge 
-                        className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20 text-xs"
-                      >
-                        Pending
-                      </Badge>
-                    ) : null}
+                    )}
                   </div>
                   
                   <span className="text-xs text-muted-foreground">

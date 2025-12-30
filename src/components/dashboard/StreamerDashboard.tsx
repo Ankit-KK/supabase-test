@@ -67,7 +67,6 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
     topDonation: 0
   });
   const [approvedDonations, setApprovedDonations] = useState<DonationRecord[]>([]);
-  const [pendingDonations, setPendingDonations] = useState<DonationRecord[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   
   // Get Pusher config from backend
@@ -232,30 +231,6 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
     };
 
     fetchApprovedDonations();
-  }, [streamerData?.id, tableName, refreshKey]);
-
-  // Fetch pending donations
-  useEffect(() => {
-    const fetchPendingDonations = async () => {
-      if (!streamerData?.id) return;
-
-      try {
-        const { data, error } = await supabase
-          .from(tableName as any)
-          .select('*')
-          .eq('streamer_id', streamerData.id)
-          .eq('moderation_status', 'pending')
-          .order('created_at', { ascending: false })
-          .limit(20) as { data: DonationRecord[] | null, error: any };
-
-        if (error) throw error;
-        setPendingDonations(data || []);
-      } catch (error) {
-        console.error('Error fetching pending donations:', error);
-      }
-    };
-
-    fetchPendingDonations();
   }, [streamerData?.id, tableName, refreshKey]);
 
   if (!user) {
