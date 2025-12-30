@@ -82,7 +82,7 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
         .select('*')
         .is('audio_played_at', null)
         .gte('created_at', pageOpenedAt)
-        .in('moderation_status', ['approved', 'auto_approved'])
+        .eq('moderation_status', 'auto_approved')
         .eq('payment_status', 'success')
         .or('voice_message_url.not.is.null,tts_audio_url.not.is.null,message.not.is.null')
         .order('created_at', { ascending: true })
