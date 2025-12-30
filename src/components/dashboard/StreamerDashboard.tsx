@@ -215,7 +215,7 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
           .select('*')
           .eq('streamer_id', streamerData.id)
           .eq('payment_status', 'success')
-          .in('moderation_status', ['approved', 'auto_approved'])
+          .eq('moderation_status', 'auto_approved')
           .order('created_at', { ascending: false })
           .limit(50) as { data: DonationRecord[] | null, error: any };
 

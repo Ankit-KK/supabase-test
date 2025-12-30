@@ -73,7 +73,7 @@ const MediaSourcePlayer: React.FC<MediaSourcePlayerProps> = ({
       .from(tableName as any)
       .select('*', { count: 'exact', head: true })
       .is('audio_played_at', null)
-      .in('moderation_status', ['approved', 'auto_approved'])
+      .eq('moderation_status', 'auto_approved')
       .eq('payment_status', 'success')
       .or('tts_audio_url.not.is.null,voice_message_url.not.is.null');
 
