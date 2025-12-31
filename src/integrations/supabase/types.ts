@@ -289,6 +289,60 @@ export type Database = {
           },
         ]
       }
+      banned_donors: {
+        Row: {
+          banned_by_moderator_id: string | null
+          banned_by_name: string | null
+          created_at: string
+          donor_name: string
+          donor_name_lower: string | null
+          id: string
+          is_active: boolean | null
+          reason: string | null
+          streamer_id: string
+          updated_at: string
+        }
+        Insert: {
+          banned_by_moderator_id?: string | null
+          banned_by_name?: string | null
+          created_at?: string
+          donor_name: string
+          donor_name_lower?: string | null
+          id?: string
+          is_active?: boolean | null
+          reason?: string | null
+          streamer_id: string
+          updated_at?: string
+        }
+        Update: {
+          banned_by_moderator_id?: string | null
+          banned_by_name?: string | null
+          created_at?: string
+          donor_name?: string
+          donor_name_lower?: string | null
+          id?: string
+          is_active?: boolean | null
+          reason?: string | null
+          streamer_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "banned_donors_banned_by_moderator_id_fkey"
+            columns: ["banned_by_moderator_id"]
+            isOneToOne: false
+            referencedRelation: "streamers_moderators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "banned_donors_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bongflick_donations: {
         Row: {
           amount: number
@@ -906,6 +960,69 @@ export type Database = {
           },
         ]
       }
+      moderation_actions: {
+        Row: {
+          action_source: string
+          action_type: string
+          created_at: string
+          donation_id: string
+          donation_table: string
+          id: string
+          moderator_id: string | null
+          moderator_name: string | null
+          moderator_telegram_id: string | null
+          new_status: string | null
+          notes: string | null
+          previous_status: string | null
+          streamer_id: string
+        }
+        Insert: {
+          action_source: string
+          action_type: string
+          created_at?: string
+          donation_id: string
+          donation_table: string
+          id?: string
+          moderator_id?: string | null
+          moderator_name?: string | null
+          moderator_telegram_id?: string | null
+          new_status?: string | null
+          notes?: string | null
+          previous_status?: string | null
+          streamer_id: string
+        }
+        Update: {
+          action_source?: string
+          action_type?: string
+          created_at?: string
+          donation_id?: string
+          donation_table?: string
+          id?: string
+          moderator_id?: string | null
+          moderator_name?: string | null
+          moderator_telegram_id?: string | null
+          new_status?: string | null
+          notes?: string | null
+          previous_status?: string | null
+          streamer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moderation_actions_moderator_id_fkey"
+            columns: ["moderator_id"]
+            isOneToOne: false
+            referencedRelation: "streamers_moderators"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moderation_actions_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mriqmaster_donations: {
         Row: {
           amount: number
@@ -1469,6 +1586,7 @@ export type Database = {
           hyperemotes_enabled: boolean | null
           hyperemotes_min_amount: number | null
           id: string
+          moderation_mode: string | null
           pusher_group: number | null
           streamer_name: string
           streamer_slug: string
@@ -1490,6 +1608,7 @@ export type Database = {
           hyperemotes_enabled?: boolean | null
           hyperemotes_min_amount?: number | null
           id?: string
+          moderation_mode?: string | null
           pusher_group?: number | null
           streamer_name: string
           streamer_slug: string
@@ -1511,6 +1630,7 @@ export type Database = {
           hyperemotes_enabled?: boolean | null
           hyperemotes_min_amount?: number | null
           id?: string
+          moderation_mode?: string | null
           pusher_group?: number | null
           streamer_name?: string
           streamer_slug?: string
@@ -1524,28 +1644,55 @@ export type Database = {
       }
       streamers_moderators: {
         Row: {
+          can_approve: boolean | null
+          can_ban: boolean | null
+          can_hide_message: boolean | null
+          can_manage_mods: boolean | null
+          can_reject: boolean | null
+          can_replay: boolean | null
           created_at: string
           id: string
           is_active: boolean
+          last_action_at: string | null
           mod_name: string
+          role: Database["public"]["Enums"]["moderator_role"] | null
           streamer_id: string
           telegram_user_id: string
+          total_actions: number | null
         }
         Insert: {
+          can_approve?: boolean | null
+          can_ban?: boolean | null
+          can_hide_message?: boolean | null
+          can_manage_mods?: boolean | null
+          can_reject?: boolean | null
+          can_replay?: boolean | null
           created_at?: string
           id?: string
           is_active?: boolean
+          last_action_at?: string | null
           mod_name: string
+          role?: Database["public"]["Enums"]["moderator_role"] | null
           streamer_id: string
           telegram_user_id: string
+          total_actions?: number | null
         }
         Update: {
+          can_approve?: boolean | null
+          can_ban?: boolean | null
+          can_hide_message?: boolean | null
+          can_manage_mods?: boolean | null
+          can_reject?: boolean | null
+          can_replay?: boolean | null
           created_at?: string
           id?: string
           is_active?: boolean
+          last_action_at?: string | null
           mod_name?: string
+          role?: Database["public"]["Enums"]["moderator_role"] | null
           streamer_id?: string
           telegram_user_id?: string
+          total_actions?: number | null
         }
         Relationships: [
           {
@@ -1937,6 +2084,10 @@ export type Database = {
       can_access_admin_emails: { Args: never; Returns: boolean }
       check_and_rotate_expired_tokens: { Args: never; Returns: undefined }
       check_bulk_access_rate_limit: { Args: never; Returns: boolean }
+      check_moderator_permission: {
+        Args: { p_moderator_id: string; p_permission: string }
+        Returns: boolean
+      }
       check_rate_limit: {
         Args: {
           p_endpoint: string
@@ -2484,6 +2635,10 @@ export type Database = {
       is_admin_email: { Args: { check_email: string }; Returns: boolean }
       is_admin_user: { Args: never; Returns: boolean }
       is_current_user_admin: { Args: never; Returns: boolean }
+      is_donor_banned: {
+        Args: { p_donor_name: string; p_streamer_id: string }
+        Returns: boolean
+      }
       is_service_role: { Args: never; Returns: boolean }
       is_valid_streamer_operation: {
         Args: { streamer_id: string }
@@ -2505,6 +2660,22 @@ export type Database = {
           p_user_agent?: string
         }
         Returns: undefined
+      }
+      log_moderation_action: {
+        Args: {
+          p_action_source: string
+          p_action_type: string
+          p_donation_id: string
+          p_donation_table: string
+          p_moderator_id: string
+          p_moderator_name: string
+          p_moderator_telegram_id: string
+          p_new_status?: string
+          p_notes?: string
+          p_previous_status?: string
+          p_streamer_id: string
+        }
+        Returns: string
       }
       log_security_event: {
         Args: {
@@ -2742,7 +2913,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      moderator_role: "owner" | "moderator" | "viewer"
     }
     CompositeTypes: {
       http_header: {
@@ -2885,6 +3056,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      moderator_role: ["owner", "moderator", "viewer"],
+    },
   },
 } as const
