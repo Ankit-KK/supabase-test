@@ -107,18 +107,22 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
     return () => clearInterval(interval);
   }, [fetchQueue]);
 
-  // Update settings
+  // Update settings via edge function (bypasses RLS)
   const updateSettings = async (key: keyof ModerationSettings, value: any) => {
-    const { error } = await supabase
-      .from('streamers')
-      .update({ [key]: value })
-      .eq('id', streamerId);
+    try {
+      const response = await supabase.functions.invoke('update-streamer-settings', {
+        body: { streamerId, setting: key, value }
+      });
 
-    if (error) {
-      toast({ title: 'Error', description: 'Failed to update settings', variant: 'destructive' });
-    } else {
-      setSettings(prev => ({ ...prev, [key]: value }));
-      toast({ title: 'Settings Updated', description: `${key} has been updated` });
+      if (response.data?.success) {
+        setSettings(prev => ({ ...prev, [key]: value }));
+        toast({ title: 'Settings Updated', description: `${key} has been updated` });
+      } else {
+        throw new Error(response.data?.error || 'Failed to update settings');
+      }
+    } catch (error: any) {
+      console.error('Settings update error:', error);
+      toast({ title: 'Error', description: error.message || 'Failed to update settings', variant: 'destructive' });
     }
   };
 

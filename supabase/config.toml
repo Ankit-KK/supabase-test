@@ -161,3 +161,6 @@ verify_jwt = false
 
 [functions.get-moderation-queue]
 verify_jwt = false
+
+[functions.update-streamer-settings]
+verify_jwt = false
