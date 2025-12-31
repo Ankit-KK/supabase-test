@@ -7,11 +7,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { DollarSign, Users, TrendingUp, Clock, AlertCircle, LogOut } from 'lucide-react';
+import { DollarSign, Users, TrendingUp, Clock, AlertCircle, LogOut, Shield } from 'lucide-react';
 import DonationCard from './DonationCard';
 import TelegramDashboard from './telegram/TelegramDashboard';
 import OBSTokenManager from './OBSTokenManager';
 import CSVExportButton from './CSVExportButton';
+import ModerationPanel from './moderation/ModerationPanel';
 import { usePusherDashboard } from '@/hooks/usePusherDashboard';
 import { usePusherConfig } from '@/hooks/usePusherConfig';
 import { convertToINR } from '@/constants/currencies';
@@ -359,12 +360,24 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
         </div>
 
         {/* Main Content Tabs */}
-        <Tabs defaultValue="donations" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+        <Tabs defaultValue="moderation" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="moderation" className="flex items-center gap-1">
+              <Shield className="h-4 w-4" /> Moderation
+            </TabsTrigger>
             <TabsTrigger value="donations">Approved Donations</TabsTrigger>
-            <TabsTrigger value="telegram">Telegram Dashboard</TabsTrigger>
+            <TabsTrigger value="telegram">Telegram</TabsTrigger>
             <TabsTrigger value="obs">OBS Setup</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="moderation" className="space-y-6">
+            <ModerationPanel
+              streamerId={streamerData.id}
+              streamerSlug={streamerSlug}
+              tableName={tableName}
+              brandColor={brandColor}
+            />
+          </TabsContent>
 
           <TabsContent value="donations" className="space-y-6">
             <Card>

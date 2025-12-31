@@ -6,83 +6,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Helper function to notify moderators via Telegram
-async function notifyTelegramModerators(streamerId: string, message: string, supabase: any) {
-  try {
-    const telegramBotToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
-    if (!telegramBotToken) {
-      console.log('No Telegram bot token configured, skipping notification');
-      return { success: false, error: 'No bot token' };
-    }
-
-    // Get active moderators for this streamer
-    const { data: moderators, error } = await supabase
-      .from('streamers_moderators')
-      .select('telegram_user_id, mod_name')
-      .eq('streamer_id', streamerId)
-      .eq('is_active', true);
-
-    if (error) {
-      console.error('Error fetching moderators:', error);
-      return { success: false, error: 'Failed to fetch moderators' };
-    }
-
-    if (!moderators || moderators.length === 0) {
-      console.log('No active moderators found for streamer:', streamerId);
-      return { success: false, error: 'No moderators found' };
-    }
-
-    console.log(`Found ${moderators.length} moderators for notification`);
-
-    let successCount = 0;
-    let errorCount = 0;
-
-    // Send message to each moderator
-    for (const moderator of moderators) {
-      if (moderator.telegram_user_id) {
-        try {
-          console.log(`Sending Telegram notification to moderator ${moderator.mod_name} (${moderator.telegram_user_id})`);
-          
-          const response = await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              chat_id: moderator.telegram_user_id,
-              text: message,
-              parse_mode: 'HTML'
-            })
-          });
-
-          const result = await response.json();
-          
-          if (response.ok) {
-            console.log(`Successfully sent message to ${moderator.mod_name}`);
-            successCount++;
-          } else {
-            console.error(`Failed to send message to ${moderator.mod_name}:`, result);
-            errorCount++;
-          }
-        } catch (err) {
-          console.error(`Error sending Telegram message to ${moderator.mod_name}:`, err);
-          errorCount++;
-        }
-      }
-    }
-
-    return { 
-      success: successCount > 0, 
-      successCount, 
-      errorCount, 
-      totalModerators: moderators.length 
-    };
-  } catch (error) {
-    console.error('Error in notifyTelegramModerators:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
-  }
-}
+console.log('notify-new-donations: loaded with moderation support');
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -90,16 +16,14 @@ serve(async (req) => {
   try {
     console.log('Starting notification check for new donations...');
 
-    // Create Supabase client with service role key for admin access
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Get bot token
     const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
     if (!botToken) {
-      console.log('TELEGRAM_BOT_TOKEN not configured, skipping notifications');
+      console.log('TELEGRAM_BOT_TOKEN not configured');
       return new Response(JSON.stringify({
         success: false,
         error: 'Telegram bot token not configured'
@@ -109,7 +33,7 @@ serve(async (req) => {
       });
     }
 
-    // Find successful donations that haven't been notified yet across all tables
+    // Donation tables to check
     const donationTables = [
       'ankit_donations',
       'chiaa_gaming_donations',
@@ -124,43 +48,31 @@ serve(async (req) => {
       'abdevil_donations',
       'damask_plays_donations',
       'neko_xenpai_donations',
-      'jhanvoo_donations'
+      'jhanvoo_donations',
+      'clumsygod_donations',
+      'jimmy_gaming_donations'
     ];
 
     let donationsToNotify: any[] = [];
-    const fetchErrors: any[] = [];
 
-    // Query each table and merge results
+    // Query each table
     for (const tableName of donationTables) {
       try {
         const { data, error } = await supabaseAdmin
           .from(tableName)
-          .select('*, table_name')
+          .select('*')
           .eq('payment_status', 'success')
-          .eq('moderation_status', 'auto_approved')
           .eq('mod_notified', false)
           .not('streamer_id', 'is', null);
 
-        if (error) {
-          console.error(`Error fetching from ${tableName}:`, error);
-          fetchErrors.push({ table: tableName, error });
-        } else if (data && data.length > 0) {
-          // Add table name to each donation for tracking
+        if (!error && data && data.length > 0) {
           const donationsWithTable = data.map(d => ({ ...d, source_table: tableName }));
           donationsToNotify = [...donationsToNotify, ...donationsWithTable];
           console.log(`Found ${data.length} donations from ${tableName}`);
         }
       } catch (err) {
         console.error(`Exception querying ${tableName}:`, err);
-        fetchErrors.push({ table: tableName, error: err });
       }
-    }
-
-    const fetchError = fetchErrors.length > 0 ? fetchErrors[0].error : null;
-
-    if (fetchError) {
-      console.error('Error fetching donations to notify:', fetchError);
-      throw fetchError;
     }
 
     if (!donationsToNotify || donationsToNotify.length === 0) {
@@ -174,23 +86,28 @@ serve(async (req) => {
       });
     }
 
-    console.log(`Found ${donationsToNotify.length} donations that need moderator notification`);
+    console.log(`Found ${donationsToNotify.length} donations that need notification`);
 
     let notifiedCount = 0;
     let errorCount = 0;
 
     for (const donation of donationsToNotify) {
       try {
-        // Get moderators for this streamer
-        const { data: moderators, error: modError } = await supabaseAdmin
-          .from('streamers_moderators')
-          .select('telegram_user_id, mod_name')
-          .eq('streamer_id', donation.streamer_id)
-          .eq('is_active', true);
+        // Get streamer settings
+        const { data: streamer, error: streamerError } = await supabaseAdmin
+          .from('streamers')
+          .select('id, streamer_slug, streamer_name, moderation_mode, telegram_moderation_enabled')
+          .eq('id', donation.streamer_id)
+          .single();
 
-        if (modError || !moderators || moderators.length === 0) {
-          console.log(`No active moderators found for streamer: ${donation.streamer_id}`);
-          // Mark as notified even if no moderators to avoid retry loops
+        if (streamerError || !streamer) {
+          console.log(`Streamer not found for donation ${donation.id}`);
+          continue;
+        }
+
+        // Skip if telegram moderation is disabled
+        if (!streamer.telegram_moderation_enabled) {
+          // Mark as notified to avoid retry
           await supabaseAdmin
             .from(donation.source_table)
             .update({ mod_notified: true })
@@ -198,64 +115,119 @@ serve(async (req) => {
           continue;
         }
 
-        const messageText = `🎁 <b>New Donation Received!</b> 🎁\n\n` +
-          `💰 <b>Amount:</b> ₹${donation.amount}\n` +
-          `👤 <b>From:</b> ${donation.name}\n` +
-          `📅 <b>Time:</b> ${new Date(donation.created_at).toLocaleString()}\n` +
-          `${donation.message ? `💬 <b>Message:</b> ${donation.message}\n` : ''}` +
-          `${donation.voice_message_url ? `🎵 <b>Voice Message:</b> Available\n` : ''}\n` +
-          `✅ <i>Auto-approved and visible on stream</i>`;
+        // Get moderators
+        const { data: moderators, error: modError } = await supabaseAdmin
+          .from('streamers_moderators')
+          .select('telegram_user_id, mod_name, role, can_approve, can_reject, can_hide_message, can_ban')
+          .eq('streamer_id', donation.streamer_id)
+          .eq('is_active', true);
 
-        // Get streamer slug for dashboard link
-        const { data: streamerData } = await supabaseAdmin
-          .from('streamers')
-          .select('streamer_slug')
-          .eq('id', donation.streamer_id)
-          .single();
+        if (modError || !moderators || moderators.length === 0) {
+          console.log(`No active moderators for streamer: ${donation.streamer_id}`);
+          await supabaseAdmin
+            .from(donation.source_table)
+            .update({ mod_notified: true })
+            .eq('id', donation.id);
+          continue;
+        }
 
-        const streamerSlug = streamerData?.streamer_slug || 'dashboard';
+        const isManualMode = streamer.moderation_mode === 'manual';
+        const isPending = donation.moderation_status === 'pending';
 
-        const keyboard = {
-          inline_keyboard: [
-            ...(donation.voice_message_url ? [[{ text: '🎵 Play Voice', callback_data: `play_${donation.id}` }]] : []),
-            [{ text: '📊 Dashboard', url: `https://hyperchat.site/dashboard/${streamerSlug}` }]
-          ]
-        };
+        // Build message
+        const statusEmoji = isPending ? '⏳' : '✅';
+        const statusText = isPending ? 'Pending Approval' : 'Auto-Approved';
+        
+        let messageText = isManualMode && isPending
+          ? `🎁 <b>New Donation - Needs Approval</b> 🎁\n\n`
+          : `🎁 <b>New Donation Received!</b> 🎁\n\n`;
+        
+        messageText += `💰 <b>Amount:</b> ₹${donation.amount}\n`;
+        messageText += `👤 <b>From:</b> ${donation.name}\n`;
+        messageText += `📅 <b>Time:</b> ${new Date(donation.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}\n`;
+        
+        if (donation.message) {
+          messageText += `💬 <b>Message:</b> ${donation.message.substring(0, 200)}${donation.message.length > 200 ? '...' : ''}\n`;
+        }
+        
+        if (donation.voice_message_url) {
+          messageText += `🎵 <b>Voice:</b> Available\n`;
+        }
+        
+        messageText += `\n${statusEmoji} <i>${statusText}</i>`;
 
         let notificationSent = false;
 
         for (const moderator of moderators) {
           try {
-            const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-            const payload = {
+            // Build keyboard based on mode and permissions
+            const keyboard: any[][] = [];
+            
+            if (isManualMode && isPending) {
+              // Row 1: Approve/Reject for pending manual mode
+              const row1: any[] = [];
+              if (moderator.role === 'owner' || moderator.can_approve) {
+                row1.push({ text: '✅ Approve', callback_data: `approve_${donation.id}_${donation.source_table}` });
+              }
+              if (moderator.role === 'owner' || moderator.can_reject) {
+                row1.push({ text: '❌ Reject', callback_data: `reject_${donation.id}_${donation.source_table}` });
+              }
+              if (row1.length > 0) keyboard.push(row1);
+
+              // Row 2: Hide/Ban
+              const row2: any[] = [];
+              if ((moderator.role === 'owner' || moderator.can_hide_message) && donation.message) {
+                row2.push({ text: '🙈 Hide Msg', callback_data: `hide_message_${donation.id}_${donation.source_table}` });
+              }
+              if (moderator.role === 'owner' || moderator.can_ban) {
+                row2.push({ text: '🚫 Ban', callback_data: `ban_donor_${donation.id}_${donation.source_table}` });
+              }
+              if (row2.length > 0) keyboard.push(row2);
+            } else {
+              // For auto-approved: show replay and hide options
+              const row: any[] = [];
+              if (donation.message && (moderator.role === 'owner' || moderator.can_hide_message)) {
+                row.push({ text: '🙈 Hide Msg', callback_data: `hide_message_${donation.id}_${donation.source_table}` });
+              }
+              row.push({ text: '🔄 Replay', callback_data: `replay_${donation.id}_${donation.source_table}` });
+              if (row.length > 0) keyboard.push(row);
+            }
+
+            // Dashboard link
+            keyboard.push([{ text: '📊 Dashboard', url: `https://hyperchat.site/dashboard/${streamer.streamer_slug}` }]);
+
+            const payload: any = {
               chat_id: parseInt(moderator.telegram_user_id),
               text: messageText,
               parse_mode: 'HTML',
-              disable_web_page_preview: true,
-              reply_markup: keyboard
+              disable_web_page_preview: true
             };
 
-            console.log(`Sending notification to moderator ${moderator.mod_name} (${moderator.telegram_user_id}) for donation ${donation.id}`);
+            if (keyboard.length > 0) {
+              payload.reply_markup = { inline_keyboard: keyboard };
+            }
 
-            const resp = await fetch(url, {
+            console.log(`Sending to ${moderator.mod_name} (${moderator.telegram_user_id})`);
+
+            const resp = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(payload)
             });
 
-            if (!resp.ok) {
-              const errText = await resp.text();
-              console.error(`Error sending Telegram message to ${moderator.mod_name}:`, errText);
-            } else {
-              console.log(`Successfully sent notification to ${moderator.mod_name}`);
+            if (resp.ok) {
+              console.log(`Sent to ${moderator.mod_name}`);
               notificationSent = true;
+            } else {
+              const errText = await resp.text();
+              console.error(`Failed for ${moderator.mod_name}:`, errText);
             }
           } catch (e) {
-            console.error(`Error notifying moderator ${moderator.mod_name}:`, e);
+            console.error(`Error notifying ${moderator.mod_name}:`, e);
           }
         }
 
-        // Mark donation as notified
+        // Mark as notified
         if (notificationSent) {
           await supabaseAdmin
             .from(donation.source_table)
@@ -266,7 +238,6 @@ serve(async (req) => {
           errorCount++;
         }
 
-        // Add small delay to avoid overwhelming Telegram API
         await new Promise(resolve => setTimeout(resolve, 100));
 
       } catch (error) {
@@ -275,7 +246,7 @@ serve(async (req) => {
       }
     }
 
-    console.log(`Notification process completed: ${notifiedCount} notified, ${errorCount} errors`);
+    console.log(`Completed: ${notifiedCount} notified, ${errorCount} errors`);
 
     return new Response(JSON.stringify({
       success: true,
@@ -287,7 +258,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Error in notify-new-donations function:', error);
+    console.error('Error in notify-new-donations:', error);
     return new Response(JSON.stringify({ 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown error' 
