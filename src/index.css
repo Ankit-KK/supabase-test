@@ -156,11 +156,11 @@
   margin-top: -30px;
   transition: 0.3s cubic-bezier(0.23, 1, 0.32, 1);
   z-index: 0;
-  color: #B967F1;
+  color: #3B82F6;
   font-family: 'Montserrat', sans-serif;
   font-weight: 900;
   font-size: clamp(18px, 5vw, 40px);
-  text-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
   text-transform: uppercase;
 }
 
