@@ -18,6 +18,37 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Helper function to extract meaningful error messages from edge function responses
+const extractErrorMessage = (error: any): string => {
+  // Check for rate limiting (429)
+  if (error?.message?.includes('429') || error?.context?.status === 429) {
+    return 'Too many login attempts. Please wait a minute before trying again.';
+  }
+  
+  // Check for account locked (423)
+  if (error?.message?.includes('423') || error?.context?.status === 423) {
+    return 'Your account is temporarily locked due to too many failed attempts. Please try again later.';
+  }
+  
+  // Check for unauthorized (401)
+  if (error?.message?.includes('401') || error?.context?.status === 401) {
+    return 'Invalid email or password.';
+  }
+  
+  // Try to parse JSON error body if available
+  try {
+    if (error?.context?.body) {
+      const body = JSON.parse(error.context.body);
+      if (body.error) return body.error;
+    }
+  } catch {
+    // Ignore parsing errors
+  }
+  
+  // Return the error message or a default
+  return error?.message || 'Authentication failed. Please try again.';
+};
+
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -69,11 +100,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
 
+      // Handle edge function invocation error (network, HTTP errors like 401, 429, etc.)
       if (error) {
-        return { error };
+        const errorMessage = extractErrorMessage(error);
+        return { error: { message: errorMessage } };
       }
 
-      if (data.error) {
+      // Handle application-level errors returned in data
+      if (data?.error) {
         return { error: { message: data.error } };
       }
 
@@ -87,8 +121,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       return { error: null };
-    } catch (error) {
-      return { error };
+    } catch (error: any) {
+      return { error: { message: 'Connection error. Please check your internet and try again.' } };
     }
   };
 
@@ -102,11 +136,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
 
+      // Handle edge function invocation error
       if (error) {
-        return { error };
+        const errorMessage = extractErrorMessage(error);
+        return { error: { message: errorMessage } };
       }
 
-      if (data.error) {
+      // Handle application-level errors returned in data
+      if (data?.error) {
         return { error: { message: data.error } };
       }
 
@@ -120,8 +157,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       return { error: null };
-    } catch (error) {
-      return { error };
+    } catch (error: any) {
+      return { error: { message: 'Connection error. Please check your internet and try again.' } };
     }
   };
 

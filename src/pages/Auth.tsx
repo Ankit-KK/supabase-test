@@ -56,11 +56,40 @@ const Auth = () => {
       const { error } = await signIn(formData.email, formData.password);
       
       if (error) {
-        toast({
-          title: "Login Failed",
-          description: error.message || "Invalid email or password.",
-          variant: "destructive",
-        });
+        const message = error.message || 'Invalid email or password.';
+        
+        // Rate limiting error
+        if (message.toLowerCase().includes('too many') || message.includes('429')) {
+          toast({
+            title: "Too Many Attempts",
+            description: "Please wait a minute before trying again.",
+            variant: "destructive",
+          });
+        }
+        // Account locked
+        else if (message.toLowerCase().includes('locked')) {
+          toast({
+            title: "Account Locked",
+            description: "Your account is temporarily locked. Please try again later.",
+            variant: "destructive",
+          });
+        }
+        // Connection error
+        else if (message.toLowerCase().includes('connection')) {
+          toast({
+            title: "Connection Error",
+            description: "Please check your internet connection and try again.",
+            variant: "destructive",
+          });
+        }
+        // Default credential error
+        else {
+          toast({
+            title: "Login Failed",
+            description: message,
+            variant: "destructive",
+          });
+        }
       } else {
         toast({
           title: "Welcome back!",
@@ -113,11 +142,40 @@ const Auth = () => {
       const { error } = await signUp(formData.email, formData.password);
       
       if (error) {
-        toast({
-          title: "Signup Failed",
-          description: error.message || "Failed to create account.",
-          variant: "destructive",
-        });
+        const message = error.message || 'Failed to create account.';
+        
+        // Rate limiting error
+        if (message.toLowerCase().includes('too many') || message.includes('429')) {
+          toast({
+            title: "Too Many Attempts",
+            description: "Please wait a minute before trying again.",
+            variant: "destructive",
+          });
+        }
+        // User already exists
+        else if (message.toLowerCase().includes('already') || message.toLowerCase().includes('exists')) {
+          toast({
+            title: "Account Exists",
+            description: "An account with this email already exists. Please sign in instead.",
+            variant: "destructive",
+          });
+        }
+        // Connection error
+        else if (message.toLowerCase().includes('connection')) {
+          toast({
+            title: "Connection Error",
+            description: "Please check your internet connection and try again.",
+            variant: "destructive",
+          });
+        }
+        // Default error
+        else {
+          toast({
+            title: "Signup Failed",
+            description: message,
+            variant: "destructive",
+          });
+        }
       } else {
         toast({
           title: "Account Created!",
