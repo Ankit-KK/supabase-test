@@ -20,12 +20,33 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    const url = new URL(req.url);
-    const streamerId = url.searchParams.get('streamerId');
-    const streamerSlug = url.searchParams.get('streamerSlug');
-    const status = url.searchParams.get('status') || 'pending'; // pending, approved, rejected, all
-    const limit = parseInt(url.searchParams.get('limit') || '50');
-    const offset = parseInt(url.searchParams.get('offset') || '0');
+    let streamerId: string | null = null;
+    let streamerSlug: string | null = null;
+    let status = 'pending';
+    let limit = 50;
+    let offset = 0;
+
+    // Parse JSON body for POST requests
+    if (req.method === 'POST') {
+      try {
+        const body = await req.json();
+        streamerId = body.streamerId || null;
+        streamerSlug = body.streamerSlug || null;
+        status = body.status || 'pending';
+        limit = parseInt(body.limit) || 50;
+        offset = parseInt(body.offset) || 0;
+      } catch (e) {
+        console.error('Error parsing request body:', e);
+      }
+    } else {
+      // Fallback to URL params for GET requests
+      const url = new URL(req.url);
+      streamerId = url.searchParams.get('streamerId');
+      streamerSlug = url.searchParams.get('streamerSlug');
+      status = url.searchParams.get('status') || 'pending';
+      limit = parseInt(url.searchParams.get('limit') || '50');
+      offset = parseInt(url.searchParams.get('offset') || '0');
+    }
 
     console.log('Queue request:', { streamerId, streamerSlug, status, limit, offset });
 
