@@ -61,8 +61,10 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
         .single();
 
       if (!error && data) {
+        const modeValue = data.moderation_mode;
+        const mode: 'auto_approve' | 'manual' = modeValue === 'manual' ? 'manual' : 'auto_approve';
         setSettings({
-          moderation_mode: data.moderation_mode || 'auto_approve',
+          moderation_mode: mode,
           telegram_moderation_enabled: data.telegram_moderation_enabled ?? true
         });
       }
@@ -91,7 +93,7 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
         .order('created_at', { ascending: false })
         .limit(10);
 
-      setRecentDonations(recent || []);
+      setRecentDonations((recent as unknown as Donation[]) || []);
     } catch (error) {
       console.error('Error fetching queue:', error);
     } finally {
