@@ -13,10 +13,12 @@ const corsHeaders = {
 
 // Get client IP from request headers
 const getClientIP = (req: Request): string => {
-  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-         req.headers.get('x-real-ip') ||
-         req.headers.get('cf-connecting-ip') ||
-         'unknown';
+  return (
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("x-real-ip") ||
+    req.headers.get("cf-connecting-ip") ||
+    "unknown"
+  );
 };
 
 // Initialize R2 client
@@ -108,26 +110,26 @@ serve(async (req) => {
 
     // Get client IP for rate limiting
     const clientIP = getClientIP(req);
-    console.log('TTS request from IP:', clientIP);
+    console.log("TTS request from IP:", clientIP);
 
     // Check rate limit (10 TTS requests per minute)
-    const { data: rateLimitOk, error: rateLimitError } = await supabase.rpc('check_rate_limit_v2', {
+    const { data: rateLimitOk, error: rateLimitError } = await supabase.rpc("check_rate_limit_v2", {
       p_ip_address: clientIP,
-      p_endpoint: 'generate-donation-tts',
+      p_endpoint: "generate-donation-tts",
       p_max_requests: 10,
-      p_window_seconds: 60
+      p_window_seconds: 60,
     });
 
     if (rateLimitError) {
-      console.error('Rate limit check error:', rateLimitError);
+      console.error("Rate limit check error:", rateLimitError);
     }
 
     if (rateLimitOk === false) {
-      console.log('Rate limit exceeded for IP:', clientIP);
-      return new Response(
-        JSON.stringify({ error: 'Too many requests. Please try again later.' }),
-        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      console.log("Rate limit exceeded for IP:", clientIP);
+      return new Response(JSON.stringify({ error: "Too many requests. Please try again later." }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const {
@@ -176,10 +178,10 @@ serve(async (req) => {
     // Check if TTS is enabled for this streamer
     if (streamerData.tts_enabled === false) {
       console.log("TTS is disabled for streamer:", streamerId);
-      return new Response(
-        JSON.stringify({ error: "TTS is disabled for this streamer" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "TTS is disabled for this streamer" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const streamerSlug = streamerData.streamer_slug;
@@ -289,7 +291,7 @@ serve(async (req) => {
         voice_setting: {
           voice_id: voiceId,
           speed: 1.1,
-          vol: 1,
+          vol: 3,
           pitch: 0,
         },
         audio_setting: {
