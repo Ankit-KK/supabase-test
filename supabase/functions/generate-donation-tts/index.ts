@@ -291,7 +291,7 @@ serve(async (req) => {
         voice_setting: {
           voice_id: voiceId,
           speed: 1.1,
-          vol: 3,
+          vol: 5,
           pitch: 0,
         },
         audio_setting: {
