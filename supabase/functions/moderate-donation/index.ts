@@ -19,6 +19,93 @@ interface ModerationRequest {
   banReason?: string;
 }
 
+// Pusher credentials by group
+const PUSHER_CREDENTIALS: Record<number, { appId: string; key: string; secret: string; cluster: string }> = {
+  1: {
+    appId: Deno.env.get('PUSHER_APP_ID') || '',
+    key: Deno.env.get('PUSHER_KEY') || '',
+    secret: Deno.env.get('PUSHER_SECRET') || '',
+    cluster: Deno.env.get('PUSHER_CLUSTER') || 'ap2'
+  },
+  2: {
+    appId: Deno.env.get('PUSHER_APP_ID_2') || '',
+    key: Deno.env.get('PUSHER_KEY_2') || '',
+    secret: Deno.env.get('PUSHER_SECRET_2') || '',
+    cluster: Deno.env.get('PUSHER_CLUSTER_2') || 'ap2'
+  },
+  3: {
+    appId: Deno.env.get('PUSHER_APP_ID_3') || '',
+    key: Deno.env.get('PUSHER_KEY_3') || '',
+    secret: Deno.env.get('PUSHER_SECRET_3') || '',
+    cluster: Deno.env.get('PUSHER_CLUSTER_3') || 'ap2'
+  }
+};
+
+// Helper function to generate Pusher signature
+async function generatePusherSignature(secret: string, stringToSign: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(stringToSign));
+  return Array.from(new Uint8Array(signature))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+// Helper function to send Pusher event
+async function sendPusherEvent(
+  channels: string[],
+  eventName: string,
+  data: any,
+  pusherGroup: number = 1
+): Promise<boolean> {
+  try {
+    const creds = PUSHER_CREDENTIALS[pusherGroup] || PUSHER_CREDENTIALS[1];
+    
+    if (!creds.appId || !creds.key || !creds.secret) {
+      console.error(`Pusher credentials not configured for group ${pusherGroup}`);
+      return false;
+    }
+
+    const timestamp = Math.floor(Date.now() / 1000).toString();
+    const body = JSON.stringify({
+      name: eventName,
+      channels: channels,
+      data: JSON.stringify(data)
+    });
+    const bodyMd5 = await crypto.subtle.digest('MD5', new TextEncoder().encode(body))
+      .then(buf => Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join(''));
+
+    const stringToSign = `POST\n/apps/${creds.appId}/events\nauth_key=${creds.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${bodyMd5}`;
+    const signature = await generatePusherSignature(creds.secret, stringToSign);
+
+    const url = `https://api-${creds.cluster}.pusher.com/apps/${creds.appId}/events?auth_key=${creds.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${bodyMd5}&auth_signature=${signature}`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: body
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Pusher API error: ${response.status} - ${errorText}`);
+      return false;
+    }
+
+    console.log(`Pusher event '${eventName}' sent to channels: ${channels.join(', ')}`);
+    return true;
+  } catch (error) {
+    console.error('Error sending Pusher event:', error);
+    return false;
+  }
+}
+
 console.log('moderate-donation: function loaded');
 
 serve(async (req) => {
@@ -100,18 +187,32 @@ serve(async (req) => {
       });
     }
 
+    // Fetch streamer info for Pusher
+    const { data: streamer, error: streamerError } = await supabaseAdmin
+      .from('streamers')
+      .select('streamer_slug, pusher_group, tts_enabled, tts_voice_id')
+      .eq('id', streamerId)
+      .single();
+
+    if (streamerError) {
+      console.error('Error fetching streamer:', streamerError);
+    }
+
     const previousStatus = donation.moderation_status;
     let newStatus = previousStatus;
     let updateData: Record<string, any> = {};
+    let shouldSendOBSAlert = false;
 
     // Execute the action
     switch (action) {
       case 'approve':
         newStatus = 'approved';
+        shouldSendOBSAlert = true;
         updateData = {
           moderation_status: 'approved',
           approved_by: moderatorName || 'moderator',
-          approved_at: new Date().toISOString()
+          approved_at: new Date().toISOString(),
+          audio_scheduled_at: new Date().toISOString()
         };
         break;
 
@@ -146,7 +247,6 @@ serve(async (req) => {
 
         if (banError) {
           console.error('Error banning donor:', banError);
-          // Don't fail the whole operation, just log
         }
         
         // Also reject the current donation
@@ -167,8 +267,12 @@ serve(async (req) => {
         break;
 
       case 'replay':
-        // Set audio_played_at to null to trigger replay
-        updateData = { audio_played_at: null };
+        // Set audio_played_at to null and set new scheduled time to trigger replay
+        shouldSendOBSAlert = true;
+        updateData = { 
+          audio_played_at: null,
+          audio_scheduled_at: new Date().toISOString()
+        };
         break;
 
       default:
@@ -200,6 +304,97 @@ serve(async (req) => {
       }
     }
 
+    // Send OBS alert if needed (approve or replay actions)
+    if (shouldSendOBSAlert && streamer) {
+      const channelSlug = streamer.streamer_slug;
+      const pusherGroup = streamer.pusher_group || 1;
+
+      // Determine donation type
+      let donationType: 'text' | 'voice' | 'hypersound' = 'text';
+      if (donation.voice_message_url) {
+        donationType = 'voice';
+      } else if (donation.hypersound_url) {
+        donationType = 'hypersound';
+      }
+
+      // Prepare alert data
+      const alertData = {
+        id: donation.id,
+        name: donation.name,
+        amount: donation.amount,
+        currency: donation.currency || 'INR',
+        message: donation.message,
+        type: donationType,
+        voice_message_url: donation.voice_message_url,
+        tts_audio_url: donation.tts_audio_url,
+        hypersound_url: donation.hypersound_url,
+        is_hyperemote: donation.is_hyperemote,
+        selected_gif_id: donation.selected_gif_id,
+        message_visible: donation.message_visible !== false,
+        created_at: donation.created_at
+      };
+
+      // Generate TTS if needed (text donation with message, amount >= 70, no existing TTS)
+      const shouldGenerateTTS = donationType === 'text' && 
+        donation.message && 
+        donation.amount >= 70 && 
+        !donation.tts_audio_url &&
+        streamer.tts_enabled !== false;
+
+      if (shouldGenerateTTS) {
+        console.log('Generating TTS for manually approved donation...');
+        try {
+          const ttsResponse = await fetch(
+            `${Deno.env.get('SUPABASE_URL')}/functions/v1/generate-donation-tts`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
+              },
+              body: JSON.stringify({
+                donationId: donation.id,
+                tableName: donationTable,
+                name: donation.name,
+                amount: donation.amount,
+                message: donation.message,
+                voiceId: streamer.tts_voice_id || 'en-IN-Standard-B'
+              })
+            }
+          );
+
+          if (ttsResponse.ok) {
+            const ttsResult = await ttsResponse.json();
+            if (ttsResult.audioUrl) {
+              alertData.tts_audio_url = ttsResult.audioUrl;
+              console.log('TTS generated successfully:', ttsResult.audioUrl);
+            }
+          } else {
+            console.error('TTS generation failed:', await ttsResponse.text());
+          }
+        } catch (ttsError) {
+          console.error('Error calling TTS function:', ttsError);
+        }
+      }
+
+      // Send Pusher event to OBS alerts channel
+      console.log(`Sending Pusher event to ${channelSlug}-alerts channel`);
+      await sendPusherEvent(
+        [`${channelSlug}-alerts`],
+        'new-donation',
+        alertData,
+        pusherGroup
+      );
+
+      // Also send to dashboard for real-time updates
+      await sendPusherEvent(
+        [`${channelSlug}-dashboard`],
+        'donation-updated',
+        { ...alertData, action },
+        pusherGroup
+      );
+    }
+
     // Log the moderation action
     const { data: actionLog, error: logError } = await supabaseAdmin
       .from('moderation_actions')
@@ -221,7 +416,6 @@ serve(async (req) => {
 
     if (logError) {
       console.error('Error logging action:', logError);
-      // Don't fail, action was already performed
     }
 
     // Update moderator stats
@@ -243,7 +437,8 @@ serve(async (req) => {
       donationId,
       previousStatus,
       newStatus,
-      actionLogId: actionLog?.id
+      actionLogId: actionLog?.id,
+      alertSent: shouldSendOBSAlert
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
