@@ -1,4 +1,4 @@
-// Updated: 2025-12-29 - Removed moderation system, all donations auto-approved
+// Updated: 2026-01-01 - Restored moderation system, respects streamer moderation_mode setting
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { createHash, createHmac } from 'https://deno.land/std@0.177.0/node/crypto.ts'
@@ -340,17 +340,31 @@ serve(async (req) => {
     const audioDelay = donation.hypersound_url ? 15000 : 60000;
     const audioScheduledAt = new Date(Date.now() + audioDelay).toISOString();
 
-    // ALL DONATIONS AUTO-APPROVED - no moderation check
-    const moderationStatus = 'auto_approved';
+    // Fetch streamer's moderation settings
+    const { data: streamerSettings, error: streamerError } = await supabase
+      .from('streamers')
+      .select('moderation_mode, telegram_moderation_enabled')
+      .eq('id', donation.streamer_id)
+      .single();
+
+    if (streamerError) {
+      console.error('Error fetching streamer settings:', streamerError);
+    }
+
+    const moderationMode = streamerSettings?.moderation_mode || 'auto_approve';
+    const shouldAutoApprove = moderationMode === 'auto_approve';
+    const moderationStatus = shouldAutoApprove ? 'auto_approved' : 'pending';
+    
+    console.log(`Streamer moderation_mode: ${moderationMode}, shouldAutoApprove: ${shouldAutoApprove}`);
 
     // Update donation status
     const updateData: any = {
       payment_status: newStatus,
       moderation_status: isSuccess ? moderationStatus : undefined,
-      approved_at: isSuccess ? new Date().toISOString() : null,
-      approved_by: isSuccess ? 'system' : null,
+      approved_at: isSuccess && shouldAutoApprove ? new Date().toISOString() : null,
+      approved_by: isSuccess && shouldAutoApprove ? 'system' : null,
       updated_at: new Date().toISOString(),
-      audio_scheduled_at: isSuccess ? audioScheduledAt : null
+      audio_scheduled_at: isSuccess && shouldAutoApprove ? audioScheduledAt : null
     }
 
     console.log(`Setting audio_scheduled_at to ${audioScheduledAt} (${audioDelay/1000}s delay for ${donation.hypersound_url ? 'HyperSound' : 'regular'})`)
@@ -431,99 +445,107 @@ serve(async (req) => {
       });
       console.log(`✅ Pusher dashboard event sent to ${channelSlug}-dashboard`);
 
-      // ALWAYS send to OBS alerts channel immediately (no moderation)
-      await sendPusherEvent([`${channelSlug}-alerts`], 'new-donation', {
-        id: donation.id,
-        name: donation.name,
-        amount: donation.amount,
-        currency: paymentCurrency,
-        message: donation.message,
-        is_hyperemote: donation.is_hyperemote,
-        hypersound_url: donation.hypersound_url,
-        voice_message_url: donation.voice_message_url,
-        created_at: donation.created_at
-      });
-      console.log(`✅ Pusher alerts event sent to ${channelSlug}-alerts`);
+      // Only send to OBS alerts channel if auto-approved
+      if (shouldAutoApprove) {
+        await sendPusherEvent([`${channelSlug}-alerts`], 'new-donation', {
+          id: donation.id,
+          name: donation.name,
+          amount: donation.amount,
+          currency: paymentCurrency,
+          message: donation.message,
+          is_hyperemote: donation.is_hyperemote,
+          hypersound_url: donation.hypersound_url,
+          voice_message_url: donation.voice_message_url,
+          created_at: donation.created_at
+        });
+        console.log(`✅ Pusher alerts event sent to ${channelSlug}-alerts (auto-approved)`);
+      } else {
+        console.log(`⏸️ Skipping OBS alerts - donation pending moderation (mode: ${moderationMode})`);
+      }
 
-      // TTS Generation Logic
-      const donationCurrency = paymentCurrency || 'INR';
-      const amountInINR = convertToINR(donation.amount, donationCurrency);
+      // TTS Generation Logic - Only generate TTS if auto-approved
+      if (shouldAutoApprove) {
+        const donationCurrency = paymentCurrency || 'INR';
+        const amountInINR = convertToINR(donation.amount, donationCurrency);
 
-      // Skip TTS for HyperSounds/HyperEmotes
-      if (!donation.hypersound_url && !donation.is_hyperemote) {
-        
-        // Voice Messages - Generate announcement TTS
-        if (donation.voice_message_url) {
-          console.log('Voice message donation - generating announcement TTS');
-          try {
-            const ttsResponse = await fetch(`${supabaseUrl}/functions/v1/generate-donation-tts`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${supabaseServiceKey}`
-              },
-              body: JSON.stringify({
-                username: donation.name,
-                amount: donation.amount,
-                message: null,
-                donationId: donation.id,
-                streamerId: donation.streamer_id,
-                isVoiceAnnouncement: true,
-                currency: donationCurrency
-              })
-            });
-            
-            if (!ttsResponse.ok) {
-              const errorText = await ttsResponse.text();
-              console.error('Announcement TTS error:', errorText);
-            } else {
-              const ttsData = await ttsResponse.json();
-              if (ttsData?.audioUrl) {
-                console.log('Announcement TTS generated:', ttsData.audioUrl);
+        // Skip TTS for HyperSounds/HyperEmotes
+        if (!donation.hypersound_url && !donation.is_hyperemote) {
+          
+          // Voice Messages - Generate announcement TTS
+          if (donation.voice_message_url) {
+            console.log('Voice message donation - generating announcement TTS');
+            try {
+              const ttsResponse = await fetch(`${supabaseUrl}/functions/v1/generate-donation-tts`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${supabaseServiceKey}`
+                },
+                body: JSON.stringify({
+                  username: donation.name,
+                  amount: donation.amount,
+                  message: null,
+                  donationId: donation.id,
+                  streamerId: donation.streamer_id,
+                  isVoiceAnnouncement: true,
+                  currency: donationCurrency
+                })
+              });
+              
+              if (!ttsResponse.ok) {
+                const errorText = await ttsResponse.text();
+                console.error('Announcement TTS error:', errorText);
+              } else {
+                const ttsData = await ttsResponse.json();
+                if (ttsData?.audioUrl) {
+                  console.log('Announcement TTS generated:', ttsData.audioUrl);
+                }
               }
+            } catch (error) {
+              console.error('TTS generation error:', error);
             }
-          } catch (error) {
-            console.error('TTS generation error:', error);
           }
-        }
-        
-        // Text Messages - Generate full TTS for ₹70+ (INR equivalent)
-        else if (donation.message && amountInINR >= 70) {
-          console.log(`Generating TTS for ₹${amountInINR} text donation`);
-          try {
-            const ttsResponse = await fetch(`${supabaseUrl}/functions/v1/generate-donation-tts`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${supabaseServiceKey}`
-              },
-              body: JSON.stringify({
-                username: donation.name,
-                amount: donation.amount,
-                message: donation.message,
-                donationId: donation.id,
-                streamerId: donation.streamer_id,
-                currency: donationCurrency
-              })
-            });
-            
-            if (!ttsResponse.ok) {
-              const errorText = await ttsResponse.text();
-              console.error('TTS error:', errorText);
-            } else {
-              const ttsData = await ttsResponse.json();
-              if (ttsData?.audioUrl) {
-                console.log('TTS generated successfully:', ttsData.audioUrl);
+          
+          // Text Messages - Generate full TTS for ₹70+ (INR equivalent)
+          else if (donation.message && amountInINR >= 70) {
+            console.log(`Generating TTS for ₹${amountInINR} text donation`);
+            try {
+              const ttsResponse = await fetch(`${supabaseUrl}/functions/v1/generate-donation-tts`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${supabaseServiceKey}`
+                },
+                body: JSON.stringify({
+                  username: donation.name,
+                  amount: donation.amount,
+                  message: donation.message,
+                  donationId: donation.id,
+                  streamerId: donation.streamer_id,
+                  currency: donationCurrency
+                })
+              });
+              
+              if (!ttsResponse.ok) {
+                const errorText = await ttsResponse.text();
+                console.error('TTS error:', errorText);
+              } else {
+                const ttsData = await ttsResponse.json();
+                if (ttsData?.audioUrl) {
+                  console.log('TTS generated successfully:', ttsData.audioUrl);
+                }
               }
+            } catch (error) {
+              console.error('TTS generation error:', error);
             }
-          } catch (error) {
-            console.error('TTS generation error:', error);
+          } else {
+            console.log(`Donation ₹${amountInINR} - below TTS threshold or no message`);
           }
         } else {
-          console.log(`Donation ₹${amountInINR} - below TTS threshold or no message`);
+          console.log('HyperSound/HyperEmote donation - skipping TTS');
         }
       } else {
-        console.log('HyperSound/HyperEmote donation - skipping TTS');
+        console.log('⏸️ Skipping TTS generation - donation pending moderation');
       }
 
       // For Ankit, check if there's an active goal and send progress update
@@ -559,7 +581,7 @@ serve(async (req) => {
         }
       }
 
-      // Send Telegram notification to moderators (notification only, no approve/reject buttons)
+      // Send Telegram notification to moderators
       try {
         console.log('Sending Telegram notification to moderators for donation:', donation.id);
         
@@ -578,13 +600,18 @@ serve(async (req) => {
           } else if (moderators && moderators.length > 0) {
             console.log(`Found ${moderators.length} active moderators for streamer ${donation.streamer_id}`);
 
+            // Different message based on moderation mode
+            const statusText = shouldAutoApprove 
+              ? `✅ Auto-approved and sent to OBS`
+              : `⏳ *Awaiting moderation approval*`;
+
             const messageText = `🎉 *New Donation Received!*\n\n` +
               `👤 From: *${donation.name}*\n` +
               `💰 Amount: ₹${donation.amount}\n` +
               (donation.message ? `💬 Message: "${donation.message}"\n` : '') +
               (donation.is_hyperemote ? `✨ HyperEmote activated!\n` : '') +
               `📅 Time: ${new Date(donation.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}\n\n` +
-              `✅ Auto-approved and sent to OBS`;
+              statusText;
 
             for (const mod of moderators) {
               try {
