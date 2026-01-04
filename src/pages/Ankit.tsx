@@ -402,9 +402,23 @@ const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersou
     {/* Overlay for better text readability */}
     <div className="absolute inset-0 bg-black/40 pointer-events-none"></div>
 
-      <Card className="w-full max-w-sm mx-auto bg-card/95 backdrop-blur-sm border-blue-500/20 shadow-2xl relative overflow-hidden">
+      <Card className="w-full max-w-sm mx-auto bg-transparent border-blue-500/20 shadow-2xl relative overflow-hidden z-10">
+        {/* Video Background for Card */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover z-0"
+        >
+          <source src="/lovable-uploads/ankit-card-background.mp4" type="video/mp4" />
+        </video>
+        
+        {/* Card overlay for readability */}
+        <div className="absolute inset-0 bg-black/50 z-0"></div>
+        
         {/* Card glow effect */}
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-blue-600/20 to-blue-400/20 opacity-50 blur-xl"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-blue-600/20 to-blue-400/20 opacity-50 blur-xl z-0"></div>
         
         <CardHeader className="text-center relative z-10 pb-2">
           <div className="flex items-center justify-center mb-2">
