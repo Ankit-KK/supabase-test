@@ -441,7 +441,7 @@ const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersou
           <CardTitle className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent">
             Ankit
           </CardTitle>
-          <p className="text-muted-foreground text-xs">
+          <p className="text-blue-200/90 text-xs">
             Support Ankit with your donation
           </p>
         </CardHeader>
@@ -465,22 +465,22 @@ const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersou
                   <button type="button" onClick={() => handleDonationTypeChange('message')} className={`p-2 rounded-lg border-2 transition-all ${donationType === 'message' ? 'border-blue-500 bg-blue-500/10' : 'border-blue-500/30 hover:border-blue-500/50'}`}>
                     <div className="text-center">
                       <div className="text-base mb-1">💬</div>
-                      <div className="font-medium text-[10px]">Text</div>
-                      <div className="text-[9px] text-muted-foreground">Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minText}</div>
+                      <div className="font-medium text-[10px] text-blue-100">Text</div>
+                      <div className="text-[9px] text-blue-300/80">Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minText}</div>
                     </div>
                   </button>
                   <button type="button" onClick={() => handleDonationTypeChange('voice')} className={`p-2 rounded-lg border-2 transition-all ${donationType === 'voice' ? 'border-blue-500 bg-blue-500/10' : 'border-blue-500/30 hover:border-blue-500/50'}`}>
                     <div className="text-center">
                       <div className="text-base mb-1">🎤</div>
-                      <div className="font-medium text-[10px]">Voice</div>
-                      <div className="text-[9px] text-muted-foreground">Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minVoice}</div>
+                      <div className="font-medium text-[10px] text-blue-100">Voice</div>
+                      <div className="text-[9px] text-blue-300/80">Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minVoice}</div>
                     </div>
                   </button>
                   <button type="button" onClick={() => handleDonationTypeChange('hypersound')} className={`p-2 rounded-lg border-2 transition-all ${donationType === 'hypersound' ? 'border-orange-500 bg-orange-500/10' : 'border-orange-500/30 hover:border-orange-500/50'}`}>
                     <div className="text-center">
                       <div className="text-base mb-1">🔊</div>
-                      <div className="font-medium text-[10px]">Sound</div>
-                      <div className="text-[9px] text-muted-foreground">
+                      <div className="font-medium text-[10px] text-orange-100">Sound</div>
+                      <div className="text-[9px] text-orange-300/80">
                         Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minHypersound}
                       </div>
                     </div>
@@ -488,8 +488,8 @@ const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersou
                   <button type="button" onClick={() => handleDonationTypeChange('image')} className={`p-2 rounded-lg border-2 transition-all ${donationType === 'image' ? 'border-purple-500 bg-purple-500/10' : 'border-purple-500/30 hover:border-purple-500/50'}`}>
                     <div className="text-center">
                       <div className="text-base mb-1">📷</div>
-                      <div className="font-medium text-[10px]">Image</div>
-                      <div className="text-[9px] text-muted-foreground">Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minText}</div>
+                      <div className="font-medium text-[10px] text-purple-100">Image</div>
+                      <div className="text-[9px] text-purple-300/80">Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minText}</div>
                     </div>
                   </button>
                 </div>
