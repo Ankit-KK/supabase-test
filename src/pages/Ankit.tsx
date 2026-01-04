@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +20,7 @@ import HyperSoundSelector from "@/components/HyperSoundSelector";
 
 const Ankit = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [formData, setFormData] = useState({
     name: '',
     amount: '',
@@ -396,26 +398,34 @@ const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersou
   };
 
   return <div className="min-h-screen bg-transparent flex items-center justify-center p-4 relative">
-    {/* Video Background */}
-    <VideoBackground videoSrc="/lovable-uploads/ankit-background.mp4" />
-    
-    {/* Overlay for better text readability */}
-    <div className="absolute inset-0 bg-black/40 pointer-events-none"></div>
+    {/* Background - Video on desktop, gradient on mobile */}
+    {!isMobile ? (
+      <>
+        <VideoBackground videoSrc="/lovable-uploads/ankit-background.mp4" />
+        <div className="absolute inset-0 bg-black/40 pointer-events-none"></div>
+      </>
+    ) : (
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 pointer-events-none"></div>
+    )}
 
       <Card className="w-full max-w-sm mx-auto bg-transparent border-blue-500/20 shadow-2xl relative overflow-hidden z-10">
-        {/* Video Background for Card */}
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover z-0"
-        >
-          <source src="/lovable-uploads/ankit-card-background.mp4" type="video/mp4" />
-        </video>
-        
-        {/* Card overlay for readability */}
-        <div className="absolute inset-0 bg-black/50 z-0"></div>
+        {/* Card Background - Video on desktop, gradient on mobile */}
+        {!isMobile ? (
+          <>
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover z-0"
+            >
+              <source src="/lovable-uploads/ankit-card-background.mp4" type="video/mp4" />
+            </video>
+            <div className="absolute inset-0 bg-black/50 z-0"></div>
+          </>
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-800/90 via-purple-800/90 to-indigo-800/90 z-0"></div>
+        )}
         
         {/* Card glow effect */}
         <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-blue-600/20 to-blue-400/20 opacity-50 blur-xl z-0"></div>
