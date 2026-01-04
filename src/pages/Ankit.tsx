@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { toast } from "@/hooks/use-toast";
-import { Gamepad2, Heart, Sparkles, Check, ChevronsUpDown, Volume2 } from "lucide-react";
+import { Gamepad2, Heart, Sparkles, Check, ChevronsUpDown, Volume2, Image, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SUPPORTED_CURRENCIES, getCurrencySymbol, getCurrencyMinimums } from "@/constants/currencies";
 // Razorpay integration - SDK loaded dynamically
@@ -26,7 +26,9 @@ const Ankit = () => {
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
-  const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersound'>('message');
+const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersound' | 'image'>('message');
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [streamerSettings, setStreamerSettings] = useState<any>(null);
   const [hasVoiceRecording, setHasVoiceRecording] = useState(false);
   const [voiceDuration, setVoiceDuration] = useState(0);
@@ -330,7 +332,37 @@ const Ankit = () => {
     }
   };
 
-  const handleDonationTypeChange = (type: 'message' | 'voice' | 'hypersound') => {
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid File",
+          description: "Please select an image file.",
+          variant: "destructive"
+        });
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File Too Large",
+          description: "Image must be less than 5MB.",
+          variant: "destructive"
+        });
+        return;
+      }
+      setSelectedImage(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImagePreview(null);
+  };
+
+  const handleDonationTypeChange = (type: 'message' | 'voice' | 'hypersound' | 'image') => {
     setDonationType(type);
     if (type === 'hypersound') {
       const minAmount = getCurrencyMinimums(formData.currency).minHypersound;
@@ -341,12 +373,24 @@ const Ankit = () => {
       }));
       setShowHypersoundEffect(true);
       setTimeout(() => setShowHypersoundEffect(false), 3000);
+    } else if (type === 'image') {
+      const minAmount = getCurrencyMinimums(formData.currency).minText;
+      setFormData(prev => ({
+        ...prev,
+        amount: minAmount.toString(),
+        message: ''
+      }));
+      setSelectedSound(null);
     } else {
       setFormData(prev => ({
         ...prev,
         amount: ''
       }));
       setSelectedSound(null);
+    }
+    // Clear image when switching away from image type
+    if (type !== 'image') {
+      handleRemoveImage();
     }
   };
 
@@ -393,28 +437,35 @@ const Ankit = () => {
                 <label className="text-sm font-medium text-blue-500">
                   Choose your donation type
                 </label>
-                <div className="grid grid-cols-3 gap-2">
-                  <button type="button" onClick={() => handleDonationTypeChange('message')} className={`p-3 rounded-lg border-2 transition-all ${donationType === 'message' ? 'border-blue-500 bg-blue-500/10' : 'border-blue-500/30 hover:border-blue-500/50'}`}>
+                <div className="grid grid-cols-4 gap-2">
+                  <button type="button" onClick={() => handleDonationTypeChange('message')} className={`p-2 rounded-lg border-2 transition-all ${donationType === 'message' ? 'border-blue-500 bg-blue-500/10' : 'border-blue-500/30 hover:border-blue-500/50'}`}>
                     <div className="text-center">
                       <div className="text-base mb-1">💬</div>
-                      <div className="font-medium text-xs">Text Message</div>
-                      <div className="text-xs text-muted-foreground">Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minText}</div>
+                      <div className="font-medium text-[10px]">Text</div>
+                      <div className="text-[9px] text-muted-foreground">Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minText}</div>
                     </div>
                   </button>
-                  <button type="button" onClick={() => handleDonationTypeChange('voice')} className={`p-3 rounded-lg border-2 transition-all ${donationType === 'voice' ? 'border-blue-500 bg-blue-500/10' : 'border-blue-500/30 hover:border-blue-500/50'}`}>
+                  <button type="button" onClick={() => handleDonationTypeChange('voice')} className={`p-2 rounded-lg border-2 transition-all ${donationType === 'voice' ? 'border-blue-500 bg-blue-500/10' : 'border-blue-500/30 hover:border-blue-500/50'}`}>
                     <div className="text-center">
                       <div className="text-base mb-1">🎤</div>
-                      <div className="font-medium text-xs">Voice Message</div>
-                      <div className="text-xs text-muted-foreground">Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minVoice}</div>
+                      <div className="font-medium text-[10px]">Voice</div>
+                      <div className="text-[9px] text-muted-foreground">Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minVoice}</div>
                     </div>
                   </button>
-                  <button type="button" onClick={() => handleDonationTypeChange('hypersound')} className={`p-3 rounded-lg border-2 transition-all ${donationType === 'hypersound' ? 'border-orange-500 bg-orange-500/10' : 'border-orange-500/30 hover:border-orange-500/50'}`}>
+                  <button type="button" onClick={() => handleDonationTypeChange('hypersound')} className={`p-2 rounded-lg border-2 transition-all ${donationType === 'hypersound' ? 'border-orange-500 bg-orange-500/10' : 'border-orange-500/30 hover:border-orange-500/50'}`}>
                     <div className="text-center">
                       <div className="text-base mb-1">🔊</div>
-                      <div className="font-medium text-xs">HyperSounds</div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="font-medium text-[10px]">Sound</div>
+                      <div className="text-[9px] text-muted-foreground">
                         Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minHypersound}
                       </div>
+                    </div>
+                  </button>
+                  <button type="button" onClick={() => handleDonationTypeChange('image')} className={`p-2 rounded-lg border-2 transition-all ${donationType === 'image' ? 'border-purple-500 bg-purple-500/10' : 'border-purple-500/30 hover:border-purple-500/50'}`}>
+                    <div className="text-center">
+                      <div className="text-base mb-1">📷</div>
+                      <div className="font-medium text-[10px]">Image</div>
+                      <div className="text-[9px] text-muted-foreground">Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minText}</div>
                     </div>
                   </button>
                 </div>
@@ -529,6 +580,51 @@ const Ankit = () => {
                     selectedSound={selectedSound}
                     onSoundSelect={setSelectedSound}
                   />
+                </div>
+              </div>}
+
+            {/* Image Upload (Demo) */}
+            {donationType === 'image' && <div className="space-y-3">
+                <div className="p-4 rounded-lg border border-purple-500/30 bg-purple-500/5">
+                  <div className="flex items-center gap-3 mb-3">
+                    <Image className="h-5 w-5 text-purple-500" />
+                    <span className="font-medium text-purple-500">Image Upload</span>
+                    <span className="text-xs bg-yellow-500/20 text-yellow-600 px-2 py-0.5 rounded-full">Demo</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Share an image with the streamer! (Demo feature - not functional yet)
+                  </p>
+                  
+                  {!imagePreview ? (
+                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-purple-500/30 border-dashed rounded-lg cursor-pointer bg-purple-500/5 hover:bg-purple-500/10 transition-colors">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <Image className="w-8 h-8 mb-2 text-purple-400" />
+                        <p className="text-sm text-purple-400">Click to upload image</p>
+                        <p className="text-xs text-muted-foreground">PNG, JPG up to 5MB</p>
+                      </div>
+                      <input 
+                        type="file" 
+                        className="hidden" 
+                        accept="image/*"
+                        onChange={handleImageSelect}
+                      />
+                    </label>
+                  ) : (
+                    <div className="relative">
+                      <img 
+                        src={imagePreview} 
+                        alt="Preview" 
+                        className="w-full h-32 object-cover rounded-lg"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleRemoveImage}
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>}
 
