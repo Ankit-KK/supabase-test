@@ -409,8 +409,8 @@ const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersou
     )}
 
       <Card className="w-full max-w-sm mx-auto bg-transparent border-blue-500/20 shadow-2xl relative overflow-hidden z-10">
-        {/* Card Background - Video on desktop, gradient on mobile */}
-        {!isMobile ? (
+        {/* Card Background - Gradient on desktop, video on mobile */}
+        {isMobile ? (
           <>
             <video
               autoPlay
