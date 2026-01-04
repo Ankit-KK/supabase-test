@@ -405,7 +405,7 @@ const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersou
         <div className="absolute inset-0 bg-black/40 pointer-events-none"></div>
       </>
     ) : (
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 pointer-events-none"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-[#9b87f5]/30 via-[#D946EF]/20 to-[#7E69AB]/40 pointer-events-none"></div>
     )}
 
       <Card className="w-full max-w-sm mx-auto bg-transparent border-blue-500/20 shadow-2xl relative overflow-hidden z-10">
@@ -424,11 +424,11 @@ const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersou
             <div className="absolute inset-0 bg-black/50 z-0"></div>
           </>
         ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-800/90 via-purple-800/90 to-indigo-800/90 z-0"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-[#9b87f5]/40 via-[#D946EF]/30 to-[#7E69AB]/50 z-0"></div>
         )}
         
         {/* Card glow effect */}
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-blue-600/20 to-blue-400/20 opacity-50 blur-xl z-0"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-hyperchat-purple/20 via-hyperchat-pink/20 to-hyperchat-purple/20 opacity-50 blur-xl z-0"></div>
         
         <CardHeader className="text-center relative z-10 pb-2">
           <div className="flex items-center justify-center mb-2">
@@ -438,10 +438,10 @@ const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersou
               <Heart className="h-5 w-5 text-blue-400" />
             </div>
           </div>
-          <CardTitle className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent">
+          <CardTitle className="text-xl sm:text-2xl font-bold bg-hero-gradient bg-clip-text text-transparent">
             Ankit
           </CardTitle>
-          <p className="text-blue-200/90 text-xs">
+          <p className="text-white/90 text-xs">
             Support Ankit with your donation
           </p>
         </CardHeader>
@@ -450,7 +450,7 @@ const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersou
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Name Field */}
             <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-medium text-blue-500">
+              <label htmlFor="name" className="text-sm font-medium text-hyperchat-purple">
                 Your Name *
               </label>
               <Input id="name" name="name" placeholder="Enter your name" value={formData.name} onChange={handleInputChange} className="border-blue-500/30 focus:border-blue-500 focus:ring-blue-500/20" required />
@@ -458,29 +458,29 @@ const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersou
 
             {/* Donation Type Selection */}
             <div className="space-y-3">
-                <label className="text-sm font-medium text-blue-500">
+                <label className="text-sm font-medium text-hyperchat-purple">
                   Choose your donation type
                 </label>
                 <div className="grid grid-cols-4 gap-2">
                   <button type="button" onClick={() => handleDonationTypeChange('message')} className={`p-2 rounded-lg border-2 transition-all ${donationType === 'message' ? 'border-blue-500 bg-blue-500/10' : 'border-blue-500/30 hover:border-blue-500/50'}`}>
                     <div className="text-center">
                       <div className="text-base mb-1">💬</div>
-                      <div className="font-medium text-[10px] text-blue-100">Text</div>
-                      <div className="text-[9px] text-blue-300/80">Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minText}</div>
+                      <div className="font-medium text-[10px] text-white">Text</div>
+                      <div className="text-[9px] text-hyperchat-light-purple">Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minText}</div>
                     </div>
                   </button>
                   <button type="button" onClick={() => handleDonationTypeChange('voice')} className={`p-2 rounded-lg border-2 transition-all ${donationType === 'voice' ? 'border-blue-500 bg-blue-500/10' : 'border-blue-500/30 hover:border-blue-500/50'}`}>
                     <div className="text-center">
                       <div className="text-base mb-1">🎤</div>
-                      <div className="font-medium text-[10px] text-blue-100">Voice</div>
-                      <div className="text-[9px] text-blue-300/80">Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minVoice}</div>
+                      <div className="font-medium text-[10px] text-white">Voice</div>
+                      <div className="text-[9px] text-hyperchat-light-purple">Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minVoice}</div>
                     </div>
                   </button>
                   <button type="button" onClick={() => handleDonationTypeChange('hypersound')} className={`p-2 rounded-lg border-2 transition-all ${donationType === 'hypersound' ? 'border-orange-500 bg-orange-500/10' : 'border-orange-500/30 hover:border-orange-500/50'}`}>
                     <div className="text-center">
                       <div className="text-base mb-1">🔊</div>
-                      <div className="font-medium text-[10px] text-orange-100">Sound</div>
-                      <div className="text-[9px] text-orange-300/80">
+                      <div className="font-medium text-[10px] text-white">Sound</div>
+                      <div className="text-[9px] text-orange-200">
                         Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minHypersound}
                       </div>
                     </div>
@@ -488,8 +488,8 @@ const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersou
                   <button type="button" onClick={() => handleDonationTypeChange('image')} className={`p-2 rounded-lg border-2 transition-all ${donationType === 'image' ? 'border-purple-500 bg-purple-500/10' : 'border-purple-500/30 hover:border-purple-500/50'}`}>
                     <div className="text-center">
                       <div className="text-base mb-1">📷</div>
-                      <div className="font-medium text-[10px] text-purple-100">Image</div>
-                      <div className="text-[9px] text-purple-300/80">Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minText}</div>
+                      <div className="font-medium text-[10px] text-white">Image</div>
+                      <div className="text-[9px] text-hyperchat-light-purple">Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minText}</div>
                     </div>
                   </button>
                 </div>
@@ -497,7 +497,7 @@ const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersou
 
             {/* Amount Field with Inline Currency Selector */}
             <div className="space-y-2">
-              <label htmlFor="amount" className="text-sm font-medium text-blue-500">
+              <label htmlFor="amount" className="text-sm font-medium text-hyperchat-purple">
                 Amount *
               </label>
               <div className="flex gap-2">
@@ -559,29 +559,29 @@ const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersou
               {isAmountLocked && <p className="text-xs text-yellow-600 flex items-center gap-1">
                   🔒 Amount locked during voice recording
                 </p>}
-              {formData.currency === 'INR' && donationType === 'message' && <p className="text-xs text-muted-foreground">TTS above ₹70</p>}
-              {donationType === 'voice' && currentAmount >= getCurrencyMinimums(formData.currency).minVoice && <p className="text-xs text-muted-foreground">
+              {formData.currency === 'INR' && donationType === 'message' && <p className="text-xs text-white/70">TTS above ₹70</p>}
+              {donationType === 'voice' && currentAmount >= getCurrencyMinimums(formData.currency).minVoice && <p className="text-xs text-white/70">
                   Voice duration: {getVoiceDuration(currentAmount)}s
                   {formData.currency === 'INR' && currentAmount < 200 && ' (Donate ₹200+ for 20s, ₹250+ for 30s)'}
                 </p>}
-              {donationType === 'hypersound' && <p className="text-xs text-muted-foreground">
+              {donationType === 'hypersound' && <p className="text-xs text-white/70">
                   HyperSounds start at {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minHypersound}
                 </p>}
             </div>
 
             {/* Message Field */}
             {donationType === 'message' && <div className="space-y-2">
-                <label htmlFor="message" className="text-sm font-medium text-blue-500">
+                <label htmlFor="message" className="text-sm font-medium text-hyperchat-purple">
                   Message *
                 </label>
                 <textarea id="message" name="message" placeholder="Enter your message" value={formData.message} onChange={handleInputChange} className="w-full p-3 border border-blue-500/30 rounded-lg bg-background/50 backdrop-blur-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none resize-none" rows={3} maxLength={getCharacterLimit(currentAmount)} required />
-                <div className="text-xs text-muted-foreground text-right">
+                <div className="text-xs text-white/70 text-right">
                   {formData.message.length}/{getCharacterLimit(currentAmount)} characters
                 </div>
               </div>}
 
             {donationType === 'voice' && <div className="space-y-3">
-                <label className="text-sm font-medium text-blue-500">
+                <label className="text-sm font-medium text-hyperchat-purple">
                   Record Voice Message *
                 </label>
                 <VoiceRecorder onRecordingComplete={(hasRecording, duration) => {
@@ -597,7 +597,7 @@ const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersou
                     <Volume2 className="h-5 w-5 text-orange-500" />
                     <span className="font-medium text-orange-500">HyperSounds</span>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-4">
+                  <p className="text-sm text-white/70 mb-4">
                     You control the soundboard! Pick a sound to play on stream.
                   </p>
                   <HyperSoundSelector 
@@ -615,7 +615,7 @@ const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersou
                     <span className="font-medium text-purple-500">Image Upload</span>
                     <span className="text-xs bg-yellow-500/20 text-yellow-600 px-2 py-0.5 rounded-full">Demo</span>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-4">
+                  <p className="text-sm text-white/70 mb-4">
                     Share an image with the streamer! (Demo feature - not functional yet)
                   </p>
                   
@@ -624,7 +624,7 @@ const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersou
                       <div className="flex flex-col items-center justify-center pt-5 pb-6">
                         <Image className="w-8 h-8 mb-2 text-purple-400" />
                         <p className="text-sm text-purple-400">Click to upload image</p>
-                        <p className="text-xs text-muted-foreground">PNG, JPG up to 5MB</p>
+                        <p className="text-xs text-white/60">PNG, JPG up to 5MB</p>
                       </div>
                       <input 
                         type="file" 
@@ -653,7 +653,7 @@ const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersou
               </div>}
 
             {/* Submit Button */}
-            <Button type="submit" className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none" disabled={isProcessing || !razorpayLoaded}>
+            <Button type="submit" className="w-full bg-hero-gradient hover:opacity-90 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none" disabled={isProcessing || !razorpayLoaded}>
               {isProcessing ? <div className="flex items-center justify-center space-x-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   <span>Processing...</span>
