@@ -7,6 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { toast } from "@/hooks/use-toast";
 import { Gamepad2, Heart, Sparkles, Check, ChevronsUpDown, Volume2, Image, X } from "lucide-react";
+import VideoBackground from "@/components/VideoBackground";
 import { cn } from "@/lib/utils";
 import { SUPPORTED_CURRENCIES, getCurrencySymbol, getCurrencyMinimums } from "@/constants/currencies";
 // Razorpay integration - SDK loaded dynamically
@@ -394,13 +395,12 @@ const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersou
     }
   };
 
-  return <div className="min-h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center p-4">
-      {/* Background decorations */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-20 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-20 w-40 h-40 bg-blue-600/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-blue-400/10 rounded-full blur-2xl animate-pulse"></div>
-      </div>
+  return <div className="min-h-screen bg-transparent flex items-center justify-center p-4 relative">
+    {/* Video Background */}
+    <VideoBackground videoSrc="/lovable-uploads/ankit-background.mp4" />
+    
+    {/* Overlay for better text readability */}
+    <div className="absolute inset-0 bg-black/40 pointer-events-none"></div>
 
       <Card className="w-full max-w-sm mx-auto bg-card/95 backdrop-blur-sm border-blue-500/20 shadow-2xl relative overflow-hidden">
         {/* Card glow effect */}
