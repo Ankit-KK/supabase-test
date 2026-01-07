@@ -398,15 +398,9 @@ const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersou
   };
 
   return <div className="min-h-screen bg-transparent flex items-center justify-center p-4 relative">
-    {/* Background - Video on desktop, gradient on mobile */}
-    {!isMobile ? (
-      <>
-        <VideoBackground videoSrc="/lovable-uploads/ankit-background.mp4" />
-        <div className="absolute inset-0 bg-black/40 pointer-events-none"></div>
-      </>
-    ) : (
-      <div className="absolute inset-0 bg-gradient-to-br from-[#9b87f5]/30 via-[#D946EF]/20 to-[#7E69AB]/40 pointer-events-none"></div>
-    )}
+    {/* Video Background for all devices */}
+    <VideoBackground videoSrc="/lovable-uploads/ankit-background.mp4" />
+    <div className="absolute inset-0 bg-black/40 pointer-events-none"></div>
 
       <Card className="w-full max-w-sm mx-auto bg-transparent border-blue-500/20 shadow-2xl relative overflow-hidden z-10">
         {/* Card Background - Gradient on desktop, video on mobile */}
