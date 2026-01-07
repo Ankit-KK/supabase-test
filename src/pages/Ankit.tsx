@@ -432,16 +432,16 @@ const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersou
         
         <CardHeader className="text-center relative z-10 pb-2">
           <div className="flex items-center justify-center mb-2">
-            <div className="flex items-center space-x-2 text-blue-500">
+            <div className="flex items-center space-x-2 text-white drop-shadow-[0_0_8px_rgba(155,135,245,0.8)]">
               <Gamepad2 className="h-6 w-6" />
               <Sparkles className="h-5 w-5 animate-pulse" />
-              <Heart className="h-5 w-5 text-blue-400" />
+              <Heart className="h-5 w-5" />
             </div>
           </div>
-          <CardTitle className="text-xl sm:text-2xl font-bold bg-hero-gradient bg-clip-text text-transparent">
+          <CardTitle className="text-xl sm:text-2xl font-bold bg-hero-gradient bg-clip-text text-transparent drop-shadow-lg">
             Ankit
           </CardTitle>
-          <p className="text-white/90 text-xs">
+          <p className="text-white text-xs drop-shadow-md">
             Support Ankit with your donation
           </p>
         </CardHeader>
@@ -450,7 +450,7 @@ const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersou
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Name Field */}
             <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-medium text-hyperchat-purple">
+              <label htmlFor="name" className="text-sm font-semibold text-white drop-shadow-md">
                 Your Name *
               </label>
               <Input id="name" name="name" placeholder="Enter your name" value={formData.name} onChange={handleInputChange} className="border-blue-500/30 focus:border-blue-500 focus:ring-blue-500/20" required />
@@ -458,29 +458,29 @@ const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersou
 
             {/* Donation Type Selection */}
             <div className="space-y-3">
-                <label className="text-sm font-medium text-hyperchat-purple">
+                <label className="text-sm font-semibold text-white drop-shadow-md">
                   Choose your donation type
                 </label>
                 <div className="grid grid-cols-4 gap-2">
                   <button type="button" onClick={() => handleDonationTypeChange('message')} className={`p-2 rounded-lg border-2 transition-all ${donationType === 'message' ? 'border-blue-500 bg-blue-500/10' : 'border-blue-500/30 hover:border-blue-500/50'}`}>
                     <div className="text-center">
                       <div className="text-base mb-1">💬</div>
-                      <div className="font-medium text-[10px] text-white">Text</div>
-                      <div className="text-[9px] text-hyperchat-light-purple">Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minText}</div>
+                      <div className="font-semibold text-[10px] text-white drop-shadow-sm">Text</div>
+                      <div className="text-[9px] text-yellow-300 drop-shadow-sm">Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minText}</div>
                     </div>
                   </button>
                   <button type="button" onClick={() => handleDonationTypeChange('voice')} className={`p-2 rounded-lg border-2 transition-all ${donationType === 'voice' ? 'border-blue-500 bg-blue-500/10' : 'border-blue-500/30 hover:border-blue-500/50'}`}>
                     <div className="text-center">
                       <div className="text-base mb-1">🎤</div>
-                      <div className="font-medium text-[10px] text-white">Voice</div>
-                      <div className="text-[9px] text-hyperchat-light-purple">Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minVoice}</div>
+                      <div className="font-semibold text-[10px] text-white drop-shadow-sm">Voice</div>
+                      <div className="text-[9px] text-yellow-300 drop-shadow-sm">Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minVoice}</div>
                     </div>
                   </button>
                   <button type="button" onClick={() => handleDonationTypeChange('hypersound')} className={`p-2 rounded-lg border-2 transition-all ${donationType === 'hypersound' ? 'border-orange-500 bg-orange-500/10' : 'border-orange-500/30 hover:border-orange-500/50'}`}>
                     <div className="text-center">
                       <div className="text-base mb-1">🔊</div>
-                      <div className="font-medium text-[10px] text-white">Sound</div>
-                      <div className="text-[9px] text-orange-200">
+                      <div className="font-semibold text-[10px] text-white drop-shadow-sm">Sound</div>
+                      <div className="text-[9px] text-yellow-300 drop-shadow-sm">
                         Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minHypersound}
                       </div>
                     </div>
@@ -488,8 +488,8 @@ const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersou
                   <button type="button" onClick={() => handleDonationTypeChange('image')} className={`p-2 rounded-lg border-2 transition-all ${donationType === 'image' ? 'border-purple-500 bg-purple-500/10' : 'border-purple-500/30 hover:border-purple-500/50'}`}>
                     <div className="text-center">
                       <div className="text-base mb-1">📷</div>
-                      <div className="font-medium text-[10px] text-white">Image</div>
-                      <div className="text-[9px] text-hyperchat-light-purple">Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minText}</div>
+                      <div className="font-semibold text-[10px] text-white drop-shadow-sm">Image</div>
+                      <div className="text-[9px] text-yellow-300 drop-shadow-sm">Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minText}</div>
                     </div>
                   </button>
                 </div>
@@ -497,7 +497,7 @@ const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersou
 
             {/* Amount Field with Inline Currency Selector */}
             <div className="space-y-2">
-              <label htmlFor="amount" className="text-sm font-medium text-hyperchat-purple">
+              <label htmlFor="amount" className="text-sm font-semibold text-white drop-shadow-md">
                 Amount *
               </label>
               <div className="flex gap-2">
@@ -559,29 +559,29 @@ const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersou
               {isAmountLocked && <p className="text-xs text-yellow-600 flex items-center gap-1">
                   🔒 Amount locked during voice recording
                 </p>}
-              {formData.currency === 'INR' && donationType === 'message' && <p className="text-xs text-white/70">TTS above ₹70</p>}
-              {donationType === 'voice' && currentAmount >= getCurrencyMinimums(formData.currency).minVoice && <p className="text-xs text-white/70">
+              {formData.currency === 'INR' && donationType === 'message' && <p className="text-xs text-white/90 drop-shadow-sm">TTS above ₹70</p>}
+              {donationType === 'voice' && currentAmount >= getCurrencyMinimums(formData.currency).minVoice && <p className="text-xs text-white/90 drop-shadow-sm">
                   Voice duration: {getVoiceDuration(currentAmount)}s
                   {formData.currency === 'INR' && currentAmount < 200 && ' (Donate ₹200+ for 20s, ₹250+ for 30s)'}
                 </p>}
-              {donationType === 'hypersound' && <p className="text-xs text-white/70">
+              {donationType === 'hypersound' && <p className="text-xs text-white/90 drop-shadow-sm">
                   HyperSounds start at {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minHypersound}
                 </p>}
             </div>
 
             {/* Message Field */}
             {donationType === 'message' && <div className="space-y-2">
-                <label htmlFor="message" className="text-sm font-medium text-hyperchat-purple">
+                <label htmlFor="message" className="text-sm font-semibold text-white drop-shadow-md">
                   Message *
                 </label>
                 <textarea id="message" name="message" placeholder="Enter your message" value={formData.message} onChange={handleInputChange} className="w-full p-3 border border-blue-500/30 rounded-lg bg-background/50 backdrop-blur-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none resize-none" rows={3} maxLength={getCharacterLimit(currentAmount)} required />
-                <div className="text-xs text-white/70 text-right">
+                <div className="text-xs text-white/90 drop-shadow-sm text-right">
                   {formData.message.length}/{getCharacterLimit(currentAmount)} characters
                 </div>
               </div>}
 
             {donationType === 'voice' && <div className="space-y-3">
-                <label className="text-sm font-medium text-hyperchat-purple">
+                <label className="text-sm font-semibold text-white drop-shadow-md">
                   Record Voice Message *
                 </label>
                 <VoiceRecorder onRecordingComplete={(hasRecording, duration) => {
@@ -594,10 +594,10 @@ const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersou
             {donationType === 'hypersound' && <div className="space-y-3">
                 <div className="p-4 rounded-lg border border-orange-500/30 bg-orange-500/5">
                   <div className="flex items-center gap-3 mb-3">
-                    <Volume2 className="h-5 w-5 text-orange-500" />
-                    <span className="font-medium text-orange-500">HyperSounds</span>
+                    <Volume2 className="h-5 w-5 text-orange-400 drop-shadow-md" />
+                    <span className="font-semibold text-orange-400 drop-shadow-md">HyperSounds</span>
                   </div>
-                  <p className="text-sm text-white/70 mb-4">
+                  <p className="text-sm text-white/90 drop-shadow-sm mb-4">
                     You control the soundboard! Pick a sound to play on stream.
                   </p>
                   <HyperSoundSelector 
@@ -611,20 +611,20 @@ const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersou
             {donationType === 'image' && <div className="space-y-3">
                 <div className="p-4 rounded-lg border border-purple-500/30 bg-purple-500/5">
                   <div className="flex items-center gap-3 mb-3">
-                    <Image className="h-5 w-5 text-purple-500" />
-                    <span className="font-medium text-purple-500">Image Upload</span>
-                    <span className="text-xs bg-yellow-500/20 text-yellow-600 px-2 py-0.5 rounded-full">Demo</span>
+                    <Image className="h-5 w-5 text-purple-300 drop-shadow-md" />
+                    <span className="font-semibold text-purple-300 drop-shadow-md">Image Upload</span>
+                    <span className="text-xs bg-yellow-500/30 text-yellow-300 px-2 py-0.5 rounded-full drop-shadow-sm">Demo</span>
                   </div>
-                  <p className="text-sm text-white/70 mb-4">
+                  <p className="text-sm text-white/90 drop-shadow-sm mb-4">
                     Share an image with the streamer! (Demo feature - not functional yet)
                   </p>
                   
                   {!imagePreview ? (
                     <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-purple-500/30 border-dashed rounded-lg cursor-pointer bg-purple-500/5 hover:bg-purple-500/10 transition-colors">
                       <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                        <Image className="w-8 h-8 mb-2 text-purple-400" />
-                        <p className="text-sm text-purple-400">Click to upload image</p>
-                        <p className="text-xs text-white/60">PNG, JPG up to 5MB</p>
+                        <Image className="w-8 h-8 mb-2 text-purple-300 drop-shadow-md" />
+                        <p className="text-sm text-purple-300 drop-shadow-sm">Click to upload image</p>
+                        <p className="text-xs text-white/80 drop-shadow-sm">PNG, JPG up to 5MB</p>
                       </div>
                       <input 
                         type="file" 
