@@ -21,6 +21,7 @@ import HyperSoundSelector from "@/components/HyperSoundSelector";
 const Ankit = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const mobileVideoRef = useRef<HTMLVideoElement>(null);
   const [formData, setFormData] = useState({
     name: '',
     amount: '',
@@ -29,7 +30,7 @@ const Ankit = () => {
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
-const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersound' | 'image'>('message');
+  const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersound' | 'image'>('message');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [streamerSettings, setStreamerSettings] = useState<any>(null);
@@ -39,6 +40,40 @@ const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersou
   const [isAmountLocked, setIsAmountLocked] = useState(false);
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const [selectedSound, setSelectedSound] = useState<string | null>(null);
+
+  // Auto-resume mobile video when it gets paused by touch/interaction
+  useEffect(() => {
+    const video = mobileVideoRef.current;
+    if (!video || !isMobile) return;
+
+    const handlePause = () => {
+      if (document.visibilityState === 'visible') {
+        video.play().catch(() => {});
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        video.play().catch(() => {});
+      }
+    };
+
+    const handleTouchEnd = () => {
+      if (video.paused) {
+        video.play().catch(() => {});
+      }
+    };
+
+    video.addEventListener('pause', handlePause);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener('touchend', handleTouchEnd);
+
+    return () => {
+      video.removeEventListener('pause', handlePause);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [isMobile]);
 
   // Calculate character limit based on amount
   const getCharacterLimit = (amount: number): number => {
@@ -413,6 +448,7 @@ const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersou
         {isMobile ? (
           <>
             <video
+              ref={mobileVideoRef}
               autoPlay
               loop
               muted
