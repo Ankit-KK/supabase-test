@@ -2,10 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { ClumsyGodAlertDisplay } from '@/components/ClumsyGodAlertDisplay';
 import { usePusherAlerts } from '@/hooks/usePusherAlerts';
 import { usePusherConfig } from '@/hooks/usePusherConfig';
+import { useLeaderboard } from '@/hooks/useLeaderboard';
+import { ResizableWidget } from '@/components/obs/ResizableWidget';
+import { LeaderboardWidget } from '@/components/obs/LeaderboardWidget';
 import { supabase } from '@/integrations/supabase/client';
 
 const ClumsyGodObsAlerts = () => {
   const [alertBoxScale, setAlertBoxScale] = useState<number>(1.0);
+  const [leaderboardEnabled, setLeaderboardEnabled] = useState<boolean>(true);
+  const [brandColor, setBrandColor] = useState<string>('#ef4444');
 
   const { config: pusherConfig, loading: configLoading } = usePusherConfig('clumsygod');
   
@@ -26,19 +31,32 @@ const ClumsyGodObsAlerts = () => {
     },
   });
 
+  const { topDonator, latestDonations } = useLeaderboard({
+    donationsTable: 'clumsygod_donations',
+    streamerSlug: 'clumsygod',
+    pusherKey: pusherConfig?.key || '',
+    pusherCluster: pusherConfig?.cluster || '',
+  });
+
   useEffect(() => {
-    const fetchScale = async () => {
+    const fetchSettings = async () => {
       const { data, error } = await supabase
         .from('streamers')
-        .select('alert_box_scale')
+        .select('alert_box_scale, leaderboard_widget_enabled, brand_color')
         .eq('streamer_slug', 'clumsygod')
         .single();
       
-      if (!error && data?.alert_box_scale) {
-        setAlertBoxScale(Number(data.alert_box_scale));
+      if (!error && data) {
+        if (data.alert_box_scale) {
+          setAlertBoxScale(Number(data.alert_box_scale));
+        }
+        setLeaderboardEnabled(data.leaderboard_widget_enabled ?? true);
+        if (data.brand_color) {
+          setBrandColor(data.brand_color);
+        }
       }
     };
-    fetchScale();
+    fetchSettings();
 
     const channel = supabase
       .channel('clumsygod-settings')
@@ -50,6 +68,12 @@ const ClumsyGodObsAlerts = () => {
       }, (payload: any) => {
         if (payload.new?.alert_box_scale) {
           setAlertBoxScale(Number(payload.new.alert_box_scale));
+        }
+        if (payload.new?.leaderboard_widget_enabled !== undefined) {
+          setLeaderboardEnabled(payload.new.leaderboard_widget_enabled);
+        }
+        if (payload.new?.brand_color) {
+          setBrandColor(payload.new.brand_color);
         }
       })
       .subscribe();
@@ -77,6 +101,20 @@ const ClumsyGodObsAlerts = () => {
         isVisible={isVisible}
         scale={alertBoxScale}
       />
+
+      {leaderboardEnabled && (
+        <ResizableWidget
+          id="leaderboard"
+          storagePrefix="clumsygod"
+          defaultState={{ x: 50, y: 50, width: 400, height: 120 }}
+        >
+          <LeaderboardWidget
+            topDonator={topDonator}
+            latestDonations={latestDonations}
+            brandColor={brandColor}
+          />
+        </ResizableWidget>
+      )}
       
       {process.env.NODE_ENV === 'development' && (
         <div className="fixed bottom-4 left-4 bg-black/80 text-white p-3 rounded-lg text-xs space-y-2 max-w-xs">

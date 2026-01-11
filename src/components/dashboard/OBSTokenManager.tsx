@@ -19,7 +19,8 @@ import {
   ExternalLink,
   Maximize2,
   Volume2,
-  Trophy
+  Trophy,
+  Palette
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -63,13 +64,15 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
   const [alertBoxScale, setAlertBoxScale] = useState<number>(1.0);
   const [updatingScale, setUpdatingScale] = useState(false);
   const [leaderboardEnabled, setLeaderboardEnabled] = useState<boolean>(true);
+  const [leaderboardColor, setLeaderboardColor] = useState<string>('#3b82f6');
+  const [updatingColor, setUpdatingColor] = useState(false);
 
-  // Fetch alert box scale and leaderboard settings
+  // Fetch alert box scale, leaderboard settings, and brand color
   useEffect(() => {
     const fetchSettings = async () => {
       const { data, error } = await supabase
         .from('streamers')
-        .select('alert_box_scale, leaderboard_widget_enabled')
+        .select('alert_box_scale, leaderboard_widget_enabled, brand_color')
         .eq('streamer_slug', streamerSlug)
         .single();
       
@@ -78,6 +81,9 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
           setAlertBoxScale(Number(data.alert_box_scale));
         }
         setLeaderboardEnabled(data.leaderboard_widget_enabled ?? true);
+        if (data.brand_color) {
+          setLeaderboardColor(data.brand_color);
+        }
       }
     };
     fetchSettings();
@@ -105,6 +111,34 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
         description: "Failed to update leaderboard setting.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleColorChange = async (color: string) => {
+    setUpdatingColor(true);
+    try {
+      const { data, error } = await supabase.rpc('update_streamer_brand_color', {
+        p_streamer_slug: streamerSlug,
+        p_color: color
+      });
+      
+      if (error) throw error;
+      if (!data) throw new Error('Streamer not found');
+      
+      setLeaderboardColor(color);
+      toast({
+        title: "Color Updated",
+        description: "Leaderboard color has been updated. Changes apply immediately to OBS.",
+      });
+    } catch (error) {
+      console.error('Error updating brand color:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update leaderboard color.",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdatingColor(false);
     }
   };
 
@@ -512,6 +546,32 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
                 checked={leaderboardEnabled}
                 onCheckedChange={handleLeaderboardToggle}
               />
+            </div>
+
+            {/* Color Picker */}
+            <div className="flex items-center justify-between pt-4">
+              <div className="space-y-1">
+                <Label htmlFor="leaderboard-color" className="flex items-center gap-2">
+                  <Palette className="h-4 w-4" />
+                  Leaderboard Color
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Choose a custom color for your leaderboard widget
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  id="leaderboard-color"
+                  value={leaderboardColor}
+                  onChange={(e) => handleColorChange(e.target.value)}
+                  disabled={updatingColor}
+                  className="w-10 h-10 rounded cursor-pointer border border-border disabled:opacity-50"
+                />
+                <span className="text-xs font-mono text-muted-foreground">
+                  {leaderboardColor.toUpperCase()}
+                </span>
+              </div>
             </div>
           </div>
         )}
