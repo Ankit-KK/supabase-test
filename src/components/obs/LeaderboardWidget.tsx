@@ -78,7 +78,7 @@ export const LeaderboardWidget: React.FC<LeaderboardWidgetProps> = ({
   return (
     <div
       style={{
-        background: hexToDarkBg(brandColor, 0.75),
+        background: hexToDarkBg(brandColor, 0.95),
         border: `1px solid ${hexToRgba(brandColor, 0.4)}`,
         borderRadius: "1.25rem",
         padding: "16px 24px",
