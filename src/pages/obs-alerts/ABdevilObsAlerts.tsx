@@ -123,7 +123,6 @@ const ABdevilObsAlerts = () => {
           defaultState={{ x: 50, y: 50, width: 400, height: 120 }}
         >
           <LeaderboardWidget
-            key={brandColor}
             topDonator={topDonator}
             latestDonations={latestDonations}
             brandColor={brandColor}
