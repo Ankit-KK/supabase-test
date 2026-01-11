@@ -1586,6 +1586,7 @@ export type Database = {
           hyperemotes_enabled: boolean | null
           hyperemotes_min_amount: number | null
           id: string
+          leaderboard_widget_enabled: boolean | null
           moderation_mode: string | null
           pusher_group: number | null
           streamer_name: string
@@ -1608,6 +1609,7 @@ export type Database = {
           hyperemotes_enabled?: boolean | null
           hyperemotes_min_amount?: number | null
           id?: string
+          leaderboard_widget_enabled?: boolean | null
           moderation_mode?: string | null
           pusher_group?: number | null
           streamer_name: string
@@ -1630,6 +1632,7 @@ export type Database = {
           hyperemotes_enabled?: boolean | null
           hyperemotes_min_amount?: number | null
           id?: string
+          leaderboard_widget_enabled?: boolean | null
           moderation_mode?: string | null
           pusher_group?: number | null
           streamer_name?: string

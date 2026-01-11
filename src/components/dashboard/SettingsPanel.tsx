@@ -17,7 +17,8 @@ import {
   AlertCircle,
   Heart,
   Link,
-  Copy
+  Copy,
+  Trophy
 } from 'lucide-react';
 
 interface SettingsPanelProps {
@@ -29,6 +30,7 @@ interface SettingsPanelProps {
     brand_logo_url?: string;
     hyperemotes_enabled?: boolean;
     hyperemotes_min_amount?: number;
+    leaderboard_widget_enabled?: boolean;
   };
   onSettingsUpdate: () => void;
 }
@@ -42,7 +44,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     brand_color: streamerData.brand_color || '#3b82f6',
     brand_logo_url: streamerData.brand_logo_url || '',
     hyperemotes_enabled: streamerData.hyperemotes_enabled || false,
-    hyperemotes_min_amount: streamerData.hyperemotes_min_amount || 1
+    hyperemotes_min_amount: streamerData.hyperemotes_min_amount || 1,
+    leaderboard_widget_enabled: streamerData.leaderboard_widget_enabled ?? true
   });
   const [saving, setSaving] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
@@ -64,7 +67,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
           brand_color: settings.brand_color,
           brand_logo_url: settings.brand_logo_url || null,
           hyperemotes_enabled: settings.hyperemotes_enabled,
-          hyperemotes_min_amount: settings.hyperemotes_min_amount
+          hyperemotes_min_amount: settings.hyperemotes_min_amount,
+          leaderboard_widget_enabled: settings.leaderboard_widget_enabled
         })
         .eq('id', streamerData.id);
 
@@ -286,6 +290,30 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
               </p>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Leaderboard Widget Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Trophy className="h-5 w-5" />
+            <span>Leaderboard Widget</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <Label>Show Leaderboard on OBS</Label>
+              <p className="text-sm text-muted-foreground">
+                Display Top Donator and !hyperchat widget on your stream
+              </p>
+            </div>
+            <Switch
+              checked={settings.leaderboard_widget_enabled}
+              onCheckedChange={(checked) => handleInputChange('leaderboard_widget_enabled', checked)}
+            />
+          </div>
         </CardContent>
       </Card>
 
