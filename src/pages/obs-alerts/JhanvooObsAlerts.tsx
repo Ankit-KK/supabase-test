@@ -123,6 +123,7 @@ const JhanvooObsAlerts = () => {
           defaultState={{ x: 50, y: 50, width: 400, height: 120 }}
         >
           <LeaderboardWidget
+            key={brandColor}
             topDonator={topDonator}
             latestDonations={latestDonations}
             brandColor={brandColor}
@@ -136,6 +137,17 @@ const JhanvooObsAlerts = () => {
           <div>Status: {connectionStatus}</div>
           <div>Channel: jhanvoo-alerts</div>
           <div>Group: {pusherConfig?.group || 1}</div>
+          <div className="flex items-center gap-2">
+            <span>Color:</span>
+            <div style={{ 
+              width: 16, 
+              height: 16, 
+              backgroundColor: brandColor, 
+              border: '1px solid white',
+              borderRadius: 4 
+            }} />
+            <span>{brandColor}</span>
+          </div>
           <button 
             onClick={triggerTestAlert}
             className="mt-2 px-2 py-1 bg-indigo-600 rounded hover:bg-indigo-700"
