@@ -123,6 +123,7 @@ const ClumsyGodObsAlerts = () => {
           defaultState={{ x: 50, y: 50, width: 400, height: 120 }}
         >
           <LeaderboardWidget
+            key={brandColor}
             topDonator={topDonator}
             latestDonations={latestDonations}
             brandColor={brandColor}
@@ -146,6 +147,17 @@ const ClumsyGodObsAlerts = () => {
           <div>Channel: clumsygod-alerts</div>
           <div>Queue: {queueSize} alert{queueSize !== 1 ? 's' : ''}</div>
           <div>Alert: {currentAlert ? `🔔 ${currentAlert.name}` : '⏸️ None'}</div>
+          <div className="flex items-center gap-2">
+            <span>Color:</span>
+            <div style={{ 
+              width: 16, 
+              height: 16, 
+              backgroundColor: brandColor, 
+              border: '1px solid white',
+              borderRadius: 4 
+            }} />
+            <span>{brandColor}</span>
+          </div>
           <button 
             onClick={triggerTestAlert}
             className="w-full px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded text-xs font-medium transition-colors"
