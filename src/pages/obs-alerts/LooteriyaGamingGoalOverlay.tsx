@@ -13,16 +13,44 @@ interface GoalData {
   goal_is_active: boolean;
 }
 
+// Color helper functions
+const hexToRgba = (hex: string, alpha: number) => {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
+const hexToDarkBg = (hex: string, alpha: number) => {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const darkR = Math.floor(r * 0.15 + 20);
+  const darkG = Math.floor(g * 0.1 + 10);
+  const darkB = Math.floor(b * 0.2 + 30);
+  return `rgba(${darkR}, ${darkG}, ${darkB}, ${alpha})`;
+};
+
+const hexToLightVariant = (hex: string) => {
+  const r = Math.min(255, parseInt(hex.slice(1, 3), 16) + 60);
+  const g = Math.min(255, parseInt(hex.slice(3, 5), 16) + 60);
+  const b = Math.min(255, parseInt(hex.slice(5, 7), 16) + 60);
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+};
+
 const LooteriyaGamingGoalOverlay = () => {
   const [goalData, setGoalData] = useState<GoalData | null>(null);
   const [currentAmount, setCurrentAmount] = useState(0);
+  const [brandColor, setBrandColor] = useState<string>("#9333ea"); // Default purple
   const [pusherConfig, setPusherConfig] = useState<{
     key: string;
     cluster: string;
   } | null>(null);
   const pusherRef = useRef<Pusher | null>(null);
-  // Logo is now always visible (static display)
   const [showCelebration, setShowCelebration] = useState(false);
+
+  // Derived colors from brandColor
+  const lightColor = hexToLightVariant(brandColor);
 
   // Fetch Pusher config
   useEffect(() => {
@@ -52,11 +80,16 @@ const LooteriyaGamingGoalOverlay = () => {
     try {
       const { data: streamer, error } = await supabase
         .from("streamers")
-        .select("goal_name, goal_target_amount, goal_activated_at, goal_is_active")
+        .select("goal_name, goal_target_amount, goal_activated_at, goal_is_active, brand_color")
         .eq("id", LOOTERIYA_GAMING_STREAMER_ID)
         .single();
 
       if (error) throw error;
+
+      // Update brand color if available
+      if (streamer?.brand_color) {
+        setBrandColor(streamer.brand_color);
+      }
 
       // Only proceed if goal is active
       if (!streamer?.goal_is_active || !streamer.goal_activated_at) {
@@ -111,18 +144,30 @@ const LooteriyaGamingGoalOverlay = () => {
 
     pusherRef.current = pusher;
 
-    const channel = pusher.subscribe("looteriya_gaming-goal");
-
-    channel.bind("goal-progress", (data: { currentAmount: number }) => {
+    // Subscribe to goal progress channel
+    const goalChannel = pusher.subscribe("looteriya_gaming-goal");
+    goalChannel.bind("goal-progress", (data: { currentAmount: number }) => {
       console.log("Goal progress update:", data);
       setCurrentAmount(data.currentAmount);
+    });
+
+    // Subscribe to settings channel for brand color updates
+    const settingsChannel = pusher.subscribe("looteriya_gaming-settings");
+    settingsChannel.bind("settings-updated", (rawData: any) => {
+      console.log("[GoalOverlay] Settings update received:", rawData);
+      const data = typeof rawData === "string" ? JSON.parse(rawData) : rawData;
+      if (data.brand_color) {
+        setBrandColor(data.brand_color);
+      }
     });
 
     return () => {
       if (pusherRef.current) {
         try {
-          channel.unbind_all();
-          channel.unsubscribe();
+          goalChannel.unbind_all();
+          goalChannel.unsubscribe();
+          settingsChannel.unbind_all();
+          settingsChannel.unsubscribe();
           pusherRef.current.disconnect();
         } catch (e) {
           console.log("Pusher cleanup:", e);
@@ -168,13 +213,13 @@ const LooteriyaGamingGoalOverlay = () => {
   return (
     <div className="w-screen h-screen bg-transparent overflow-hidden flex items-center justify-center">
       <div className="relative w-[min(80vw,900px)]">
-        {/* Goal Card - Purple Theme */}
+        {/* Goal Card - Dynamic Brand Color Theme */}
         <div
           className="relative px-7 py-5 rounded-[1.25rem] text-white"
           style={{
-            background: "rgba(45, 20, 60, 0.75)",
-            border: "1px solid rgba(168, 85, 247, 0.4)",
-            boxShadow: "0 18px 35px rgba(0, 0, 0, 0.6), 0 0 40px rgba(147, 51, 234, 0.3)",
+            background: hexToDarkBg(brandColor, 0.95),
+            border: `1px solid ${hexToRgba(brandColor, 0.4)}`,
+            boxShadow: `0 18px 35px rgba(0, 0, 0, 0.6), 0 0 40px ${hexToRgba(brandColor, 0.3)}`,
           }}
         >
           {/* Title Row */}
@@ -203,24 +248,24 @@ const LooteriyaGamingGoalOverlay = () => {
             </span>
           </div>
 
-          {/* Divider - Purple */}
-          <div className="w-full h-px mb-3" style={{ background: "rgba(168, 85, 247, 0.35)" }} />
+          {/* Divider */}
+          <div className="w-full h-px mb-3" style={{ background: hexToRgba(brandColor, 0.35) }} />
 
-          {/* Progress Bar Track - Purple */}
+          {/* Progress Bar Track */}
           <div
             className="relative w-full h-[18px] rounded-full overflow-hidden"
             style={{
-              background: "rgba(30, 15, 40, 1)",
-              border: "1px solid rgba(168, 85, 247, 0.6)",
+              background: hexToDarkBg(brandColor, 1),
+              border: `1px solid ${hexToRgba(brandColor, 0.6)}`,
             }}
           >
-            {/* Progress Fill - Purple Gradient */}
+            {/* Progress Fill - Dynamic Gradient */}
             <div
               className="relative h-full rounded-full transition-[width] duration-1000"
               style={{
                 width: `${percentage}%`,
-                background: "linear-gradient(90deg, #9333ea, #c084fc)",
-                boxShadow: "0 0 14px rgba(147, 51, 234, 0.8), 0 0 26px rgba(192, 132, 252, 0.7)",
+                background: `linear-gradient(90deg, ${brandColor}, ${lightColor})`,
+                boxShadow: `0 0 14px ${hexToRgba(brandColor, 0.8)}, 0 0 26px ${hexToRgba(lightColor, 0.7)}`,
                 transitionTimingFunction: "cubic-bezier(0.23, 0.9, 0.32, 1.01)",
               }}
             >
@@ -237,7 +282,7 @@ const LooteriyaGamingGoalOverlay = () => {
           </div>
         </div>
 
-        {/* Goal Reached Celebration - Purple */}
+        {/* Goal Reached Celebration */}
         {showCelebration && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             {/* Confetti Particles */}
@@ -246,7 +291,7 @@ const LooteriyaGamingGoalOverlay = () => {
                 key={i}
                 className="absolute w-3 h-3 rounded-full"
                 style={{
-                  background: i % 3 === 0 ? "#9333ea" : i % 3 === 1 ? "#c084fc" : "#ffffff",
+                  background: i % 3 === 0 ? brandColor : i % 3 === 1 ? lightColor : "#ffffff",
                   left: "50%",
                   top: "50%",
                   animation: `confettiBurst 1.5s ease-out ${i * 0.05}s forwards`,
@@ -255,19 +300,23 @@ const LooteriyaGamingGoalOverlay = () => {
               />
             ))}
 
-            {/* Neon Ripple - Purple */}
+            {/* Neon Ripple */}
             <div
-              className="absolute rounded-full bg-gradient-to-r from-[#9333ea] to-[#c084fc] opacity-50"
+              className="absolute rounded-full opacity-50"
               style={{
                 width: "100px",
                 height: "100px",
+                background: `linear-gradient(to right, ${brandColor}, ${lightColor})`,
                 animation: "rippleExpand 1.5s ease-out infinite",
               }}
             />
 
             {/* Goal Reached Text */}
             <div className="relative mt-32">
-              <h2 className="text-4xl font-bold text-white drop-shadow-[0_0_20px_rgba(147,51,234,1)] animate-pulse">
+              <h2 
+                className="text-4xl font-bold text-white animate-pulse"
+                style={{ textShadow: `0 0 20px ${brandColor}` }}
+              >
                 GOAL REACHED! 🎉
               </h2>
             </div>
