@@ -338,6 +338,9 @@ const Ankit = () => {
         prefill: {
           name: formData.name.trim()
         },
+        hidden: {
+          contact: true
+        },
         theme: {
           color: '#3b82f6'
         },
