@@ -100,6 +100,15 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
       if (!data) throw new Error('Streamer not found');
       
       setLeaderboardEnabled(enabled);
+      
+      // Broadcast via Pusher for real-time OBS updates
+      await supabase.functions.invoke('broadcast-settings-update', {
+        body: {
+          streamer_slug: streamerSlug,
+          settings: { leaderboard_widget_enabled: enabled }
+        }
+      });
+      
       toast({
         title: enabled ? "Leaderboard Enabled" : "Leaderboard Disabled",
         description: "Changes apply immediately to OBS.",
@@ -126,6 +135,15 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
       if (!data) throw new Error('Streamer not found');
       
       setLeaderboardColor(color);
+      
+      // Broadcast via Pusher for real-time OBS updates
+      await supabase.functions.invoke('broadcast-settings-update', {
+        body: {
+          streamer_slug: streamerSlug,
+          settings: { brand_color: color }
+        }
+      });
+      
       toast({
         title: "Color Updated",
         description: "Leaderboard color has been updated. Changes apply immediately to OBS.",

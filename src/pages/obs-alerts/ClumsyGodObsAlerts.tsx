@@ -6,6 +6,7 @@ import { useLeaderboard } from '@/hooks/useLeaderboard';
 import { ResizableWidget } from '@/components/obs/ResizableWidget';
 import { LeaderboardWidget } from '@/components/obs/LeaderboardWidget';
 import { supabase } from '@/integrations/supabase/client';
+import Pusher from 'pusher-js';
 
 const ClumsyGodObsAlerts = () => {
   const [alertBoxScale, setAlertBoxScale] = useState<number>(1.0);
@@ -38,6 +39,7 @@ const ClumsyGodObsAlerts = () => {
     pusherCluster: pusherConfig?.cluster || '',
   });
 
+  // Fetch initial settings from database
   useEffect(() => {
     const fetchSettings = async () => {
       const { data, error } = await supabase
@@ -57,31 +59,38 @@ const ClumsyGodObsAlerts = () => {
       }
     };
     fetchSettings();
+  }, []);
 
-    const channel = supabase
-      .channel('clumsygod-settings')
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'streamers',
-        filter: 'streamer_slug=eq.clumsygod'
-      }, (payload: any) => {
-        if (payload.new?.alert_box_scale) {
-          setAlertBoxScale(Number(payload.new.alert_box_scale));
-        }
-        if (payload.new?.leaderboard_widget_enabled !== undefined) {
-          setLeaderboardEnabled(payload.new.leaderboard_widget_enabled);
-        }
-        if (payload.new?.brand_color) {
-          setBrandColor(payload.new.brand_color);
-        }
-      })
-      .subscribe();
+  // Subscribe to Pusher for real-time settings updates
+  useEffect(() => {
+    if (!pusherConfig?.key || !pusherConfig?.cluster) return;
+
+    const pusher = new Pusher(pusherConfig.key, {
+      cluster: pusherConfig.cluster,
+    });
+
+    const settingsChannel = pusher.subscribe('clumsygod-settings');
+
+    settingsChannel.bind('settings-updated', (data: any) => {
+      console.log('[OBS] Settings update received:', data);
+      
+      if (data.leaderboard_widget_enabled !== undefined) {
+        setLeaderboardEnabled(data.leaderboard_widget_enabled);
+      }
+      if (data.brand_color) {
+        setBrandColor(data.brand_color);
+      }
+      if (data.alert_box_scale) {
+        setAlertBoxScale(Number(data.alert_box_scale));
+      }
+    });
 
     return () => {
-      supabase.removeChannel(channel);
+      settingsChannel.unbind_all();
+      pusher.unsubscribe('clumsygod-settings');
+      pusher.disconnect();
     };
-  }, []);
+  }, [pusherConfig]);
 
   if (configLoading || !pusherConfig) {
     return (
