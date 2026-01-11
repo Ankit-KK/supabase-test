@@ -71,13 +71,18 @@ const ClumsyGodObsAlerts = () => {
 
     const settingsChannel = pusher.subscribe('clumsygod-settings');
 
-    settingsChannel.bind('settings-updated', (data: any) => {
-      console.log('[OBS] Settings update received:', data);
+    settingsChannel.bind('settings-updated', (rawData: any) => {
+      console.log('[OBS] Raw data received:', rawData, 'type:', typeof rawData);
+      
+      // Parse if data is a string (Pusher double-stringifies)
+      const data = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+      console.log('[OBS] Parsed data:', data);
       
       if (data.leaderboard_widget_enabled !== undefined) {
         setLeaderboardEnabled(data.leaderboard_widget_enabled);
       }
       if (data.brand_color) {
+        console.log('[OBS] Setting brand color to:', data.brand_color);
         setBrandColor(data.brand_color);
       }
       if (data.alert_box_scale) {
