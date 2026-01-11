@@ -704,6 +704,11 @@ const Ankit = () => {
                   <span>Donate {getCurrencySymbol(formData.currency)}{formData.amount || '0'}</span>
                 </span>}
             </Button>
+            
+            {/* RBI Regulation Notice */}
+            <p className="text-xs text-white/70 text-center mt-2">
+              Phone numbers are collected by Razorpay as per RBI regulations
+            </p>
           </form>
         </CardContent>
       </Card>
