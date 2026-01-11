@@ -18,8 +18,11 @@ import {
   AlertCircle,
   ExternalLink,
   Maximize2,
-  Volume2
+  Volume2,
+  Trophy
 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { GoalManager } from './GoalManager';
 import {
   Select,
@@ -59,22 +62,50 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
   const [copySuccess, setCopySuccess] = useState<string | null>(null);
   const [alertBoxScale, setAlertBoxScale] = useState<number>(1.0);
   const [updatingScale, setUpdatingScale] = useState(false);
+  const [leaderboardEnabled, setLeaderboardEnabled] = useState<boolean>(true);
 
-  // Fetch alert box scale setting
+  // Fetch alert box scale and leaderboard settings
   useEffect(() => {
-    const fetchScale = async () => {
+    const fetchSettings = async () => {
       const { data, error } = await supabase
         .from('streamers')
-        .select('alert_box_scale')
+        .select('alert_box_scale, leaderboard_widget_enabled')
         .eq('streamer_slug', streamerSlug)
         .single();
       
-      if (!error && data?.alert_box_scale) {
-        setAlertBoxScale(Number(data.alert_box_scale));
+      if (!error && data) {
+        if (data.alert_box_scale) {
+          setAlertBoxScale(Number(data.alert_box_scale));
+        }
+        setLeaderboardEnabled(data.leaderboard_widget_enabled ?? true);
       }
     };
-    fetchScale();
+    fetchSettings();
   }, [streamerSlug]);
+
+  const handleLeaderboardToggle = async (enabled: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('streamers')
+        .update({ leaderboard_widget_enabled: enabled })
+        .eq('streamer_slug', streamerSlug);
+      
+      if (error) throw error;
+      
+      setLeaderboardEnabled(enabled);
+      toast({
+        title: enabled ? "Leaderboard Enabled" : "Leaderboard Disabled",
+        description: "Changes apply immediately to OBS.",
+      });
+    } catch (error) {
+      console.error('Error updating leaderboard setting:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update leaderboard setting.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleScaleChange = async (value: string) => {
     setUpdatingScale(true);
@@ -457,6 +488,30 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
               <Key className="h-4 w-4 mr-2" />
               Generate Your First Token
             </Button>
+          </div>
+        )}
+
+        {/* Leaderboard Widget Toggle */}
+        {activeToken && (
+          <div className="space-y-4 pt-6 border-t">
+            <h3 className="font-semibold flex items-center space-x-2">
+              <Trophy className="h-4 w-4" />
+              <span>Leaderboard Widget</span>
+            </h3>
+            
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label htmlFor="leaderboard-toggle">Show Leaderboard on OBS</Label>
+                <p className="text-sm text-muted-foreground">
+                  Display Top Donator and !hyperchat widget on your stream
+                </p>
+              </div>
+              <Switch
+                id="leaderboard-toggle"
+                checked={leaderboardEnabled}
+                onCheckedChange={handleLeaderboardToggle}
+              />
+            </div>
           </div>
         )}
 
