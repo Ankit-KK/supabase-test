@@ -63,7 +63,7 @@ export const LeaderboardWidget: React.FC<LeaderboardWidgetProps> = ({
   return (
     <div
       style={{
-        background: "rgba(20, 20, 30, 0.9)",
+        background: `linear-gradient(135deg, rgba(20, 20, 30, 0.95), ${hexToRgba(brandColor, 0.25)})`,
         border: `1px solid ${hexToRgba(brandColor, 0.4)}`,
         borderRadius: "16px",
         padding: "16px 24px",
