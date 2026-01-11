@@ -16,6 +16,7 @@ interface GoalData {
 const ThunderXGoalOverlay = () => {
   const [goalData, setGoalData] = useState<GoalData | null>(null);
   const [currentAmount, setCurrentAmount] = useState(0);
+  const [brandColor, setBrandColor] = useState<string>('#6c63ff');
   const [pusherConfig, setPusherConfig] = useState<{
     key: string;
     cluster: string;
@@ -45,11 +46,15 @@ const ThunderXGoalOverlay = () => {
     try {
       const { data: streamer, error } = await supabase
         .from('streamers')
-        .select('goal_name, goal_target_amount, goal_activated_at, goal_is_active')
+        .select('goal_name, goal_target_amount, goal_activated_at, goal_is_active, brand_color')
         .eq('id', THUNDERX_STREAMER_ID)
         .single();
 
       if (error) throw error;
+
+      if (streamer?.brand_color) {
+        setBrandColor(streamer.brand_color);
+      }
 
       if (!streamer?.goal_is_active || !streamer.goal_activated_at) {
         setGoalData(null);
@@ -92,16 +97,26 @@ const ThunderXGoalOverlay = () => {
     const pusher = new Pusher(pusherConfig.key, { cluster: pusherConfig.cluster });
     pusherRef.current = pusher;
 
-    const channel = pusher.subscribe('thunderx-goal');
-    channel.bind('goal-progress', (data: { currentAmount: number }) => {
+    const goalChannel = pusher.subscribe('thunderx-goal');
+    goalChannel.bind('goal-progress', (data: { currentAmount: number }) => {
       setCurrentAmount(data.currentAmount);
+    });
+
+    const settingsChannel = pusher.subscribe('thunderx-settings');
+    settingsChannel.bind('settings-updated', (rawData: any) => {
+      const data = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+      if (data.brand_color) {
+        setBrandColor(data.brand_color);
+      }
     });
 
     return () => {
       if (pusherRef.current) {
         try {
-          channel.unbind_all();
-          channel.unsubscribe();
+          goalChannel.unbind_all();
+          settingsChannel.unbind_all();
+          pusher.unsubscribe('thunderx-goal');
+          pusher.unsubscribe('thunderx-settings');
           pusherRef.current.disconnect();
         } catch (e) {
           console.log('Pusher cleanup:', e);
@@ -119,6 +134,7 @@ const ThunderXGoalOverlay = () => {
         goalName={goalData.goal_name}
         currentAmount={currentAmount}
         targetAmount={goalData.goal_target_amount}
+        brandColor={brandColor}
       />
     </div>
   );

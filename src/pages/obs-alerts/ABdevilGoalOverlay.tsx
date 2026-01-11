@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import GoalOverlay from '@/components/GoalOverlay';
 import { supabase } from '@/integrations/supabase/client';
 import Pusher from 'pusher-js';
 import { convertToINR } from '@/constants/currencies';
+
+const ABDEVIL_STREAMER_ID = '73b5d392-6dfb-42ad-9018-c06fd951f757';
 
 interface GoalData {
   goalName: string;
@@ -14,7 +16,9 @@ interface GoalData {
 const ABdevilGoalOverlay = () => {
   const [goalData, setGoalData] = useState<GoalData | null>(null);
   const [currentAmount, setCurrentAmount] = useState(0);
+  const [brandColor, setBrandColor] = useState<string>('#f97316');
   const [pusherConfig, setPusherConfig] = useState<{ key: string; cluster: string } | null>(null);
+  const pusherRef = useRef<Pusher | null>(null);
 
   useEffect(() => {
     const fetchPusherConfig = async () => {
@@ -32,11 +36,14 @@ const ABdevilGoalOverlay = () => {
     const fetchGoalData = async () => {
       const { data: streamerData } = await supabase
         .from('streamers')
-        .select('goal_name, goal_target_amount, goal_activated_at, goal_is_active')
-        .eq('id', '73b5d392-6dfb-42ad-9018-c06fd951f757')
+        .select('goal_name, goal_target_amount, goal_activated_at, goal_is_active, brand_color')
+        .eq('id', ABDEVIL_STREAMER_ID)
         .single();
 
       if (streamerData) {
+        if (streamerData.brand_color) {
+          setBrandColor(streamerData.brand_color);
+        }
         setGoalData({
           goalName: streamerData.goal_name || '',
           targetAmount: streamerData.goal_target_amount || 0,
@@ -64,21 +71,39 @@ const ABdevilGoalOverlay = () => {
   }, []);
 
   useEffect(() => {
-    if (!pusherConfig?.key) return;
+    if (!pusherConfig?.key || pusherRef.current) return;
 
     const pusher = new Pusher(pusherConfig.key, {
       cluster: pusherConfig.cluster,
     });
+    pusherRef.current = pusher;
 
-    const channel = pusher.subscribe('abdevil-goal');
-    channel.bind('goal-progress', (data: { currentAmount: number; targetAmount: number }) => {
+    const goalChannel = pusher.subscribe('abdevil-goal');
+    goalChannel.bind('goal-progress', (data: { currentAmount: number }) => {
       setCurrentAmount(data.currentAmount);
     });
 
+    const settingsChannel = pusher.subscribe('abdevil-settings');
+    settingsChannel.bind('settings-updated', (rawData: any) => {
+      const data = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+      if (data.brand_color) {
+        setBrandColor(data.brand_color);
+      }
+    });
+
     return () => {
-      channel.unbind_all();
-      pusher.unsubscribe('abdevil-goal');
-      pusher.disconnect();
+      if (pusherRef.current) {
+        try {
+          goalChannel.unbind_all();
+          settingsChannel.unbind_all();
+          pusher.unsubscribe('abdevil-goal');
+          pusher.unsubscribe('abdevil-settings');
+          pusherRef.current.disconnect();
+        } catch (e) {
+          console.log('Pusher cleanup:', e);
+        }
+        pusherRef.current = null;
+      }
     };
   }, [pusherConfig]);
 
@@ -87,11 +112,14 @@ const ABdevilGoalOverlay = () => {
   }
 
   return (
-    <GoalOverlay
-      goalName={goalData.goalName}
-      currentAmount={currentAmount}
-      targetAmount={goalData.targetAmount}
-    />
+    <div className="w-screen h-screen bg-transparent overflow-hidden flex items-center justify-center">
+      <GoalOverlay
+        goalName={goalData.goalName}
+        currentAmount={currentAmount}
+        targetAmount={goalData.targetAmount}
+        brandColor={brandColor}
+      />
+    </div>
   );
 };
 
