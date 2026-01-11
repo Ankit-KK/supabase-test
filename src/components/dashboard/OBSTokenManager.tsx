@@ -85,12 +85,13 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
 
   const handleLeaderboardToggle = async (enabled: boolean) => {
     try {
-      const { error } = await supabase
-        .from('streamers')
-        .update({ leaderboard_widget_enabled: enabled })
-        .eq('streamer_slug', streamerSlug);
+      const { data, error } = await supabase.rpc('update_streamer_leaderboard_setting', {
+        p_streamer_slug: streamerSlug,
+        p_enabled: enabled
+      });
       
       if (error) throw error;
+      if (!data) throw new Error('Streamer not found');
       
       setLeaderboardEnabled(enabled);
       toast({

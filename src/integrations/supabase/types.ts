@@ -2788,6 +2788,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      update_streamer_leaderboard_setting: {
+        Args: { p_enabled: boolean; p_streamer_slug: string }
+        Returns: boolean
+      }
       update_user_profile: {
         Args: { new_username: string; user_id: string }
         Returns: undefined
