@@ -2778,6 +2778,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      update_streamer_brand_color: {
+        Args: { p_color: string; p_streamer_slug: string }
+        Returns: boolean
+      }
       update_streamer_goal: {
         Args: {
           p_goal_activated_at?: string
