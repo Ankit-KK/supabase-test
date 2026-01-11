@@ -60,12 +60,27 @@ export const LeaderboardWidget: React.FC<LeaderboardWidgetProps> = ({
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   };
 
+  // Convert hex to dark desaturated background (matches goal overlay style)
+  const hexToDarkBg = (hex: string, alpha: number) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    
+    // Create a very dark version by mixing with near-black
+    // This mimics how goal overlay uses rgba(45, 20, 60, 0.75) for purple
+    const darkR = Math.floor(r * 0.15 + 20);
+    const darkG = Math.floor(g * 0.1 + 10);
+    const darkB = Math.floor(b * 0.2 + 30);
+    
+    return `rgba(${darkR}, ${darkG}, ${darkB}, ${alpha})`;
+  };
+
   return (
     <div
       style={{
-        background: hexToRgba(brandColor, 0.4),
+        background: hexToDarkBg(brandColor, 0.75),
         border: `1px solid ${hexToRgba(brandColor, 0.4)}`,
-        borderRadius: "16px",
+        borderRadius: "1.25rem",
         padding: "16px 24px",
         boxShadow: `0 18px 35px rgba(0, 0, 0, 0.6), 0 0 40px ${hexToRgba(brandColor, 0.3)}`,
         width: "100%",
