@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import GoalOverlay from '@/components/GoalOverlay';
 import { supabase } from '@/integrations/supabase/client';
 import Pusher from 'pusher-js';
 import { convertToINR } from '@/constants/currencies';
+
+const CLUMSYGOD_STREAMER_ID = '320d8369-f75f-419a-98a9-16d5f5ceaf16';
 
 interface GoalData {
   goalName: string;
@@ -14,7 +16,9 @@ interface GoalData {
 const ClumsyGodGoalOverlay = () => {
   const [goalData, setGoalData] = useState<GoalData | null>(null);
   const [currentAmount, setCurrentAmount] = useState(0);
+  const [brandColor, setBrandColor] = useState<string>('#ef4444');
   const [pusherConfig, setPusherConfig] = useState<{ key: string; cluster: string } | null>(null);
+  const pusherRef = useRef<Pusher | null>(null);
 
   useEffect(() => {
     const fetchPusherConfig = async () => {
@@ -32,11 +36,14 @@ const ClumsyGodGoalOverlay = () => {
     const fetchGoalData = async () => {
       const { data: streamerData } = await supabase
         .from('streamers')
-        .select('goal_name, goal_target_amount, goal_activated_at, goal_is_active')
-        .eq('id', '320d8369-f75f-419a-98a9-16d5f5ceaf16')
+        .select('goal_name, goal_target_amount, goal_activated_at, goal_is_active, brand_color')
+        .eq('id', CLUMSYGOD_STREAMER_ID)
         .single();
 
       if (streamerData) {
+        if (streamerData.brand_color) {
+          setBrandColor(streamerData.brand_color);
+        }
         setGoalData({
           goalName: streamerData.goal_name || '',
           targetAmount: streamerData.goal_target_amount || 0,
@@ -64,21 +71,39 @@ const ClumsyGodGoalOverlay = () => {
   }, []);
 
   useEffect(() => {
-    if (!pusherConfig?.key) return;
+    if (!pusherConfig?.key || pusherRef.current) return;
 
     const pusher = new Pusher(pusherConfig.key, {
       cluster: pusherConfig.cluster,
     });
+    pusherRef.current = pusher;
 
-    const channel = pusher.subscribe('clumsygod-goal');
-    channel.bind('goal-progress', (data: { currentAmount: number; targetAmount: number }) => {
+    const goalChannel = pusher.subscribe('clumsygod-goal');
+    goalChannel.bind('goal-progress', (data: { currentAmount: number; targetAmount: number }) => {
       setCurrentAmount(data.currentAmount);
     });
 
+    const settingsChannel = pusher.subscribe('clumsygod-settings');
+    settingsChannel.bind('settings-updated', (rawData: any) => {
+      const data = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+      if (data.brand_color) {
+        setBrandColor(data.brand_color);
+      }
+    });
+
     return () => {
-      channel.unbind_all();
-      pusher.unsubscribe('clumsygod-goal');
-      pusher.disconnect();
+      if (pusherRef.current) {
+        try {
+          goalChannel.unbind_all();
+          settingsChannel.unbind_all();
+          pusher.unsubscribe('clumsygod-goal');
+          pusher.unsubscribe('clumsygod-settings');
+          pusherRef.current.disconnect();
+        } catch (e) {
+          console.log('Pusher cleanup:', e);
+        }
+        pusherRef.current = null;
+      }
     };
   }, [pusherConfig]);
 
@@ -87,11 +112,14 @@ const ClumsyGodGoalOverlay = () => {
   }
 
   return (
-    <GoalOverlay
-      goalName={goalData.goalName}
-      currentAmount={currentAmount}
-      targetAmount={goalData.targetAmount}
-    />
+    <div className="w-screen h-screen bg-transparent overflow-hidden flex items-center justify-center">
+      <GoalOverlay
+        goalName={goalData.goalName}
+        currentAmount={currentAmount}
+        targetAmount={goalData.targetAmount}
+        brandColor={brandColor}
+      />
+    </div>
   );
 };
 

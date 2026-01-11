@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import GoalOverlay from '@/components/GoalOverlay';
 import { supabase } from '@/integrations/supabase/client';
 import Pusher from 'pusher-js';
@@ -14,8 +14,9 @@ interface GoalData {
 const JimmyGamingGoalOverlay = () => {
   const [goalData, setGoalData] = useState<GoalData | null>(null);
   const [currentAmount, setCurrentAmount] = useState(0);
+  const [brandColor, setBrandColor] = useState<string>('#6c63ff');
   const [pusherConfig, setPusherConfig] = useState<{ key: string; cluster: string } | null>(null);
-  const [streamerId, setStreamerId] = useState<string | null>(null);
+  const pusherRef = useRef<Pusher | null>(null);
 
   useEffect(() => {
     const fetchPusherConfig = async () => {
@@ -33,12 +34,14 @@ const JimmyGamingGoalOverlay = () => {
     const fetchGoalData = async () => {
       const { data: streamerData } = await supabase
         .from('streamers')
-        .select('id, goal_name, goal_target_amount, goal_activated_at, goal_is_active')
+        .select('id, goal_name, goal_target_amount, goal_activated_at, goal_is_active, brand_color')
         .eq('streamer_slug', 'jimmy_gaming')
         .single();
 
       if (streamerData) {
-        setStreamerId(streamerData.id);
+        if (streamerData.brand_color) {
+          setBrandColor(streamerData.brand_color);
+        }
         setGoalData({
           goalName: streamerData.goal_name || '',
           targetAmount: streamerData.goal_target_amount || 0,
@@ -66,21 +69,39 @@ const JimmyGamingGoalOverlay = () => {
   }, []);
 
   useEffect(() => {
-    if (!pusherConfig?.key) return;
+    if (!pusherConfig?.key || pusherRef.current) return;
 
     const pusher = new Pusher(pusherConfig.key, {
       cluster: pusherConfig.cluster,
     });
+    pusherRef.current = pusher;
 
-    const channel = pusher.subscribe('jimmy_gaming-goal');
-    channel.bind('goal-progress', (data: { currentAmount: number; targetAmount: number }) => {
+    const goalChannel = pusher.subscribe('jimmy_gaming-goal');
+    goalChannel.bind('goal-progress', (data: { currentAmount: number }) => {
       setCurrentAmount(data.currentAmount);
     });
 
+    const settingsChannel = pusher.subscribe('jimmy_gaming-settings');
+    settingsChannel.bind('settings-updated', (rawData: any) => {
+      const data = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+      if (data.brand_color) {
+        setBrandColor(data.brand_color);
+      }
+    });
+
     return () => {
-      channel.unbind_all();
-      pusher.unsubscribe('jimmy_gaming-goal');
-      pusher.disconnect();
+      if (pusherRef.current) {
+        try {
+          goalChannel.unbind_all();
+          settingsChannel.unbind_all();
+          pusher.unsubscribe('jimmy_gaming-goal');
+          pusher.unsubscribe('jimmy_gaming-settings');
+          pusherRef.current.disconnect();
+        } catch (e) {
+          console.log('Pusher cleanup:', e);
+        }
+        pusherRef.current = null;
+      }
     };
   }, [pusherConfig]);
 
@@ -89,11 +110,14 @@ const JimmyGamingGoalOverlay = () => {
   }
 
   return (
-    <GoalOverlay
-      goalName={goalData.goalName}
-      currentAmount={currentAmount}
-      targetAmount={goalData.targetAmount}
-    />
+    <div className="w-screen h-screen bg-transparent overflow-hidden flex items-center justify-center">
+      <GoalOverlay
+        goalName={goalData.goalName}
+        currentAmount={currentAmount}
+        targetAmount={goalData.targetAmount}
+        brandColor={brandColor}
+      />
+    </div>
   );
 };
 
