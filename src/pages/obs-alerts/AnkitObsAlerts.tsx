@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { AlertDisplay } from '@/components/AlertDisplay';
 import { usePusherAlerts } from '@/hooks/usePusherAlerts';
 import { usePusherConfig } from '@/hooks/usePusherConfig';
+import { useLeaderboard } from '@/hooks/useLeaderboard';
 import { supabase } from '@/integrations/supabase/client';
+import { ResizableWidget } from '@/components/obs/ResizableWidget';
+import { LeaderboardWidget } from '@/components/obs/LeaderboardWidget';
 
 const AnkitObsAlerts = () => {
   const [alertBoxScale, setAlertBoxScale] = useState<number>(1.0);
@@ -26,6 +29,14 @@ const AnkitObsAlerts = () => {
       text: 60000,
       voice: 60000,
     },
+  });
+
+  // Leaderboard data (Top Donator & !hyperchat)
+  const { topDonator, latestDonations } = useLeaderboard({
+    donationsTable: 'ankit_donations',
+    streamerSlug: 'ankit',
+    pusherKey: pusherConfig?.key || '',
+    pusherCluster: pusherConfig?.cluster || '',
   });
 
   // Fetch alert box scale setting and subscribe to real-time updates
@@ -84,6 +95,19 @@ const AnkitObsAlerts = () => {
         streamerName="Ankit"
         scale={alertBoxScale}
       />
+
+      {/* Leaderboard Widget (Top Donator & !hyperchat) */}
+      <ResizableWidget
+        id="leaderboard"
+        storagePrefix="ankit"
+        defaultState={{ x: 50, y: 50, width: 400, height: 120 }}
+      >
+        <LeaderboardWidget
+          topDonator={topDonator}
+          latestDonations={latestDonations}
+          brandColor="#3b82f6"
+        />
+      </ResizableWidget>
       
       {/* Debug info (only visible in development) */}
       {process.env.NODE_ENV === 'development' && (
