@@ -40,21 +40,12 @@ const GoalOverlay: React.FC<GoalOverlayProps> = ({
   targetAmount,
   brandColor = '#6c63ff', // Default blue/purple color
 }) => {
-  const [showLogo, setShowLogo] = useState(false);
   const percentage = Math.min((currentAmount / Math.max(targetAmount, 0.01)) * 100, 100);
   const isGoalReached = currentAmount >= targetAmount;
   const [showCelebration, setShowCelebration] = useState(false);
 
   // Derived colors from brandColor
   const lightColor = hexToLightVariant(brandColor);
-
-  // Toggle between logo and title every 5 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setShowLogo(prev => !prev);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     if (isGoalReached && !showCelebration) {
@@ -83,24 +74,14 @@ const GoalOverlay: React.FC<GoalOverlayProps> = ({
       >
         {/* Title Row */}
         <div className="flex items-center justify-between mb-3">
-          {/* Title/Logo Toggle */}
-          <div className="relative h-12 min-w-[200px]">
+          {/* Static Logo + Goal Name */}
+          <div className="flex items-center gap-4">
             <img 
               src={hyperchatLogo} 
-              alt="HyperChat logo"
-              className="absolute left-0 top-1/2 h-12 w-auto transition-all duration-400 ease-out"
-              style={{
-                opacity: showLogo ? 1 : 0,
-                transform: `translateY(-50%) ${showLogo ? 'scale(1)' : 'scale(0.92)'}`,
-              }}
+              alt="HyperChat logo" 
+              className="h-14 w-auto" 
             />
-            <span 
-              className="absolute left-0 top-1/2 text-[clamp(1.2rem,2.1vw,1.6rem)] font-semibold tracking-wider uppercase whitespace-nowrap transition-all duration-400 ease-out"
-              style={{
-                opacity: showLogo ? 0 : 1,
-                transform: `translateY(-50%) ${showLogo ? 'translateY(-6px)' : 'translateY(0)'}`,
-              }}
-            >
+            <span className="text-[clamp(1.2rem,2.1vw,1.6rem)] font-semibold tracking-wider uppercase whitespace-nowrap">
               {goalName}
             </span>
           </div>
