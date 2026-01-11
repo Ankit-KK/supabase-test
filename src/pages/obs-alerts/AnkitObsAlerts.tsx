@@ -9,6 +9,7 @@ import { LeaderboardWidget } from '@/components/obs/LeaderboardWidget';
 
 const AnkitObsAlerts = () => {
   const [alertBoxScale, setAlertBoxScale] = useState<number>(1.0);
+  const [leaderboardEnabled, setLeaderboardEnabled] = useState<boolean>(true);
 
   // Get Pusher config from backend
   const { config: pusherConfig, loading: configLoading } = usePusherConfig('ankit');
@@ -39,20 +40,23 @@ const AnkitObsAlerts = () => {
     pusherCluster: pusherConfig?.cluster || '',
   });
 
-  // Fetch alert box scale setting and subscribe to real-time updates
+  // Fetch settings and subscribe to real-time updates
   useEffect(() => {
-    const fetchScale = async () => {
+    const fetchSettings = async () => {
       const { data, error } = await supabase
         .from('streamers')
-        .select('alert_box_scale')
+        .select('alert_box_scale, leaderboard_widget_enabled')
         .eq('streamer_slug', 'ankit')
         .single();
       
-      if (!error && data?.alert_box_scale) {
-        setAlertBoxScale(Number(data.alert_box_scale));
+      if (!error && data) {
+        if (data.alert_box_scale) {
+          setAlertBoxScale(Number(data.alert_box_scale));
+        }
+        setLeaderboardEnabled(data.leaderboard_widget_enabled ?? true);
       }
     };
-    fetchScale();
+    fetchSettings();
 
     // Set up real-time subscription for live updates
     const channel = supabase
@@ -65,6 +69,9 @@ const AnkitObsAlerts = () => {
       }, (payload: any) => {
         if (payload.new?.alert_box_scale) {
           setAlertBoxScale(Number(payload.new.alert_box_scale));
+        }
+        if (payload.new?.leaderboard_widget_enabled !== undefined) {
+          setLeaderboardEnabled(payload.new.leaderboard_widget_enabled);
         }
       })
       .subscribe();
@@ -97,17 +104,19 @@ const AnkitObsAlerts = () => {
       />
 
       {/* Leaderboard Widget (Top Donator & !hyperchat) */}
-      <ResizableWidget
-        id="leaderboard"
-        storagePrefix="ankit"
-        defaultState={{ x: 50, y: 50, width: 400, height: 120 }}
-      >
-        <LeaderboardWidget
-          topDonator={topDonator}
-          latestDonations={latestDonations}
-          brandColor="#3b82f6"
-        />
-      </ResizableWidget>
+      {leaderboardEnabled && (
+        <ResizableWidget
+          id="leaderboard"
+          storagePrefix="ankit"
+          defaultState={{ x: 50, y: 50, width: 400, height: 120 }}
+        >
+          <LeaderboardWidget
+            topDonator={topDonator}
+            latestDonations={latestDonations}
+            brandColor="#3b82f6"
+          />
+        </ResizableWidget>
+      )}
       
       {/* Debug info (only visible in development) */}
       {process.env.NODE_ENV === 'development' && (
