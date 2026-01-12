@@ -15,6 +15,7 @@ import { SUPPORTED_CURRENCIES, getCurrencyByCode, getCurrencyMinimums, getCurren
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
+import DonationPageFooter from "@/components/DonationPageFooter";
 
 const notyourkweenBanner = '/lovable-uploads/notyourkween-banner.jpg';
 const notyourkweenLogo = '/lovable-uploads/notyourkween-logo.jpg';
@@ -394,6 +395,7 @@ const NotYourKween = () => {
                 {isProcessingPayment ? 'Processing...' : `Pay ${currencySymbol}${formData.amount || '0'}`}
               </Button>
             </form>
+            <DonationPageFooter brandColor="#ec4899" />
           </CardContent>
           </div>
         </Card>

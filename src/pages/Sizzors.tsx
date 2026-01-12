@@ -13,6 +13,7 @@ import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import sizzorsBanner from "@/assets/sizzors-banner.jpg";
 import sizzorsProfile from "@/assets/sizzors-profile.jpg";
 import sizzorsLogo from "@/assets/sizzors-logo.jpg";
+import DonationPageFooter from "@/components/DonationPageFooter";
 
 const Sizzors = () => {
   const navigate = useNavigate();
@@ -589,6 +590,7 @@ const Sizzors = () => {
               </div>
             )}
           </form>
+          <DonationPageFooter brandColor="#a855f7" />
         </CardContent>
       </Card>
 

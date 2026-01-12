@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import VoiceRecorder from "@/components/VoiceRecorder";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import HyperSoundSelector from "@/components/HyperSoundSelector";
+import DonationPageFooter from "@/components/DonationPageFooter";
 
 const ClumsyGod = () => {
   const navigate = useNavigate();
@@ -576,6 +577,7 @@ const ClumsyGod = () => {
               )}
             </Button>
           </form>
+          <DonationPageFooter brandColor="#8b5cf6" />
         </CardContent>
       </Card>
 

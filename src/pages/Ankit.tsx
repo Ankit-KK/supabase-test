@@ -17,6 +17,7 @@ import { useNavigate } from "react-router-dom";
 import VoiceRecorder from "@/components/VoiceRecorder";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import HyperSoundSelector from "@/components/HyperSoundSelector";
+import DonationPageFooter from "@/components/DonationPageFooter";
 
 const Ankit = () => {
   const navigate = useNavigate();
@@ -710,6 +711,7 @@ const Ankit = () => {
               Phone numbers are collected by Razorpay as per RBI regulations
             </p>
           </form>
+          <DonationPageFooter brandColor="#3b82f6" />
         </CardContent>
       </Card>
 

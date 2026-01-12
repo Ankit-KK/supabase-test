@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { SUPPORTED_CURRENCIES, getCurrencyMinimums, getCurrencyByCode } from "@/constants/currencies";
 import jhanvooBanner from "@/assets/jhanvoo-banner.jpg";
 import jhanvooLogo from "@/assets/jhanvoo-logo.jpg";
+import DonationPageFooter from "@/components/DonationPageFooter";
 
 declare global {
   interface Window {
@@ -387,6 +388,7 @@ const Jhanvoo = () => {
             <Sparkles className="w-5 h-5 mr-2" />
             {isProcessing ? "Processing..." : `Pay ${currencySymbol}${amount || "0"}`}
           </Button>
+          <DonationPageFooter brandColor="#6366f1" />
         </form>
       </div>
     </div>

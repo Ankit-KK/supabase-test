@@ -29,6 +29,7 @@ import { SUPPORTED_CURRENCIES, getCurrencyByCode, getCurrencyMinimums, getCurren
 import nekoXenpaiBanner from '@/assets/neko-xenpai-banner-new.jpg';
 import nekoXenpaiProfile from '@/assets/neko-xenpai-profile-new.jpg';
 import nekoXenpaiLogo from '@/assets/neko-xenpai-profile-new.jpg';
+import DonationPageFooter from "@/components/DonationPageFooter";
 
 const NekoXenpai = () => {
   const [formData, setFormData] = useState({
@@ -476,6 +477,7 @@ const NekoXenpai = () => {
           >
             {isProcessingPayment ? 'Processing...' : `Support with ${currencySymbol}${formData.amount || '0'}`}
           </Button>
+          <DonationPageFooter brandColor="#d946ef" />
         </CardContent>
       </Card>
     </div>

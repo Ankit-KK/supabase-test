@@ -14,6 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { SUPPORTED_CURRENCIES, getCurrencyMinimums, getCurrencyByCode } from "@/constants/currencies";
+import DonationPageFooter from "@/components/DonationPageFooter";
 
 declare global {
   interface Window {
@@ -377,6 +378,7 @@ const ABdevil = () => {
               {isProcessing ? "Processing..." : `Pay ${currencySymbol}${amount || "0"}`}
             </Button>
           </form>
+          <DonationPageFooter brandColor="#f97316" />
         </div>
       </div>
     </div>
