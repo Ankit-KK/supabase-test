@@ -17,6 +17,7 @@ import { SUPPORTED_CURRENCIES, getCurrencyMinimums, getCurrencySymbol } from "@/
 import looteriyaLogo from "@/assets/looteriya-logo.jpg";
 import looteriyaCardBg from "@/assets/looteriya-card-bg.jpg";
 import looteriyaMainBanner from "@/assets/looteriya-main-banner.jpg";
+import DonationPageFooter from "@/components/DonationPageFooter";
 
 const LooteriyaGaming = () => {
   const [formData, setFormData] = useState({
@@ -441,6 +442,7 @@ const LooteriyaGaming = () => {
               {isProcessingPayment ? "Processing..." : `Support with ${currencySymbol}${formData.amount || "0"}`}
             </Button>
           </form>
+          <DonationPageFooter brandColor="#f59e0b" />
         </CardContent>
       </Card>
     </div>

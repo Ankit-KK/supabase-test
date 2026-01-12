@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import VoiceRecorder from "@/components/VoiceRecorder";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
+import DonationPageFooter from "@/components/DonationPageFooter";
 
 
 const ChiaGaming = () => {
@@ -608,6 +609,7 @@ const ChiaGaming = () => {
               )}
             </div>
           )}
+          <DonationPageFooter brandColor="#ec4899" />
         </CardContent>
       </Card>
 

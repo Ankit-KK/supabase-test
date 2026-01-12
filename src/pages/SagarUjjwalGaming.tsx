@@ -14,6 +14,7 @@ import { Flame, MessageSquare, Mic, Volume2, Check, ChevronsUpDown } from 'lucid
 import { cn } from '@/lib/utils';
 import HyperSoundSelector from '@/components/HyperSoundSelector';
 import { SUPPORTED_CURRENCIES, getCurrencyMinimums, getCurrencySymbol } from '@/constants/currencies';
+import DonationPageFooter from "@/components/DonationPageFooter";
 
 declare global {
   interface Window {
@@ -389,6 +390,7 @@ const SagarUjjwalGaming = () => {
           >
             {isProcessingPayment ? 'Processing...' : `Pay ${currencySymbol}${formData.amount || '0'}`}
           </Button>
+          <DonationPageFooter brandColor="#ef4444" />
         </form>
       </div>
     </div>

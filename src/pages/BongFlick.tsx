@@ -15,6 +15,7 @@ import { SUPPORTED_CURRENCIES, getCurrencyMinimums, getCurrencySymbol } from '@/
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
+import DonationPageFooter from "@/components/DonationPageFooter";
 
 const bongflickBanner = '/lovable-uploads/bongflick-banner.jpg';
 const bongflickLogo = '/lovable-uploads/bongflick-logo.jpg';
@@ -394,6 +395,7 @@ const BongFlick = () => {
                 {isProcessingPayment ? 'Processing...' : `Pay ${currencySymbol}${formData.amount || '0'}`}
               </Button>
             </form>
+            <DonationPageFooter brandColor="#8b5cf6" />
           </CardContent>
           </div>
         </Card>

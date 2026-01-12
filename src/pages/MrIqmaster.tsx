@@ -15,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
 import { SUPPORTED_CURRENCIES, getCurrencyMinimums, getCurrencyByCode } from '@/constants/currencies';
+import DonationPageFooter from "@/components/DonationPageFooter";
 
 const MrIqmaster = () => {
   const [formData, setFormData] = useState({
@@ -412,6 +413,7 @@ const MrIqmaster = () => {
               {isProcessingPayment ? 'Processing...' : 'Send Support'}
             </Button>
           </form>
+          <DonationPageFooter brandColor="#06b6d4" />
         </CardContent>
         </div>
       </Card>

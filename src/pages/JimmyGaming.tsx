@@ -15,6 +15,7 @@ import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import HyperSoundSelector from "@/components/HyperSoundSelector";
 import jimmyLogo from "@/assets/jimmy-gaming-logo.jpg";
 import jimmyBanner from "@/assets/jimmy-gaming-banner.jpg";
+import DonationPageFooter from "@/components/DonationPageFooter";
 
 const JimmyGaming = () => {
   const navigate = useNavigate();
@@ -535,6 +536,7 @@ const JimmyGaming = () => {
               {isProcessing ? "Processing..." : `Donate ${getCurrencySymbol(formData.currency)}${formData.amount || '0'}`}
             </Button>
           </form>
+          <DonationPageFooter brandColor="#ef4444" />
         </CardContent>
       </Card>
     </div>

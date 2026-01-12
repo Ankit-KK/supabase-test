@@ -15,6 +15,7 @@ import HyperSoundSelector from '@/components/HyperSoundSelector';
 import { Zap, Check, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SUPPORTED_CURRENCIES, getCurrencySymbol, getCurrencyMinimums } from '@/constants/currencies';
+import DonationPageFooter from "@/components/DonationPageFooter";
 
 const thunderxBanner = '/lovable-uploads/thunderx-banner.jpg';
 const thunderxLogo = '/lovable-uploads/thunderx-logo.jpg';
@@ -464,6 +465,7 @@ const ThunderX = () => {
               {isProcessingPayment ? 'Processing...' : `Pay ${currencySymbol}${formData.amount || '0'}`}
             </Button>
           </form>
+          <DonationPageFooter brandColor="#10b981" />
         </CardContent>
       </Card>
     </div>

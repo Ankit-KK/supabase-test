@@ -29,6 +29,7 @@ import { SUPPORTED_CURRENCIES, getCurrencyMinimums, getCurrencySymbol } from '@/
 import damaskBanner from '@/assets/damask-banner.jpg';
 import damaskProfile from '@/assets/damask-profile.jpg';
 import damaskLogo from '@/assets/damask-logo.jpg';
+import DonationPageFooter from "@/components/DonationPageFooter";
 
 const DamaskPlays = () => {
   const [formData, setFormData] = useState({
@@ -443,6 +444,7 @@ const DamaskPlays = () => {
               {isProcessingPayment ? 'Processing...' : `Support with ${currencySymbol}${formData.amount || '0'}`}
             </Button>
           </form>
+          <DonationPageFooter brandColor="#10b981" />
         </CardContent>
       </Card>
     </div>

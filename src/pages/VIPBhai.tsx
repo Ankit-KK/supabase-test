@@ -32,6 +32,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from '@/lib/utils';
+import DonationPageFooter from "@/components/DonationPageFooter";
 
 const vipbhaiBanner = '/lovable-uploads/vipbhai-banner.jpg';
 const vipbhaiLogo = '/lovable-uploads/vipbhai-logo.jpg';
@@ -421,6 +422,7 @@ const VIPBhai = () => {
                 {isProcessingPayment ? 'Processing...' : `Pay ${getCurrencySymbol(selectedCurrency)}${formData.amount || '0'}`}
               </Button>
             </form>
+            <DonationPageFooter brandColor="#f59e0b" />
           </CardContent>
           </div>
         </Card>
