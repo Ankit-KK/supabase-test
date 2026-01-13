@@ -171,37 +171,38 @@ export function usePusherAlerts(config: PusherAlertsConfig) {
       console.error('[PusherAlerts] Subscription error:', error);
     });
 
-    // Bind to new-donation event
+    // Bind to audio-now-playing event - triggered when Media Source plays audio
+    // This ensures perfect sync between visual alert and audio playback
+    channel.bind('audio-now-playing', (data: Donation) => {
+      console.log('[PusherAlerts] Audio now playing - showing alert immediately:', data);
+      addToQueueRef.current(data);
+    });
+
+    // Bind to new-donation event - only for text-only donations (no audio)
     channel.bind('new-donation', (data: Donation) => {
       console.log('[PusherAlerts] New donation received:', data);
       
-      // Use server-provided audio_scheduled_at for sync with audio playback
-      let delay = 0;
+      // Check if this donation has audio
+      const hasAudio = data.tts_audio_url || data.voice_message_url || data.hypersound_url;
       
-      if (data.audio_scheduled_at) {
-        // Calculate delay based on server timestamp for perfect sync with audio
-        const scheduledTime = new Date(data.audio_scheduled_at).getTime();
-        delay = Math.max(0, scheduledTime - Date.now());
-        console.log(`[PusherAlerts] Using server timestamp for sync - delay: ${delay}ms (scheduled: ${data.audio_scheduled_at})`);
-      } else {
-        // Fallback to type-based delays if no server timestamp
-        delay = delayBeforeDisplay;
-        if (data.hypersound_url && delayByType.hypersound !== undefined) {
-          delay = delayByType.hypersound;
-        } else if (data.voice_message_url && delayByType.voice !== undefined) {
-          delay = delayByType.voice;
-        } else if (delayByType.text !== undefined) {
+      if (!hasAudio) {
+        // Text-only donation - show immediately with optional delay
+        let delay = delayBeforeDisplay;
+        if (delayByType.text !== undefined) {
           delay = delayByType.text;
         }
-        console.log(`[PusherAlerts] Using fallback delay: ${delay}ms (type-based)`);
-      }
-      
-      if (delay > 0) {
-        setTimeout(() => {
+        console.log(`[PusherAlerts] Text-only donation - showing with delay: ${delay}ms`);
+        
+        if (delay > 0) {
+          setTimeout(() => {
+            addToQueueRef.current(data);
+          }, delay);
+        } else {
           addToQueueRef.current(data);
-        }, delay);
+        }
       } else {
-        addToQueueRef.current(data);
+        // Donation has audio - wait for audio-now-playing event from get-current-audio
+        console.log('[PusherAlerts] Donation has audio - waiting for audio-now-playing event');
       }
     });
 
