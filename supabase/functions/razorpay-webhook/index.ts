@@ -456,9 +456,10 @@ serve(async (req) => {
           is_hyperemote: donation.is_hyperemote,
           hypersound_url: donation.hypersound_url,
           voice_message_url: donation.voice_message_url,
-          created_at: donation.created_at
+          created_at: donation.created_at,
+          audio_scheduled_at: audioScheduledAt // Sync visual alert with audio timing
         });
-        console.log(`✅ Pusher alerts event sent to ${channelSlug}-alerts (auto-approved)`);
+        console.log(`✅ Pusher alerts event sent to ${channelSlug}-alerts (auto-approved, audio scheduled at ${audioScheduledAt})`);
       } else {
         console.log(`⏸️ Skipping OBS alerts - donation pending moderation (mode: ${moderationMode})`);
       }
