@@ -13,6 +13,7 @@ interface Donation {
   is_hyperemote: boolean;
   created_at: string;
   streamer_id: string;
+  audio_scheduled_at?: string; // Server timestamp for syncing with audio
 }
 
 interface PusherAlertsConfig {
@@ -174,18 +175,28 @@ export function usePusherAlerts(config: PusherAlertsConfig) {
     channel.bind('new-donation', (data: Donation) => {
       console.log('[PusherAlerts] New donation received:', data);
       
-      // Determine delay based on donation type
-      let delay = delayBeforeDisplay;
-      if (data.hypersound_url && delayByType.hypersound !== undefined) {
-        delay = delayByType.hypersound;
-      } else if (data.voice_message_url && delayByType.voice !== undefined) {
-        delay = delayByType.voice;
-      } else if (delayByType.text !== undefined) {
-        delay = delayByType.text;
+      // Use server-provided audio_scheduled_at for sync with audio playback
+      let delay = 0;
+      
+      if (data.audio_scheduled_at) {
+        // Calculate delay based on server timestamp for perfect sync with audio
+        const scheduledTime = new Date(data.audio_scheduled_at).getTime();
+        delay = Math.max(0, scheduledTime - Date.now());
+        console.log(`[PusherAlerts] Using server timestamp for sync - delay: ${delay}ms (scheduled: ${data.audio_scheduled_at})`);
+      } else {
+        // Fallback to type-based delays if no server timestamp
+        delay = delayBeforeDisplay;
+        if (data.hypersound_url && delayByType.hypersound !== undefined) {
+          delay = delayByType.hypersound;
+        } else if (data.voice_message_url && delayByType.voice !== undefined) {
+          delay = delayByType.voice;
+        } else if (delayByType.text !== undefined) {
+          delay = delayByType.text;
+        }
+        console.log(`[PusherAlerts] Using fallback delay: ${delay}ms (type-based)`);
       }
       
       if (delay > 0) {
-        console.log(`[PusherAlerts] Delaying alert for ${delay}ms (type-specific)`);
         setTimeout(() => {
           addToQueueRef.current(data);
         }, delay);

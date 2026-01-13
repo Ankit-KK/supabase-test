@@ -69,7 +69,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log(`Processing audio for streamer: ${streamerSlug}, table: ${tableName}`);
+    // Debug logging to verify correct streamer isolation
+    console.log(`[get-current-audio] Token validated for streamer: ${streamerSlug}, querying table: ${tableName}`);
 
     const now = new Date().toISOString();
 

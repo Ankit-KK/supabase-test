@@ -196,6 +196,17 @@ serve(async (req) => {
     
     const tableName = getTableName(order_id);
 
+    // First, fetch the donation to check its type for delay calculation
+    const { data: donationCheck, error: checkError } = await supabase
+      .from(tableName)
+      .select('hypersound_url')
+      .eq('order_id', order_id)
+      .maybeSingle();
+
+    // Calculate audio_scheduled_at based on donation type (15s for hypersound, 60s for others)
+    const audioDelay = donationCheck?.hypersound_url ? 15000 : 60000;
+    const audioScheduledAt = new Date(Date.now() + audioDelay).toISOString();
+
     // Atomic update with conditional check: only update if payment_status is NOT already 'success'
     const { data: updatedDonation, error: updateError } = await supabase
       .from(tableName)
@@ -204,7 +215,8 @@ serve(async (req) => {
         moderation_status: moderationStatus,
         approved_at: dbStatus === 'success' ? new Date().toISOString() : null,
         approved_by: dbStatus === 'success' ? 'system' : null,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        audio_scheduled_at: dbStatus === 'success' ? audioScheduledAt : null
       })
       .eq('order_id', order_id)
       .neq('payment_status', 'success')
@@ -219,7 +231,7 @@ serve(async (req) => {
     // If updatedDonation is null, it means the status was already 'success'
     const isFirstSuccess = updatedDonation !== null && dbStatus === 'success';
 
-    console.log(`Idempotency check: order_id=${order_id}, dbStatus=${dbStatus}, isFirstSuccess=${isFirstSuccess}`);
+    console.log(`Idempotency check: order_id=${order_id}, dbStatus=${dbStatus}, isFirstSuccess=${isFirstSuccess}, audioScheduledAt=${audioScheduledAt}`);
 
     // Map order_id prefix to correct streamer slug for Pusher channels
     const getStreamerSlug = (orderId: string): string => {
@@ -277,9 +289,10 @@ serve(async (req) => {
           is_hyperemote: updatedDonation.is_hyperemote,
           created_at: updatedDonation.created_at,
           streamer_id: updatedDonation.streamer_id,
+          audio_scheduled_at: audioScheduledAt, // Sync visual alert with audio timing
         });
         
-        console.log(`✅ Pusher alerts event sent to ${alertsChannel}`);
+        console.log(`✅ Pusher alerts event sent to ${alertsChannel} (audio scheduled at ${audioScheduledAt})`);
       } catch (pusherError) {
         console.error('❌ Pusher (alerts) trigger error:', pusherError);
       }

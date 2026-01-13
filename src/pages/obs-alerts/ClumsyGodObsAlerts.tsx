@@ -25,11 +25,7 @@ const ClumsyGodObsAlerts = () => {
     channelName: 'clumsygod-alerts',
     pusherKey: pusherConfig?.key || '',
     pusherCluster: pusherConfig?.cluster || '',
-    delayByType: {
-      hypersound: 15000,
-      text: 60000,
-      voice: 60000,
-    },
+    // Timing is now handled by server-provided audio_scheduled_at for perfect sync
   });
 
   const { topDonator, latestDonations } = useLeaderboard({
