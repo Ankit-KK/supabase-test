@@ -53,6 +53,7 @@ export function usePusherAlerts(config: PusherAlertsConfig) {
   const displayTimeoutRef = useRef<NodeJS.Timeout>();
   const isProcessingRef = useRef(false);
   const addToQueueRef = useRef<(donation: Donation) => void>(() => {});
+  const displayedIdsRef = useRef<Set<string>>(new Set());
 
   // Process next alert from queue
   const processNextAlert = useCallback(() => {
@@ -101,15 +102,30 @@ export function usePusherAlerts(config: PusherAlertsConfig) {
   const addToQueue = useCallback((donation: Donation) => {
     console.log('[PusherAlerts] Adding to queue:', donation.id);
     
-    // Check if already in queue
+    // Prevent duplicate displays - check both queue and already displayed
+    if (displayedIdsRef.current.has(donation.id)) {
+      console.log('[PusherAlerts] Skipping duplicate (already displayed):', donation.id);
+      return;
+    }
+    
     if (alertQueueRef.current.some(d => d.id === donation.id)) {
       console.log('[PusherAlerts] Alert already in queue, skipping');
       return;
     }
 
+    // Mark as displayed
+    displayedIdsRef.current.add(donation.id);
     alertQueueRef.current.push(donation);
     processNextAlert();
   }, [processNextAlert]);
+
+  // Clear displayed IDs periodically to prevent memory buildup
+  useEffect(() => {
+    const cleanup = setInterval(() => {
+      displayedIdsRef.current.clear();
+    }, 5 * 60 * 1000); // Clear every 5 minutes
+    return () => clearInterval(cleanup);
+  }, []);
 
   // Update ref when addToQueue changes
   useEffect(() => {
@@ -178,32 +194,12 @@ export function usePusherAlerts(config: PusherAlertsConfig) {
       addToQueueRef.current(data);
     });
 
-    // Bind to new-donation event - only for text-only donations (no audio)
+    // Bind to new-donation event - IGNORE for visual alerts
+    // All donations go through TTS pipeline, so we ALWAYS wait for audio-now-playing
+    // This event is only used for dashboard notifications, not visual alerts
     channel.bind('new-donation', (data: Donation) => {
-      console.log('[PusherAlerts] New donation received:', data);
-      
-      // Check if this donation has audio
-      const hasAudio = data.tts_audio_url || data.voice_message_url || data.hypersound_url;
-      
-      if (!hasAudio) {
-        // Text-only donation - show immediately with optional delay
-        let delay = delayBeforeDisplay;
-        if (delayByType.text !== undefined) {
-          delay = delayByType.text;
-        }
-        console.log(`[PusherAlerts] Text-only donation - showing with delay: ${delay}ms`);
-        
-        if (delay > 0) {
-          setTimeout(() => {
-            addToQueueRef.current(data);
-          }, delay);
-        } else {
-          addToQueueRef.current(data);
-        }
-      } else {
-        // Donation has audio - wait for audio-now-playing event from get-current-audio
-        console.log('[PusherAlerts] Donation has audio - waiting for audio-now-playing event');
-      }
+      console.log('[PusherAlerts] New donation received (ignoring for visual alert, waiting for audio-now-playing):', data.id);
+      // Don't add to queue - always wait for audio-now-playing event from get-current-audio
     });
 
     // Cleanup
