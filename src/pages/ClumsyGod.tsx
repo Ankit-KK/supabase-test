@@ -324,13 +324,8 @@ const ClumsyGod = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Full-page background with banner image */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: 'url(/lovable-uploads/clumsygod-banner.jpg)' }}
-      />
-      {/* Dark overlay for better readability */}
-      <div className="absolute inset-0 bg-black/50" />
+      {/* Gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-violet-950 via-purple-900 to-black" />
       
       {/* Animated purple glow effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -340,13 +335,8 @@ const ClumsyGod = () => {
       </div>
 
       <Card className="w-full max-w-[21rem] mx-auto relative overflow-hidden border-violet-500/30 shadow-2xl shadow-violet-500/20">
-        {/* Card background with logo image */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: 'url(/lovable-uploads/clumsygod-logo.jpg)' }}
-        />
-        {/* Semi-transparent overlay for card content readability */}
-        <div className="absolute inset-0 bg-background/85 backdrop-blur-sm" />
+        {/* Card background */}
+        <div className="absolute inset-0 bg-background/95 backdrop-blur-sm" />
         
         <CardHeader className="text-center relative z-10 pb-3">
           <div className="flex items-center justify-center mb-3">
