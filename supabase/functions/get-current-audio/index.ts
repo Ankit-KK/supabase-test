@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import Pusher from 'npm:pusher@5.1.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -23,6 +24,26 @@ const STREAMER_TABLE_MAP: Record<string, string> = {
   'neko_xenpai': 'neko_xenpai_donations',
   'clumsygod': 'clumsygod_donations',
   'jimmy_gaming': 'jimmy_gaming_donations',
+};
+
+// Mapping of streamer slugs to their Pusher alert channel names
+const STREAMER_CHANNEL_MAP: Record<string, string> = {
+  'ankit': 'ankit-alerts',
+  'looteriya_gaming': 'looteriya_gaming-alerts',
+  'chiaa_gaming': 'chiaa_gaming-alerts',
+  'sizzors': 'sizzors-alerts',
+  'thunderx': 'thunderx-alerts',
+  'vipbhai': 'vipbhai-alerts',
+  'sagarujjwalgaming': 'sagarujjwalgaming-alerts',
+  'notyourkween': 'notyourkween-alerts',
+  'bongflick': 'bongflick-alerts',
+  'mriqmaster': 'mriqmaster-alerts',
+  'abdevil': 'abdevil-alerts',
+  'jhanvoo': 'jhanvoo-alerts',
+  'damask_plays': 'damask_plays-alerts',
+  'neko_xenpai': 'neko_xenpai-alerts',
+  'clumsygod': 'clumsygod-alerts',
+  'jimmy_gaming': 'jimmy_gaming-alerts',
 };
 
 Deno.serve(async (req) => {
@@ -60,6 +81,7 @@ Deno.serve(async (req) => {
 
     const streamerSlug = tokenData[0].streamer_slug;
     const tableName = STREAMER_TABLE_MAP[streamerSlug];
+    const alertsChannel = STREAMER_CHANNEL_MAP[streamerSlug];
 
     if (!tableName) {
       console.error(`No table mapping for streamer: ${streamerSlug}`);
@@ -78,7 +100,7 @@ Deno.serve(async (req) => {
     // audio_scheduled_at <= NOW() means the delay period is over and it's ready to play
     const { data: donation, error: fetchError } = await supabase
       .from(tableName)
-      .select('id, name, amount, message, tts_audio_url, voice_message_url, hypersound_url, created_at, audio_scheduled_at')
+      .select('id, name, amount, message, tts_audio_url, voice_message_url, hypersound_url, is_hyperemote, created_at, audio_scheduled_at')
       .is('audio_played_at', null)
       .eq('moderation_status', 'auto_approved')
       .eq('payment_status', 'success')
@@ -131,13 +153,40 @@ Deno.serve(async (req) => {
       console.error('Error marking as played:', updateError);
     }
 
-    console.log(`Serving audio for donation ${donation.id}: ${donation.name} - amount ${donation.amount} (scheduled: ${donation.audio_scheduled_at})`);
+    console.log(`[get-current-audio] Serving audio for donation ${donation.id}: ${donation.name} - amount ${donation.amount}`);
 
-    // NO DELAY - audio is served immediately since scheduled time has already passed
-    // The delay was already applied when setting audio_scheduled_at in the webhook
+    // Trigger Pusher event to show visual alert NOW (in sync with audio)
+    if (alertsChannel) {
+      try {
+        const pusher = new Pusher({
+          appId: Deno.env.get('PUSHER_APP_ID')!,
+          key: Deno.env.get('PUSHER_KEY')!,
+          secret: Deno.env.get('PUSHER_SECRET')!,
+          cluster: Deno.env.get('PUSHER_CLUSTER')!,
+          useTLS: true,
+        });
+
+        await pusher.trigger(alertsChannel, 'audio-now-playing', {
+          id: donation.id,
+          name: donation.name,
+          amount: donation.amount,
+          message: donation.message,
+          voice_message_url: donation.voice_message_url,
+          tts_audio_url: donation.tts_audio_url,
+          hypersound_url: donation.hypersound_url,
+          is_hyperemote: donation.is_hyperemote || false,
+          created_at: donation.created_at,
+        });
+
+        console.log(`[get-current-audio] Triggered audio-now-playing event on channel: ${alertsChannel}`);
+      } catch (pusherError) {
+        console.error('[get-current-audio] Failed to trigger Pusher event:', pusherError);
+        // Continue serving audio even if Pusher fails
+      }
+    }
 
     // Fetch and proxy the audio directly to avoid redirect issues with OBS
-    console.log(`Fetching audio from: ${audioUrl}`);
+    console.log(`[get-current-audio] Fetching audio from: ${audioUrl}`);
     const audioResponse = await fetch(audioUrl);
 
     if (!audioResponse.ok) {
