@@ -81,9 +81,9 @@ serve(async (req) => {
         );
       }
 
-      // Hash password using bcrypt with proper salt rounds
-      const salt = await bcrypt.genSalt(BCRYPT_SALT_ROUNDS);
-      const hashedPassword = await bcrypt.hash(password, salt);
+      // Hash password using bcrypt with proper salt rounds (sync to avoid Worker issues in Deno)
+      const salt = bcrypt.genSaltSync(BCRYPT_SALT_ROUNDS);
+      const hashedPassword = bcrypt.hashSync(password, salt);
 
       // Create user with properly hashed password
       const { data: newUser, error: createError } = await supabase
@@ -184,8 +184,30 @@ serve(async (req) => {
         );
       }
 
-      // Secure password verification using bcrypt
-      const passwordValid = await bcrypt.compare(password, user.password_hash);
+      // Secure password verification using bcrypt (sync to avoid Worker issues in Deno)
+      // Also handle backward compatibility for existing plaintext passwords
+      let passwordValid = false;
+      const isBcryptHash = user.password_hash && user.password_hash.startsWith('$2');
+      
+      if (isBcryptHash) {
+        // Modern bcrypt hash - use secure comparison
+        passwordValid = bcrypt.compareSync(password, user.password_hash);
+      } else {
+        // Legacy plaintext password - compare directly then upgrade
+        passwordValid = user.password_hash === password;
+        
+        if (passwordValid) {
+          // Upgrade plaintext password to bcrypt hash
+          console.log('Upgrading plaintext password to bcrypt for user:', user.email);
+          const salt = bcrypt.genSaltSync(BCRYPT_SALT_ROUNDS);
+          const hashedPassword = bcrypt.hashSync(password, salt);
+          
+          await supabase
+            .from('auth_users')
+            .update({ password_hash: hashedPassword })
+            .eq('id', user.id);
+        }
+      }
       
       if (!passwordValid) {
         // Increment failed login attempts
