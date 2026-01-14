@@ -1956,6 +1956,35 @@ export type Database = {
       }
     }
     Views: {
+      auth_sessions_safe: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auth_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "auth_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_signups_masked: {
         Row: {
           created_at: string | null
