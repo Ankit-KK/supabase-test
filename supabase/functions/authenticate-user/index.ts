@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,6 +25,9 @@ const getClientIP = (req: Request): string => {
 // Account lockout configuration
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MINUTES = 15;
+
+// Password hashing cost factor (higher = more secure but slower)
+const BCRYPT_SALT_ROUNDS = 12;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -77,16 +81,20 @@ serve(async (req) => {
         );
       }
 
-      // Create user with plain password for now (in production, you'd want proper hashing)
+      // Hash password using bcrypt with proper salt rounds
+      const salt = await bcrypt.genSalt(BCRYPT_SALT_ROUNDS);
+      const hashedPassword = await bcrypt.hash(password, salt);
+
+      // Create user with properly hashed password
       const { data: newUser, error: createError } = await supabase
         .from('auth_users')
         .insert({
           email: email.toLowerCase(),
-          password_hash: password, // Simple approach for demo
+          password_hash: hashedPassword,
           username: username || null,
           role: 'user'
         })
-        .select()
+        .select('id, email, username, role')
         .single();
 
       if (createError) {
@@ -144,10 +152,10 @@ serve(async (req) => {
     }
 
     if (action === 'login') {
-      // Get user by email
+      // Get user by email - only select fields needed for authentication
       const { data: user, error: userError } = await supabase
         .from('auth_users')
-        .select('*')
+        .select('id, email, username, role, password_hash, is_active, failed_login_attempts, locked_until')
         .eq('email', email.toLowerCase())
         .single();
 
@@ -176,11 +184,13 @@ serve(async (req) => {
         );
       }
 
-      // Simple password verification (in production, use proper hashing)
-      if (user.password_hash !== password) {
+      // Secure password verification using bcrypt
+      const passwordValid = await bcrypt.compare(password, user.password_hash);
+      
+      if (!passwordValid) {
         // Increment failed login attempts
         const newFailedAttempts = (user.failed_login_attempts || 0) + 1;
-        const updates: any = { failed_login_attempts: newFailedAttempts };
+        const updates: Record<string, unknown> = { failed_login_attempts: newFailedAttempts };
 
         // Lock account if max attempts reached
         if (newFailedAttempts >= MAX_FAILED_ATTEMPTS) {
@@ -247,6 +257,7 @@ serve(async (req) => {
         );
       }
 
+      // Return user data without sensitive fields (password_hash excluded)
       return new Response(
         JSON.stringify({
           user: {
