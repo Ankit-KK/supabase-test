@@ -6,6 +6,32 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// XSS sanitization for user input - removes dangerous HTML/script content
+const sanitizeInput = (input: string | null | undefined): string | null => {
+  if (!input) return null;
+  
+  return input
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+    .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '')
+    .replace(/<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi, '')
+    .replace(/<applet\b[^<]*(?:(?!<\/applet>)<[^<]*)*<\/applet>/gi, '')
+    .replace(/<form\b[^<]*(?:(?!<\/form>)<[^<]*)*<\/form>/gi, '')
+    .replace(/javascript:/gi, '')
+    .replace(/vbscript:/gi, '')
+    .replace(/data:/gi, '')
+    .replace(/on\w+\s*=/gi, '')
+    .replace(/expression\s*\(/gi, '')
+    .replace(/<[^>]*>/g, '') // Remove all remaining HTML tags
+    .trim()
+    .substring(0, 500); // Limit length
+};
+
+const sanitizeName = (name: string | null | undefined): string => {
+  if (!name) return '';
+  return sanitizeInput(name)?.substring(0, 100) || '';
+};
+
 const CURRENCY_MINIMUMS: Record<string, { minText: number; minVoice: number; minHypersound: number }> = {
   'INR': { minText: 40, minVoice: 150, minHypersound: 30 },
   'USD': { minText: 1, minVoice: 3, minHypersound: 1 },
@@ -104,15 +130,23 @@ serve(async (req) => {
 
     const razorpayOrder = await razorpayResponse.json();
 
+    // Sanitize user inputs to prevent XSS attacks
+    const sanitizedName = sanitizeName(name);
+    const sanitizedMessage = sanitizeInput(message);
+
+    if (!sanitizedName) {
+      throw new Error('Invalid name provided');
+    }
+
     // Store donation in database
     const { data: donation, error: donationError } = await supabase
       .from('vipbhai_donations')
       .insert({
         streamer_id: streamerData.id,
-        name: name.trim(),
+        name: sanitizedName,
         amount,
         currency: currency,
-        message: message?.trim() || null,
+        message: sanitizedMessage,
         voice_message_url: voiceMessageUrl || null,
         hypersound_url: hypersoundUrl || null,
         is_hyperemote: false,

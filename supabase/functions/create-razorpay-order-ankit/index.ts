@@ -6,6 +6,32 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// XSS sanitization for user input - removes dangerous HTML/script content
+const sanitizeInput = (input: string | null | undefined): string | null => {
+  if (!input) return null;
+  
+  return input
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+    .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '')
+    .replace(/<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi, '')
+    .replace(/<applet\b[^<]*(?:(?!<\/applet>)<[^<]*)*<\/applet>/gi, '')
+    .replace(/<form\b[^<]*(?:(?!<\/form>)<[^<]*)*<\/form>/gi, '')
+    .replace(/javascript:/gi, '')
+    .replace(/vbscript:/gi, '')
+    .replace(/data:/gi, '')
+    .replace(/on\w+\s*=/gi, '')
+    .replace(/expression\s*\(/gi, '')
+    .replace(/<[^>]*>/g, '') // Remove all remaining HTML tags
+    .trim()
+    .substring(0, 500); // Limit length
+};
+
+const sanitizeName = (name: string | null | undefined): string => {
+  if (!name) return '';
+  return sanitizeInput(name)?.substring(0, 100) || '';
+};
+
 // Get client IP from request headers
 const getClientIP = (req: Request): string => {
   return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
@@ -173,6 +199,14 @@ serve(async (req) => {
     const razorpayOrder = await razorpayResponse.json()
     console.log('Razorpay order created:', razorpayOrder.id)
 
+    // Sanitize user inputs to prevent XSS attacks
+    const sanitizedName = sanitizeName(name);
+    const sanitizedMessage = sanitizeInput(message);
+
+    if (!sanitizedName) {
+      throw new Error('Invalid name provided');
+    }
+
     // Store donation in database with currency
     // Note: is_hyperemote is set to true for hypersounds to trigger visual effects
     const { data: donation, error: donationError } = await supabase
@@ -180,10 +214,10 @@ serve(async (req) => {
       .insert({
         order_id: orderId,
         razorpay_order_id: razorpayOrder.id,
-        name: name.trim(),
+        name: sanitizedName,
         amount: parseFloat(amount),
         currency: currency,
-        message: message ? message.trim() : null,
+        message: sanitizedMessage,
         streamer_id: streamerData.id,
         payment_status: 'pending',
         moderation_status: 'pending',

@@ -6,6 +6,32 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// XSS sanitization for user input - removes dangerous HTML/script content
+const sanitizeInput = (input: string | null | undefined): string | null => {
+  if (!input) return null;
+  
+  return input
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+    .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '')
+    .replace(/<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi, '')
+    .replace(/<applet\b[^<]*(?:(?!<\/applet>)<[^<]*)*<\/applet>/gi, '')
+    .replace(/<form\b[^<]*(?:(?!<\/form>)<[^<]*)*<\/form>/gi, '')
+    .replace(/javascript:/gi, '')
+    .replace(/vbscript:/gi, '')
+    .replace(/data:/gi, '')
+    .replace(/on\w+\s*=/gi, '')
+    .replace(/expression\s*\(/gi, '')
+    .replace(/<[^>]*>/g, '') // Remove all remaining HTML tags
+    .trim()
+    .substring(0, 500); // Limit length
+};
+
+const sanitizeName = (name: string | null | undefined): string => {
+  if (!name) return '';
+  return sanitizeInput(name)?.substring(0, 100) || '';
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -102,13 +128,21 @@ serve(async (req) => {
     // Only set hyperemote if explicitly requested by user
     const isHyperemoteValue = isHyperemote === true;
     
+    // Sanitize user inputs to prevent XSS attacks
+    const sanitizedName = sanitizeName(name);
+    const sanitizedMessage = sanitizeInput(message);
+
+    if (!sanitizedName) {
+      throw new Error('Invalid name provided');
+    }
+
     // Store donation in database
     const { data: donation, error: donationError } = await supabase
       .from('chiaa_gaming_donations')
       .insert({
-        name: name,
+        name: sanitizedName,
         amount: parseFloat(amount),
-        message: message || null,
+        message: sanitizedMessage,
         order_id: orderId,
         payment_status: 'pending',
         moderation_status: isHyperemoteValue ? 'auto_approved' : (parseFloat(amount) >= 100 ? 'approved' : 'pending'),
