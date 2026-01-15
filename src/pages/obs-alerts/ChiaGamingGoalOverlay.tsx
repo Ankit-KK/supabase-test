@@ -1,17 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import Pusher from 'pusher-js';
-import { convertToINR } from '@/constants/currencies';
-import hyperchatLogo from '@/assets/hyperchat-logo-short.png';
+import React, { useEffect, useState, useRef } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import Pusher from "pusher-js";
+import hyperchatLogo from "@/assets/hyperchat-logo-short.png";
+import { convertToINR } from "@/constants/currencies";
+
+const CHIAA_GAMING_STREAMER_ID = "53190692-149e-4fa6-b4c4-1aed73510469";
 
 interface GoalData {
-  goalName: string;
-  targetAmount: number;
-  activatedAt: string | null;
-  isActive: boolean;
+  goal_name: string;
+  goal_target_amount: number;
+  goal_activated_at: string;
+  goal_is_active: boolean;
 }
 
-// Helper functions for color manipulation
+// Color helper functions
 const hexToRgba = (hex: string, alpha: number) => {
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
@@ -19,258 +21,338 @@ const hexToRgba = (hex: string, alpha: number) => {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
-const hexToDarkBg = (hex: string) => {
-  const r = Math.max(0, parseInt(hex.slice(1, 3), 16) - 180);
-  const g = Math.max(0, parseInt(hex.slice(3, 5), 16) - 180);
-  const b = Math.max(0, parseInt(hex.slice(5, 7), 16) - 180);
-  return `rgb(${r}, ${g}, ${b})`;
+const hexToDarkBg = (hex: string, alpha: number) => {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const darkR = Math.floor(r * 0.15 + 20);
+  const darkG = Math.floor(g * 0.1 + 10);
+  const darkB = Math.floor(b * 0.2 + 30);
+  return `rgba(${darkR}, ${darkG}, ${darkB}, ${alpha})`;
 };
 
 const hexToLightVariant = (hex: string) => {
-  const r = Math.min(255, parseInt(hex.slice(1, 3), 16) + 40);
-  const g = Math.min(255, parseInt(hex.slice(3, 5), 16) + 40);
-  const b = Math.min(255, parseInt(hex.slice(5, 7), 16) + 40);
-  return `rgb(${r}, ${g}, ${b})`;
+  const r = Math.min(255, parseInt(hex.slice(1, 3), 16) + 60);
+  const g = Math.min(255, parseInt(hex.slice(3, 5), 16) + 60);
+  const b = Math.min(255, parseInt(hex.slice(5, 7), 16) + 60);
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 };
 
 const ChiaGamingGoalOverlay = () => {
   const [goalData, setGoalData] = useState<GoalData | null>(null);
   const [currentAmount, setCurrentAmount] = useState(0);
-  const [brandColor, setBrandColor] = useState('#ec4899');
-  const [pusherConfig, setPusherConfig] = useState<{ key: string; cluster: string } | null>(null);
+  const [brandColor, setBrandColor] = useState<string>("#ec4899"); // Default pink
+  const [pusherConfig, setPusherConfig] = useState<{
+    key: string;
+    cluster: string;
+  } | null>(null);
+  const pusherRef = useRef<Pusher | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
+
+  // Derived colors from brandColor
+  const lightColor = hexToLightVariant(brandColor);
 
   // Fetch Pusher config
   useEffect(() => {
     const fetchPusherConfig = async () => {
-      const { data, error } = await supabase.functions.invoke('get-pusher-config', {
-        body: { streamer_slug: 'chiaa_gaming' }
-      });
-      if (!error && data) {
-        setPusherConfig({ key: data.key, cluster: data.cluster });
+      try {
+        const { data, error } = await supabase.functions.invoke("get-pusher-config", {
+          body: { streamer_slug: "chiaa_gaming" },
+        });
+
+        if (error) throw error;
+        if (data?.key && data?.cluster) {
+          setPusherConfig({
+            key: data.key,
+            cluster: data.cluster,
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching Pusher config:", error);
       }
     };
+
     fetchPusherConfig();
   }, []);
 
-  // Fetch goal data and donations
-  useEffect(() => {
-    const fetchGoalData = async () => {
-      const { data: streamerData } = await supabase
-        .from('streamers')
-        .select('goal_name, goal_target_amount, goal_activated_at, goal_is_active, brand_color')
-        .eq('id', '53190692-149e-4fa6-b4c4-1aed73510469')
+  // Fetch goal data and calculate progress
+  const fetchGoalData = async () => {
+    try {
+      const { data: streamer, error } = await supabase
+        .from("streamers")
+        .select("goal_name, goal_target_amount, goal_activated_at, goal_is_active, brand_color")
+        .eq("id", CHIAA_GAMING_STREAMER_ID)
         .single();
 
-      if (streamerData) {
-        setGoalData({
-          goalName: streamerData.goal_name || '',
-          targetAmount: streamerData.goal_target_amount || 0,
-          activatedAt: streamerData.goal_activated_at,
-          isActive: streamerData.goal_is_active || false,
-        });
+      if (error) throw error;
 
-        if (streamerData.brand_color) {
-          setBrandColor(streamerData.brand_color);
-        }
-
-        if (streamerData.goal_is_active && streamerData.goal_activated_at) {
-          const { data: donations } = await supabase
-            .from('chiaa_gaming_donations')
-            .select('amount, currency')
-            .gte('created_at', streamerData.goal_activated_at)
-            .eq('payment_status', 'success')
-            .eq('moderation_status', 'auto_approved');
-
-          const total = donations?.reduce((sum, d) => sum + convertToINR(Number(d.amount), d.currency || 'INR'), 0) || 0;
-          setCurrentAmount(total);
-        }
+      // Update brand color if available
+      if (streamer?.brand_color) {
+        setBrandColor(streamer.brand_color);
       }
-    };
 
+      // Only proceed if goal is active
+      if (!streamer?.goal_is_active || !streamer.goal_activated_at) {
+        setGoalData(null);
+        return;
+      }
+
+      setGoalData({
+        goal_name: streamer.goal_name!,
+        goal_target_amount: Number(streamer.goal_target_amount!),
+        goal_activated_at: streamer.goal_activated_at,
+        goal_is_active: streamer.goal_is_active,
+      });
+
+      // Calculate donations since goal activation
+      const { data: donations, error: donError } = await supabase
+        .from("chiaa_gaming_donations")
+        .select("amount, currency")
+        .eq("streamer_id", CHIAA_GAMING_STREAMER_ID)
+        .eq("payment_status", "success")
+        .eq("moderation_status", "auto_approved")
+        .gte("created_at", streamer.goal_activated_at);
+
+      if (!donError && donations) {
+        const total = donations.reduce((sum, d) => sum + convertToINR(Number(d.amount), d.currency || "INR"), 0);
+        setCurrentAmount(total);
+      }
+    } catch (error) {
+      console.error("Error fetching goal data:", error);
+    }
+  };
+
+  useEffect(() => {
     fetchGoalData();
+
+    // Refresh every 30 seconds
     const interval = setInterval(fetchGoalData, 30000);
+
     return () => clearInterval(interval);
   }, []);
 
-  // Pusher subscription for real-time updates
+  // Setup Pusher for real-time updates
   useEffect(() => {
-    if (!pusherConfig?.key) return;
+    if (!pusherConfig) return;
+
+    // Prevent duplicate connections
+    if (pusherRef.current) return;
 
     const pusher = new Pusher(pusherConfig.key, {
       cluster: pusherConfig.cluster,
     });
 
-    const goalChannel = pusher.subscribe('chiaa_gaming-goal');
-    goalChannel.bind('goal-progress', (data: { currentAmount: number; targetAmount: number }) => {
+    pusherRef.current = pusher;
+
+    // Subscribe to goal progress channel
+    const goalChannel = pusher.subscribe("chiaa_gaming-goal");
+    goalChannel.bind("goal-progress", (data: { currentAmount: number }) => {
+      console.log("Goal progress update:", data);
       setCurrentAmount(data.currentAmount);
     });
 
-    const settingsChannel = pusher.subscribe('chiaa_gaming-settings');
-    settingsChannel.bind('settings-updated', (data: any) => {
+    // Subscribe to settings channel for brand color updates
+    const settingsChannel = pusher.subscribe("chiaa_gaming-settings");
+    settingsChannel.bind("settings-updated", (rawData: any) => {
+      console.log("[GoalOverlay] Settings update received:", rawData);
+      const data = typeof rawData === "string" ? JSON.parse(rawData) : rawData;
       if (data.brand_color) {
         setBrandColor(data.brand_color);
       }
     });
 
     return () => {
-      goalChannel.unbind_all();
-      settingsChannel.unbind_all();
-      pusher.unsubscribe('chiaa_gaming-goal');
-      pusher.unsubscribe('chiaa_gaming-settings');
-      pusher.disconnect();
+      if (pusherRef.current) {
+        try {
+          goalChannel.unbind_all();
+          goalChannel.unsubscribe();
+          settingsChannel.unbind_all();
+          settingsChannel.unsubscribe();
+          pusherRef.current.disconnect();
+        } catch (e) {
+          console.log("Pusher cleanup:", e);
+        }
+        pusherRef.current = null;
+      }
     };
   }, [pusherConfig]);
 
-  // Check for goal completion and show celebration
-  const percentage = goalData?.targetAmount ? Math.min((currentAmount / goalData.targetAmount) * 100, 100) : 0;
-  const isGoalReached = percentage >= 100;
+  // Check if goal is reached
+  const isGoalReached = goalData ? currentAmount >= goalData.goal_target_amount : false;
 
   useEffect(() => {
     if (isGoalReached && !showCelebration) {
       setShowCelebration(true);
-      setTimeout(() => setShowCelebration(false), 5000);
     }
-  }, [isGoalReached]);
-
-  if (!goalData?.isActive) {
-    return null;
-  }
+  }, [isGoalReached, showCelebration]);
 
   const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 0,
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
       maximumFractionDigits: 0,
     }).format(amount);
   };
 
   const formatCompactTarget = (amount: number) => {
-    if (amount >= 100000) {
-      return `${(amount / 100000).toFixed(1)}L`;
-    } else if (amount >= 1000) {
-      return `${(amount / 1000).toFixed(1)}K`;
+    if (amount >= 1000) {
+      const thousands = amount / 1000;
+      const formatted = thousands % 1 === 0 ? thousands.toString() : thousands.toFixed(1);
+      return { number: `₹${formatted}`, suffix: "k" };
     }
-    return amount.toString();
+    return { number: `₹${amount}`, suffix: "" };
   };
 
+  // Don't render anything if no active goal
+  if (!goalData) {
+    return null;
+  }
+
+  const percentage = Math.min((currentAmount / Math.max(goalData.goal_target_amount, 0.01)) * 100, 100);
+
   return (
-    <div className="fixed inset-0 flex items-end justify-center pb-8 pointer-events-none">
-      <div 
-        className="w-[90%] max-w-lg p-4 rounded-xl relative overflow-hidden"
-        style={{
-          background: `linear-gradient(135deg, ${hexToDarkBg(brandColor)} 0%, rgba(0,0,0,0.9) 100%)`,
-          boxShadow: `0 8px 32px ${hexToRgba(brandColor, 0.3)}`,
-          border: `2px solid ${hexToRgba(brandColor, 0.4)}`,
-        }}
-      >
-        {/* HyperChat Logo */}
-        <div className="absolute top-2 right-2 opacity-60">
-          <img src={hyperchatLogo} alt="HyperChat" className="h-5" />
-        </div>
-
-        {/* Goal Name */}
-        <div className="text-center mb-3">
-          <h3 
-            className="text-lg font-bold"
-            style={{ color: brandColor }}
-          >
-            {goalData.goalName}
-          </h3>
-        </div>
-
-        {/* Progress Bar */}
-        <div className="relative h-8 rounded-full overflow-hidden mb-2"
-          style={{ 
-            background: hexToRgba(brandColor, 0.2),
-            border: `1px solid ${hexToRgba(brandColor, 0.3)}`,
+    <div className="w-screen h-screen bg-transparent overflow-hidden flex items-center justify-center">
+      <div className="relative w-[min(80vw,900px)]">
+        {/* Goal Card - Dynamic Brand Color Theme */}
+        <div
+          className="relative px-7 py-5 rounded-[1.25rem] text-white"
+          style={{
+            background: hexToDarkBg(brandColor, 0.95),
+            border: `1px solid ${hexToRgba(brandColor, 0.4)}`,
+            boxShadow: `0 18px 35px rgba(0, 0, 0, 0.6), 0 0 40px ${hexToRgba(brandColor, 0.3)}`,
           }}
         >
-          <div 
-            className="absolute inset-y-0 left-0 rounded-full transition-all duration-1000 ease-out"
-            style={{ 
-              width: `${percentage}%`,
-              background: `linear-gradient(90deg, ${brandColor} 0%, ${hexToLightVariant(brandColor)} 100%)`,
-            }}
-          >
-            {/* Shimmer effect */}
-            <div 
-              className="absolute inset-0 opacity-30"
-              style={{
-                background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%)',
-                animation: 'shimmer 2s infinite',
-              }}
-            />
-          </div>
+          {/* Title Row */}
+          <div className="flex items-center mb-3">
+            {/* Static Logo + Goal Name */}
+            <div className="flex items-center gap-4">
+              <img src={hyperchatLogo} alt="HyperChat logo" className="h-10 w-auto" />
+              <span className="text-[clamp(1.2rem,2.1vw,1.6rem)] font-semibold tracking-wider uppercase whitespace-nowrap">
+                {goalData.goal_name}
+              </span>
+            </div>
 
-          {/* Amount text on progress bar */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-white font-bold text-sm drop-shadow-lg">
-              {formatAmount(currentAmount)} / ₹{formatCompactTarget(goalData.targetAmount)}
+            {/* Amount Text - positioned 25% right from center */}
+            <span className="text-5xl font-black opacity-95 absolute left-[75%] transform -translate-x-1/2 whitespace-nowrap drop-shadow-lg">
+              <span className="font-extrabold">{formatAmount(currentAmount)}</span>
+              {" / "}
+              {(() => {
+                const target = formatCompactTarget(goalData.goal_target_amount);
+                return (
+                  <span className="text-4xl font-normal opacity-60">
+                    {target.number}
+                    {target.suffix}
+                  </span>
+                );
+              })()}
             </span>
           </div>
-        </div>
 
-        {/* Percentage */}
-        <div className="text-center">
-          <span 
-            className="text-2xl font-bold"
-            style={{ color: brandColor }}
+          {/* Divider */}
+          <div className="w-full h-px mb-3" style={{ background: hexToRgba(brandColor, 0.35) }} />
+
+          {/* Progress Bar Track */}
+          <div
+            className="relative w-full h-[18px] rounded-full overflow-hidden"
+            style={{
+              background: hexToDarkBg(brandColor, 1),
+              border: `1px solid ${hexToRgba(brandColor, 0.6)}`,
+            }}
           >
-            {percentage.toFixed(1)}%
-          </span>
+            {/* Progress Fill - Dynamic Gradient */}
+            <div
+              className="relative h-full rounded-full transition-[width] duration-1000"
+              style={{
+                width: `${percentage}%`,
+                background: `linear-gradient(90deg, ${brandColor}, ${lightColor})`,
+                boxShadow: `0 0 14px ${hexToRgba(brandColor, 0.8)}, 0 0 26px ${hexToRgba(lightColor, 0.7)}`,
+                transitionTimingFunction: "cubic-bezier(0.23, 0.9, 0.32, 1.01)",
+              }}
+            >
+              {/* Shimmer Overlay */}
+              <div
+                className="absolute inset-0 opacity-35 mix-blend-screen"
+                style={{
+                  background:
+                    "repeating-linear-gradient(120deg, rgba(255, 255, 255, 0.18) 0, rgba(255, 255, 255, 0.18) 5px, transparent 5px, transparent 10px)",
+                  animation: "shimmer 1.3s linear infinite",
+                }}
+              />
+            </div>
+          </div>
         </div>
 
-        {/* Celebration Animation */}
+        {/* Goal Reached Celebration */}
         {showCelebration && (
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            {/* Confetti Particles */}
             {[...Array(20)].map((_, i) => (
               <div
                 key={i}
                 className="absolute w-3 h-3 rounded-full"
                 style={{
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  background: i % 2 === 0 ? brandColor : hexToLightVariant(brandColor),
-                  animation: `confetti-burst 1s ease-out forwards`,
-                  animationDelay: `${Math.random() * 0.5}s`,
+                  background: i % 3 === 0 ? brandColor : i % 3 === 1 ? lightColor : "#ffffff",
+                  left: "50%",
+                  top: "50%",
+                  animation: `confettiBurst 1.5s ease-out ${i * 0.05}s forwards`,
+                  transform: `rotate(${i * 18}deg) translateY(0)`,
                 }}
               />
             ))}
-            <div 
-              className="absolute inset-0 rounded-xl"
+
+            {/* Neon Ripple */}
+            <div
+              className="absolute rounded-full opacity-50"
               style={{
-                border: `3px solid ${brandColor}`,
-                animation: 'ripple-expand 1s ease-out forwards',
+                width: "100px",
+                height: "100px",
+                background: `linear-gradient(to right, ${brandColor}, ${lightColor})`,
+                animation: "rippleExpand 1.5s ease-out infinite",
               }}
             />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span 
-                className="text-4xl font-bold animate-bounce"
-                style={{ color: brandColor }}
+
+            {/* Goal Reached Text */}
+            <div className="relative mt-32">
+              <h2 
+                className="text-4xl font-bold text-white animate-pulse"
+                style={{ textShadow: `0 0 20px ${brandColor}` }}
               >
-                🎉 GOAL REACHED! 🎉
-              </span>
+                GOAL REACHED! 🎉
+              </h2>
             </div>
           </div>
         )}
-      </div>
 
-      <style>{`
-        @keyframes shimmer {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
-        }
-        @keyframes confetti-burst {
-          0% { transform: scale(0) translateY(0); opacity: 1; }
-          100% { transform: scale(1) translateY(-100px); opacity: 0; }
-        }
-        @keyframes ripple-expand {
-          0% { transform: scale(0.8); opacity: 1; }
-          100% { transform: scale(1.1); opacity: 0; }
-        }
-      `}</style>
+        {/* CSS Animations */}
+        <style>{`
+          @keyframes shimmer {
+            from { transform: translateX(-20%); }
+            to { transform: translateX(20%); }
+          }
+
+          @keyframes confettiBurst {
+            0% {
+              transform: translate(-50%, -50%) rotate(0deg) translateY(0) scale(1);
+              opacity: 1;
+            }
+            100% {
+              transform: translate(-50%, -50%) rotate(720deg) translateY(-300px) scale(0.5);
+              opacity: 0;
+            }
+          }
+
+          @keyframes rippleExpand {
+            0% {
+              transform: scale(0);
+              opacity: 0.6;
+            }
+            100% {
+              transform: scale(8);
+              opacity: 0;
+            }
+          }
+        `}</style>
+      </div>
     </div>
   );
 };
