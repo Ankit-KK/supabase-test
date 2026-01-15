@@ -12,6 +12,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import EnhancedVoiceRecorder from "@/components/EnhancedVoiceRecorder";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
+import HyperSoundSelector from "@/components/HyperSoundSelector";
 import { SUPPORTED_CURRENCIES, getCurrencyMinimums, getCurrencySymbol } from "@/constants/currencies";
 import DonationPageFooter from "@/components/DonationPageFooter";
 
@@ -32,30 +33,14 @@ const ChiaGaming = () => {
   });
   const [selectedCurrency, setSelectedCurrency] = useState("INR");
   const [currencyOpen, setCurrencyOpen] = useState(false);
-  const [donationType, setDonationType] = useState<"text" | "voice" | "hyperemote">("text");
-  const [selectedEmoteUrl, setSelectedEmoteUrl] = useState<string | null>(null);
+  const [donationType, setDonationType] = useState<"text" | "voice" | "hypersound">("text");
+  const [selectedHypersound, setSelectedHypersound] = useState<string | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const navigate = useNavigate();
 
   const minimums = getCurrencyMinimums(selectedCurrency);
   const currencySymbol = getCurrencySymbol(selectedCurrency);
   const brandColor = "#ec4899";
-
-  // Static emotes from chiaa-emotes bucket
-  const availableEmotes = [
-    { name: "emojis1", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/emojis1-Photoroom.png" },
-    { name: "image-10", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(10).png" },
-    { name: "image-1", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(1).png" },
-    { name: "image-2", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(2).png" },
-    { name: "image-3", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(3).png" },
-    { name: "image-4", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(4).png" },
-    { name: "image-5", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(5).png" },
-    { name: "image-6", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(6).png" },
-    { name: "image-7", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(7).png" },
-    { name: "image-8", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(8).png" },
-    { name: "image-9", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom%20(9).png" },
-    { name: "image", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom.png" }
-  ];
 
   const getVoiceDuration = (amount: number) => {
     if (selectedCurrency === "INR") {
@@ -105,7 +90,7 @@ const ChiaGaming = () => {
     const minAmount =
       donationType === "voice"
         ? minimums.minVoice
-        : donationType === "hyperemote"
+        : donationType === "hypersound"
           ? minimums.minHypersound
           : minimums.minText;
     if (amount < minAmount) {
@@ -118,8 +103,8 @@ const ChiaGaming = () => {
       return;
     }
 
-    if (donationType === "hyperemote" && !selectedEmoteUrl) {
-      toast.error("Please select an emote");
+    if (donationType === "hypersound" && !selectedHypersound) {
+      toast.error("Please select a sound");
       return;
     }
 
@@ -187,7 +172,7 @@ const ChiaGaming = () => {
           amount: parseFloat(formData.amount),
           message: donationType === "text" ? formData.message : null,
           voiceMessageUrl: voiceMessageUrl,
-          hypersoundUrl: donationType === "hyperemote" ? selectedEmoteUrl : null,
+          hypersoundUrl: donationType === "hypersound" ? selectedHypersound : null,
           currency: selectedCurrency,
         },
       });
@@ -226,9 +211,9 @@ const ChiaGaming = () => {
     }
   };
 
-  const handleDonationTypeChange = (value: "text" | "voice" | "hyperemote") => {
+  const handleDonationTypeChange = (value: "text" | "voice" | "hypersound") => {
     setDonationType(value);
-    if (value === "hyperemote") {
+    if (value === "hypersound") {
       setFormData((prev) => ({ ...prev, amount: String(minimums.minHypersound), message: "" }));
     } else if (value === "voice") {
       setFormData((prev) => ({ ...prev, amount: String(minimums.minVoice), message: "" }));
@@ -320,16 +305,16 @@ const ChiaGaming = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleDonationTypeChange("hyperemote")}
+                  onClick={() => handleDonationTypeChange("hypersound")}
                   className={`p-2 rounded-lg border-2 transition-all ${
-                    donationType === "hyperemote"
+                    donationType === "hypersound"
                       ? "border-pink-500 bg-pink-500/10"
                       : "border-pink-500/30 hover:border-pink-500/50"
                   }`}
                 >
                   <div className="text-center">
-                    <div className="text-sm mb-0.5">🎉</div>
-                    <div className="font-medium text-[10px]">Hyperemotes</div>
+                    <div className="text-sm mb-0.5">🔊</div>
+                    <div className="font-medium text-[10px]">HyperSound</div>
                     <div className="text-[9px] text-muted-foreground">
                       Min: {currencySymbol}
                       {minimums.minHypersound}
@@ -443,25 +428,10 @@ const ChiaGaming = () => {
               </div>
             )}
 
-            {donationType === "hyperemote" && (
+            {donationType === "hypersound" && (
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-pink-500">Select an Emote *</Label>
-                <div className="grid grid-cols-4 gap-2 max-h-40 overflow-y-auto p-1">
-                  {availableEmotes.map((emote) => (
-                    <button
-                      key={emote.name}
-                      type="button"
-                      onClick={() => setSelectedEmoteUrl(emote.url)}
-                      className={`p-2 rounded-lg border-2 transition-all ${
-                        selectedEmoteUrl === emote.url
-                          ? "border-pink-500 bg-pink-500/20"
-                          : "border-pink-500/30 hover:border-pink-500/50"
-                      }`}
-                    >
-                      <img src={emote.url} alt={emote.name} className="w-10 h-10 object-contain mx-auto" />
-                    </button>
-                  ))}
-                </div>
+                <Label className="text-sm font-medium text-pink-500">Select a Sound</Label>
+                <HyperSoundSelector selectedSound={selectedHypersound} onSoundSelect={setSelectedHypersound} />
               </div>
             )}
 
