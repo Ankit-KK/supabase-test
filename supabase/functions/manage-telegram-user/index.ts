@@ -49,13 +49,22 @@ serve(async (req) => {
     }
 
     if (action === 'add') {
-      // Remove existing entry for this streamer (if any)
-      await supabaseAdmin
+      // Check if this telegram user already exists for this streamer
+      const { data: existing } = await supabaseAdmin
         .from('streamers_moderators')
-        .delete()
-        .eq('streamer_id', streamerId);
+        .select('id')
+        .eq('streamer_id', streamerId)
+        .eq('telegram_user_id', telegramUserId)
+        .single();
 
-      // Add new telegram user
+      if (existing) {
+        return new Response(JSON.stringify({ error: 'This Telegram user is already added as a moderator' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Add new telegram user (without deleting existing ones)
       const { error: insertError } = await supabaseAdmin
         .from('streamers_moderators')
         .insert({
@@ -78,10 +87,19 @@ serve(async (req) => {
       });
 
     } else if (action === 'remove') {
+      // Remove specific telegram user by ID
+      if (!telegramUserId) {
+        return new Response(JSON.stringify({ error: 'telegramUserId is required for remove action' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       const { error: deleteError } = await supabaseAdmin
         .from('streamers_moderators')
         .delete()
-        .eq('streamer_id', streamerId);
+        .eq('streamer_id', streamerId)
+        .eq('telegram_user_id', telegramUserId);
 
       if (deleteError) {
         console.error('Delete error:', deleteError);

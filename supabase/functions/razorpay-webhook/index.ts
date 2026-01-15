@@ -597,7 +597,7 @@ serve(async (req) => {
         }
       }
 
-      // Send Telegram notification to moderators
+      // Send Telegram notification to moderators with moderation buttons
       try {
         console.log('Sending Telegram notification to moderators for donation:', donation.id);
         
@@ -605,9 +605,10 @@ serve(async (req) => {
         if (!telegramBotToken) {
           console.log('TELEGRAM_BOT_TOKEN not configured, skipping Telegram notification');
         } else {
+          // Fetch moderators with their permissions
           const { data: moderators, error: modError } = await supabase
             .from('streamers_moderators')
-            .select('telegram_user_id, mod_name')
+            .select('telegram_user_id, mod_name, role, can_approve, can_reject, can_hide_message, can_ban, can_replay')
             .eq('streamer_id', donation.streamer_id)
             .eq('is_active', true);
 
@@ -616,21 +617,75 @@ serve(async (req) => {
           } else if (moderators && moderators.length > 0) {
             console.log(`Found ${moderators.length} active moderators for streamer ${donation.streamer_id}`);
 
-            // Different message based on moderation mode
-            const statusText = shouldAutoApprove 
-              ? `✅ Auto-approved and sent to OBS`
-              : `⏳ *Awaiting moderation approval*`;
+            const isManualMode = !shouldAutoApprove;
+            const isPending = donation.moderation_status === 'pending';
 
-            const messageText = `🎉 *New Donation Received!*\n\n` +
-              `👤 From: *${donation.name}*\n` +
-              `💰 Amount: ₹${donation.amount}\n` +
-              (donation.message ? `💬 Message: "${donation.message}"\n` : '') +
-              (donation.is_hyperemote ? `✨ HyperEmote activated!\n` : '') +
-              `📅 Time: ${new Date(donation.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}\n\n` +
-              statusText;
+            // Build message with HTML formatting
+            let messageText = isManualMode && isPending
+              ? `🎁 <b>New Donation - Needs Approval</b> 🎁\n\n`
+              : `🎁 <b>New Donation Received!</b> 🎁\n\n`;
+            
+            messageText += `💰 <b>Amount:</b> ₹${donation.amount}\n`;
+            messageText += `👤 <b>From:</b> ${donation.name}\n`;
+            messageText += `📅 <b>Time:</b> ${new Date(donation.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}\n`;
+            
+            if (donation.message) {
+              const truncatedMsg = donation.message.substring(0, 200) + (donation.message.length > 200 ? '...' : '');
+              messageText += `💬 <b>Message:</b> ${truncatedMsg}\n`;
+            }
+            
+            if (donation.voice_message_url) {
+              messageText += `🎵 <b>Voice:</b> Available\n`;
+            }
+
+            if (donation.is_hyperemote) {
+              messageText += `✨ <b>HyperEmote:</b> Activated\n`;
+            }
+
+            const statusEmoji = isPending ? '⏳' : '✅';
+            const statusText = isPending ? 'Pending Approval' : 'Auto-Approved';
+            messageText += `\n${statusEmoji} <i>${statusText}</i>`;
 
             for (const mod of moderators) {
               try {
+                // Build keyboard based on mode and permissions
+                const keyboard: any[][] = [];
+                
+                if (isManualMode && isPending) {
+                  // Row 1: Approve/Reject for pending manual mode
+                  const row1: any[] = [];
+                  if (mod.role === 'owner' || mod.can_approve) {
+                    row1.push({ text: '✅ Approve', callback_data: `approve_${donation.id}_${donationTable}` });
+                  }
+                  if (mod.role === 'owner' || mod.can_reject) {
+                    row1.push({ text: '❌ Reject', callback_data: `reject_${donation.id}_${donationTable}` });
+                  }
+                  if (row1.length > 0) keyboard.push(row1);
+
+                  // Row 2: Hide/Ban
+                  const row2: any[] = [];
+                  if ((mod.role === 'owner' || mod.can_hide_message) && donation.message) {
+                    row2.push({ text: '🙈 Hide Msg', callback_data: `hide_message_${donation.id}_${donationTable}` });
+                  }
+                  if (mod.role === 'owner' || mod.can_ban) {
+                    row2.push({ text: '🚫 Ban', callback_data: `ban_donor_${donation.id}_${donationTable}` });
+                  }
+                  if (row2.length > 0) keyboard.push(row2);
+                } else {
+                  // For auto-approved: show replay and hide options
+                  const row: any[] = [];
+                  if (donation.message && (mod.role === 'owner' || mod.can_hide_message)) {
+                    row.push({ text: '🙈 Hide Msg', callback_data: `hide_message_${donation.id}_${donationTable}` });
+                  }
+                  if (mod.role === 'owner' || mod.can_replay) {
+                    row.push({ text: '🔄 Replay', callback_data: `replay_${donation.id}_${donationTable}` });
+                  }
+                  if (row.length > 0) keyboard.push(row);
+                }
+
+                // Dashboard link
+                keyboard.push([{ text: '📊 Dashboard', url: `https://hyperchat.site/dashboard/${pusherSlug}` }]);
+
                 const textResponse = await fetch(
                   `https://api.telegram.org/bot${telegramBotToken}/sendMessage`,
                   {
@@ -639,15 +694,9 @@ serve(async (req) => {
                     body: JSON.stringify({
                       chat_id: mod.telegram_user_id,
                       text: messageText,
-                      parse_mode: 'Markdown',
-                      reply_markup: {
-                        inline_keyboard: [[
-                          {
-                            text: '📊 View Dashboard',
-                            url: `https://hyperchat.site/dashboard/${pusherSlug}`
-                          }
-                        ]]
-                      }
+                      parse_mode: 'HTML',
+                      disable_web_page_preview: true,
+                      reply_markup: keyboard.length > 0 ? { inline_keyboard: keyboard } : undefined
                     })
                   }
                 );
