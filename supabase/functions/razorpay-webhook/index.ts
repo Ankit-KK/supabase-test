@@ -23,6 +23,7 @@ const streamerSlugMap: Record<string, string> = {
   'damaskplays': 'damask_plays',
   'nekoxenpai': 'neko_xenpai',
   'jimmygaming': 'jimmy_gaming',
+  'chiagaming': 'chiaa_gaming',
 };
 
 // Helper function to get Pusher credentials based on streamer_slug
@@ -127,7 +128,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // Determine table based on order ID prefix (supports both old and new formats)
-    let streamerType: 'ankit' | 'thunderx' | 'vipbhai' | 'sagarujjwalgaming' | 'notyourkween' | 'bongflick' | 'mriqmaster' | 'abdevil' | 'looteriyagaming' | 'damaskplays' | 'nekoxenpai' | 'jhanvoo' | 'clumsygod' | 'jimmygaming'
+    let streamerType: 'ankit' | 'thunderx' | 'vipbhai' | 'sagarujjwalgaming' | 'notyourkween' | 'bongflick' | 'mriqmaster' | 'abdevil' | 'looteriyagaming' | 'damaskplays' | 'nekoxenpai' | 'jhanvoo' | 'clumsygod' | 'jimmygaming' | 'chiagaming'
     let tableName: string
     
     // Get donation from the appropriate table using Razorpay order ID
@@ -290,7 +291,7 @@ serve(async (req) => {
                               streamerType = 'clumsygod'
                               tableName = 'clumsygod_donations'
                             } else {
-                              // Try jimmy_gaming
+                            // Try jimmy_gaming
                               const jimmyGamingResult = await supabase
                                 .from('jimmy_gaming_donations')
                                 .select('*')
@@ -302,7 +303,20 @@ serve(async (req) => {
                                 streamerType = 'jimmygaming'
                                 tableName = 'jimmy_gaming_donations'
                               } else {
-                                fetchError = ankitResult.error || thunderxResult.error || vipbhaiResult.error || sagarujjwalgamingResult.error || notyourkweenResult.error || bongflickResult.error || mriqmasterResult.error || abdevilResult.error || looteriyaGamingResult.error || damaskPlaysResult.error || nekoXenpaiResult.error || jhanvooResult.error || clumsygodResult.error || jimmyGamingResult.error
+                                // Try chiaa_gaming
+                                const chiagamingResult = await supabase
+                                  .from('chiaa_gaming_donations')
+                                  .select('*')
+                                  .eq('razorpay_order_id', razorpayOrderId)
+                                  .maybeSingle()
+                                
+                                if (chiagamingResult.data) {
+                                  donation = chiagamingResult.data
+                                  streamerType = 'chiagaming'
+                                  tableName = 'chiaa_gaming_donations'
+                                } else {
+                                  fetchError = ankitResult.error || thunderxResult.error || vipbhaiResult.error || sagarujjwalgamingResult.error || notyourkweenResult.error || bongflickResult.error || mriqmasterResult.error || abdevilResult.error || looteriyaGamingResult.error || damaskPlaysResult.error || nekoXenpaiResult.error || jhanvooResult.error || clumsygodResult.error || jimmyGamingResult.error || chiagamingResult.error
+                                }
                               }
                             }
                           }
@@ -428,6 +442,7 @@ serve(async (req) => {
         : streamerType === 'jhanvoo' ? 'jhanvoo'
         : streamerType === 'clumsygod' ? 'clumsygod'
         : streamerType === 'jimmygaming' ? 'jimmy_gaming'
+        : streamerType === 'chiagaming' ? 'chiaa_gaming'
         : 'ankit';
 
       // Send to dashboard channel for real-time updates

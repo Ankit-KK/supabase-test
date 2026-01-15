@@ -2,16 +2,21 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { Gamepad2, Heart, Sparkles } from "lucide-react";
-import { load } from '@cashfreepayments/cashfree-js';
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import VoiceRecorder from "@/components/VoiceRecorder";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import DonationPageFooter from "@/components/DonationPageFooter";
+import { SUPPORTED_CURRENCIES, getCurrencySymbol, getCurrencyMinimums } from "@/constants/currencies";
 
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 const ChiaGaming = () => {
   const navigate = useNavigate();
@@ -20,10 +25,9 @@ const ChiaGaming = () => {
     amount: '',
     message: ''
   });
+  const [currency, setCurrency] = useState('INR');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [cashfree, setCashfree] = useState<any>(null);
-  const [sdkLoading, setSdkLoading] = useState(true);
-  const [sdkError, setSdkError] = useState<string | null>(null);
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [donationType, setDonationType] = useState<'message' | 'voice' | 'hyperemote'>('message');
   const [streamerSettings, setStreamerSettings] = useState<any>(null);
   const [hasVoiceRecording, setHasVoiceRecording] = useState(false);
@@ -31,11 +35,6 @@ const ChiaGaming = () => {
   const [showHyperemoteEffect, setShowHyperemoteEffect] = useState(false);
   const [selectedEmoji, setSelectedEmoji] = useState<string>('');
   const [selectedEmoteUrl, setSelectedEmoteUrl] = useState<string>('');
-  
-  // Phone number dialog states
-  const [showPhoneDialog, setShowPhoneDialog] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [phoneError, setPhoneError] = useState('');
   
   // Calculate voice recording duration based on amount
   const getVoiceDuration = (amount: number) => {
@@ -65,36 +64,36 @@ const ChiaGaming = () => {
     { name: "image", url: "https://vsevsjvtrshgeiudrnth.supabase.co/storage/v1/object/public/chiaa-emotes/image-Photoroom.png" }
   ];
 
-  // Initialize Cashfree SDK and fetch streamer settings
+  // Get currency minimums
+  const currencyMins = getCurrencyMinimums(currency);
+  const currencySymbol = getCurrencySymbol(currency);
+
+  // Load Razorpay SDK and fetch streamer settings
   useEffect(() => {
-    const initializeSDK = async () => {
-      try {
-        setSdkLoading(true);
-        setSdkError(null);
-        console.log('Initializing Cashfree SDK...');
-        
-        const cf = await load({
-          mode: "production"
-        });
-        
-        setCashfree(cf);
-        console.log('Cashfree SDK initialized successfully');
-        
+    const loadRazorpay = () => {
+      if (window.Razorpay) {
+        setRazorpayLoaded(true);
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => {
+        setRazorpayLoaded(true);
         toast({
           title: "Payment System Ready",
           description: "You can now make donations safely.",
         });
-      } catch (error) {
-        console.error('Failed to initialize Cashfree SDK:', error);
-        setSdkError('Failed to load payment system. Please refresh the page.');
+      };
+      script.onerror = () => {
         toast({
-          title: "Payment System Error", 
+          title: "Payment System Error",
           description: "Failed to load payment system. Please refresh the page.",
           variant: "destructive",
         });
-      } finally {
-        setSdkLoading(false);
-      }
+      };
+      document.body.appendChild(script);
     };
 
     const fetchStreamerSettings = async () => {
@@ -109,7 +108,7 @@ const ChiaGaming = () => {
       }
     };
     
-    initializeSDK();
+    loadRazorpay();
     fetchStreamerSettings();
   }, []);
 
@@ -163,27 +162,27 @@ const ChiaGaming = () => {
       return;
     }
 
-    // Validate minimum amounts based on donation type
-    if (donationType === 'message' && amount < 40) {
+    // Validate minimum amounts based on donation type and currency
+    if (donationType === 'message' && amount < currencyMins.minText) {
       toast({
         title: "Minimum Amount Required",
-        description: "Minimum amount for text message is ₹40",
+        description: `Minimum amount for text message is ${currencySymbol}${currencyMins.minText}`,
         variant: "destructive",
       });
       return;
     }
-    if (donationType === 'voice' && amount < 150) {
+    if (donationType === 'voice' && amount < currencyMins.minVoice) {
       toast({
         title: "Minimum Amount Required",
-        description: "Minimum amount for voice message is ₹150",
+        description: `Minimum amount for voice message is ${currencySymbol}${currencyMins.minVoice}`,
         variant: "destructive",
       });
       return;
     }
-    if (donationType === 'hyperemote' && amount < 50) {
+    if (donationType === 'hyperemote' && amount < currencyMins.minHypersound) {
       toast({
         title: "Minimum Amount Required",
-        description: "Minimum amount for hyperemotes is ₹50",
+        description: `Minimum amount for hyperemotes is ${currencySymbol}${currencyMins.minHypersound}`,
         variant: "destructive",
       });
       return;
@@ -199,13 +198,13 @@ const ChiaGaming = () => {
       return;
     }
 
-    // Open phone number dialog
-    setShowPhoneDialog(true);
+    // Process payment directly (no phone dialog needed for Razorpay)
+    await handlePayment();
   };
 
-  const handlePaymentAfterPhone = async () => {
+  const handlePayment = async () => {
     setIsProcessing(true);
-    let data: any = null;
+    let orderData: any = null;
 
     try {
       const amount = parseFloat(formData.amount);
@@ -244,66 +243,65 @@ const ChiaGaming = () => {
       }
 
       // Create order via Supabase edge function
-      const response = await supabase.functions.invoke('create-payment-order-chiagaming', {
+      const response = await supabase.functions.invoke('create-razorpay-order-chiagaming', {
         body: {
           name: formData.name.trim(),
           amount: amount,
+          currency: currency,
           message: donationType === 'message' ? formData.message.trim() : donationType === 'voice' ? 'Voice message donation' : '',
-          phone: phoneNumber,
-          voiceMessageUrl: voiceMessageUrl
+          voiceMessageUrl: voiceMessageUrl,
+          hypersoundUrl: donationType === 'hyperemote' ? selectedEmoteUrl : null
         }
       });
 
-      data = response.data;
+      orderData = response.data;
       const error = response.error;
 
-      if (error || !data?.success) {
-        throw new Error(data?.error || 'Failed to create payment order');
+      if (error || !orderData?.razorpay_order_id) {
+        throw new Error(orderData?.error || 'Failed to create payment order');
       }
 
-      // Streamer ID is stored by the edge function; no need to fetch here
-      // Extras (voice/hyperemote) are passed to edge function at creation time.
-      // Initialize Cashfree checkout
-      const checkoutOptions = {
-        paymentSessionId: data.payment_session_id,
-        redirectTarget: "_modal",
-        appearance: {
-          width: "500px",
-          height: "700px"
+      console.log('Order created:', orderData);
+
+      // Initialize Razorpay checkout
+      const razorpayOptions = {
+        key: orderData.razorpay_key_id,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'Chia Gaming',
+        description: `Donation from ${formData.name.trim()}`,
+        order_id: orderData.razorpay_order_id,
+        handler: function(response: any) {
+          console.log('Payment successful:', response);
+          navigate(`/chiagaming/status?order_id=${orderData.orderId}&status=success`);
         },
-        onSuccess: function(data: any) {
-          console.log("Payment successful:", data);
+        modal: {
+          ondismiss: function() {
+            console.log('Payment modal closed');
+            navigate(`/chiagaming/status?order_id=${orderData.orderId}&status=pending`);
+          }
         },
-        onFailure: function(data: any) {
-          console.log("Payment failed:", data);
+        prefill: {
+          name: formData.name.trim(),
+        },
+        theme: {
+          color: '#ec4899'
         }
       };
 
-      // Add a small delay to ensure proper focus handling
-      setTimeout(async () => {
-        const result = await cashfree.checkout(checkoutOptions);
-        
-        const orderId = data.order_id;
-        if (result.error) {
-          console.log("Payment cancelled or error:", result.error);
-          navigate(`/status?order_id=${orderId}&status=pending`);
-        } else if (result.paymentDetails) {
-          console.log("Payment completed:", result.paymentDetails);
-          navigate(`/status?order_id=${orderId}&status=success`);
-        } else if (result.redirect) {
-          console.log("Payment will be redirected");
-          navigate(`/status?order_id=${orderId}&status=pending`);
-        } else {
-          navigate(`/status?order_id=${orderId}&status=pending`);
-        }
-      }, 100);
+      const razorpay = new window.Razorpay(razorpayOptions);
+      razorpay.on('payment.failed', function(response: any) {
+        console.log('Payment failed:', response.error);
+        navigate(`/chiagaming/status?order_id=${orderData.orderId}&status=failed`);
+      });
+      razorpay.open();
 
     } catch (error) {
       console.error('Payment error:', error);
       // Redirect to status page even on error, if we have an order ID
-      const orderId = data?.order_id;
+      const orderId = orderData?.orderId;
       if (orderId) {
-        navigate(`/status?order_id=${orderId}&status=error`);
+        navigate(`/chiagaming/status?order_id=${orderId}&status=error`);
       } else {
         toast({
           title: "Payment Failed",
@@ -313,35 +311,13 @@ const ChiaGaming = () => {
       }
     } finally {
       setIsProcessing(false);
-      setShowPhoneDialog(false);
     }
-  };
-
-  const validatePhoneNumber = (phone: string): boolean => {
-    const phoneRegex = /^[6-9]\d{9}$/; // Indian mobile number format
-    return phoneRegex.test(phone);
-  };
-
-  const handlePhoneSubmit = () => {
-    setPhoneError('');
-    
-    if (!phoneNumber.trim()) {
-      setPhoneError('Please enter your mobile number');
-      return;
-    }
-    
-    if (!validatePhoneNumber(phoneNumber)) {
-      setPhoneError('Please enter a valid 10-digit mobile number');
-      return;
-    }
-    
-    handlePaymentAfterPhone();
   };
 
   const handleDonationTypeChange = (type: 'message' | 'voice' | 'hyperemote') => {
     setDonationType(type);
     if (type === 'hyperemote') {
-      const minAmount = streamerSettings?.hyperemotes_min_amount || 50;
+      const minAmount = streamerSettings?.hyperemotes_min_amount || currencyMins.minHypersound;
       setFormData(prev => ({ ...prev, amount: minAmount.toString(), message: '' }));
       // Trigger hyperemote effect
       setShowHyperemoteEffect(true);
@@ -403,6 +379,24 @@ const ChiaGaming = () => {
               />
             </div>
 
+            {/* Currency Selector */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gaming-pink-primary">
+                Currency
+              </label>
+              <Select value={currency} onValueChange={setCurrency}>
+                <SelectTrigger className="border-gaming-pink-primary/30 focus:border-gaming-pink-primary">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SUPPORTED_CURRENCIES.map((curr) => (
+                    <SelectItem key={curr.code} value={curr.code}>
+                      {curr.symbol} {curr.code} - {curr.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
             {/* Donation Type Selection */}
             <div className="space-y-3">
@@ -422,7 +416,7 @@ const ChiaGaming = () => {
                     <div className="text-center">
                       <div className="text-base mb-1">💬</div>
                       <div className="font-medium text-xs">Text Message</div>
-                      <div className="text-xs text-muted-foreground">Min: ₹40</div>
+                      <div className="text-xs text-muted-foreground">Min: {currencySymbol}{currencyMins.minText}</div>
                     </div>
                   </button>
                   <button
@@ -437,7 +431,7 @@ const ChiaGaming = () => {
                     <div className="text-center">
                       <div className="text-base mb-1">🎤</div>
                       <div className="font-medium text-xs">Voice Message</div>
-                      <div className="text-xs text-muted-foreground">Min: ₹150</div>
+                      <div className="text-xs text-muted-foreground">Min: {currencySymbol}{currencyMins.minVoice}</div>
                     </div>
                   </button>
                   <button
@@ -452,7 +446,7 @@ const ChiaGaming = () => {
                     <div className="text-center">
                       <div className="text-base mb-1">🎉</div>
                       <div className="font-medium text-xs">Hyperemotes</div>
-                      <div className="text-xs text-muted-foreground">₹{streamerSettings?.hyperemotes_min_amount || 50}+ celebration</div>
+                      <div className="text-xs text-muted-foreground">{currencySymbol}{streamerSettings?.hyperemotes_min_amount || currencyMins.minHypersound}+ celebration</div>
                     </div>
                   </button>
                 </div>
@@ -465,19 +459,19 @@ const ChiaGaming = () => {
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gaming-pink-primary font-medium">
-                  ₹
+                  {currencySymbol}
                 </span>
                 <Input
                   id="amount"
                   name="amount"
                   type="number"
                   placeholder={
-                    donationType === 'message' ? 'Min: ₹40' : 
-                    donationType === 'voice' ? 'Min: ₹150' : 
-                    donationType === 'hyperemote' ? (streamerSettings?.hyperemotes_min_amount || 50).toString() : 
+                    donationType === 'message' ? `Min: ${currencySymbol}${currencyMins.minText}` : 
+                    donationType === 'voice' ? `Min: ${currencySymbol}${currencyMins.minVoice}` : 
+                    donationType === 'hyperemote' ? (streamerSettings?.hyperemotes_min_amount || currencyMins.minHypersound).toString() : 
                     '100'
                   }
-                  min={donationType === 'hyperemote' ? (streamerSettings?.hyperemotes_min_amount || 50).toString() : '1'}
+                  min={donationType === 'hyperemote' ? (streamerSettings?.hyperemotes_min_amount || currencyMins.minHypersound).toString() : '1'}
                   max="100000"
                   value={formData.amount}
                   onChange={handleInputChange}
@@ -490,10 +484,35 @@ const ChiaGaming = () => {
               </div>
               {donationType === 'message' && (
                 <p className="text-xs text-muted-foreground">
-                  TTS available for donations above ₹70
+                  TTS available for donations above {currencySymbol}{currency === 'INR' ? '70' : Math.round(70 / 89)}
                 </p>
               )}
             </div>
+
+            {/* Hyperemote Selector */}
+            {donationType === 'hyperemote' && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gaming-pink-primary">
+                  Select Emote *
+                </label>
+                <div className="grid grid-cols-4 gap-2 max-h-32 overflow-y-auto">
+                  {availableEmotes.map((emote) => (
+                    <button
+                      key={emote.name}
+                      type="button"
+                      onClick={() => handleEmojiSelect(emote.name, emote.url)}
+                      className={`p-2 rounded-lg border-2 transition-all ${
+                        selectedEmoji === emote.name
+                          ? 'border-purple-500 bg-purple-500/20'
+                          : 'border-purple-500/30 hover:border-purple-500/50'
+                      }`}
+                    >
+                      <img src={emote.url} alt={emote.name} className="w-8 h-8 object-contain mx-auto" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Text Message Field */}
             {donationType === 'message' && (
@@ -539,12 +558,12 @@ const ChiaGaming = () => {
             {/* Pay Button */}
             <Button
               type="submit"
-              disabled={isProcessing || sdkLoading || !cashfree || 
+              disabled={isProcessing || !razorpayLoaded || 
                        (donationType === 'voice' && !hasVoiceRecording) ||
                        (donationType === 'message' && !formData.message?.trim())}
               className="w-full bg-gradient-to-r from-gaming-pink-primary to-gaming-pink-secondary hover:from-gaming-pink-secondary hover:to-gaming-pink-accent text-gaming-pink-foreground font-medium py-3 relative overflow-hidden group transition-all duration-300 transform hover:scale-[1.02] disabled:scale-100"
             >
-              {sdkLoading ? (
+              {!razorpayLoaded ? (
                 <div className="flex items-center space-x-2">
                   <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
                   <span>Loading Payment System...</span>
@@ -557,7 +576,7 @@ const ChiaGaming = () => {
               ) : donationType === 'hyperemote' ? (
                 <div className="flex items-center space-x-2">
                   <Sparkles className="h-4 w-4" />
-                  <span>🎉 Celebrate with ₹1</span>
+                  <span>🎉 Celebrate with {currencySymbol}{formData.amount || currencyMins.minHypersound}</span>
                   <Sparkles className="h-4 w-4 group-hover:animate-pulse-glow" />
                 </div>
               ) : (
@@ -566,7 +585,7 @@ const ChiaGaming = () => {
                   <span>
                     {donationType === 'voice' ? '🎤 Voice Donation' : 
                      donationType === 'message' ? '💬 Text Donation' : 
-                     `Donate ₹${formData.amount || '0'}`}
+                     `Donate ${currencySymbol}${formData.amount || '0'}`}
                   </span>
                   <Sparkles className="h-4 w-4 group-hover:animate-pulse-glow" />
                 </div>
@@ -578,92 +597,27 @@ const ChiaGaming = () => {
           </form>
 
           {/* Status messages */}
-          {sdkError && (
+          {!razorpayLoaded && (
             <div className="text-center pt-4 border-t border-gaming-pink-primary/20">
-              <p className="text-sm text-destructive">{sdkError}</p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => window.location.reload()} 
-                className="mt-2"
-              >
-                Refresh Page
-              </Button>
+              <p className="text-xs text-gaming-pink-primary">
+                🔄 Loading secure payment system...
+              </p>
             </div>
           )}
           
-          {!sdkError && (
+          {razorpayLoaded && (
             <div className="text-center pt-4 border-t border-gaming-pink-primary/20">
               <p className="text-xs text-muted-foreground">
                 💝 Choose your preferred way to support and connect with the streamer
               </p>
-              {sdkLoading && (
-                <p className="text-xs text-gaming-pink-primary mt-1">
-                  🔄 Loading secure payment system...
-                </p>
-              )}
-              {cashfree && !sdkLoading && (
-                <p className="text-xs text-gaming-pink-primary mt-1">
-                  ✅ Payment system ready
-                </p>
-              )}
+              <p className="text-xs text-gaming-pink-primary mt-1">
+                ✅ Payment system ready
+              </p>
             </div>
           )}
           <DonationPageFooter brandColor="#ec4899" />
         </CardContent>
       </Card>
-
-      {/* Phone Number Dialog */}
-      <Dialog open={showPhoneDialog} onOpenChange={setShowPhoneDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-gaming-pink-primary">Enter Mobile Number</DialogTitle>
-            <DialogDescription>
-              Please enter your mobile number to proceed with the payment (required by Cashfree Payments).
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label htmlFor="dialog-phone" className="text-sm font-medium text-gaming-pink-primary">
-                Mobile Number *
-              </label>
-              <Input
-                id="dialog-phone"
-                type="tel"
-                placeholder="Enter 10-digit mobile number"
-                value={phoneNumber}
-                onChange={(e) => {
-                  setPhoneNumber(e.target.value);
-                  setPhoneError('');
-                }}
-                className="border-gaming-pink-primary/30 focus:border-gaming-pink-primary focus:ring-gaming-pink-primary/20"
-                maxLength={10}
-              />
-              {phoneError && (
-                <p className="text-sm text-red-500">{phoneError}</p>
-              )}
-            </div>
-          </div>
-          
-          <div className="flex justify-end space-x-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowPhoneDialog(false)}
-              disabled={isProcessing}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handlePhoneSubmit}
-              disabled={isProcessing}
-              className="bg-gaming-pink-primary hover:bg-gaming-pink-primary/90"
-            >
-              {isProcessing ? 'Processing...' : 'Continue to Payment'}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Stream-Style Hyperemote Animation */}
       {showHyperemoteEffect && (
