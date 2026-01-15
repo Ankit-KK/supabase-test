@@ -6,7 +6,15 @@ import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { MessageCircle, Trash2, Bot } from 'lucide-react';
+import { MessageCircle, Trash2, Bot, UserPlus, Users } from 'lucide-react';
+
+interface Moderator {
+  id: string;
+  telegram_user_id: string;
+  mod_name: string;
+  is_active: boolean;
+  role?: string;
+}
 
 interface TelegramDashboardProps {
   streamerId: string;
@@ -18,21 +26,22 @@ const TelegramDashboard: React.FC<TelegramDashboardProps> = ({
   streamerSlug
 }) => {
   const { user } = useAuth();
-  const [telegramUserId, setTelegramUserId] = useState<string>('');
+  const [moderators, setModerators] = useState<Moderator[]>([]);
   const [inputValue, setInputValue] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [removingId, setRemovingId] = useState<string | null>(null);
   const [fetchingData, setFetchingData] = useState(true);
 
-  // Fetch existing Telegram user ID via edge function
+  // Fetch existing Telegram moderators via edge function
   useEffect(() => {
-    const fetchTelegramUserId = async () => {
+    const fetchTelegramModerators = async () => {
       if (!streamerId) {
         console.log('No streamer ID provided');
         setFetchingData(false);
         return;
       }
 
-      console.log('Fetching Telegram user ID for streamer:', streamerId);
+      console.log('Fetching Telegram moderators for streamer:', streamerId);
       setFetchingData(true);
       
       try {
@@ -47,15 +56,15 @@ const TelegramDashboard: React.FC<TelegramDashboardProps> = ({
           throw error;
         }
         
-        if (data && data.telegramUserId) {
-          console.log('Found existing Telegram user ID:', data.telegramUserId);
-          setTelegramUserId(data.telegramUserId);
+        if (data && data.moderators) {
+          console.log('Found moderators:', data.moderators);
+          setModerators(data.moderators);
         } else {
-          console.log('No Telegram user ID found for this streamer');
-          setTelegramUserId('');
+          console.log('No moderators found for this streamer');
+          setModerators([]);
         }
       } catch (error) {
-        console.error('Error fetching telegram user ID:', error);
+        console.error('Error fetching telegram moderators:', error);
         toast({
           title: "Error",
           description: "Failed to load Telegram settings",
@@ -66,7 +75,7 @@ const TelegramDashboard: React.FC<TelegramDashboardProps> = ({
       }
     };
 
-    fetchTelegramUserId();
+    fetchTelegramModerators();
   }, [streamerId]);
 
   const handleAddTelegramUser = async () => {
@@ -92,8 +101,6 @@ const TelegramDashboard: React.FC<TelegramDashboardProps> = ({
     try {
       const authToken = localStorage.getItem('auth_token');
       console.log('Auth token exists:', !!authToken);
-      console.log('User ID:', user.id);
-      console.log('Streamer ID:', streamerId);
       
       if (!authToken) {
         toast({
@@ -136,11 +143,18 @@ const TelegramDashboard: React.FC<TelegramDashboardProps> = ({
         return;
       }
 
-      setTelegramUserId(inputValue.trim());
+      // Add to local state
+      const newModerator: Moderator = {
+        id: Date.now().toString(), // Temporary ID until refresh
+        telegram_user_id: inputValue.trim(),
+        mod_name: 'Telegram User',
+        is_active: true
+      };
+      setModerators(prev => [...prev, newModerator]);
       setInputValue('');
       toast({
         title: "Success",
-        description: "Telegram user ID added successfully",
+        description: "Telegram user added successfully",
       });
     } catch (error) {
       console.error('Error adding telegram user:', error);
@@ -154,7 +168,7 @@ const TelegramDashboard: React.FC<TelegramDashboardProps> = ({
     }
   };
 
-  const handleRemoveTelegramUser = async () => {
+  const handleRemoveTelegramUser = async (telegramUserId: string) => {
     if (!user) {
       toast({
         title: "Error",
@@ -164,7 +178,7 @@ const TelegramDashboard: React.FC<TelegramDashboardProps> = ({
       return;
     }
 
-    setLoading(true);
+    setRemovingId(telegramUserId);
     try {
       const authToken = localStorage.getItem('auth_token');
       if (!authToken) {
@@ -181,6 +195,7 @@ const TelegramDashboard: React.FC<TelegramDashboardProps> = ({
         body: {
           action: 'remove',
           streamerId,
+          telegramUserId,
           authToken
         }
       });
@@ -207,10 +222,11 @@ const TelegramDashboard: React.FC<TelegramDashboardProps> = ({
         return;
       }
 
-      setTelegramUserId('');
+      // Remove from local state
+      setModerators(prev => prev.filter(m => m.telegram_user_id !== telegramUserId));
       toast({
         title: "Success",
-        description: "Telegram user ID removed successfully",
+        description: "Telegram user removed successfully",
       });
     } catch (error) {
       console.error('Error removing telegram user:', error);
@@ -220,7 +236,7 @@ const TelegramDashboard: React.FC<TelegramDashboardProps> = ({
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setRemovingId(null);
     }
   };
 
@@ -234,7 +250,7 @@ const TelegramDashboard: React.FC<TelegramDashboardProps> = ({
           <div>
             <CardTitle>Telegram Notifications</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Add your Telegram User ID to receive donation alerts
+              Add Telegram User IDs to receive donation alerts
             </p>
           </div>
         </div>
@@ -269,49 +285,72 @@ const TelegramDashboard: React.FC<TelegramDashboardProps> = ({
           <div className="flex items-center justify-center py-4">
             <div className="text-sm text-muted-foreground">Loading...</div>
           </div>
-        ) : telegramUserId ? (
-          <div className="space-y-4">
-            <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-              <p className="text-sm font-medium text-green-800 dark:text-green-200">
-                Telegram notifications enabled
-              </p>
-              <p className="text-sm text-green-600 dark:text-green-400">
-                User ID: {telegramUserId}
-              </p>
-            </div>
-            <Button 
-              onClick={handleRemoveTelegramUser}
-              disabled={loading}
-              variant="destructive"
-              className="w-full"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Remove Telegram User
-            </Button>
-          </div>
         ) : (
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="telegram-user-id">Telegram User ID</Label>
-              <Input
-                id="telegram-user-id"
-                placeholder="Enter your Telegram User ID"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                className="mt-1"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Get your User ID by messaging @userinfobot on Telegram
-              </p>
+          <>
+            {/* Active Moderators List */}
+            {moderators.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <Users className="h-4 w-4" />
+                  <span>Active Telegram Users ({moderators.length})</span>
+                </div>
+                <div className="space-y-2">
+                  {moderators.map((mod) => (
+                    <div 
+                      key={mod.telegram_user_id}
+                      className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800"
+                    >
+                      <div>
+                        <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                          {mod.mod_name || 'Telegram User'}
+                        </p>
+                        <p className="text-xs text-green-600 dark:text-green-400">
+                          ID: {mod.telegram_user_id}
+                        </p>
+                      </div>
+                      <Button 
+                        onClick={() => handleRemoveTelegramUser(mod.telegram_user_id)}
+                        disabled={removingId === mod.telegram_user_id}
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/30"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Add New Telegram User */}
+            <div className="space-y-4 pt-2">
+              <div>
+                <Label htmlFor="telegram-user-id" className="flex items-center gap-2">
+                  <UserPlus className="h-4 w-4" />
+                  Add Telegram User ID
+                </Label>
+                <Input
+                  id="telegram-user-id"
+                  placeholder="Enter Telegram User ID"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  className="mt-1"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Get your User ID by messaging @userinfobot on Telegram
+                </p>
+              </div>
+              <Button 
+                onClick={handleAddTelegramUser}
+                disabled={loading || !inputValue.trim()}
+                className="w-full"
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Add Telegram User
+              </Button>
             </div>
-            <Button 
-              onClick={handleAddTelegramUser}
-              disabled={loading || !inputValue.trim()}
-              className="w-full"
-            >
-              Add Telegram User
-            </Button>
-          </div>
+          </>
         )}
       </CardContent>
     </Card>
