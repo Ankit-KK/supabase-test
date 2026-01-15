@@ -188,12 +188,12 @@ const ChiaGaming = () => {
         description: "Support Chiaa Gaming",
         handler: function (response: any) {
           console.log("Payment successful:", response);
-          navigate(`/chiagaming/status?order_id=${data.orderId}&status=success`);
+          navigate(`/status?order_id=${data.orderId}&status=success`);
         },
         modal: {
           ondismiss: function () {
             console.log("Payment cancelled");
-            navigate(`/chiagaming/status?order_id=${data.orderId}&status=pending`);
+            navigate(`/status?order_id=${data.orderId}&status=pending`);
           },
         },
         theme: {
