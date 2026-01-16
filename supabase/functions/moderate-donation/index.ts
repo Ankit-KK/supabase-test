@@ -388,6 +388,15 @@ serve(async (req) => {
         pusherGroup
       );
 
+      // Also send to audio player channel for media source
+      console.log(`Sending Pusher event to ${channelSlug}-audio channel`);
+      await sendPusherEvent(
+        [`${channelSlug}-audio`],
+        'new-audio-message',
+        alertData,
+        pusherGroup
+      );
+
       // Also send to dashboard for real-time updates
       await sendPusherEvent(
         [`${channelSlug}-dashboard`],
@@ -395,6 +404,52 @@ serve(async (req) => {
         { ...alertData, action },
         pusherGroup
       );
+    }
+
+    // Send Telegram notification about the moderation action to all moderators
+    if ((action === 'approve' || action === 'reject') && streamer) {
+      try {
+        const telegramBotToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
+        if (telegramBotToken && streamer.telegram_moderation_enabled) {
+          // Fetch all active moderators for this streamer
+          const { data: moderators } = await supabaseAdmin
+            .from('streamers_moderators')
+            .select('telegram_user_id, mod_name')
+            .eq('streamer_id', streamerId)
+            .eq('is_active', true);
+
+          if (moderators && moderators.length > 0) {
+            const actionEmoji = action === 'approve' ? '✅' : '❌';
+            const actionText = action === 'approve' ? 'Approved' : 'Rejected';
+            const moderatorInfo = moderatorName || 'Dashboard';
+            
+            const messageText = 
+              `${actionEmoji} <b>Donation ${actionText}</b>\n\n` +
+              `💰 ₹${donation.amount} from ${donation.name}\n` +
+              `👤 By: ${moderatorInfo}\n` +
+              `📱 Via: ${source === 'telegram' ? 'Telegram' : 'Dashboard'}`;
+
+            for (const mod of moderators) {
+              try {
+                await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    chat_id: mod.telegram_user_id,
+                    text: messageText,
+                    parse_mode: 'HTML'
+                  })
+                });
+              } catch (modError) {
+                console.error(`Failed to notify moderator ${mod.mod_name}:`, modError);
+              }
+            }
+            console.log(`Telegram notifications sent to ${moderators.length} moderators`);
+          }
+        }
+      } catch (telegramError) {
+        console.error('Error sending Telegram notifications:', telegramError);
+      }
     }
 
     // Log the moderation action

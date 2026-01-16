@@ -366,10 +366,15 @@ serve(async (req) => {
     }
 
     const moderationMode = streamerSettings?.moderation_mode || 'auto_approve';
-    const shouldAutoApprove = moderationMode === 'auto_approve';
+    // HyperSounds/HyperEmotes always auto-approve (no user content to moderate)
+    const isHypersound = donation.hypersound_url || donation.is_hyperemote;
+    const shouldAutoApprove = moderationMode === 'auto_approve' || isHypersound;
     const moderationStatus = shouldAutoApprove ? 'auto_approved' : 'pending';
     
-    console.log(`Streamer moderation_mode: ${moderationMode}, shouldAutoApprove: ${shouldAutoApprove}`);
+    if (isHypersound) {
+      console.log('HyperSound/HyperEmote detected - bypassing moderation');
+    }
+    console.log(`Streamer moderation_mode: ${moderationMode}, isHypersound: ${isHypersound}, shouldAutoApprove: ${shouldAutoApprove}`);
 
     // Update donation status
     const updateData: any = {
