@@ -575,12 +575,12 @@ serve(async (req) => {
         type: donationType
       }
 
-      // ONLY send OBS alerts if auto-approved
+      // For auto-approved donations: Do NOT send immediate alerts to OBS
+      // The visual alert + audio will be triggered by get-current-audio after the delay
+      // This ensures the 60-second fraud protection delay is enforced
       if (shouldAutoApprove) {
-        // Send Pusher events for OBS alerts
-        console.log(`Sending Pusher events to ${pusherSlug}-alerts channel (auto-approved)`)
-        await sendPusherEvent([`${pusherSlug}-alerts`], 'new-donation', donationData)
-        await sendPusherEvent([`${pusherSlug}-alerts`], 'audio-now-playing', donationData)
+        // Only send to audio channel to notify MediaSource polling (optional, for faster detection)
+        console.log(`Auto-approved donation - audio scheduled in ${audioDelay/1000}s, NOT sending immediate OBS alert`)
         await sendPusherEvent([`${pusherSlug}-audio`], 'new-audio-message', donationData)
 
         // Send goal progress update for all streamers

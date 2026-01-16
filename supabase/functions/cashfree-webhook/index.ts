@@ -274,28 +274,9 @@ serve(async (req) => {
         pusherCreds.cluster
       );
       
-      // 1. ALWAYS trigger OBS alerts channel immediately (no moderation)
-      try {
-        const alertsChannel = `${streamerSlug}-alerts`;
-        console.log(`Publishing to alerts channel: ${alertsChannel}`);
-        
-        await pusher.trigger(alertsChannel, 'new-donation', {
-          id: updatedDonation.id,
-          name: updatedDonation.name,
-          amount: updatedDonation.amount,
-          message: updatedDonation.message,
-          voice_message_url: updatedDonation.voice_message_url,
-          tts_audio_url: updatedDonation.tts_audio_url,
-          is_hyperemote: updatedDonation.is_hyperemote,
-          created_at: updatedDonation.created_at,
-          streamer_id: updatedDonation.streamer_id,
-          audio_scheduled_at: audioScheduledAt, // Sync visual alert with audio timing
-        });
-        
-        console.log(`✅ Pusher alerts event sent to ${alertsChannel} (audio scheduled at ${audioScheduledAt})`);
-      } catch (pusherError) {
-        console.error('❌ Pusher (alerts) trigger error:', pusherError);
-      }
+      // Do NOT send immediate alerts to OBS - visual alert + audio will be triggered by get-current-audio
+      // after the 60-second fraud protection delay has passed. This ensures sync between audio and visuals.
+      console.log(`✅ Auto-approved donation - audio scheduled at ${audioScheduledAt}, NOT sending immediate OBS alert`);
       
       // 2. Trigger dashboard channel for real-time updates
       try {
