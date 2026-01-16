@@ -82,7 +82,7 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
         pusherRef.current = pusher;
 
         // Subscribe to dashboard channel
-        const channelName = `${streamerSlug.replace(/_/g, '-')}-dashboard`;
+        const channelName = `${streamerSlug}-dashboard`;
         const channel = pusher.subscribe(channelName);
         channelRef.current = channel;
 
@@ -179,7 +179,7 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
         channelRef.current.unbind_all();
       }
       if (pusherRef.current) {
-        pusherRef.current.unsubscribe(`${streamerSlug.replace(/_/g, '-')}-dashboard`);
+        pusherRef.current.unsubscribe(`${streamerSlug}-dashboard`);
         pusherRef.current.disconnect();
       }
     };
