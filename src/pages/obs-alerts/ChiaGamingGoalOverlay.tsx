@@ -110,7 +110,7 @@ const ChiaGamingGoalOverlay = () => {
         .select("amount, currency")
         .eq("streamer_id", CHIAA_GAMING_STREAMER_ID)
         .eq("payment_status", "success")
-        .eq("moderation_status", "auto_approved")
+        .in("moderation_status", ["auto_approved", "approved"])
         .gte("created_at", streamer.goal_activated_at);
 
       if (!donError && donations) {
