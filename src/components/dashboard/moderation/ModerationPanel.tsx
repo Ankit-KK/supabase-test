@@ -65,7 +65,7 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
     const setupPusher = async () => {
       try {
         const { data, error } = await supabase.functions.invoke('get-pusher-config', {
-          body: { streamerSlug }
+          body: { streamer_slug: streamerSlug }
         });
 
         if (error || !data?.key) {
