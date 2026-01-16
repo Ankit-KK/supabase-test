@@ -441,7 +441,9 @@ serve(async (req) => {
 
             for (const mod of moderators) {
               try {
-                await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
+                console.log(`Sending Telegram approval notification to ${mod.mod_name} (${mod.telegram_user_id})...`);
+                
+                const telegramResponse = await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
@@ -450,11 +452,19 @@ serve(async (req) => {
                     parse_mode: 'HTML'
                   })
                 });
+                
+                const responseData = await telegramResponse.json();
+                
+                if (!responseData.ok) {
+                  console.error(`Telegram API error for ${mod.mod_name}:`, responseData.error_code, responseData.description);
+                } else {
+                  console.log(`Successfully sent approval notification to ${mod.mod_name}`);
+                }
               } catch (modError) {
                 console.error(`Failed to notify moderator ${mod.mod_name}:`, modError);
               }
             }
-            console.log(`Telegram notifications sent to ${moderators.length} moderators`);
+            console.log(`Telegram notification attempts completed for ${moderators.length} moderators`);
           }
         }
       } catch (telegramError) {
