@@ -90,6 +90,8 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
       console.log('[Dashboard] Donation update via Pusher:', data);
       // Pass to ModerationPanel
       setLastDonationUpdate(data);
+      // Refresh the approved donations list to reflect the change
+      setRefreshKey(prev => prev + 1);
     },
     onStatsUpdate: (newStats) => {
       console.log('[Dashboard] Stats update via Pusher:', newStats);
