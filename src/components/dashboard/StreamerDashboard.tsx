@@ -211,9 +211,9 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
     fetchStats();
   }, [streamerData?.id, tableName, refreshKey]);
 
-  // Fetch approved donations
+  // Fetch all successful donations (moderation only affects OBS alerts, not dashboard visibility)
   useEffect(() => {
-    const fetchApprovedDonations = async () => {
+    const fetchAllDonations = async () => {
       if (!streamerData?.id) return;
 
       try {
@@ -222,18 +222,17 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
           .select('*')
           .eq('streamer_id', streamerData.id)
           .eq('payment_status', 'success')
-          .eq('moderation_status', 'auto_approved')
           .order('created_at', { ascending: false })
           .limit(50) as { data: DonationRecord[] | null, error: any };
 
         if (error) throw error;
         setApprovedDonations(data || []);
       } catch (error) {
-        console.error('Error fetching approved donations:', error);
+        console.error('Error fetching donations:', error);
       }
     };
 
-    fetchApprovedDonations();
+    fetchAllDonations();
   }, [streamerData?.id, tableName, refreshKey]);
 
   if (!user) {
