@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
       .from(tableName)
       .select('id, name, amount, message, tts_audio_url, voice_message_url, hypersound_url, is_hyperemote, created_at, audio_scheduled_at')
       .is('audio_played_at', null)
-      .eq('moderation_status', 'auto_approved')
+      .in('moderation_status', ['auto_approved', 'approved'])
       .eq('payment_status', 'success')
       .or('tts_audio_url.not.is.null,voice_message_url.not.is.null,hypersound_url.not.is.null')
       .not('audio_scheduled_at', 'is', null) // Must have a scheduled time
