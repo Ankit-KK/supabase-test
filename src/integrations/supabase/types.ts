@@ -1710,6 +1710,47 @@ export type Database = {
           },
         ]
       }
+      telegram_callback_mapping: {
+        Row: {
+          action_type: string
+          created_at: string | null
+          donation_id: string
+          expires_at: string | null
+          id: string
+          short_id: string
+          streamer_id: string
+          table_name: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string | null
+          donation_id: string
+          expires_at?: string | null
+          id?: string
+          short_id: string
+          streamer_id: string
+          table_name: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string | null
+          donation_id?: string
+          expires_at?: string | null
+          id?: string
+          short_id?: string
+          streamer_id?: string
+          table_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "telegram_callback_mapping_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       thunderx_donations: {
         Row: {
           amount: number
@@ -2162,6 +2203,7 @@ export type Database = {
               username_exists: boolean
             }[]
           }
+      cleanup_expired_callback_mappings: { Args: never; Returns: undefined }
       cleanup_expired_websocket_connections: { Args: never; Returns: undefined }
       create_visits_table: { Args: never; Returns: boolean }
       encrypt_obs_token: { Args: { token_text: string }; Returns: string }

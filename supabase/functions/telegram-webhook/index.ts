@@ -1,4 +1,4 @@
-// Production Telegram webhook with full moderation support
+// Production Telegram webhook with full moderation support + callback mapping
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
@@ -7,7 +7,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-console.log('telegram-webhook: function loaded with full moderation support');
+console.log('telegram-webhook: function loaded with callback mapping support');
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -55,6 +55,74 @@ serve(async (req) => {
   }
 });
 
+// Parse callback data - supports both new short format and legacy format
+async function parseCallbackData(data: string, supabase: any): Promise<{
+  action: string;
+  donationId: string;
+  tableName: string | null;
+  streamerId: string | null;
+} | null> {
+  // New short format: a_ABC12345 (action prefix + short_id)
+  const shortMatch = data.match(/^([arhbp])_([A-Za-z0-9]{8})$/);
+  
+  if (shortMatch) {
+    const actionPrefix = shortMatch[1];
+    const shortId = shortMatch[2];
+    
+    const actionMap: Record<string, string> = {
+      'a': 'approve',
+      'r': 'reject',
+      'h': 'hide_message',
+      'b': 'ban_donor',
+      'p': 'replay'
+    };
+    
+    // Look up the mapping
+    const { data: mapping, error } = await supabase
+      .from('telegram_callback_mapping')
+      .select('donation_id, table_name, streamer_id, action_type')
+      .eq('short_id', shortId)
+      .single();
+    
+    if (error || !mapping) {
+      console.error('Callback mapping not found for short_id:', shortId, error);
+      return null;
+    }
+    
+    // Check if expired
+    const { data: fullMapping } = await supabase
+      .from('telegram_callback_mapping')
+      .select('expires_at')
+      .eq('short_id', shortId)
+      .single();
+    
+    if (fullMapping && new Date(fullMapping.expires_at) < new Date()) {
+      console.error('Callback mapping expired for short_id:', shortId);
+      return null;
+    }
+    
+    return {
+      action: actionMap[actionPrefix] || mapping.action_type,
+      donationId: mapping.donation_id,
+      tableName: mapping.table_name,
+      streamerId: mapping.streamer_id
+    };
+  }
+  
+  // Legacy format: action_donationId_tableName
+  const parts = data.split('_');
+  if (parts.length >= 2) {
+    return {
+      action: parts[0],
+      donationId: parts[1],
+      tableName: parts.slice(2).join('_') || null,
+      streamerId: null
+    };
+  }
+  
+  return null;
+}
+
 // Handle callback queries from inline keyboards
 async function handleCallbackQuery(callbackQuery: any, supabase: any, botToken: string) {
   const chatId = callbackQuery.message.chat.id;
@@ -65,27 +133,66 @@ async function handleCallbackQuery(callbackQuery: any, supabase: any, botToken: 
 
   console.log('Callback query:', { chatId, userId, data });
 
-  // Parse callback data: action_donationId_table
-  const parts = data.split('_');
-  if (parts.length < 2) {
-    await answerCallback(callbackQuery.id, '❌ Invalid action', botToken);
+  // Parse callback data (supports both new and legacy formats)
+  const parsed = await parseCallbackData(data, supabase);
+  
+  if (!parsed) {
+    await answerCallback(callbackQuery.id, '❌ Invalid or expired action', botToken);
     return;
   }
 
-  const action = parts[0];
-  const donationId = parts[1];
-  const tableName = parts.slice(2).join('_') || null;
+  const { action, donationId, tableName, streamerId: mappedStreamerId } = parsed;
 
-  // Get moderator info
-  const { data: moderator, error: modError } = await supabase
-    .from('streamers_moderators')
-    .select('*, streamers(streamer_slug, streamer_name, moderation_mode, telegram_moderation_enabled)')
-    .eq('telegram_user_id', userId)
-    .eq('is_active', true)
-    .single();
+  // Get moderator info - use streamerId from mapping if available
+  let moderator: any = null;
+  let modError: any = null;
+  
+  if (mappedStreamerId) {
+    // Use the streamer_id from callback mapping for precise lookup
+    const result = await supabase
+      .from('streamers_moderators')
+      .select('*, streamers(streamer_slug, streamer_name, moderation_mode, telegram_moderation_enabled)')
+      .eq('telegram_user_id', userId)
+      .eq('streamer_id', mappedStreamerId)
+      .eq('is_active', true)
+      .single();
+    
+    moderator = result.data;
+    modError = result.error;
+  } else {
+    // Legacy: Try to find moderator without specific streamer context
+    // First get all active moderators for this user
+    const { data: moderators, error } = await supabase
+      .from('streamers_moderators')
+      .select('*, streamers(streamer_slug, streamer_name, moderation_mode, telegram_moderation_enabled)')
+      .eq('telegram_user_id', userId)
+      .eq('is_active', true);
+    
+    if (error || !moderators || moderators.length === 0) {
+      modError = error || new Error('No moderator found');
+    } else if (moderators.length === 1) {
+      // Only one streamer - use it
+      moderator = moderators[0];
+    } else if (tableName) {
+      // Multiple streamers - try to match by table name
+      moderator = moderators.find((m: any) => {
+        const expectedTable = `${m.streamers?.streamer_slug?.replace(/-/g, '_')}_donations`;
+        return expectedTable === tableName;
+      });
+      
+      if (!moderator) {
+        // Fallback to first one
+        moderator = moderators[0];
+        console.warn('Could not match moderator to table, using first one');
+      }
+    } else {
+      moderator = moderators[0];
+    }
+  }
 
   if (modError || !moderator) {
-    await answerCallback(callbackQuery.id, '❌ You are not a registered moderator', botToken);
+    console.error('Moderator lookup failed:', modError);
+    await answerCallback(callbackQuery.id, '❌ You are not a registered moderator for this streamer', botToken);
     return;
   }
 
@@ -116,7 +223,7 @@ async function handleCallbackQuery(callbackQuery: any, supabase: any, botToken: 
         action: action,
         donationId: donationId,
         donationTable: donationTable,
-        streamerId: moderator.streamer_id,
+        streamerId: mappedStreamerId || moderator.streamer_id,
         moderatorId: moderator.id,
         moderatorTelegramId: userId,
         moderatorName: moderator.mod_name || userName,
@@ -200,44 +307,52 @@ async function handleMessage(message: any, supabase: any, botToken: string) {
 
 // Show pending donations with moderation buttons
 async function showPendingDonations(chatId: number, userId: string, supabase: any, botToken: string) {
-  const { data: moderator, error: modError } = await supabase
+  // Get all moderator assignments for this user
+  const { data: moderators, error: modError } = await supabase
     .from('streamers_moderators')
     .select('*, streamers(streamer_slug, streamer_name, moderation_mode, telegram_moderation_enabled)')
     .eq('telegram_user_id', userId)
-    .eq('is_active', true)
-    .single();
+    .eq('is_active', true);
 
-  if (modError || !moderator) {
+  if (modError || !moderators || moderators.length === 0) {
     await sendMessage(chatId, '❌ You are not registered as a moderator.', botToken);
     return;
   }
 
-  const streamerSlug = moderator.streamers?.streamer_slug;
-  const tableName = `${streamerSlug?.replace(/-/g, '_')}_donations`;
+  // For each streamer the user moderates, show pending donations
+  let totalPending = 0;
+  
+  for (const moderator of moderators) {
+    const streamerSlug = moderator.streamers?.streamer_slug;
+    const tableName = `${streamerSlug?.replace(/-/g, '_')}_donations`;
 
-  const { data: donations, error: donError } = await supabase
-    .from(tableName)
-    .select('*')
-    .eq('payment_status', 'success')
-    .eq('moderation_status', 'pending')
-    .order('created_at', { ascending: true })
-    .limit(5);
+    const { data: donations, error: donError } = await supabase
+      .from(tableName)
+      .select('*')
+      .eq('payment_status', 'success')
+      .eq('moderation_status', 'pending')
+      .order('created_at', { ascending: true })
+      .limit(5);
 
-  if (donError || !donations || donations.length === 0) {
-    await sendMessage(chatId, '✅ No pending donations to moderate.', botToken);
-    return;
+    if (!donError && donations && donations.length > 0) {
+      totalPending += donations.length;
+      
+      await sendMessage(chatId, `📋 <b>${moderator.streamers?.streamer_name} - ${donations.length} Pending</b>`, botToken);
+      
+      for (const donation of donations) {
+        await sendDonationCard(chatId, donation, tableName, moderator, supabase, botToken);
+        await new Promise(r => setTimeout(r, 100));
+      }
+    }
   }
-
-  await sendMessage(chatId, `📋 <b>${donations.length} Pending Donation(s)</b>\n\nReview and moderate:`, botToken);
-
-  for (const donation of donations) {
-    await sendDonationCard(chatId, donation, tableName, moderator, botToken);
-    await new Promise(r => setTimeout(r, 100)); // Small delay
+  
+  if (totalPending === 0) {
+    await sendMessage(chatId, '✅ No pending donations to moderate.', botToken);
   }
 }
 
-// Send a single donation card with moderation buttons
-async function sendDonationCard(chatId: number, donation: any, tableName: string, moderator: any, botToken: string) {
+// Send a single donation card with moderation buttons (using callback mapping)
+async function sendDonationCard(chatId: number, donation: any, tableName: string, moderator: any, supabase: any, botToken: string) {
   const time = new Date(donation.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
   
   let messageText = `🎁 <b>Donation Pending</b>\n\n`;
@@ -253,30 +368,86 @@ async function sendDonationCard(chatId: number, donation: any, tableName: string
     messageText += `🎵 <b>Voice:</b> Available\n`;
   }
 
-  // Build keyboard based on permissions
+  // Build keyboard based on permissions using callback mapping
   const keyboard: any[][] = [];
   
   // Row 1: Approve/Reject
   const row1: any[] = [];
   if (hasPermission(moderator, 'approve')) {
-    row1.push({ text: '✅ Approve', callback_data: `approve_${donation.id}_${tableName}` });
+    const approveCallback = await createCallbackMapping(supabase, donation.id, tableName, moderator.streamer_id, 'approve');
+    row1.push({ text: '✅ Approve', callback_data: approveCallback });
   }
   if (hasPermission(moderator, 'reject')) {
-    row1.push({ text: '❌ Reject', callback_data: `reject_${donation.id}_${tableName}` });
+    const rejectCallback = await createCallbackMapping(supabase, donation.id, tableName, moderator.streamer_id, 'reject');
+    row1.push({ text: '❌ Reject', callback_data: rejectCallback });
   }
   if (row1.length > 0) keyboard.push(row1);
 
   // Row 2: Hide/Ban
   const row2: any[] = [];
   if (hasPermission(moderator, 'hide_message') && donation.message) {
-    row2.push({ text: '🙈 Hide Msg', callback_data: `hide_message_${donation.id}_${tableName}` });
+    const hideCallback = await createCallbackMapping(supabase, donation.id, tableName, moderator.streamer_id, 'hide_message');
+    row2.push({ text: '🙈 Hide Msg', callback_data: hideCallback });
   }
   if (hasPermission(moderator, 'ban_donor')) {
-    row2.push({ text: '🚫 Ban', callback_data: `ban_donor_${donation.id}_${tableName}` });
+    const banCallback = await createCallbackMapping(supabase, donation.id, tableName, moderator.streamer_id, 'ban_donor');
+    row2.push({ text: '🚫 Ban', callback_data: banCallback });
   }
   if (row2.length > 0) keyboard.push(row2);
 
   await sendMessageWithKeyboard(chatId, messageText, keyboard, botToken);
+}
+
+// Generate short ID for callback mapping
+function generateShortId(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  let result = '';
+  for (let i = 0; i < 8; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+// Create callback mapping for buttons
+async function createCallbackMapping(
+  supabase: any,
+  donationId: string,
+  tableName: string,
+  streamerId: string,
+  action: string
+): Promise<string> {
+  const shortId = generateShortId();
+  
+  try {
+    const { error } = await supabase
+      .from('telegram_callback_mapping')
+      .insert({
+        short_id: shortId,
+        donation_id: donationId,
+        table_name: tableName,
+        streamer_id: streamerId,
+        action_type: action,
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+      });
+    
+    if (error) {
+      console.error('Error creating callback mapping:', error);
+      return `${action.charAt(0)}_${donationId.substring(0, 8)}`;
+    }
+    
+    const actionPrefix: Record<string, string> = {
+      'approve': 'a',
+      'reject': 'r',
+      'hide_message': 'h',
+      'ban_donor': 'b',
+      'replay': 'p'
+    };
+    
+    return `${actionPrefix[action] || action.charAt(0)}_${shortId}`;
+  } catch (err) {
+    console.error('Error in createCallbackMapping:', err);
+    return `${action.charAt(0)}_${donationId.substring(0, 8)}`;
+  }
 }
 
 async function showRecentDonations(chatId: number, userId: string, supabase: any, botToken: string) {
@@ -285,7 +456,8 @@ async function showRecentDonations(chatId: number, userId: string, supabase: any
     .select('streamer_id, streamers(streamer_slug, streamer_name)')
     .eq('telegram_user_id', userId)
     .eq('is_active', true)
-    .single();
+    .limit(1)
+    .maybeSingle();
 
   if (modError || !moderator) {
     await sendMessage(chatId, '❌ You are not registered as a moderator.', botToken);
@@ -329,7 +501,8 @@ async function showDonationStats(chatId: number, userId: string, supabase: any, 
     .select('streamer_id, total_actions, last_action_at, streamers(streamer_slug, streamer_name)')
     .eq('telegram_user_id', userId)
     .eq('is_active', true)
-    .single();
+    .limit(1)
+    .maybeSingle();
 
   if (modError || !moderator) {
     await sendMessage(chatId, '❌ You are not registered as a moderator.', botToken);
@@ -377,13 +550,13 @@ async function showDonationStats(chatId: number, userId: string, supabase: any, 
 }
 
 async function showModeratorStatus(chatId: number, userId: string, supabase: any, botToken: string) {
-  const { data: moderator, error } = await supabase
+  // Get all moderator assignments for this user
+  const { data: moderators, error } = await supabase
     .from('streamers_moderators')
     .select('*, streamers(streamer_name, streamer_slug, moderation_mode, telegram_moderation_enabled)')
-    .eq('telegram_user_id', userId)
-    .single();
+    .eq('telegram_user_id', userId);
 
-  if (error || !moderator) {
+  if (error || !moderators || moderators.length === 0) {
     await sendMessage(chatId, 
       '❌ You are not registered as a moderator.\n\n' +
       'Contact the streamer to add you.', 
@@ -392,32 +565,34 @@ async function showModeratorStatus(chatId: number, userId: string, supabase: any
     return;
   }
 
-  const status = moderator.is_active ? '✅ Active' : '❌ Inactive';
-  const since = new Date(moderator.created_at).toLocaleDateString('en-IN');
-  const role = moderator.role || 'moderator';
+  let messageText = `👤 <b>Moderator Status</b>\n\n`;
+  
+  for (const moderator of moderators) {
+    const status = moderator.is_active ? '✅ Active' : '❌ Inactive';
+    const since = new Date(moderator.created_at).toLocaleDateString('en-IN');
+    const role = moderator.role || 'moderator';
 
-  const permissions: string[] = [];
-  if (moderator.role === 'owner') {
-    permissions.push('All permissions');
-  } else if (moderator.role === 'viewer') {
-    permissions.push('View only');
-  } else {
-    if (moderator.can_approve) permissions.push('Approve');
-    if (moderator.can_reject) permissions.push('Reject');
-    if (moderator.can_hide_message) permissions.push('Hide');
-    if (moderator.can_ban) permissions.push('Ban');
-    if (moderator.can_replay) permissions.push('Replay');
+    const permissions: string[] = [];
+    if (moderator.role === 'owner') {
+      permissions.push('All permissions');
+    } else if (moderator.role === 'viewer') {
+      permissions.push('View only');
+    } else {
+      if (moderator.can_approve) permissions.push('Approve');
+      if (moderator.can_reject) permissions.push('Reject');
+      if (moderator.can_hide_message) permissions.push('Hide');
+      if (moderator.can_ban) permissions.push('Ban');
+      if (moderator.can_replay) permissions.push('Replay');
+    }
+
+    messageText += 
+      `🎮 <b>${moderator.streamers?.streamer_name}</b>\n` +
+      `   📊 Status: ${status}\n` +
+      `   👑 Role: ${role.charAt(0).toUpperCase() + role.slice(1)}\n` +
+      `   🔐 Permissions: ${permissions.join(', ')}\n` +
+      `   📅 Since: ${since}\n` +
+      `   🛡️ Actions: ${moderator.total_actions || 0}\n\n`;
   }
-
-  const messageText = 
-    `👤 <b>Moderator Status</b>\n\n` +
-    `📛 Name: <b>${moderator.mod_name}</b>\n` +
-    `🎮 Streamer: <b>${moderator.streamers?.streamer_name}</b>\n` +
-    `📊 Status: ${status}\n` +
-    `👑 Role: ${role.charAt(0).toUpperCase() + role.slice(1)}\n` +
-    `🔐 Permissions: ${permissions.join(', ')}\n` +
-    `📅 Since: ${since}\n` +
-    `🛡️ Actions: ${moderator.total_actions || 0}`;
 
   await sendMessage(chatId, messageText, botToken);
 }
@@ -428,7 +603,8 @@ async function showSettings(chatId: number, userId: string, supabase: any, botTo
     .select('*, streamers(streamer_name, moderation_mode, telegram_moderation_enabled)')
     .eq('telegram_user_id', userId)
     .eq('is_active', true)
-    .single();
+    .limit(1)
+    .maybeSingle();
 
   if (error || !moderator) {
     await sendMessage(chatId, '❌ You are not registered as a moderator.', botToken);
