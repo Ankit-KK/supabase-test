@@ -414,6 +414,46 @@ serve(async (req) => {
         { ...alertData, action },
         pusherGroup
       );
+
+      // Send goal progress update after approval
+      if (action === 'approve') {
+        try {
+          const { data: streamerGoal } = await supabaseAdmin
+            .from('streamers')
+            .select('goal_is_active, goal_activated_at, goal_target_amount')
+            .eq('id', streamerId)
+            .single();
+
+          if (streamerGoal?.goal_is_active && streamerGoal.goal_activated_at) {
+            const { data: donations } = await supabaseAdmin
+              .from(donationTable)
+              .select('amount, currency')
+              .eq('streamer_id', streamerId)
+              .eq('payment_status', 'success')
+              .in('moderation_status', ['auto_approved', 'approved'])
+              .gte('created_at', streamerGoal.goal_activated_at);
+
+            if (donations) {
+              const EXCHANGE_RATES_TO_INR: Record<string, number> = { 'INR': 1, 'USD': 89, 'EUR': 94, 'GBP': 113, 'AED': 24, 'AUD': 57 };
+              const newTotal = donations.reduce((sum, d) => {
+                const rate = EXCHANGE_RATES_TO_INR[d.currency || 'INR'] || 1;
+                return sum + Number(d.amount) * rate;
+              }, 0);
+
+              await sendPusherEvent(
+                [`${channelSlug}-goal`],
+                'goal-progress',
+                { currentAmount: newTotal, targetAmount: streamerGoal.goal_target_amount },
+                pusherGroup
+              );
+
+              console.log(`Goal progress update sent after approval: ${newTotal}/${streamerGoal.goal_target_amount}`);
+            }
+          }
+        } catch (goalError) {
+          console.error('Error sending goal progress:', goalError);
+        }
+      }
     }
 
     // Send Telegram notification about the moderation action to all moderators

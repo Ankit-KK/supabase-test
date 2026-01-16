@@ -569,37 +569,40 @@ serve(async (req) => {
         console.log('⏸️ Skipping TTS generation - donation pending moderation');
       }
 
-      // For Ankit, check if there's an active goal and send progress update
-      if (streamerType === 'ankit') {
-        try {
-          const { data: streamer, error: goalError } = await supabase
-            .from('streamers')
-            .select('goal_is_active, goal_activated_at, goal_target_amount')
-            .eq('id', donation.streamer_id)
-            .single();
+      // Check if there's an active goal and send progress update for all streamers
+      try {
+        const { data: streamer, error: goalError } = await supabase
+          .from('streamers')
+          .select('goal_is_active, goal_activated_at, goal_target_amount')
+          .eq('id', donation.streamer_id)
+          .single();
 
-          if (!goalError && streamer?.goal_is_active && streamer.goal_activated_at) {
-            const { data: donations, error: donError } = await supabase
-              .from('ankit_donations')
-              .select('amount')
-              .eq('streamer_id', donation.streamer_id)
-              .eq('payment_status', 'success')
-              .gte('created_at', streamer.goal_activated_at);
+        if (!goalError && streamer?.goal_is_active && streamer.goal_activated_at) {
+          const { data: donations, error: donError } = await supabase
+            .from(tableName)
+            .select('amount, currency')
+            .eq('streamer_id', donation.streamer_id)
+            .eq('payment_status', 'success')
+            .in('moderation_status', ['auto_approved', 'approved'])
+            .gte('created_at', streamer.goal_activated_at);
 
-            if (!donError && donations) {
-              const newTotal = donations.reduce((sum, d) => sum + Number(d.amount), 0);
-              
-              await sendPusherEvent(['ankit-goal'], 'goal-progress', {
-                currentAmount: newTotal,
-                targetAmount: streamer.goal_target_amount,
-              });
+          if (!donError && donations) {
+            const newTotal = donations.reduce((sum, d) => {
+              const currency = d.currency || 'INR';
+              const rate = EXCHANGE_RATES_TO_INR[currency] || 1;
+              return sum + Number(d.amount) * rate;
+            }, 0);
 
-              console.log('Goal progress update sent:', newTotal);
-            }
+            await sendPusherEvent([`${channelSlug}-goal`], 'goal-progress', {
+              currentAmount: newTotal,
+              targetAmount: streamer.goal_target_amount,
+            });
+
+            console.log(`Goal progress update sent for ${channelSlug}: ${newTotal}/${streamer.goal_target_amount}`);
           }
-        } catch (error) {
-          console.error('Error sending goal progress update:', error);
         }
+      } catch (error) {
+        console.error('Error sending goal progress update:', error);
       }
 
       // Send Telegram notification to moderators with moderation buttons
@@ -660,30 +663,30 @@ serve(async (req) => {
                   // Row 1: Approve/Reject for pending manual mode
                   const row1: any[] = [];
                   if (mod.role === 'owner' || mod.can_approve) {
-                    row1.push({ text: '✅ Approve', callback_data: `approve_${donation.id}_${donationTable}` });
+                    row1.push({ text: '✅ Approve', callback_data: `approve_${donation.id}_${tableName}` });
                   }
                   if (mod.role === 'owner' || mod.can_reject) {
-                    row1.push({ text: '❌ Reject', callback_data: `reject_${donation.id}_${donationTable}` });
+                    row1.push({ text: '❌ Reject', callback_data: `reject_${donation.id}_${tableName}` });
                   }
                   if (row1.length > 0) keyboard.push(row1);
 
                   // Row 2: Hide/Ban
                   const row2: any[] = [];
                   if ((mod.role === 'owner' || mod.can_hide_message) && donation.message) {
-                    row2.push({ text: '🙈 Hide Msg', callback_data: `hide_message_${donation.id}_${donationTable}` });
+                    row2.push({ text: '🙈 Hide Msg', callback_data: `hide_message_${donation.id}_${tableName}` });
                   }
                   if (mod.role === 'owner' || mod.can_ban) {
-                    row2.push({ text: '🚫 Ban', callback_data: `ban_donor_${donation.id}_${donationTable}` });
+                    row2.push({ text: '🚫 Ban', callback_data: `ban_donor_${donation.id}_${tableName}` });
                   }
                   if (row2.length > 0) keyboard.push(row2);
                 } else {
                   // For auto-approved: show replay and hide options
                   const row: any[] = [];
                   if (donation.message && (mod.role === 'owner' || mod.can_hide_message)) {
-                    row.push({ text: '🙈 Hide Msg', callback_data: `hide_message_${donation.id}_${donationTable}` });
+                    row.push({ text: '🙈 Hide Msg', callback_data: `hide_message_${donation.id}_${tableName}` });
                   }
                   if (mod.role === 'owner' || mod.can_replay) {
-                    row.push({ text: '🔄 Replay', callback_data: `replay_${donation.id}_${donationTable}` });
+                    row.push({ text: '🔄 Replay', callback_data: `replay_${donation.id}_${tableName}` });
                   }
                   if (row.length > 0) keyboard.push(row);
                 }
