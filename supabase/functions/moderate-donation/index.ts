@@ -192,7 +192,7 @@ serve(async (req) => {
     // Fetch streamer info for Pusher
     const { data: streamer, error: streamerError } = await supabaseAdmin
       .from('streamers')
-      .select('streamer_slug, pusher_group, tts_enabled, tts_voice_id')
+      .select('streamer_slug, pusher_group, tts_enabled, tts_voice_id, telegram_moderation_enabled')
       .eq('id', streamerId)
       .single();
 
@@ -356,8 +356,9 @@ serve(async (req) => {
               },
               body: JSON.stringify({
                 donationId: donation.id,
+                streamerId: streamerId,
                 tableName: donationTable,
-                name: donation.name,
+                username: donation.name,
                 amount: donation.amount,
                 message: donation.message,
                 voiceId: streamer.tts_voice_id || 'en-IN-Standard-B'
@@ -384,6 +385,15 @@ serve(async (req) => {
       await sendPusherEvent(
         [`${channelSlug}-alerts`],
         'new-donation',
+        alertData,
+        pusherGroup
+      );
+
+      // Also send audio-now-playing to trigger instant visual alert display
+      console.log(`Sending audio-now-playing to ${channelSlug}-alerts channel for instant display`);
+      await sendPusherEvent(
+        [`${channelSlug}-alerts`],
+        'audio-now-playing',
         alertData,
         pusherGroup
       );
