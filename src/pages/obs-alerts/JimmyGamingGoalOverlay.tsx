@@ -54,8 +54,7 @@ const JimmyGamingGoalOverlay = () => {
             .from('jimmy_gaming_donations')
             .select('amount, currency')
             .gte('created_at', streamerData.goal_activated_at)
-            .eq('payment_status', 'success')
-            .in('moderation_status', ['auto_approved', 'approved']);
+            .eq('payment_status', 'success');
 
           const total = donations?.reduce((sum, d) => sum + convertToINR(Number(d.amount), d.currency || 'INR'), 0) || 0;
           setCurrentAmount(total);

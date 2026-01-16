@@ -73,7 +73,6 @@ const ThunderXGoalOverlay = () => {
         .select('amount, currency')
         .eq('streamer_id', THUNDERX_STREAMER_ID)
         .eq('payment_status', 'success')
-        .in('moderation_status', ['auto_approved', 'approved'])
         .gte('created_at', streamer.goal_activated_at);
 
       if (!donError && donations) {

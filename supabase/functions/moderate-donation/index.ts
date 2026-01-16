@@ -430,7 +430,6 @@ serve(async (req) => {
               .select('amount, currency')
               .eq('streamer_id', streamerId)
               .eq('payment_status', 'success')
-              .in('moderation_status', ['auto_approved', 'approved'])
               .gte('created_at', streamerGoal.goal_activated_at);
 
             if (donations) {
