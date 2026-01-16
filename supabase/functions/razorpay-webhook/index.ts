@@ -1,4 +1,4 @@
-// Updated: 2026-01-01 - Restored moderation system, respects streamer moderation_mode setting
+// Updated: 2026-01-16 - Production moderation system with shortened callback data
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { createHash, createHmac } from 'https://deno.land/std@0.177.0/node/crypto.ts'
@@ -25,6 +25,60 @@ const streamerSlugMap: Record<string, string> = {
   'jimmygaming': 'jimmy_gaming',
   'chiagaming': 'chiaa_gaming',
 };
+
+// Generate short ID for callback mapping (8 characters)
+function generateShortId(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  let result = '';
+  for (let i = 0; i < 8; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+// Create callback mapping and return short callback_data
+async function createCallbackMapping(
+  supabase: any,
+  donationId: string,
+  tableName: string,
+  streamerId: string,
+  action: string
+): Promise<string> {
+  const shortId = generateShortId();
+  
+  try {
+    const { error } = await supabase
+      .from('telegram_callback_mapping')
+      .insert({
+        short_id: shortId,
+        donation_id: donationId,
+        table_name: tableName,
+        streamer_id: streamerId,
+        action_type: action,
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
+      });
+    
+    if (error) {
+      console.error('Error creating callback mapping:', error);
+      // Fallback to truncated format if mapping fails
+      return `${action.charAt(0)}_${donationId.substring(0, 8)}`;
+    }
+    
+    // Return shortened format: action_prefix + short_id (max ~11 chars)
+    const actionPrefix = {
+      'approve': 'a',
+      'reject': 'r', 
+      'hide_message': 'h',
+      'ban_donor': 'b',
+      'replay': 'p'
+    }[action] || action.charAt(0);
+    
+    return `${actionPrefix}_${shortId}`;
+  } catch (err) {
+    console.error('Error in createCallbackMapping:', err);
+    return `${action.charAt(0)}_${donationId.substring(0, 8)}`;
+  }
+}
 
 // Helper function to get Pusher credentials based on streamer_slug
 async function getPusherCredentials(streamerSlug: string, supabase: any) {
@@ -421,199 +475,163 @@ serve(async (req) => {
         
         const timestamp = Math.floor(Date.now() / 1000)
         const pusherBody = JSON.stringify(pusherPayload)
-        const bodyMd5 = createHash('md5').update(pusherBody).digest('hex')
-        const authString = `POST\n/apps/${pusherAppId}/events\nauth_key=${pusherKey}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${bodyMd5}`
-        const authSignature = createHmac('sha256', pusherSecret).update(authString).digest('hex')
-        const pusherUrlWithAuth = `${pusherUrl}?auth_key=${pusherKey}&auth_timestamp=${timestamp}&auth_version=1.0&auth_signature=${authSignature}&body_md5=${bodyMd5}`
-        
-        await fetch(pusherUrlWithAuth, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: pusherBody
-        })
+        const md5 = createHash('md5').update(pusherBody).digest('hex')
+        const stringToSign = `POST\n/apps/${pusherAppId}/events\nauth_key=${pusherKey}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${md5}`
+        const signature = createHmac('sha256', pusherSecret).update(stringToSign).digest('hex')
+        const pusherAuthUrl = `${pusherUrl}?auth_key=${pusherKey}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${md5}&auth_signature=${signature}`
+
+        try {
+          const response = await fetch(pusherAuthUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: pusherBody
+          })
+          
+          if (!response.ok) {
+            const errorText = await response.text()
+            console.error(`Pusher error for ${eventName}:`, errorText)
+          } else {
+            console.log(`Pusher event ${eventName} sent successfully to channels:`, channels)
+          }
+        } catch (error) {
+          console.error(`Failed to send Pusher event ${eventName}:`, error)
+        }
       }
 
-      // Get streamer slug for channel names
-      const channelSlug = streamerType === 'thunderx' ? 'thunderx'
-        : streamerType === 'vipbhai' ? 'vipbhai'
-        : streamerType === 'sagarujjwalgaming' ? 'sagarujjwalgaming'
-        : streamerType === 'notyourkween' ? 'notyourkween'
-        : streamerType === 'bongflick' ? 'bongflick'
-        : streamerType === 'mriqmaster' ? 'mriqmaster'
-        : streamerType === 'abdevil' ? 'abdevil'
-        : streamerType === 'looteriyagaming' ? 'looteriya_gaming'
-        : streamerType === 'damaskplays' ? 'damask_plays'
-        : streamerType === 'nekoxenpai' ? 'neko_xenpai'
-        : streamerType === 'jhanvoo' ? 'jhanvoo'
-        : streamerType === 'clumsygod' ? 'clumsygod'
-        : streamerType === 'jimmygaming' ? 'jimmy_gaming'
-        : streamerType === 'chiagaming' ? 'chiaa_gaming'
-        : 'ankit';
+      // Determine donation type
+      let donationType: 'text' | 'voice' | 'hypersound' = 'text';
+      if (donation.voice_message_url) {
+        donationType = 'voice';
+      } else if (donation.hypersound_url) {
+        donationType = 'hypersound';
+      }
+      
+      // TTS generation for text donations with significant amount (only for auto-approved)
+      const amountInINR = convertToINR(Number(donation.amount), paymentCurrency);
+      const shouldGenerateTTS = shouldAutoApprove && 
+        donationType === 'text' && 
+        donation.message && 
+        amountInINR >= 70;
 
-      // Send to dashboard channel for real-time updates
-      await sendPusherEvent([`${channelSlug}-dashboard`], 'new-donation', {
+      if (shouldGenerateTTS) {
+        console.log('Generating TTS for donation...')
+        try {
+          const { data: streamer } = await supabase
+            .from('streamers')
+            .select('tts_voice_id, tts_enabled')
+            .eq('id', donation.streamer_id)
+            .single();
+          
+          if (streamer?.tts_enabled !== false) {
+            const ttsResponse = await fetch(
+              `${supabaseUrl}/functions/v1/generate-donation-tts`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${supabaseServiceKey}`
+                },
+                body: JSON.stringify({
+                  donationId: donation.id,
+                  streamerId: donation.streamer_id,
+                  tableName: tableName,
+                  username: donation.name,
+                  amount: donation.amount,
+                  message: donation.message,
+                  voiceId: streamer?.tts_voice_id || 'en-IN-Standard-B'
+                })
+              }
+            )
+            
+            if (ttsResponse.ok) {
+              const ttsResult = await ttsResponse.json()
+              if (ttsResult.audioUrl) {
+                donation.tts_audio_url = ttsResult.audioUrl
+                console.log('TTS generated:', ttsResult.audioUrl)
+              }
+            } else {
+              console.error('TTS generation failed:', await ttsResponse.text())
+            }
+          }
+        } catch (ttsError) {
+          console.error('TTS generation error:', ttsError)
+        }
+      }
+
+      // Prepare donation data for events
+      const donationData = {
         id: donation.id,
         name: donation.name,
         amount: donation.amount,
         currency: paymentCurrency,
         message: donation.message,
-        is_hyperemote: donation.is_hyperemote,
-        hypersound_url: donation.hypersound_url,
         voice_message_url: donation.voice_message_url,
+        tts_audio_url: donation.tts_audio_url,
+        hypersound_url: donation.hypersound_url,
+        is_hyperemote: donation.is_hyperemote,
+        selected_gif_id: donation.selected_gif_id,
+        message_visible: true,
         created_at: donation.created_at,
-        moderation_status: moderationStatus
-      });
-      console.log(`✅ Pusher dashboard event sent to ${channelSlug}-dashboard`);
-
-      // Only send to OBS alerts channel if auto-approved
-      if (shouldAutoApprove) {
-        await sendPusherEvent([`${channelSlug}-alerts`], 'new-donation', {
-          id: donation.id,
-          name: donation.name,
-          amount: donation.amount,
-          currency: paymentCurrency,
-          message: donation.message,
-          is_hyperemote: donation.is_hyperemote,
-          hypersound_url: donation.hypersound_url,
-          voice_message_url: donation.voice_message_url,
-          created_at: donation.created_at,
-          audio_scheduled_at: audioScheduledAt // Sync visual alert with audio timing
-        });
-        console.log(`✅ Pusher alerts event sent to ${channelSlug}-alerts (auto-approved, audio scheduled at ${audioScheduledAt})`);
-      } else {
-        console.log(`⏸️ Skipping OBS alerts - donation pending moderation (mode: ${moderationMode})`);
+        type: donationType
       }
 
-      // TTS Generation Logic - Only generate TTS if auto-approved
+      // ONLY send OBS alerts if auto-approved
       if (shouldAutoApprove) {
-        const donationCurrency = paymentCurrency || 'INR';
-        const amountInINR = convertToINR(donation.amount, donationCurrency);
+        // Send Pusher events for OBS alerts
+        console.log(`Sending Pusher events to ${pusherSlug}-alerts channel (auto-approved)`)
+        await sendPusherEvent([`${pusherSlug}-alerts`], 'new-donation', donationData)
+        await sendPusherEvent([`${pusherSlug}-alerts`], 'audio-now-playing', donationData)
+        await sendPusherEvent([`${pusherSlug}-audio`], 'new-audio-message', donationData)
 
-        // Skip TTS for HyperSounds/HyperEmotes
-        if (!donation.hypersound_url && !donation.is_hyperemote) {
-          
-          // Voice Messages - Generate announcement TTS
-          if (donation.voice_message_url) {
-            console.log('Voice message donation - generating announcement TTS');
-            try {
-              const ttsResponse = await fetch(`${supabaseUrl}/functions/v1/generate-donation-tts`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${supabaseServiceKey}`
-                },
-                body: JSON.stringify({
-                  username: donation.name,
-                  amount: donation.amount,
-                  message: null,
-                  donationId: donation.id,
-                  streamerId: donation.streamer_id,
-                  isVoiceAnnouncement: true,
-                  currency: donationCurrency
-                })
-              });
+        // Send goal progress update for all streamers
+        try {
+          const { data: streamerGoal, error: goalError } = await supabase
+            .from('streamers')
+            .select('goal_is_active, goal_activated_at, goal_target_amount')
+            .eq('id', donation.streamer_id)
+            .single();
+
+          if (!goalError && streamerGoal?.goal_is_active && streamerGoal.goal_activated_at) {
+            const { data: goalDonations, error: donError } = await supabase
+              .from(tableName)
+              .select('amount, currency')
+              .eq('streamer_id', donation.streamer_id)
+              .eq('payment_status', 'success')
+              .in('moderation_status', ['auto_approved', 'approved'])
+              .gte('created_at', streamerGoal.goal_activated_at);
+
+            if (!donError && goalDonations) {
+              const newTotal = goalDonations.reduce((sum: number, d: any) => {
+                const currency = d.currency || 'INR';
+                const rate = EXCHANGE_RATES_TO_INR[currency] || 1;
+                return sum + Number(d.amount) * rate;
+              }, 0);
               
-              if (!ttsResponse.ok) {
-                const errorText = await ttsResponse.text();
-                console.error('Announcement TTS error:', errorText);
-              } else {
-                const ttsData = await ttsResponse.json();
-                if (ttsData?.audioUrl) {
-                  console.log('Announcement TTS generated:', ttsData.audioUrl);
-                }
-              }
-            } catch (error) {
-              console.error('TTS generation error:', error);
+              await sendPusherEvent([`${pusherSlug}-goal`], 'goal-progress', {
+                currentAmount: newTotal,
+                targetAmount: streamerGoal.goal_target_amount,
+              });
+
+              console.log(`Goal progress update sent for ${pusherSlug}:`, newTotal);
             }
           }
-          
-          // Text Messages - Generate full TTS for ₹70+ (INR equivalent)
-          else if (donation.message && amountInINR >= 70) {
-            console.log(`Generating TTS for ₹${amountInINR} text donation`);
-            try {
-              const ttsResponse = await fetch(`${supabaseUrl}/functions/v1/generate-donation-tts`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${supabaseServiceKey}`
-                },
-                body: JSON.stringify({
-                  username: donation.name,
-                  amount: donation.amount,
-                  message: donation.message,
-                  donationId: donation.id,
-                  streamerId: donation.streamer_id,
-                  currency: donationCurrency
-                })
-              });
-              
-              if (!ttsResponse.ok) {
-                const errorText = await ttsResponse.text();
-                console.error('TTS error:', errorText);
-              } else {
-                const ttsData = await ttsResponse.json();
-                if (ttsData?.audioUrl) {
-                  console.log('TTS generated successfully:', ttsData.audioUrl);
-                }
-              }
-            } catch (error) {
-              console.error('TTS generation error:', error);
-            }
-          } else {
-            console.log(`Donation ₹${amountInINR} - below TTS threshold or no message`);
-          }
-        } else {
-          console.log('HyperSound/HyperEmote donation - skipping TTS');
+        } catch (goalError) {
+          console.error('Error sending goal progress update:', goalError);
         }
-      } else {
-        console.log('⏸️ Skipping TTS generation - donation pending moderation');
       }
 
-      // Check if there's an active goal and send progress update for all streamers
-      try {
-        const { data: streamer, error: goalError } = await supabase
-          .from('streamers')
-          .select('goal_is_active, goal_activated_at, goal_target_amount')
-          .eq('id', donation.streamer_id)
-          .single();
+      // Send dashboard update event (always, regardless of moderation status)
+      await sendPusherEvent([`${pusherSlug}-dashboard`], 'donation-updated', {
+        ...donationData,
+        moderation_status: moderationStatus,
+        action: shouldAutoApprove ? 'auto_approved' : 'pending'
+      })
 
-        if (!goalError && streamer?.goal_is_active && streamer.goal_activated_at) {
-          const { data: donations, error: donError } = await supabase
-            .from(tableName)
-            .select('amount, currency')
-            .eq('streamer_id', donation.streamer_id)
-            .eq('payment_status', 'success')
-            .in('moderation_status', ['auto_approved', 'approved'])
-            .gte('created_at', streamer.goal_activated_at);
-
-          if (!donError && donations) {
-            const newTotal = donations.reduce((sum, d) => {
-              const currency = d.currency || 'INR';
-              const rate = EXCHANGE_RATES_TO_INR[currency] || 1;
-              return sum + Number(d.amount) * rate;
-            }, 0);
-
-            await sendPusherEvent([`${channelSlug}-goal`], 'goal-progress', {
-              currentAmount: newTotal,
-              targetAmount: streamer.goal_target_amount,
-            });
-
-            console.log(`Goal progress update sent for ${channelSlug}: ${newTotal}/${streamer.goal_target_amount}`);
-          }
-        }
-      } catch (error) {
-        console.error('Error sending goal progress update:', error);
-      }
-
-      // Send Telegram notification to moderators with moderation buttons
-      try {
-        console.log('Sending Telegram notification to moderators for donation:', donation.id);
-        
-        const telegramBotToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
-        if (!telegramBotToken) {
-          console.log('TELEGRAM_BOT_TOKEN not configured, skipping Telegram notification');
-        } else {
-          // Fetch moderators with their permissions
+      // Telegram notifications (if enabled)
+      const telegramBotToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
+      if (telegramBotToken && streamerSettings?.telegram_moderation_enabled) {
+        try {
+          // Fetch moderators
           const { data: moderators, error: modError } = await supabase
             .from('streamers_moderators')
             .select('telegram_user_id, mod_name, role, can_approve, can_reject, can_hide_message, can_ban, can_replay')
@@ -626,7 +644,7 @@ serve(async (req) => {
             console.log(`Found ${moderators.length} active moderators for streamer ${donation.streamer_id}`);
 
             const isManualMode = !shouldAutoApprove;
-            const isPending = donation.moderation_status === 'pending';
+            const isPending = moderationStatus === 'pending';
 
             // Build message with HTML formatting
             let messageText = isManualMode && isPending
@@ -656,37 +674,43 @@ serve(async (req) => {
 
             for (const mod of moderators) {
               try {
-                // Build keyboard based on mode and permissions
+                // Build keyboard based on mode and permissions using shortened callback_data
                 const keyboard: any[][] = [];
                 
                 if (isManualMode && isPending) {
                   // Row 1: Approve/Reject for pending manual mode
                   const row1: any[] = [];
                   if (mod.role === 'owner' || mod.can_approve) {
-                    row1.push({ text: '✅ Approve', callback_data: `approve_${donation.id}_${tableName}` });
+                    const approveCallback = await createCallbackMapping(supabase, donation.id, tableName, donation.streamer_id, 'approve');
+                    row1.push({ text: '✅ Approve', callback_data: approveCallback });
                   }
                   if (mod.role === 'owner' || mod.can_reject) {
-                    row1.push({ text: '❌ Reject', callback_data: `reject_${donation.id}_${tableName}` });
+                    const rejectCallback = await createCallbackMapping(supabase, donation.id, tableName, donation.streamer_id, 'reject');
+                    row1.push({ text: '❌ Reject', callback_data: rejectCallback });
                   }
                   if (row1.length > 0) keyboard.push(row1);
 
                   // Row 2: Hide/Ban
                   const row2: any[] = [];
                   if ((mod.role === 'owner' || mod.can_hide_message) && donation.message) {
-                    row2.push({ text: '🙈 Hide Msg', callback_data: `hide_message_${donation.id}_${tableName}` });
+                    const hideCallback = await createCallbackMapping(supabase, donation.id, tableName, donation.streamer_id, 'hide_message');
+                    row2.push({ text: '🙈 Hide Msg', callback_data: hideCallback });
                   }
                   if (mod.role === 'owner' || mod.can_ban) {
-                    row2.push({ text: '🚫 Ban', callback_data: `ban_donor_${donation.id}_${tableName}` });
+                    const banCallback = await createCallbackMapping(supabase, donation.id, tableName, donation.streamer_id, 'ban_donor');
+                    row2.push({ text: '🚫 Ban', callback_data: banCallback });
                   }
                   if (row2.length > 0) keyboard.push(row2);
                 } else {
                   // For auto-approved: show replay and hide options
                   const row: any[] = [];
                   if (donation.message && (mod.role === 'owner' || mod.can_hide_message)) {
-                    row.push({ text: '🙈 Hide Msg', callback_data: `hide_message_${donation.id}_${tableName}` });
+                    const hideCallback = await createCallbackMapping(supabase, donation.id, tableName, donation.streamer_id, 'hide_message');
+                    row.push({ text: '🙈 Hide Msg', callback_data: hideCallback });
                   }
                   if (mod.role === 'owner' || mod.can_replay) {
-                    row.push({ text: '🔄 Replay', callback_data: `replay_${donation.id}_${tableName}` });
+                    const replayCallback = await createCallbackMapping(supabase, donation.id, tableName, donation.streamer_id, 'replay');
+                    row.push({ text: '🔄 Replay', callback_data: replayCallback });
                   }
                   if (row.length > 0) keyboard.push(row);
                 }
@@ -709,9 +733,10 @@ serve(async (req) => {
                   }
                 );
 
-                if (!textResponse.ok) {
-                  const errorText = await textResponse.text();
-                  console.error(`Failed to send text to ${mod.mod_name}:`, errorText);
+                const responseData = await textResponse.json();
+                
+                if (!textResponse.ok || !responseData.ok) {
+                  console.error(`Failed to send text to ${mod.mod_name}:`, JSON.stringify(responseData));
                   continue;
                 }
 
@@ -747,9 +772,9 @@ serve(async (req) => {
           } else {
             console.log('No active moderators found for streamer');
           }
+        } catch (telegramError) {
+          console.error('Error sending Telegram notifications:', telegramError);
         }
-      } catch (telegramError) {
-        console.error('Error sending Telegram notifications:', telegramError);
       }
     }
 

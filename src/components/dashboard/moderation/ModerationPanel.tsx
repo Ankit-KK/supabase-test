@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Check, X, Eye, EyeOff, Ban, RotateCcw, Clock, Shield, AlertTriangle } from 'lucide-react';
+import { Check, X, Eye, EyeOff, Ban, RotateCcw, Shield, Wifi, WifiOff } from 'lucide-react';
+import Pusher from 'pusher-js';
 
 interface ModerationPanelProps {
   streamerId: string;
@@ -28,6 +29,9 @@ interface Donation {
   created_at: string;
   is_donor_banned?: boolean;
   source_table?: string;
+  currency?: string;
+  tts_audio_url?: string;
+  hypersound_url?: string;
 }
 
 interface ModerationSettings {
@@ -50,6 +54,136 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
   const [pendingCount, setPendingCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const pusherRef = useRef<Pusher | null>(null);
+  const channelRef = useRef<any>(null);
+
+  // Fetch Pusher config and setup real-time connection
+  useEffect(() => {
+    let mounted = true;
+
+    const setupPusher = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-pusher-config', {
+          body: { streamerSlug }
+        });
+
+        if (error || !data?.key) {
+          console.error('Failed to get Pusher config:', error);
+          return;
+        }
+
+        // Initialize Pusher
+        const pusher = new Pusher(data.key, {
+          cluster: data.cluster || 'ap2',
+          forceTLS: true
+        });
+
+        pusherRef.current = pusher;
+
+        // Subscribe to dashboard channel
+        const channelName = `${streamerSlug.replace(/_/g, '-')}-dashboard`;
+        const channel = pusher.subscribe(channelName);
+        channelRef.current = channel;
+
+        channel.bind('pusher:subscription_succeeded', () => {
+          if (mounted) {
+            setIsConnected(true);
+            console.log('Connected to dashboard channel:', channelName);
+          }
+        });
+
+        channel.bind('pusher:subscription_error', () => {
+          if (mounted) {
+            setIsConnected(false);
+            console.error('Failed to subscribe to dashboard channel');
+          }
+        });
+
+        // Listen for donation updates
+        channel.bind('donation-updated', (data: any) => {
+          console.log('Donation update received:', data);
+          
+          if (data.action === 'approve' || data.action === 'auto_approved') {
+            // Move from pending to recent
+            setPendingDonations(prev => prev.filter(d => d.id !== data.id));
+            setRecentDonations(prev => {
+              const exists = prev.some(d => d.id === data.id);
+              if (exists) return prev;
+              const newDonation: Donation = {
+                id: data.id,
+                name: data.name,
+                amount: data.amount,
+                message: data.message,
+                message_visible: data.message_visible !== false,
+                moderation_status: 'approved',
+                payment_status: 'success',
+                created_at: data.created_at,
+                voice_message_url: data.voice_message_url,
+                currency: data.currency,
+                tts_audio_url: data.tts_audio_url,
+                hypersound_url: data.hypersound_url
+              };
+              return [newDonation, ...prev.slice(0, 9)];
+            });
+            setPendingCount(prev => Math.max(0, prev - 1));
+          } else if (data.action === 'reject') {
+            // Remove from pending
+            setPendingDonations(prev => prev.filter(d => d.id !== data.id));
+            setPendingCount(prev => Math.max(0, prev - 1));
+          } else if (data.action === 'pending') {
+            // New pending donation
+            const newDonation: Donation = {
+              id: data.id,
+              name: data.name,
+              amount: data.amount,
+              message: data.message,
+              message_visible: true,
+              moderation_status: 'pending',
+              payment_status: 'success',
+              created_at: data.created_at,
+              voice_message_url: data.voice_message_url,
+              currency: data.currency
+            };
+            setPendingDonations(prev => {
+              const exists = prev.some(d => d.id === data.id);
+              if (exists) return prev;
+              return [newDonation, ...prev];
+            });
+            setPendingCount(prev => prev + 1);
+            
+            // Show toast for new pending donation
+            toast({
+              title: '🔔 New Donation Pending',
+              description: `₹${data.amount} from ${data.name} needs approval`
+            });
+          } else if (data.action === 'hide_message' || data.action === 'unhide_message') {
+            // Update message visibility
+            const isVisible = data.action === 'unhide_message';
+            setRecentDonations(prev => 
+              prev.map(d => d.id === data.id ? { ...d, message_visible: isVisible } : d)
+            );
+          }
+        });
+
+      } catch (err) {
+        console.error('Error setting up Pusher:', err);
+      }
+    };
+
+    setupPusher();
+
+    return () => {
+      mounted = false;
+      if (channelRef.current) {
+        channelRef.current.unbind_all();
+      }
+      if (pusherRef.current) {
+        pusherRef.current.unsubscribe(`${streamerSlug.replace(/_/g, '-')}-dashboard`);
+        pusherRef.current.disconnect();
+      }
+    };
+  }, [streamerSlug]);
 
   // Fetch settings
   useEffect(() => {
@@ -103,7 +237,8 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
 
   useEffect(() => {
     fetchQueue();
-    const interval = setInterval(fetchQueue, 10000);
+    // Reduced polling interval since we have real-time updates
+    const interval = setInterval(fetchQueue, 30000);
     return () => clearInterval(interval);
   }, [fetchQueue]);
 
@@ -136,18 +271,21 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
           donationId,
           donationTable: tableName,
           streamerId,
+          moderatorName: 'Dashboard',
           source: 'dashboard'
         }
       });
 
       if (response.data?.success) {
         toast({ title: 'Success', description: `Donation ${action}d` });
-        fetchQueue();
+        // Don't need to fetchQueue since Pusher will update
       } else {
         throw new Error(response.data?.error || 'Action failed');
       }
     } catch (error: any) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      // Refresh on error to ensure UI is in sync
+      fetchQueue();
     } finally {
       setActionLoading(null);
     }
@@ -158,9 +296,24 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
       {/* Settings Card */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            Moderation Settings
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Shield className="h-5 w-5" />
+              Moderation Settings
+            </div>
+            <div className="flex items-center gap-2 text-sm font-normal">
+              {isConnected ? (
+                <Badge variant="outline" className="text-green-600 border-green-600">
+                  <Wifi className="h-3 w-3 mr-1" />
+                  Live
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-muted-foreground">
+                  <WifiOff className="h-3 w-3 mr-1" />
+                  Polling
+                </Badge>
+              )}
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
