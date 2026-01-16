@@ -67,6 +67,7 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
   });
   const [approvedDonations, setApprovedDonations] = useState<DonationRecord[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [lastDonationUpdate, setLastDonationUpdate] = useState<any>(null);
   
   // Get Pusher config from backend
   const { config: pusherConfig } = usePusherConfig(streamerSlug);
@@ -84,6 +85,11 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
         title: "New Donation!",
         description: `${donation.name} donated ₹${donation.amount}`,
       });
+    },
+    onDonationUpdated: (data) => {
+      console.log('[Dashboard] Donation update via Pusher:', data);
+      // Pass to ModerationPanel
+      setLastDonationUpdate(data);
     },
     onStatsUpdate: (newStats) => {
       console.log('[Dashboard] Stats update via Pusher:', newStats);
@@ -376,6 +382,8 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
               streamerSlug={streamerSlug}
               tableName={tableName}
               brandColor={brandColor}
+              isConnected={pusherStatus === 'connected'}
+              onDonationUpdate={lastDonationUpdate}
             />
           </TabsContent>
 

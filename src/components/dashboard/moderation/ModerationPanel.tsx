@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,13 +8,28 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Check, X, Eye, EyeOff, Ban, RotateCcw, Shield, Wifi, WifiOff } from 'lucide-react';
-import Pusher from 'pusher-js';
+
+interface DonationUpdateEvent {
+  id: string;
+  action: 'approve' | 'reject' | 'pending' | 'auto_approved' | 'hide_message' | 'unhide_message';
+  name: string;
+  amount: number;
+  currency?: string;
+  message?: string;
+  message_visible?: boolean;
+  created_at: string;
+  voice_message_url?: string;
+  tts_audio_url?: string;
+  hypersound_url?: string;
+}
 
 interface ModerationPanelProps {
   streamerId: string;
   streamerSlug: string;
   tableName: string;
   brandColor?: string;
+  isConnected?: boolean;
+  onDonationUpdate?: DonationUpdateEvent | null;
 }
 
 interface Donation {
@@ -43,7 +58,9 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
   streamerId,
   streamerSlug,
   tableName,
-  brandColor = '#3b82f6'
+  brandColor = '#3b82f6',
+  isConnected = false,
+  onDonationUpdate
 }) => {
   const [settings, setSettings] = useState<ModerationSettings>({
     moderation_mode: 'auto_approve',
@@ -54,136 +71,75 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
   const [pendingCount, setPendingCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-  const pusherRef = useRef<Pusher | null>(null);
-  const channelRef = useRef<any>(null);
 
-  // Fetch Pusher config and setup real-time connection
+  // Handle donation updates from parent Pusher connection
   useEffect(() => {
-    let mounted = true;
-
-    const setupPusher = async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke('get-pusher-config', {
-          body: { streamer_slug: streamerSlug }
-        });
-
-        if (error || !data?.key) {
-          console.error('Failed to get Pusher config:', error);
-          return;
-        }
-
-        // Initialize Pusher
-        const pusher = new Pusher(data.key, {
-          cluster: data.cluster || 'ap2',
-          forceTLS: true
-        });
-
-        pusherRef.current = pusher;
-
-        // Subscribe to dashboard channel
-        const channelName = `${streamerSlug}-dashboard`;
-        const channel = pusher.subscribe(channelName);
-        channelRef.current = channel;
-
-        channel.bind('pusher:subscription_succeeded', () => {
-          if (mounted) {
-            setIsConnected(true);
-            console.log('Connected to dashboard channel:', channelName);
-          }
-        });
-
-        channel.bind('pusher:subscription_error', () => {
-          if (mounted) {
-            setIsConnected(false);
-            console.error('Failed to subscribe to dashboard channel');
-          }
-        });
-
-        // Listen for donation updates
-        channel.bind('donation-updated', (data: any) => {
-          console.log('Donation update received:', data);
-          
-          if (data.action === 'approve' || data.action === 'auto_approved') {
-            // Move from pending to recent
-            setPendingDonations(prev => prev.filter(d => d.id !== data.id));
-            setRecentDonations(prev => {
-              const exists = prev.some(d => d.id === data.id);
-              if (exists) return prev;
-              const newDonation: Donation = {
-                id: data.id,
-                name: data.name,
-                amount: data.amount,
-                message: data.message,
-                message_visible: data.message_visible !== false,
-                moderation_status: 'approved',
-                payment_status: 'success',
-                created_at: data.created_at,
-                voice_message_url: data.voice_message_url,
-                currency: data.currency,
-                tts_audio_url: data.tts_audio_url,
-                hypersound_url: data.hypersound_url
-              };
-              return [newDonation, ...prev.slice(0, 9)];
-            });
-            setPendingCount(prev => Math.max(0, prev - 1));
-          } else if (data.action === 'reject') {
-            // Remove from pending
-            setPendingDonations(prev => prev.filter(d => d.id !== data.id));
-            setPendingCount(prev => Math.max(0, prev - 1));
-          } else if (data.action === 'pending') {
-            // New pending donation
-            const newDonation: Donation = {
-              id: data.id,
-              name: data.name,
-              amount: data.amount,
-              message: data.message,
-              message_visible: true,
-              moderation_status: 'pending',
-              payment_status: 'success',
-              created_at: data.created_at,
-              voice_message_url: data.voice_message_url,
-              currency: data.currency
-            };
-            setPendingDonations(prev => {
-              const exists = prev.some(d => d.id === data.id);
-              if (exists) return prev;
-              return [newDonation, ...prev];
-            });
-            setPendingCount(prev => prev + 1);
-            
-            // Show toast for new pending donation
-            toast({
-              title: '🔔 New Donation Pending',
-              description: `₹${data.amount} from ${data.name} needs approval`
-            });
-          } else if (data.action === 'hide_message' || data.action === 'unhide_message') {
-            // Update message visibility
-            const isVisible = data.action === 'unhide_message';
-            setRecentDonations(prev => 
-              prev.map(d => d.id === data.id ? { ...d, message_visible: isVisible } : d)
-            );
-          }
-        });
-
-      } catch (err) {
-        console.error('Error setting up Pusher:', err);
-      }
-    };
-
-    setupPusher();
-
-    return () => {
-      mounted = false;
-      if (channelRef.current) {
-        channelRef.current.unbind_all();
-      }
-      if (pusherRef.current) {
-        pusherRef.current.unsubscribe(`${streamerSlug}-dashboard`);
-        pusherRef.current.disconnect();
-      }
-    };
-  }, [streamerSlug]);
+    if (!onDonationUpdate) return;
+    
+    const data = onDonationUpdate;
+    console.log('ModerationPanel received donation update:', data);
+    
+    if (data.action === 'approve' || data.action === 'auto_approved') {
+      // Move from pending to recent
+      setPendingDonations(prev => prev.filter(d => d.id !== data.id));
+      setRecentDonations(prev => {
+        const exists = prev.some(d => d.id === data.id);
+        if (exists) return prev;
+        const newDonation: Donation = {
+          id: data.id,
+          name: data.name,
+          amount: data.amount,
+          message: data.message,
+          message_visible: data.message_visible !== false,
+          moderation_status: 'approved',
+          payment_status: 'success',
+          created_at: data.created_at,
+          voice_message_url: data.voice_message_url,
+          currency: data.currency,
+          tts_audio_url: data.tts_audio_url,
+          hypersound_url: data.hypersound_url
+        };
+        return [newDonation, ...prev.slice(0, 9)];
+      });
+      setPendingCount(prev => Math.max(0, prev - 1));
+    } else if (data.action === 'reject') {
+      // Remove from pending
+      setPendingDonations(prev => prev.filter(d => d.id !== data.id));
+      setPendingCount(prev => Math.max(0, prev - 1));
+    } else if (data.action === 'pending') {
+      // New pending donation
+      const newDonation: Donation = {
+        id: data.id,
+        name: data.name,
+        amount: data.amount,
+        message: data.message,
+        message_visible: true,
+        moderation_status: 'pending',
+        payment_status: 'success',
+        created_at: data.created_at,
+        voice_message_url: data.voice_message_url,
+        currency: data.currency
+      };
+      setPendingDonations(prev => {
+        const exists = prev.some(d => d.id === data.id);
+        if (exists) return prev;
+        return [newDonation, ...prev];
+      });
+      setPendingCount(prev => prev + 1);
+      
+      // Show toast for new pending donation
+      toast({
+        title: '🔔 New Donation Pending',
+        description: `₹${data.amount} from ${data.name} needs approval`
+      });
+    } else if (data.action === 'hide_message' || data.action === 'unhide_message') {
+      // Update message visibility
+      const isVisible = data.action === 'unhide_message';
+      setRecentDonations(prev => 
+        prev.map(d => d.id === data.id ? { ...d, message_visible: isVisible } : d)
+      );
+    }
+  }, [onDonationUpdate]);
 
   // Fetch settings
   useEffect(() => {
