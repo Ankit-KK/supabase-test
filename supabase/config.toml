@@ -164,3 +164,18 @@ verify_jwt = false
 
 [functions.update-streamer-settings]
 verify_jwt = false
+
+[functions.get-dashboard-stats-looteriya-gaming]
+verify_jwt = false
+
+[functions.create-razorpay-order-chiagaming]
+verify_jwt = false
+
+[functions.check-payment-status-chiagaming]
+verify_jwt = false
+
+[functions.generate-obs-token]
+verify_jwt = false
+
+[functions.broadcast-settings-update]
+verify_jwt = false
