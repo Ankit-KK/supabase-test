@@ -3471,14 +3471,19 @@ export type Database = {
         }
         Returns: string
       }
-      log_security_event: {
-        Args: {
-          event_details?: string
-          event_type: string
-          ip_address?: string
-        }
-        Returns: undefined
-      }
+      log_security_event:
+        | {
+            Args: {
+              event_details?: string
+              event_type: string
+              ip_address?: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: { p_details?: Json; p_event_type: string }
+            Returns: undefined
+          }
       log_security_violation: {
         Args: { details?: string; user_email?: string; violation_type: string }
         Returns: undefined
@@ -3551,6 +3556,7 @@ export type Database = {
           youtube_channel: string
         }[]
       }
+      sanitize_text_input: { Args: { p_input: string }; Returns: string }
       text_to_bytea: { Args: { data: string }; Returns: string }
       update_donation_visibility: {
         Args: {
@@ -3610,10 +3616,15 @@ export type Database = {
             } & "Could not choose the best candidate function between: public.urlencode(string => bytea), public.urlencode(string => varchar). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
           }
       validate_donation_amount: { Args: { amount: number }; Returns: boolean }
-      validate_donation_input: {
-        Args: { p_amount: number; p_message?: string; p_name: string }
-        Returns: boolean
-      }
+      validate_donation_input:
+        | {
+            Args: { p_amount: number; p_message?: string; p_name: string }
+            Returns: boolean
+          }
+        | {
+            Args: { p_amount: number; p_message?: string; p_name: string }
+            Returns: boolean
+          }
       validate_donation_insert: {
         Args: {
           p_amount: number
