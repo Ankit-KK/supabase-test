@@ -2204,7 +2204,12 @@ export type Database = {
             }[]
           }
       cleanup_expired_callback_mappings: { Args: never; Returns: undefined }
+      cleanup_expired_sessions: { Args: never; Returns: number }
       cleanup_expired_websocket_connections: { Args: never; Returns: undefined }
+      create_session_with_hashed_token: {
+        Args: { p_plain_token: string; p_user_id: string }
+        Returns: undefined
+      }
       create_visits_table: { Args: never; Returns: boolean }
       encrypt_obs_token: { Args: { token_text: string }; Returns: string }
       export_user_signups_for_compliance: {
@@ -2584,6 +2589,7 @@ export type Database = {
       }
       hash_obs_token: { Args: { token_text: string }; Returns: string }
       hash_password: { Args: { password: string }; Returns: string }
+      hash_session_token: { Args: { plain_token: string }; Returns: string }
       http: {
         Args: { request: Database["public"]["CompositeTypes"]["http_request"] }
         Returns: Database["public"]["CompositeTypes"]["http_response"]
@@ -2817,6 +2823,10 @@ export type Database = {
             }
             Returns: boolean
           }
+      rotate_session_token: {
+        Args: { old_plain_token: string }
+        Returns: string
+      }
       safe_export_user_signups: {
         Args: { export_reason: string }
         Returns: {
@@ -2943,7 +2953,7 @@ export type Database = {
         }[]
       }
       validate_session_token: {
-        Args: { token: string }
+        Args: { plain_token: string }
         Returns: {
           email: string
           role: string

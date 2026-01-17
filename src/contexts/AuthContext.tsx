@@ -67,7 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const token = localStorage.getItem('auth_token');
       if (token) {
         try {
-          const { data, error } = await supabase.rpc('validate_session_token', { token });
+          const { data, error } = await supabase.rpc('validate_session_token', { plain_token: token });
           if (!error && data && data.length > 0) {
           const userData = data[0] as any; // Type cast needed as DB returns 'user_id'
             setUser({
