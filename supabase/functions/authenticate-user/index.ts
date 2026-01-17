@@ -117,12 +117,11 @@ serve(async (req) => {
         );
       }
 
-      // Create session
+      // Create session with hashed token (secure storage)
       const { error: sessionError } = await supabase
-        .from('auth_sessions')
-        .insert({
-          user_id: newUser.id,
-          token: sessionToken
+        .rpc('create_session_with_hashed_token', {
+          p_user_id: newUser.id,
+          p_plain_token: sessionToken
         });
 
       if (sessionError) {
@@ -258,17 +257,12 @@ serve(async (req) => {
         );
       }
 
-      // Clean up old sessions and create new one
-      await supabase
-        .from('auth_sessions')
-        .delete()
-        .eq('user_id', user.id);
-
+      // Create session with hashed token (secure storage)
+      // The RPC function handles cleanup of old sessions automatically
       const { error: sessionError } = await supabase
-        .from('auth_sessions')
-        .insert({
-          user_id: user.id,
-          token: sessionToken
+        .rpc('create_session_with_hashed_token', {
+          p_user_id: user.id,
+          p_plain_token: sessionToken
         });
 
       if (sessionError) {
