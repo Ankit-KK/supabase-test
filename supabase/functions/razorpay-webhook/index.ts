@@ -136,22 +136,27 @@ serve(async (req) => {
 
     console.log('Razorpay webhook received')
 
-    // Verify webhook signature if secret is configured
-    if (webhookSecret && webhookSignature) {
-      const expectedSignature = createHmac('sha256', webhookSecret)
-        .update(webhookBody)
-        .digest('hex')
-
-      if (webhookSignature !== expectedSignature) {
-        console.error('Invalid webhook signature')
-        return new Response('Invalid signature', { status: 400, headers: corsHeaders })
-      }
-      console.log('Webhook signature verified ✓')
-    } else if (!webhookSecret) {
-      console.warn('⚠️ Webhook secret not configured - skipping signature verification (less secure)')
-    } else if (!webhookSignature) {
-      console.warn('⚠️ No signature in webhook - skipping verification')
+    // SECURITY: Verify webhook signature - reject if secret or signature is missing
+    if (!webhookSecret) {
+      console.error('SECURITY: Webhook secret not configured - rejecting request')
+      return new Response('Unauthorized - webhook secret not configured', { status: 401, headers: corsHeaders })
     }
+
+    if (!webhookSignature) {
+      console.error('SECURITY: No signature in webhook request - rejecting request')
+      return new Response('Unauthorized - missing signature', { status: 401, headers: corsHeaders })
+    }
+
+    const expectedSignature = createHmac('sha256', webhookSecret)
+      .update(webhookBody)
+      .digest('hex')
+
+    if (webhookSignature !== expectedSignature) {
+      console.error('SECURITY: Invalid webhook signature - rejecting request')
+      return new Response('Unauthorized - invalid signature', { status: 401, headers: corsHeaders })
+    }
+    
+    console.log('Webhook signature verified ✓')
 
     // Parse webhook data
     const webhookData = JSON.parse(webhookBody)
