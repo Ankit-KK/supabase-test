@@ -79,6 +79,56 @@ serve(async (req) => {
       throw new Error('Voice data and streamer slug are required')
     }
 
+    // Validate voiceData is a string
+    if (typeof voiceData !== 'string') {
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'Invalid voice data format. Expected base64 string.' 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Calculate estimated decoded size (base64 is ~133% of original)
+    const estimatedSizeBytes = (voiceData.length * 3) / 4
+    const MAX_VOICE_SIZE_MB = 5
+    const MAX_VOICE_SIZE_BYTES = MAX_VOICE_SIZE_MB * 1024 * 1024
+
+    if (estimatedSizeBytes > MAX_VOICE_SIZE_BYTES) {
+      console.log('Voice message too large:', Math.round(estimatedSizeBytes / 1024 / 1024 * 100) / 100, 'MB from IP:', clientIP)
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: `Voice message too large. Maximum size is ${MAX_VOICE_SIZE_MB}MB.` 
+        }),
+        { status: 413, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Validate base64 format (only allow valid base64 characters)
+    if (!/^[A-Za-z0-9+/=]+$/.test(voiceData)) {
+      console.log('Invalid base64 format from IP:', clientIP)
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'Invalid voice data format. Data must be valid base64.' 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Validate streamerSlug format to prevent path traversal
+    if (!/^[a-zA-Z0-9_-]+$/.test(streamerSlug)) {
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'Invalid streamer slug format.' 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     // Get R2 configuration
     const bucketName = Deno.env.get('R2_BUCKET_NAME')
     const publicUrl = Deno.env.get('R2_PUBLIC_URL')
