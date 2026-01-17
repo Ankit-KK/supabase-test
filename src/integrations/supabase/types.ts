@@ -2000,6 +2000,93 @@ export type Database = {
       }
     }
     Views: {
+      abdevil_donations_public: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          currency: string | null
+          hypersound_url: string | null
+          id: string | null
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          name: string | null
+          selected_gif_id: string | null
+          tts_audio_url: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          selected_gif_id?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          selected_gif_id?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: []
+      }
+      ankit_donations_public: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          currency: string | null
+          hypersound_url: string | null
+          id: string | null
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          name: string | null
+          tts_audio_url: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: []
+      }
       auth_sessions_safe: {
         Row: {
           created_at: string | null
@@ -2028,6 +2115,585 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      bongflick_donations_public: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          currency: string | null
+          hypersound_url: string | null
+          id: string | null
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          name: string | null
+          selected_gif_id: string | null
+          tts_audio_url: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          selected_gif_id?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          selected_gif_id?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: []
+      }
+      chiaa_gaming_donations_public: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          currency: string | null
+          hypersound_url: string | null
+          id: string | null
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          name: string | null
+          tts_audio_url: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: []
+      }
+      clumsygod_donations_public: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          currency: string | null
+          hypersound_url: string | null
+          id: string | null
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          name: string | null
+          selected_gif_id: string | null
+          tts_audio_url: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          selected_gif_id?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          selected_gif_id?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: []
+      }
+      damask_plays_donations_public: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          currency: string | null
+          hypersound_url: string | null
+          id: string | null
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          name: string | null
+          selected_gif_id: string | null
+          tts_audio_url: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          selected_gif_id?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          selected_gif_id?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: []
+      }
+      jhanvoo_donations_public: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          currency: string | null
+          hypersound_url: string | null
+          id: string | null
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          name: string | null
+          selected_gif_id: string | null
+          tts_audio_url: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          selected_gif_id?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          selected_gif_id?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: []
+      }
+      jimmy_gaming_donations_public: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          currency: string | null
+          hypersound_url: string | null
+          id: string | null
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          name: string | null
+          selected_gif_id: string | null
+          tts_audio_url: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          selected_gif_id?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          selected_gif_id?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: []
+      }
+      looteriya_gaming_donations_public: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          currency: string | null
+          hypersound_url: string | null
+          id: string | null
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          name: string | null
+          selected_gif_id: string | null
+          tts_audio_url: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          selected_gif_id?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          selected_gif_id?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: []
+      }
+      mriqmaster_donations_public: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          currency: string | null
+          hypersound_url: string | null
+          id: string | null
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          name: string | null
+          selected_gif_id: string | null
+          tts_audio_url: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          selected_gif_id?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          selected_gif_id?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: []
+      }
+      neko_xenpai_donations_public: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          currency: string | null
+          hypersound_url: string | null
+          id: string | null
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          name: string | null
+          selected_gif_id: string | null
+          tts_audio_url: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          selected_gif_id?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          selected_gif_id?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: []
+      }
+      notyourkween_donations_public: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          currency: string | null
+          hypersound_url: string | null
+          id: string | null
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          name: string | null
+          selected_gif_id: string | null
+          tts_audio_url: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          selected_gif_id?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          selected_gif_id?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: []
+      }
+      sagarujjwalgaming_donations_public: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          currency: string | null
+          hypersound_url: string | null
+          id: string | null
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          name: string | null
+          selected_gif_id: string | null
+          tts_audio_url: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          selected_gif_id?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          selected_gif_id?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: []
+      }
+      sizzors_donations_public: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          currency: string | null
+          hypersound_url: string | null
+          id: string | null
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          name: string | null
+          tts_audio_url: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: []
+      }
+      thunderx_donations_public: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          currency: string | null
+          hypersound_url: string | null
+          id: string | null
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          name: string | null
+          selected_gif_id: string | null
+          tts_audio_url: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          selected_gif_id?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          selected_gif_id?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: []
       }
       user_signups_masked: {
         Row: {
@@ -2092,6 +2758,51 @@ export type Database = {
           mobile_masked?: never
           name?: string | null
           youtube_channel?: string | null
+        }
+        Relationships: []
+      }
+      vipbhai_donations_public: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          currency: string | null
+          hypersound_url: string | null
+          id: string | null
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          name: string | null
+          selected_gif_id: string | null
+          tts_audio_url: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          selected_gif_id?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          selected_gif_id?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
         }
         Relationships: []
       }
