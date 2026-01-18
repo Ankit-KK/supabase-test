@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { crypto as stdCrypto } from "https://deno.land/std@0.190.0/crypto/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -53,7 +54,7 @@ async function sendPusherEvent(channels: string[], event: string, data: any, pus
 
     const body = JSON.stringify({ name: event, channels, data: JSON.stringify(data) });
     const timestamp = Math.floor(Date.now() / 1000).toString();
-    const md5Hash = Array.from(new Uint8Array(await crypto.subtle.digest('MD5', new TextEncoder().encode(body))))
+    const md5Hash = Array.from(new Uint8Array(await stdCrypto.subtle.digest('MD5', new TextEncoder().encode(body))))
       .map(b => b.toString(16).padStart(2, '0')).join('');
     
     const stringToSign = `POST\n/apps/${creds.appId}/events\nauth_key=${creds.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${md5Hash}`;
