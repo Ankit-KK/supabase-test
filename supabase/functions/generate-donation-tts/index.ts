@@ -1,8 +1,40 @@
-// Updated: 2025-12-26 - Migrated to Cloudflare R2 storage
+// Updated: 2025-01-18 - Added emoji-to-text conversion for TTS
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 import { Hash } from "https://deno.land/x/checksum@1.4.0/mod.ts";
 import { S3Client, PutObjectCommand } from "npm:@aws-sdk/client-s3@3.525.0";
+
+// Import complete emoji data (100% Unicode coverage including newest emojis)
+import emojiData from "https://esm.sh/unicode-emoji-json@0.6.0/data-by-emoji.json" with { type: "json" };
+
+// Convert emojis to their readable text names for TTS
+// Uses unicode-emoji-json which has 100% Unicode emoji coverage
+const convertEmojisToText = (text: string): string => {
+  if (!text) return text;
+  
+  let result = text;
+  
+  // Sort emojis by length (longest first) to handle compound emojis correctly
+  const sortedEmojis = Object.keys(emojiData).sort((a, b) => b.length - a.length);
+  
+  // Iterate through all known emojis and replace them with their names
+  for (const emoji of sortedEmojis) {
+    if (result.includes(emoji)) {
+      const data = emojiData[emoji as keyof typeof emojiData];
+      // Replace emoji with its readable name (e.g., "grinning face")
+      result = result.split(emoji).join(` ${data.name} `);
+    }
+  }
+  
+  // Handle skin tone modifiers and variation selectors that might remain
+  const modifierRegex = /[\u{1F3FB}-\u{1F3FF}]|[\u{200D}]|[\u{FE0F}]|[\u{FE0E}]/gu;
+  result = result.replace(modifierRegex, '');
+  
+  // Clean up extra whitespace
+  result = result.replace(/\s+/g, ' ').trim();
+  
+  return result;
+};
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -254,15 +286,20 @@ serve(async (req) => {
     const getSpokenCurrency = (code: string): string => CURRENCY_SPOKEN_NAMES[code] || code;
     const spokenCurrency = getSpokenCurrency(currency);
 
+    // Convert emojis to readable text before TTS
+    const ttsReadyMessage = message ? convertEmojisToText(message) : null;
+    console.log("Original message:", message);
+    console.log("TTS-ready message:", ttsReadyMessage);
+
     // Format the donation text for TTS
     let donationText: string;
 
     if (isVoiceAnnouncement) {
       // Voice message announcement: just announce the sender
       donationText = `${username} sent a Voice message`;
-    } else if (message) {
-      // Text message with content
-      donationText = `${username} donated ${amount} ${spokenCurrency}. ${message}`;
+    } else if (ttsReadyMessage) {
+      // Text message with emojis converted to text
+      donationText = `${username} donated ${amount} ${spokenCurrency}. ${ttsReadyMessage}`;
     } else {
       // Fallback
       donationText = `${username} donated ${amount} ${spokenCurrency}. Thank you!`;
