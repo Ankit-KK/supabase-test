@@ -1,102 +1,78 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
-import Pusher from 'https://esm.sh/pusher@5.2.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// TTS generation helper
-async function generateTTS(text: string, donationId: string, supabase: any): Promise<string | null> {
-  try {
-    const elevenLabsApiKey = Deno.env.get('ELEVENLABS_API_KEY');
-    if (!elevenLabsApiKey) {
-      console.error('[Looteriya Gaming] ElevenLabs API key not configured');
-      return null;
-    }
-
-    // Use default voice
-    const voiceId = 'pNInz6obpgDQGcFmaJgB'; // Adam voice
-
-    console.log('[Looteriya Gaming] Generating TTS for donation:', donationId);
-
-    const response = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`,
-      {
-        method: 'POST',
-        headers: {
-          'xi-api-key': elevenLabsApiKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          text: text,
-          model_id: 'eleven_multilingual_v2',
-          voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.75,
-          },
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[Looteriya Gaming] ElevenLabs API error:', errorText);
-      return null;
-    }
-
-    const audioBuffer = await response.arrayBuffer();
-    const audioBytes = new Uint8Array(audioBuffer);
-
-    // Upload to Supabase Storage
-    const fileName = `looteriya-gaming/${donationId}-tts.mp3`;
-    const { error: uploadError } = await supabase.storage
-      .from('voice-messages')
-      .upload(fileName, audioBytes, {
-        contentType: 'audio/mpeg',
-        upsert: true,
-      });
-
-    if (uploadError) {
-      console.error('[Looteriya Gaming] Storage upload error:', uploadError);
-      return null;
-    }
-
-    const { data: urlData } = supabase.storage
-      .from('voice-messages')
-      .getPublicUrl(fileName);
-
-    console.log('[Looteriya Gaming] TTS generated successfully:', urlData.publicUrl);
-    return urlData.publicUrl;
-  } catch (error) {
-    console.error('[Looteriya Gaming] TTS generation error:', error);
-    return null;
-  }
+// Helper to get Pusher credentials based on group
+function getPusherCredentials(group: number) {
+  const suffix = group === 1 ? '' : `_${group}`;
+  return {
+    appId: Deno.env.get(`PUSHER_APP_ID${suffix}`) || '',
+    key: Deno.env.get(`PUSHER_KEY${suffix}`) || '',
+    secret: Deno.env.get(`PUSHER_SECRET${suffix}`) || '',
+    cluster: Deno.env.get(`PUSHER_CLUSTER${suffix}`) || 'ap2'
+  };
 }
 
-// Initialize Pusher client
-function getPusherClient(): Pusher | null {
-  try {
-    const appId = Deno.env.get('PUSHER_APP_ID_2');
-    const key = Deno.env.get('PUSHER_KEY_2');
-    const secret = Deno.env.get('PUSHER_SECRET_2');
-    const cluster = Deno.env.get('PUSHER_CLUSTER_2');
+// Pusher client class (no external dependency)
+class PusherClient {
+  private appId: string;
+  private key: string;
+  private secret: string;
+  private cluster: string;
 
-    if (!appId || !key || !secret || !cluster) {
-      console.error('[Looteriya Gaming] Pusher credentials not configured');
-      return null;
-    }
+  constructor(appId: string, key: string, secret: string, cluster: string) {
+    this.appId = appId;
+    this.key = key;
+    this.secret = secret;
+    this.cluster = cluster;
+  }
 
-    return new Pusher({
-      appId,
-      key,
-      secret,
-      cluster,
-      useTLS: true,
+  async trigger(channel: string, event: string, data: any): Promise<any> {
+    const timestamp = Math.floor(Date.now() / 1000).toString();
+    const body = JSON.stringify(data);
+    
+    const stringToSign = `POST\n/apps/${this.appId}/events\nauth_key=${this.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${await this.md5(body)}`;
+    const signature = await this.hmacSha256(stringToSign, this.secret);
+    
+    const url = `https://api-${this.cluster}.pusher.com/apps/${this.appId}/events?auth_key=${this.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${await this.md5(body)}&auth_signature=${signature}`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: event, channel, data: body })
     });
-  } catch (error) {
-    console.error('[Looteriya Gaming] Pusher initialization error:', error);
-    return null;
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[Looteriya Gaming] Pusher error:', response.status, errorText);
+      throw new Error(`Pusher error: ${response.status}`);
+    }
+    
+    return response.json();
+  }
+
+  private async md5(message: string): Promise<string> {
+    const msgBuffer = new TextEncoder().encode(message);
+    const hashBuffer = await crypto.subtle.digest('MD5', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  private async hmacSha256(message: string, secret: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(secret);
+    const messageData = encoder.encode(message);
+    
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+    );
+    
+    const signature = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
+    const hashArray = Array.from(new Uint8Array(signature));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   }
 }
 
@@ -129,7 +105,7 @@ Deno.serve(async (req) => {
       throw new Error('Donation not found');
     }
 
-    // If already successful, return immediately (webhook handled all alerts/TTS)
+    // If already successful, return immediately
     if (donation.payment_status === 'success') {
       console.log('[Looteriya Gaming] Payment already successful');
       return new Response(
@@ -145,11 +121,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check Razorpay order status
-    const razorpayKeyId = Deno.env.get('RAZORPAY_KEY_ID');
-    const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
+    // Check Razorpay order status using Looteriya Gaming specific credentials
+    const razorpayKeyId = Deno.env.get('RAZORPAY_KEY_ID_LOOTERIYA_GAMING');
+    const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET_LOOTERIYA_GAMING');
 
     if (!razorpayKeyId || !razorpayKeySecret || !donation.razorpay_order_id) {
+      console.error('[Looteriya Gaming] Missing Razorpay credentials or order ID');
       throw new Error('Unable to check Razorpay status');
     }
 
@@ -162,7 +139,23 @@ Deno.serve(async (req) => {
     );
 
     if (!orderResponse.ok) {
-      throw new Error('Failed to fetch Razorpay order status');
+      const errorText = await orderResponse.text();
+      console.error('[Looteriya Gaming] Razorpay API error:', {
+        status: orderResponse.status,
+        body: errorText,
+        orderId: donation.razorpay_order_id
+      });
+      
+      // Return pending instead of error for transient failures
+      return new Response(
+        JSON.stringify({
+          order_id,
+          final_status: 'PENDING',
+          payment_status: 'pending',
+          error_details: `Razorpay returned ${orderResponse.status}`
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const razorpayOrder = await orderResponse.json();
@@ -188,7 +181,7 @@ Deno.serve(async (req) => {
       finalStatus = 'failure';
     }
 
-    // Process successful payment (full logic - TTS, Pusher, moderation)
+    // Process successful payment
     if (finalStatus === 'success' && donation.payment_status !== 'success') {
       console.log('[Looteriya Gaming] Processing successful payment...');
 
@@ -202,10 +195,44 @@ Deno.serve(async (req) => {
       const isTextDonation = !hasVoiceMessage && !hasHypersound;
       const ttsMinAmount = 70; // INR minimum for TTS
 
+      // Generate TTS using the shared generate-donation-tts function
       if (isTextDonation && donation.message && donation.amount >= ttsMinAmount && !ttsAudioUrl) {
-        console.log('[Looteriya Gaming] Generating TTS for text donation...');
-        const ttsText = `${donation.name} donated ${donation.amount} rupees and says: ${donation.message}`;
-        ttsAudioUrl = await generateTTS(ttsText, donation.id, supabase);
+        console.log('[Looteriya Gaming] Generating TTS via shared function...');
+        
+        try {
+          const ttsResponse = await fetch(
+            `${supabaseUrl}/functions/v1/generate-donation-tts`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${supabaseServiceKey}`
+              },
+              body: JSON.stringify({
+                donationId: donation.id,
+                streamerId: donation.streamer_id,
+                donationTable: 'looteriya_gaming_donations',
+                username: donation.name,
+                amount: donation.amount,
+                message: donation.message,
+                currency: donation.currency || 'INR'
+              })
+            }
+          );
+
+          if (ttsResponse.ok) {
+            const ttsData = await ttsResponse.json();
+            if (ttsData.audioUrl) {
+              ttsAudioUrl = ttsData.audioUrl;
+              console.log('[Looteriya Gaming] TTS generated:', ttsAudioUrl);
+            }
+          } else {
+            const ttsError = await ttsResponse.text();
+            console.error('[Looteriya Gaming] TTS generation failed:', ttsError);
+          }
+        } catch (ttsError) {
+          console.error('[Looteriya Gaming] TTS generation error:', ttsError);
+        }
       }
 
       // Update donation in database
@@ -231,17 +258,28 @@ Deno.serve(async (req) => {
         console.log('[Looteriya Gaming] Donation updated successfully');
       }
 
-      // Send Pusher notifications
-      const pusher = getPusherClient();
-      if (pusher) {
-        try {
-          // Get streamer info for goal updates
-          const { data: streamer } = await supabase
-            .from('streamers')
-            .select('*')
-            .eq('streamer_slug', 'looteriya-gaming')
-            .single();
+      // Get streamer info for Pusher group (use correct slug with underscore)
+      const { data: streamer } = await supabase
+        .from('streamers')
+        .select('*')
+        .eq('streamer_slug', 'looteriya_gaming')
+        .single();
 
+      // Get dynamic Pusher credentials based on streamer's group
+      const pusherGroup = streamer?.pusher_group || 1;
+      const pusherCreds = getPusherCredentials(pusherGroup);
+      
+      console.log('[Looteriya Gaming] Using Pusher group:', pusherGroup);
+
+      if (pusherCreds.appId && pusherCreds.key && pusherCreds.secret) {
+        const pusher = new PusherClient(
+          pusherCreds.appId,
+          pusherCreds.key,
+          pusherCreds.secret,
+          pusherCreds.cluster
+        );
+
+        try {
           // Dashboard notification
           const dashboardPayload = {
             id: donation.id,
@@ -299,6 +337,8 @@ Deno.serve(async (req) => {
         } catch (pusherError) {
           console.error('[Looteriya Gaming] Pusher error:', pusherError);
         }
+      } else {
+        console.warn('[Looteriya Gaming] Pusher credentials not configured for group:', pusherGroup);
       }
     } else if (finalStatus === 'failure' && donation.payment_status !== 'failure') {
       console.log('[Looteriya Gaming] Updating payment status to failure');
