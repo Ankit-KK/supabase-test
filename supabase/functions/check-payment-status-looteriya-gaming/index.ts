@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
+import { createHash } from 'https://deno.land/std@0.177.0/node/crypto.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -33,11 +34,12 @@ class PusherClient {
   async trigger(channel: string, event: string, data: any): Promise<any> {
     const timestamp = Math.floor(Date.now() / 1000).toString();
     const body = JSON.stringify(data);
+    const bodyMd5 = this.md5(body);
     
-    const stringToSign = `POST\n/apps/${this.appId}/events\nauth_key=${this.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${await this.md5(body)}`;
+    const stringToSign = `POST\n/apps/${this.appId}/events\nauth_key=${this.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${bodyMd5}`;
     const signature = await this.hmacSha256(stringToSign, this.secret);
     
-    const url = `https://api-${this.cluster}.pusher.com/apps/${this.appId}/events?auth_key=${this.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${await this.md5(body)}&auth_signature=${signature}`;
+    const url = `https://api-${this.cluster}.pusher.com/apps/${this.appId}/events?auth_key=${this.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${bodyMd5}&auth_signature=${signature}`;
     
     const response = await fetch(url, {
       method: 'POST',
@@ -54,11 +56,8 @@ class PusherClient {
     return response.json();
   }
 
-  private async md5(message: string): Promise<string> {
-    const msgBuffer = new TextEncoder().encode(message);
-    const hashBuffer = await crypto.subtle.digest('MD5', msgBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  private md5(message: string): string {
+    return createHash('md5').update(message).digest('hex');
   }
 
   private async hmacSha256(message: string, secret: string): Promise<string> {
