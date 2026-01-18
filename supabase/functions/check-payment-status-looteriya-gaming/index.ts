@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
-import { createHash } from 'https://deno.land/std@0.177.0/node/crypto.ts';
+import { createHash, createHmac } from 'https://deno.land/std@0.177.0/node/crypto.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,7 +17,7 @@ function getPusherCredentials(group: number) {
   };
 }
 
-// Pusher client class (no external dependency)
+// Pusher client class (matching razorpay-webhook format)
 class PusherClient {
   private appId: string;
   private key: string;
@@ -33,18 +33,26 @@ class PusherClient {
 
   async trigger(channel: string, event: string, data: any): Promise<any> {
     const timestamp = Math.floor(Date.now() / 1000).toString();
-    const body = JSON.stringify(data);
-    const bodyMd5 = this.md5(body);
+    
+    // Create payload in SAME format as razorpay-webhook (channels array, not channel string)
+    const pusherPayload = {
+      name: event,
+      channels: [channel],
+      data: JSON.stringify(data)
+    };
+    
+    const pusherBody = JSON.stringify(pusherPayload);
+    const bodyMd5 = this.md5(pusherBody);
     
     const stringToSign = `POST\n/apps/${this.appId}/events\nauth_key=${this.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${bodyMd5}`;
-    const signature = await this.hmacSha256(stringToSign, this.secret);
+    const signature = this.hmacSha256Sync(stringToSign, this.secret);
     
     const url = `https://api-${this.cluster}.pusher.com/apps/${this.appId}/events?auth_key=${this.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${bodyMd5}&auth_signature=${signature}`;
     
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: event, channel, data: body })
+      body: pusherBody
     });
     
     if (!response.ok) {
@@ -60,18 +68,8 @@ class PusherClient {
     return createHash('md5').update(message).digest('hex');
   }
 
-  private async hmacSha256(message: string, secret: string): Promise<string> {
-    const encoder = new TextEncoder();
-    const keyData = encoder.encode(secret);
-    const messageData = encoder.encode(message);
-    
-    const cryptoKey = await crypto.subtle.importKey(
-      'raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
-    );
-    
-    const signature = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
-    const hashArray = Array.from(new Uint8Array(signature));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  private hmacSha256Sync(message: string, secret: string): string {
+    return createHmac('sha256', secret).update(message).digest('hex');
   }
 }
 
