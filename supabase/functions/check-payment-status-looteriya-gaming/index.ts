@@ -201,7 +201,7 @@ Deno.serve(async (req) => {
         // Fetch streamer info for Pusher
         const { data: streamer } = await supabase
           .from('streamers')
-          .select('id, streamer_slug, pusher_group')
+          .select('id, streamer_slug, pusher_group, tts_enabled, tts_voice_id')
           .eq('id', donation.streamer_id)
           .single();
 
@@ -214,6 +214,52 @@ Deno.serve(async (req) => {
           if (donation.voice_message_url) donationType = 'voice';
           else if (donation.hypersound_url) donationType = 'hypersound';
 
+          let ttsAudioUrl = donation.tts_audio_url;
+
+          // Generate TTS for text donations with message >= 70 INR
+          const shouldGenerateTTS = donationType === 'text' && 
+            donation.message && 
+            donation.amount >= 70 && 
+            !donation.tts_audio_url &&
+            streamer.tts_enabled !== false;
+
+          if (shouldGenerateTTS) {
+            console.log('[Looteriya Gaming] Generating TTS for donation...');
+            try {
+              const ttsResponse = await fetch(
+                `${supabaseUrl}/functions/v1/generate-donation-tts`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${supabaseServiceKey}`
+                  },
+                  body: JSON.stringify({
+                    donationId: donation.id,
+                    streamerId: donation.streamer_id,
+                    tableName: 'looteriya_gaming_donations',
+                    username: donation.name,
+                    amount: donation.amount,
+                    message: donation.message,
+                    voiceId: streamer.tts_voice_id || 'en-IN-Standard-B'
+                  })
+                }
+              );
+
+              if (ttsResponse.ok) {
+                const ttsResult = await ttsResponse.json();
+                if (ttsResult.audioUrl) {
+                  ttsAudioUrl = ttsResult.audioUrl;
+                  console.log('[Looteriya Gaming] TTS generated:', ttsAudioUrl);
+                }
+              } else {
+                console.error('[Looteriya Gaming] TTS generation failed:', await ttsResponse.text());
+              }
+            } catch (ttsError) {
+              console.error('[Looteriya Gaming] TTS generation error:', ttsError);
+            }
+          }
+
           const alertData = {
             id: donation.id,
             name: donation.name,
@@ -222,7 +268,7 @@ Deno.serve(async (req) => {
             message: donation.message,
             type: donationType,
             voice_message_url: donation.voice_message_url,
-            tts_audio_url: donation.tts_audio_url,
+            tts_audio_url: ttsAudioUrl,
             hypersound_url: donation.hypersound_url,
             message_visible: donation.message_visible !== false,
             created_at: donation.created_at,
@@ -231,14 +277,10 @@ Deno.serve(async (req) => {
 
           console.log('[Looteriya Gaming] Broadcasting Pusher events for channel:', channelSlug);
 
-          // Send to dashboard
+          // Send to dashboard only - OBS alerts will be triggered by audio player after delay
           await sendPusherEvent([`${channelSlug}-dashboard`], 'new-donation', alertData, pusherGroup);
 
-          // Send to OBS alerts
-          await sendPusherEvent([`${channelSlug}-alerts`], 'new-donation', alertData, pusherGroup);
-          await sendPusherEvent([`${channelSlug}-alerts`], 'audio-now-playing', alertData, pusherGroup);
-
-          // Send to audio player
+          // Send to audio player - it will trigger OBS alerts after audio_scheduled_at delay
           await sendPusherEvent([`${channelSlug}-audio`], 'new-audio-message', alertData, pusherGroup);
 
           // Calculate and send goal progress
@@ -262,7 +304,7 @@ Deno.serve(async (req) => {
             }
 
             await sendPusherEvent([`${channelSlug}-goal`], 'goal-progress', {
-              current: totalProgress,
+              currentAmount: totalProgress,
               target: goalData.goal_target_amount,
               percentage: Math.min(100, (totalProgress / goalData.goal_target_amount) * 100),
             }, pusherGroup);
