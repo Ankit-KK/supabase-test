@@ -5,6 +5,81 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Pusher credentials by group
+const PUSHER_CREDENTIALS: Record<number, { appId: string; key: string; secret: string; cluster: string }> = {
+  1: {
+    appId: Deno.env.get('PUSHER_APP_ID') || '',
+    key: Deno.env.get('PUSHER_KEY') || '',
+    secret: Deno.env.get('PUSHER_SECRET') || '',
+    cluster: Deno.env.get('PUSHER_CLUSTER') || 'ap2',
+  },
+  2: {
+    appId: Deno.env.get('PUSHER_APP_ID_2') || '',
+    key: Deno.env.get('PUSHER_KEY_2') || '',
+    secret: Deno.env.get('PUSHER_SECRET_2') || '',
+    cluster: Deno.env.get('PUSHER_CLUSTER_2') || 'ap2',
+  },
+  3: {
+    appId: Deno.env.get('PUSHER_APP_ID_3') || '',
+    key: Deno.env.get('PUSHER_KEY_3') || '',
+    secret: Deno.env.get('PUSHER_SECRET_3') || '',
+    cluster: Deno.env.get('PUSHER_CLUSTER_3') || 'ap2',
+  },
+};
+
+async function generatePusherSignature(stringToSign: string, secret: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(secret);
+  const messageData = encoder.encode(stringToSign);
+  
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+  );
+  
+  const signature = await crypto.subtle.sign('HMAC', cryptoKey, messageData);
+  return Array.from(new Uint8Array(signature))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+async function sendPusherEvent(channels: string[], event: string, data: any, pusherGroup: number = 1): Promise<boolean> {
+  try {
+    const creds = PUSHER_CREDENTIALS[pusherGroup] || PUSHER_CREDENTIALS[1];
+    
+    if (!creds.appId || !creds.key || !creds.secret) {
+      console.error('[Looteriya Gaming] Missing Pusher credentials for group:', pusherGroup);
+      return false;
+    }
+
+    const body = JSON.stringify({ name: event, channels, data: JSON.stringify(data) });
+    const timestamp = Math.floor(Date.now() / 1000).toString();
+    const md5Hash = Array.from(new Uint8Array(await crypto.subtle.digest('MD5', new TextEncoder().encode(body))))
+      .map(b => b.toString(16).padStart(2, '0')).join('');
+    
+    const stringToSign = `POST\n/apps/${creds.appId}/events\nauth_key=${creds.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${md5Hash}`;
+    const authSignature = await generatePusherSignature(stringToSign, creds.secret);
+    
+    const url = `https://api-${creds.cluster}.pusher.com/apps/${creds.appId}/events?auth_key=${creds.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${md5Hash}&auth_signature=${authSignature}`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    });
+
+    if (!response.ok) {
+      console.error('[Looteriya Gaming] Pusher error:', await response.text());
+      return false;
+    }
+
+    console.log('[Looteriya Gaming] Pusher event sent:', event, 'to channels:', channels);
+    return true;
+  } catch (error) {
+    console.error('[Looteriya Gaming] Pusher send error:', error);
+    return false;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -96,25 +171,21 @@ Deno.serve(async (req) => {
       paymentStatus = 'failed';
     }
 
-    // UPDATE DATABASE if payment status changed
-    if (paymentStatus !== donation.payment_status) {
-      console.log('[Looteriya Gaming] Updating payment status to:', paymentStatus);
+    // UPDATE DATABASE if payment status changed to success
+    if (paymentStatus === 'success' && paymentStatus !== donation.payment_status) {
+      console.log('[Looteriya Gaming] Updating payment status to success and broadcasting...');
       
       const updateData: Record<string, any> = { 
-        payment_status: paymentStatus 
+        payment_status: 'success',
+        moderation_status: 'auto_approved',
+        approved_at: new Date().toISOString(),
+        approved_by: 'system',
       };
 
-      // If successful, set moderation and schedule audio
-      if (paymentStatus === 'success') {
-        updateData.moderation_status = 'auto_approved';
-        updateData.approved_at = new Date().toISOString();
-        updateData.approved_by = 'system';
-        
-        // Schedule audio to play after a delay (based on donation type)
-        const delaySeconds = donation.voice_message_url || donation.hypersound_url ? 5 : 3;
-        const scheduledTime = new Date(Date.now() + delaySeconds * 1000).toISOString();
-        updateData.audio_scheduled_at = scheduledTime;
-      }
+      // Schedule audio to play after a delay
+      const delaySeconds = donation.voice_message_url || donation.hypersound_url ? 5 : 3;
+      const scheduledTime = new Date(Date.now() + delaySeconds * 1000).toISOString();
+      updateData.audio_scheduled_at = scheduledTime;
 
       const { error: updateError } = await supabase
         .from('looteriya_gaming_donations')
@@ -125,6 +196,91 @@ Deno.serve(async (req) => {
         console.error('[Looteriya Gaming] Database update error:', updateError);
       } else {
         console.log('[Looteriya Gaming] Database updated successfully');
+        
+        // Fetch streamer info for Pusher
+        const { data: streamer } = await supabase
+          .from('streamers')
+          .select('id, streamer_slug, pusher_group')
+          .eq('id', donation.streamer_id)
+          .single();
+
+        if (streamer) {
+          const channelSlug = streamer.streamer_slug;
+          const pusherGroup = streamer.pusher_group || 1;
+
+          // Determine donation type
+          let donationType = 'text';
+          if (donation.voice_message_url) donationType = 'voice';
+          else if (donation.hypersound_url) donationType = 'hypersound';
+
+          const alertData = {
+            id: donation.id,
+            name: donation.name,
+            amount: donation.amount,
+            currency: donation.currency || 'INR',
+            message: donation.message,
+            type: donationType,
+            voice_message_url: donation.voice_message_url,
+            tts_audio_url: donation.tts_audio_url,
+            hypersound_url: donation.hypersound_url,
+            message_visible: donation.message_visible !== false,
+            created_at: donation.created_at,
+            moderation_status: 'auto_approved',
+          };
+
+          console.log('[Looteriya Gaming] Broadcasting Pusher events for channel:', channelSlug);
+
+          // Send to dashboard
+          await sendPusherEvent([`${channelSlug}-dashboard`], 'new-donation', alertData, pusherGroup);
+
+          // Send to OBS alerts
+          await sendPusherEvent([`${channelSlug}-alerts`], 'new-donation', alertData, pusherGroup);
+          await sendPusherEvent([`${channelSlug}-alerts`], 'audio-now-playing', alertData, pusherGroup);
+
+          // Send to audio player
+          await sendPusherEvent([`${channelSlug}-audio`], 'new-audio-message', alertData, pusherGroup);
+
+          // Calculate and send goal progress
+          const { data: goalData } = await supabase
+            .from('streamers')
+            .select('goal_is_active, goal_target_amount, goal_activated_at')
+            .eq('id', streamer.id)
+            .single();
+
+          if (goalData?.goal_is_active && goalData.goal_target_amount) {
+            const { data: donations } = await supabase
+              .from('looteriya_gaming_donations')
+              .select('amount, currency')
+              .eq('streamer_id', streamer.id)
+              .eq('payment_status', 'success')
+              .gte('created_at', goalData.goal_activated_at);
+
+            let totalProgress = 0;
+            if (donations) {
+              totalProgress = donations.reduce((sum, d) => sum + (d.amount || 0), 0);
+            }
+
+            await sendPusherEvent([`${channelSlug}-goal`], 'goal-progress', {
+              current: totalProgress,
+              target: goalData.goal_target_amount,
+              percentage: Math.min(100, (totalProgress / goalData.goal_target_amount) * 100),
+            }, pusherGroup);
+          }
+
+          console.log('[Looteriya Gaming] All Pusher events sent successfully');
+        } else {
+          console.error('[Looteriya Gaming] Streamer not found for donation');
+        }
+      }
+    } else if (paymentStatus !== donation.payment_status) {
+      // Update failed status without broadcasting
+      const { error: updateError } = await supabase
+        .from('looteriya_gaming_donations')
+        .update({ payment_status: paymentStatus })
+        .eq('order_id', order_id);
+
+      if (updateError) {
+        console.error('[Looteriya Gaming] Database update error:', updateError);
       }
     }
 
