@@ -100,7 +100,7 @@ Deno.serve(async (req) => {
     // audio_scheduled_at <= NOW() means the delay period is over and it's ready to play
     const { data: donation, error: fetchError } = await supabase
       .from(tableName)
-      .select('id, name, amount, message, tts_audio_url, voice_message_url, hypersound_url, is_hyperemote, created_at, audio_scheduled_at')
+      .select('id, name, amount, message, tts_audio_url, voice_message_url, hypersound_url, is_hyperemote, created_at, audio_scheduled_at, media_url, media_type')
       .is('audio_played_at', null)
       .in('moderation_status', ['auto_approved', 'approved'])
       .eq('payment_status', 'success')
@@ -176,6 +176,8 @@ Deno.serve(async (req) => {
           hypersound_url: donation.hypersound_url,
           is_hyperemote: donation.is_hyperemote || false,
           created_at: donation.created_at,
+          media_url: donation.media_url,
+          media_type: donation.media_type,
         });
 
         console.log(`[get-current-audio] Triggered audio-now-playing event on channel: ${alertsChannel}`);
