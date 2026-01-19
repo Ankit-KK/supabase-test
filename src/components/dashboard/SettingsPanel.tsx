@@ -18,7 +18,8 @@ import {
   Heart,
   Link,
   Copy,
-  Trophy
+  Trophy,
+  Image as ImageIcon
 } from 'lucide-react';
 
 interface SettingsPanelProps {
@@ -31,6 +32,9 @@ interface SettingsPanelProps {
     hyperemotes_enabled?: boolean;
     hyperemotes_min_amount?: number;
     leaderboard_widget_enabled?: boolean;
+    media_upload_enabled?: boolean;
+    media_moderation_enabled?: boolean;
+    media_min_amount?: number;
   };
   onSettingsUpdate: () => void;
 }
@@ -45,7 +49,10 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     brand_logo_url: streamerData.brand_logo_url || '',
     hyperemotes_enabled: streamerData.hyperemotes_enabled || false,
     hyperemotes_min_amount: streamerData.hyperemotes_min_amount || 1,
-    leaderboard_widget_enabled: streamerData.leaderboard_widget_enabled ?? true
+    leaderboard_widget_enabled: streamerData.leaderboard_widget_enabled ?? true,
+    media_upload_enabled: streamerData.media_upload_enabled ?? false,
+    media_moderation_enabled: streamerData.media_moderation_enabled ?? true,
+    media_min_amount: streamerData.media_min_amount ?? 100
   });
   const [saving, setSaving] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
@@ -68,7 +75,10 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
           brand_logo_url: settings.brand_logo_url || null,
           hyperemotes_enabled: settings.hyperemotes_enabled,
           hyperemotes_min_amount: settings.hyperemotes_min_amount,
-          leaderboard_widget_enabled: settings.leaderboard_widget_enabled
+          leaderboard_widget_enabled: settings.leaderboard_widget_enabled,
+          media_upload_enabled: settings.media_upload_enabled,
+          media_moderation_enabled: settings.media_moderation_enabled,
+          media_min_amount: settings.media_min_amount
         })
         .eq('id', streamerData.id);
 
@@ -325,6 +335,76 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
               onCheckedChange={(checked) => handleInputChange('leaderboard_widget_enabled', checked)}
             />
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Media Uploads Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <ImageIcon className="h-5 w-5" />
+            <span>Media Uploads</span>
+            <Badge variant="outline" className="ml-2 text-xs">New</Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <Label>Enable Media Uploads</Label>
+              <p className="text-sm text-muted-foreground">
+                Allow donors to upload images, GIFs, or short videos with their donations
+              </p>
+            </div>
+            <Switch
+              checked={settings.media_upload_enabled}
+              onCheckedChange={(checked) => handleInputChange('media_upload_enabled', checked)}
+            />
+          </div>
+
+          {settings.media_upload_enabled && (
+            <>
+              <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                <div className="space-y-1">
+                  <Label>Require Approval for Media</Label>
+                  <p className="text-sm text-muted-foreground">
+                    All media donations will go to moderation queue regardless of global settings
+                  </p>
+                </div>
+                <Switch
+                  checked={settings.media_moderation_enabled}
+                  onCheckedChange={(checked) => handleInputChange('media_moderation_enabled', checked)}
+                />
+              </div>
+
+              <div className="space-y-2 pt-2 border-t border-border/50">
+                <Label htmlFor="media_min_amount">Minimum Amount for Media</Label>
+                <div className="flex items-center space-x-2">
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="media_min_amount"
+                    type="number"
+                    min="1"
+                    max="10000"
+                    value={settings.media_min_amount}
+                    onChange={(e) => handleInputChange('media_min_amount', parseInt(e.target.value) || 100)}
+                    placeholder="100"
+                  />
+                  <span className="text-sm text-muted-foreground">INR</span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Donors need to donate at least this amount to upload media
+                </p>
+              </div>
+
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Security Note:</strong> Media uploads can contain inappropriate content. 
+                  We recommend keeping "Require Approval for Media" enabled to review all media before it appears on stream.
+                </AlertDescription>
+              </Alert>
+            </>
+          )}
         </CardContent>
       </Card>
 
