@@ -19,20 +19,28 @@ serve(async (req) => {
 
     const { action, streamerId, telegramUserId, authToken } = await req.json();
 
+    console.log('manage-telegram-user called with action:', action, 'streamerId:', streamerId);
+    console.log('authToken provided:', !!authToken, 'length:', authToken?.length || 0);
+
     // Validate auth token by checking auth_sessions table
-    const { data: sessionData } = await supabaseAdmin
+    const { data: sessionData, error: sessionError } = await supabaseAdmin
       .from('auth_sessions')
       .select('user_id')
       .eq('token', authToken)
       .gt('expires_at', new Date().toISOString())
       .single();
 
+    console.log('Session lookup result:', { found: !!sessionData, error: sessionError?.message });
+
     if (!sessionData) {
+      console.error('Auth validation failed - no valid session found for token');
       return new Response(JSON.stringify({ error: 'Invalid or expired auth token' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    console.log('Auth validated, user_id:', sessionData.user_id);
 
     // Verify user owns the streamer
     const { data: streamerData } = await supabaseAdmin
