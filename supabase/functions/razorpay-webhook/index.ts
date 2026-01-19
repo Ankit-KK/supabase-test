@@ -587,41 +587,42 @@ serve(async (req) => {
         // Only send to audio channel to notify MediaSource polling (optional, for faster detection)
         console.log(`Auto-approved donation - audio scheduled in ${audioDelay/1000}s, NOT sending immediate OBS alert`)
         await sendPusherEvent([`${pusherSlug}-audio`], 'new-audio-message', donationData)
+      }
 
-        // Send goal progress update for all streamers
-        try {
-          const { data: streamerGoal, error: goalError } = await supabase
-            .from('streamers')
-            .select('goal_is_active, goal_activated_at, goal_target_amount')
-            .eq('id', donation.streamer_id)
-            .single();
+      // Send goal progress update for ALL successful payments (regardless of moderation status)
+      // Goal updates should happen immediately when payment succeeds, not on approval
+      try {
+        const { data: streamerGoal, error: goalError } = await supabase
+          .from('streamers')
+          .select('goal_is_active, goal_activated_at, goal_target_amount')
+          .eq('id', donation.streamer_id)
+          .single();
 
-          if (!goalError && streamerGoal?.goal_is_active && streamerGoal.goal_activated_at) {
-            const { data: goalDonations, error: donError } = await supabase
-              .from(tableName)
-              .select('amount, currency')
-              .eq('streamer_id', donation.streamer_id)
-              .eq('payment_status', 'success')
-              .gte('created_at', streamerGoal.goal_activated_at);
+        if (!goalError && streamerGoal?.goal_is_active && streamerGoal.goal_activated_at) {
+          const { data: goalDonations, error: donError } = await supabase
+            .from(tableName)
+            .select('amount, currency')
+            .eq('streamer_id', donation.streamer_id)
+            .eq('payment_status', 'success')
+            .gte('created_at', streamerGoal.goal_activated_at);
 
-            if (!donError && goalDonations) {
-              const newTotal = goalDonations.reduce((sum: number, d: any) => {
-                const currency = d.currency || 'INR';
-                const rate = EXCHANGE_RATES_TO_INR[currency] || 1;
-                return sum + Number(d.amount) * rate;
-              }, 0);
-              
-              await sendPusherEvent([`${pusherSlug}-goal`], 'goal-progress', {
-                currentAmount: newTotal,
-                targetAmount: streamerGoal.goal_target_amount,
-              });
+          if (!donError && goalDonations) {
+            const newTotal = goalDonations.reduce((sum: number, d: any) => {
+              const currency = d.currency || 'INR';
+              const rate = EXCHANGE_RATES_TO_INR[currency] || 1;
+              return sum + Number(d.amount) * rate;
+            }, 0);
+            
+            await sendPusherEvent([`${pusherSlug}-goal`], 'goal-progress', {
+              currentAmount: newTotal,
+              targetAmount: streamerGoal.goal_target_amount,
+            });
 
-              console.log(`Goal progress update sent for ${pusherSlug}:`, newTotal);
-            }
+            console.log(`Goal progress update sent for ${pusherSlug}:`, newTotal);
           }
-        } catch (goalError) {
-          console.error('Error sending goal progress update:', goalError);
         }
+      } catch (goalError) {
+        console.error('Error sending goal progress update:', goalError);
       }
 
       // Send dashboard update event (always, regardless of moderation status)
