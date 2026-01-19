@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 import EnhancedVoiceRecorder from "@/components/EnhancedVoiceRecorder";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import HyperSoundSelector from "@/components/HyperSoundSelector";
+import MediaUploader from "@/components/MediaUploader";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
@@ -28,8 +29,10 @@ const ABdevil = () => {
   const [message, setMessage] = useState("");
   const [currency, setCurrency] = useState("INR");
   const [currencyOpen, setCurrencyOpen] = useState(false);
-  const [donationType, setDonationType] = useState<"text" | "voice" | "hypersound">("text");
+  const [donationType, setDonationType] = useState<"text" | "voice" | "hypersound" | "media">("text");
   const [selectedSound, setSelectedSound] = useState<string | null>(null);
+  const [mediaUrl, setMediaUrl] = useState<string | null>(null);
+  const [mediaType, setMediaType] = useState<"image" | "gif" | "video" | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -100,6 +103,24 @@ const ABdevil = () => {
       return;
     }
 
+    if (donationType === "media" && amountNum < minimums.minMedia) {
+      toast({
+        title: "Invalid Amount",
+        description: `Minimum ${currencySymbol}${minimums.minMedia} required for media`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (donationType === "media" && !mediaUrl) {
+      toast({
+        title: "Media Required",
+        description: "Please upload a media file",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (donationType === "voice" && !voiceRecorder.audioBlob) {
       toast({
         title: "Voice Required",
@@ -157,6 +178,8 @@ const ABdevil = () => {
           message: donationType === "text" ? message.trim() : null,
           voiceMessageUrl,
           hypersoundUrl: donationType === "hypersound" ? selectedSound : null,
+          mediaUrl: donationType === "media" ? mediaUrl : null,
+          mediaType: donationType === "media" ? mediaType : null,
         },
       });
 
@@ -232,7 +255,7 @@ const ABdevil = () => {
               <Label className="text-gray-100 font-bold text-sm uppercase tracking-wide block text-center">
                 Choose Your Interaction
               </Label>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-4 gap-2">
                 <Button
                   type="button"
                   onClick={() => { setDonationType('text'); setAmount(String(minimums.minText)); }}
@@ -241,10 +264,10 @@ const ABdevil = () => {
                     ? 'bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white border-2 border-orange-400 shadow-lg shadow-orange-500/50 h-auto' 
                     : 'border-2 border-orange-500/40 text-orange-300 hover:bg-orange-950/60 hover:border-orange-400/60 bg-orange-950/20 h-auto'}
                 >
-                  <div className="flex flex-col items-center gap-1.5 py-2">
-                    <span className="text-2xl">💬</span>
-                    <span className="text-xs font-semibold">Text</span>
-                    <span className="text-[10px] opacity-80 font-medium">{currencySymbol}{minimums.minText}+</span>
+                  <div className="flex flex-col items-center gap-1 py-1.5">
+                    <span className="text-xl">💬</span>
+                    <span className="text-[10px] font-semibold">Text</span>
+                    <span className="text-[9px] opacity-80">{currencySymbol}{minimums.minText}+</span>
                   </div>
                 </Button>
                 <Button
@@ -255,10 +278,24 @@ const ABdevil = () => {
                     ? 'bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white border-2 border-orange-400 shadow-lg shadow-orange-500/50 h-auto' 
                     : 'border-2 border-orange-500/40 text-orange-300 hover:bg-orange-950/60 hover:border-orange-400/60 bg-orange-950/20 h-auto'}
                 >
-                  <div className="flex flex-col items-center gap-1.5 py-2">
-                    <span className="text-2xl">🎤</span>
-                    <span className="text-xs font-semibold">Voice</span>
-                    <span className="text-[10px] opacity-80 font-medium">{currencySymbol}{minimums.minVoice}+</span>
+                  <div className="flex flex-col items-center gap-1 py-1.5">
+                    <span className="text-xl">🎤</span>
+                    <span className="text-[10px] font-semibold">Voice</span>
+                    <span className="text-[9px] opacity-80">{currencySymbol}{minimums.minVoice}+</span>
+                  </div>
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => { setDonationType('media'); setAmount(String(minimums.minMedia)); setMediaUrl(null); setMediaType(null); }}
+                  variant={donationType === 'media' ? 'default' : 'outline'}
+                  className={donationType === 'media' 
+                    ? 'bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white border-2 border-orange-400 shadow-lg shadow-orange-500/50 h-auto' 
+                    : 'border-2 border-orange-500/40 text-orange-300 hover:bg-orange-950/60 hover:border-orange-400/60 bg-orange-950/20 h-auto'}
+                >
+                  <div className="flex flex-col items-center gap-1 py-1.5">
+                    <span className="text-xl">🖼️</span>
+                    <span className="text-[10px] font-semibold">Media</span>
+                    <span className="text-[9px] opacity-80">{currencySymbol}{minimums.minMedia}+</span>
                   </div>
                 </Button>
                 <Button
@@ -269,10 +306,10 @@ const ABdevil = () => {
                     ? 'bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white border-2 border-orange-400 shadow-lg shadow-orange-500/50 h-auto' 
                     : 'border-2 border-orange-500/40 text-orange-300 hover:bg-orange-950/60 hover:border-orange-400/60 bg-orange-950/20 h-auto'}
                 >
-                  <div className="flex flex-col items-center gap-1.5 py-2">
-                    <span className="text-2xl">🔊</span>
-                    <span className="text-xs font-semibold">Sound</span>
-                    <span className="text-[10px] opacity-80 font-medium">{currencySymbol}{minimums.minHypersound}+</span>
+                  <div className="flex flex-col items-center gap-1 py-1.5">
+                    <span className="text-xl">🔊</span>
+                    <span className="text-[10px] font-semibold">Sound</span>
+                    <span className="text-[9px] opacity-80">{currencySymbol}{minimums.minHypersound}+</span>
                   </div>
                 </Button>
               </div>
@@ -368,6 +405,23 @@ const ABdevil = () => {
                 selectedSound={selectedSound}
                 onSoundSelect={setSelectedSound}
               />
+            )}
+
+            {donationType === "media" && (
+              <div className="space-y-3">
+                <Label className="text-gray-100">Upload Media</Label>
+                <MediaUploader
+                  streamerSlug="abdevil"
+                  onMediaUploaded={(url, type) => {
+                    setMediaUrl(url);
+                    setMediaType(type);
+                  }}
+                  onMediaRemoved={() => {
+                    setMediaUrl(null);
+                    setMediaType(null);
+                  }}
+                />
+              </div>
             )}
 
             <Button

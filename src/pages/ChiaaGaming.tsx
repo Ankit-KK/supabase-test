@@ -13,6 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import EnhancedVoiceRecorder from "@/components/EnhancedVoiceRecorder";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import HyperSoundSelector from "@/components/HyperSoundSelector";
+import MediaUploader from "@/components/MediaUploader";
 import { SUPPORTED_CURRENCIES, getCurrencyMinimums, getCurrencySymbol } from "@/constants/currencies";
 import DonationPageFooter from "@/components/DonationPageFooter";
 
@@ -33,8 +34,10 @@ const ChiaGaming = () => {
   });
   const [selectedCurrency, setSelectedCurrency] = useState("INR");
   const [currencyOpen, setCurrencyOpen] = useState(false);
-  const [donationType, setDonationType] = useState<"text" | "voice" | "hypersound">("text");
+  const [donationType, setDonationType] = useState<"text" | "voice" | "hypersound" | "media">("text");
   const [selectedHypersound, setSelectedHypersound] = useState<string | null>(null);
+  const [mediaUrl, setMediaUrl] = useState<string | null>(null);
+  const [mediaType, setMediaType] = useState<"image" | "gif" | "video" | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const navigate = useNavigate();
 
@@ -92,9 +95,16 @@ const ChiaGaming = () => {
         ? minimums.minVoice
         : donationType === "hypersound"
           ? minimums.minHypersound
-          : minimums.minText;
+          : donationType === "media"
+            ? minimums.minMedia
+            : minimums.minText;
     if (amount < minAmount) {
       toast.error(`Minimum amount for ${donationType} is ${currencySymbol}${minAmount}`);
+      return;
+    }
+
+    if (donationType === "media" && !mediaUrl) {
+      toast.error("Please upload a media file");
       return;
     }
 
@@ -173,6 +183,8 @@ const ChiaGaming = () => {
           message: donationType === "text" ? formData.message : null,
           voiceMessageUrl: voiceMessageUrl,
           hypersoundUrl: donationType === "hypersound" ? selectedHypersound : null,
+          mediaUrl: donationType === "media" ? mediaUrl : null,
+          mediaType: donationType === "media" ? mediaType : null,
           currency: selectedCurrency,
         },
       });
@@ -211,12 +223,16 @@ const ChiaGaming = () => {
     }
   };
 
-  const handleDonationTypeChange = (value: "text" | "voice" | "hypersound") => {
+  const handleDonationTypeChange = (value: "text" | "voice" | "hypersound" | "media") => {
     setDonationType(value);
     if (value === "hypersound") {
       setFormData((prev) => ({ ...prev, amount: String(minimums.minHypersound), message: "" }));
     } else if (value === "voice") {
       setFormData((prev) => ({ ...prev, amount: String(minimums.minVoice), message: "" }));
+    } else if (value === "media") {
+      setFormData((prev) => ({ ...prev, amount: String(minimums.minMedia), message: "" }));
+      setMediaUrl(null);
+      setMediaType(null);
     } else {
       setFormData((prev) => ({ ...prev, amount: String(minimums.minText), message: "" }));
     }
@@ -266,11 +282,11 @@ const ChiaGaming = () => {
 
             <div className="space-y-2">
               <label className="text-xs font-medium text-pink-500">Choose your donation type</label>
-              <div className="grid grid-cols-3 gap-1.5">
+              <div className="grid grid-cols-4 gap-1">
                 <button
                   type="button"
                   onClick={() => handleDonationTypeChange("text")}
-                  className={`p-2 rounded-lg border-2 transition-all ${
+                  className={`p-1.5 rounded-lg border-2 transition-all ${
                     donationType === "text"
                       ? "border-pink-500 bg-pink-500/10"
                       : "border-pink-500/30 hover:border-pink-500/50"
@@ -278,17 +294,16 @@ const ChiaGaming = () => {
                 >
                   <div className="text-center">
                     <div className="text-sm mb-0.5">💬</div>
-                    <div className="font-medium text-[10px]">Text Message</div>
-                    <div className="text-[9px] text-muted-foreground">
-                      Min: {currencySymbol}
-                      {minimums.minText}
+                    <div className="font-medium text-[9px]">Text</div>
+                    <div className="text-[8px] text-muted-foreground">
+                      {currencySymbol}{minimums.minText}
                     </div>
                   </div>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleDonationTypeChange("voice")}
-                  className={`p-2 rounded-lg border-2 transition-all ${
+                  className={`p-1.5 rounded-lg border-2 transition-all ${
                     donationType === "voice"
                       ? "border-pink-500 bg-pink-500/10"
                       : "border-pink-500/30 hover:border-pink-500/50"
@@ -296,17 +311,33 @@ const ChiaGaming = () => {
                 >
                   <div className="text-center">
                     <div className="text-sm mb-0.5">🎤</div>
-                    <div className="font-medium text-[10px]">Voice Message</div>
-                    <div className="text-[9px] text-muted-foreground">
-                      Min: {currencySymbol}
-                      {minimums.minVoice}
+                    <div className="font-medium text-[9px]">Voice</div>
+                    <div className="text-[8px] text-muted-foreground">
+                      {currencySymbol}{minimums.minVoice}
+                    </div>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDonationTypeChange("media")}
+                  className={`p-1.5 rounded-lg border-2 transition-all ${
+                    donationType === "media"
+                      ? "border-pink-500 bg-pink-500/10"
+                      : "border-pink-500/30 hover:border-pink-500/50"
+                  }`}
+                >
+                  <div className="text-center">
+                    <div className="text-sm mb-0.5">🖼️</div>
+                    <div className="font-medium text-[9px]">Media</div>
+                    <div className="text-[8px] text-muted-foreground">
+                      {currencySymbol}{minimums.minMedia}
                     </div>
                   </div>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleDonationTypeChange("hypersound")}
-                  className={`p-2 rounded-lg border-2 transition-all ${
+                  className={`p-1.5 rounded-lg border-2 transition-all ${
                     donationType === "hypersound"
                       ? "border-pink-500 bg-pink-500/10"
                       : "border-pink-500/30 hover:border-pink-500/50"
@@ -314,10 +345,9 @@ const ChiaGaming = () => {
                 >
                   <div className="text-center">
                     <div className="text-sm mb-0.5">🔊</div>
-                    <div className="font-medium text-[10px]">HyperSound</div>
-                    <div className="text-[9px] text-muted-foreground">
-                      Min: {currencySymbol}
-                      {minimums.minHypersound}
+                    <div className="font-medium text-[9px]">Sound</div>
+                    <div className="text-[8px] text-muted-foreground">
+                      {currencySymbol}{minimums.minHypersound}
                     </div>
                   </div>
                 </button>
@@ -432,6 +462,23 @@ const ChiaGaming = () => {
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-pink-500">Select a Sound</Label>
                 <HyperSoundSelector selectedSound={selectedHypersound} onSoundSelect={setSelectedHypersound} />
+              </div>
+            )}
+
+            {donationType === "media" && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-pink-500">Upload Media *</Label>
+                <MediaUploader
+                  streamerSlug="chiaa_gaming"
+                  onMediaUploaded={(url, type) => {
+                    setMediaUrl(url);
+                    setMediaType(type);
+                  }}
+                  onMediaRemoved={() => {
+                    setMediaUrl(null);
+                    setMediaType(null);
+                  }}
+                />
               </div>
             )}
 

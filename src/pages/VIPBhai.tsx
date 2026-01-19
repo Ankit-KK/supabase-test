@@ -11,6 +11,7 @@ import EnhancedVoiceRecorder from '@/components/EnhancedVoiceRecorder';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { Crown, Check, ChevronsUpDown } from 'lucide-react';
 import HyperSoundSelector from '@/components/HyperSoundSelector';
+import MediaUploader from '@/components/MediaUploader';
 import { 
   SUPPORTED_CURRENCIES, 
   getCurrencyByCode, 
@@ -43,13 +44,15 @@ const VIPBhai = () => {
     amount: '',
     message: '',
   });
-  const [donationType, setDonationType] = useState<'text' | 'voice' | 'hypersound'>('text');
+  const [donationType, setDonationType] = useState<'text' | 'voice' | 'hypersound' | 'media'>('text');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [streamerSettings, setStreamerSettings] = useState<{ hyperemotes_enabled: boolean; hyperemotes_min_amount: number } | null>(null);
   const [selectedCurrency, setSelectedCurrency] = useState('INR');
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const [selectedHypersoundUrl, setSelectedHypersoundUrl] = useState<string | null>(null);
+  const [mediaUrl, setMediaUrl] = useState<string | null>(null);
+  const [mediaType, setMediaType] = useState<"image" | "gif" | "video" | null>(null);
   const navigate = useNavigate();
 
   const currencyInfo = getCurrencyByCode(selectedCurrency);
@@ -127,6 +130,16 @@ const VIPBhai = () => {
       return;
     }
 
+    if (donationType === 'media' && amount < minimums.minMedia) {
+      toast.error(`Minimum amount for media is ${getCurrencySymbol(selectedCurrency)}${minimums.minMedia}`);
+      return;
+    }
+
+    if (donationType === 'media' && !mediaUrl) {
+      toast.error('Please upload a media file');
+      return;
+    }
+
     if (donationType === 'text' && !formData.message.trim()) {
       toast.error('Please enter a message');
       return;
@@ -177,6 +190,8 @@ const VIPBhai = () => {
           message: donationType === 'text' ? formData.message : null,
           voiceMessageUrl,
           hypersoundUrl: donationType === 'hypersound' ? selectedHypersoundUrl : null,
+          mediaUrl: donationType === 'media' ? mediaUrl : null,
+          mediaType: donationType === 'media' ? mediaType : null,
           currency: selectedCurrency,
         }
       });
@@ -242,20 +257,20 @@ const VIPBhai = () => {
           <CardContent className="space-y-4">
             <div className="space-y-2 text-center mb-4">
               <Label className="text-amber-200 text-xs font-medium block">Select Interaction Type</Label>
-              <div className="grid grid-cols-3 gap-1.5">
+              <div className="grid grid-cols-4 gap-1">
                 <button
                   type="button"
                   onClick={() => setDonationType('text')}
-                  className={`p-2 rounded-lg border transition-all ${
+                  className={`p-1.5 rounded-lg border transition-all ${
                     donationType === 'text'
                       ? 'bg-amber-600/80 border-amber-500/60 text-white shadow-md'
                       : 'bg-amber-900/40 border-amber-700/30 text-amber-300 hover:bg-amber-800/50'
                   }`}
                 >
                   <div className="text-center">
-                    <div className="text-2xl mb-0.5">💬</div>
-                    <div className="font-medium text-[10px]">Text</div>
-                    <div className="text-[9px]">Min: {getCurrencySymbol(selectedCurrency)}{minimums.minText}</div>
+                    <div className="text-xl mb-0.5">💬</div>
+                    <div className="font-medium text-[9px]">Text</div>
+                    <div className="text-[8px]">{getCurrencySymbol(selectedCurrency)}{minimums.minText}</div>
                   </div>
                 </button>
 
@@ -265,32 +280,52 @@ const VIPBhai = () => {
                     setDonationType('voice');
                     voiceRecorder.clearRecording();
                   }}
-                  className={`p-2 rounded-lg border transition-all ${
+                  className={`p-1.5 rounded-lg border transition-all ${
                     donationType === 'voice'
                       ? 'bg-amber-600/80 border-amber-500/60 text-white shadow-md'
                       : 'bg-amber-900/40 border-amber-700/30 text-amber-300 hover:bg-amber-800/50'
                   }`}
                 >
                   <div className="text-center">
-                    <div className="text-2xl mb-0.5">🎤</div>
-                    <div className="font-medium text-[10px]">Voice</div>
-                    <div className="text-[9px]">Min: {getCurrencySymbol(selectedCurrency)}{minimums.minVoice}</div>
+                    <div className="text-xl mb-0.5">🎤</div>
+                    <div className="font-medium text-[9px]">Voice</div>
+                    <div className="text-[8px]">{getCurrencySymbol(selectedCurrency)}{minimums.minVoice}</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDonationType('media');
+                    setMediaUrl(null);
+                    setMediaType(null);
+                  }}
+                  className={`p-1.5 rounded-lg border transition-all ${
+                    donationType === 'media'
+                      ? 'bg-amber-600/80 border-amber-500/60 text-white shadow-md'
+                      : 'bg-amber-900/40 border-amber-700/30 text-amber-300 hover:bg-amber-800/50'
+                  }`}
+                >
+                  <div className="text-center">
+                    <div className="text-xl mb-0.5">🖼️</div>
+                    <div className="font-medium text-[9px]">Media</div>
+                    <div className="text-[8px]">{getCurrencySymbol(selectedCurrency)}{minimums.minMedia}</div>
                   </div>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setDonationType('hypersound')}
-                  className={`p-2 rounded-lg border transition-all ${
+                  className={`p-1.5 rounded-lg border transition-all ${
                     donationType === 'hypersound'
                       ? 'bg-amber-600/80 border-amber-500/60 text-white shadow-md'
                       : 'bg-amber-900/40 border-amber-700/30 text-amber-300 hover:bg-amber-800/50'
                   }`}
                 >
                   <div className="text-center">
-                    <div className="text-2xl mb-0.5">🔊</div>
-                    <div className="font-medium text-[10px]">HyperSounds</div>
-                    <div className="text-[9px]">Min: {getCurrencySymbol(selectedCurrency)}{minimums.minHypersound}</div>
+                    <div className="text-xl mb-0.5">🔊</div>
+                    <div className="font-medium text-[9px]">Sound</div>
+                    <div className="text-[8px]">{getCurrencySymbol(selectedCurrency)}{minimums.minHypersound}</div>
                   </div>
                 </button>
               </div>
@@ -410,6 +445,23 @@ const VIPBhai = () => {
                   <HyperSoundSelector
                     selectedSound={selectedHypersoundUrl}
                     onSoundSelect={setSelectedHypersoundUrl}
+                  />
+                </div>
+              )}
+
+              {donationType === 'media' && (
+                <div className="space-y-1.5">
+                  <Label className="text-amber-200 text-xs">Upload Media *</Label>
+                  <MediaUploader
+                    streamerSlug="vipbhai"
+                    onMediaUploaded={(url, type) => {
+                      setMediaUrl(url);
+                      setMediaType(type);
+                    }}
+                    onMediaRemoved={() => {
+                      setMediaUrl(null);
+                      setMediaType(null);
+                    }}
                   />
                 </div>
               )}
