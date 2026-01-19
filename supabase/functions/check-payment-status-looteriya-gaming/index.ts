@@ -118,9 +118,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check Razorpay order status using Looteriya Gaming specific credentials
-    const razorpayKeyId = Deno.env.get('RAZORPAY_KEY_ID_LOOTERIYA_GAMING');
-    const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET_LOOTERIYA_GAMING');
+    // Check Razorpay order status using standardized credentials
+    const razorpayKeyId = Deno.env.get('razorpay-keyid');
+    const razorpayKeySecret = Deno.env.get('razorpay-keysecret');
 
     if (!razorpayKeyId || !razorpayKeySecret || !donation.razorpay_order_id) {
       console.error('[Looteriya Gaming] Missing Razorpay credentials or order ID');
@@ -312,22 +312,24 @@ Deno.serve(async (req) => {
           await pusher.trigger('looteriya_gaming-audio', 'new-audio-message', audioPayload);
           console.log('[Looteriya Gaming] Audio queue notification sent');
 
-          // Goal progress update (if goal is active)
+          // Goal progress update (if goal is active) - with currency conversion
           if (streamer?.goal_is_active && streamer?.goal_target_amount) {
+            const EXCHANGE_RATES_TO_INR: Record<string, number> = { 'INR': 1, 'USD': 89, 'EUR': 94, 'GBP': 113, 'AED': 24, 'AUD': 57 };
+            
             const { data: goalDonations } = await supabase
               .from('looteriya_gaming_donations')
-              .select('amount')
+              .select('amount, currency')
               .eq('payment_status', 'success')
               .gte('created_at', streamer.goal_activated_at || '1970-01-01');
 
-            const totalRaised = goalDonations?.reduce((sum: number, d: any) => sum + (d.amount || 0), 0) || 0;
-            const progress = Math.min((totalRaised / streamer.goal_target_amount) * 100, 100);
+            const totalRaised = goalDonations?.reduce((sum: number, d: any) => {
+              const rate = EXCHANGE_RATES_TO_INR[d.currency || 'INR'] || 1;
+              return sum + (d.amount || 0) * rate;
+            }, 0) || 0;
 
-            await pusher.trigger('looteriya_gaming-goal', 'goal-update', {
-              goal_name: streamer.goal_name,
-              goal_target_amount: streamer.goal_target_amount,
-              current_amount: totalRaised,
-              progress: progress,
+            await pusher.trigger('looteriya_gaming-goal', 'goal-progress', {
+              currentAmount: totalRaised,
+              targetAmount: streamer.goal_target_amount,
             });
             console.log('[Looteriya Gaming] Goal progress notification sent');
           }
