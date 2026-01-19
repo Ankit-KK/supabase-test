@@ -182,6 +182,13 @@ Deno.serve(async (req) => {
     if (finalStatus === 'success' && donation.payment_status !== 'success') {
       console.log('[Looteriya Gaming] Processing successful payment...');
 
+      // Get streamer info for moderation settings and Pusher group
+      const { data: streamer } = await supabase
+        .from('streamers')
+        .select('*, moderation_mode, telegram_moderation_enabled, media_moderation_enabled')
+        .eq('streamer_slug', 'looteriya_gaming')
+        .single();
+
       // Calculate audio_scheduled_at (60 seconds from now for fraud protection)
       const audioScheduledAt = new Date(Date.now() + 60 * 1000).toISOString();
 
@@ -193,8 +200,20 @@ Deno.serve(async (req) => {
       const isTextDonation = !hasVoiceMessage && !hasHypersound && !hasMedia;
       const ttsMinAmount = 70; // INR minimum for TTS
 
-      // Generate TTS using the shared generate-donation-tts function
-      if (isTextDonation && donation.message && donation.amount >= ttsMinAmount && !ttsAudioUrl) {
+      // Determine moderation status based on streamer settings
+      const moderationMode = streamer?.moderation_mode || 'auto_approve';
+      const mediaRequiresModeration = hasMedia && streamer?.media_moderation_enabled;
+      const hasHypersoundContent = hasHypersound || donation.is_hyperemote;
+      
+      // HyperSounds always auto-approve, media goes to moderation if enabled
+      const shouldAutoApprove = hasHypersoundContent || 
+        (moderationMode === 'auto_approve' && !mediaRequiresModeration);
+      const moderationStatus = shouldAutoApprove ? 'auto_approved' : 'pending';
+
+      console.log(`[Looteriya Gaming] Moderation: mode=${moderationMode}, hasMedia=${hasMedia}, mediaModEnabled=${streamer?.media_moderation_enabled}, shouldAutoApprove=${shouldAutoApprove}`);
+
+      // Generate TTS using the shared generate-donation-tts function (only for auto-approved)
+      if (isTextDonation && donation.message && donation.amount >= ttsMinAmount && !ttsAudioUrl && shouldAutoApprove) {
         console.log('[Looteriya Gaming] Generating TTS via shared function...');
         
         try {
@@ -236,10 +255,14 @@ Deno.serve(async (req) => {
       // Update donation in database
       const updateData: any = {
         payment_status: 'success',
-        moderation_status: 'auto_approved',
-        audio_scheduled_at: audioScheduledAt,
+        moderation_status: moderationStatus,
         message_visible: true,
       };
+
+      // Only set audio_scheduled_at for auto_approved donations
+      if (shouldAutoApprove) {
+        updateData.audio_scheduled_at = audioScheduledAt;
+      }
 
       if (ttsAudioUrl) {
         updateData.tts_audio_url = ttsAudioUrl;
@@ -256,13 +279,6 @@ Deno.serve(async (req) => {
         console.log('[Looteriya Gaming] Donation updated successfully');
       }
 
-      // Get streamer info for Pusher group (use correct slug with underscore)
-      const { data: streamer } = await supabase
-        .from('streamers')
-        .select('*')
-        .eq('streamer_slug', 'looteriya_gaming')
-        .single();
-
       // Get dynamic Pusher credentials based on streamer's group
       const pusherGroup = streamer?.pusher_group || 1;
       const pusherCreds = getPusherCredentials(pusherGroup);
@@ -278,7 +294,7 @@ Deno.serve(async (req) => {
         );
 
         try {
-          // Dashboard notification
+          // Dashboard notification (always send, with correct moderation_status)
           const dashboardPayload = {
             id: donation.id,
             name: donation.name,
@@ -286,7 +302,8 @@ Deno.serve(async (req) => {
             message: donation.message,
             currency: donation.currency || 'INR',
             payment_status: 'success',
-            moderation_status: 'auto_approved',
+            moderation_status: moderationStatus,
+            action: shouldAutoApprove ? 'auto_approved' : 'pending',
             created_at: donation.created_at,
             voice_message_url: donation.voice_message_url,
             hypersound_url: donation.hypersound_url,
@@ -298,24 +315,28 @@ Deno.serve(async (req) => {
           await pusher.trigger('looteriya_gaming-dashboard', 'new-donation', dashboardPayload);
           console.log('[Looteriya Gaming] Dashboard notification sent');
 
-          // Audio queue notification
-          const audioPayload = {
-            id: donation.id,
-            name: donation.name,
-            amount: donation.amount,
-            message: donation.message,
-            currency: donation.currency || 'INR',
-            voice_message_url: donation.voice_message_url,
-            hypersound_url: donation.hypersound_url,
-            tts_audio_url: ttsAudioUrl,
-            audio_scheduled_at: audioScheduledAt,
-            created_at: donation.created_at,
-            media_url: donation.media_url,
-            media_type: donation.media_type,
-          };
+          // Audio queue notification (only for auto_approved donations)
+          if (shouldAutoApprove) {
+            const audioPayload = {
+              id: donation.id,
+              name: donation.name,
+              amount: donation.amount,
+              message: donation.message,
+              currency: donation.currency || 'INR',
+              voice_message_url: donation.voice_message_url,
+              hypersound_url: donation.hypersound_url,
+              tts_audio_url: ttsAudioUrl,
+              audio_scheduled_at: audioScheduledAt,
+              created_at: donation.created_at,
+              media_url: donation.media_url,
+              media_type: donation.media_type,
+            };
 
-          await pusher.trigger('looteriya_gaming-audio', 'new-audio-message', audioPayload);
-          console.log('[Looteriya Gaming] Audio queue notification sent');
+            await pusher.trigger('looteriya_gaming-audio', 'new-audio-message', audioPayload);
+            console.log('[Looteriya Gaming] Audio queue notification sent');
+          } else {
+            console.log('[Looteriya Gaming] Skipping audio notification - pending moderation');
+          }
 
           // Goal progress update (if goal is active) - with currency conversion
           if (streamer?.goal_is_active && streamer?.goal_target_amount) {
