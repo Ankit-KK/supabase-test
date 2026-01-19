@@ -47,7 +47,7 @@ export const useLeaderboard = ({
         .from(donationsTable as any)
         .select("name, amount, currency, created_at")
         .eq("payment_status", "success")
-        .eq("moderation_status", "auto_approved")
+        .in("moderation_status", ["auto_approved", "approved"])
         .order("created_at", { ascending: false });
 
       // Query 2: Fetch latest 5 donations for !hyperchat
@@ -55,7 +55,7 @@ export const useLeaderboard = ({
         .from(donationsTable as any)
         .select("name, amount, currency, created_at")
         .eq("payment_status", "success")
-        .eq("moderation_status", "auto_approved")
+        .in("moderation_status", ["auto_approved", "approved"])
         .order("created_at", { ascending: false })
         .limit(5);
 

@@ -125,8 +125,8 @@ Deno.serve(async (req) => {
     const orderId = `lg_rp_${timestamp}_${randomStr}`;
 
     // Create Razorpay order using direct fetch
-    const razorpayKeyId = Deno.env.get('RAZORPAY_KEY_ID');
-    const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
+    const razorpayKeyId = Deno.env.get('razorpay-keyid');
+    const razorpayKeySecret = Deno.env.get('razorpay-keysecret');
 
     if (!razorpayKeyId || !razorpayKeySecret) {
       throw new Error('Razorpay credentials not configured');
