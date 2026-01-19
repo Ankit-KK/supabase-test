@@ -59,7 +59,9 @@ export default function Status() {
 
         if (error) {
           console.error('Error checking payment status:', error);
+          // Don't fall back to URL status - show failure with clear message
           setPaymentStatus('failure');
+          setPaymentDetails({ error: 'Unable to verify payment status. Please refresh or contact support.' });
           return;
         }
 
