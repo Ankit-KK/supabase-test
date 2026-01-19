@@ -74,6 +74,17 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
       if (error) throw error;
 
+      // Broadcast settings update via Pusher for real-time OBS updates
+      await supabase.functions.invoke('broadcast-settings-update', {
+        body: {
+          streamer_slug: streamerData.streamer_slug,
+          settings: {
+            brand_color: settings.brand_color,
+            leaderboard_widget_enabled: settings.leaderboard_widget_enabled,
+          }
+        }
+      });
+
       toast({
         title: "Settings Saved",
         description: "Your streamer settings have been updated successfully.",
