@@ -626,7 +626,8 @@ serve(async (req) => {
       }
 
       // Send dashboard update event (always, regardless of moderation status)
-      await sendPusherEvent([`${pusherSlug}-dashboard`], 'donation-updated', {
+      // Use 'new-donation' for leaderboard hook compatibility
+      await sendPusherEvent([`${pusherSlug}-dashboard`], 'new-donation', {
         ...donationData,
         moderation_status: moderationStatus,
         action: shouldAutoApprove ? 'auto_approved' : 'pending'
