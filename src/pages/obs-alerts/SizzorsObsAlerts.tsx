@@ -23,7 +23,7 @@ const SizzorsObsAlerts = () => {
     connectionStatus,
     triggerTestAlert,
   } = usePusherAlerts({
-    channelName: config.alertsChannel,
+    channelName: config.pusherAlertsChannel,
     pusherKey: pusherConfig?.key || '',
     pusherCluster: pusherConfig?.cluster || '',
     delayByType: {
@@ -66,7 +66,7 @@ const SizzorsObsAlerts = () => {
       cluster: pusherConfig.cluster,
     });
 
-    const settingsChannel = pusher.subscribe(config.settingsChannel);
+    const settingsChannel = pusher.subscribe(config.pusherSettingsChannel);
 
     settingsChannel.bind('settings-updated', (rawData: any) => {
       const data = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
@@ -84,7 +84,7 @@ const SizzorsObsAlerts = () => {
 
     return () => {
       settingsChannel.unbind_all();
-      pusher.unsubscribe(config.settingsChannel);
+      pusher.unsubscribe(config.pusherSettingsChannel);
       pusher.disconnect();
     };
   }, [pusherConfig]);
@@ -127,7 +127,7 @@ const SizzorsObsAlerts = () => {
       {process.env.NODE_ENV === 'development' && (
         <div className="fixed bottom-4 left-4 bg-black/80 text-white p-2 rounded text-xs space-y-1">
           <div>Status: {connectionStatus}</div>
-          <div>Channel: {config.alertsChannel}</div>
+          <div>Channel: {config.pusherAlertsChannel}</div>
           <div className="flex items-center gap-2">
             <span>Color:</span>
             <div style={{ width: 16, height: 16, backgroundColor: brandColor, border: '1px solid white', borderRadius: 4 }} />

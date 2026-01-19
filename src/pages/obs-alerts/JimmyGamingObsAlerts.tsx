@@ -25,7 +25,7 @@ const JimmyGamingObsAlerts = () => {
     triggerTestAlert,
     queueSize
   } = usePusherAlerts({
-    channelName: config.alertsChannel,
+    channelName: config.pusherAlertsChannel,
     pusherKey: pusherConfig?.key || '',
     pusherCluster: pusherConfig?.cluster || '',
     delayByType: {
@@ -68,7 +68,7 @@ const JimmyGamingObsAlerts = () => {
       cluster: pusherConfig.cluster,
     });
 
-    const settingsChannel = pusher.subscribe(config.settingsChannel);
+    const settingsChannel = pusher.subscribe(config.pusherSettingsChannel);
 
     settingsChannel.bind('settings-updated', (rawData: any) => {
       const data = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
@@ -86,7 +86,7 @@ const JimmyGamingObsAlerts = () => {
 
     return () => {
       settingsChannel.unbind_all();
-      pusher.unsubscribe(config.settingsChannel);
+      pusher.unsubscribe(config.pusherSettingsChannel);
       pusher.disconnect();
     };
   }, [pusherConfig]);
@@ -138,7 +138,7 @@ const JimmyGamingObsAlerts = () => {
               {connectionStatus.toUpperCase()}
             </span>
           </div>
-          <div>Channel: {config.alertsChannel}</div>
+          <div>Channel: {config.pusherAlertsChannel}</div>
           <div>Queue: {queueSize} alert{queueSize !== 1 ? 's' : ''}</div>
           <div>Alert: {currentAlert ? `🔔 ${currentAlert.name}` : '⏸️ None'}</div>
           <div className="flex items-center gap-2">
