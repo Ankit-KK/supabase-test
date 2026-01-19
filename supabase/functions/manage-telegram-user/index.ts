@@ -22,17 +22,16 @@ serve(async (req) => {
     console.log('manage-telegram-user called with action:', action, 'streamerId:', streamerId);
     console.log('authToken provided:', !!authToken, 'length:', authToken?.length || 0);
 
-    // Validate auth token by checking auth_sessions table
+    // Validate auth token using the RPC function that handles hashed tokens
     const { data: sessionData, error: sessionError } = await supabaseAdmin
-      .from('auth_sessions')
-      .select('user_id')
-      .eq('token', authToken)
-      .gt('expires_at', new Date().toISOString())
-      .single();
+      .rpc('validate_session_token', { plain_token: authToken });
 
-    console.log('Session lookup result:', { found: !!sessionData, error: sessionError?.message });
+    console.log('Session validation result:', { 
+      found: sessionData && sessionData.length > 0, 
+      error: sessionError?.message 
+    });
 
-    if (!sessionData) {
+    if (sessionError || !sessionData || sessionData.length === 0) {
       console.error('Auth validation failed - no valid session found for token');
       return new Response(JSON.stringify({ error: 'Invalid or expired auth token' }), {
         status: 401,
@@ -40,7 +39,8 @@ serve(async (req) => {
       });
     }
 
-    console.log('Auth validated, user_id:', sessionData.user_id);
+    const validatedUser = sessionData[0];
+    console.log('Auth validated, user_id:', validatedUser.id);
 
     // Verify user owns the streamer
     const { data: streamerData } = await supabaseAdmin
@@ -49,7 +49,7 @@ serve(async (req) => {
       .eq('id', streamerId)
       .single();
 
-    if (!streamerData || streamerData.user_id !== sessionData.user_id) {
+    if (!streamerData || streamerData.user_id !== validatedUser.id) {
       return new Response(JSON.stringify({ error: 'Unauthorized: You do not own this streamer' }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
