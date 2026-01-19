@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChiaaGamingAlertDisplay } from '@/components/ChiaaGamingAlertDisplay';
+import { UnifiedAlertDisplay } from '@/components/obs/UnifiedAlertDisplay';
 import { usePusherAlerts } from '@/hooks/usePusherAlerts';
 import { usePusherConfig } from '@/hooks/usePusherConfig';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
@@ -7,11 +7,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { ResizableWidget } from '@/components/obs/ResizableWidget';
 import { LeaderboardWidget } from '@/components/obs/LeaderboardWidget';
 import Pusher from 'pusher-js';
+import { STREAMER_CONFIGS } from '@/config/streamers';
+
+const config = STREAMER_CONFIGS.chiaa_gaming;
 
 const ChiaGamingObsAlerts = () => {
   const [alertBoxScale, setAlertBoxScale] = useState<number>(1.0);
   const [leaderboardEnabled, setLeaderboardEnabled] = useState(false);
-  const [brandColor, setBrandColor] = useState('#ec4899');
+  const [brandColor, setBrandColor] = useState(config.brandColor);
   const { config: pusherConfig, loading: configLoading } = usePusherConfig('chiaa_gaming');
   
   const {
@@ -20,7 +23,7 @@ const ChiaGamingObsAlerts = () => {
     connectionStatus,
     triggerTestAlert,
   } = usePusherAlerts({
-    channelName: 'chiaa_gaming-alerts',
+    channelName: config.pusherAlertsChannel,
     pusherKey: pusherConfig?.key || '',
     pusherCluster: pusherConfig?.cluster || '',
     delayByType: {
@@ -31,8 +34,8 @@ const ChiaGamingObsAlerts = () => {
   });
 
   const { topDonator, latestDonations } = useLeaderboard({
-    streamerSlug: 'chiaa_gaming',
-    donationsTable: 'chiaa_gaming_donations',
+    streamerSlug: config.slug,
+    donationsTable: config.tableName,
     pusherKey: pusherConfig?.key || '',
     pusherCluster: pusherConfig?.cluster || '',
   });
@@ -43,7 +46,7 @@ const ChiaGamingObsAlerts = () => {
       const { data, error } = await supabase
         .from('streamers')
         .select('alert_box_scale, leaderboard_widget_enabled, brand_color')
-        .eq('streamer_slug', 'chiaa_gaming')
+        .eq('streamer_slug', config.slug)
         .single();
       
       if (!error && data) {
@@ -63,7 +66,7 @@ const ChiaGamingObsAlerts = () => {
       cluster: pusherConfig.cluster,
     });
 
-    const channel = pusher.subscribe('chiaa_gaming-settings');
+    const channel = pusher.subscribe(config.pusherSettingsChannel);
     channel.bind('settings-updated', (data: any) => {
       console.log('Settings updated via Pusher:', data);
       if (data.leaderboard_widget_enabled !== undefined) {
@@ -79,7 +82,7 @@ const ChiaGamingObsAlerts = () => {
 
     return () => {
       channel.unbind_all();
-      pusher.unsubscribe('chiaa_gaming-settings');
+      pusher.unsubscribe(config.pusherSettingsChannel);
       pusher.disconnect();
     };
   }, [pusherConfig]);
@@ -97,9 +100,10 @@ const ChiaGamingObsAlerts = () => {
 
   return (
     <div className="fixed inset-0 bg-transparent">
-      <ChiaaGamingAlertDisplay
+      <UnifiedAlertDisplay
         donation={currentAlert}
         isVisible={isVisible}
+        brandColor={brandColor}
         scale={alertBoxScale}
       />
 
@@ -121,8 +125,12 @@ const ChiaGamingObsAlerts = () => {
       {process.env.NODE_ENV === 'development' && (
         <div className="fixed bottom-4 left-4 bg-black/80 text-white p-2 rounded text-xs space-y-1">
           <div>Status: {connectionStatus}</div>
-          <div>Channel: chiaa_gaming-alerts</div>
-          <div>Brand Color: {brandColor}</div>
+          <div>Channel: {config.pusherAlertsChannel}</div>
+          <div className="flex items-center gap-2">
+            <span>Color:</span>
+            <div style={{ width: 16, height: 16, backgroundColor: brandColor, border: '1px solid white', borderRadius: 4 }} />
+            <span>{brandColor}</span>
+          </div>
           <div>Alert: {currentAlert ? 'Active' : 'None'}</div>
           <button 
             onClick={triggerTestAlert}

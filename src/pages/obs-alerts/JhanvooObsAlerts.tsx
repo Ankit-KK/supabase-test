@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { JhanvooAlertDisplay } from '@/components/JhanvooAlertDisplay';
+import { UnifiedAlertDisplay } from '@/components/obs/UnifiedAlertDisplay';
 import { usePusherAlerts } from '@/hooks/usePusherAlerts';
 import { usePusherConfig } from '@/hooks/usePusherConfig';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
@@ -7,11 +7,14 @@ import { ResizableWidget } from '@/components/obs/ResizableWidget';
 import { LeaderboardWidget } from '@/components/obs/LeaderboardWidget';
 import { supabase } from '@/integrations/supabase/client';
 import Pusher from 'pusher-js';
+import { STREAMER_CONFIGS } from '@/config/streamers';
+
+const config = STREAMER_CONFIGS.jhanvoo;
 
 const JhanvooObsAlerts = () => {
   const [alertBoxScale, setAlertBoxScale] = useState<number>(1.0);
   const [leaderboardEnabled, setLeaderboardEnabled] = useState<boolean>(true);
-  const [brandColor, setBrandColor] = useState<string>('#6366f1');
+  const [brandColor, setBrandColor] = useState<string>(config.brandColor);
   const { config: pusherConfig, loading: configLoading } = usePusherConfig('jhanvoo');
   
   const {
@@ -20,7 +23,7 @@ const JhanvooObsAlerts = () => {
     connectionStatus,
     triggerTestAlert,
   } = usePusherAlerts({
-    channelName: 'jhanvoo-alerts',
+    channelName: config.alertsChannel,
     pusherKey: pusherConfig?.key || '',
     pusherCluster: pusherConfig?.cluster || '',
     delayByType: {
@@ -36,8 +39,8 @@ const JhanvooObsAlerts = () => {
   });
 
   const { topDonator, latestDonations } = useLeaderboard({
-    donationsTable: 'jhanvoo_donations',
-    streamerSlug: 'jhanvoo',
+    donationsTable: config.tableName,
+    streamerSlug: config.slug,
     pusherKey: pusherConfig?.key || '',
     pusherCluster: pusherConfig?.cluster || '',
   });
@@ -48,7 +51,7 @@ const JhanvooObsAlerts = () => {
       const { data, error } = await supabase
         .from('streamers')
         .select('alert_box_scale, leaderboard_widget_enabled, brand_color')
-        .eq('streamer_slug', 'jhanvoo')
+        .eq('streamer_slug', config.slug)
         .single();
       
       if (!error && data) {
@@ -72,12 +75,11 @@ const JhanvooObsAlerts = () => {
       cluster: pusherConfig.cluster,
     });
 
-    const settingsChannel = pusher.subscribe('jhanvoo-settings');
+    const settingsChannel = pusher.subscribe(config.settingsChannel);
 
     settingsChannel.bind('settings-updated', (rawData: any) => {
       console.log('[OBS] Raw data received:', rawData, 'type:', typeof rawData);
       
-      // Parse if data is a string (Pusher double-stringifies)
       const data = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
       console.log('[OBS] Parsed data:', data);
       
@@ -95,7 +97,7 @@ const JhanvooObsAlerts = () => {
 
     return () => {
       settingsChannel.unbind_all();
-      pusher.unsubscribe('jhanvoo-settings');
+      pusher.unsubscribe(config.settingsChannel);
       pusher.disconnect();
     };
   }, [pusherConfig]);
@@ -110,9 +112,10 @@ const JhanvooObsAlerts = () => {
 
   return (
     <div className="min-h-screen bg-transparent relative overflow-hidden">
-      <JhanvooAlertDisplay
+      <UnifiedAlertDisplay
         donation={currentAlert}
         isVisible={isVisible}
+        brandColor={brandColor}
         scale={alertBoxScale}
       />
 
@@ -134,7 +137,7 @@ const JhanvooObsAlerts = () => {
       {process.env.NODE_ENV === 'development' && (
         <div className="fixed bottom-4 left-4 bg-black/80 text-white p-2 rounded text-xs space-y-1">
           <div>Status: {connectionStatus}</div>
-          <div>Channel: jhanvoo-alerts</div>
+          <div>Channel: {config.alertsChannel}</div>
           <div>Group: {pusherConfig?.group || 1}</div>
           <div className="flex items-center gap-2">
             <span>Color:</span>

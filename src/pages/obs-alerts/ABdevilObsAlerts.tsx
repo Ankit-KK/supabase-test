@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ABdevilAlertDisplay } from '@/components/ABdevilAlertDisplay';
+import { UnifiedAlertDisplay } from '@/components/obs/UnifiedAlertDisplay';
 import { usePusherAlerts } from '@/hooks/usePusherAlerts';
 import { usePusherConfig } from '@/hooks/usePusherConfig';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
@@ -7,11 +7,14 @@ import { ResizableWidget } from '@/components/obs/ResizableWidget';
 import { LeaderboardWidget } from '@/components/obs/LeaderboardWidget';
 import { supabase } from '@/integrations/supabase/client';
 import Pusher from 'pusher-js';
+import { STREAMER_CONFIGS } from '@/config/streamers';
+
+const config = STREAMER_CONFIGS.abdevil;
 
 const ABdevilObsAlerts = () => {
   const [alertBoxScale, setAlertBoxScale] = useState<number>(1.0);
   const [leaderboardEnabled, setLeaderboardEnabled] = useState<boolean>(true);
-  const [brandColor, setBrandColor] = useState<string>('#f97316');
+  const [brandColor, setBrandColor] = useState<string>(config.brandColor);
   const { config: pusherConfig, loading: configLoading } = usePusherConfig('abdevil');
   
   const {
@@ -20,7 +23,7 @@ const ABdevilObsAlerts = () => {
     connectionStatus,
     triggerTestAlert,
   } = usePusherAlerts({
-    channelName: 'abdevil-alerts',
+    channelName: config.alertsChannel,
     pusherKey: pusherConfig?.key || '',
     pusherCluster: pusherConfig?.cluster || '',
     delayByType: {
@@ -36,8 +39,8 @@ const ABdevilObsAlerts = () => {
   });
 
   const { topDonator, latestDonations } = useLeaderboard({
-    donationsTable: 'abdevil_donations',
-    streamerSlug: 'abdevil',
+    donationsTable: config.tableName,
+    streamerSlug: config.slug,
     pusherKey: pusherConfig?.key || '',
     pusherCluster: pusherConfig?.cluster || '',
   });
@@ -48,7 +51,7 @@ const ABdevilObsAlerts = () => {
       const { data, error } = await supabase
         .from('streamers')
         .select('alert_box_scale, leaderboard_widget_enabled, brand_color')
-        .eq('streamer_slug', 'abdevil')
+        .eq('streamer_slug', config.slug)
         .single();
       
       if (!error && data) {
@@ -72,7 +75,7 @@ const ABdevilObsAlerts = () => {
       cluster: pusherConfig.cluster,
     });
 
-    const settingsChannel = pusher.subscribe('abdevil-settings');
+    const settingsChannel = pusher.subscribe(config.settingsChannel);
 
     settingsChannel.bind('settings-updated', (rawData: any) => {
       console.log('[OBS] Raw data received:', rawData, 'type:', typeof rawData);
@@ -95,7 +98,7 @@ const ABdevilObsAlerts = () => {
 
     return () => {
       settingsChannel.unbind_all();
-      pusher.unsubscribe('abdevil-settings');
+      pusher.unsubscribe(config.settingsChannel);
       pusher.disconnect();
     };
   }, [pusherConfig]);
@@ -110,9 +113,10 @@ const ABdevilObsAlerts = () => {
 
   return (
     <div className="min-h-screen bg-transparent relative overflow-hidden">
-      <ABdevilAlertDisplay
+      <UnifiedAlertDisplay
         donation={currentAlert}
         isVisible={isVisible}
+        brandColor={brandColor}
         scale={alertBoxScale}
       />
 
@@ -134,7 +138,7 @@ const ABdevilObsAlerts = () => {
       {process.env.NODE_ENV === 'development' && (
         <div className="fixed bottom-4 left-4 bg-black/80 text-white p-2 rounded text-xs space-y-1">
           <div>Status: {connectionStatus}</div>
-          <div>Channel: abdevil-alerts</div>
+          <div>Channel: {config.alertsChannel}</div>
           <div>Group: {pusherConfig?.group || 1}</div>
           <div className="flex items-center gap-2">
             <span>Color:</span>
