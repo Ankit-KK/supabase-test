@@ -4,10 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Check, X, Eye, EyeOff, Ban, RotateCcw, Shield, Wifi, WifiOff, Image as ImageIcon, Video, FileImage } from 'lucide-react';
+import { Check, X, Eye, EyeOff, Ban, RotateCcw, Shield, Wifi, WifiOff, Image as ImageIcon, Video, FileImage, IndianRupee } from 'lucide-react';
 
 interface DonationUpdateEvent {
   id: string;
@@ -54,6 +55,9 @@ interface Donation {
 interface ModerationSettings {
   moderation_mode: 'auto_approve' | 'manual';
   telegram_moderation_enabled: boolean;
+  media_upload_enabled: boolean;
+  media_moderation_enabled: boolean;
+  media_min_amount: number;
 }
 
 const ModerationPanel: React.FC<ModerationPanelProps> = ({
@@ -66,7 +70,10 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
 }) => {
   const [settings, setSettings] = useState<ModerationSettings>({
     moderation_mode: 'auto_approve',
-    telegram_moderation_enabled: true
+    telegram_moderation_enabled: true,
+    media_upload_enabled: false,
+    media_moderation_enabled: false,
+    media_min_amount: 100
   });
   const [pendingDonations, setPendingDonations] = useState<Donation[]>([]);
   const [recentDonations, setRecentDonations] = useState<Donation[]>([]);
@@ -148,7 +155,7 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
     const fetchSettings = async () => {
       const { data, error } = await supabase
         .from('streamers')
-        .select('moderation_mode, telegram_moderation_enabled')
+        .select('moderation_mode, telegram_moderation_enabled, media_upload_enabled, media_moderation_enabled, media_min_amount')
         .eq('id', streamerId)
         .single();
 
@@ -157,7 +164,10 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
         const mode: 'auto_approve' | 'manual' = modeValue === 'manual' ? 'manual' : 'auto_approve';
         setSettings({
           moderation_mode: mode,
-          telegram_moderation_enabled: data.telegram_moderation_enabled ?? true
+          telegram_moderation_enabled: data.telegram_moderation_enabled ?? true,
+          media_upload_enabled: data.media_upload_enabled ?? false,
+          media_moderation_enabled: data.media_moderation_enabled ?? false,
+          media_min_amount: data.media_min_amount ?? 100
         });
       }
     };
@@ -298,6 +308,63 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
               checked={settings.telegram_moderation_enabled}
               onCheckedChange={(checked) => updateSettings('telegram_moderation_enabled', checked)}
             />
+          </div>
+
+          {/* Media Moderation Section */}
+          <div className="border-t pt-4 mt-4">
+            <div className="flex items-center gap-2 mb-4">
+              <ImageIcon className="h-4 w-4 text-muted-foreground" />
+              <Label className="text-base font-medium">Media Moderation</Label>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Enable Media Uploads</Label>
+                  <p className="text-sm text-muted-foreground">Allow donors to upload images, GIFs, or videos</p>
+                </div>
+                <Switch
+                  checked={settings.media_upload_enabled}
+                  onCheckedChange={(checked) => updateSettings('media_upload_enabled', checked)}
+                />
+              </div>
+
+              {settings.media_upload_enabled && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Require Approval for Media</Label>
+                      <p className="text-sm text-muted-foreground">Media donations go to moderation queue</p>
+                    </div>
+                    <Switch
+                      checked={settings.media_moderation_enabled}
+                      onCheckedChange={(checked) => updateSettings('media_moderation_enabled', checked)}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Minimum Amount for Media</Label>
+                      <p className="text-sm text-muted-foreground">Minimum donation to enable media upload</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                      <Input
+                        type="number"
+                        value={settings.media_min_amount}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value) || 0;
+                          setSettings(prev => ({ ...prev, media_min_amount: val }));
+                        }}
+                        onBlur={() => updateSettings('media_min_amount', settings.media_min_amount)}
+                        className="w-24"
+                        min={0}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
