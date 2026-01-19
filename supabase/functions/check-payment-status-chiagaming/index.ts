@@ -353,27 +353,35 @@ Deno.serve(async (req) => {
             console.log('[ChiaGaming] Audio queue notification sent');
           }
 
-          // Goal progress update (if goal is active)
-          if (streamer?.goal_is_active && streamer?.goal_target_amount) {
+        } catch (pusherError) {
+          console.error('[ChiaGaming] Pusher error:', pusherError);
+        }
+
+        // Goal progress update - ALWAYS on successful payment (regardless of moderation status)
+        // This ensures goals update immediately when payment succeeds
+        if (streamer?.goal_is_active && streamer?.goal_target_amount) {
+          try {
+            const EXCHANGE_RATES_TO_INR: Record<string, number> = { 'INR': 1, 'USD': 89, 'EUR': 94, 'GBP': 113, 'AED': 24, 'AUD': 57 };
+            
             const { data: goalDonations } = await supabase
               .from('chiaa_gaming_donations')
-              .select('amount')
+              .select('amount, currency')
               .eq('payment_status', 'success')
               .gte('created_at', streamer.goal_activated_at || '1970-01-01');
 
-            const totalRaised = goalDonations?.reduce((sum: number, d: any) => sum + (d.amount || 0), 0) || 0;
-            const progress = Math.min((totalRaised / streamer.goal_target_amount) * 100, 100);
+            const totalRaised = goalDonations?.reduce((sum: number, d: any) => {
+              const rate = EXCHANGE_RATES_TO_INR[d.currency || 'INR'] || 1;
+              return sum + (d.amount || 0) * rate;
+            }, 0) || 0;
 
-            await pusher.trigger('chiaa_gaming-goal', 'goal-update', {
-              goal_name: streamer.goal_name,
-              goal_target_amount: streamer.goal_target_amount,
-              current_amount: totalRaised,
-              progress: progress,
+            await pusher.trigger('chiaa_gaming-goal', 'goal-progress', {
+              currentAmount: totalRaised,
+              targetAmount: streamer.goal_target_amount,
             });
-            console.log('[ChiaGaming] Goal progress notification sent');
+            console.log('[ChiaGaming] Goal progress notification sent:', totalRaised);
+          } catch (goalError) {
+            console.error('[ChiaGaming] Goal progress error:', goalError);
           }
-        } catch (pusherError) {
-          console.error('[ChiaGaming] Pusher error:', pusherError);
         }
       } else {
         console.warn('[ChiaGaming] Pusher credentials not configured for group:', pusherGroup);
