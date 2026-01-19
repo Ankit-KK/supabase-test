@@ -24,7 +24,7 @@ const LooteriyaGamingObsAlerts = () => {
       voice: 60000,
     },
     alertDuration: {
-      text: 10000,
+      text: 15000,
       voice: 10000,
       hyperemote: 10000,
     },
@@ -109,11 +109,7 @@ const LooteriyaGamingObsAlerts = () => {
           storagePrefix="looteriya_gaming"
           defaultState={{ x: 50, y: 50, width: 400, height: 120 }}
         >
-        <LeaderboardWidget
-          topDonator={topDonator}
-          latestDonations={latestDonations}
-          brandColor={brandColor}
-        />
+          <LeaderboardWidget topDonator={topDonator} latestDonations={latestDonations} brandColor={brandColor} />
         </ResizableWidget>
       )}
 
@@ -125,19 +121,18 @@ const LooteriyaGamingObsAlerts = () => {
           <div>Group: {pusherConfig?.group || 1}</div>
           <div className="flex items-center gap-2">
             <span>Color:</span>
-            <div style={{ 
-              width: 16, 
-              height: 16, 
-              backgroundColor: brandColor, 
-              border: '1px solid white',
-              borderRadius: 4 
-            }} />
+            <div
+              style={{
+                width: 16,
+                height: 16,
+                backgroundColor: brandColor,
+                border: "1px solid white",
+                borderRadius: 4,
+              }}
+            />
             <span>{brandColor}</span>
           </div>
-          <button
-            onClick={triggerTestAlert}
-            className="mt-2 px-2 py-1 bg-purple-600 rounded hover:bg-purple-700"
-          >
+          <button onClick={triggerTestAlert} className="mt-2 px-2 py-1 bg-purple-600 rounded hover:bg-purple-700">
             Test Alert
           </button>
         </div>
