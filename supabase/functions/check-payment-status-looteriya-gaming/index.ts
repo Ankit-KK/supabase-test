@@ -213,8 +213,12 @@ Deno.serve(async (req) => {
       console.log(`[Looteriya Gaming] Moderation: mode=${moderationMode}, hasMedia=${hasMedia}, mediaModEnabled=${streamer?.media_moderation_enabled}, shouldAutoApprove=${shouldAutoApprove}`);
 
       // Generate TTS using the shared generate-donation-tts function (only for auto-approved)
-      if (isTextDonation && donation.message && donation.amount >= ttsMinAmount && !ttsAudioUrl && shouldAutoApprove) {
-        console.log('[Looteriya Gaming] Generating TTS via shared function...');
+      // Text donations with message >= ₹70 get full TTS, Media donations get announcement TTS
+      const shouldGenerateTextTTS = isTextDonation && donation.message && donation.amount >= ttsMinAmount && !ttsAudioUrl && shouldAutoApprove;
+      const shouldGenerateMediaTTS = hasMedia && shouldAutoApprove && !ttsAudioUrl;
+
+      if (shouldGenerateTextTTS || shouldGenerateMediaTTS) {
+        console.log(`[Looteriya Gaming] Generating ${shouldGenerateMediaTTS ? 'media announcement' : 'text'} TTS via shared function...`);
         
         try {
           const ttsResponse = await fetch(
@@ -231,8 +235,10 @@ Deno.serve(async (req) => {
                 donationTable: 'looteriya_gaming_donations',
                 username: donation.name,
                 amount: donation.amount,
-                message: donation.message,
-                currency: donation.currency || 'INR'
+                message: shouldGenerateTextTTS ? donation.message : null,
+                currency: donation.currency || 'INR',
+                isMediaAnnouncement: shouldGenerateMediaTTS,
+                mediaType: donation.media_type
               })
             }
           );

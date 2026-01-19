@@ -513,19 +513,20 @@ serve(async (req) => {
       }
 
       // Determine donation type
-      let donationType: 'text' | 'voice' | 'hypersound' = 'text';
+      let donationType: 'text' | 'voice' | 'hypersound' | 'media' = 'text';
       if (donation.voice_message_url) {
         donationType = 'voice';
       } else if (donation.hypersound_url) {
         donationType = 'hypersound';
+      } else if (donation.media_url) {
+        donationType = 'media';
       }
       
-      // TTS generation for text donations with significant amount (only for auto-approved)
+      // TTS generation for text donations with significant amount OR media donations (only for auto-approved)
       const amountInINR = convertToINR(Number(donation.amount), paymentCurrency);
       const shouldGenerateTTS = shouldAutoApprove && 
-        donationType === 'text' && 
-        donation.message && 
-        amountInINR >= 70;
+        ((donationType === 'text' && donation.message && amountInINR >= 70) ||
+         donationType === 'media');
 
       if (shouldGenerateTTS) {
         console.log('Generating TTS for donation...')
@@ -551,7 +552,10 @@ serve(async (req) => {
                   tableName: tableName,
                   username: donation.name,
                   amount: donation.amount,
-                  message: donation.message,
+                  message: donationType === 'text' ? donation.message : null,
+                  currency: paymentCurrency,
+                  isMediaAnnouncement: donationType === 'media',
+                  mediaType: donation.media_type,
                   voiceId: streamer?.tts_voice_id || 'en-IN-Standard-B'
                 })
               }
