@@ -179,3 +179,6 @@ verify_jwt = false
 
 [functions.broadcast-settings-update]
 verify_jwt = false
+
+[functions.upload-donation-media]
+verify_jwt = false

@@ -26,6 +26,8 @@ export type Database = {
           hypersound_url: string | null
           id: string
           is_hyperemote: boolean | null
+          media_type: string | null
+          media_url: string | null
           message: string | null
           message_visible: boolean | null
           mod_notified: boolean | null
@@ -52,6 +54,8 @@ export type Database = {
           hypersound_url?: string | null
           id?: string
           is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
           message?: string | null
           message_visible?: boolean | null
           mod_notified?: boolean | null
@@ -78,6 +82,8 @@ export type Database = {
           hypersound_url?: string | null
           id?: string
           is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
           message?: string | null
           message_visible?: boolean | null
           mod_notified?: boolean | null
@@ -133,6 +139,8 @@ export type Database = {
           hypersound_url: string | null
           id: string
           is_hyperemote: boolean | null
+          media_type: string | null
+          media_url: string | null
           message: string | null
           message_visible: boolean | null
           mod_notified: boolean | null
@@ -158,6 +166,8 @@ export type Database = {
           hypersound_url?: string | null
           id?: string
           is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
           message?: string | null
           message_visible?: boolean | null
           mod_notified?: boolean | null
@@ -183,6 +193,8 @@ export type Database = {
           hypersound_url?: string | null
           id?: string
           is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
           message?: string | null
           message_visible?: boolean | null
           mod_notified?: boolean | null
@@ -355,6 +367,8 @@ export type Database = {
           hypersound_url: string | null
           id: string
           is_hyperemote: boolean | null
+          media_type: string | null
+          media_url: string | null
           message: string | null
           message_visible: boolean | null
           mod_notified: boolean | null
@@ -381,6 +395,8 @@ export type Database = {
           hypersound_url?: string | null
           id?: string
           is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
           message?: string | null
           message_visible?: boolean | null
           mod_notified?: boolean | null
@@ -407,6 +423,8 @@ export type Database = {
           hypersound_url?: string | null
           id?: string
           is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
           message?: string | null
           message_visible?: boolean | null
           mod_notified?: boolean | null
@@ -444,6 +462,8 @@ export type Database = {
           hypersound_url: string | null
           id: string
           is_hyperemote: boolean | null
+          media_type: string | null
+          media_url: string | null
           message: string | null
           message_visible: boolean | null
           mod_notified: boolean | null
@@ -469,6 +489,8 @@ export type Database = {
           hypersound_url?: string | null
           id?: string
           is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
           message?: string | null
           message_visible?: boolean | null
           mod_notified?: boolean | null
@@ -494,6 +516,8 @@ export type Database = {
           hypersound_url?: string | null
           id?: string
           is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
           message?: string | null
           message_visible?: boolean | null
           mod_notified?: boolean | null
@@ -530,6 +554,8 @@ export type Database = {
           hypersound_url: string | null
           id: string
           is_hyperemote: boolean | null
+          media_type: string | null
+          media_url: string | null
           message: string | null
           message_visible: boolean | null
           mod_notified: boolean | null
@@ -556,6 +582,8 @@ export type Database = {
           hypersound_url?: string | null
           id?: string
           is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
           message?: string | null
           message_visible?: boolean | null
           mod_notified?: boolean | null
@@ -582,6 +610,8 @@ export type Database = {
           hypersound_url?: string | null
           id?: string
           is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
           message?: string | null
           message_visible?: boolean | null
           mod_notified?: boolean | null
@@ -619,6 +649,8 @@ export type Database = {
           hypersound_url: string | null
           id: string
           is_hyperemote: boolean | null
+          media_type: string | null
+          media_url: string | null
           message: string | null
           message_visible: boolean | null
           mod_notified: boolean | null
@@ -645,6 +677,8 @@ export type Database = {
           hypersound_url?: string | null
           id?: string
           is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
           message?: string | null
           message_visible?: boolean | null
           mod_notified?: boolean | null
@@ -671,6 +705,8 @@ export type Database = {
           hypersound_url?: string | null
           id?: string
           is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
           message?: string | null
           message_visible?: boolean | null
           mod_notified?: boolean | null
@@ -708,6 +744,8 @@ export type Database = {
           hypersound_url: string | null
           id: string
           is_hyperemote: boolean | null
+          media_type: string | null
+          media_url: string | null
           message: string | null
           message_visible: boolean | null
           mod_notified: boolean | null
@@ -734,6 +772,8 @@ export type Database = {
           hypersound_url?: string | null
           id?: string
           is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
           message?: string | null
           message_visible?: boolean | null
           mod_notified?: boolean | null
@@ -760,6 +800,8 @@ export type Database = {
           hypersound_url?: string | null
           id?: string
           is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
           message?: string | null
           message_visible?: boolean | null
           mod_notified?: boolean | null
@@ -797,6 +839,8 @@ export type Database = {
           hypersound_url: string | null
           id: string
           is_hyperemote: boolean | null
+          media_type: string | null
+          media_url: string | null
           message: string | null
           message_visible: boolean | null
           mod_notified: boolean | null
@@ -823,6 +867,8 @@ export type Database = {
           hypersound_url?: string | null
           id?: string
           is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
           message?: string | null
           message_visible?: boolean | null
           mod_notified?: boolean | null
@@ -849,6 +895,8 @@ export type Database = {
           hypersound_url?: string | null
           id?: string
           is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
           message?: string | null
           message_visible?: boolean | null
           mod_notified?: boolean | null
@@ -886,6 +934,8 @@ export type Database = {
           hypersound_url: string | null
           id: string
           is_hyperemote: boolean | null
+          media_type: string | null
+          media_url: string | null
           message: string | null
           message_visible: boolean | null
           mod_notified: boolean | null
@@ -912,6 +962,8 @@ export type Database = {
           hypersound_url?: string | null
           id?: string
           is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
           message?: string | null
           message_visible?: boolean | null
           mod_notified?: boolean | null
@@ -938,6 +990,8 @@ export type Database = {
           hypersound_url?: string | null
           id?: string
           is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
           message?: string | null
           message_visible?: boolean | null
           mod_notified?: boolean | null
@@ -1038,6 +1092,8 @@ export type Database = {
           hypersound_url: string | null
           id: string
           is_hyperemote: boolean | null
+          media_type: string | null
+          media_url: string | null
           message: string | null
           message_visible: boolean | null
           mod_notified: boolean | null
@@ -1064,6 +1120,8 @@ export type Database = {
           hypersound_url?: string | null
           id?: string
           is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
           message?: string | null
           message_visible?: boolean | null
           mod_notified?: boolean | null
@@ -1090,6 +1148,8 @@ export type Database = {
           hypersound_url?: string | null
           id?: string
           is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
           message?: string | null
           message_visible?: boolean | null
           mod_notified?: boolean | null
@@ -1127,6 +1187,8 @@ export type Database = {
           hypersound_url: string | null
           id: string
           is_hyperemote: boolean | null
+          media_type: string | null
+          media_url: string | null
           message: string | null
           message_visible: boolean | null
           mod_notified: boolean | null
@@ -1153,6 +1215,8 @@ export type Database = {
           hypersound_url?: string | null
           id?: string
           is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
           message?: string | null
           message_visible?: boolean | null
           mod_notified?: boolean | null
@@ -1179,6 +1243,8 @@ export type Database = {
           hypersound_url?: string | null
           id?: string
           is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
           message?: string | null
           message_visible?: boolean | null
           mod_notified?: boolean | null
@@ -1216,6 +1282,8 @@ export type Database = {
           hypersound_url: string | null
           id: string
           is_hyperemote: boolean | null
+          media_type: string | null
+          media_url: string | null
           message: string | null
           message_visible: boolean | null
           mod_notified: boolean | null
@@ -1242,6 +1310,8 @@ export type Database = {
           hypersound_url?: string | null
           id?: string
           is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
           message?: string | null
           message_visible?: boolean | null
           mod_notified?: boolean | null
@@ -1268,6 +1338,8 @@ export type Database = {
           hypersound_url?: string | null
           id?: string
           is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
           message?: string | null
           message_visible?: boolean | null
           mod_notified?: boolean | null
@@ -1424,6 +1496,8 @@ export type Database = {
           hypersound_url: string | null
           id: string
           is_hyperemote: boolean | null
+          media_type: string | null
+          media_url: string | null
           message: string | null
           message_visible: boolean | null
           mod_notified: boolean | null
@@ -1450,6 +1524,8 @@ export type Database = {
           hypersound_url?: string | null
           id?: string
           is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
           message?: string | null
           message_visible?: boolean | null
           mod_notified?: boolean | null
@@ -1476,6 +1552,8 @@ export type Database = {
           hypersound_url?: string | null
           id?: string
           is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
           message?: string | null
           message_visible?: boolean | null
           mod_notified?: boolean | null
@@ -1513,6 +1591,8 @@ export type Database = {
           hypersound_url: string | null
           id: string
           is_hyperemote: boolean | null
+          media_type: string | null
+          media_url: string | null
           message: string | null
           message_visible: boolean | null
           mod_notified: boolean | null
@@ -1537,6 +1617,8 @@ export type Database = {
           hypersound_url?: string | null
           id?: string
           is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
           message?: string | null
           message_visible?: boolean | null
           mod_notified?: boolean | null
@@ -1561,6 +1643,8 @@ export type Database = {
           hypersound_url?: string | null
           id?: string
           is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
           message?: string | null
           message_visible?: boolean | null
           mod_notified?: boolean | null
@@ -1590,6 +1674,10 @@ export type Database = {
           hyperemotes_min_amount: number | null
           id: string
           leaderboard_widget_enabled: boolean | null
+          media_max_file_size_mb: number | null
+          media_min_amount: number | null
+          media_moderation_enabled: boolean | null
+          media_upload_enabled: boolean | null
           moderation_mode: string | null
           pusher_group: number | null
           streamer_name: string
@@ -1613,6 +1701,10 @@ export type Database = {
           hyperemotes_min_amount?: number | null
           id?: string
           leaderboard_widget_enabled?: boolean | null
+          media_max_file_size_mb?: number | null
+          media_min_amount?: number | null
+          media_moderation_enabled?: boolean | null
+          media_upload_enabled?: boolean | null
           moderation_mode?: string | null
           pusher_group?: number | null
           streamer_name: string
@@ -1636,6 +1728,10 @@ export type Database = {
           hyperemotes_min_amount?: number | null
           id?: string
           leaderboard_widget_enabled?: boolean | null
+          media_max_file_size_mb?: number | null
+          media_min_amount?: number | null
+          media_moderation_enabled?: boolean | null
+          media_upload_enabled?: boolean | null
           moderation_mode?: string | null
           pusher_group?: number | null
           streamer_name?: string
