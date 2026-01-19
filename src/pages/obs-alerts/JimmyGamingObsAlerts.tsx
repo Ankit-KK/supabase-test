@@ -1,11 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { JimmyGamingAlertDisplay } from '@/components/JimmyGamingAlertDisplay';
+import { UnifiedAlertDisplay } from '@/components/obs/UnifiedAlertDisplay';
 import { usePusherAlerts } from '@/hooks/usePusherAlerts';
 import { usePusherConfig } from '@/hooks/usePusherConfig';
+import { useLeaderboard } from '@/hooks/useLeaderboard';
+import { ResizableWidget } from '@/components/obs/ResizableWidget';
+import { LeaderboardWidget } from '@/components/obs/LeaderboardWidget';
 import { supabase } from '@/integrations/supabase/client';
+import Pusher from 'pusher-js';
+import { STREAMER_CONFIGS } from '@/config/streamers';
+
+const config = STREAMER_CONFIGS.jimmy_gaming;
 
 const JimmyGamingObsAlerts = () => {
   const [alertBoxScale, setAlertBoxScale] = useState<number>(1.0);
+  const [leaderboardEnabled, setLeaderboardEnabled] = useState<boolean>(true);
+  const [brandColor, setBrandColor] = useState<string>(config.brandColor);
 
   const { config: pusherConfig, loading: configLoading } = usePusherConfig('jimmy_gaming');
   
@@ -16,7 +25,7 @@ const JimmyGamingObsAlerts = () => {
     triggerTestAlert,
     queueSize
   } = usePusherAlerts({
-    channelName: 'jimmy_gaming-alerts',
+    channelName: config.alertsChannel,
     pusherKey: pusherConfig?.key || '',
     pusherCluster: pusherConfig?.cluster || '',
     delayByType: {
@@ -26,38 +35,61 @@ const JimmyGamingObsAlerts = () => {
     },
   });
 
+  const { topDonator, latestDonations } = useLeaderboard({
+    donationsTable: config.tableName,
+    streamerSlug: config.slug,
+    pusherKey: pusherConfig?.key || '',
+    pusherCluster: pusherConfig?.cluster || '',
+  });
+
+  // Fetch initial settings
   useEffect(() => {
-    const fetchScale = async () => {
+    const fetchSettings = async () => {
       const { data, error } = await supabase
         .from('streamers')
-        .select('alert_box_scale')
-        .eq('streamer_slug', 'jimmy_gaming')
+        .select('alert_box_scale, leaderboard_widget_enabled, brand_color')
+        .eq('streamer_slug', config.slug)
         .single();
       
-      if (!error && data?.alert_box_scale) {
-        setAlertBoxScale(Number(data.alert_box_scale));
+      if (!error && data) {
+        if (data.alert_box_scale) setAlertBoxScale(Number(data.alert_box_scale));
+        setLeaderboardEnabled(data.leaderboard_widget_enabled ?? true);
+        if (data.brand_color) setBrandColor(data.brand_color);
       }
     };
-    fetchScale();
+    fetchSettings();
+  }, []);
 
-    const channel = supabase
-      .channel('jimmy_gaming-settings')
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'streamers',
-        filter: 'streamer_slug=eq.jimmy_gaming'
-      }, (payload: any) => {
-        if (payload.new?.alert_box_scale) {
-          setAlertBoxScale(Number(payload.new.alert_box_scale));
-        }
-      })
-      .subscribe();
+  // Subscribe to Pusher for real-time settings updates
+  useEffect(() => {
+    if (!pusherConfig?.key || !pusherConfig?.cluster) return;
+
+    const pusher = new Pusher(pusherConfig.key, {
+      cluster: pusherConfig.cluster,
+    });
+
+    const settingsChannel = pusher.subscribe(config.settingsChannel);
+
+    settingsChannel.bind('settings-updated', (rawData: any) => {
+      const data = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+      
+      if (data.leaderboard_widget_enabled !== undefined) {
+        setLeaderboardEnabled(data.leaderboard_widget_enabled);
+      }
+      if (data.brand_color) {
+        setBrandColor(data.brand_color);
+      }
+      if (data.alert_box_scale) {
+        setAlertBoxScale(Number(data.alert_box_scale));
+      }
+    });
 
     return () => {
-      supabase.removeChannel(channel);
+      settingsChannel.unbind_all();
+      pusher.unsubscribe(config.settingsChannel);
+      pusher.disconnect();
     };
-  }, []);
+  }, [pusherConfig]);
 
   if (configLoading || !pusherConfig) {
     return (
@@ -72,11 +104,26 @@ const JimmyGamingObsAlerts = () => {
 
   return (
     <div className="fixed inset-0 bg-transparent">
-      <JimmyGamingAlertDisplay
+      <UnifiedAlertDisplay
         donation={currentAlert}
         isVisible={isVisible}
+        brandColor={brandColor}
         scale={alertBoxScale}
       />
+
+      {leaderboardEnabled && (
+        <ResizableWidget
+          id="leaderboard"
+          storagePrefix="jimmy_gaming"
+          defaultState={{ x: 50, y: 50, width: 400, height: 120 }}
+        >
+          <LeaderboardWidget
+            topDonator={topDonator}
+            latestDonations={latestDonations}
+            brandColor={brandColor}
+          />
+        </ResizableWidget>
+      )}
       
       {process.env.NODE_ENV === 'development' && (
         <div className="fixed bottom-4 left-4 bg-black/80 text-white p-3 rounded-lg text-xs space-y-2 max-w-xs">
@@ -91,9 +138,14 @@ const JimmyGamingObsAlerts = () => {
               {connectionStatus.toUpperCase()}
             </span>
           </div>
-          <div>Channel: jimmy_gaming-alerts</div>
+          <div>Channel: {config.alertsChannel}</div>
           <div>Queue: {queueSize} alert{queueSize !== 1 ? 's' : ''}</div>
           <div>Alert: {currentAlert ? `🔔 ${currentAlert.name}` : '⏸️ None'}</div>
+          <div className="flex items-center gap-2">
+            <span>Color:</span>
+            <div style={{ width: 16, height: 16, backgroundColor: brandColor, border: '1px solid white', borderRadius: 4 }} />
+            <span>{brandColor}</span>
+          </div>
           <button 
             onClick={triggerTestAlert}
             className="w-full px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-medium transition-colors"

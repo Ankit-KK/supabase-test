@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ClumsyGodAlertDisplay } from '@/components/ClumsyGodAlertDisplay';
+import { UnifiedAlertDisplay } from '@/components/obs/UnifiedAlertDisplay';
 import { usePusherAlerts } from '@/hooks/usePusherAlerts';
 import { usePusherConfig } from '@/hooks/usePusherConfig';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
@@ -7,11 +7,14 @@ import { ResizableWidget } from '@/components/obs/ResizableWidget';
 import { LeaderboardWidget } from '@/components/obs/LeaderboardWidget';
 import { supabase } from '@/integrations/supabase/client';
 import Pusher from 'pusher-js';
+import { STREAMER_CONFIGS } from '@/config/streamers';
+
+const config = STREAMER_CONFIGS.clumsygod;
 
 const ClumsyGodObsAlerts = () => {
   const [alertBoxScale, setAlertBoxScale] = useState<number>(1.0);
   const [leaderboardEnabled, setLeaderboardEnabled] = useState<boolean>(true);
-  const [brandColor, setBrandColor] = useState<string>('#ef4444');
+  const [brandColor, setBrandColor] = useState<string>(config.brandColor);
 
   const { config: pusherConfig, loading: configLoading } = usePusherConfig('clumsygod');
   
@@ -22,15 +25,14 @@ const ClumsyGodObsAlerts = () => {
     triggerTestAlert,
     queueSize
   } = usePusherAlerts({
-    channelName: 'clumsygod-alerts',
+    channelName: config.alertsChannel,
     pusherKey: pusherConfig?.key || '',
     pusherCluster: pusherConfig?.cluster || '',
-    // Timing is now handled by server-provided audio_scheduled_at for perfect sync
   });
 
   const { topDonator, latestDonations } = useLeaderboard({
-    donationsTable: 'clumsygod_donations',
-    streamerSlug: 'clumsygod',
+    donationsTable: config.tableName,
+    streamerSlug: config.slug,
     pusherKey: pusherConfig?.key || '',
     pusherCluster: pusherConfig?.cluster || '',
   });
@@ -41,7 +43,7 @@ const ClumsyGodObsAlerts = () => {
       const { data, error } = await supabase
         .from('streamers')
         .select('alert_box_scale, leaderboard_widget_enabled, brand_color')
-        .eq('streamer_slug', 'clumsygod')
+        .eq('streamer_slug', config.slug)
         .single();
       
       if (!error && data) {
@@ -65,12 +67,11 @@ const ClumsyGodObsAlerts = () => {
       cluster: pusherConfig.cluster,
     });
 
-    const settingsChannel = pusher.subscribe('clumsygod-settings');
+    const settingsChannel = pusher.subscribe(config.settingsChannel);
 
     settingsChannel.bind('settings-updated', (rawData: any) => {
       console.log('[OBS] Raw data received:', rawData, 'type:', typeof rawData);
       
-      // Parse if data is a string (Pusher double-stringifies)
       const data = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
       console.log('[OBS] Parsed data:', data);
       
@@ -88,7 +89,7 @@ const ClumsyGodObsAlerts = () => {
 
     return () => {
       settingsChannel.unbind_all();
-      pusher.unsubscribe('clumsygod-settings');
+      pusher.unsubscribe(config.settingsChannel);
       pusher.disconnect();
     };
   }, [pusherConfig]);
@@ -106,9 +107,10 @@ const ClumsyGodObsAlerts = () => {
 
   return (
     <div className="fixed inset-0 bg-transparent">
-      <ClumsyGodAlertDisplay
+      <UnifiedAlertDisplay
         donation={currentAlert}
         isVisible={isVisible}
+        brandColor={brandColor}
         scale={alertBoxScale}
       />
 
@@ -139,7 +141,7 @@ const ClumsyGodObsAlerts = () => {
               {connectionStatus.toUpperCase()}
             </span>
           </div>
-          <div>Channel: clumsygod-alerts</div>
+          <div>Channel: {config.alertsChannel}</div>
           <div>Queue: {queueSize} alert{queueSize !== 1 ? 's' : ''}</div>
           <div>Alert: {currentAlert ? `🔔 ${currentAlert.name}` : '⏸️ None'}</div>
           <div className="flex items-center gap-2">
