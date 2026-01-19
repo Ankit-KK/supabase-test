@@ -416,7 +416,7 @@ serve(async (req) => {
     // Fetch streamer's moderation settings
     const { data: streamerSettings, error: streamerError } = await supabase
       .from('streamers')
-      .select('moderation_mode, telegram_moderation_enabled')
+      .select('moderation_mode, telegram_moderation_enabled, media_moderation_enabled')
       .eq('id', donation.streamer_id)
       .single();
 
@@ -427,13 +427,22 @@ serve(async (req) => {
     const moderationMode = streamerSettings?.moderation_mode || 'auto_approve';
     // HyperSounds/HyperEmotes always auto-approve (no user content to moderate)
     const isHypersound = donation.hypersound_url || donation.is_hyperemote;
-    const shouldAutoApprove = moderationMode === 'auto_approve' || isHypersound;
+    // Check if this is a media donation that requires moderation
+    const hasMedia = donation.media_url && donation.media_url.length > 0;
+    const mediaRequiresModeration = hasMedia && streamerSettings?.media_moderation_enabled;
+    
+    // HyperSounds always bypass moderation, media goes to moderation if enabled
+    const shouldAutoApprove = isHypersound || 
+      (moderationMode === 'auto_approve' && !mediaRequiresModeration);
     const moderationStatus = shouldAutoApprove ? 'auto_approved' : 'pending';
     
     if (isHypersound) {
       console.log('HyperSound/HyperEmote detected - bypassing moderation');
     }
-    console.log(`Streamer moderation_mode: ${moderationMode}, isHypersound: ${isHypersound}, shouldAutoApprove: ${shouldAutoApprove}`);
+    if (mediaRequiresModeration) {
+      console.log('Media donation detected with moderation enabled - sending to moderation queue');
+    }
+    console.log(`Streamer moderation_mode: ${moderationMode}, isHypersound: ${isHypersound}, hasMedia: ${hasMedia}, mediaRequiresModeration: ${mediaRequiresModeration}, shouldAutoApprove: ${shouldAutoApprove}`);
 
     // Update donation status
     const updateData: any = {
@@ -668,6 +677,11 @@ serve(async (req) => {
             
             if (donation.voice_message_url) {
               messageText += `🎵 <b>Voice:</b> Available\n`;
+            }
+
+            if (donation.media_url) {
+              const mediaTypeEmoji = donation.media_type?.startsWith('video') ? '🎬' : '🖼️';
+              messageText += `${mediaTypeEmoji} <b>Media:</b> Attached\n`;
             }
 
             if (donation.is_hyperemote) {

@@ -216,13 +216,21 @@ Deno.serve(async (req) => {
       // Get streamer info for moderation mode and Pusher
       const { data: streamer } = await supabase
         .from('streamers')
-        .select('*')
+        .select('*, moderation_mode, telegram_moderation_enabled, media_moderation_enabled')
         .eq('streamer_slug', 'chiaa_gaming')
         .single();
 
       // Determine moderation status based on streamer settings
       const moderationMode = streamer?.moderation_mode || 'auto';
-      const newModerationStatus = moderationMode === 'manual' ? 'pending' : 'auto_approved';
+      const hasHypersoundContent = hasHypersound || donation.is_hyperemote;
+      const mediaRequiresModeration = hasMedia && streamer?.media_moderation_enabled;
+      
+      // HyperSounds always auto-approve, media goes to moderation if enabled
+      const shouldAutoApprove = hasHypersoundContent || 
+        (moderationMode !== 'manual' && !mediaRequiresModeration);
+      const newModerationStatus = shouldAutoApprove ? 'auto_approved' : 'pending';
+
+      console.log(`[ChiaGaming] Moderation: mode=${moderationMode}, hasMedia=${hasMedia}, mediaModEnabled=${streamer?.media_moderation_enabled}, shouldAutoApprove=${shouldAutoApprove}`);
 
       // Calculate audio_scheduled_at (60 seconds from now for fraud protection)
       const audioScheduledAt = new Date(Date.now() + 60 * 1000).toISOString();
