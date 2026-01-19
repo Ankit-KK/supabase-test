@@ -1,12 +1,15 @@
-import StreamerDashboard from "@/components/dashboard/StreamerDashboard";
+import StreamerDashboardWrapper from "@/components/dashboard/StreamerDashboardWrapper";
+import { STREAMER_CONFIGS } from "@/config/streamers";
+
+const config = STREAMER_CONFIGS.abdevil;
 
 const ABdevilDashboard = () => {
   return (
-    <StreamerDashboard
-      streamerSlug="abdevil"
-      streamerName="ABdevil"
-      tableName="abdevil_donations"
-      brandColor="#f97316"
+    <StreamerDashboardWrapper
+      streamerSlug={config.slug}
+      streamerName={config.name}
+      tableName={config.tableName}
+      brandColor={config.brandColor}
     />
   );
 };

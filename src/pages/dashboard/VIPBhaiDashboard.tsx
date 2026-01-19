@@ -1,13 +1,15 @@
-import React from 'react';
-import StreamerDashboard from '@/components/dashboard/StreamerDashboard';
+import StreamerDashboardWrapper from "@/components/dashboard/StreamerDashboardWrapper";
+import { STREAMER_CONFIGS } from "@/config/streamers";
+
+const config = STREAMER_CONFIGS.vipbhai;
 
 const VIPBhaiDashboard = () => {
   return (
-    <StreamerDashboard
-      streamerSlug="vipbhai"
-      streamerName="VIP BHAI"
-      tableName="vipbhai_donations"
-      brandColor="#f59e0b"
+    <StreamerDashboardWrapper
+      streamerSlug={config.slug}
+      streamerName={config.name}
+      tableName={config.tableName}
+      brandColor={config.brandColor}
     />
   );
 };

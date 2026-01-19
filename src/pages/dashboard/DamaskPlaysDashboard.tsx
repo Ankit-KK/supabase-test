@@ -1,13 +1,15 @@
-import React from 'react';
-import StreamerDashboard from '@/components/dashboard/StreamerDashboard';
+import StreamerDashboardWrapper from "@/components/dashboard/StreamerDashboardWrapper";
+import { STREAMER_CONFIGS } from "@/config/streamers";
+
+const config = STREAMER_CONFIGS.damask_plays;
 
 const DamaskPlaysDashboard = () => {
   return (
-    <StreamerDashboard
-      streamerSlug="damask_plays"
-      streamerName="Damask plays"
-      brandColor="#10b981"
-      tableName="damask_plays_donations"
+    <StreamerDashboardWrapper
+      streamerSlug={config.slug}
+      streamerName={config.name}
+      tableName={config.tableName}
+      brandColor={config.brandColor}
     />
   );
 };

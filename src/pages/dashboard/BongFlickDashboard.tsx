@@ -1,12 +1,15 @@
-import StreamerDashboard from "@/components/dashboard/StreamerDashboard";
+import StreamerDashboardWrapper from "@/components/dashboard/StreamerDashboardWrapper";
+import { STREAMER_CONFIGS } from "@/config/streamers";
+
+const config = STREAMER_CONFIGS.bongflick;
 
 const BongFlickDashboard = () => {
   return (
-    <StreamerDashboard
-      streamerSlug="bongflick"
-      streamerName="BongFlick"
-      tableName="bongflick_donations"
-      brandColor="#8b5cf6"
+    <StreamerDashboardWrapper
+      streamerSlug={config.slug}
+      streamerName={config.name}
+      tableName={config.tableName}
+      brandColor={config.brandColor}
     />
   );
 };

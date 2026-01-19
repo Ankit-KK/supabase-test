@@ -1,12 +1,15 @@
-import StreamerDashboard from "@/components/dashboard/StreamerDashboard";
+import StreamerDashboardWrapper from "@/components/dashboard/StreamerDashboardWrapper";
+import { STREAMER_CONFIGS } from "@/config/streamers";
+
+const config = STREAMER_CONFIGS.jhanvoo;
 
 const JhanvooDashboard = () => {
   return (
-    <StreamerDashboard
-      streamerSlug="jhanvoo"
-      streamerName="Jhanvoo"
-      tableName="jhanvoo_donations"
-      brandColor="#6366f1"
+    <StreamerDashboardWrapper
+      streamerSlug={config.slug}
+      streamerName={config.name}
+      tableName={config.tableName}
+      brandColor={config.brandColor}
     />
   );
 };
