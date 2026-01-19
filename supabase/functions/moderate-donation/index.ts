@@ -380,20 +380,12 @@ serve(async (req) => {
         }
       }
 
-      // Send Pusher event to OBS alerts channel
+      // Send Pusher event to OBS alerts channel (for new-donation tracking only)
+      // Note: audio-now-playing is ONLY sent by get-current-audio when audio actually plays
       console.log(`Sending Pusher event to ${channelSlug}-alerts channel`);
       await sendPusherEvent(
         [`${channelSlug}-alerts`],
         'new-donation',
-        alertData,
-        pusherGroup
-      );
-
-      // Also send audio-now-playing to trigger instant visual alert display
-      console.log(`Sending audio-now-playing to ${channelSlug}-alerts channel for instant display`);
-      await sendPusherEvent(
-        [`${channelSlug}-alerts`],
-        'audio-now-playing',
         alertData,
         pusherGroup
       );
