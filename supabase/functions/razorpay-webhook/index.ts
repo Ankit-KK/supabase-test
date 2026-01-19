@@ -586,7 +586,9 @@ serve(async (req) => {
         selected_gif_id: donation.selected_gif_id,
         message_visible: true,
         created_at: donation.created_at,
-        type: donationType
+        type: donationType,
+        media_url: donation.media_url,
+        media_type: donation.media_type
       }
 
       // For auto-approved donations: Do NOT send immediate alerts to OBS
