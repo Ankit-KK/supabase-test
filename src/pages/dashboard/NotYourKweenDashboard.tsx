@@ -1,12 +1,15 @@
-import StreamerDashboard from "@/components/dashboard/StreamerDashboard";
+import StreamerDashboardWrapper from "@/components/dashboard/StreamerDashboardWrapper";
+import { STREAMER_CONFIGS } from "@/config/streamers";
+
+const config = STREAMER_CONFIGS.notyourkween;
 
 const NotYourKweenDashboard = () => {
   return (
-    <StreamerDashboard
-      streamerSlug="notyourkween"
-      streamerName="not your Kween"
-      tableName="notyourkween_donations"
-      brandColor="#ec4899"
+    <StreamerDashboardWrapper
+      streamerSlug={config.slug}
+      streamerName={config.name}
+      tableName={config.tableName}
+      brandColor={config.brandColor}
     />
   );
 };

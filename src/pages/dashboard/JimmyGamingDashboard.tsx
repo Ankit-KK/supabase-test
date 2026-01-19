@@ -1,12 +1,15 @@
-import StreamerDashboard from '@/components/dashboard/StreamerDashboard';
+import StreamerDashboardWrapper from "@/components/dashboard/StreamerDashboardWrapper";
+import { STREAMER_CONFIGS } from "@/config/streamers";
+
+const config = STREAMER_CONFIGS.jimmy_gaming;
 
 const JimmyGamingDashboard = () => {
   return (
-    <StreamerDashboard
-      streamerSlug="jimmy_gaming"
-      streamerName="Jimmy Gaming"
-      tableName="jimmy_gaming_donations"
-      brandColor="#ef4444"
+    <StreamerDashboardWrapper
+      streamerSlug={config.slug}
+      streamerName={config.name}
+      tableName={config.tableName}
+      brandColor={config.brandColor}
     />
   );
 };

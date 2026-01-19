@@ -1,13 +1,15 @@
-import React from 'react';
-import StreamerDashboard from '@/components/dashboard/StreamerDashboard';
+import StreamerDashboardWrapper from "@/components/dashboard/StreamerDashboardWrapper";
+import { STREAMER_CONFIGS } from "@/config/streamers";
+
+const config = STREAMER_CONFIGS.sizzors;
 
 const SizzorsDashboard = () => {
   return (
-    <StreamerDashboard
-      streamerSlug="sizzors"
-      streamerName="Sizzors"
-      tableName="sizzors_donations"
-      brandColor="#8b5cf6"
+    <StreamerDashboardWrapper
+      streamerSlug={config.slug}
+      streamerName={config.name}
+      tableName={config.tableName}
+      brandColor={config.brandColor}
     />
   );
 };

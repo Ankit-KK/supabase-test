@@ -1,12 +1,15 @@
-import StreamerDashboard from '@/components/dashboard/StreamerDashboard';
+import StreamerDashboardWrapper from "@/components/dashboard/StreamerDashboardWrapper";
+import { STREAMER_CONFIGS } from "@/config/streamers";
+
+const config = STREAMER_CONFIGS.sagarujjwalgaming;
 
 const SagarUjjwalGamingDashboard = () => {
   return (
-    <StreamerDashboard
-      streamerSlug="sagarujjwalgaming"
-      streamerName="SAGAR UJJWAL GAMING"
-      brandColor="#ef4444"
-      tableName="sagarujjwalgaming_donations"
+    <StreamerDashboardWrapper
+      streamerSlug={config.slug}
+      streamerName={config.name}
+      tableName={config.tableName}
+      brandColor={config.brandColor}
     />
   );
 };
