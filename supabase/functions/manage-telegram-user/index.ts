@@ -40,7 +40,7 @@ serve(async (req) => {
     }
 
     const validatedUser = sessionData[0];
-    console.log('Auth validated, user_id:', validatedUser.id);
+    console.log('Auth validated, user_id:', validatedUser.user_id);
 
     // Verify user owns the streamer
     const { data: streamerData } = await supabaseAdmin
@@ -49,7 +49,7 @@ serve(async (req) => {
       .eq('id', streamerId)
       .single();
 
-    if (!streamerData || streamerData.user_id !== validatedUser.id) {
+    if (!streamerData || streamerData.user_id !== validatedUser.user_id) {
       return new Response(JSON.stringify({ error: 'Unauthorized: You do not own this streamer' }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
