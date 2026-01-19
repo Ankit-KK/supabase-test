@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Check, X, Eye, EyeOff, Ban, RotateCcw, Shield, Wifi, WifiOff } from 'lucide-react';
+import { Check, X, Eye, EyeOff, Ban, RotateCcw, Shield, Wifi, WifiOff, Image as ImageIcon, Video, FileImage } from 'lucide-react';
 
 interface DonationUpdateEvent {
   id: string;
@@ -47,6 +47,8 @@ interface Donation {
   currency?: string;
   tts_audio_url?: string;
   hypersound_url?: string;
+  media_url?: string;
+  media_type?: string;
 }
 
 interface ModerationSettings {
@@ -341,6 +343,36 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
                       {donation.voice_message_url && (
                         <Badge variant="secondary" className="mb-3">🎵 Voice Message</Badge>
                       )}
+                      {donation.hypersound_url && (
+                        <Badge variant="secondary" className="mb-3">🔊 HyperSound</Badge>
+                      )}
+                      {donation.media_url && (
+                        <div className="mb-3 space-y-2">
+                          <Badge variant="secondary" className="flex items-center gap-1 w-fit">
+                            {donation.media_type === 'video' ? <Video className="h-3 w-3" /> : 
+                             donation.media_type === 'gif' ? <FileImage className="h-3 w-3" /> : 
+                             <ImageIcon className="h-3 w-3" />}
+                            {donation.media_type === 'video' ? 'Video' : 
+                             donation.media_type === 'gif' ? 'GIF' : 'Image'}
+                          </Badge>
+                          <div className="w-full max-w-[200px]">
+                            {donation.media_type === 'video' ? (
+                              <video 
+                                src={donation.media_url} 
+                                controls 
+                                muted 
+                                className="w-full h-auto rounded-md max-h-[120px] object-contain"
+                              />
+                            ) : (
+                              <img 
+                                src={donation.media_url} 
+                                alt="Donation media"
+                                className="w-full h-auto rounded-md max-h-[120px] object-contain"
+                              />
+                            )}
+                          </div>
+                        </div>
+                      )}
                       <div className="flex gap-2 flex-wrap">
                         <Button
                           size="sm"
@@ -397,6 +429,11 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
                         <span className="font-medium">{donation.name}</span>
                         <span className="text-muted-foreground ml-2">₹{donation.amount}</span>
                         {!donation.message_visible && <Badge variant="secondary" className="ml-2">Hidden</Badge>}
+                        {donation.media_url && (
+                          <Badge variant="outline" className="ml-2">
+                            {donation.media_type === 'video' ? '🎬' : donation.media_type === 'gif' ? '✨' : '🖼️'}
+                          </Badge>
+                        )}
                       </div>
                       <div className="flex gap-1">
                         <Button

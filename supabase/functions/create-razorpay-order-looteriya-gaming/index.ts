@@ -40,13 +40,13 @@ const getClientIP = (req: Request): string => {
 };
 
 // Currency minimums for validation
-const CURRENCY_MINIMUMS: Record<string, { minText: number; minVoice: number; minHypersound: number }> = {
-  'INR': { minText: 40, minVoice: 150, minHypersound: 30 },
-  'USD': { minText: 1, minVoice: 3, minHypersound: 1 },
-  'EUR': { minText: 1, minVoice: 3, minHypersound: 1 },
-  'GBP': { minText: 1, minVoice: 3, minHypersound: 1 },
-  'AED': { minText: 4, minVoice: 12, minHypersound: 3 },
-  'AUD': { minText: 2, minVoice: 5, minHypersound: 1.5 },
+const CURRENCY_MINIMUMS: Record<string, { minText: number; minVoice: number; minHypersound: number; minMedia: number }> = {
+  'INR': { minText: 40, minVoice: 150, minHypersound: 30, minMedia: 100 },
+  'USD': { minText: 1, minVoice: 3, minHypersound: 1, minMedia: 2 },
+  'EUR': { minText: 1, minVoice: 3, minHypersound: 1, minMedia: 2 },
+  'GBP': { minText: 1, minVoice: 3, minHypersound: 1, minMedia: 2 },
+  'AED': { minText: 4, minVoice: 12, minHypersound: 3, minMedia: 8 },
+  'AUD': { minText: 2, minVoice: 5, minHypersound: 1.5, minMedia: 3 },
 };
 
 Deno.serve(async (req) => {
@@ -84,9 +84,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { name, amount, message, voiceMessageUrl, hypersoundUrl, currency = 'INR' } = await req.json();
+    const { name, amount, message, voiceMessageUrl, hypersoundUrl, mediaUrl, mediaType, currency = 'INR' } = await req.json();
 
-    console.log('[Looteriya Gaming] Creating Razorpay order:', { name, amount, currency, hasVoice: !!voiceMessageUrl, hasHypersound: !!hypersoundUrl });
+    console.log('[Looteriya Gaming] Creating Razorpay order:', { name, amount, currency, hasVoice: !!voiceMessageUrl, hasHypersound: !!hypersoundUrl, hasMedia: !!mediaUrl });
 
     // Get minimums for currency
     const minimums = CURRENCY_MINIMUMS[currency] || CURRENCY_MINIMUMS['INR'];
@@ -95,7 +95,10 @@ Deno.serve(async (req) => {
     let donationType = 'text';
     let minAmount = minimums.minText;
 
-    if (hypersoundUrl) {
+    if (mediaUrl) {
+      donationType = 'media';
+      minAmount = minimums.minMedia;
+    } else if (hypersoundUrl) {
       donationType = 'hypersound';
       minAmount = minimums.minHypersound;
     } else if (voiceMessageUrl) {
@@ -177,6 +180,8 @@ Deno.serve(async (req) => {
         message: sanitizedMessage,
         voice_message_url: voiceMessageUrl || null,
         hypersound_url: hypersoundUrl || null,
+        media_url: mediaUrl || null,
+        media_type: mediaType || null,
         is_hyperemote: !!hypersoundUrl,
         payment_status: 'pending',
         moderation_status: 'pending',

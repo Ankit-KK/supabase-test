@@ -13,6 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import EnhancedVoiceRecorder from "@/components/EnhancedVoiceRecorder";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import HyperSoundSelector from "@/components/HyperSoundSelector";
+import MediaUploader from "@/components/MediaUploader";
 import { SUPPORTED_CURRENCIES, getCurrencyMinimums, getCurrencySymbol } from "@/constants/currencies";
 import looteriyaLogo from "@/assets/looteriya-logo.jpg";
 import looteriyaCardBg from "@/assets/looteriya-card-bg.jpg";
@@ -27,8 +28,10 @@ const LooteriyaGaming = () => {
   });
   const [selectedCurrency, setSelectedCurrency] = useState("INR");
   const [currencyOpen, setCurrencyOpen] = useState(false);
-  const [donationType, setDonationType] = useState<"text" | "voice" | "hypersound">("text");
+  const [donationType, setDonationType] = useState<"text" | "voice" | "hypersound" | "media">("text");
   const [selectedHypersound, setSelectedHypersound] = useState<string | null>(null);
+  const [mediaUrl, setMediaUrl] = useState<string | null>(null);
+  const [mediaType, setMediaType] = useState<string | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const navigate = useNavigate();
 
@@ -85,7 +88,9 @@ const LooteriyaGaming = () => {
         ? minimums.minVoice
         : donationType === "hypersound"
           ? minimums.minHypersound
-          : minimums.minText;
+          : donationType === "media"
+            ? minimums.minMedia
+            : minimums.minText;
     if (amount < minAmount) {
       toast.error(`Minimum amount for ${donationType} is ${currencySymbol}${minAmount}`);
       return;
@@ -98,6 +103,11 @@ const LooteriyaGaming = () => {
 
     if (donationType === "hypersound" && !selectedHypersound) {
       toast.error("Please select a sound");
+      return;
+    }
+
+    if (donationType === "media" && !mediaUrl) {
+      toast.error("Please upload a media file");
       return;
     }
 
@@ -166,6 +176,8 @@ const LooteriyaGaming = () => {
           message: donationType === "text" ? formData.message : null,
           voiceMessageUrl: voiceMessageUrl,
           hypersoundUrl: donationType === "hypersound" ? selectedHypersound : null,
+          mediaUrl: donationType === "media" ? mediaUrl : null,
+          mediaType: donationType === "media" ? mediaType : null,
           currency: selectedCurrency,
         },
       });
@@ -204,12 +216,16 @@ const LooteriyaGaming = () => {
     }
   };
 
-  const handleDonationTypeChange = (value: "text" | "voice" | "hypersound") => {
+  const handleDonationTypeChange = (value: "text" | "voice" | "hypersound" | "media") => {
     setDonationType(value);
     if (value === "hypersound") {
       setFormData((prev) => ({ ...prev, amount: String(minimums.minHypersound), message: "" }));
     } else if (value === "voice") {
       setFormData((prev) => ({ ...prev, amount: String(minimums.minVoice), message: "" }));
+    } else if (value === "media") {
+      setFormData((prev) => ({ ...prev, amount: String(minimums.minMedia), message: "" }));
+      setMediaUrl(null);
+      setMediaType(null);
     } else {
       setFormData((prev) => ({ ...prev, amount: String(minimums.minText), message: "" }));
     }
@@ -264,7 +280,7 @@ const LooteriyaGaming = () => {
 
             <div className="space-y-2">
               <label className="text-xs font-medium text-amber-500">Choose your donation type</label>
-              <div className="grid grid-cols-3 gap-1.5">
+              <div className="grid grid-cols-4 gap-1.5">
                 <button
                   type="button"
                   onClick={() => handleDonationTypeChange("text")}
@@ -276,7 +292,7 @@ const LooteriyaGaming = () => {
                 >
                   <div className="text-center">
                     <div className="text-sm mb-0.5">💬</div>
-                    <div className="font-medium text-[10px]">Text Message</div>
+                    <div className="font-medium text-[10px]">Text</div>
                     <div className="text-[9px] text-muted-foreground">
                       Min: {currencySymbol}
                       {minimums.minText}
@@ -294,7 +310,7 @@ const LooteriyaGaming = () => {
                 >
                   <div className="text-center">
                     <div className="text-sm mb-0.5">🎤</div>
-                    <div className="font-medium text-[10px]">Voice Message</div>
+                    <div className="font-medium text-[10px]">Voice</div>
                     <div className="text-[9px] text-muted-foreground">
                       Min: {currencySymbol}
                       {minimums.minVoice}
@@ -312,10 +328,28 @@ const LooteriyaGaming = () => {
                 >
                   <div className="text-center">
                     <div className="text-sm mb-0.5">🔊</div>
-                    <div className="font-medium text-[10px]">HyperSound</div>
+                    <div className="font-medium text-[10px]">Sound</div>
                     <div className="text-[9px] text-muted-foreground">
                       Min: {currencySymbol}
                       {minimums.minHypersound}
+                    </div>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDonationTypeChange("media")}
+                  className={`p-2 rounded-lg border-2 transition-all ${
+                    donationType === "media"
+                      ? "border-amber-500 bg-amber-500/10"
+                      : "border-amber-500/30 hover:border-amber-500/50"
+                  }`}
+                >
+                  <div className="text-center">
+                    <div className="text-sm mb-0.5">🖼️</div>
+                    <div className="font-medium text-[10px]">Media</div>
+                    <div className="text-[9px] text-muted-foreground">
+                      Min: {currencySymbol}
+                      {minimums.minMedia}
                     </div>
                   </div>
                 </button>
@@ -430,6 +464,25 @@ const LooteriyaGaming = () => {
               <div className="space-y-2">
                 <Label className="text-sm font-medium text-amber-500">Select a Sound</Label>
                 <HyperSoundSelector selectedSound={selectedHypersound} onSoundSelect={setSelectedHypersound} />
+              </div>
+            )}
+
+            {donationType === "media" && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-amber-500">Upload Media</Label>
+                <MediaUploader
+                  streamerSlug="looteriya_gaming"
+                  onMediaUploaded={(url, type) => {
+                    setMediaUrl(url);
+                    setMediaType(type);
+                  }}
+                  onMediaRemoved={() => {
+                    setMediaUrl(null);
+                    setMediaType(null);
+                  }}
+                  maxFileSizeMB={10}
+                  maxVideoDurationSeconds={15}
+                />
               </div>
             )}
 

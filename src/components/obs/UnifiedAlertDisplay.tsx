@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Music } from 'lucide-react';
+import { Music, Image as ImageIcon } from 'lucide-react';
 import { getCurrencySymbol } from '@/constants/currencies';
 
 interface Donation {
@@ -11,6 +11,8 @@ interface Donation {
   voice_message_url?: string;
   hypersound_url?: string;
   is_hyperemote?: boolean;
+  media_url?: string;
+  media_type?: string;
 }
 
 interface UnifiedAlertDisplayProps {
@@ -126,6 +128,9 @@ export const UnifiedAlertDisplay: React.FC<UnifiedAlertDisplayProps> = ({
   const currencySymbol = getCurrencySymbol(donation.currency || 'INR');
   const isVoiceMessage = !!donation.voice_message_url;
   const isHypersound = !!donation.hypersound_url;
+  const hasMedia = !!donation.media_url;
+  const isVideo = donation.media_type === 'video';
+  const isGif = donation.media_type === 'gif';
 
   return (
     <div className="fixed inset-0 flex items-end justify-center pb-[10%] pointer-events-none">
@@ -150,7 +155,36 @@ export const UnifiedAlertDisplay: React.FC<UnifiedAlertDisplayProps> = ({
                 Voice Message
               </span>
             )}
+            {hasMedia && !isHypersound && !isVoiceMessage && (
+              <span className="inline-flex items-center gap-1 ml-2">
+                <ImageIcon className="w-5 h-5" />
+                Media
+              </span>
+            )}
           </p>
+          
+          {/* Media Display */}
+          {hasMedia && (
+            <div className="my-4 flex justify-center">
+              {isVideo ? (
+                <video 
+                  src={donation.media_url} 
+                  autoPlay 
+                  loop 
+                  muted 
+                  playsInline
+                  className="max-w-[400px] max-h-[300px] rounded-lg object-contain"
+                />
+              ) : (
+                <img 
+                  src={donation.media_url} 
+                  alt="Donation media"
+                  className="max-w-[400px] max-h-[300px] rounded-lg object-contain"
+                />
+              )}
+            </div>
+          )}
+          
           {donation.message && (
             <p className="text-xl text-white/90">
               {displayedMessage}

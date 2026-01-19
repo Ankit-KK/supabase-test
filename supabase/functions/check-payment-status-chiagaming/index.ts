@@ -231,7 +231,8 @@ Deno.serve(async (req) => {
       let ttsAudioUrl = donation.tts_audio_url;
       const hasVoiceMessage = donation.voice_message_url && donation.voice_message_url.length > 0;
       const hasHypersound = donation.hypersound_url && donation.hypersound_url.length > 0;
-      const isTextDonation = !hasVoiceMessage && !hasHypersound;
+      const hasMedia = donation.media_url && donation.media_url.length > 0;
+      const isTextDonation = !hasVoiceMessage && !hasHypersound && !hasMedia;
       const ttsMinAmount = 70; // INR minimum for TTS
 
       // Generate TTS using the shared generate-donation-tts function
@@ -329,6 +330,8 @@ Deno.serve(async (req) => {
             voice_message_url: donation.voice_message_url,
             hypersound_url: donation.hypersound_url,
             tts_audio_url: ttsAudioUrl,
+            media_url: donation.media_url,
+            media_type: donation.media_type,
           };
 
           await pusher.trigger('chiaa_gaming-dashboard', 'new-donation', dashboardPayload);
@@ -347,6 +350,8 @@ Deno.serve(async (req) => {
               tts_audio_url: ttsAudioUrl,
               audio_scheduled_at: audioScheduledAt,
               created_at: donation.created_at,
+              media_url: donation.media_url,
+              media_type: donation.media_type,
             };
 
             await pusher.trigger('chiaa_gaming-audio', 'new-audio-message', audioPayload);

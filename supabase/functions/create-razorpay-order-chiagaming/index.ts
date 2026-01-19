@@ -40,13 +40,13 @@ const getClientIP = (req: Request): string => {
          'unknown';
 };
 
-const CURRENCY_MINIMUMS: Record<string, { text: number; voice: number; hypersound: number }> = {
-  'INR': { text: 40, voice: 150, hypersound: 30 },
-  'USD': { text: 1, voice: 3, hypersound: 1 },
-  'EUR': { text: 1, voice: 3, hypersound: 1 },
-  'GBP': { text: 1, voice: 3, hypersound: 1 },
-  'AED': { text: 4, voice: 12, hypersound: 3 },
-  'AUD': { text: 2, voice: 5, hypersound: 1.5 },
+const CURRENCY_MINIMUMS: Record<string, { text: number; voice: number; hypersound: number; media: number }> = {
+  'INR': { text: 40, voice: 150, hypersound: 30, media: 100 },
+  'USD': { text: 1, voice: 3, hypersound: 1, media: 2 },
+  'EUR': { text: 1, voice: 3, hypersound: 1, media: 2 },
+  'GBP': { text: 1, voice: 3, hypersound: 1, media: 2 },
+  'AED': { text: 4, voice: 12, hypersound: 3, media: 8 },
+  'AUD': { text: 2, voice: 5, hypersound: 1.5, media: 3 },
 };
 
 serve(async (req) => {
@@ -83,20 +83,23 @@ serve(async (req) => {
       );
     }
 
-    const { amount, currency = 'INR', name, message, voiceMessageUrl, hypersoundUrl } = await req.json();
+    const { amount, currency = 'INR', name, message, voiceMessageUrl, hypersoundUrl, mediaUrl, mediaType } = await req.json();
 
-    console.log('[ChiaGaming Order] Creating order:', { amount, currency, name });
+    console.log('[ChiaGaming Order] Creating order:', { amount, currency, name, hasMedia: !!mediaUrl });
 
     const mins = CURRENCY_MINIMUMS[currency] || CURRENCY_MINIMUMS['INR'];
 
     // Validate minimum amounts based on type
+    if (mediaUrl && amount < mins.media) {
+      throw new Error(`Minimum ${currency} ${mins.media} required for media uploads`);
+    }
     if (hypersoundUrl && amount < mins.hypersound) {
       throw new Error(`Minimum ${currency} ${mins.hypersound} required for HyperSounds`);
     }
     if (voiceMessageUrl && amount < mins.voice) {
       throw new Error(`Minimum ${currency} ${mins.voice} required for voice messages`);
     }
-    if (!hypersoundUrl && !voiceMessageUrl && amount < mins.text) {
+    if (!mediaUrl && !hypersoundUrl && !voiceMessageUrl && amount < mins.text) {
       throw new Error(`Minimum ${currency} ${mins.text} required for text messages`);
     }
 
@@ -175,6 +178,8 @@ serve(async (req) => {
         message: sanitizedMessage,
         voice_message_url: voiceMessageUrl || null,
         hypersound_url: hypersoundUrl || null,
+        media_url: mediaUrl || null,
+        media_type: mediaType || null,
         is_hyperemote: !!hypersoundUrl,
         order_id: internalOrderId,
         razorpay_order_id: razorpayOrder.id,
