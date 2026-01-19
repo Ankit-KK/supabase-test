@@ -121,11 +121,12 @@ serve(async (req) => {
 
     console.log('[ChiaGaming Order] Generated internal order ID:', internalOrderId);
 
-    // Get Razorpay credentials
-    const razorpayKeyId = Deno.env.get('RAZORPAY_KEY_ID');
-    const razorpayKeySecret = Deno.env.get('RAZORPAY_KEY_SECRET');
+    // Get Razorpay credentials - USE STANDARDIZED NAMES (lowercase with hyphen)
+    const razorpayKeyId = Deno.env.get('razorpay-keyid');
+    const razorpayKeySecret = Deno.env.get('razorpay-keysecret');
 
     if (!razorpayKeyId || !razorpayKeySecret) {
+      console.error('[ChiaGaming Order] Razorpay credentials not configured');
       throw new Error('Razorpay credentials not configured');
     }
 
