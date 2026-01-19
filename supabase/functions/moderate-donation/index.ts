@@ -400,9 +400,10 @@ serve(async (req) => {
       );
 
       // Also send to dashboard for real-time updates
+      // Use 'donation-approved' for leaderboard hook compatibility when approving
       await sendPusherEvent(
         [`${channelSlug}-dashboard`],
-        'donation-updated',
+        action === 'approve' ? 'donation-approved' : 'donation-updated',
         { ...alertData, action },
         pusherGroup
       );
