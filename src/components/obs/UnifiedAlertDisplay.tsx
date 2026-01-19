@@ -27,14 +27,17 @@ const hexToRgba = (hex: string, alpha: number): string => {
   return `rgba(${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}, ${alpha})`;
 };
 
-// Helper function to create darker variant of hex color
-const hexToDarker = (hex: string, factor: number = 0.7): string => {
+// Helper function to create dark moody background from brand color (matches GoalOverlay)
+const hexToDarkBg = (hex: string, alpha: number): string => {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  if (!result) return hex;
-  const r = Math.floor(parseInt(result[1], 16) * factor);
-  const g = Math.floor(parseInt(result[2], 16) * factor);
-  const b = Math.floor(parseInt(result[3], 16) * factor);
-  return `rgb(${r}, ${g}, ${b})`;
+  if (!result) return `rgba(30, 20, 40, ${alpha})`;
+  const r = parseInt(result[1], 16);
+  const g = parseInt(result[2], 16);
+  const b = parseInt(result[3], 16);
+  const darkR = Math.floor(r * 0.15 + 20);
+  const darkG = Math.floor(g * 0.1 + 10);
+  const darkB = Math.floor(b * 0.2 + 30);
+  return `rgba(${darkR}, ${darkG}, ${darkB}, ${alpha})`;
 };
 
 export const UnifiedAlertDisplay: React.FC<UnifiedAlertDisplayProps> = ({
@@ -124,17 +127,14 @@ export const UnifiedAlertDisplay: React.FC<UnifiedAlertDisplayProps> = ({
   const isVoiceMessage = !!donation.voice_message_url;
   const isHypersound = !!donation.hypersound_url;
 
-  // Dynamic styling based on brand color
-  const gradientBg = `linear-gradient(135deg, ${hexToRgba(brandColor, 0.95)} 0%, ${hexToRgba(hexToDarker(brandColor), 0.95)} 100%)`;
-  const boxShadow = `0 8px 32px ${hexToRgba(brandColor, 0.4)}`;
-
   return (
     <div className="fixed inset-0 flex items-end justify-center pb-[10%] pointer-events-none">
       <div
-        className="px-8 py-4 rounded-lg animate-fade-in"
+        className="px-8 py-5 rounded-[1.25rem] animate-fade-in"
         style={{
-          background: gradientBg,
-          boxShadow: boxShadow,
+          background: hexToDarkBg(brandColor, 0.95),
+          border: `1px solid ${hexToRgba(brandColor, 0.4)}`,
+          boxShadow: `0 18px 35px rgba(0, 0, 0, 0.6), 0 0 40px ${hexToRgba(brandColor, 0.3)}`,
           maxWidth: '80%',
           transform: `scale(${scale})`,
           transformOrigin: 'bottom center',
