@@ -244,8 +244,12 @@ Deno.serve(async (req) => {
       const ttsMinAmount = 70; // INR minimum for TTS
 
       // Generate TTS using the shared generate-donation-tts function
-      if (isTextDonation && donation.message && donation.amount >= ttsMinAmount && !ttsAudioUrl && newModerationStatus === 'auto_approved') {
-        console.log('[ChiaGaming] Generating TTS via shared function...');
+      // Text donations with message >= ₹70 get full TTS, Media donations get announcement TTS
+      const shouldGenerateTextTTS = isTextDonation && donation.message && donation.amount >= ttsMinAmount && !ttsAudioUrl && newModerationStatus === 'auto_approved';
+      const shouldGenerateMediaTTS = hasMedia && newModerationStatus === 'auto_approved' && !ttsAudioUrl;
+
+      if (shouldGenerateTextTTS || shouldGenerateMediaTTS) {
+        console.log(`[ChiaGaming] Generating ${shouldGenerateMediaTTS ? 'media announcement' : 'text'} TTS via shared function...`);
         
         try {
           const ttsResponse = await fetch(
@@ -262,8 +266,10 @@ Deno.serve(async (req) => {
                 donationTable: 'chiaa_gaming_donations',
                 username: donation.name,
                 amount: donation.amount,
-                message: donation.message,
-                currency: donation.currency || 'INR'
+                message: shouldGenerateTextTTS ? donation.message : null,
+                currency: donation.currency || 'INR',
+                isMediaAnnouncement: shouldGenerateMediaTTS,
+                mediaType: donation.media_type
               })
             }
           );

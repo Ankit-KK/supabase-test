@@ -171,6 +171,8 @@ serve(async (req) => {
       donationId,
       streamerId,
       isVoiceAnnouncement,
+      isMediaAnnouncement,
+      mediaType,
       currency = "INR",
     } = await req.json();
 
@@ -297,6 +299,17 @@ serve(async (req) => {
     if (isVoiceAnnouncement) {
       // Voice message announcement: just announce the sender
       donationText = `${username} sent a Voice message`;
+    } else if (isMediaAnnouncement) {
+      // Media donation announcement: describe what was uploaded
+      let mediaDescription = 'an image';
+      if (mediaType) {
+        if (mediaType.includes('gif')) {
+          mediaDescription = 'a GIF';
+        } else if (mediaType.startsWith('video')) {
+          mediaDescription = 'a video';
+        }
+      }
+      donationText = `${username} donated ${amount} ${spokenCurrency} and sent ${mediaDescription}`;
     } else if (ttsReadyMessage) {
       // Text message with emojis converted to text
       donationText = `${username} donated ${amount} ${spokenCurrency}. ${ttsReadyMessage}`;
