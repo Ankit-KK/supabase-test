@@ -884,3 +884,13 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Verification step text */
+.verification-step {
+  font-size: 0.9rem;
+  color: hsl(var(--muted-foreground));
+  margin-top: 16px;
+  min-height: 24px;
+  text-align: center;
+  animation: pulse 1.5s ease-in-out infinite;
+}
