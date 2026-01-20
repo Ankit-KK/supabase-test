@@ -24,6 +24,8 @@ interface DonationUpdateEvent {
   voice_message_url?: string;
   tts_audio_url?: string;
   hypersound_url?: string;
+  media_url?: string;
+  media_type?: string;
 }
 
 interface ModerationPanelProps {
@@ -104,7 +106,9 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
           voice_message_url: data.voice_message_url,
           currency: data.currency,
           tts_audio_url: data.tts_audio_url,
-          hypersound_url: data.hypersound_url
+          hypersound_url: data.hypersound_url,
+          media_url: data.media_url,
+          media_type: data.media_type
         };
         return [newDonation, ...prev.slice(0, 9)];
       });
@@ -125,7 +129,9 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
         payment_status: 'success',
         created_at: data.created_at,
         voice_message_url: data.voice_message_url,
-        currency: data.currency
+        currency: data.currency,
+        media_url: data.media_url,
+        media_type: data.media_type
       };
       setPendingDonations(prev => {
         const exists = prev.some(d => d.id === data.id);
