@@ -443,33 +443,68 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
               ) : (
                 <div className="space-y-3">
                   {recentDonations.map((donation) => (
-                    <div key={donation.id} className="flex justify-between items-center border-b pb-2">
-                      <div>
-                        <span className="font-medium">{donation.name}</span>
-                        <span className="text-muted-foreground ml-2">₹{donation.amount}</span>
-                        {!donation.message_visible && <Badge variant="secondary" className="ml-2">Hidden</Badge>}
-                        {donation.media_url && (
-                          <Badge variant="outline" className="ml-2">
-                            {donation.media_type === 'video' ? '🎬' : donation.media_type === 'gif' ? '✨' : '🖼️'}
+                    <div key={donation.id} className="border rounded-lg p-3">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <span className="font-medium">{donation.name}</span>
+                          <span className="text-muted-foreground ml-2">₹{donation.amount}</span>
+                          {!donation.message_visible && <Badge variant="secondary" className="ml-2">Hidden</Badge>}
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => moderateDonation(donation.id, donation.message_visible ? 'hide_message' : 'unhide_message')}
+                          >
+                            {donation.message_visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => moderateDonation(donation.id, 'replay')}
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      {/* Message */}
+                      {donation.message && (
+                        <p className="text-sm text-muted-foreground mb-2">{donation.message}</p>
+                      )}
+                      
+                      {/* Media Preview */}
+                      {donation.media_url && (
+                        <div className="mb-2">
+                          <Badge variant="outline" className="mb-2">
+                            {donation.media_type === 'video' ? '🎬 Video' : donation.media_type === 'gif' ? '✨ GIF' : '🖼️ Image'}
                           </Badge>
-                        )}
-                      </div>
-                      <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => moderateDonation(donation.id, donation.message_visible ? 'hide_message' : 'unhide_message')}
-                        >
-                          {donation.message_visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => moderateDonation(donation.id, 'replay')}
-                        >
-                          <RotateCcw className="h-4 w-4" />
-                        </Button>
-                      </div>
+                          <div className="max-w-[150px]">
+                            {donation.media_type === 'video' ? (
+                              <video 
+                                src={donation.media_url} 
+                                controls 
+                                muted 
+                                className="w-full h-auto rounded-md max-h-[100px] object-contain"
+                              />
+                            ) : (
+                              <img 
+                                src={donation.media_url} 
+                                alt="Donation media"
+                                className="w-full h-auto rounded-md max-h-[100px] object-contain"
+                              />
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Voice Message Audio Player */}
+                      {donation.voice_message_url && (
+                        <div className="mb-2">
+                          <Badge variant="outline" className="mb-1">🎤 Voice Message</Badge>
+                          <audio src={donation.voice_message_url} controls className="w-full h-8" />
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

@@ -768,6 +768,7 @@ serve(async (req) => {
 
                 console.log(`✅ Text notification sent to ${mod.mod_name}`);
 
+                // Send voice message if present
                 if (donation.voice_message_url) {
                   const voiceResponse = await fetch(
                     `https://api.telegram.org/bot${telegramBotToken}/sendVoice`,
@@ -787,6 +788,55 @@ serve(async (req) => {
                   } else {
                     const errorText = await voiceResponse.text();
                     console.error(`Failed to send voice to ${mod.mod_name}:`, errorText);
+                  }
+                }
+
+                // Send media (image/video/gif) if present
+                if (donation.media_url) {
+                  const isVideo = donation.media_type === 'video';
+                  
+                  if (isVideo) {
+                    // Send video
+                    const videoResponse = await fetch(
+                      `https://api.telegram.org/bot${telegramBotToken}/sendVideo`,
+                      {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          chat_id: mod.telegram_user_id,
+                          video: donation.media_url,
+                          caption: `🎬 Video from ${donation.name} - ₹${donation.amount}`
+                        })
+                      }
+                    );
+
+                    if (videoResponse.ok) {
+                      console.log(`✅ Video sent to ${mod.mod_name}`);
+                    } else {
+                      const errorText = await videoResponse.text();
+                      console.error(`Failed to send video to ${mod.mod_name}:`, errorText);
+                    }
+                  } else {
+                    // Send image or GIF
+                    const photoResponse = await fetch(
+                      `https://api.telegram.org/bot${telegramBotToken}/sendPhoto`,
+                      {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          chat_id: mod.telegram_user_id,
+                          photo: donation.media_url,
+                          caption: `${donation.media_type === 'gif' ? '✨ GIF' : '🖼️ Image'} from ${donation.name} - ₹${donation.amount}`
+                        })
+                      }
+                    );
+
+                    if (photoResponse.ok) {
+                      console.log(`✅ Photo/GIF sent to ${mod.mod_name}`);
+                    } else {
+                      const errorText = await photoResponse.text();
+                      console.error(`Failed to send photo to ${mod.mod_name}:`, errorText);
+                    }
                   }
                 }
 
