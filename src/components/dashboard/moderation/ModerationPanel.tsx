@@ -4,11 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-
+import { MediaPreview } from '@/components/ui/MediaPreview';
+import { VoiceMessagePlayer } from '@/components/ui/VoiceMessagePlayer';
+import { DonationTypeBadge } from '@/components/ui/DonationTypeBadge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Check, X, Eye, EyeOff, Ban, RotateCcw, Shield, Wifi, WifiOff, Image as ImageIcon, Video, FileImage } from 'lucide-react';
+import { Check, X, Eye, EyeOff, Ban, RotateCcw, Shield, Wifi, WifiOff, Image as ImageIcon } from 'lucide-react';
 
 interface DonationUpdateEvent {
   id: string;
@@ -360,36 +362,23 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
                         <p className="text-sm text-muted-foreground mb-3">{donation.message}</p>
                       )}
                       {donation.voice_message_url && (
-                        <Badge variant="secondary" className="mb-3">🎵 Voice Message</Badge>
+                        <DonationTypeBadge type="voice" className="mb-3" />
                       )}
                       {donation.hypersound_url && (
-                        <Badge variant="secondary" className="mb-3">🔊 HyperSound</Badge>
+                        <DonationTypeBadge type="hypersound" className="mb-3" />
                       )}
                       {donation.media_url && (
                         <div className="mb-3 space-y-2">
-                          <Badge variant="secondary" className="flex items-center gap-1 w-fit">
-                            {donation.media_type === 'video' ? <Video className="h-3 w-3" /> : 
-                             donation.media_type === 'gif' ? <FileImage className="h-3 w-3" /> : 
-                             <ImageIcon className="h-3 w-3" />}
-                            {donation.media_type === 'video' ? 'Video' : 
-                             donation.media_type === 'gif' ? 'GIF' : 'Image'}
-                          </Badge>
-                          <div className="w-full max-w-[200px]">
-                            {donation.media_type === 'video' ? (
-                              <video 
-                                src={donation.media_url} 
-                                controls 
-                                muted 
-                                className="w-full h-auto rounded-md max-h-[120px] object-contain"
-                              />
-                            ) : (
-                              <img 
-                                src={donation.media_url} 
-                                alt="Donation media"
-                                className="w-full h-auto rounded-md max-h-[120px] object-contain"
-                              />
-                            )}
-                          </div>
+                          <DonationTypeBadge 
+                            type="media" 
+                            mediaType={donation.media_type as 'image' | 'gif' | 'video'} 
+                          />
+                          <MediaPreview
+                            url={donation.media_url}
+                            type={donation.media_type as 'image' | 'gif' | 'video' || 'image'}
+                            maxWidth={200}
+                            maxHeight={120}
+                          />
                         </div>
                       )}
                       <div className="flex gap-2 flex-wrap">
@@ -475,35 +464,27 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
                       
                       {/* Media Preview */}
                       {donation.media_url && (
-                        <div className="mb-2">
-                          <Badge variant="outline" className="mb-2">
-                            {donation.media_type === 'video' ? '🎬 Video' : donation.media_type === 'gif' ? '✨ GIF' : '🖼️ Image'}
-                          </Badge>
-                          <div className="max-w-[150px]">
-                            {donation.media_type === 'video' ? (
-                              <video 
-                                src={donation.media_url} 
-                                controls 
-                                muted 
-                                className="w-full h-auto rounded-md max-h-[100px] object-contain"
-                              />
-                            ) : (
-                              <img 
-                                src={donation.media_url} 
-                                alt="Donation media"
-                                className="w-full h-auto rounded-md max-h-[100px] object-contain"
-                              />
-                            )}
-                          </div>
+                        <div className="mb-2 space-y-2">
+                          <DonationTypeBadge 
+                            type="media" 
+                            mediaType={donation.media_type as 'image' | 'gif' | 'video'} 
+                            variant="outline"
+                          />
+                          <MediaPreview
+                            url={donation.media_url}
+                            type={donation.media_type as 'image' | 'gif' | 'video' || 'image'}
+                            maxWidth={150}
+                            maxHeight={100}
+                          />
                         </div>
                       )}
                       
                       {/* Voice Message Audio Player */}
                       {donation.voice_message_url && (
-                        <div className="mb-2">
-                          <Badge variant="outline" className="mb-1">🎤 Voice Message</Badge>
-                          <audio src={donation.voice_message_url} controls className="w-full h-8" />
-                        </div>
+                        <VoiceMessagePlayer 
+                          url={donation.voice_message_url} 
+                          className="mb-2"
+                        />
                       )}
                     </div>
                   ))}
