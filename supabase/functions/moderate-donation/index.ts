@@ -312,8 +312,10 @@ serve(async (req) => {
       const pusherGroup = streamer.pusher_group || 1;
 
       // Determine donation type
-      let donationType: 'text' | 'voice' | 'hypersound' = 'text';
-      if (donation.voice_message_url) {
+      let donationType: 'text' | 'voice' | 'hypersound' | 'media' = 'text';
+      if (donation.media_url) {
+        donationType = 'media';
+      } else if (donation.voice_message_url) {
         donationType = 'voice';
       } else if (donation.hypersound_url) {
         donationType = 'hypersound';
@@ -333,18 +335,28 @@ serve(async (req) => {
         is_hyperemote: donation.is_hyperemote,
         selected_gif_id: donation.selected_gif_id,
         message_visible: donation.message_visible !== false,
-        created_at: donation.created_at
+        created_at: donation.created_at,
+        media_url: donation.media_url,
+        media_type: donation.media_type
       };
 
-      // Generate TTS if needed (text donation with message, amount >= 70, no existing TTS)
-      const shouldGenerateTTS = donationType === 'text' && 
+      // Generate TTS if needed
+      // Text donation: message with amount >= 70
+      // Media donation: always generate announcement
+      const shouldGenerateTextTTS = donationType === 'text' && 
         donation.message && 
         donation.amount >= 70 && 
         !donation.tts_audio_url &&
         streamer.tts_enabled !== false;
 
+      const shouldGenerateMediaTTS = donationType === 'media' && 
+        !donation.tts_audio_url &&
+        streamer.tts_enabled !== false;
+
+      const shouldGenerateTTS = shouldGenerateTextTTS || shouldGenerateMediaTTS;
+
       if (shouldGenerateTTS) {
-        console.log('Generating TTS for manually approved donation...');
+        console.log(`Generating TTS for manually approved ${donationType} donation...`);
         try {
           const ttsResponse = await fetch(
             `${Deno.env.get('SUPABASE_URL')}/functions/v1/generate-donation-tts`,
@@ -360,7 +372,10 @@ serve(async (req) => {
                 tableName: donationTable,
                 username: donation.name,
                 amount: donation.amount,
-                message: donation.message,
+                message: donationType === 'text' ? donation.message : null,
+                currency: donation.currency || 'INR',
+                isMediaAnnouncement: donationType === 'media',
+                mediaType: donation.media_type,
                 voiceId: streamer.tts_voice_id || 'en-IN-Standard-B'
               })
             }

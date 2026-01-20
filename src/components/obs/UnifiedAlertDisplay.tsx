@@ -163,9 +163,9 @@ export const UnifiedAlertDisplay: React.FC<UnifiedAlertDisplayProps> = ({
             )}
           </p>
           
-          {/* Media Display */}
+          {/* Media Display - Compact size */}
           {hasMedia && (
-            <div className="my-4 flex justify-center">
+            <div className="my-3 flex justify-center">
               {isVideo ? (
                 <video 
                   src={donation.media_url} 
@@ -173,13 +173,13 @@ export const UnifiedAlertDisplay: React.FC<UnifiedAlertDisplayProps> = ({
                   loop 
                   muted 
                   playsInline
-                  className="max-w-[400px] max-h-[300px] rounded-lg object-contain"
+                  className="max-w-[220px] max-h-[160px] rounded-lg object-contain"
                 />
               ) : (
                 <img 
                   src={donation.media_url} 
                   alt="Donation media"
-                  className="max-w-[400px] max-h-[300px] rounded-lg object-contain"
+                  className="max-w-[220px] max-h-[160px] rounded-lg object-contain"
                 />
               )}
             </div>
