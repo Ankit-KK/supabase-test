@@ -33,6 +33,7 @@ const Jhanvoo = () => {
   const [donationType, setDonationType] = useState<"text" | "voice" | "hypersound">("text");
   const [selectedSound, setSelectedSound] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -55,14 +56,32 @@ const Jhanvoo = () => {
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.async = true;
+    script.onload = () => {
+      setRazorpayLoaded(true);
+      console.log('Razorpay SDK loaded');
+    };
+    script.onerror = () => {
+      console.error('Failed to load Razorpay SDK');
+    };
     document.body.appendChild(script);
     return () => {
-      document.body.removeChild(script);
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
     };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!razorpayLoaded || !window.Razorpay) {
+      toast({
+        title: "Please Wait",
+        description: "Payment system is still loading",
+        variant: "destructive",
+      });
+      return;
+    }
 
     if (!name.trim() || !amount) {
       toast({

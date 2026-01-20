@@ -42,6 +42,7 @@ const NekoXenpai = () => {
   const [donationType, setDonationType] = useState<'text' | 'voice' | 'hypersound'>('text');
   const [selectedHypersound, setSelectedHypersound] = useState<string | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const navigate = useNavigate();
   
   const minimums = getCurrencyMinimums(selectedCurrency);
@@ -78,14 +79,22 @@ const NekoXenpai = () => {
   const voiceRecorder = useVoiceRecorder(getVoiceDuration(currentAmount));
 
   useEffect(() => {
-    // Load Razorpay script
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
     script.async = true;
+    script.onload = () => {
+      setRazorpayLoaded(true);
+      console.log('Razorpay SDK loaded');
+    };
+    script.onerror = () => {
+      console.error('Failed to load Razorpay SDK');
+    };
     document.body.appendChild(script);
 
     return () => {
-      document.body.removeChild(script);
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
     };
   }, []);
 
@@ -128,6 +137,11 @@ const NekoXenpai = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!razorpayLoaded || !window.Razorpay) {
+      toast.error("Payment system is still loading. Please wait.");
+      return;
+    }
 
     if (!validateDonation()) return;
 

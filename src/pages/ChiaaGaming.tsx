@@ -40,6 +40,7 @@ const ChiaGaming = () => {
   const [mediaType, setMediaType] = useState<"image" | "gif" | "video" | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const navigate = useNavigate();
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
 
   const minimums = getCurrencyMinimums(selectedCurrency);
   const currencySymbol = getCurrencySymbol(selectedCurrency);
@@ -64,10 +65,19 @@ const ChiaGaming = () => {
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.async = true;
+    script.onload = () => {
+      setRazorpayLoaded(true);
+      console.log('Razorpay SDK loaded');
+    };
+    script.onerror = () => {
+      console.error('Failed to load Razorpay SDK');
+    };
     document.body.appendChild(script);
 
     return () => {
-      document.body.removeChild(script);
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
     };
   }, []);
 
@@ -78,6 +88,11 @@ const ChiaGaming = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!razorpayLoaded || !window.Razorpay) {
+      toast.error("Payment system is still loading. Please wait.");
+      return;
+    }
 
     if (!formData.name || !formData.amount) {
       toast.error("Please fill in all required fields");
