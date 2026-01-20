@@ -40,6 +40,8 @@ interface DonationUpdateEvent {
   voice_message_url?: string;
   tts_audio_url?: string;
   hypersound_url?: string;
+  media_url?: string;
+  media_type?: string;
 }
 
 export const usePusherDashboard = ({
