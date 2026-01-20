@@ -14,6 +14,8 @@ interface Donation {
   created_at: string;
   streamer_id: string;
   audio_scheduled_at?: string; // Server timestamp for syncing with audio
+  media_url?: string | null;
+  media_type?: string | null;
 }
 
 interface PusherAlertsConfig {
