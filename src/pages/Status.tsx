@@ -38,21 +38,53 @@ const TetrisBlockL = () => (
   </div>
 );
 
+// Minimum display time for animation (ms)
+const MINIMUM_DISPLAY_TIME = 2500;
+
+// Progress steps shown during verification
+const VERIFICATION_STEPS = [
+  "Connecting to payment gateway...",
+  "Verifying transaction...",
+  "Confirming payment status...",
+  "Almost done..."
+];
+
 export default function Status() {
   const [searchParams] = useSearchParams();
   const [paymentStatus, setPaymentStatus] = useState<'loading' | 'success' | 'failure' | 'pending'>('loading');
   const [paymentDetails, setPaymentDetails] = useState<any>(null);
+  const [showResult, setShowResult] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
   
   const orderId = searchParams.get('order_id');
   const status = searchParams.get('status');
 
+  // Cycle through progress steps while loading
   useEffect(() => {
+    if (!showResult && paymentStatus === 'loading') {
+      const interval = setInterval(() => {
+        setCurrentStep(prev => (prev + 1) % VERIFICATION_STEPS.length);
+      }, 800);
+      
+      return () => clearInterval(interval);
+    }
+  }, [showResult, paymentStatus]);
+
+  useEffect(() => {
+    const startTime = Date.now();
+    
     const checkPaymentStatus = async () => {
       // Check for missing or invalid order_id (including string "undefined")
       if (!orderId || orderId === 'undefined' || orderId === 'null') {
         console.error('[Status] Invalid order_id:', orderId);
-        setPaymentStatus('failure');
-        setPaymentDetails({ error: 'Invalid or missing order ID. Please try again.' });
+        // Still wait minimum time before showing error
+        const elapsed = Date.now() - startTime;
+        const remaining = Math.max(0, MINIMUM_DISPLAY_TIME - elapsed);
+        setTimeout(() => {
+          setPaymentStatus('failure');
+          setPaymentDetails({ error: 'Invalid or missing order ID. Please try again.' });
+          setShowResult(true);
+        }, remaining);
         return;
       }
 
@@ -91,9 +123,14 @@ export default function Status() {
 
         if (error) {
           console.error('Error checking payment status:', error);
-          // Don't fall back to URL status - show failure with clear message
-          setPaymentStatus('failure');
-          setPaymentDetails({ error: 'Unable to verify payment status. Please refresh or contact support.' });
+          // Wait minimum time before showing error
+          const elapsed = Date.now() - startTime;
+          const remaining = Math.max(0, MINIMUM_DISPLAY_TIME - elapsed);
+          setTimeout(() => {
+            setPaymentStatus('failure');
+            setPaymentDetails({ error: 'Unable to verify payment status. Please refresh or contact support.' });
+            setShowResult(true);
+          }, remaining);
           return;
         }
 
@@ -130,8 +167,15 @@ export default function Status() {
           else backendStatus = 'pending';
         }
 
-        // ALWAYS trust backend status over URL parameter
-        setPaymentStatus(backendStatus as any);
+        // Calculate remaining time to meet minimum display
+        const elapsed = Date.now() - startTime;
+        const remaining = Math.max(0, MINIMUM_DISPLAY_TIME - elapsed);
+        
+        // Wait for minimum time before showing result
+        setTimeout(() => {
+          setPaymentStatus(backendStatus as any);
+          setShowResult(true);
+        }, remaining);
 
         // If payment is successful, upload voice message if it exists
         // Skip voice upload for Razorpay streamers (ThunderX, Ankit) - they upload BEFORE payment
@@ -175,7 +219,12 @@ export default function Status() {
         }
       } catch (err) {
         console.error('Payment status check failed:', err);
-        setPaymentStatus('failure');
+        const elapsed = Date.now() - startTime;
+        const remaining = Math.max(0, MINIMUM_DISPLAY_TIME - elapsed);
+        setTimeout(() => {
+          setPaymentStatus('failure');
+          setShowResult(true);
+        }, remaining);
       }
     };
 
@@ -242,7 +291,7 @@ export default function Status() {
   };
 
   const statusContent = getStatusContent(paymentStatus);
-  const showTetris = paymentStatus === 'loading' || paymentStatus === 'pending';
+  const showTetris = !showResult || paymentStatus === 'pending';
 
   return (
     <div className="status-screen-container">
@@ -254,22 +303,27 @@ export default function Status() {
 
         {/* Tetris Loader - visible during loading/pending */}
         {showTetris && (
-          <div className="tetris-loader">
-            <div className="tetris-grid-overlay" />
-            <div className="tetris-container">
-              <TetrisBlockI />
-              <TetrisBlockO />
-              <TetrisBlockZ />
-              <TetrisBlockL />
+          <>
+            <div className="tetris-loader">
+              <div className="tetris-grid-overlay" />
+              <div className="tetris-container">
+                <TetrisBlockI />
+                <TetrisBlockO />
+                <TetrisBlockZ />
+                <TetrisBlockL />
+              </div>
             </div>
-          </div>
+            {!showResult && (
+              <p className="verification-step">{VERIFICATION_STEPS[currentStep]}</p>
+            )}
+          </>
         )}
 
-        {/* Status Icon for success/failure */}
-        {paymentStatus === 'success' && (
+        {/* Status Icon for success/failure - only show after result is ready */}
+        {showResult && paymentStatus === 'success' && (
           <CheckCircle className="status-icon-success" />
         )}
-        {paymentStatus === 'failure' && (
+        {showResult && paymentStatus === 'failure' && (
           <XCircle className="status-icon-failure" />
         )}
 
