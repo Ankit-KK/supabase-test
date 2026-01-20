@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 
-interface CustomSwitchProps {
+interface UiverseSwitchProps {
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
   id?: string;
@@ -9,7 +9,7 @@ interface CustomSwitchProps {
   className?: string;
 }
 
-export const CustomSwitch: React.FC<CustomSwitchProps> = ({
+export const UiverseSwitch: React.FC<UiverseSwitchProps> = ({
   checked,
   onCheckedChange,
   id,
