@@ -33,6 +33,7 @@ const LooteriyaGaming = () => {
   const [mediaUrl, setMediaUrl] = useState<string | null>(null);
   const [mediaType, setMediaType] = useState<string | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const navigate = useNavigate();
 
   const minimums = getCurrencyMinimums(selectedCurrency);
@@ -57,10 +58,19 @@ const LooteriyaGaming = () => {
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.async = true;
+    script.onload = () => {
+      setRazorpayLoaded(true);
+      console.log('Razorpay SDK loaded');
+    };
+    script.onerror = () => {
+      console.error('Failed to load Razorpay SDK');
+    };
     document.body.appendChild(script);
 
     return () => {
-      document.body.removeChild(script);
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
     };
   }, []);
 
@@ -71,6 +81,11 @@ const LooteriyaGaming = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!razorpayLoaded || !window.Razorpay) {
+      toast.error("Payment system is still loading. Please wait.");
+      return;
+    }
 
     if (!formData.name || !formData.amount) {
       toast.error("Please fill in all required fields");
