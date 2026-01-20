@@ -3,7 +3,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
-import { DollarSign, MessageSquare, Mic, Heart } from 'lucide-react';
+import { DollarSign, MessageSquare, Mic, Heart, Image } from 'lucide-react';
+import { MediaPreview } from '@/components/ui/MediaPreview';
+import { DonationTypeBadge } from '@/components/ui/DonationTypeBadge';
 import { MiniAudioPlayer } from '@/components/MiniAudioPlayer';
 import { getCurrencySymbol } from '@/constants/currencies';
 
@@ -21,6 +23,8 @@ interface DonationCardProps {
     payment_status: string;
     created_at: string;
     message_visible?: boolean;
+    media_url?: string;
+    media_type?: string;
   };
   brandColor?: string;
 }
@@ -68,6 +72,9 @@ const DonationCard: React.FC<DonationCardProps> = ({
   const getDonationTypeIcon = () => {
     if (donation.is_hyperemote) {
       return <Heart className="h-4 w-4 text-pink-500" />;
+    }
+    if (donation.media_url) {
+      return <Image className="h-4 w-4 text-purple-500" />;
     }
     if (donation.voice_message_url) {
       return <Mic className="h-4 w-4 text-blue-500" />;
@@ -128,6 +135,24 @@ const DonationCard: React.FC<DonationCardProps> = ({
                   <span>Voice Message</span>
                 </div>
                 <MiniAudioPlayer audioUrl={donation.voice_message_url} />
+              </div>
+            )}
+
+            {/* Media Preview */}
+            {donation.media_url && (
+              <div className="mb-3 space-y-2">
+                <DonationTypeBadge 
+                  type="media" 
+                  mediaType={donation.media_type as 'image' | 'gif' | 'video'} 
+                  variant="outline"
+                  size="sm"
+                />
+                <MediaPreview
+                  url={donation.media_url}
+                  type={donation.media_type as 'image' | 'gif' | 'video' || 'image'}
+                  maxWidth={200}
+                  maxHeight={150}
+                />
               </div>
             )}
 
