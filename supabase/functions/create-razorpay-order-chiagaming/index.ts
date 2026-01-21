@@ -83,9 +83,24 @@ serve(async (req) => {
       );
     }
 
-    const { amount, currency = 'INR', name, message, voiceMessageUrl, hypersoundUrl, mediaUrl, mediaType } = await req.json();
+    const { 
+      amount, 
+      currency = 'INR', 
+      name, 
+      donorName,  // Wrapper field name fallback
+      message, 
+      voiceMessageUrl, 
+      hypersoundUrl,
+      selectedSound,  // Wrapper field name fallback
+      mediaUrl, 
+      mediaType 
+    } = await req.json();
 
-    console.log('[ChiaGaming Order] Creating order:', { amount, currency, name, hasMedia: !!mediaUrl });
+    // Use with fallbacks for wrapper compatibility
+    const finalName = name || donorName;
+    const finalHypersoundUrl = hypersoundUrl || selectedSound;
+
+    console.log('[ChiaGaming Order] Creating order:', { amount, currency, name: finalName, hasMedia: !!mediaUrl });
 
     const mins = CURRENCY_MINIMUMS[currency] || CURRENCY_MINIMUMS['INR'];
 
@@ -93,7 +108,7 @@ serve(async (req) => {
     if (mediaUrl && amount < mins.media) {
       throw new Error(`Minimum ${currency} ${mins.media} required for media uploads`);
     }
-    if (hypersoundUrl && amount < mins.hypersound) {
+    if (finalHypersoundUrl && amount < mins.hypersound) {
       throw new Error(`Minimum ${currency} ${mins.hypersound} required for HyperSounds`);
     }
     if (voiceMessageUrl && amount < mins.voice) {
