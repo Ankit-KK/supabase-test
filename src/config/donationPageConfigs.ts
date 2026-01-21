@@ -24,25 +24,15 @@ export interface DonationPageConfig {
 }
 
 export const DONATION_PAGE_CONFIGS: Record<string, DonationPageConfig> = {
-  // Note: Existing streamers (chiaa_gaming, looteriya_gaming, etc.) 
-  // continue to use their own dedicated page components.
-  // This config is for NEW streamers using DonationPageWrapper.
-  
-  // Example configuration for reference:
-  // new_streamer: {
-  //   streamerSlug: 'new_streamer',
-  //   streamerName: 'New Streamer',
-  //   brandColor: '#ec4899',
-  //   logoSrc: '/lovable-uploads/new-streamer-logo.png',
-  //   backgroundSrc: '/lovable-uploads/new-streamer-bg.jpg',
-  //   cardBackgroundSrc: '/lovable-uploads/new-streamer-card.jpg',
-  //   edgeFunctionName: 'create-razorpay-order-newstreamer',
-  //   themeDescription: 'Support New Streamer with your donation',
-  //   socialLinks: {
-  //     youtube: 'https://youtube.com/@newstreamer',
-  //     instagram: 'https://instagram.com/newstreamer',
-  //   },
-  // },
+  chiaa_gaming: {
+    streamerSlug: 'chiaa_gaming',
+    streamerName: 'Chiaa Gaming',
+    brandColor: '#ec4899',
+    logoSrc: '/lovable-uploads/b3a1671f-4c8f-4220-a29f-774bb7851737.png',
+    backgroundSrc: '/lovable-uploads/b3a1671f-4c8f-4220-a29f-774bb7851737.png',
+    edgeFunctionName: 'create-razorpay-order-chiagaming',
+    themeDescription: 'Support Chiaa Gaming with your donation',
+  },
 };
 
 export const getDonationPageConfig = (slug: string): DonationPageConfig | undefined => {
