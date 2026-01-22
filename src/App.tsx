@@ -95,7 +95,6 @@ import AnkitAudioPlayer from "./pages/audio-player/AnkitAudioPlayer";
 import AnkitMediaSourcePlayer from "./pages/audio-player/AnkitMediaSourcePlayer";
 import LooteriyaGamingMediaSourcePlayer from "./pages/audio-player/LooteriyaGamingMediaSourcePlayer";
 import ChiaGamingAudioPlayer from "./pages/audio-player/ChiaGamingAudioPlayer";
-import LooteriyaGamingAudioPlayer from "./pages/audio-player/LooteriyaGamingAudioPlayer";
 import SizzorsAudioPlayer from "./pages/audio-player/SizzorsAudioPlayer";
 import DamaskPlaysAudioPlayer from "./pages/audio-player/DamaskPlaysAudioPlayer";
 import NekoXenpaiAudioPlayer from "./pages/audio-player/NekoXenpaiAudioPlayer";
@@ -229,7 +228,6 @@ const App = () => (
               <Route path="/ankit/audio-player" element={<AnkitAudioPlayer />} />
               <Route path="/ankit/media-audio-player" element={<AnkitMediaSourcePlayer />} />
               <Route path="/chiaa_gaming/audio-player" element={<ChiaGamingAudioPlayer />} />
-              <Route path="/looteriya_gaming/audio-player" element={<LooteriyaGamingAudioPlayer />} />
               <Route path="/looteriya_gaming/media-audio-player" element={<LooteriyaGamingMediaSourcePlayer />} />
               <Route path="/sizzors/audio-player" element={<SizzorsAudioPlayer />} />
               <Route path="/damask_plays/audio-player" element={<DamaskPlaysAudioPlayer />} />
