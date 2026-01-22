@@ -340,6 +340,9 @@ serve(async (req) => {
         media_type: donation.media_type
       };
 
+      // Silent audio URL for text donations under ₹70 (triggers visual alert without TTS)
+      const SILENT_AUDIO_URL = 'https://pub-fff13c27bb0d4a1e807dfc596462b7d5.r2.dev/silent.m4a';
+
       // Generate TTS if needed
       // Text donation: message with amount >= 70
       // Media donation: always generate announcement
@@ -352,6 +355,11 @@ serve(async (req) => {
       const shouldGenerateMediaTTS = donationType === 'media' && 
         !donation.tts_audio_url &&
         streamer.tts_enabled !== false;
+
+      // Text donations < ₹70 get silent audio (triggers visual alert without TTS cost)
+      const shouldUseSilentAudio = donationType === 'text' && 
+        donation.amount < 70 && 
+        !donation.tts_audio_url;
 
       const shouldGenerateTTS = shouldGenerateTextTTS || shouldGenerateMediaTTS;
 
@@ -393,6 +401,16 @@ serve(async (req) => {
         } catch (ttsError) {
           console.error('Error calling TTS function:', ttsError);
         }
+      } else if (shouldUseSilentAudio) {
+        // Use silent audio for text donations under ₹70 - triggers visual alert without TTS
+        alertData.tts_audio_url = SILENT_AUDIO_URL;
+        console.log('Using silent audio for donation under ₹70 threshold');
+        
+        // Update database with silent audio URL
+        await supabaseAdmin
+          .from(donationTable)
+          .update({ tts_audio_url: SILENT_AUDIO_URL })
+          .eq('id', donationId);
       }
 
       // Send Pusher event to OBS alerts channel (for new-donation tracking only)

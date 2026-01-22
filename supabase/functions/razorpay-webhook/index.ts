@@ -522,11 +522,19 @@ serve(async (req) => {
         donationType = 'media';
       }
       
+      // Silent audio URL for text donations under ₹70 (triggers visual alert without TTS)
+      const SILENT_AUDIO_URL = 'https://pub-fff13c27bb0d4a1e807dfc596462b7d5.r2.dev/silent.m4a';
+      
       // TTS generation for text donations with significant amount OR media donations (only for auto-approved)
       const amountInINR = convertToINR(Number(donation.amount), paymentCurrency);
       const shouldGenerateTTS = shouldAutoApprove && 
         ((donationType === 'text' && donation.message && amountInINR >= 70) ||
          donationType === 'media');
+      // Text donations < ₹70 get silent audio (triggers visual alert without TTS cost)
+      const shouldUseSilentAudio = shouldAutoApprove && 
+        donationType === 'text' && 
+        donation.message && 
+        amountInINR < 70;
 
       if (shouldGenerateTTS) {
         console.log('Generating TTS for donation...')
@@ -574,6 +582,16 @@ serve(async (req) => {
         } catch (ttsError) {
           console.error('TTS generation error:', ttsError)
         }
+      } else if (shouldUseSilentAudio) {
+        // Use silent audio for text donations under ₹70 - triggers visual alert without TTS
+        donation.tts_audio_url = SILENT_AUDIO_URL;
+        console.log('Using silent audio for donation under ₹70 threshold');
+        
+        // Update database with silent audio URL
+        await supabase
+          .from(tableName)
+          .update({ tts_audio_url: SILENT_AUDIO_URL })
+          .eq('id', donation.id);
       }
 
       // Prepare donation data for events
