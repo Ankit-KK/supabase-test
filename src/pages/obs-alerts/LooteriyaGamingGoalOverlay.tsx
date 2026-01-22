@@ -1,7 +1,11 @@
 import { GoalOverlayWrapper } from '@/components/obs/GoalOverlayWrapper';
 
 const LooteriyaGamingGoalOverlay = () => {
-  return <GoalOverlayWrapper streamerSlug="looteriya_gaming" />;
+  return (
+    <div className="w-screen h-screen bg-transparent overflow-hidden flex items-center justify-center">
+      <GoalOverlayWrapper streamerSlug="looteriya_gaming" />
+    </div>
+  );
 };
 
 export default LooteriyaGamingGoalOverlay;
