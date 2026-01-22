@@ -189,6 +189,22 @@ Deno.serve(async (req) => {
         .eq('streamer_slug', 'looteriya_gaming')
         .single();
 
+      // Determine donation type FIRST
+      const hasVoiceMessage = donation.voice_message_url && donation.voice_message_url.length > 0;
+      const hasHypersound = donation.hypersound_url && donation.hypersound_url.length > 0;
+      const hasMedia = donation.media_url && donation.media_url.length > 0;
+      const isTextDonation = !hasVoiceMessage && !hasHypersound && !hasMedia;
+
+      // Determine moderation status
+      const moderationMode = streamer?.moderation_mode || 'auto';
+      const hasHypersoundContent = hasHypersound || donation.is_hyperemote;
+      const mediaRequiresModeration = hasMedia && streamer?.media_moderation_enabled;
+      const shouldAutoApprove = hasHypersoundContent || 
+        (moderationMode !== 'manual' && !mediaRequiresModeration);
+      const moderationStatus = shouldAutoApprove ? 'auto_approved' : 'pending';
+
+      console.log(`[Looteriya Gaming] Moderation: mode=${moderationMode}, shouldAutoApprove=${shouldAutoApprove}`);
+
       // Calculate audio_scheduled_at (60 seconds from now for fraud protection)
       const audioScheduledAt = new Date(Date.now() + 60 * 1000).toISOString();
 
@@ -197,17 +213,14 @@ Deno.serve(async (req) => {
 
       // Determine if we need to generate TTS
       let ttsAudioUrl = donation.tts_audio_url;
-      const hasVoiceMessage = donation.voice_message_url && donation.voice_message_url.length > 0;
-      const hasHypersound = donation.hypersound_url && donation.hypersound_url.length > 0;
-      const hasMedia = donation.media_url && donation.media_url.length > 0;
-      const isTextDonation = !hasVoiceMessage && !hasHypersound && !hasMedia;
       const ttsMinAmount = 70; // INR minimum for spoken TTS
 
       // Text donations >= ₹70 get full TTS, Media donations get announcement TTS
       const shouldGenerateTextTTS = isTextDonation && donation.message && donation.amount >= ttsMinAmount && !ttsAudioUrl && shouldAutoApprove;
       const shouldGenerateMediaTTS = hasMedia && shouldAutoApprove && !ttsAudioUrl;
-      // Text donations < ₹70 get silent audio (triggers visual alert without TTS cost)
-      const shouldUseSilentAudio = isTextDonation && donation.amount < ttsMinAmount && shouldAutoApprove && !ttsAudioUrl;
+      // Text donations < ₹70 OR without message get silent audio (triggers visual alert without TTS cost)
+      const shouldUseSilentAudio = isTextDonation && !ttsAudioUrl && shouldAutoApprove && 
+        (donation.amount < ttsMinAmount || !donation.message);
 
       if (shouldGenerateTextTTS || shouldGenerateMediaTTS) {
         console.log(`[Looteriya Gaming] Generating ${shouldGenerateMediaTTS ? 'media announcement' : 'text'} TTS via shared function...`);

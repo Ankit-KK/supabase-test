@@ -356,10 +356,10 @@ serve(async (req) => {
         !donation.tts_audio_url &&
         streamer.tts_enabled !== false;
 
-      // Text donations < ₹70 get silent audio (triggers visual alert without TTS cost)
+      // Text donations < ₹70 OR without message get silent audio (triggers visual alert without TTS cost)
       const shouldUseSilentAudio = donationType === 'text' && 
-        donation.amount < 70 && 
-        !donation.tts_audio_url;
+        !donation.tts_audio_url &&
+        (donation.amount < 70 || !donation.message);
 
       const shouldGenerateTTS = shouldGenerateTextTTS || shouldGenerateMediaTTS;
 

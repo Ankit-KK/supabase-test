@@ -220,6 +220,12 @@ Deno.serve(async (req) => {
         .eq('streamer_slug', 'chiaa_gaming')
         .single();
 
+      // Determine donation type FIRST (before using in moderation checks)
+      const hasVoiceMessage = donation.voice_message_url && donation.voice_message_url.length > 0;
+      const hasHypersound = donation.hypersound_url && donation.hypersound_url.length > 0;
+      const hasMedia = donation.media_url && donation.media_url.length > 0;
+      const isTextDonation = !hasVoiceMessage && !hasHypersound && !hasMedia;
+
       // Determine moderation status based on streamer settings
       const moderationMode = streamer?.moderation_mode || 'auto';
       const hasHypersoundContent = hasHypersound || donation.is_hyperemote;
@@ -240,18 +246,15 @@ Deno.serve(async (req) => {
 
       // Determine if we need to generate TTS
       let ttsAudioUrl = donation.tts_audio_url;
-      const hasVoiceMessage = donation.voice_message_url && donation.voice_message_url.length > 0;
-      const hasHypersound = donation.hypersound_url && donation.hypersound_url.length > 0;
-      const hasMedia = donation.media_url && donation.media_url.length > 0;
-      const isTextDonation = !hasVoiceMessage && !hasHypersound && !hasMedia;
       const ttsMinAmount = 70; // INR minimum for spoken TTS
 
       // Generate TTS using the shared generate-donation-tts function
       // Text donations with message >= ₹70 get full TTS, Media donations get announcement TTS
       const shouldGenerateTextTTS = isTextDonation && donation.message && donation.amount >= ttsMinAmount && !ttsAudioUrl && newModerationStatus === 'auto_approved';
       const shouldGenerateMediaTTS = hasMedia && newModerationStatus === 'auto_approved' && !ttsAudioUrl;
-      // Text donations < ₹70 get silent audio (triggers visual alert without TTS cost)
-      const shouldUseSilentAudio = isTextDonation && donation.amount < ttsMinAmount && newModerationStatus === 'auto_approved' && !ttsAudioUrl;
+      // Text donations < ₹70 OR without message get silent audio (triggers visual alert without TTS cost)
+      const shouldUseSilentAudio = isTextDonation && !ttsAudioUrl && newModerationStatus === 'auto_approved' && 
+        (donation.amount < ttsMinAmount || !donation.message);
 
       if (shouldGenerateTextTTS || shouldGenerateMediaTTS) {
         console.log(`[ChiaGaming] Generating ${shouldGenerateMediaTTS ? 'media announcement' : 'text'} TTS via shared function...`);
