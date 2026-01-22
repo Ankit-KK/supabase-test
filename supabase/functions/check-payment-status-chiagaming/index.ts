@@ -242,7 +242,7 @@ Deno.serve(async (req) => {
       const audioScheduledAt = new Date(Date.now() + 60 * 1000).toISOString();
 
       // Silent audio URL for text donations under ₹70 (triggers visual alert without TTS)
-      const SILENT_AUDIO_URL = 'https://pub-fff13c27bb0d4a1e807dfc596462b7d5.r2.dev/silent.m4a';
+      const SILENT_AUDIO_URL = Deno.env.get('SILENT_AUDIO_URL') || 'https://pub-fff13c27bb0d4a1e807dfc596462b7d5.r2.dev/silent.mp3';
 
       // Determine if we need to generate TTS
       let ttsAudioUrl = donation.tts_audio_url;

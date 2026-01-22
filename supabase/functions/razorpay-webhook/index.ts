@@ -523,7 +523,7 @@ serve(async (req) => {
       }
       
       // Silent audio URL for text donations under ₹70 (triggers visual alert without TTS)
-      const SILENT_AUDIO_URL = 'https://pub-fff13c27bb0d4a1e807dfc596462b7d5.r2.dev/silent.m4a';
+      const SILENT_AUDIO_URL = Deno.env.get('SILENT_AUDIO_URL') || 'https://pub-fff13c27bb0d4a1e807dfc596462b7d5.r2.dev/silent.mp3';
       
       // TTS generation for text donations with significant amount OR media donations (only for auto-approved)
       const amountInINR = convertToINR(Number(donation.amount), paymentCurrency);
