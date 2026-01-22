@@ -530,11 +530,10 @@ serve(async (req) => {
       const shouldGenerateTTS = shouldAutoApprove && 
         ((donationType === 'text' && donation.message && amountInINR >= 70) ||
          donationType === 'media');
-      // Text donations < ₹70 get silent audio (triggers visual alert without TTS cost)
+      // Text donations < ₹70 OR without message get silent audio (triggers visual alert without TTS cost)
       const shouldUseSilentAudio = shouldAutoApprove && 
         donationType === 'text' && 
-        donation.message && 
-        amountInINR < 70;
+        (amountInINR < 70 || !donation.message);
 
       if (shouldGenerateTTS) {
         console.log('Generating TTS for donation...')
