@@ -32,7 +32,7 @@ export const GoalOverlayWrapper: React.FC<GoalOverlayWrapperProps> = ({ streamer
   useEffect(() => {
     const fetchPusherConfig = async () => {
       const { data, error } = await supabase.functions.invoke('get-pusher-config', {
-        body: { streamerSlug }
+        body: { streamer_slug: streamerSlug }
       });
       if (!error && data) {
         setPusherConfig(data);
