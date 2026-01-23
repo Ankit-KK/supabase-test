@@ -24,6 +24,15 @@ export interface DonationPageConfig {
 }
 
 export const DONATION_PAGE_CONFIGS: Record<string, DonationPageConfig> = {
+  ankit: {
+    streamerSlug: 'ankit',
+    streamerName: 'Ankit',
+    brandColor: '#3b82f6',
+    logoSrc: '/lovable-uploads/ankit-logo.png',
+    backgroundSrc: '/lovable-uploads/ankit-background.mp4',
+    edgeFunctionName: 'create-razorpay-order-ankit',
+    themeDescription: 'Support Ankit with your donation',
+  },
   chiaa_gaming: {
     streamerSlug: 'chiaa_gaming',
     streamerName: 'Chiaa Gaming',
