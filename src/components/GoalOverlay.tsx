@@ -82,11 +82,10 @@ const GoalOverlay: React.FC<GoalOverlayProps> = ({
             </span>
           </div>
 
-          <div className="text-3xl font-semibold ml-auto flex items-center gap-1">
-            <span>{formatAmount(currentAmount)}</span>
-            <span className="opacity-60">/</span>
-            <span className="opacity-60">{formatAmount(targetAmount)}</span>
-          </div>
+          {/* Amount Text */}
+          <span className="text-3xl font-semibold opacity-95 ml-auto">
+            {formatAmount(currentAmount)} / {formatAmount(targetAmount)}
+          </span>
         </div>
 
         {/* Divider */}
@@ -94,7 +93,7 @@ const GoalOverlay: React.FC<GoalOverlayProps> = ({
 
         {/* Progress Bar Track */}
         <div
-          className="relative w-full h-[18px] rounded-full overflow-hidden"
+          className="relative w-full h-[9px] rounded-full overflow-hidden"
           style={{
             background: hexToDarkBg(brandColor, 1),
             border: `1px solid ${hexToRgba(brandColor, 0.6)}`,
