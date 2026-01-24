@@ -17,8 +17,8 @@ import { cn } from '@/lib/utils';
 import { SUPPORTED_CURRENCIES, getCurrencySymbol, getCurrencyMinimums } from '@/constants/currencies';
 import DonationPageFooter from "@/components/DonationPageFooter";
 
-const thunderxBanner = '/lovable-uploads/thunderx-banner.jpg';
-const thunderxLogo = '/lovable-uploads/thunderx-logo.jpg';
+const thunderxBanner = '/assets/streamers/thunderx-banner.jpg';
+const thunderxLogo = '/assets/streamers/thunderx-logo.jpg';
 
 const ThunderX = () => {
   const [formData, setFormData] = useState({

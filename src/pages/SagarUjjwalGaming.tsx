@@ -217,7 +217,7 @@ const SagarUjjwalGaming = () => {
     <div 
       className="min-h-screen flex items-center justify-center p-4 relative"
       style={{
-        backgroundImage: `url('/lovable-uploads/sagarujjwal-banner.jpg')`,
+        backgroundImage: `url('/assets/streamers/sagarujjwal-banner.jpg')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
@@ -227,7 +227,7 @@ const SagarUjjwalGaming = () => {
       <div 
         className="w-full max-w-sm backdrop-blur-sm rounded-2xl shadow-2xl p-4 sm:p-6 border border-red-500/20 relative z-10"
         style={{
-          backgroundImage: `url('/lovable-uploads/sagarujjwal-logo.jpg')`,
+          backgroundImage: `url('/assets/streamers/sagarujjwal-logo.jpg')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'

@@ -35,8 +35,8 @@ import {
 import { cn } from '@/lib/utils';
 import DonationPageFooter from "@/components/DonationPageFooter";
 
-const vipbhaiBanner = '/lovable-uploads/vipbhai-banner.jpg';
-const vipbhaiLogo = '/lovable-uploads/vipbhai-logo.jpg';
+const vipbhaiBanner = '/assets/streamers/vipbhai-banner.jpg';
+const vipbhaiLogo = '/assets/streamers/vipbhai-logo.jpg';
 
 const VIPBhai = () => {
   const [formData, setFormData] = useState({
