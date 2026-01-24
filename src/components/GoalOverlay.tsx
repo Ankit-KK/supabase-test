@@ -82,11 +82,11 @@ const GoalOverlay: React.FC<GoalOverlayProps> = ({
             </span>
           </div>
 
-          {/* Amount Text */}
-          <span className="text-3xl font-semibold opacity-95 ml-auto">
-            {formatAmount(currentAmount)} / {formatAmount(targetAmount)}
-          </span>
-        </div>
+          <div className="text-3xl font-semibold ml-auto flex items-center gap-1">
+  <span>{formatAmount(currentAmount)}</span>
+  <span className="opacity-60">/</span>
+  <span className="opacity-60">{formatAmount(targetAmount)}</span>
+</div>
 
         {/* Divider */}
         <div className="w-full h-px mb-3" style={{ background: hexToRgba(brandColor, 0.35) }} />
