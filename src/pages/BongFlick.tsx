@@ -17,8 +17,8 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { cn } from '@/lib/utils';
 import DonationPageFooter from "@/components/DonationPageFooter";
 
-const bongflickBanner = '/lovable-uploads/bongflick-banner.jpg';
-const bongflickLogo = '/lovable-uploads/bongflick-logo.jpg';
+const bongflickBanner = '/assets/streamers/bongflick-banner.jpg';
+const bongflickLogo = '/assets/streamers/bongflick-logo.jpg';
 
 const BongFlick = () => {
   const [formData, setFormData] = useState({

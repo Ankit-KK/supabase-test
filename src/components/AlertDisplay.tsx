@@ -31,16 +31,16 @@ const HYPEREMOTE_ICONS = {
 
 // Hyperemote emotes for rain effect
 const hyperemotes = [
-  { id: 'happy', src: '/lovable-uploads/2f07c754-6bf7-40e6-8a98-f181f991614a.png', name: 'Happy' },
-  { id: 'peaceful', src: '/lovable-uploads/292d1bf8-f7af-4bf3-8540-9e79fda428c2.png', name: 'Peaceful' },
-  { id: 'disappointed', src: '/lovable-uploads/a62460bb-2981-4570-8bce-51472286d43f.png', name: 'Disappointed' },
-  { id: 'upset', src: '/lovable-uploads/2016b23f-1791-4159-b604-4ec5ecbf505e.png', name: 'Upset' },
-  { id: 'wink', src: '/lovable-uploads/2e0cb8ea-caa0-4039-a256-b14849269d25.png', name: 'Wink' },
-  { id: 'surprised', src: '/lovable-uploads/6c1ab8e8-8d6f-48bf-9111-059acae74a34.png', name: 'Surprised' },
-  { id: 'excited', src: '/lovable-uploads/5459b5bb-a628-4c02-a9ca-4b374fe1fe38.png', name: 'Excited' },
-  { id: 'love', src: '/lovable-uploads/33359350-7d33-4384-81d9-99fcf0220f60.png', name: 'Love' },
-  { id: 'sleepy', src: '/lovable-uploads/cd661d15-1109-41d5-9908-70531edc117c.png', name: 'Sleepy' },
-  { id: 'crying', src: '/lovable-uploads/2d18e120-71ab-48bf-8ead-36620a7546a8.png', name: 'Crying' },
+  { id: 'happy', src: '/assets/emotes/happy.png', name: 'Happy' },
+  { id: 'peaceful', src: '/assets/emotes/peaceful.png', name: 'Peaceful' },
+  { id: 'disappointed', src: '/assets/emotes/disappointed.png', name: 'Disappointed' },
+  { id: 'upset', src: '/assets/emotes/upset.png', name: 'Upset' },
+  { id: 'wink', src: '/assets/emotes/wink.png', name: 'Wink' },
+  { id: 'surprised', src: '/assets/emotes/surprised.png', name: 'Surprised' },
+  { id: 'excited', src: '/assets/emotes/excited.png', name: 'Excited' },
+  { id: 'love', src: '/assets/emotes/love.png', name: 'Love' },
+  { id: 'sleepy', src: '/assets/emotes/sleepy.png', name: 'Sleepy' },
+  { id: 'crying', src: '/assets/emotes/crying.png', name: 'Crying' },
 ];
 
 export const AlertDisplay: React.FC<AlertDisplayProps> = ({

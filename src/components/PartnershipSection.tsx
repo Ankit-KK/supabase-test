@@ -25,7 +25,7 @@ const PartnershipSection = () => {
         {/* Partnership Image */}
         <div className="flex justify-center mb-8">
         <div className="relative">
-            <img alt="Vritra Esports x HyperChat Partnership" className="w-full max-w-lg md:max-w-xl lg:max-w-2xl rounded-xl" src="/lovable-uploads/f58b22f3-9b00-4c05-b212-3d4e82299080.png" />
+            <img alt="Vritra Esports x HyperChat Partnership" className="w-full max-w-lg md:max-w-xl lg:max-w-2xl rounded-xl" src="/assets/branding/vritra-partnership.png" />
           </div>
         </div>
 

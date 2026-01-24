@@ -241,12 +241,12 @@ const ABdevil = () => {
   return (
     <div
       className="min-h-screen flex items-center justify-center p-4 bg-cover bg-center bg-no-repeat"
-      style={{ backgroundImage: "url('/lovable-uploads/abdevil-banner.jpg')" }}
+      style={{ backgroundImage: "url('/assets/streamers/abdevil-banner.jpg')" }}
     >
       <div className="w-full max-w-sm rounded-2xl shadow-2xl border border-orange-500/30 relative overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: "url('/lovable-uploads/abdevil-logo.jpg')" }}
+          style={{ backgroundImage: "url('/assets/streamers/abdevil-logo.jpg')" }}
         />
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
         <div className="relative z-10 p-4 sm:p-6">

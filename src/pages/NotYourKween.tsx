@@ -17,8 +17,8 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { cn } from '@/lib/utils';
 import DonationPageFooter from "@/components/DonationPageFooter";
 
-const notyourkweenBanner = '/lovable-uploads/notyourkween-banner.jpg';
-const notyourkweenLogo = '/lovable-uploads/notyourkween-logo.jpg';
+const notyourkweenBanner = '/assets/streamers/notyourkween-banner.jpg';
+const notyourkweenLogo = '/assets/streamers/notyourkween-logo.jpg';
 
 const NotYourKween = () => {
   const [formData, setFormData] = useState({

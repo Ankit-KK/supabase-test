@@ -214,7 +214,7 @@ const MrIqmaster = () => {
     <div 
       className="min-h-screen flex items-center justify-center p-4 relative"
       style={{
-        backgroundImage: `url('/lovable-uploads/mriqmaster-banner.jpg')`,
+        backgroundImage: `url('/assets/streamers/mriqmaster-banner.jpg')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
@@ -224,7 +224,7 @@ const MrIqmaster = () => {
       <Card 
         className="w-full max-w-[21rem] backdrop-blur-xl border-2 border-cyan-400/30 shadow-2xl relative z-10 overflow-hidden"
         style={{
-          backgroundImage: `url('/lovable-uploads/mriqmaster-logo.jpg')`,
+          backgroundImage: `url('/assets/streamers/mriqmaster-logo.jpg')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'

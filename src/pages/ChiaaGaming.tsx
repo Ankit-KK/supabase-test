@@ -246,14 +246,14 @@ const ChiaGaming = () => {
   return (
     <div
       className="min-h-screen flex items-center justify-center p-4 relative bg-cover bg-center bg-no-repeat"
-      style={{ backgroundImage: "url('/lovable-uploads/b3a1671f-4c8f-4220-a29f-774bb7851737.png')" }}
+      style={{ backgroundImage: "url('/assets/streamers/chiaa-gaming-logo.png')" }}
     >
       <div className="absolute inset-0 bg-black/20"></div>
 
       <Card
         className="w-full max-w-sm mx-auto bg-card/95 backdrop-blur-sm border-pink-500/20 shadow-2xl relative overflow-hidden"
         style={{
-          backgroundImage: "url('/lovable-uploads/b3a1671f-4c8f-4220-a29f-774bb7851737.png')",
+          backgroundImage: "url('/assets/streamers/chiaa-gaming-logo.png')",
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
@@ -264,7 +264,7 @@ const ChiaGaming = () => {
         <CardHeader className="text-center relative z-10 pb-2">
           <div className="flex justify-center mb-2">
             <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-4 border-pink-500 shadow-xl">
-              <img src="/lovable-uploads/b3a1671f-4c8f-4220-a29f-774bb7851737.png" alt="Chiaa Gaming Logo" className="w-full h-full object-cover" />
+              <img src="/assets/streamers/chiaa-gaming-logo.png" alt="Chiaa Gaming Logo" className="w-full h-full object-cover" />
             </div>
           </div>
           <CardTitle className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-pink-500 to-pink-600 bg-clip-text text-transparent">

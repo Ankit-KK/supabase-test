@@ -440,7 +440,7 @@ const Ankit = () => {
     {/* Background - Video on desktop, gradient on mobile */}
     {!isMobile ? (
       <>
-        <VideoBackground videoSrc="/lovable-uploads/ankit-background.mp4" />
+        <VideoBackground videoSrc="/assets/streamers/ankit-background.mp4" />
         <div className="absolute inset-0 bg-black/40 pointer-events-none"></div>
       </>
     ) : (
@@ -459,7 +459,7 @@ const Ankit = () => {
               playsInline
               className="absolute inset-0 w-full h-full object-cover z-0 rounded-lg"
             >
-              <source src="/lovable-uploads/ankit-background.mp4" type="video/mp4" />
+              <source src="/assets/streamers/ankit-background.mp4" type="video/mp4" />
             </video>
             <div className="absolute inset-0 bg-black/50 z-0"></div>
           </>
