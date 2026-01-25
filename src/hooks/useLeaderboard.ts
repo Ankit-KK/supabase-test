@@ -103,6 +103,7 @@ export const useLeaderboard = ({
   }, [fetchDonations]);
 
   // Pusher subscription for real-time updates
+  // Uses pushed leaderboard data directly to avoid full table scans (egress optimization)
   useEffect(() => {
     if (!pusherKey || !pusherCluster) return;
 
@@ -118,13 +119,27 @@ export const useLeaderboard = ({
 
     const channel = pusher.subscribe(`${streamerSlug}-dashboard`);
 
-    channel.bind("new-donation", () => {
-      console.log(`[useLeaderboard] New donation event received for ${streamerSlug}`);
-      fetchDonations();
+    // Use pre-computed leaderboard data from backend (no full table scan)
+    channel.bind("leaderboard-updated", (data: { topDonator: TopDonator | null; latestDonation: DonationData }) => {
+      console.log(`[useLeaderboard] Leaderboard update received for ${streamerSlug}`, data);
+      if (data.topDonator) {
+        setTopDonator(data.topDonator);
+      }
+      if (data.latestDonation) {
+        setLatestDonations(prev => {
+          // Prepend new donation, keep only 5
+          const updated = [data.latestDonation, ...prev.filter(d => 
+            d.name !== data.latestDonation.name || d.created_at !== data.latestDonation.created_at
+          )].slice(0, 5);
+          return updated;
+        });
+      }
     });
 
+    // Fallback: refetch only on donation-approved for manual moderation cases
+    // This is less frequent than new-donation events
     channel.bind("donation-approved", () => {
-      console.log(`[useLeaderboard] Donation approved event received for ${streamerSlug}`);
+      console.log(`[useLeaderboard] Donation approved event (fallback refetch) for ${streamerSlug}`);
       fetchDonations();
     });
 

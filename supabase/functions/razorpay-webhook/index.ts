@@ -665,6 +665,45 @@ serve(async (req) => {
         action: shouldAutoApprove ? 'auto_approved' : 'pending'
       })
 
+      // Calculate and send leaderboard update (only for approved donations to reduce egress)
+      if (shouldAutoApprove) {
+        try {
+          const { data: allDonations } = await supabase
+            .from(tableName)
+            .select('name, amount, currency')
+            .eq('payment_status', 'success')
+            .in('moderation_status', ['auto_approved', 'approved']);
+          
+          if (allDonations && allDonations.length > 0) {
+            const donatorTotals: Record<string, { name: string; totalAmount: number }> = {};
+            allDonations.forEach((d: any) => {
+              const key = d.name.toLowerCase();
+              const amountInINR = (d.amount || 0) * (EXCHANGE_RATES_TO_INR[d.currency || 'INR'] || 1);
+              if (!donatorTotals[key]) {
+                donatorTotals[key] = { name: d.name, totalAmount: 0 };
+              }
+              donatorTotals[key].totalAmount += amountInINR;
+            });
+            
+            const sortedDonators = Object.values(donatorTotals)
+              .sort((a, b) => b.totalAmount - a.totalAmount);
+            
+            await sendPusherEvent([`${pusherSlug}-dashboard`], 'leaderboard-updated', {
+              topDonator: sortedDonators[0] || null,
+              latestDonation: {
+                name: donation.name,
+                amount: donation.amount,
+                currency: paymentCurrency,
+                created_at: donation.created_at,
+              }
+            });
+            console.log(`Leaderboard update sent for ${pusherSlug}`);
+          }
+        } catch (leaderboardError) {
+          console.error('Error calculating leaderboard:', leaderboardError);
+        }
+      }
+
       // Telegram notifications (if enabled)
       const telegramBotToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
       if (telegramBotToken && streamerSettings?.telegram_moderation_enabled) {

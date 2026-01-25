@@ -187,24 +187,14 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Fetch and proxy the audio directly to avoid redirect issues with OBS
-    console.log(`[get-current-audio] Fetching audio from: ${audioUrl}`);
-    const audioResponse = await fetch(audioUrl);
-
-    if (!audioResponse.ok) {
-      console.error('Failed to fetch audio:', audioResponse.status);
-      return new Response(null, {
-        status: 204,
-        headers: corsHeaders,
-      });
-    }
-
-    // Stream the audio directly to OBS
-    return new Response(audioResponse.body, {
-      status: 200,
+    // 302 Redirect to R2 URL - eliminates audio byte egress through Supabase
+    // OBS Media Source follows redirects, so this is safe
+    console.log(`[get-current-audio] Redirecting to R2: ${audioUrl}`);
+    return new Response(null, {
+      status: 302,
       headers: {
         ...corsHeaders,
-        'Content-Type': audioResponse.headers.get('Content-Type') || 'audio/mpeg',
+        'Location': audioUrl,
         'Cache-Control': 'no-cache, no-store, must-revalidate',
       },
     });
