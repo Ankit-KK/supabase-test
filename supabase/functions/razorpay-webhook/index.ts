@@ -21,6 +21,7 @@ const convertToINR = (amount: number, currency: string): number => {
 const streamerSlugMap: Record<string, string> = {
   'looteriyagaming': 'looteriya_gaming',
   'chiagaming': 'chiaa_gaming',
+  'ankit': 'ankit',
 };
 
 // Generate short ID for callback mapping (8 characters)
@@ -369,12 +370,61 @@ serve(async (req) => {
           created_at: donation.created_at,
           payment_status: 'success',
           moderation_status: moderationStatus,
+          message_visible: true,
           voice_message_url: donation.voice_message_url,
+          tts_audio_url: donation.tts_audio_url,
           hypersound_url: donation.hypersound_url,
           is_hyperemote: donation.is_hyperemote,
           media_url: donation.media_url,
           media_type: donation.media_type
         });
+
+        // Send goal progress update
+        const goalChannel = `${streamerSlug}-goal`;
+        try {
+          const { data: streamerGoal } = await supabase
+            .from('streamers')
+            .select('goal_is_active, goal_target_amount, goal_activated_at')
+            .eq('id', donation.streamer_id)
+            .single();
+
+          if (streamerGoal?.goal_is_active && streamerGoal?.goal_activated_at) {
+            const { data: goalDonations } = await supabase
+              .from(tableName)
+              .select('amount, currency')
+              .eq('payment_status', 'success')
+              .gte('created_at', streamerGoal.goal_activated_at);
+
+            const currentAmount = (goalDonations || []).reduce((sum: number, d: any) => 
+              sum + convertToINR(d.amount, d.currency || 'INR'), 0);
+
+            await sendPusherEvent(goalChannel, 'goal-progress', {
+              currentAmount,
+              targetAmount: streamerGoal.goal_target_amount,
+              newDonation: { 
+                amount: convertToINR(donation.amount, paymentCurrency), 
+                name: donation.name 
+              }
+            });
+            console.log(`Goal progress sent: ${currentAmount}/${streamerGoal.goal_target_amount}`);
+          }
+        } catch (goalError) {
+          console.error('Goal progress update error:', goalError);
+        }
+
+        // Send leaderboard update for auto-approved donations
+        if (shouldAutoApprove) {
+          const leaderboardChannel = `${streamerSlug}-leaderboard`;
+          await sendPusherEvent(leaderboardChannel, 'leaderboard-updated', {
+            type: 'new-donation',
+            donation: {
+              id: donation.id,
+              name: donation.name,
+              amount: donation.amount,
+              currency: paymentCurrency
+            }
+          });
+        }
 
         // Only send audio queue events for auto-approved donations
         if (shouldAutoApprove) {
