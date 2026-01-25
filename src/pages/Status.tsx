@@ -93,6 +93,13 @@ export default function Status() {
         const getCheckPaymentFunction = (orderId: string) => {
           console.log('[Status] Checking payment for order_id:', orderId);
           
+          // Unified function handles these streamers (new prefixes)
+          if (orderId.startsWith('ank_rp_')) return 'check-payment-status-unified';
+          if (orderId.startsWith('lg_rp_')) return 'check-payment-status-unified';
+          if (orderId.startsWith('cg_rp_') && !orderId.startsWith('cg_rp_clumsy')) return 'check-payment-status-unified'; // Chiaa Gaming (not ClumsyGod)
+          if (orderId.startsWith('chiagaming_rp_')) return 'check-payment-status-unified';
+          
+          // Legacy prefixes - still use streamer-specific functions
           if (orderId.startsWith('ankit_') || orderId.startsWith('ak_rp_')) return 'check-payment-status-ankit';
           if (orderId.startsWith('thunderx_') || orderId.startsWith('tx_rp_')) return 'check-payment-status-thunderx';
           if (orderId.startsWith('vb_rp_')) return 'check-payment-status-vipbhai';
@@ -102,12 +109,10 @@ export default function Status() {
           if (orderId.startsWith('miq_rp_')) return 'check-payment-status-mriqmaster';
           if (orderId.startsWith('abd_rp_')) return 'check-payment-status-abdevil';
           if (orderId.startsWith('jv_rp_')) return 'check-payment-status-jhanvoo';
-          if (orderId.startsWith('lg_rp_')) return 'check-payment-status-looteriya-gaming';
           if (orderId.startsWith('dp_rp_')) return 'check-payment-status-damask-plays';
           if (orderId.startsWith('nx_rp_')) return 'check-payment-status-neko-xenpai';
-          if (orderId.startsWith('cg_rp_')) return 'check-payment-status-clumsygod';
+          if (orderId.startsWith('clg_rp_')) return 'check-payment-status-clumsygod';
           if (orderId.startsWith('jg_rp_')) return 'check-payment-status-jimmygaming';
-          if (orderId.startsWith('chiagaming_rp_')) return 'check-payment-status-chiagaming';
           
           console.warn('[Status] Unknown order_id prefix, defaulting to check-payment-status:', orderId);
           return 'check-payment-status'; // default fallback
@@ -187,7 +192,8 @@ export default function Status() {
             return false;
           };
 
-          if (!shouldSkipVoiceUpload(orderId)) {
+          // Skip voice upload for all Razorpay streamers (they upload before payment)
+          if (!shouldSkipVoiceUpload(orderId) && !orderId.startsWith('ank_rp_') && !orderId.startsWith('lg_rp_') && !orderId.startsWith('cg_rp_')) {
             try {
               console.log('Payment successful, checking for voice message upload...');
               const getVoiceUploadFunction = () => {
