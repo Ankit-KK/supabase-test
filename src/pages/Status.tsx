@@ -1,4 +1,4 @@
-// Payment status page - supports all streamers with Razorpay and Cashfree integrations
+// Payment status page - supports active streamers: Ankit, Chiaa Gaming, Looteriya Gaming
 import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -89,33 +89,25 @@ export default function Status() {
       }
 
       try {
-        // Determine which function to call based on order ID prefix (supports both old and new formats)
+        // Determine which function to call based on order ID prefix
+        // All active streamers use the unified function
         const getCheckPaymentFunction = (orderId: string) => {
           console.log('[Status] Checking payment for order_id:', orderId);
           
-          // Unified function handles these streamers (new prefixes)
+          // Active streamers - all use unified function
           if (orderId.startsWith('ank_rp_')) return 'check-payment-status-unified';
           if (orderId.startsWith('lg_rp_')) return 'check-payment-status-unified';
-          if (orderId.startsWith('cg_rp_') && !orderId.startsWith('cg_rp_clumsy')) return 'check-payment-status-unified'; // Chiaa Gaming (not ClumsyGod)
+          if (orderId.startsWith('cg_rp_')) return 'check-payment-status-unified';
           if (orderId.startsWith('chiagaming_rp_')) return 'check-payment-status-unified';
           
-          // Legacy prefixes - still use streamer-specific functions
-          if (orderId.startsWith('ankit_') || orderId.startsWith('ak_rp_')) return 'check-payment-status-ankit';
-          if (orderId.startsWith('thunderx_') || orderId.startsWith('tx_rp_')) return 'check-payment-status-thunderx';
-          if (orderId.startsWith('vb_rp_')) return 'check-payment-status-vipbhai';
-          if (orderId.startsWith('sug_rp_')) return 'check-payment-status-sagarujjwalgaming';
-          if (orderId.startsWith('nyk_rp_')) return 'check-payment-status-notyourkween';
-          if (orderId.startsWith('bf_rp_')) return 'check-payment-status-bongflick';
-          if (orderId.startsWith('miq_rp_')) return 'check-payment-status-mriqmaster';
-          if (orderId.startsWith('abd_rp_')) return 'check-payment-status-abdevil';
-          if (orderId.startsWith('jv_rp_')) return 'check-payment-status-jhanvoo';
-          if (orderId.startsWith('dp_rp_')) return 'check-payment-status-damask-plays';
-          if (orderId.startsWith('nx_rp_')) return 'check-payment-status-neko-xenpai';
-          if (orderId.startsWith('clg_rp_')) return 'check-payment-status-clumsygod';
-          if (orderId.startsWith('jg_rp_')) return 'check-payment-status-jimmygaming';
+          // Legacy Ankit prefix
+          if (orderId.startsWith('ak_rp_')) return 'check-payment-status-unified';
           
-          console.warn('[Status] Unknown order_id prefix, defaulting to check-payment-status:', orderId);
-          return 'check-payment-status'; // default fallback
+          // Streamer-specific functions for legacy support (Ankit, Chiaa, Looteriya)
+          if (orderId.startsWith('ankit_')) return 'check-payment-status-ankit';
+          
+          console.warn('[Status] Unknown order_id prefix, defaulting to unified:', orderId);
+          return 'check-payment-status-unified';
         };
         
         const functionName = getCheckPaymentFunction(orderId);
@@ -182,47 +174,8 @@ export default function Status() {
           setShowResult(true);
         }, remaining);
 
-        // If payment is successful, upload voice message if it exists
-        // Skip voice upload for Razorpay streamers (ThunderX, Ankit) - they upload BEFORE payment
-        if (backendStatus === 'success') {
-          const shouldSkipVoiceUpload = (orderId: string) => {
-            // Razorpay streamers upload voice messages before payment via upload-voice-message-direct
-            if (orderId.startsWith('ak_rp_') || orderId.startsWith('tx_rp_') || orderId.startsWith('vb_rp_') || orderId.startsWith('sug_rp_') || orderId.startsWith('nyk_rp_') || orderId.startsWith('bf_rp_') || orderId.startsWith('miq_rp_') || orderId.startsWith('abd_rp_') || orderId.startsWith('jv_rp_') || orderId.startsWith('lg_rp_') || orderId.startsWith('dp_rp_') || orderId.startsWith('nx_rp_') || orderId.startsWith('cg_rp_') || orderId.startsWith('jg_rp_') || orderId.startsWith('chiagaming_rp_')) return true;
-            if (orderId.startsWith('ankit_razorpay_') || orderId.startsWith('thunderx_razorpay_')) return true;
-            return false;
-          };
-
-          // Skip voice upload for all Razorpay streamers (they upload before payment)
-          if (!shouldSkipVoiceUpload(orderId) && !orderId.startsWith('ank_rp_') && !orderId.startsWith('lg_rp_') && !orderId.startsWith('cg_rp_')) {
-            try {
-              console.log('Payment successful, checking for voice message upload...');
-              const getVoiceUploadFunction = () => {
-                return 'upload-voice-message'; // default for chia_gaming (only Cashfree streamer)
-              };
-              
-              const voiceFunctionName = getVoiceUploadFunction();
-              console.log(`Voice upload function determined: ${voiceFunctionName} for order: ${orderId}`);
-              
-              // Add a small delay to ensure webhook has completed
-              await new Promise(resolve => setTimeout(resolve, 2000));
-              
-              const { data: uploadResult, error: uploadError } = await supabase.functions.invoke(voiceFunctionName, {
-                body: { order_id: orderId }
-              });
-              
-              if (uploadError) {
-                console.error('Voice message upload error:', uploadError);
-              } else if (uploadResult?.success) {
-                console.log('Voice message uploaded successfully:', uploadResult.voice_message_url);
-              }
-            } catch (uploadErr) {
-              console.error('Failed to upload voice message:', uploadErr);
-              // Don't fail the entire status check if voice upload fails
-            }
-          } else {
-            console.log('Skipping voice upload for Razorpay streamer (already uploaded before payment)');
-          }
-        }
+        // Voice upload is handled before payment for all Razorpay streamers
+        // No post-payment upload needed
       } catch (err) {
         console.error('Payment status check failed:', err);
         const elapsed = Date.now() - startTime;
@@ -236,10 +189,6 @@ export default function Status() {
 
     checkPaymentStatus();
   }, [orderId, status]);
-
-  // NOTE: Removed auto-refresh polling for pending payments to reduce Supabase egress
-  // Payment confirmation is now handled via Pusher events from the webhook
-  // The user can manually refresh if needed using the Refresh Status button
 
   const getStatusContent = (st: typeof paymentStatus) => {
     switch (st) {
@@ -268,22 +217,11 @@ export default function Status() {
 
   const getBackLink = () => {
     if (!orderId) return "/";
-    if (orderId.startsWith('ankit_') || orderId.startsWith('ak_rp_')) return "/ankit";
-    if (orderId.startsWith('thunderx_') || orderId.startsWith('tx_rp_')) return "/thunderx";
-    if (orderId.startsWith('vb_rp_')) return "/vipbhai";
-    if (orderId.startsWith('sug_rp_')) return "/sagarujjwalgaming";
-    if (orderId.startsWith('nyk_rp_')) return "/notyourkween";
-    if (orderId.startsWith('bf_rp_')) return "/bongflick";
-    if (orderId.startsWith('miq_rp_')) return "/mriqmaster";
-    if (orderId.startsWith('abd_rp_')) return "/abdevil";
-    if (orderId.startsWith('jv_rp_')) return "/jhanvoo";
+    
+    // Active streamers
+    if (orderId.startsWith('ank_rp_') || orderId.startsWith('ak_rp_') || orderId.startsWith('ankit_')) return "/ankit";
     if (orderId.startsWith('lg_rp_')) return "/looteriya_gaming";
-    if (orderId.startsWith('dp_rp_')) return "/damask_plays";
-    if (orderId.startsWith('nx_rp_')) return "/neko_xenpai";
-    if (orderId.startsWith('cg_rp_')) return "/clumsygod";
-    if (orderId.startsWith('jg_rp_')) return "/jimmy_gaming";
-    if (orderId.startsWith('chiagaming_rp_')) return "/chiaa_gaming";
-    if (orderId.startsWith('sizzors_')) return "/sizzors";
+    if (orderId.startsWith('cg_rp_') || orderId.startsWith('chiagaming_rp_')) return "/chiaa_gaming";
     
     console.warn('[Status] Unknown order_id prefix for navigation, redirecting to homepage:', orderId);
     return "/";
