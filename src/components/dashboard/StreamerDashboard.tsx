@@ -79,8 +79,32 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
     pusherCluster: pusherConfig?.cluster,
     onNewDonation: (donation) => {
       console.log('[Dashboard] New donation via Pusher:', donation);
-      // Refresh dashboard data
-      setRefreshKey(prev => prev + 1);
+      // Incremental update - add donation directly instead of full refetch (reduces egress)
+      // Create a DonationRecord from the Pusher event data
+      const newDonation: DonationRecord = {
+        id: donation.id,
+        name: donation.name,
+        amount: donation.amount,
+        currency: donation.currency,
+        message: donation.message,
+        moderation_status: donation.moderation_status,
+        payment_status: 'success', // Only successful donations are pushed
+        created_at: donation.created_at,
+        streamer_id: streamerData?.id || '',
+      };
+      setApprovedDonations(prev => [newDonation, ...prev.slice(0, 49)]);
+      // Update stats incrementally
+      const donationAmountINR = convertToINR(parseFloat(donation.amount?.toString() || '0'), donation.currency || 'INR');
+      const today = new Date().toDateString();
+      const isToday = new Date(donation.created_at).toDateString() === today;
+      setStats(prev => ({
+        ...prev,
+        totalRevenue: prev.totalRevenue + donationAmountINR,
+        todayRevenue: isToday ? prev.todayRevenue + donationAmountINR : prev.todayRevenue,
+        totalDonations: prev.totalDonations + 1,
+        averageDonation: (prev.totalRevenue + donationAmountINR) / (prev.totalDonations + 1),
+        topDonation: Math.max(prev.topDonation, donationAmountINR)
+      }));
       toast({
         title: "New Donation!",
         description: `${donation.name} donated ₹${donation.amount}`,
@@ -90,8 +114,22 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
       console.log('[Dashboard] Donation update via Pusher:', data);
       // Pass to ModerationPanel
       setLastDonationUpdate(data);
-      // Refresh the approved donations list to reflect the change
-      setRefreshKey(prev => prev + 1);
+      // Incremental update - modify donation in list instead of full refetch (reduces egress)
+      if (data.id) {
+        const newStatus = data.action === 'approve' ? 'approved' : 
+                          data.action === 'auto_approved' ? 'auto_approved' :
+                          data.action === 'reject' ? 'rejected' : 
+                          data.action === 'pending' ? 'pending' : undefined;
+        setApprovedDonations(prev => prev.map(d => 
+          d.id === data.id 
+            ? { 
+                ...d, 
+                moderation_status: newStatus || d.moderation_status, 
+                message_visible: data.message_visible ?? d.message_visible 
+              }
+            : d
+        ));
+      }
     },
     onStatsUpdate: (newStats) => {
       console.log('[Dashboard] Stats update via Pusher:', newStats);
