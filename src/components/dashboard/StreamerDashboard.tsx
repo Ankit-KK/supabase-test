@@ -40,7 +40,11 @@ interface DonationRecord {
   currency?: string;
   message?: string;
   voice_message_url?: string;
+  tts_audio_url?: string;
+  hypersound_url?: string;
   is_hyperemote?: boolean;
+  media_url?: string;
+  media_type?: string;
   moderation_status: string;
   payment_status: string;
   created_at: string;
@@ -80,13 +84,20 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
     onNewDonation: (donation) => {
       console.log('[Dashboard] New donation via Pusher:', donation);
       // Incremental update - add donation directly instead of full refetch (reduces egress)
-      // Create a DonationRecord from the Pusher event data
+      // Create a DonationRecord from the Pusher event data with ALL fields
       const newDonation: DonationRecord = {
         id: donation.id,
         name: donation.name,
         amount: donation.amount,
         currency: donation.currency,
         message: donation.message,
+        voice_message_url: donation.voice_message_url,
+        tts_audio_url: donation.tts_audio_url,
+        hypersound_url: donation.hypersound_url,
+        is_hyperemote: donation.is_hyperemote,
+        media_url: donation.media_url,
+        media_type: donation.media_type,
+        message_visible: donation.message_visible ?? true, // Default to true for new donations
         moderation_status: donation.moderation_status,
         payment_status: 'success', // Only successful donations are pushed
         created_at: donation.created_at,

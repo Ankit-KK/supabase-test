@@ -15,6 +15,13 @@ interface DonationUpdate {
   amount: number;
   currency?: string;
   message?: string;
+  voice_message_url?: string;
+  tts_audio_url?: string;
+  hypersound_url?: string;
+  is_hyperemote?: boolean;
+  media_url?: string;
+  media_type?: string;
+  message_visible?: boolean;
   created_at: string;
   moderation_status: string;
 }
