@@ -24,43 +24,10 @@ verify_jwt = false
 [functions.telegram-webhook]
 verify_jwt = false
 
-[functions.check-payment-status]
-verify_jwt = false
-
-[functions.check-payment-status-thunderx]
-verify_jwt = false
-
-[functions.check-payment-status-ankit]
-verify_jwt = false
-
-[functions.check-payment-status-vipbhai]
-verify_jwt = false
-
-[functions.cashfree-webhook]
-verify_jwt = false
-
 [functions.authenticate-user]
 verify_jwt = false
 
 [functions.notify-new-donations]
-verify_jwt = false
-
-[functions.create-payment-order-ankit]
-verify_jwt = false
-
-[functions.create-payment-order-chiagaming]
-verify_jwt = false
-
-[functions.create-payment-order-looteriya-gaming]
-verify_jwt = false
-
-[functions.create-payment-order-sizzors]
-verify_jwt = false
-
-[functions.create-payment-order-damask-plays]
-verify_jwt = false
-
-[functions.create-payment-order-neko-xenpai]
 verify_jwt = false
 
 [functions.upload-voice-message-direct]
@@ -69,64 +36,19 @@ verify_jwt = false
 [functions.create-razorpay-order-ankit]
 verify_jwt = false
 
-[functions.create-razorpay-order-thunderx]
+[functions.check-payment-status-ankit]
 verify_jwt = false
 
-[functions.create-razorpay-order-vipbhai]
+[functions.create-razorpay-order-chiagaming]
 verify_jwt = false
 
-[functions.create-razorpay-order-sagarujjwalgaming]
-verify_jwt = false
-
-[functions.check-payment-status-sagarujjwalgaming]
-verify_jwt = false
-
-[functions.create-razorpay-order-notyourkween]
-verify_jwt = false
-
-[functions.check-payment-status-notyourkween]
-verify_jwt = false
-
-[functions.create-razorpay-order-bongflick]
-verify_jwt = false
-
-[functions.check-payment-status-bongflick]
-verify_jwt = false
-
-[functions.create-razorpay-order-mriqmaster]
-verify_jwt = false
-
-[functions.check-payment-status-mriqmaster]
-verify_jwt = false
-
-[functions.check-payment-status-abdevil]
-verify_jwt = false
-
-[functions.create-razorpay-order-abdevil]
+[functions.check-payment-status-chiagaming]
 verify_jwt = false
 
 [functions.create-razorpay-order-looteriya-gaming]
 verify_jwt = false
 
-[functions.create-razorpay-order-damask-plays]
-verify_jwt = false
-
-[functions.create-razorpay-order-neko-xenpai]
-verify_jwt = false
-
 [functions.check-payment-status-looteriya-gaming]
-verify_jwt = false
-
-[functions.check-payment-status-damask-plays]
-verify_jwt = false
-
-[functions.check-payment-status-neko-xenpai]
-verify_jwt = false
-
-[functions.create-razorpay-order-jhanvoo]
-verify_jwt = false
-
-[functions.check-payment-status-jhanvoo]
 verify_jwt = false
 
 [functions.razorpay-webhook]
@@ -136,18 +58,6 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.get-current-audio]
-verify_jwt = false
-
-[functions.create-razorpay-order-clumsygod]
-verify_jwt = false
-
-[functions.check-payment-status-clumsygod]
-verify_jwt = false
-
-[functions.create-razorpay-order-jimmygaming]
-verify_jwt = false
-
-[functions.check-payment-status-jimmygaming]
 verify_jwt = false
 
 [functions.list-hypersounds]
@@ -166,12 +76,6 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.get-dashboard-stats-looteriya-gaming]
-verify_jwt = false
-
-[functions.create-razorpay-order-chiagaming]
-verify_jwt = false
-
-[functions.check-payment-status-chiagaming]
 verify_jwt = false
 
 [functions.generate-obs-token]
