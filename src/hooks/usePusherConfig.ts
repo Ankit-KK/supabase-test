@@ -8,6 +8,41 @@ interface PusherConfig {
   streamer?: string;
 }
 
+interface CachedConfig {
+  data: PusherConfig;
+  timestamp: number;
+}
+
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+const getCacheKey = (streamerSlug: string) => `pusher-config-${streamerSlug}`;
+
+const getCachedConfig = (streamerSlug: string): PusherConfig | null => {
+  try {
+    const cached = localStorage.getItem(getCacheKey(streamerSlug));
+    if (!cached) return null;
+    
+    const { data, timestamp }: CachedConfig = JSON.parse(cached);
+    if (Date.now() - timestamp > CACHE_TTL) {
+      localStorage.removeItem(getCacheKey(streamerSlug));
+      return null;
+    }
+    
+    return data;
+  } catch {
+    return null;
+  }
+};
+
+const setCachedConfig = (streamerSlug: string, data: PusherConfig) => {
+  try {
+    const cached: CachedConfig = { data, timestamp: Date.now() };
+    localStorage.setItem(getCacheKey(streamerSlug), JSON.stringify(cached));
+  } catch {
+    // localStorage might be full or disabled
+  }
+};
+
 export const usePusherConfig = (streamerSlug: string) => {
   const [config, setConfig] = useState<PusherConfig | null>(null);
   const [loading, setLoading] = useState(true);
@@ -16,6 +51,15 @@ export const usePusherConfig = (streamerSlug: string) => {
   useEffect(() => {
     if (!streamerSlug) {
       setError('streamerSlug is required');
+      setLoading(false);
+      return;
+    }
+
+    // Check cache first
+    const cached = getCachedConfig(streamerSlug);
+    if (cached) {
+      console.log(`[usePusherConfig] Using cached config for ${streamerSlug} (Group ${cached.group})`);
+      setConfig(cached);
       setLoading(false);
       return;
     }
@@ -35,6 +79,7 @@ export const usePusherConfig = (streamerSlug: string) => {
         }
         
         console.log(`[usePusherConfig] Loaded Group ${data.group} config for ${streamerSlug}`);
+        setCachedConfig(streamerSlug, data);
         setConfig(data);
       } catch (err) {
         console.error('[usePusherConfig] Error:', err);

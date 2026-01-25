@@ -136,12 +136,7 @@ export const useLeaderboard = ({
       }
     });
 
-    // Fallback: refetch only on donation-approved for manual moderation cases
-    // This is less frequent than new-donation events
-    channel.bind("donation-approved", () => {
-      console.log(`[useLeaderboard] Donation approved event (fallback refetch) for ${streamerSlug}`);
-      fetchDonations();
-    });
+    // Note: donation-approved fallback removed - leaderboard-updated events now handle this case
 
     return () => {
       channel.unbind_all();
