@@ -82,10 +82,14 @@ const MediaSourcePlayer: React.FC<MediaSourcePlayerProps> = ({
     }
   };
 
+  // Use Pusher queueSize instead of polling (reduces Supabase egress)
+  useEffect(() => {
+    setQueueCount(queueSize);
+  }, [queueSize]);
+
+  // Initial fetch only - no polling
   useEffect(() => {
     fetchQueueCount();
-    const interval = setInterval(fetchQueueCount, 10000);
-    return () => clearInterval(interval);
   }, [tableName]);
 
   // Use the generic edge function
