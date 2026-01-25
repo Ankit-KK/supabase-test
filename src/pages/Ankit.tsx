@@ -311,8 +311,9 @@ const Ankit = () => {
       }
 
       // Create Razorpay order via Supabase edge function
-      const response = await supabase.functions.invoke('create-razorpay-order-ankit', {
+      const response = await supabase.functions.invoke('create-razorpay-order-unified', {
         body: {
+          streamer_slug: 'ankit',
           name: formData.name.trim(),
           amount: amount,
           currency: formData.currency,
@@ -323,7 +324,7 @@ const Ankit = () => {
       });
       const data = response.data;
       const error = response.error;
-      if (error || !data?.success) {
+      if (error || !data?.orderId) {
         throw new Error(data?.error || 'Failed to create payment order');
       }
       console.log('Razorpay order created:', data.razorpay_order_id);

@@ -52,13 +52,13 @@ const sanitizeName = (name: string | null | undefined): string => {
   return sanitizeInput(name)?.substring(0, 100) || '';
 };
 
-const CURRENCY_MINIMUMS: Record<string, { minText: number; minVoice: number; minHypersound: number }> = {
-  'INR': { minText: 40, minVoice: 150, minHypersound: 30 },
-  'USD': { minText: 1, minVoice: 3, minHypersound: 1 },
-  'EUR': { minText: 1, minVoice: 3, minHypersound: 1 },
-  'GBP': { minText: 1, minVoice: 3, minHypersound: 1 },
-  'AED': { minText: 4, minVoice: 12, minHypersound: 3 },
-  'AUD': { minText: 2, minVoice: 5, minHypersound: 1.5 },
+const CURRENCY_MINIMUMS: Record<string, { minText: number; minVoice: number; minHypersound: number; minMedia: number }> = {
+  'INR': { minText: 40, minVoice: 150, minHypersound: 30, minMedia: 100 },
+  'USD': { minText: 1, minVoice: 3, minHypersound: 1, minMedia: 3 },
+  'EUR': { minText: 1, minVoice: 3, minHypersound: 1, minMedia: 3 },
+  'GBP': { minText: 1, minVoice: 3, minHypersound: 1, minMedia: 3 },
+  'AED': { minText: 4, minVoice: 12, minHypersound: 3, minMedia: 10 },
+  'AUD': { minText: 2, minVoice: 5, minHypersound: 1.5, minMedia: 5 },
 };
 
 serve(async (req) => {
@@ -73,7 +73,9 @@ serve(async (req) => {
       amount, 
       message, 
       voiceMessageUrl, 
-      hypersoundUrl, 
+      hypersoundUrl,
+      mediaUrl,
+      mediaType,
       currency = 'INR' 
     } = await req.json();
 
@@ -119,7 +121,11 @@ serve(async (req) => {
       throw new Error(`Voice messages require minimum ${currency} ${minimums.minVoice}`);
     }
 
-    if (!hypersoundUrl && !voiceMessageUrl && amount < minimums.minText) {
+    if (mediaUrl && amount < minimums.minMedia) {
+      throw new Error(`Media messages require minimum ${currency} ${minimums.minMedia}`);
+    }
+
+    if (!hypersoundUrl && !voiceMessageUrl && !mediaUrl && amount < minimums.minText) {
       throw new Error(`Text messages require minimum ${currency} ${minimums.minText}`);
     }
 
@@ -186,6 +192,8 @@ serve(async (req) => {
         message: sanitizedMessage,
         voice_message_url: voiceMessageUrl || null,
         hypersound_url: hypersoundUrl || null,
+        media_url: mediaUrl || null,
+        media_type: mediaType || null,
         is_hyperemote: false,
         order_id: orderId,
         razorpay_order_id: razorpayOrder.id,

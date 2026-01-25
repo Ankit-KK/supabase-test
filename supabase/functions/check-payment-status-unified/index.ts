@@ -28,6 +28,10 @@ const STREAMER_CONFIG: Record<string, { table: string; prefix: string }> = {
 
 // Derive streamer_slug from order_id prefix
 const getStreamerFromOrderId = (orderId: string): string | null => {
+  // Handle legacy prefixes that differ from standard config
+  if (orderId.startsWith('chiagaming_rp_')) return 'chiaa_gaming';
+  if (orderId.startsWith('ak_rp_')) return 'ankit'; // Legacy Ankit prefix
+  
   for (const [slug, config] of Object.entries(STREAMER_CONFIG)) {
     if (orderId.startsWith(config.prefix)) {
       return slug;

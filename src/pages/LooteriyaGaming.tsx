@@ -184,8 +184,9 @@ const LooteriyaGaming = () => {
         console.log("Voice message uploaded successfully:", voiceMessageUrl);
       }
 
-      const { data, error } = await supabase.functions.invoke("create-razorpay-order-looteriya-gaming", {
+      const { data, error } = await supabase.functions.invoke("create-razorpay-order-unified", {
         body: {
+          streamer_slug: 'looteriya_gaming',
           name: formData.name,
           amount: parseFloat(formData.amount),
           message: donationType === "text" ? formData.message : null,

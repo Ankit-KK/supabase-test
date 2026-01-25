@@ -181,8 +181,9 @@ const ChiaGaming = () => {
         console.log("Voice message uploaded successfully:", voiceMessageUrl);
       }
 
-      const { data, error } = await supabase.functions.invoke("create-razorpay-order-chiagaming", {
+      const { data, error } = await supabase.functions.invoke("create-razorpay-order-unified", {
         body: {
+          streamer_slug: 'chiaa_gaming',
           name: formData.name,
           amount: parseFloat(formData.amount),
           message: donationType === "text" ? formData.message : null,
