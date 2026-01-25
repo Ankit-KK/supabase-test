@@ -62,9 +62,7 @@ const JimmyGamingGoalOverlay = () => {
       }
     };
 
-    fetchGoalData();
-    const interval = setInterval(fetchGoalData, 30000);
-    return () => clearInterval(interval);
+    fetchGoalData(); // Initial fetch only - real-time updates come via Pusher (no polling to reduce egress)
   }, []);
 
   useEffect(() => {
