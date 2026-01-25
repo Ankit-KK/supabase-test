@@ -344,22 +344,22 @@ serve(async (req) => {
       const SILENT_AUDIO_URL = Deno.env.get('SILENT_AUDIO_URL') || 'https://pub-fff13c27bb0d4a1e807dfc596462b7d5.r2.dev/silent.mp3';
 
       // Generate TTS if needed
-      // Text donation: message with amount >= 70
+      // Text donation >= ₹70: generates TTS (with message or "Thank you!" fallback)
       // Media donation: always generate announcement
       const shouldGenerateTextTTS = donationType === 'text' && 
-        donation.message && 
         donation.amount >= 70 && 
         !donation.tts_audio_url &&
         streamer.tts_enabled !== false;
+      // REMOVED: donation.message requirement - generate-donation-tts has "Thank you!" fallback
 
       const shouldGenerateMediaTTS = donationType === 'media' && 
         !donation.tts_audio_url &&
         streamer.tts_enabled !== false;
 
-      // Text donations < ₹70 OR without message get silent audio (triggers visual alert without TTS cost)
+      // Text donations < ₹70 get silent audio (triggers visual alert without TTS cost)
       const shouldUseSilentAudio = donationType === 'text' && 
         !donation.tts_audio_url &&
-        (donation.amount < 70 || !donation.message);
+        donation.amount < 70;
 
       const shouldGenerateTTS = shouldGenerateTextTTS || shouldGenerateMediaTTS;
 
