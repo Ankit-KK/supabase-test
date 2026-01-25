@@ -1,4 +1,5 @@
 // Updated: 2025-01-18 - Added emoji-to-text conversion for TTS
+// Cleaned: 2026-01-25 - Removed legacy streamers, only active: Ankit, Chiaa Gaming, Looteriya Gaming
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 import { Hash } from "https://deno.land/x/checksum@1.4.0/mod.ts";
@@ -223,24 +224,11 @@ serve(async (req) => {
     const voiceId = streamerData.tts_voice_id || DEFAULT_VOICE_ID;
     console.log("Processing TTS for streamer:", streamerSlug, "with voice:", voiceId);
 
-    // Determine donation table name based on streamer slug
+    // Determine donation table name based on streamer slug (active streamers only)
     const donationTableMap: Record<string, string> = {
       ankit: "ankit_donations",
       chiaa_gaming: "chiaa_gaming_donations",
       looteriya_gaming: "looteriya_gaming_donations",
-      sizzors: "sizzors_donations",
-      damask_plays: "damask_plays_donations",
-      neko_xenpai: "neko_xenpai_donations",
-      thunderx: "thunderx_donations",
-      sagarujjwalgaming: "sagarujjwalgaming_donations",
-      notyourkween: "notyourkween_donations",
-      bongflick: "bongflick_donations",
-      mriqmaster: "mriqmaster_donations",
-      abdevil: "abdevil_donations",
-      vipbhai: "vipbhai_donations",
-      jhanvoo: "jhanvoo_donations",
-      clumsygod: "clumsygod_donations",
-      jimmy_gaming: "jimmy_gaming_donations",
     };
 
     const donationTable = donationTableMap[streamerSlug];
