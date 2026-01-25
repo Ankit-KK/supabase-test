@@ -414,16 +414,43 @@ serve(async (req) => {
 
         // Send leaderboard update for auto-approved donations
         if (shouldAutoApprove) {
-          const leaderboardChannel = `${streamerSlug}-leaderboard`;
-          await sendPusherEvent(leaderboardChannel, 'leaderboard-updated', {
-            type: 'new-donation',
-            donation: {
-              id: donation.id,
-              name: donation.name,
-              amount: donation.amount,
-              currency: paymentCurrency
+          try {
+            // Calculate top donator from all donations (matches moderate-donation logic)
+            const { data: allDonations } = await supabase
+              .from(tableName)
+              .select('name, amount, currency')
+              .eq('payment_status', 'success')
+              .in('moderation_status', ['auto_approved', 'approved']);
+            
+            if (allDonations && allDonations.length > 0) {
+              const donatorTotals: Record<string, { name: string; totalAmount: number }> = {};
+              allDonations.forEach((d: any) => {
+                const key = d.name.toLowerCase();
+                const amountInINR = convertToINR(d.amount, d.currency || 'INR');
+                if (!donatorTotals[key]) {
+                  donatorTotals[key] = { name: d.name, totalAmount: 0 };
+                }
+                donatorTotals[key].totalAmount += amountInINR;
+              });
+              
+              const sortedDonators = Object.values(donatorTotals)
+                .sort((a, b) => b.totalAmount - a.totalAmount);
+              
+              // Send to dashboard channel (matches frontend subscription)
+              await sendPusherEvent(dashboardChannel, 'leaderboard-updated', {
+                topDonator: sortedDonators[0] || null,
+                latestDonation: {
+                  name: donation.name,
+                  amount: donation.amount,
+                  currency: paymentCurrency,
+                  created_at: donation.created_at,
+                }
+              });
+              console.log(`Leaderboard update sent to ${dashboardChannel}`);
             }
-          });
+          } catch (leaderboardError) {
+            console.error('Error calculating leaderboard:', leaderboardError);
+          }
         }
 
         // Only send audio queue events for auto-approved donations
