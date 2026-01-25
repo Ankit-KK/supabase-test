@@ -441,6 +441,49 @@ serve(async (req) => {
         pusherGroup
       );
 
+      // Calculate and send leaderboard update when approving (reduces egress vs full table scan on client)
+      if (action === 'approve') {
+        try {
+          const EXCHANGE_RATES_TO_INR: Record<string, number> = {
+            'INR': 1, 'USD': 89, 'EUR': 94, 'GBP': 113, 'AED': 24, 'AUD': 57
+          };
+          
+          const { data: allDonations } = await supabaseAdmin
+            .from(donationTable)
+            .select('name, amount, currency')
+            .eq('payment_status', 'success')
+            .in('moderation_status', ['auto_approved', 'approved']);
+          
+          if (allDonations && allDonations.length > 0) {
+            const donatorTotals: Record<string, { name: string; totalAmount: number }> = {};
+            allDonations.forEach((d: any) => {
+              const key = d.name.toLowerCase();
+              const amountInINR = (d.amount || 0) * (EXCHANGE_RATES_TO_INR[d.currency || 'INR'] || 1);
+              if (!donatorTotals[key]) {
+                donatorTotals[key] = { name: d.name, totalAmount: 0 };
+              }
+              donatorTotals[key].totalAmount += amountInINR;
+            });
+            
+            const sortedDonators = Object.values(donatorTotals)
+              .sort((a, b) => b.totalAmount - a.totalAmount);
+            
+            await sendPusherEvent([`${channelSlug}-dashboard`], 'leaderboard-updated', {
+              topDonator: sortedDonators[0] || null,
+              latestDonation: {
+                name: donation.name,
+                amount: donation.amount,
+                currency: donation.currency || 'INR',
+                created_at: donation.created_at,
+              }
+            }, pusherGroup);
+            console.log(`Leaderboard update sent for ${channelSlug}`);
+          }
+        } catch (leaderboardError) {
+          console.error('Error calculating leaderboard:', leaderboardError);
+        }
+      }
+
       // NOTE: Goal progress is NOT updated here - it's already updated on payment success
       // in razorpay-webhook and check-payment-status functions. Goals should reflect
       // money received (payment success), not moderation status.
