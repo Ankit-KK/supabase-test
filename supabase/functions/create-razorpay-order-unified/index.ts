@@ -6,24 +6,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Streamer configuration mapping
+// Active streamer configuration mapping (only 3 active streamers)
 const STREAMER_CONFIG: Record<string, { table: string; prefix: string }> = {
-  'abdevil': { table: 'abdevil_donations', prefix: 'ab_rp_' },
   'ankit': { table: 'ankit_donations', prefix: 'ank_rp_' },
-  'bongflick': { table: 'bongflick_donations', prefix: 'bf_rp_' },
   'chiaa_gaming': { table: 'chiaa_gaming_donations', prefix: 'cg_rp_' },
-  'clumsygod': { table: 'clumsygod_donations', prefix: 'clg_rp_' },
-  'damask_plays': { table: 'damask_plays_donations', prefix: 'dp_rp_' },
-  'jhanvoo': { table: 'jhanvoo_donations', prefix: 'jh_rp_' },
-  'jimmy_gaming': { table: 'jimmy_gaming_donations', prefix: 'jg_rp_' },
   'looteriya_gaming': { table: 'looteriya_gaming_donations', prefix: 'lg_rp_' },
-  'mriqmaster': { table: 'mriqmaster_donations', prefix: 'mi_rp_' },
-  'neko_xenpai': { table: 'neko_xenpai_donations', prefix: 'nx_rp_' },
-  'notyourkween': { table: 'notyourkween_donations', prefix: 'nyk_rp_' },
-  'sagarujjwalgaming': { table: 'sagarujjwalgaming_donations', prefix: 'sug_rp_' },
-  'sizzors': { table: 'sizzors_donations', prefix: 'sz_rp_' },
-  'thunderx': { table: 'thunderx_donations', prefix: 'tx_rp_' },
-  'vipbhai': { table: 'vipbhai_donations', prefix: 'vb_rp_' },
 };
 
 // XSS sanitization for user input

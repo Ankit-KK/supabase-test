@@ -11,37 +11,37 @@ const SitemapXml = () => {
   <!-- Main Pages -->
   <url>
     <loc>https://hyperchat.space/</loc>
-    <lastmod>2025-12-13</lastmod>
+    <lastmod>2025-01-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://hyperchat.space/about</loc>
-    <lastmod>2025-12-13</lastmod>
+    <lastmod>2025-01-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://hyperchat.space/feature-showcase</loc>
-    <lastmod>2025-12-13</lastmod>
+    <lastmod>2025-01-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://hyperchat.space/contact</loc>
-    <lastmod>2025-12-13</lastmod>
+    <lastmod>2025-01-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://hyperchat.space/blog</loc>
-    <lastmod>2025-12-13</lastmod>
+    <lastmod>2025-01-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://hyperchat.space/sitemap</loc>
-    <lastmod>2025-12-13</lastmod>
+    <lastmod>2025-01-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -49,91 +49,19 @@ const SitemapXml = () => {
   <!-- Creator Pages -->
   <url>
     <loc>https://hyperchat.space/ankit</loc>
-    <lastmod>2025-12-13</lastmod>
+    <lastmod>2025-01-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://hyperchat.space/chiaa_gaming</loc>
-    <lastmod>2025-12-13</lastmod>
+    <lastmod>2025-01-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://hyperchat.space/looteriya_gaming</loc>
-    <lastmod>2025-12-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://hyperchat.space/sizzors</loc>
-    <lastmod>2025-12-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://hyperchat.space/damask_plays</loc>
-    <lastmod>2025-12-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://hyperchat.space/neko_xenpai</loc>
-    <lastmod>2025-12-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://hyperchat.space/thunderx</loc>
-    <lastmod>2025-12-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://hyperchat.space/vipbhai</loc>
-    <lastmod>2025-12-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://hyperchat.space/sagarujjwalgaming</loc>
-    <lastmod>2025-12-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://hyperchat.space/notyourkween</loc>
-    <lastmod>2025-12-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://hyperchat.space/bongflick</loc>
-    <lastmod>2025-12-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://hyperchat.space/mriqmaster</loc>
-    <lastmod>2025-12-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://hyperchat.space/abdevil</loc>
-    <lastmod>2025-12-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://hyperchat.space/jhanvoo</loc>
-    <lastmod>2025-12-13</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://hyperchat.space/clumsygod</loc>
-    <lastmod>2025-12-13</lastmod>
+    <lastmod>2025-01-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -141,25 +69,25 @@ const SitemapXml = () => {
   <!-- Legal Pages -->
   <url>
     <loc>https://hyperchat.space/privacy-policy</loc>
-    <lastmod>2025-12-13</lastmod>
+    <lastmod>2025-01-25</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
     <loc>https://hyperchat.space/cancellation-refunds</loc>
-    <lastmod>2025-12-13</lastmod>
+    <lastmod>2025-01-25</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
     <loc>https://hyperchat.space/shipping</loc>
-    <lastmod>2025-12-13</lastmod>
+    <lastmod>2025-01-25</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
     <loc>https://hyperchat.space/terms-and-conditions</loc>
-    <lastmod>2025-12-13</lastmod>
+    <lastmod>2025-01-25</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
   </url>
@@ -167,43 +95,43 @@ const SitemapXml = () => {
   <!-- Blog Posts -->
   <url>
     <loc>https://hyperchat.space/blog/earn-money-streaming-india</loc>
-    <lastmod>2025-12-13</lastmod>
+    <lastmod>2025-01-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://hyperchat.space/blog/best-upi-tipping-platforms</loc>
-    <lastmod>2025-12-13</lastmod>
+    <lastmod>2025-01-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://hyperchat.space/blog/complete-guide-monetize-content-india</loc>
-    <lastmod>2025-12-13</lastmod>
+    <lastmod>2025-01-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://hyperchat.space/blog/fan-engagement-tools-2025</loc>
-    <lastmod>2025-12-13</lastmod>
+    <lastmod>2025-01-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://hyperchat.space/blog/streamer-donation-app-strategy</loc>
-    <lastmod>2025-12-13</lastmod>
+    <lastmod>2025-01-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://hyperchat.space/blog/upi-security-best-practices</loc>
-    <lastmod>2025-12-13</lastmod>
+    <lastmod>2025-01-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://hyperchat.space/blog/virtual-gifts-maximize-revenue</loc>
-    <lastmod>2025-12-13</lastmod>
+    <lastmod>2025-01-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>

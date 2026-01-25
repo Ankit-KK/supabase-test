@@ -18,18 +18,6 @@ const Sitemap = () => {
     { path: "/ankit", title: "Ankit", description: "Support Ankit" },
     { path: "/chiaa_gaming", title: "Chiaa Gaming", description: "Support Chiaa Gaming" },
     { path: "/looteriya_gaming", title: "Looteriya Gaming", description: "Support Looteriya Gaming" },
-    { path: "/sizzors", title: "Sizzors", description: "Support Sizzors" },
-    { path: "/damask_plays", title: "Damask Plays", description: "Support Damask Plays" },
-    { path: "/neko_xenpai", title: "Neko Xenpai", description: "Support Neko Xenpai" },
-    { path: "/thunderx", title: "ThunderX", description: "Support ThunderX" },
-    { path: "/vipbhai", title: "VIP Bhai", description: "Support VIP Bhai" },
-    { path: "/sagarujjwalgaming", title: "Sagar Ujjwal Gaming", description: "Support Sagar Ujjwal Gaming" },
-    { path: "/notyourkween", title: "Not Your Kween", description: "Support Not Your Kween" },
-    { path: "/bongflick", title: "BongFlick", description: "Support BongFlick" },
-    { path: "/mriqmaster", title: "Mr Iqmaster", description: "Support Mr Iqmaster" },
-    { path: "/abdevil", title: "ABdevil", description: "Support ABdevil" },
-    { path: "/jhanvoo", title: "Jhanvoo", description: "Support Jhanvoo" },
-    { path: "/clumsygod", title: "ClumsyGod", description: "Support ClumsyGod" },
   ];
 
   const legalPages = [
@@ -98,7 +86,7 @@ const Sitemap = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-3">
+              <div className="grid md:grid-cols-3 lg:grid-cols-3 gap-3">
                 {creatorPages.map((page) => (
                   <Link
                     key={page.path}
