@@ -231,16 +231,9 @@ export default function Status() {
     checkPaymentStatus();
   }, [orderId, status]);
 
-  // Auto-refresh for pending payments
-  useEffect(() => {
-    if (paymentStatus === 'pending') {
-      const timer = setTimeout(() => {
-        window.location.reload();
-      }, 3000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [paymentStatus]);
+  // NOTE: Removed auto-refresh polling for pending payments to reduce Supabase egress
+  // Payment confirmation is now handled via Pusher events from the webhook
+  // The user can manually refresh if needed using the Refresh Status button
 
   const getStatusContent = (st: typeof paymentStatus) => {
     switch (st) {

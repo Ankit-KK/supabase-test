@@ -95,11 +95,9 @@ export const GoalOverlayWrapper: React.FC<GoalOverlayWrapperProps> = ({ streamer
     setCurrentAmount(totalAmount);
   }, [streamerSlug, config.tableName]);
 
-  // Initial fetch and periodic refresh
+  // Initial fetch only - real-time updates come via Pusher (no polling to reduce egress)
   useEffect(() => {
     fetchGoalData();
-    const interval = setInterval(fetchGoalData, 30000); // Refresh every 30 seconds
-    return () => clearInterval(interval);
   }, [fetchGoalData]);
 
   // Pusher subscription for real-time updates

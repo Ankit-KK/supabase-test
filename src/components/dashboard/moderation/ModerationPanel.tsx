@@ -205,11 +205,9 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
     }
   }, [streamerSlug, tableName]);
 
+  // Initial fetch only - real-time updates come via Pusher (no polling to reduce egress)
   useEffect(() => {
     fetchQueue();
-    // Reduced polling interval since we have real-time updates
-    const interval = setInterval(fetchQueue, 30000);
-    return () => clearInterval(interval);
   }, [fetchQueue]);
 
   // Update settings via edge function (bypasses RLS)
