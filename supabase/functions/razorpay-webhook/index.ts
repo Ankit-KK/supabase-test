@@ -359,7 +359,7 @@ serve(async (req) => {
         };
 
         // Send dashboard notification for all successful payments
-        const dashboardChannel = `${streamerSlug.replace(/_/g, '-')}-dashboard`;
+        const dashboardChannel = `${streamerSlug}-dashboard`;
         await sendPusherEvent(dashboardChannel, 'new-donation', {
           id: donation.id,
           name: donation.name,
@@ -414,7 +414,7 @@ serve(async (req) => {
             .single();
 
           // Send audio queue event
-          const audioChannel = `${streamerSlug.replace(/_/g, '-')}-audio`;
+          const audioChannel = `${streamerSlug}-audio`;
           await sendPusherEvent(audioChannel, 'new-audio-message', {
             id: updatedDonation?.id || donation.id,
             name: updatedDonation?.name || donation.name,
