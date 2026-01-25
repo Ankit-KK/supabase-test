@@ -18,110 +18,33 @@ import NotFound from "./pages/NotFound";
 import FeatureShowcase from "./pages/FeatureShowcase";
 import Status from "./pages/Status";
 import UpiSecurityBestPractices from "./pages/blog/UpiSecurityBestPractices";
-// Individual streamer donation pages (only active streamers + ThunderX)
+
+// Active streamer donation pages
 import Ankit from "./pages/Ankit";
 import ChiaaGaming from "./pages/ChiaaGaming";
 import LooteriyaGaming from "./pages/LooteriyaGaming";
-import Sizzors from "./pages/Sizzors";
-import DamaskPlays from "./pages/DamaskPlays";
-import NekoXenpai from "./pages/NekoXenpai";
-import ThunderX from "./pages/ThunderX";
-import VIPBhai from "./pages/VIPBhai";
-import SagarUjjwalGaming from "./pages/SagarUjjwalGaming";
-import NotYourKween from "./pages/NotYourKween";
-import BongFlick from "./pages/BongFlick";
-import MrIqmaster from "./pages/MrIqmaster";
-import ABdevil from "./pages/ABdevil";
-import Jhanvoo from "./pages/Jhanvoo";
-import ClumsyGod from "./pages/ClumsyGod";
-import JimmyGaming from "./pages/JimmyGaming";
 
-// Dashboard pages (active streamers + ThunderX)
+// Dashboard pages
 import Dashboard from "./pages/dashboard/Dashboard";
 import Auth from "./pages/Auth";
 import AnkitDashboard from "./pages/dashboard/AnkitDashboard";
 import ChiaGamingDashboard from "./pages/dashboard/ChiaGamingDashboard";
 import LooteriyaGamingDashboard from "./pages/dashboard/LooteriyaGamingDashboard";
-import SizzorsDashboard from "./pages/dashboard/SizzorsDashboard";
-import DamaskPlaysDashboard from "./pages/dashboard/DamaskPlaysDashboard";
-import NekoXenpaiDashboard from "./pages/dashboard/NekoXenpaiDashboard";
-import ThunderXDashboard from "./pages/dashboard/ThunderXDashboard";
-import VIPBhaiDashboard from "./pages/dashboard/VIPBhaiDashboard";
-import SagarUjjwalGamingDashboard from "./pages/dashboard/SagarUjjwalGamingDashboard";
-import NotYourKweenDashboard from "./pages/dashboard/NotYourKweenDashboard";
-import BongFlickDashboard from "./pages/dashboard/BongFlickDashboard";
-import MrIqmasterDashboard from "./pages/dashboard/MrIqmasterDashboard";
-import ABdevilDashboard from "./pages/dashboard/ABdevilDashboard";
-import JhanvooDashboard from "./pages/dashboard/JhanvooDashboard";
-import ClumsyGodDashboard from "./pages/dashboard/ClumsyGodDashboard";
-import JimmyGamingDashboard from "./pages/dashboard/JimmyGamingDashboard";
 
-// OBS Alert pages (active streamers + ThunderX)
+// OBS Alert pages
 import AnkitObsAlerts from "./pages/obs-alerts/AnkitObsAlerts";
 import AnkitGoalOverlay from "./pages/obs-alerts/AnkitGoalOverlay";
-import LooteriyaGamingGoalOverlay from "./pages/obs-alerts/LooteriyaGamingGoalOverlay";
 import ChiaGamingObsAlerts from "./pages/obs-alerts/ChiaGamingObsAlerts";
 import ChiaGamingGoalOverlay from "./pages/obs-alerts/ChiaGamingGoalOverlay";
 import LooteriyaGamingObsAlerts from "./pages/obs-alerts/LooteriyaGamingObsAlerts";
-import SizzorsObsAlerts from "./pages/obs-alerts/SizzorsObsAlerts";
-import SizzorsGoalOverlay from "./pages/obs-alerts/SizzorsGoalOverlay";
-import DamaskPlaysObsAlerts from "./pages/obs-alerts/DamaskPlaysObsAlerts";
-import DamaskPlaysGoalOverlay from "./pages/obs-alerts/DamaskPlaysGoalOverlay";
-import NekoXenpaiObsAlerts from "./pages/obs-alerts/NekoXenpaiObsAlerts";
-import NekoXenpaiGoalOverlay from "./pages/obs-alerts/NekoXenpaiGoalOverlay";
-import ThunderXObsAlerts from "./pages/obs-alerts/ThunderXObsAlerts";
-import ThunderXGoalOverlay from "./pages/obs-alerts/ThunderXGoalOverlay";
-import VIPBhaiObsAlerts from "./pages/obs-alerts/VIPBhaiObsAlerts";
-import VIPBhaiGoalOverlay from "./pages/obs-alerts/VIPBhaiGoalOverlay";
-import SagarUjjwalGamingObsAlerts from "./pages/obs-alerts/SagarUjjwalGamingObsAlerts";
-import SagarUjjwalGamingGoalOverlay from "./pages/obs-alerts/SagarUjjwalGamingGoalOverlay";
-import NotYourKweenObsAlerts from "./pages/obs-alerts/NotYourKweenObsAlerts";
-import NotYourKweenGoalOverlay from "./pages/obs-alerts/NotYourKweenGoalOverlay";
-import BongFlickObsAlerts from "./pages/obs-alerts/BongFlickObsAlerts";
-import BongFlickGoalOverlay from "./pages/obs-alerts/BongFlickGoalOverlay";
-import MrIqmasterObsAlerts from "./pages/obs-alerts/MrIqmasterObsAlerts";
-import MrIqmasterGoalOverlay from "./pages/obs-alerts/MrIqmasterGoalOverlay";
-import ABdevilObsAlerts from "./pages/obs-alerts/ABdevilObsAlerts";
-import ABdevilGoalOverlay from "./pages/obs-alerts/ABdevilGoalOverlay";
-import JhanvooObsAlerts from "./pages/obs-alerts/JhanvooObsAlerts";
-import JhanvooGoalOverlay from "./pages/obs-alerts/JhanvooGoalOverlay";
-import ClumsyGodObsAlerts from "./pages/obs-alerts/ClumsyGodObsAlerts";
-import ClumsyGodGoalOverlay from "./pages/obs-alerts/ClumsyGodGoalOverlay";
-import JimmyGamingObsAlerts from "./pages/obs-alerts/JimmyGamingObsAlerts";
-import JimmyGamingGoalOverlay from "./pages/obs-alerts/JimmyGamingGoalOverlay";
+import LooteriyaGamingGoalOverlay from "./pages/obs-alerts/LooteriyaGamingGoalOverlay";
 
-// Audio Player pages (active streamers + ThunderX)
+// Audio Player pages
 import AnkitAudioPlayer from "./pages/audio-player/AnkitAudioPlayer";
 import AnkitMediaSourcePlayer from "./pages/audio-player/AnkitMediaSourcePlayer";
-import LooteriyaGamingMediaSourcePlayer from "./pages/audio-player/LooteriyaGamingMediaSourcePlayer";
 import ChiaGamingAudioPlayer from "./pages/audio-player/ChiaGamingAudioPlayer";
-import SizzorsAudioPlayer from "./pages/audio-player/SizzorsAudioPlayer";
-import DamaskPlaysAudioPlayer from "./pages/audio-player/DamaskPlaysAudioPlayer";
-import NekoXenpaiAudioPlayer from "./pages/audio-player/NekoXenpaiAudioPlayer";
-import ThunderXAudioPlayer from "./pages/audio-player/ThunderXAudioPlayer";
-import ThunderXMediaSourcePlayer from "./pages/audio-player/ThunderXMediaSourcePlayer";
-import VIPBhaiAudioPlayer from "./pages/audio-player/VIPBhaiAudioPlayer";
-import VIPBhaiMediaSourcePlayer from "./pages/audio-player/VIPBhaiMediaSourcePlayer";
-import SagarUjjwalGamingAudioPlayer from "./pages/audio-player/SagarUjjwalGamingAudioPlayer";
-import NotYourKweenAudioPlayer from "./pages/audio-player/NotYourKweenAudioPlayer";
-import BongFlickAudioPlayer from "./pages/audio-player/BongFlickAudioPlayer";
-import MrIqmasterAudioPlayer from "./pages/audio-player/MrIqmasterAudioPlayer";
-import ABdevilAudioPlayer from "./pages/audio-player/ABdevilAudioPlayer";
-import JhanvooAudioPlayer from "./pages/audio-player/JhanvooAudioPlayer";
-import ClumsyGodAudioPlayer from "./pages/audio-player/ClumsyGodAudioPlayer";
-import ClumsyGodMediaSourcePlayer from "./pages/audio-player/ClumsyGodMediaSourcePlayer";
-import JimmyGamingAudioPlayer from "./pages/audio-player/JimmyGamingAudioPlayer";
-import JimmyGamingMediaSourcePlayer from "./pages/audio-player/JimmyGamingMediaSourcePlayer";
 import ChiaGamingMediaSourcePlayer from "./pages/audio-player/ChiaGamingMediaSourcePlayer";
-import SizzorsMediaSourcePlayer from "./pages/audio-player/SizzorsMediaSourcePlayer";
-import DamaskPlaysMediaSourcePlayer from "./pages/audio-player/DamaskPlaysMediaSourcePlayer";
-import NekoXenpaiMediaSourcePlayer from "./pages/audio-player/NekoXenpaiMediaSourcePlayer";
-import SagarUjjwalGamingMediaSourcePlayer from "./pages/audio-player/SagarUjjwalGamingMediaSourcePlayer";
-import NotYourKweenMediaSourcePlayer from "./pages/audio-player/NotYourKweenMediaSourcePlayer";
-import BongFlickMediaSourcePlayer from "./pages/audio-player/BongFlickMediaSourcePlayer";
-import MrIqmasterMediaSourcePlayer from "./pages/audio-player/MrIqmasterMediaSourcePlayer";
-import ABdevilMediaSourcePlayer from "./pages/audio-player/ABdevilMediaSourcePlayer";
-import JhanvooMediaSourcePlayer from "./pages/audio-player/JhanvooMediaSourcePlayer";
+import LooteriyaGamingMediaSourcePlayer from "./pages/audio-player/LooteriyaGamingMediaSourcePlayer";
 
 const queryClient = new QueryClient();
 
@@ -129,138 +52,60 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Index />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/about" element={<About />} />
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<Index />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/about" element={<About />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
             <Route path="/cancellation-refunds" element={<CancellationRefunds />} />
-              <Route path="/shipping" element={<Shipping />} />
-              <Route path="/blog" element={<Blog />} />
-              <Route path="/sitemap" element={<Sitemap />} />
-              <Route path="/sitemap.xml" element={<SitemapXml />} />
-              <Route path="/feature-showcase" element={<FeatureShowcase />} />
-              <Route path="/status" element={<Status />} />
-              
-              {/* Blog posts */}
-              <Route path="/blog/upi-security-best-practices" element={<UpiSecurityBestPractices />} />
-              
-              {/* Streamer donation pages - Active Streamers */}
-              <Route path="/ankit" element={<Ankit />} />
-              <Route path="/chiaa_gaming" element={<ChiaaGaming />} />
-              <Route path="/looteriya_gaming" element={<LooteriyaGaming />} />
-              <Route path="/sizzors" element={<Sizzors />} />
-              <Route path="/damask_plays" element={<DamaskPlays />} />
-              <Route path="/neko_xenpai" element={<NekoXenpai />} />
-              <Route path="/thunderx" element={<ThunderX />} />
-              <Route path="/vipbhai" element={<VIPBhai />} />
-              <Route path="/sagarujjwalgaming" element={<SagarUjjwalGaming />} />
-              <Route path="/notyourkween" element={<NotYourKween />} />
-              <Route path="/bongflick" element={<BongFlick />} />
-              <Route path="/mriqmaster" element={<MrIqmaster />} />
-              <Route path="/abdevil" element={<ABdevil />} />
-              <Route path="/jhanvoo" element={<Jhanvoo />} />
-              <Route path="/clumsygod" element={<ClumsyGod />} />
-              <Route path="/jimmy_gaming" element={<JimmyGaming />} />
-              
-              {/* Authentication */}
-              <Route path="/auth" element={<Auth />} />
-              
-              {/* Dashboard Routes */}
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/dashboard/ankit" element={<AnkitDashboard />} />
-              <Route path="/dashboard/chiaa_gaming" element={<ChiaGamingDashboard />} />
-              <Route path="/dashboard/looteriya_gaming" element={<LooteriyaGamingDashboard />} />
-              <Route path="/dashboard/sizzors" element={<SizzorsDashboard />} />
-              <Route path="/dashboard/damask_plays" element={<DamaskPlaysDashboard />} />
-              <Route path="/dashboard/neko_xenpai" element={<NekoXenpaiDashboard />} />
-              <Route path="/dashboard/thunderx" element={<ThunderXDashboard />} />
-              <Route path="/dashboard/vipbhai" element={<VIPBhaiDashboard />} />
-              <Route path="/dashboard/sagarujjwalgaming" element={<SagarUjjwalGamingDashboard />} />
-              <Route path="/dashboard/notyourkween" element={<NotYourKweenDashboard />} />
-              <Route path="/dashboard/bongflick" element={<BongFlickDashboard />} />
-              <Route path="/dashboard/mriqmaster" element={<MrIqmasterDashboard />} />
-              <Route path="/dashboard/abdevil" element={<ABdevilDashboard />} />
-              <Route path="/dashboard/jhanvoo" element={<JhanvooDashboard />} />
-              <Route path="/dashboard/clumsygod" element={<ClumsyGodDashboard />} />
-              <Route path="/dashboard/jimmy_gaming" element={<JimmyGamingDashboard />} />
-              
-              {/* OBS Alert routes */}
-              <Route path="/ankit/obs-alerts" element={<AnkitObsAlerts />} />
-              <Route path="/ankit/goal-overlay" element={<AnkitGoalOverlay />} />
-              <Route path="/chiaa_gaming/obs-alerts" element={<ChiaGamingObsAlerts />} />
-              <Route path="/chiaa_gaming/goal-overlay" element={<ChiaGamingGoalOverlay />} />
-              <Route path="/looteriya_gaming/obs-alerts" element={<LooteriyaGamingObsAlerts />} />
-              <Route path="/looteriya_gaming/goal-overlay" element={<LooteriyaGamingGoalOverlay />} />
-              <Route path="/sizzors/obs-alerts" element={<SizzorsObsAlerts />} />
-              <Route path="/sizzors/goal-overlay" element={<SizzorsGoalOverlay />} />
-              <Route path="/damask_plays/obs-alerts" element={<DamaskPlaysObsAlerts />} />
-              <Route path="/damask_plays/goal-overlay" element={<DamaskPlaysGoalOverlay />} />
-              <Route path="/neko_xenpai/obs-alerts" element={<NekoXenpaiObsAlerts />} />
-              <Route path="/neko_xenpai/goal-overlay" element={<NekoXenpaiGoalOverlay />} />
-              <Route path="/thunderx/obs-alerts" element={<ThunderXObsAlerts />} />
-              <Route path="/thunderx/goal-overlay" element={<ThunderXGoalOverlay />} />
-              <Route path="/vipbhai/obs-alerts" element={<VIPBhaiObsAlerts />} />
-              <Route path="/vipbhai/goal-overlay" element={<VIPBhaiGoalOverlay />} />
-              <Route path="/sagarujjwalgaming/obs-alerts" element={<SagarUjjwalGamingObsAlerts />} />
-              <Route path="/sagarujjwalgaming/goal-overlay" element={<SagarUjjwalGamingGoalOverlay />} />
-              <Route path="/notyourkween/obs-alerts" element={<NotYourKweenObsAlerts />} />
-              <Route path="/notyourkween/goal-overlay" element={<NotYourKweenGoalOverlay />} />
-              <Route path="/bongflick/obs-alerts" element={<BongFlickObsAlerts />} />
-              <Route path="/bongflick/goal-overlay" element={<BongFlickGoalOverlay />} />
-              <Route path="/mriqmaster/obs-alerts" element={<MrIqmasterObsAlerts />} />
-              <Route path="/mriqmaster/goal-overlay" element={<MrIqmasterGoalOverlay />} />
-              <Route path="/abdevil/obs-alerts" element={<ABdevilObsAlerts />} />
-              <Route path="/abdevil/goal-overlay" element={<ABdevilGoalOverlay />} />
-              <Route path="/jhanvoo/obs-alerts" element={<JhanvooObsAlerts />} />
-              <Route path="/jhanvoo/goal-overlay" element={<JhanvooGoalOverlay />} />
-              <Route path="/clumsygod/obs-alerts" element={<ClumsyGodObsAlerts />} />
-              <Route path="/clumsygod/goal-overlay" element={<ClumsyGodGoalOverlay />} />
-              <Route path="/jimmy_gaming/obs-alerts" element={<JimmyGamingObsAlerts />} />
-              <Route path="/jimmy_gaming/goal-overlay" element={<JimmyGamingGoalOverlay />} />
-              
-              {/* Audio Player routes */}
-              <Route path="/ankit/audio-player" element={<AnkitAudioPlayer />} />
-              <Route path="/ankit/media-audio-player" element={<AnkitMediaSourcePlayer />} />
-              <Route path="/chiaa_gaming/audio-player" element={<ChiaGamingAudioPlayer />} />
-              <Route path="/looteriya_gaming/media-audio-player" element={<LooteriyaGamingMediaSourcePlayer />} />
-              <Route path="/sizzors/audio-player" element={<SizzorsAudioPlayer />} />
-              <Route path="/damask_plays/audio-player" element={<DamaskPlaysAudioPlayer />} />
-              <Route path="/neko_xenpai/audio-player" element={<NekoXenpaiAudioPlayer />} />
-              <Route path="/thunderx/audio-player" element={<ThunderXAudioPlayer />} />
-              <Route path="/thunderx/media-audio-player" element={<ThunderXMediaSourcePlayer />} />
-              <Route path="/vipbhai/audio-player" element={<VIPBhaiAudioPlayer />} />
-              <Route path="/vipbhai/media-audio-player" element={<VIPBhaiMediaSourcePlayer />} />
-              <Route path="/sagarujjwalgaming/audio-player" element={<SagarUjjwalGamingAudioPlayer />} />
-              <Route path="/notyourkween/audio-player" element={<NotYourKweenAudioPlayer />} />
-              <Route path="/bongflick/audio-player" element={<BongFlickAudioPlayer />} />
-              <Route path="/mriqmaster/audio-player" element={<MrIqmasterAudioPlayer />} />
-              <Route path="/abdevil/audio-player" element={<ABdevilAudioPlayer />} />
-              <Route path="/jhanvoo/audio-player" element={<JhanvooAudioPlayer />} />
-              <Route path="/clumsygod/audio-player" element={<ClumsyGodAudioPlayer />} />
-              <Route path="/clumsygod/media-audio-player" element={<ClumsyGodMediaSourcePlayer />} />
-              <Route path="/jimmy_gaming/audio-player" element={<JimmyGamingAudioPlayer />} />
-              <Route path="/jimmy_gaming/media-audio-player" element={<JimmyGamingMediaSourcePlayer />} />
-              <Route path="/chiaa_gaming/media-audio-player" element={<ChiaGamingMediaSourcePlayer />} />
-              <Route path="/sizzors/media-audio-player" element={<SizzorsMediaSourcePlayer />} />
-              <Route path="/damask_plays/media-audio-player" element={<DamaskPlaysMediaSourcePlayer />} />
-              <Route path="/neko_xenpai/media-audio-player" element={<NekoXenpaiMediaSourcePlayer />} />
-              <Route path="/sagarujjwalgaming/media-audio-player" element={<SagarUjjwalGamingMediaSourcePlayer />} />
-              <Route path="/notyourkween/media-audio-player" element={<NotYourKweenMediaSourcePlayer />} />
-              <Route path="/bongflick/media-audio-player" element={<BongFlickMediaSourcePlayer />} />
-              <Route path="/mriqmaster/media-audio-player" element={<MrIqmasterMediaSourcePlayer />} />
-              <Route path="/abdevil/media-audio-player" element={<ABdevilMediaSourcePlayer />} />
-              <Route path="/jhanvoo/media-audio-player" element={<JhanvooMediaSourcePlayer />} />
-              
-              {/* Catch all 404 */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
+            <Route path="/shipping" element={<Shipping />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/sitemap" element={<Sitemap />} />
+            <Route path="/sitemap.xml" element={<SitemapXml />} />
+            <Route path="/feature-showcase" element={<FeatureShowcase />} />
+            <Route path="/status" element={<Status />} />
+            
+            {/* Blog posts */}
+            <Route path="/blog/upi-security-best-practices" element={<UpiSecurityBestPractices />} />
+            
+            {/* Streamer donation pages */}
+            <Route path="/ankit" element={<Ankit />} />
+            <Route path="/chiaa_gaming" element={<ChiaaGaming />} />
+            <Route path="/looteriya_gaming" element={<LooteriyaGaming />} />
+            
+            {/* Authentication */}
+            <Route path="/auth" element={<Auth />} />
+            
+            {/* Dashboard Routes */}
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard/ankit" element={<AnkitDashboard />} />
+            <Route path="/dashboard/chiaa_gaming" element={<ChiaGamingDashboard />} />
+            <Route path="/dashboard/looteriya_gaming" element={<LooteriyaGamingDashboard />} />
+            
+            {/* OBS Alert routes */}
+            <Route path="/ankit/obs-alerts" element={<AnkitObsAlerts />} />
+            <Route path="/ankit/goal-overlay" element={<AnkitGoalOverlay />} />
+            <Route path="/chiaa_gaming/obs-alerts" element={<ChiaGamingObsAlerts />} />
+            <Route path="/chiaa_gaming/goal-overlay" element={<ChiaGamingGoalOverlay />} />
+            <Route path="/looteriya_gaming/obs-alerts" element={<LooteriyaGamingObsAlerts />} />
+            <Route path="/looteriya_gaming/goal-overlay" element={<LooteriyaGamingGoalOverlay />} />
+            
+            {/* Audio Player routes */}
+            <Route path="/ankit/audio-player" element={<AnkitAudioPlayer />} />
+            <Route path="/ankit/media-audio-player" element={<AnkitMediaSourcePlayer />} />
+            <Route path="/chiaa_gaming/audio-player" element={<ChiaGamingAudioPlayer />} />
+            <Route path="/chiaa_gaming/media-audio-player" element={<ChiaGamingMediaSourcePlayer />} />
+            <Route path="/looteriya_gaming/media-audio-player" element={<LooteriyaGamingMediaSourcePlayer />} />
+            
+            {/* Catch all 404 */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
