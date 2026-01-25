@@ -33,24 +33,11 @@ serve(async (req) => {
       });
     }
 
-    // Donation tables to check
+    // Active donation tables only (3 streamers)
     const donationTables = [
       'ankit_donations',
       'chiaa_gaming_donations',
       'looteriya_gaming_donations',
-      'sizzors_donations',
-      'thunderx_donations',
-      'vipbhai_donations',
-      'sagarujjwalgaming_donations',
-      'notyourkween_donations',
-      'bongflick_donations',
-      'mriqmaster_donations',
-      'abdevil_donations',
-      'damask_plays_donations',
-      'neko_xenpai_donations',
-      'jhanvoo_donations',
-      'clumsygod_donations',
-      'jimmy_gaming_donations'
     ];
 
     let donationsToNotify: any[] = [];

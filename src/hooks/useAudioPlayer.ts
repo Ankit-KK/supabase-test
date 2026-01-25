@@ -16,7 +16,7 @@ interface Donation {
   tts_audio_url?: string;
 }
 
-type TableName = 'ankit_donations' | 'chiaa_gaming_donations' | 'looteriya_gaming_donations' | 'sizzors_donations' | 'damask_plays_donations' | 'neko_xenpai_donations' | 'thunderx_donations' | 'vipbhai_donations' | 'sagarujjwalgaming_donations' | 'notyourkween_donations' | 'bongflick_donations' | 'mriqmaster_donations' | 'abdevil_donations' | 'jhanvoo_donations' | 'clumsygod_donations' | 'jimmy_gaming_donations';
+type TableName = 'ankit_donations' | 'chiaa_gaming_donations' | 'looteriya_gaming_donations';
 
 interface UseAudioPlayerProps {
   tableName: TableName;

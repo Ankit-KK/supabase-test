@@ -39,14 +39,7 @@ const Dashboard = () => {
         
         // Auto-redirect if user has only one streamer access and is not admin
         if (streamers.length === 1 && !streamers[0].is_admin) {
-          const slug = streamers[0].streamer_slug;
-          if (slug === 'ankit') {
-            navigate('/dashboard/ankit');
-          } else if (slug === 'chiaa_gaming') {
-            navigate('/dashboard/chiaa_gaming');
-          } else if (slug === 'damask_plays') {
-            navigate('/dashboard/damask_plays');
-          }
+          navigate(`/dashboard/${streamers[0].streamer_slug}`);
           return;
         }
       } catch (error) {

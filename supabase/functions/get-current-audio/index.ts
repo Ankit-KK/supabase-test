@@ -6,44 +6,18 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Mapping of streamer slugs to their donation table names
+// Active streamers only - mapping slugs to donation table names
 const STREAMER_TABLE_MAP: Record<string, string> = {
   'ankit': 'ankit_donations',
-  'looteriya_gaming': 'looteriya_gaming_donations',
   'chiaa_gaming': 'chiaa_gaming_donations',
-  'sizzors': 'sizzors_donations',
-  'thunderx': 'thunderx_donations',
-  'vipbhai': 'vipbhai_donations',
-  'sagarujjwalgaming': 'sagarujjwalgaming_donations',
-  'notyourkween': 'notyourkween_donations',
-  'bongflick': 'bongflick_donations',
-  'mriqmaster': 'mriqmaster_donations',
-  'abdevil': 'abdevil_donations',
-  'jhanvoo': 'jhanvoo_donations',
-  'damask_plays': 'damask_plays_donations',
-  'neko_xenpai': 'neko_xenpai_donations',
-  'clumsygod': 'clumsygod_donations',
-  'jimmy_gaming': 'jimmy_gaming_donations',
+  'looteriya_gaming': 'looteriya_gaming_donations',
 };
 
-// Mapping of streamer slugs to their Pusher alert channel names
+// Active streamers only - mapping slugs to Pusher alert channel names
 const STREAMER_CHANNEL_MAP: Record<string, string> = {
   'ankit': 'ankit-alerts',
-  'looteriya_gaming': 'looteriya_gaming-alerts',
   'chiaa_gaming': 'chiaa_gaming-alerts',
-  'sizzors': 'sizzors-alerts',
-  'thunderx': 'thunderx-alerts',
-  'vipbhai': 'vipbhai-alerts',
-  'sagarujjwalgaming': 'sagarujjwalgaming-alerts',
-  'notyourkween': 'notyourkween-alerts',
-  'bongflick': 'bongflick-alerts',
-  'mriqmaster': 'mriqmaster-alerts',
-  'abdevil': 'abdevil-alerts',
-  'jhanvoo': 'jhanvoo-alerts',
-  'damask_plays': 'damask_plays-alerts',
-  'neko_xenpai': 'neko_xenpai-alerts',
-  'clumsygod': 'clumsygod-alerts',
-  'jimmy_gaming': 'jimmy_gaming-alerts',
+  'looteriya_gaming': 'looteriya_gaming-alerts',
 };
 
 Deno.serve(async (req) => {
