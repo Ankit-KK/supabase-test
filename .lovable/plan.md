@@ -1,160 +1,130 @@
 
-# Fix Media Moderation and Telegram Notifications
+# Per-Streamer Pricing in Unified Payment System
 
-## Problem Summary
+## Current Architecture
 
-Two critical bugs are breaking the moderation system for media donations:
+| Layer | Location | Current State |
+|-------|----------|---------------|
+| **Edge Function** | `create-razorpay-order-unified` | Hardcoded `CURRENCY_MINIMUMS` object (same for all streamers) |
+| **Database** | `streamers` table | Already has `media_min_amount`, `hyperemotes_min_amount` columns |
+| **Frontend** | `src/constants/currencies.ts` | Hardcoded minimums per currency (same for all streamers) |
 
-| Issue | Root Cause | Impact |
-|-------|-----------|--------|
-| 1. Wrong Telegram message | `notify-new-donations` only checks `moderation_mode === 'manual'`, ignoring `media_moderation_enabled` | Media donations show as "Auto-Approved" instead of "Needs Approval" in Telegram |
-| 2. Telegram buttons fail | callback_data exceeds 64-byte limit (e.g., `approve_381f6e9f-9691-457d-b77f-e7ffc97c4165_looteriya_gaming_donations`) | All Telegram inline buttons fail with `BUTTON_DATA_INVALID` error |
-| 3. Unused callback mappings | Webhook creates shortened callbacks but `notify-new-donations` ignores them | Shortened callback system not being used |
+## Solution: Database-Driven Pricing
+
+Instead of hardcoded minimums, the edge function will **query the streamer's pricing settings from the database**.
+
+### Database Schema Changes
+
+Add new columns to the `streamers` table for all pricing tiers:
+
+```sql
+ALTER TABLE streamers
+ADD COLUMN IF NOT EXISTS min_text_amount_inr numeric DEFAULT 40,
+ADD COLUMN IF NOT EXISTS min_voice_amount_inr numeric DEFAULT 150,
+ADD COLUMN IF NOT EXISTS min_hypersound_amount_inr numeric DEFAULT 30;
+-- media_min_amount already exists
+```
+
+### Edge Function Changes
+
+**File:** `supabase/functions/create-razorpay-order-unified/index.ts`
+
+The function already queries the streamer:
+```typescript
+const { data: streamerData } = await supabase
+  .from('streamers')
+  .select('id, streamer_name')  // Currently fetches minimal data
+  .eq('streamer_slug', streamer_slug)
+  .single();
+```
+
+Update to fetch pricing settings:
+```typescript
+const { data: streamerData } = await supabase
+  .from('streamers')
+  .select('id, streamer_name, min_text_amount_inr, min_voice_amount_inr, min_hypersound_amount_inr, media_min_amount')
+  .eq('streamer_slug', streamer_slug)
+  .single();
+
+// Use streamer-specific minimums (in INR) with currency conversion
+const streamerMinimumsINR = {
+  minText: streamerData.min_text_amount_inr || 40,
+  minVoice: streamerData.min_voice_amount_inr || 150,
+  minHypersound: streamerData.min_hypersound_amount_inr || 30,
+  minMedia: streamerData.media_min_amount || 100,
+};
+
+// Convert to user's currency using exchange rates
+const rate = EXCHANGE_RATES_TO_INR[currency] || 1;
+const minimums = {
+  minText: Math.ceil(streamerMinimumsINR.minText / rate),
+  minVoice: Math.ceil(streamerMinimumsINR.minVoice / rate),
+  minHypersound: Math.ceil(streamerMinimumsINR.minHypersound / rate),
+  minMedia: Math.ceil(streamerMinimumsINR.minMedia / rate),
+};
+```
+
+### Frontend Changes (Optional - For Display)
+
+If the frontend needs to show minimum amounts before payment, create an edge function:
+
+**File:** `supabase/functions/get-streamer-pricing/index.ts`
+```typescript
+// Returns streamer-specific minimums converted to requested currency
+{
+  minText: 40,
+  minVoice: 150,
+  minHypersound: 30,
+  minMedia: 100,
+  currency: 'INR'
+}
+```
 
 ---
 
-## Technical Analysis
+## Implementation Steps
 
-### Current Flow (Broken)
+### Step 1: Database Migration
+Add pricing columns to `streamers` table with sensible defaults
 
-```text
-Webhook                           notify-new-donations
-   |                                      |
-   +--> Creates shortened callbacks       |
-   |    (a_Abc12345)                      |
-   |                                      |
-   +--> Invokes notify-new-donations ---> Ignores passed callbacks
-        with callback_data                Queries DB for mod_notified=false
-                                          Builds own LONG callbacks
-                                          --> BUTTON_DATA_INVALID
-```
+### Step 2: Update Unified Edge Function
+Modify `create-razorpay-order-unified` to:
+1. Fetch pricing settings from database
+2. Apply currency conversion
+3. Use fetched values for validation
 
-### Database State
-
-All 3 active streamers have:
-- `moderation_mode: 'auto_approve'`  
-- `media_moderation_enabled: true`
-- `telegram_moderation_enabled: true` (Looteriya Gaming)
-
-When a media donation comes in with these settings:
-- Webhook correctly sets `moderation_status = 'pending'`
-- But `notify-new-donations` checks `moderation_mode === 'manual'` (false)
-- So it shows "Auto-Approved" message instead of moderation buttons
+### Step 3: (Optional) Frontend API
+Create `get-streamer-pricing` for donation pages to display correct minimums
 
 ---
 
-## Solution
+## Example: Different Pricing Per Streamer
 
-### Fix 1: Update `notify-new-donations` to handle media moderation mode
+After implementation, you can set in the database:
 
-Update the pending detection logic to check for actual `moderation_status: 'pending'` rather than relying on `moderation_mode === 'manual'`:
+| Streamer | min_text_inr | min_voice_inr | min_hypersound_inr | media_min_amount |
+|----------|--------------|---------------|--------------------|--------------------|
+| Ankit | 40 | 150 | 30 | 100 |
+| Chiaa Gaming | 50 | 200 | 40 | 150 |
+| Looteriya Gaming | 30 | 100 | 25 | 80 |
 
-```typescript
-// OLD (broken):
-const isManualMode = streamer.moderation_mode === 'manual';
-const isPending = donation.moderation_status === 'pending';
-
-let messageText = isManualMode && isPending
-  ? `🎁 <b>New Donation - Needs Approval</b> 🎁\n\n`
-  : `🎁 <b>New Donation Received!</b> 🎁\n\n`;
-
-// NEW (fixed):
-const isPending = donation.moderation_status === 'pending';
-
-let messageText = isPending
-  ? `🎁 <b>New Donation - Needs Approval</b> 🎁\n\n`
-  : `🎁 <b>New Donation Received!</b> 🎁\n\n`;
-```
-
-### Fix 2: Use shortened callback format in `notify-new-donations`
-
-Implement the same callback mapping system used in the webhook:
-
-```typescript
-// Add helper function to create callback mapping
-async function createCallbackMapping(
-  supabase: any,
-  donationId: string,
-  tableName: string,
-  streamerId: string,
-  action: string
-): Promise<string> {
-  const shortId = generateShortId();
-  
-  const { error } = await supabase
-    .from('telegram_callback_mapping')
-    .insert({
-      short_id: shortId,
-      donation_id: donationId,
-      table_name: tableName,
-      streamer_id: streamerId,
-      action_type: action,
-      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-    });
-  
-  if (error) {
-    // Fallback to truncated format
-    return `${action.charAt(0)}_${donationId.substring(0, 8)}`;
-  }
-  
-  const actionPrefix = {
-    'approve': 'a', 'reject': 'r', 
-    'hide_message': 'h', 'ban_donor': 'b', 'replay': 'p'
-  }[action] || action.charAt(0);
-  
-  return `${actionPrefix}_${shortId}`;  // e.g., "a_Abc12345" (~10 chars)
-}
-```
-
-Then update the keyboard building:
-
-```typescript
-// OLD (breaks 64-byte limit):
-row1.push({ text: '✅ Approve', callback_data: `approve_${donation.id}_${donation.source_table}` });
-
-// NEW (shortened):
-const approveCallback = await createCallbackMapping(supabase, donation.id, donation.source_table, donation.streamer_id, 'approve');
-row1.push({ text: '✅ Approve', callback_data: approveCallback });
-```
-
-### Fix 3: Update keyboard display logic for pending media donations
-
-Change the condition for showing approve/reject buttons:
-
-```typescript
-// OLD:
-if (isManualMode && isPending) {
-  // Show approve/reject buttons
-}
-
-// NEW:
-if (isPending) {
-  // Show approve/reject buttons for ANY pending donation
-}
-```
+The edge function automatically converts to the donor's currency using exchange rates.
 
 ---
 
 ## Files to Modify
 
-| File | Changes |
-|------|---------|
-| `supabase/functions/notify-new-donations/index.ts` | Add `generateShortId()` and `createCallbackMapping()` helpers; Update message logic to use `isPending` instead of `isManualMode && isPending`; Update keyboard logic to use shortened callbacks |
+| File | Change |
+|------|--------|
+| Database migration | Add 3 new columns to `streamers` table |
+| `create-razorpay-order-unified/index.ts` | Fetch pricing from DB, apply currency conversion |
+| (Optional) New edge function | `get-streamer-pricing` for frontend display |
 
 ---
 
-## Deployment Steps
+## Key Benefits
 
-1. Update `notify-new-donations` edge function
-2. Deploy the function
-3. Test by making a media donation to Looteriya Gaming
-
----
-
-## Expected Results After Fix
-
-| Scenario | Before Fix | After Fix |
-|----------|-----------|-----------|
-| Media donation with `media_moderation_enabled=true` | Telegram shows "New Donation Received!" with no approval buttons, or `BUTTON_DATA_INVALID` error | Telegram shows "New Donation - Needs Approval" with working Approve/Reject buttons |
-| Callback button clicks | Fails silently | Works correctly via `telegram_callback_mapping` table |
-| Dashboard moderation queue | Works (already working) | Works (unchanged) |
+1. **No code changes needed** to adjust pricing - just update database values
+2. **Backward compatible** - defaults match current hardcoded values
+3. **Currency conversion handled** - streamers set prices in INR, system converts automatically
+4. **Dashboard manageable** - can add UI to settings panel later
