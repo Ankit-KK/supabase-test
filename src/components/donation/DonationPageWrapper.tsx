@@ -16,7 +16,8 @@ import HowItWorksDialog from '@/components/HowItWorksDialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { ChevronDown, Check, MessageSquare, Mic, Music, Image, Loader2, HelpCircle } from 'lucide-react';
-import { SUPPORTED_CURRENCIES, getCurrencyMinimums, getCurrencySymbol as getCurrencySymbolFn } from '@/constants/currencies';
+import { SUPPORTED_CURRENCIES, getCurrencySymbol as getCurrencySymbolFn } from '@/constants/currencies';
+import { useStreamerPricing } from '@/hooks/useStreamerPricing';
 import { cn } from '@/lib/utils';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 
@@ -64,14 +65,15 @@ export const DonationPageWrapper: React.FC<DonationPageWrapperProps> = ({ config
     };
   }, []);
 
+  const { pricing } = useStreamerPricing(config.streamerSlug, currency);
+
   const getMinAmount = () => {
-    const mins = getCurrencyMinimums(currency);
     switch (donationType) {
-      case 'text': return mins.minText;
-      case 'voice': return mins.minVoice;
-      case 'hypersound': return mins.minHypersound;
-      case 'media': return mins.minMedia;
-      default: return mins.minText;
+      case 'text': return pricing.minText;
+      case 'voice': return pricing.minVoice;
+      case 'hypersound': return pricing.minHypersound;
+      case 'media': return pricing.minMedia;
+      default: return pricing.minText;
     }
   };
 
