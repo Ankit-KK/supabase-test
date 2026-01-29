@@ -216,7 +216,7 @@ const ClumsyGod = () => {
           <p className="text-xs text-muted-foreground">Support Clumsy God with your donation</p>
         </CardHeader>
 
-        <CardContent className="space-y-4 relative z-10">
+        <CardContent className="space-y-4 relative z-10 text-black">
           {/* NAME */}
           <div className="space-y-2">
             <Label className="text-emerald-400">Your Name *</Label>
@@ -224,8 +224,11 @@ const ClumsyGod = () => {
               name="name"
               value={formData.name}
               onChange={handleInputChange}
-              className="border-emerald-500/30 focus:border-emerald-500 focus:ring-emerald-500/20"
               required
+              className="bg-white text-black placeholder:text-gray-400
+                         border-emerald-500/30
+                         focus:border-emerald-500
+                         focus:ring-emerald-500/20"
             />
           </div>
 
@@ -270,7 +273,10 @@ const ClumsyGod = () => {
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className="w-[100px] justify-between border-emerald-500/30 hover:bg-emerald-500/10"
+                    className="w-[100px] justify-between
+                               bg-white text-black
+                               border-emerald-500/30
+                               hover:bg-emerald-50"
                   >
                     {currencySymbol} {selectedCurrency}
                     <ChevronsUpDown className="h-4 w-4 opacity-50" />
@@ -308,8 +314,11 @@ const ClumsyGod = () => {
                 type="number"
                 value={formData.amount}
                 onChange={handleInputChange}
-                className="border-emerald-500/30 focus:border-emerald-500 focus:ring-emerald-500/20"
                 required
+                className="bg-white text-black placeholder:text-gray-400
+                           border-emerald-500/30
+                           focus:border-emerald-500
+                           focus:ring-emerald-500/20"
               />
             </div>
           </div>
@@ -320,7 +329,12 @@ const ClumsyGod = () => {
               name="message"
               value={formData.message}
               onChange={handleInputChange}
-              className="w-full min-h-[90px] rounded-md border border-emerald-500/30 bg-background px-3 py-2 text-sm focus:border-emerald-500 focus:ring-emerald-500/20"
+              className="w-full min-h-[90px] rounded-md
+                         bg-white text-black placeholder:text-gray-400
+                         border border-emerald-500/30
+                         focus:border-emerald-500
+                         focus:ring-emerald-500/20
+                         px-3 py-2 text-sm"
               placeholder="Your message (optional)"
             />
           )}
