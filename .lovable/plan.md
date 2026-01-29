@@ -1,127 +1,135 @@
 
+# Fix: Dynamic TTS Threshold in Unified Edge Functions
 
-# Fix: Frontend Display Amounts and Dynamic TTS Threshold
+## Problem Identified
 
-## Issues Identified
+The TTS threshold is hardcoded in the edge functions, ignoring the database-controlled `min_tts_amount_inr` column:
 
-1. **Ankit.tsx (line 520)**: Text minimum shows `pricing.ttsEnabled ? pricing.minTts : pricing.minText` instead of `pricing.minText`
-2. **Ankit.tsx (line 600)**: Amount placeholder shows same incorrect logic
-3. **Ankit.tsx (line 613)**: TTS threshold is hardcoded as `TTS above ₹70` - needs to use `pricing.minTts`
-4. **ChiaaGaming.tsx (lines 437-439)**: TTS threshold hardcoded as `TTS above {symbol}{INR ? "70" : "1"}`
-5. **LooteriyaGaming.tsx (lines 439-441)**: Same hardcoded TTS threshold issue
-6. **DonationPageWrapper.tsx (line 67-75)**: Uses `getCurrencyMinimums(currency)` from constants instead of fetching from backend via `useStreamerPricing`
+| File | Location | Hardcoded Value |
+|------|----------|-----------------|
+| `check-payment-status-unified/index.ts` | Lines 343-363 | **No threshold check** - always generates TTS |
+| `moderate-donation/index.ts` | Lines 349-362 | `donation.amount >= 70` and `< 70` |
+
+When you set `min_tts_amount_inr = 40` in the database, donations at ₹40-69 should get TTS audio, but currently:
+- `check-payment-status-unified` always generates TTS (no threshold)
+- `moderate-donation` uses hardcoded ₹70, so ₹40-69 donations get silent audio instead
 
 ---
 
-## Files to Modify
+## Solution
 
-### 1. `src/pages/Ankit.tsx`
+### 1. Update `check-payment-status-unified/index.ts`
 
-**Line 520** - Fix text minimum display:
+**Add `min_tts_amount_inr` to the streamer settings query (line 202-205):**
+
 ```typescript
 // BEFORE
-<div className="text-[9px] text-yellow-300 drop-shadow-sm">Min: {getCurrencySymbol(formData.currency)}{pricing.ttsEnabled ? pricing.minTts : pricing.minText}</div>
+.select('moderation_mode, media_moderation_enabled, goal_is_active, goal_target_amount, goal_activated_at')
 
 // AFTER
-<div className="text-[9px] text-yellow-300 drop-shadow-sm">Min: {getCurrencySymbol(formData.currency)}{pricing.minText}</div>
+.select('moderation_mode, media_moderation_enabled, goal_is_active, goal_target_amount, goal_activated_at, min_tts_amount_inr, tts_enabled')
 ```
 
-**Line 600** - Fix amount placeholder:
-```typescript
-// BEFORE
-placeholder={donationType === 'message' ? `Min: ${pricing.ttsEnabled ? pricing.minTts : pricing.minText}` : ...}
-
-// AFTER
-placeholder={donationType === 'message' ? `Min: ${pricing.minText}` : ...}
-```
-
-**Line 613** - Make TTS threshold dynamic:
-```typescript
-// BEFORE
-{formData.currency === 'INR' && donationType === 'message' && <p className="text-xs text-white/90 drop-shadow-sm">TTS above ₹70</p>}
-
-// AFTER
-{donationType === 'message' && pricing.ttsEnabled && (
-  <p className="text-xs text-white/90 drop-shadow-sm">
-    TTS above {getCurrencySymbol(formData.currency)}{pricing.minTts}
-  </p>
-)}
-```
-
-### 2. `src/pages/ChiaaGaming.tsx`
-
-**Lines 436-439** - Make TTS threshold dynamic:
-```typescript
-// BEFORE
-<p className="text-xs text-muted-foreground">
-  TTS above {currencySymbol}
-  {selectedCurrency === "INR" ? "70" : "1"}
-</p>
-
-// AFTER
-{pricing.ttsEnabled && (
-  <p className="text-xs text-muted-foreground">
-    TTS above {currencySymbol}{pricing.minTts}
-  </p>
-)}
-```
-
-### 3. `src/pages/LooteriyaGaming.tsx`
-
-**Lines 439-442** - Make TTS threshold dynamic:
-```typescript
-// BEFORE
-<p className="text-xs text-muted-foreground">
-  TTS in Riya's Voice above {currencySymbol}
-  {selectedCurrency === "INR" ? "70" : "1"}
-</p>
-
-// AFTER
-{pricing.ttsEnabled && (
-  <p className="text-xs text-muted-foreground">
-    TTS in Riya's Voice above {currencySymbol}{pricing.minTts}
-  </p>
-)}
-```
-
-### 4. `src/components/donation/DonationPageWrapper.tsx`
-
-Update to use `useStreamerPricing` hook instead of hardcoded `getCurrencyMinimums`:
+**Add dynamic TTS threshold logic before TTS generation (around line 343):**
 
 ```typescript
-// Add import
-import { useStreamerPricing } from '@/hooks/useStreamerPricing';
+// Add platform floor constant
+const PLATFORM_TTS_FLOOR_INR = 40;
 
-// Inside component, replace getMinAmount with hook-based pricing
-const { pricing } = useStreamerPricing(config.streamerSlug, currency);
+// Calculate dynamic TTS threshold from database
+const ttsMinAmount = Math.max(
+  PLATFORM_TTS_FLOOR_INR, 
+  streamerSettings?.min_tts_amount_inr || PLATFORM_TTS_FLOOR_INR
+);
 
-const getMinAmount = () => {
-  switch (donationType) {
-    case 'text': return pricing.minText;
-    case 'voice': return pricing.minVoice;
-    case 'hypersound': return pricing.minHypersound;
-    case 'media': return pricing.minMedia;
-    default: return pricing.minText;
+console.log(`[Unified] TTS threshold: ${ttsMinAmount} INR (db: ${streamerSettings?.min_tts_amount_inr})`);
+
+// Determine if TTS should be generated
+const isTextDonation = !donation.voice_message_url && !donation.hypersound_url && !hasMedia;
+const amountInINR = convertToINR(donation.amount, paymentCurrency);
+
+// Generate TTS only if:
+// 1. Text/media donation (not voice/hypersound)
+// 2. Amount meets TTS threshold
+// 3. TTS is enabled for streamer
+if (!donation.voice_message_url && !donation.hypersound_url) {
+  const shouldGenerateTTS = (isTextDonation && amountInINR >= ttsMinAmount && streamerSettings?.tts_enabled !== false) || hasMedia;
+  
+  if (shouldGenerateTTS) {
+    // Call generate-donation-tts...
+  } else if (isTextDonation) {
+    // Use silent audio for donations under threshold
+    const SILENT_AUDIO_URL = Deno.env.get('SILENT_AUDIO_URL') || 'https://pub-fff13c27bb0d4a1e807dfc596462b7d5.r2.dev/silence_no_sound.mp3';
+    await supabase.from(config.table).update({ tts_audio_url: SILENT_AUDIO_URL }).eq('id', donation.id);
+    console.log(`[Unified] Using silent audio for donation under ${ttsMinAmount} INR threshold`);
   }
-};
+}
+```
+
+### 2. Update `moderate-donation/index.ts`
+
+**Add `min_tts_amount_inr` to the streamer query (line 195):**
+
+```typescript
+// BEFORE
+.select('streamer_slug, pusher_group, tts_enabled, tts_voice_id, telegram_moderation_enabled')
+
+// AFTER
+.select('streamer_slug, pusher_group, tts_enabled, tts_voice_id, telegram_moderation_enabled, min_tts_amount_inr')
+```
+
+**Replace hardcoded ₹70 with dynamic threshold (lines 343-362):**
+
+```typescript
+// Add platform floor constant (around line 343)
+const PLATFORM_TTS_FLOOR_INR = 40;
+const ttsMinAmount = Math.max(
+  PLATFORM_TTS_FLOOR_INR, 
+  streamer?.min_tts_amount_inr || PLATFORM_TTS_FLOOR_INR
+);
+console.log(`TTS threshold for approval: ${ttsMinAmount} INR (db: ${streamer?.min_tts_amount_inr})`);
+
+// BEFORE (lines 349-352)
+const shouldGenerateTextTTS = donationType === 'text' && 
+  donation.amount >= 70 && 
+  !donation.tts_audio_url &&
+  streamer.tts_enabled !== false;
+
+// AFTER
+const shouldGenerateTextTTS = donationType === 'text' && 
+  donation.amount >= ttsMinAmount && 
+  !donation.tts_audio_url &&
+  streamer.tts_enabled !== false;
+
+// BEFORE (lines 359-362)
+const shouldUseSilentAudio = donationType === 'text' && 
+  !donation.tts_audio_url &&
+  donation.amount < 70;
+
+// AFTER
+const shouldUseSilentAudio = donationType === 'text' && 
+  !donation.tts_audio_url &&
+  donation.amount < ttsMinAmount;
 ```
 
 ---
 
-## Summary
+## Summary of Changes
 
-| File | Issue | Fix |
-|------|-------|-----|
-| `Ankit.tsx` | Text min shows `minTts` | Use `pricing.minText` |
-| `Ankit.tsx` | TTS threshold hardcoded `₹70` | Use `pricing.minTts` |
-| `ChiaaGaming.tsx` | TTS threshold hardcoded | Use `pricing.minTts` |
-| `LooteriyaGaming.tsx` | TTS threshold hardcoded | Use `pricing.minTts` |
-| `DonationPageWrapper.tsx` | Uses hardcoded constants | Use `useStreamerPricing` hook |
+| File | Change |
+|------|--------|
+| `check-payment-status-unified/index.ts` | Add `min_tts_amount_inr, tts_enabled` to SELECT; add dynamic TTS threshold check before generating TTS |
+| `moderate-donation/index.ts` | Add `min_tts_amount_inr` to SELECT; replace hardcoded `70` with dynamic `ttsMinAmount` |
+
+---
 
 ## Result After Fix
 
-- Text donation minimum will show the correct `minText` value from database
-- TTS threshold will dynamically show the `minTts` value from database  
-- All currencies will display correctly rounded values from the backend
-- Streamers can control both values independently via database
+When you set `min_tts_amount_inr = 40` for Ankit in the database:
 
+| Donation Amount | Before Fix | After Fix |
+|----------------|------------|-----------|
+| ₹40-69 | Silent audio (no TTS) | TTS generated |
+| ₹70+ | TTS generated | TTS generated |
+
+The platform floor (₹40) ensures no streamer can set TTS minimum below platform limits.
