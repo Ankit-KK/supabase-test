@@ -88,7 +88,12 @@ const ClumsyGod = () => {
             ? pricing.minMedia
             : pricing.minText;
 
-    setFormData({ name: formData.name, amount: String(amount), message: "" });
+    setFormData({
+      name: formData.name,
+      amount: String(amount),
+      message: "",
+    });
+
     setSelectedHypersound(null);
     setMediaUrl(null);
     setMediaType(null);
@@ -164,7 +169,10 @@ const ClumsyGod = () => {
         });
 
         const { data, error } = await supabase.functions.invoke("upload-voice-message-direct", {
-          body: { voiceData: base64, streamerSlug: "clumsy_god" },
+          body: {
+            voiceData: base64,
+            streamerSlug: "clumsy_god",
+          },
         });
 
         if (error) throw error;
@@ -278,6 +286,7 @@ const ClumsyGod = () => {
                   </Command>
                 </PopoverContent>
               </Popover>
+
               <Input name="amount" type="number" value={formData.amount} onChange={handleInputChange} required />
             </div>
           </div>
@@ -296,6 +305,9 @@ const ClumsyGod = () => {
           {donationType === "voice" && (
             <EnhancedVoiceRecorder
               controller={voiceRecorder}
+              onRecordingComplete={(hasRecording, duration) => {
+                console.log("Voice recorded:", hasRecording, duration);
+              }}
               maxDurationSeconds={getVoiceDuration(currentAmount)}
               requiredAmount={pricing.minVoice}
               currentAmount={currentAmount}
