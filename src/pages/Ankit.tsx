@@ -246,13 +246,11 @@ const Ankit = () => {
     // Validate minimum amounts based on donation type using streamer pricing
     const currencySymbol = getCurrencySymbol(formData.currency);
     
-    // For text messages, use TTS minimum if TTS is enabled
-    const textMin = pricing.ttsEnabled ? pricing.minTts : pricing.minText;
-    
-    if (donationType === 'message' && amount < textMin) {
+    // Text donations use minText - TTS is a bonus at higher amounts (₹70+)
+    if (donationType === 'message' && amount < pricing.minText) {
       toast({
         title: "Insufficient Amount",
-        description: `Text messages require a minimum donation of ${currencySymbol}${textMin}.`,
+        description: `Text messages require a minimum donation of ${currencySymbol}${pricing.minText}.`,
         variant: "destructive"
       });
       return;
@@ -436,10 +434,10 @@ const Ankit = () => {
       }));
       setSelectedSound(null);
     } else {
-      const textMin = pricing.ttsEnabled ? pricing.minTts : pricing.minText;
+      // Text donations use minText - TTS is a bonus at higher amounts
       setFormData(prev => ({
         ...prev,
-        amount: textMin.toString()
+        amount: pricing.minText.toString()
       }));
       setSelectedSound(null);
     }

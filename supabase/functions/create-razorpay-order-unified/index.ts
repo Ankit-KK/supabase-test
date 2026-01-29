@@ -159,11 +159,10 @@ serve(async (req) => {
       throw new Error(`Media messages require minimum ${currency} ${minimums.minMedia}`);
     }
 
-    // Text donation - check TTS vs plain text minimum
+    // Text donations always use minText - TTS is a bonus at higher amounts (₹70+)
     if (!hypersoundUrl && !voiceMessageUrl && !mediaUrl) {
-      const requiredMin = streamerData.tts_enabled ? minimums.minTts : minimums.minText;
-      if (amount < requiredMin) {
-        throw new Error(`Text messages require minimum ${currency} ${requiredMin}`);
+      if (amount < minimums.minText) {
+        throw new Error(`Text messages require minimum ${currency} ${minimums.minText}`);
       }
     }
 
