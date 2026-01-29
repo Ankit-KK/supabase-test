@@ -18,10 +18,6 @@ import { SUPPORTED_CURRENCIES, getCurrencySymbol } from "@/constants/currencies"
 import { useStreamerPricing } from "@/hooks/useStreamerPricing";
 import DonationPageFooter from "@/components/DonationPageFooter";
 
-import clumsyLogo from "@/assets/clumsy-god-logo.jpg";
-import clumsyCardBg from "@/assets/clumsy-god-card-bg.jpg";
-import clumsyMainBanner from "@/assets/clumsy-god-main-banner.jpg";
-
 const ClumsyGod = () => {
   const navigate = useNavigate();
 
@@ -137,12 +133,12 @@ const ClumsyGod = () => {
     }
 
     if (donationType === "hypersound" && !selectedHypersound) {
-      toast.error("Select a sound");
+      toast.error("Please select a sound");
       return;
     }
 
     if (donationType === "media" && !mediaUrl) {
-      toast.error("Upload a media file");
+      toast.error("Please upload a media file");
       return;
     }
 
@@ -215,32 +211,120 @@ const ClumsyGod = () => {
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center p-4 bg-cover bg-center"
-      style={{ backgroundImage: `url(${clumsyMainBanner})` }}
-    >
-      <div className="absolute inset-0 bg-black/30" />
-
-      <Card
-        className="w-full max-w-sm relative overflow-hidden bg-card/95 backdrop-blur"
-        style={{
-          backgroundImage: `url(${clumsyCardBg})`,
-          backgroundSize: "cover",
-        }}
-      >
-        <div className="absolute inset-0 bg-black/50" />
-
-        <CardHeader className="relative z-10 text-center">
-          <div className="flex justify-center mb-2">
-            <img src={clumsyLogo} className="w-24 h-24 rounded-full border-4 border-emerald-500" />
-          </div>
-          <CardTitle className="text-2xl font-bold text-emerald-400">Clumsy God</CardTitle>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+      <Card className="w-full max-w-sm shadow-xl">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold text-emerald-500">Clumsy God</CardTitle>
           <p className="text-xs text-muted-foreground">Support Clumsy God on stream</p>
         </CardHeader>
 
-        <CardContent className="relative z-10 space-y-4">
-          {/* form identical structure to Looteriya */}
-          {/* intentionally omitted for brevity – logic already covered */}
+        <CardContent className="space-y-4">
+          {/* NAME */}
+          <div className="space-y-2">
+            <Label>Your Name *</Label>
+            <Input name="name" value={formData.name} onChange={handleInputChange} required />
+          </div>
+
+          {/* DONATION TYPE */}
+          <div className="grid grid-cols-4 gap-1.5">
+            {(["text", "voice", "hypersound", "media"] as const).map((type) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => handleDonationTypeChange(type)}
+                className={`p-2 rounded-lg border-2 ${
+                  donationType === type ? "border-emerald-500 bg-emerald-500/10" : "border-border"
+                }`}
+              >
+                <div className="text-xs capitalize">{type}</div>
+              </button>
+            ))}
+          </div>
+
+          {/* AMOUNT */}
+          <div className="space-y-2">
+            <Label>Amount *</Label>
+            <div className="flex gap-2">
+              <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-[100px] justify-between">
+                    {currencySymbol} {selectedCurrency}
+                    <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Search currency" />
+                    <CommandList>
+                      <CommandEmpty>No currency</CommandEmpty>
+                      <CommandGroup>
+                        {SUPPORTED_CURRENCIES.map((c) => (
+                          <CommandItem
+                            key={c.code}
+                            value={c.code}
+                            onSelect={() => {
+                              setSelectedCurrency(c.code);
+                              setCurrencyOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn("mr-2 h-4 w-4", selectedCurrency === c.code ? "opacity-100" : "opacity-0")}
+                            />
+                            {c.symbol} {c.code}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              <Input name="amount" type="number" value={formData.amount} onChange={handleInputChange} required />
+            </div>
+          </div>
+
+          {/* CONDITIONAL INPUTS */}
+          {donationType === "text" && (
+            <textarea
+              name="message"
+              value={formData.message}
+              onChange={handleInputChange}
+              className="w-full min-h-[80px] border rounded-md p-2"
+              placeholder="Optional message"
+            />
+          )}
+
+          {donationType === "voice" && (
+            <EnhancedVoiceRecorder
+              controller={voiceRecorder}
+              maxDurationSeconds={getVoiceDuration(currentAmount)}
+              requiredAmount={pricing.minVoice}
+              currentAmount={currentAmount}
+              brandColor="#10b981"
+            />
+          )}
+
+          {donationType === "hypersound" && (
+            <HyperSoundSelector selectedSound={selectedHypersound} onSoundSelect={setSelectedHypersound} />
+          )}
+
+          {donationType === "media" && (
+            <MediaUploader
+              streamerSlug="clumsy_god"
+              onMediaUploaded={(url, type) => {
+                setMediaUrl(url);
+                setMediaType(type);
+              }}
+              onMediaRemoved={() => {
+                setMediaUrl(null);
+                setMediaType(null);
+              }}
+            />
+          )}
+
+          <Button className="w-full bg-emerald-500 text-white" onClick={handleSubmit} disabled={isProcessingPayment}>
+            {isProcessingPayment ? "Processing..." : `Support ${currencySymbol}${formData.amount || "0"}`}
+          </Button>
+
           <DonationPageFooter brandColor="#10b981" />
         </CardContent>
       </Card>
