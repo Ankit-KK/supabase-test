@@ -88,12 +88,7 @@ const ClumsyGod = () => {
             ? pricing.minMedia
             : pricing.minText;
 
-    setFormData({
-      name: formData.name,
-      amount: String(amount),
-      message: "",
-    });
-
+    setFormData({ name: formData.name, amount: String(amount), message: "" });
     setSelectedHypersound(null);
     setMediaUrl(null);
     setMediaType(null);
@@ -107,14 +102,9 @@ const ClumsyGod = () => {
       return;
     }
 
-    if (!formData.name || !formData.amount) {
-      toast.error("Name and amount are required");
-      return;
-    }
-
-    const amount = parseFloat(formData.amount);
-    if (isNaN(amount) || amount <= 0) {
-      toast.error("Invalid amount");
+    const amount = Number(formData.amount);
+    if (!formData.name || !amount || amount <= 0) {
+      toast.error("Enter valid name and amount");
       return;
     }
 
@@ -138,12 +128,12 @@ const ClumsyGod = () => {
     }
 
     if (donationType === "hypersound" && !selectedHypersound) {
-      toast.error("Please select a sound");
+      toast.error("Select a sound");
       return;
     }
 
     if (donationType === "media" && !mediaUrl) {
-      toast.error("Please upload a media file");
+      toast.error("Upload a media file");
       return;
     }
 
@@ -169,10 +159,7 @@ const ClumsyGod = () => {
         });
 
         const { data, error } = await supabase.functions.invoke("upload-voice-message-direct", {
-          body: {
-            voiceData: base64,
-            streamerSlug: "clumsy_god",
-          },
+          body: { voiceData: base64, streamerSlug: "clumsy_god" },
         });
 
         if (error) throw error;
@@ -195,7 +182,7 @@ const ClumsyGod = () => {
 
       if (error) throw error;
 
-      const razorpay = new (window as any).Razorpay({
+      new (window as any).Razorpay({
         key: data.razorpay_key_id,
         amount: data.amount,
         currency: data.currency,
@@ -207,11 +194,8 @@ const ClumsyGod = () => {
           ondismiss: () => navigate(`/status?order_id=${data.orderId}&status=pending`),
         },
         theme: { color: "#10b981" },
-      });
-
-      razorpay.open();
-    } catch (err) {
-      console.error(err);
+      }).open();
+    } catch {
       toast.error("Payment failed");
     } finally {
       setIsProcessingPayment(false);
@@ -219,18 +203,30 @@ const ClumsyGod = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-      <Card className="w-full max-w-sm shadow-xl">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-emerald-500">Clumsy God</CardTitle>
-          <p className="text-xs text-muted-foreground">Support Clumsy God on stream</p>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-emerald-950 via-emerald-900 to-teal-900">
+      <div className="absolute inset-0 bg-black/30" />
+
+      <Card className="w-full max-w-sm bg-card/95 backdrop-blur-sm border-emerald-500/20 shadow-2xl relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 via-teal-500/20 to-emerald-400/20 blur-xl opacity-50" />
+
+        <CardHeader className="text-center relative z-10 pb-2">
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
+            Clumsy God
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">Support Clumsy God with your donation</p>
         </CardHeader>
 
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 relative z-10">
           {/* NAME */}
           <div className="space-y-2">
-            <Label>Your Name *</Label>
-            <Input name="name" value={formData.name} onChange={handleInputChange} required />
+            <Label className="text-emerald-400">Your Name *</Label>
+            <Input
+              name="name"
+              value={formData.name}
+              onChange={handleInputChange}
+              className="border-emerald-500/30 focus:border-emerald-500 focus:ring-emerald-500/20"
+              required
+            />
           </div>
 
           {/* DONATION TYPE */}
@@ -240,22 +236,42 @@ const ClumsyGod = () => {
                 key={type}
                 type="button"
                 onClick={() => handleDonationTypeChange(type)}
-                className={`p-2 rounded-lg border-2 ${
-                  donationType === type ? "border-emerald-500 bg-emerald-500/10" : "border-border"
+                className={`p-2 rounded-lg border-2 transition-all ${
+                  donationType === type
+                    ? "border-emerald-500 bg-emerald-500/10"
+                    : "border-emerald-500/30 hover:border-emerald-500/50"
                 }`}
               >
-                <div className="text-xs capitalize">{type}</div>
+                <div className="text-center">
+                  <div className="text-sm mb-0.5">
+                    {type === "text" ? "💬" : type === "voice" ? "🎤" : type === "hypersound" ? "🔊" : "🖼️"}
+                  </div>
+                  <div className="font-medium text-[10px] capitalize">{type === "hypersound" ? "Sound" : type}</div>
+                  <div className="text-[9px] text-muted-foreground">
+                    Min: {currencySymbol}
+                    {type === "text"
+                      ? pricing.minText
+                      : type === "voice"
+                        ? pricing.minVoice
+                        : type === "hypersound"
+                          ? pricing.minHypersound
+                          : pricing.minMedia}
+                  </div>
+                </div>
               </button>
             ))}
           </div>
 
           {/* AMOUNT */}
           <div className="space-y-2">
-            <Label>Amount *</Label>
+            <Label className="text-emerald-400">Amount *</Label>
             <div className="flex gap-2">
               <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-[100px] justify-between">
+                  <Button
+                    variant="outline"
+                    className="w-[100px] justify-between border-emerald-500/30 hover:bg-emerald-500/10"
+                  >
                     {currencySymbol} {selectedCurrency}
                     <ChevronsUpDown className="h-4 w-4 opacity-50" />
                   </Button>
@@ -287,7 +303,14 @@ const ClumsyGod = () => {
                 </PopoverContent>
               </Popover>
 
-              <Input name="amount" type="number" value={formData.amount} onChange={handleInputChange} required />
+              <Input
+                name="amount"
+                type="number"
+                value={formData.amount}
+                onChange={handleInputChange}
+                className="border-emerald-500/30 focus:border-emerald-500 focus:ring-emerald-500/20"
+                required
+              />
             </div>
           </div>
 
@@ -297,17 +320,15 @@ const ClumsyGod = () => {
               name="message"
               value={formData.message}
               onChange={handleInputChange}
-              className="w-full min-h-[80px] border rounded-md p-2"
-              placeholder="Optional message"
+              className="w-full min-h-[90px] rounded-md border border-emerald-500/30 bg-background px-3 py-2 text-sm focus:border-emerald-500 focus:ring-emerald-500/20"
+              placeholder="Your message (optional)"
             />
           )}
 
           {donationType === "voice" && (
             <EnhancedVoiceRecorder
               controller={voiceRecorder}
-              onRecordingComplete={(hasRecording, duration) => {
-                console.log("Voice recorded:", hasRecording, duration);
-              }}
+              onRecordingComplete={() => {}}
               maxDurationSeconds={getVoiceDuration(currentAmount)}
               requiredAmount={pricing.minVoice}
               currentAmount={currentAmount}
@@ -333,7 +354,11 @@ const ClumsyGod = () => {
             />
           )}
 
-          <Button className="w-full bg-emerald-500 text-white" onClick={handleSubmit} disabled={isProcessingPayment}>
+          <Button
+            className="w-full font-semibold py-6 bg-emerald-500 hover:bg-emerald-600"
+            onClick={handleSubmit}
+            disabled={isProcessingPayment}
+          >
             {isProcessingPayment ? "Processing..." : `Support ${currencySymbol}${formData.amount || "0"}`}
           </Button>
 
