@@ -313,6 +313,14 @@ const ClumsyGod = () => {
                            focus:border-purple-500 focus:ring-purple-500/20"
               />
             </div>
+
+            {/* TTS INFO (FROM BACKEND) */}
+            {pricing.ttsEnabled && (
+              <p className="text-xs text-purple-300">
+                TTS above {currencySymbol}
+                {pricing.minTts}
+              </p>
+            )}
           </div>
 
           {/* TEXT */}
