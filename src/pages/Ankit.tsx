@@ -517,7 +517,7 @@ const Ankit = () => {
                     <div className="text-center">
                       <div className="text-base mb-1">💬</div>
                       <div className="font-semibold text-[10px] text-white drop-shadow-sm">Text</div>
-                      <div className="text-[9px] text-yellow-300 drop-shadow-sm">Min: {getCurrencySymbol(formData.currency)}{pricing.ttsEnabled ? pricing.minTts : pricing.minText}</div>
+                      <div className="text-[9px] text-yellow-300 drop-shadow-sm">Min: {getCurrencySymbol(formData.currency)}{pricing.minText}</div>
                     </div>
                   </button>
                   <button type="button" onClick={() => handleDonationTypeChange('voice')} className={`p-2 rounded-lg border-2 transition-all ${donationType === 'voice' ? 'border-blue-500 bg-blue-500/10' : 'border-blue-500/30 hover:border-blue-500/50'}`}>
@@ -597,7 +597,7 @@ const Ankit = () => {
                   id="amount" 
                   name="amount" 
                   type="number" 
-                  placeholder={donationType === 'message' ? `Min: ${pricing.ttsEnabled ? pricing.minTts : pricing.minText}` : donationType === 'voice' ? `Min: ${pricing.minVoice}` : `Min: ${pricing.minHypersound}`} 
+                  placeholder={donationType === 'message' ? `Min: ${pricing.minText}` : donationType === 'voice' ? `Min: ${pricing.minVoice}` : `Min: ${pricing.minHypersound}`} 
                   value={formData.amount} 
                   onChange={handleInputChange} 
                   className="flex-1 border-blue-500/30 focus:border-blue-500 focus:ring-blue-500/20" 
@@ -610,7 +610,9 @@ const Ankit = () => {
               {isAmountLocked && <p className="text-xs text-yellow-600 flex items-center gap-1">
                   🔒 Amount locked during voice recording
                 </p>}
-              {formData.currency === 'INR' && donationType === 'message' && <p className="text-xs text-white/90 drop-shadow-sm">TTS above ₹70</p>}
+              {donationType === 'message' && pricing.ttsEnabled && (
+                <p className="text-xs text-white/90 drop-shadow-sm">TTS above {getCurrencySymbol(formData.currency)}{pricing.minTts}</p>
+              )}
               {donationType === 'voice' && currentAmount >= pricing.minVoice && <p className="text-xs text-white/90 drop-shadow-sm">
                   Voice duration: {getVoiceDuration(currentAmount)}s
                   {formData.currency === 'INR' && currentAmount < 200 && ' (Donate ₹200+ for 20s, ₹250+ for 30s)'}

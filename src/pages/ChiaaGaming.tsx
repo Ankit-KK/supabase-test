@@ -433,10 +433,11 @@ const ChiaGaming = () => {
                   min="1"
                 />
               </div>
-              <p className="text-xs text-muted-foreground">
-                TTS above {currencySymbol}
-                {selectedCurrency === "INR" ? "70" : "1"}
-              </p>
+              {pricing.ttsEnabled && (
+                <p className="text-xs text-muted-foreground">
+                  TTS above {currencySymbol}{pricing.minTts}
+                </p>
+              )}
             </div>
 
             {donationType === "text" && (
