@@ -1,97 +1,127 @@
 
 
-# Bug Fix: TTS Minimum Incorrectly Used for All Text Donations
+# Fix: Frontend Display Amounts and Dynamic TTS Threshold
 
-## Problem Identified
+## Issues Identified
 
-When `tts_enabled = true` for a streamer, the current code uses `minTts` as the minimum for ALL text donations. This is incorrect because:
+1. **Ankit.tsx (line 520)**: Text minimum shows `pricing.ttsEnabled ? pricing.minTts : pricing.minText` instead of `pricing.minText`
+2. **Ankit.tsx (line 600)**: Amount placeholder shows same incorrect logic
+3. **Ankit.tsx (line 613)**: TTS threshold is hardcoded as `TTS above ₹70` - needs to use `pricing.minTts`
+4. **ChiaaGaming.tsx (lines 437-439)**: TTS threshold hardcoded as `TTS above {symbol}{INR ? "70" : "1"}`
+5. **LooteriyaGaming.tsx (lines 439-441)**: Same hardcoded TTS threshold issue
+6. **DonationPageWrapper.tsx (line 67-75)**: Uses `getCurrencyMinimums(currency)` from constants instead of fetching from backend via `useStreamerPricing`
 
-- Ankit has `min_tts_amount_inr = 50` in the database
-- The frontend shows "Min: 50" for text messages
-- But text donations under ₹70 are plain text (no TTS), so they should use `minText` (40)
+---
 
-**Current database state for Ankit:**
-| Column | Value |
-|--------|-------|
-| `min_text_amount_inr` | NULL (uses platform floor 40) |
-| `min_tts_amount_inr` | 50 |
-| `tts_enabled` | true |
+## Files to Modify
 
-**What happens now:**
-- Text donation minimum shown: ₹50 (wrong - should be ₹40)
-- TTS only kicks in at ₹70+, so ₹40-69 donations are plain text
+### 1. `src/pages/Ankit.tsx`
 
-## The Fix
-
-The minimum for text donations should be `minText`, not `minTts`, because:
-1. Users can donate below the TTS threshold (₹70) to send plain text
-2. The `minTts` is the minimum required to get TTS, not the minimum to send any text
-
-### Files to Modify
-
-**1. `src/pages/Ankit.tsx`** - Fix validation and display logic:
-
+**Line 520** - Fix text minimum display:
 ```typescript
-// BEFORE (incorrect):
-const textMin = pricing.ttsEnabled ? pricing.minTts : pricing.minText;
+// BEFORE
+<div className="text-[9px] text-yellow-300 drop-shadow-sm">Min: {getCurrencySymbol(formData.currency)}{pricing.ttsEnabled ? pricing.minTts : pricing.minText}</div>
 
-// AFTER (correct):
-// Text donations use minText - TTS is a bonus at higher amounts
-const textMin = pricing.minText;
+// AFTER
+<div className="text-[9px] text-yellow-300 drop-shadow-sm">Min: {getCurrencySymbol(formData.currency)}{pricing.minText}</div>
 ```
 
-Also update placeholder display:
+**Line 600** - Fix amount placeholder:
 ```typescript
-// BEFORE:
+// BEFORE
 placeholder={donationType === 'message' ? `Min: ${pricing.ttsEnabled ? pricing.minTts : pricing.minText}` : ...}
 
-// AFTER:
+// AFTER
 placeholder={donationType === 'message' ? `Min: ${pricing.minText}` : ...}
 ```
 
-**2. `src/pages/ChiaaGaming.tsx`** - Same fix
-
-**3. `src/pages/LooteriyaGaming.tsx`** - Same fix
-
-**4. `supabase/functions/create-razorpay-order-unified/index.ts`** - Fix backend validation:
-
+**Line 613** - Make TTS threshold dynamic:
 ```typescript
-// BEFORE (incorrect):
-if (!hypersoundUrl && !voiceMessageUrl && !mediaUrl) {
-  const requiredMin = streamerData.tts_enabled ? minimums.minTts : minimums.minText;
-  if (amount < requiredMin) {
-    throw new Error(`Text messages require minimum ${currency} ${requiredMin}`);
-  }
-}
+// BEFORE
+{formData.currency === 'INR' && donationType === 'message' && <p className="text-xs text-white/90 drop-shadow-sm">TTS above ₹70</p>}
 
-// AFTER (correct):
-if (!hypersoundUrl && !voiceMessageUrl && !mediaUrl) {
-  // Text donations always use minText - TTS is a bonus at higher amounts
-  if (amount < minimums.minText) {
-    throw new Error(`Text messages require minimum ${currency} ${minimums.minText}`);
-  }
-}
+// AFTER
+{donationType === 'message' && pricing.ttsEnabled && (
+  <p className="text-xs text-white/90 drop-shadow-sm">
+    TTS above {getCurrencySymbol(formData.currency)}{pricing.minTts}
+  </p>
+)}
 ```
 
-## Summary of Changes
+### 2. `src/pages/ChiaaGaming.tsx`
 
-| File | Change |
-|------|--------|
-| `Ankit.tsx` | Use `pricing.minText` for text donations |
-| `ChiaaGaming.tsx` | Use `pricing.minText` for text donations |
-| `LooteriyaGaming.tsx` | Use `pricing.minText` for text donations |
-| `create-razorpay-order-unified` | Use `minimums.minText` for text validation |
+**Lines 436-439** - Make TTS threshold dynamic:
+```typescript
+// BEFORE
+<p className="text-xs text-muted-foreground">
+  TTS above {currencySymbol}
+  {selectedCurrency === "INR" ? "70" : "1"}
+</p>
+
+// AFTER
+{pricing.ttsEnabled && (
+  <p className="text-xs text-muted-foreground">
+    TTS above {currencySymbol}{pricing.minTts}
+  </p>
+)}
+```
+
+### 3. `src/pages/LooteriyaGaming.tsx`
+
+**Lines 439-442** - Make TTS threshold dynamic:
+```typescript
+// BEFORE
+<p className="text-xs text-muted-foreground">
+  TTS in Riya's Voice above {currencySymbol}
+  {selectedCurrency === "INR" ? "70" : "1"}
+</p>
+
+// AFTER
+{pricing.ttsEnabled && (
+  <p className="text-xs text-muted-foreground">
+    TTS in Riya's Voice above {currencySymbol}{pricing.minTts}
+  </p>
+)}
+```
+
+### 4. `src/components/donation/DonationPageWrapper.tsx`
+
+Update to use `useStreamerPricing` hook instead of hardcoded `getCurrencyMinimums`:
+
+```typescript
+// Add import
+import { useStreamerPricing } from '@/hooks/useStreamerPricing';
+
+// Inside component, replace getMinAmount with hook-based pricing
+const { pricing } = useStreamerPricing(config.streamerSlug, currency);
+
+const getMinAmount = () => {
+  switch (donationType) {
+    case 'text': return pricing.minText;
+    case 'voice': return pricing.minVoice;
+    case 'hypersound': return pricing.minHypersound;
+    case 'media': return pricing.minMedia;
+    default: return pricing.minText;
+  }
+};
+```
+
+---
+
+## Summary
+
+| File | Issue | Fix |
+|------|-------|-----|
+| `Ankit.tsx` | Text min shows `minTts` | Use `pricing.minText` |
+| `Ankit.tsx` | TTS threshold hardcoded `₹70` | Use `pricing.minTts` |
+| `ChiaaGaming.tsx` | TTS threshold hardcoded | Use `pricing.minTts` |
+| `LooteriyaGaming.tsx` | TTS threshold hardcoded | Use `pricing.minTts` |
+| `DonationPageWrapper.tsx` | Uses hardcoded constants | Use `useStreamerPricing` hook |
 
 ## Result After Fix
 
-For Ankit with database values:
-- `min_text_amount_inr = NULL` → Platform floor 40 INR
-- `min_tts_amount_inr = 50` → Not used for minimum validation
-
-**User experience:**
-- Text donation minimum: ₹40
-- Donations ₹40-69: Plain text only
-- Donations ₹70+: Gets TTS audio
-
-The `minTts` column can now be used for **informational purposes** (e.g., "Donate ₹50+ for TTS") or for future features where you want to control the TTS threshold, but it won't incorrectly raise the base text donation minimum.
+- Text donation minimum will show the correct `minText` value from database
+- TTS threshold will dynamically show the `minTts` value from database  
+- All currencies will display correctly rounded values from the backend
+- Streamers can control both values independently via database
 
