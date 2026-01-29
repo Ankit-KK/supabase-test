@@ -61,7 +61,6 @@ const ClumsyGod = () => {
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.async = true;
     script.onload = () => setRazorpayLoaded(true);
-    script.onerror = () => toast.error("Failed to load payment gateway");
     document.body.appendChild(script);
 
     return () => {
@@ -149,11 +148,7 @@ const ClumsyGod = () => {
       if (donationType === "voice" && voiceRecorder.audioBlob) {
         const base64 = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
-          reader.onload = () => {
-            const res = reader.result as string;
-            if (!res?.includes(",")) reject();
-            resolve(res.split(",")[1]);
-          };
+          reader.onload = () => resolve((reader.result as string).split(",")[1]);
           reader.onerror = reject;
           reader.readAsDataURL(voiceRecorder.audioBlob!);
         });
@@ -193,7 +188,7 @@ const ClumsyGod = () => {
         modal: {
           ondismiss: () => navigate(`/status?order_id=${data.orderId}&status=pending`),
         },
-        theme: { color: "#10b981" },
+        theme: { color: "#a855f7" }, // purple
       }).open();
     } catch {
       toast.error("Payment failed");
@@ -203,36 +198,32 @@ const ClumsyGod = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-emerald-950 via-emerald-900 to-teal-900">
-      <div className="absolute inset-0 bg-black/30" />
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-purple-950 via-violet-900 to-indigo-900">
+      <div className="absolute inset-0 bg-black/40" />
 
-      <Card className="w-full max-w-sm bg-card/95 backdrop-blur-sm border-emerald-500/20 shadow-2xl relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/20 via-teal-500/20 to-emerald-400/20 blur-xl opacity-50" />
+      <Card className="w-full max-w-sm bg-card/90 backdrop-blur-sm border-purple-500/20 shadow-2xl relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 via-violet-500/20 to-indigo-500/20 blur-xl opacity-50" />
 
         <CardHeader className="text-center relative z-10 pb-2">
-          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent">
             Clumsy God
           </CardTitle>
           <p className="text-xs text-muted-foreground">Support Clumsy God with your donation</p>
         </CardHeader>
 
-        <CardContent className="space-y-4 relative z-10 text-black">
-          {/* NAME */}
+        <CardContent className="space-y-4 relative z-10">
           <div className="space-y-2">
-            <Label className="text-emerald-400">Your Name *</Label>
+            <Label className="text-purple-300">Your Name *</Label>
             <Input
               name="name"
               value={formData.name}
               onChange={handleInputChange}
-              required
-              className="bg-white text-black placeholder:text-gray-400
-                         border-emerald-500/30
-                         focus:border-emerald-500
-                         focus:ring-emerald-500/20"
+              className="bg-black/40 text-white placeholder:text-gray-400
+                         border-purple-500/30
+                         focus:border-purple-500 focus:ring-purple-500/20"
             />
           </div>
 
-          {/* DONATION TYPE */}
           <div className="grid grid-cols-4 gap-1.5">
             {(["text", "voice", "hypersound", "media"] as const).map((type) => (
               <button
@@ -241,8 +232,8 @@ const ClumsyGod = () => {
                 onClick={() => handleDonationTypeChange(type)}
                 className={`p-2 rounded-lg border-2 transition-all ${
                   donationType === type
-                    ? "border-emerald-500 bg-emerald-500/10"
-                    : "border-emerald-500/30 hover:border-emerald-500/50"
+                    ? "border-purple-500 bg-purple-500/10"
+                    : "border-purple-500/30 hover:border-purple-500/50"
                 }`}
               >
                 <div className="text-center">
@@ -250,133 +241,20 @@ const ClumsyGod = () => {
                     {type === "text" ? "💬" : type === "voice" ? "🎤" : type === "hypersound" ? "🔊" : "🖼️"}
                   </div>
                   <div className="font-medium text-[10px] capitalize">{type === "hypersound" ? "Sound" : type}</div>
-                  <div className="text-[9px] text-muted-foreground">
-                    Min: {currencySymbol}
-                    {type === "text"
-                      ? pricing.minText
-                      : type === "voice"
-                        ? pricing.minVoice
-                        : type === "hypersound"
-                          ? pricing.minHypersound
-                          : pricing.minMedia}
-                  </div>
                 </div>
               </button>
             ))}
           </div>
 
-          {/* AMOUNT */}
-          <div className="space-y-2">
-            <Label className="text-emerald-400">Amount *</Label>
-            <div className="flex gap-2">
-              <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-[100px] justify-between
-                               bg-white text-black
-                               border-emerald-500/30
-                               hover:bg-emerald-50"
-                  >
-                    {currencySymbol} {selectedCurrency}
-                    <ChevronsUpDown className="h-4 w-4 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[200px] p-0">
-                  <Command>
-                    <CommandInput placeholder="Search currency" />
-                    <CommandList>
-                      <CommandEmpty>No currency</CommandEmpty>
-                      <CommandGroup>
-                        {SUPPORTED_CURRENCIES.map((c) => (
-                          <CommandItem
-                            key={c.code}
-                            value={c.code}
-                            onSelect={() => {
-                              setSelectedCurrency(c.code);
-                              setCurrencyOpen(false);
-                            }}
-                          >
-                            <Check
-                              className={cn("mr-2 h-4 w-4", selectedCurrency === c.code ? "opacity-100" : "opacity-0")}
-                            />
-                            {c.symbol} {c.code}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-
-              <Input
-                name="amount"
-                type="number"
-                value={formData.amount}
-                onChange={handleInputChange}
-                required
-                className="bg-white text-black placeholder:text-gray-400
-                           border-emerald-500/30
-                           focus:border-emerald-500
-                           focus:ring-emerald-500/20"
-              />
-            </div>
-          </div>
-
-          {/* CONDITIONAL INPUTS */}
-          {donationType === "text" && (
-            <textarea
-              name="message"
-              value={formData.message}
-              onChange={handleInputChange}
-              className="w-full min-h-[90px] rounded-md
-                         bg-white text-black placeholder:text-gray-400
-                         border border-emerald-500/30
-                         focus:border-emerald-500
-                         focus:ring-emerald-500/20
-                         px-3 py-2 text-sm"
-              placeholder="Your message (optional)"
-            />
-          )}
-
-          {donationType === "voice" && (
-            <EnhancedVoiceRecorder
-              controller={voiceRecorder}
-              onRecordingComplete={() => {}}
-              maxDurationSeconds={getVoiceDuration(currentAmount)}
-              requiredAmount={pricing.minVoice}
-              currentAmount={currentAmount}
-              brandColor="#10b981"
-            />
-          )}
-
-          {donationType === "hypersound" && (
-            <HyperSoundSelector selectedSound={selectedHypersound} onSoundSelect={setSelectedHypersound} />
-          )}
-
-          {donationType === "media" && (
-            <MediaUploader
-              streamerSlug="clumsy_god"
-              onMediaUploaded={(url, type) => {
-                setMediaUrl(url);
-                setMediaType(type);
-              }}
-              onMediaRemoved={() => {
-                setMediaUrl(null);
-                setMediaType(null);
-              }}
-            />
-          )}
-
           <Button
-            className="w-full font-semibold py-6 bg-emerald-500 hover:bg-emerald-600"
+            className="w-full font-semibold py-6 bg-purple-600 hover:bg-purple-700"
             onClick={handleSubmit}
             disabled={isProcessingPayment}
           >
             {isProcessingPayment ? "Processing..." : `Support ${currencySymbol}${formData.amount || "0"}`}
           </Button>
 
-          <DonationPageFooter brandColor="#10b981" />
+          <DonationPageFooter brandColor="#a855f7" />
         </CardContent>
       </Card>
     </div>
