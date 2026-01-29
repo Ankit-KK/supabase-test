@@ -1,114 +1,134 @@
 
-# Per-Streamer Pricing in Unified Payment System
 
-## Current Architecture
+# Streamer-Controlled Minimums (Database-Only) - Updated with TTS
 
-| Layer | Location | Current State |
-|-------|----------|---------------|
-| **Edge Function** | `create-razorpay-order-unified` | Hardcoded `CURRENCY_MINIMUMS` object (same for all streamers) |
-| **Database** | `streamers` table | Already has `media_min_amount`, `hyperemotes_min_amount` columns |
-| **Frontend** | `src/constants/currencies.ts` | Hardcoded minimums per currency (same for all streamers) |
+## Overview
 
-## Solution: Database-Driven Pricing
+Admins set custom minimum amounts directly in the `streamers` table via Supabase dashboard. No frontend settings UI needed.
 
-Instead of hardcoded minimums, the edge function will **query the streamer's pricing settings from the database**.
+## Database Columns to Add
 
-### Database Schema Changes
-
-Add new columns to the `streamers` table for all pricing tiers:
-
-```sql
-ALTER TABLE streamers
-ADD COLUMN IF NOT EXISTS min_text_amount_inr numeric DEFAULT 40,
-ADD COLUMN IF NOT EXISTS min_voice_amount_inr numeric DEFAULT 150,
-ADD COLUMN IF NOT EXISTS min_hypersound_amount_inr numeric DEFAULT 30;
--- media_min_amount already exists
-```
-
-### Edge Function Changes
-
-**File:** `supabase/functions/create-razorpay-order-unified/index.ts`
-
-The function already queries the streamer:
-```typescript
-const { data: streamerData } = await supabase
-  .from('streamers')
-  .select('id, streamer_name')  // Currently fetches minimal data
-  .eq('streamer_slug', streamer_slug)
-  .single();
-```
-
-Update to fetch pricing settings:
-```typescript
-const { data: streamerData } = await supabase
-  .from('streamers')
-  .select('id, streamer_name, min_text_amount_inr, min_voice_amount_inr, min_hypersound_amount_inr, media_min_amount')
-  .eq('streamer_slug', streamer_slug)
-  .single();
-
-// Use streamer-specific minimums (in INR) with currency conversion
-const streamerMinimumsINR = {
-  minText: streamerData.min_text_amount_inr || 40,
-  minVoice: streamerData.min_voice_amount_inr || 150,
-  minHypersound: streamerData.min_hypersound_amount_inr || 30,
-  minMedia: streamerData.media_min_amount || 100,
-};
-
-// Convert to user's currency using exchange rates
-const rate = EXCHANGE_RATES_TO_INR[currency] || 1;
-const minimums = {
-  minText: Math.ceil(streamerMinimumsINR.minText / rate),
-  minVoice: Math.ceil(streamerMinimumsINR.minVoice / rate),
-  minHypersound: Math.ceil(streamerMinimumsINR.minHypersound / rate),
-  minMedia: Math.ceil(streamerMinimumsINR.minMedia / rate),
-};
-```
-
-### Frontend Changes (Optional - For Display)
-
-If the frontend needs to show minimum amounts before payment, create an edge function:
-
-**File:** `supabase/functions/get-streamer-pricing/index.ts`
-```typescript
-// Returns streamer-specific minimums converted to requested currency
-{
-  minText: 40,
-  minVoice: 150,
-  minHypersound: 30,
-  minMedia: 100,
-  currency: 'INR'
-}
-```
+| Column | Description | Platform Default |
+|--------|-------------|------------------|
+| `min_text_amount_inr` | Minimum for text-only donations | 40 INR |
+| `min_tts_amount_inr` | Minimum for TTS (text-to-speech) donations | 40 INR |
+| `min_voice_amount_inr` | Minimum for voice recordings | 150 INR |
+| `min_hypersound_amount_inr` | Minimum for HyperSounds | 30 INR |
+| `media_min_amount` | Minimum for media uploads | 100 INR (already exists) |
 
 ---
 
 ## Implementation Steps
 
 ### Step 1: Database Migration
-Add pricing columns to `streamers` table with sensible defaults
 
-### Step 2: Update Unified Edge Function
-Modify `create-razorpay-order-unified` to:
-1. Fetch pricing settings from database
-2. Apply currency conversion
-3. Use fetched values for validation
+Add 4 nullable columns to `streamers` table:
 
-### Step 3: (Optional) Frontend API
-Create `get-streamer-pricing` for donation pages to display correct minimums
+```sql
+ALTER TABLE streamers
+ADD COLUMN IF NOT EXISTS min_text_amount_inr numeric DEFAULT NULL,
+ADD COLUMN IF NOT EXISTS min_tts_amount_inr numeric DEFAULT NULL,
+ADD COLUMN IF NOT EXISTS min_voice_amount_inr numeric DEFAULT NULL,
+ADD COLUMN IF NOT EXISTS min_hypersound_amount_inr numeric DEFAULT NULL;
+```
 
----
+- `NULL` = use platform default
+- `media_min_amount` already exists
 
-## Example: Different Pricing Per Streamer
+### Step 2: Update Edge Function
 
-After implementation, you can set in the database:
+Modify `create-razorpay-order-unified/index.ts`:
 
-| Streamer | min_text_inr | min_voice_inr | min_hypersound_inr | media_min_amount |
-|----------|--------------|---------------|--------------------|--------------------|
-| Ankit | 40 | 150 | 30 | 100 |
-| Chiaa Gaming | 50 | 200 | 40 | 150 |
-| Looteriya Gaming | 30 | 100 | 25 | 80 |
+```typescript
+// Platform floors (cannot go below)
+const PLATFORM_FLOORS_INR = { 
+  text: 40, 
+  tts: 40, 
+  voice: 150, 
+  hypersound: 30, 
+  media: 100 
+};
 
-The edge function automatically converts to the donor's currency using exchange rates.
+// Exchange rates
+const EXCHANGE_RATES_TO_INR = { INR: 1, USD: 89, EUR: 94, GBP: 113, AED: 24, AUD: 57 };
+
+// Auto-rounding function
+const roundToNice = (value: number, currency: string): number => {
+  if (currency === 'INR') return Math.ceil(value / 10) * 10;
+  if (currency === 'AED') return Math.ceil(value);
+  return Math.ceil(value * 2) / 2; // USD/EUR/GBP/AUD to nearest 0.50
+};
+
+// Fetch with custom minimums
+const { data: streamerData } = await supabase
+  .from('streamers')
+  .select('id, streamer_name, min_text_amount_inr, min_tts_amount_inr, min_voice_amount_inr, min_hypersound_amount_inr, media_min_amount, tts_enabled')
+  .eq('streamer_slug', streamer_slug)
+  .single();
+
+// Calculate effective minimums in INR
+const effectiveINR = {
+  text: Math.max(PLATFORM_FLOORS_INR.text, streamerData.min_text_amount_inr || 0),
+  tts: Math.max(PLATFORM_FLOORS_INR.tts, streamerData.min_tts_amount_inr || 0),
+  voice: Math.max(PLATFORM_FLOORS_INR.voice, streamerData.min_voice_amount_inr || 0),
+  hypersound: Math.max(PLATFORM_FLOORS_INR.hypersound, streamerData.min_hypersound_amount_inr || 0),
+  media: Math.max(PLATFORM_FLOORS_INR.media, streamerData.media_min_amount || 0),
+};
+
+// Convert to donor's currency with auto-rounding
+const rate = EXCHANGE_RATES_TO_INR[currency] || 1;
+const minimums = {
+  minText: roundToNice(effectiveINR.text / rate, currency),
+  minTts: roundToNice(effectiveINR.tts / rate, currency),
+  minVoice: roundToNice(effectiveINR.voice / rate, currency),
+  minHypersound: roundToNice(effectiveINR.hypersound / rate, currency),
+  minMedia: roundToNice(effectiveINR.media / rate, currency),
+};
+
+// Validation logic (TTS vs plain text)
+if (!hypersoundUrl && !voiceMessageUrl && !mediaUrl) {
+  // It's a text donation - check if TTS applies
+  const requiredMin = streamerData.tts_enabled ? minimums.minTts : minimums.minText;
+  if (amount < requiredMin) {
+    throw new Error(`Text messages require minimum ${currency} ${requiredMin}`);
+  }
+}
+```
+
+### Step 3: Create Pricing API
+
+New edge function `get-streamer-pricing/index.ts`:
+
+**Request:** `POST { streamer_slug: "ankit", currency: "USD" }`
+
+**Response:**
+```json
+{
+  "minText": 1,
+  "minTts": 1,
+  "minVoice": 3,
+  "minHypersound": 1,
+  "minMedia": 2,
+  "ttsEnabled": true,
+  "currency": "USD"
+}
+```
+
+### Step 4: Update Donation Pages
+
+Modify `Ankit.tsx`, `ChiaaGaming.tsx`, `LooteriyaGaming.tsx` to fetch minimums from API:
+
+```typescript
+useEffect(() => {
+  const fetchPricing = async () => {
+    const { data } = await supabase.functions.invoke('get-streamer-pricing', {
+      body: { streamer_slug: 'ankit', currency: selectedCurrency }
+    });
+    if (data) setMinimums(data);
+  };
+  fetchPricing();
+}, [selectedCurrency]);
+```
 
 ---
 
@@ -116,15 +136,35 @@ The edge function automatically converts to the donor's currency using exchange 
 
 | File | Change |
 |------|--------|
-| Database migration | Add 3 new columns to `streamers` table |
-| `create-razorpay-order-unified/index.ts` | Fetch pricing from DB, apply currency conversion |
-| (Optional) New edge function | `get-streamer-pricing` for frontend display |
+| **Database** | Add 4 columns via migration |
+| `create-razorpay-order-unified/index.ts` | Fetch DB values, apply MAX() + auto-rounding, validate TTS vs text |
+| **New** `get-streamer-pricing/index.ts` | API for frontend to fetch minimums |
+| `supabase/config.toml` | Register new edge function |
+| `Ankit.tsx`, `ChiaaGaming.tsx`, `LooteriyaGaming.tsx` | Fetch minimums from API |
+| `src/constants/currencies.ts` | Add `roundToNice()` utility |
 
 ---
 
-## Key Benefits
+## Admin Workflow
 
-1. **No code changes needed** to adjust pricing - just update database values
-2. **Backward compatible** - defaults match current hardcoded values
-3. **Currency conversion handled** - streamers set prices in INR, system converts automatically
-4. **Dashboard manageable** - can add UI to settings panel later
+To change a streamer's minimums in Supabase Dashboard:
+
+| Column | Description | NULL behavior |
+|--------|-------------|---------------|
+| `min_text_amount_inr` | Plain text minimum | Uses 40 INR |
+| `min_tts_amount_inr` | TTS-enabled text minimum | Uses 40 INR |
+| `min_voice_amount_inr` | Voice recording minimum | Uses 150 INR |
+| `min_hypersound_amount_inr` | HyperSound minimum | Uses 30 INR |
+| `media_min_amount` | Media upload minimum | Uses 100 INR |
+
+---
+
+## Auto-Rounding Examples
+
+| Streamer sets | Donor currency | Raw conversion | Final (rounded) |
+|---------------|----------------|----------------|-----------------|
+| TTS: 80 INR | USD | $0.90 | $1.00 |
+| Voice: 200 INR | USD | $2.25 | $2.50 |
+| Voice: 200 INR | AED | 8.3 | 9 AED |
+| Text: 45 INR | INR | 45 | 50 INR |
+
