@@ -16,11 +16,12 @@ const convertToINR = (amount: number, currency: string): number => {
   return amount * (EXCHANGE_RATES_TO_INR[currency] || 1);
 };
 
-// Active streamer configuration only
+// Active streamer configuration
 const STREAMER_CONFIG: Record<string, { table: string; prefix: string }> = {
   'ankit': { table: 'ankit_donations', prefix: 'ank_rp_' },
   'chiaa_gaming': { table: 'chiaa_gaming_donations', prefix: 'cg_rp_' },
   'looteriya_gaming': { table: 'looteriya_gaming_donations', prefix: 'lg_rp_' },
+  'clumsy_god': { table: 'clumsy_god_donations', prefix: 'cg2_rp_' },
 };
 
 // Derive streamer_slug from order_id prefix

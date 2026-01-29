@@ -42,6 +42,15 @@ export const DONATION_PAGE_CONFIGS: Record<string, DonationPageConfig> = {
     edgeFunctionName: 'create-razorpay-order-chiagaming',
     themeDescription: 'Support Chiaa Gaming with your donation',
   },
+  clumsy_god: {
+    streamerSlug: 'clumsy_god',
+    streamerName: 'Clumsy God',
+    brandColor: '#10b981',
+    logoSrc: '/assets/streamers/clumsy-god-logo.png',
+    backgroundSrc: '/assets/streamers/clumsy-god-background.png',
+    edgeFunctionName: 'create-razorpay-order-unified',
+    themeDescription: 'Support Clumsy God with your donation',
+  },
 };
 
 export const getDonationPageConfig = (slug: string): DonationPageConfig | undefined => {

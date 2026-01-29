@@ -22,6 +22,7 @@ const streamerSlugMap: Record<string, string> = {
   'looteriyagaming': 'looteriya_gaming',
   'chiagaming': 'chiaa_gaming',
   'ankit': 'ankit',
+  'clumsygod': 'clumsy_god',
 };
 
 // Generate short ID for callback mapping (8 characters)
@@ -185,7 +186,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // Determine table based on order ID - only active streamers
-    let streamerType: 'ankit' | 'looteriyagaming' | 'chiagaming'
+    let streamerType: 'ankit' | 'looteriyagaming' | 'chiagaming' | 'clumsygod'
     let tableName: string
     
     // Get donation from the appropriate table using Razorpay order ID
@@ -228,7 +229,20 @@ serve(async (req) => {
           streamerType = 'chiagaming'
           tableName = 'chiaa_gaming_donations'
         } else {
-          fetchError = ankitResult.error || looteriyaGamingResult.error || chiagamingResult.error
+          // Try clumsy_god
+          const clumsyGodResult = await supabase
+            .from('clumsy_god_donations')
+            .select('*')
+            .eq('razorpay_order_id', razorpayOrderId)
+            .maybeSingle()
+          
+          if (clumsyGodResult.data) {
+            donation = clumsyGodResult.data
+            streamerType = 'clumsygod'
+            tableName = 'clumsy_god_donations'
+          } else {
+            fetchError = ankitResult.error || looteriyaGamingResult.error || chiagamingResult.error || clumsyGodResult.error
+          }
         }
       }
     }

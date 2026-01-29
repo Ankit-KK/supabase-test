@@ -224,11 +224,12 @@ serve(async (req) => {
     const voiceId = streamerData.tts_voice_id || DEFAULT_VOICE_ID;
     console.log("Processing TTS for streamer:", streamerSlug, "with voice:", voiceId);
 
-    // Determine donation table name based on streamer slug (active streamers only)
+    // Determine donation table name based on streamer slug
     const donationTableMap: Record<string, string> = {
       ankit: "ankit_donations",
       chiaa_gaming: "chiaa_gaming_donations",
       looteriya_gaming: "looteriya_gaming_donations",
+      clumsy_god: "clumsy_god_donations",
     };
 
     const donationTable = donationTableMap[streamerSlug];
