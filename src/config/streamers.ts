@@ -36,6 +36,11 @@ export const STREAMER_CONFIGS: Record<string, StreamerConfig> = {
     pusherDashboardChannel: 'looteriya_gaming-dashboard', pusherGoalChannel: 'looteriya_gaming-goal', pusherAudioChannel: 'looteriya_gaming-audio',
     pusherAlertsChannel: 'looteriya_gaming-alerts', pusherSettingsChannel: 'looteriya_gaming-settings', razorpayOrderPrefix: 'lg_rp_',
   },
+  clumsy_god: {
+    slug: 'clumsy_god', name: 'Clumsy God', tableName: 'clumsy_god_donations', brandColor: '#10b981',
+    pusherDashboardChannel: 'clumsy_god-dashboard', pusherGoalChannel: 'clumsy_god-goal', pusherAudioChannel: 'clumsy_god-audio',
+    pusherAlertsChannel: 'clumsy_god-alerts', pusherSettingsChannel: 'clumsy_god-settings', razorpayOrderPrefix: 'cg2_rp_',
+  },
 };
 
 export const getStreamerConfig = (slug: string): StreamerConfig | undefined => STREAMER_CONFIGS[slug];

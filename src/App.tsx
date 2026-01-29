@@ -23,6 +23,7 @@ import UpiSecurityBestPractices from "./pages/blog/UpiSecurityBestPractices";
 import Ankit from "./pages/Ankit";
 import ChiaaGaming from "./pages/ChiaaGaming";
 import LooteriyaGaming from "./pages/LooteriyaGaming";
+import ClumsyGod from "./pages/ClumsyGod";
 
 // Dashboard pages
 import Dashboard from "./pages/dashboard/Dashboard";
@@ -30,6 +31,7 @@ import Auth from "./pages/Auth";
 import AnkitDashboard from "./pages/dashboard/AnkitDashboard";
 import ChiaGamingDashboard from "./pages/dashboard/ChiaGamingDashboard";
 import LooteriyaGamingDashboard from "./pages/dashboard/LooteriyaGamingDashboard";
+import ClumsyGodDashboard from "./pages/dashboard/ClumsyGodDashboard";
 
 // OBS Alert pages
 import AnkitObsAlerts from "./pages/obs-alerts/AnkitObsAlerts";
@@ -38,6 +40,8 @@ import ChiaGamingObsAlerts from "./pages/obs-alerts/ChiaGamingObsAlerts";
 import ChiaGamingGoalOverlay from "./pages/obs-alerts/ChiaGamingGoalOverlay";
 import LooteriyaGamingObsAlerts from "./pages/obs-alerts/LooteriyaGamingObsAlerts";
 import LooteriyaGamingGoalOverlay from "./pages/obs-alerts/LooteriyaGamingGoalOverlay";
+import ClumsyGodObsAlerts from "./pages/obs-alerts/ClumsyGodObsAlerts";
+import ClumsyGodGoalOverlay from "./pages/obs-alerts/ClumsyGodGoalOverlay";
 
 // Audio Player pages
 import AnkitAudioPlayer from "./pages/audio-player/AnkitAudioPlayer";
@@ -45,6 +49,7 @@ import AnkitMediaSourcePlayer from "./pages/audio-player/AnkitMediaSourcePlayer"
 import ChiaGamingAudioPlayer from "./pages/audio-player/ChiaGamingAudioPlayer";
 import ChiaGamingMediaSourcePlayer from "./pages/audio-player/ChiaGamingMediaSourcePlayer";
 import LooteriyaGamingMediaSourcePlayer from "./pages/audio-player/LooteriyaGamingMediaSourcePlayer";
+import ClumsyGodMediaSourcePlayer from "./pages/audio-player/ClumsyGodMediaSourcePlayer";
 
 const queryClient = new QueryClient();
 
@@ -77,6 +82,7 @@ const App = () => (
             <Route path="/ankit" element={<Ankit />} />
             <Route path="/chiaa_gaming" element={<ChiaaGaming />} />
             <Route path="/looteriya_gaming" element={<LooteriyaGaming />} />
+            <Route path="/clumsy_god" element={<ClumsyGod />} />
             
             {/* Authentication */}
             <Route path="/auth" element={<Auth />} />
@@ -86,6 +92,7 @@ const App = () => (
             <Route path="/dashboard/ankit" element={<AnkitDashboard />} />
             <Route path="/dashboard/chiaa_gaming" element={<ChiaGamingDashboard />} />
             <Route path="/dashboard/looteriya_gaming" element={<LooteriyaGamingDashboard />} />
+            <Route path="/dashboard/clumsy_god" element={<ClumsyGodDashboard />} />
             
             {/* OBS Alert routes */}
             <Route path="/ankit/obs-alerts" element={<AnkitObsAlerts />} />
@@ -94,6 +101,8 @@ const App = () => (
             <Route path="/chiaa_gaming/goal-overlay" element={<ChiaGamingGoalOverlay />} />
             <Route path="/looteriya_gaming/obs-alerts" element={<LooteriyaGamingObsAlerts />} />
             <Route path="/looteriya_gaming/goal-overlay" element={<LooteriyaGamingGoalOverlay />} />
+            <Route path="/clumsy_god/obs-alerts" element={<ClumsyGodObsAlerts />} />
+            <Route path="/clumsy_god/goal-overlay" element={<ClumsyGodGoalOverlay />} />
             
             {/* Audio Player routes */}
             <Route path="/ankit/audio-player" element={<AnkitAudioPlayer />} />
@@ -101,6 +110,7 @@ const App = () => (
             <Route path="/chiaa_gaming/audio-player" element={<ChiaGamingAudioPlayer />} />
             <Route path="/chiaa_gaming/media-audio-player" element={<ChiaGamingMediaSourcePlayer />} />
             <Route path="/looteriya_gaming/media-audio-player" element={<LooteriyaGamingMediaSourcePlayer />} />
+            <Route path="/clumsy_god/media-audio-player" element={<ClumsyGodMediaSourcePlayer />} />
             
             {/* Catch all 404 */}
             <Route path="*" element={<NotFound />} />

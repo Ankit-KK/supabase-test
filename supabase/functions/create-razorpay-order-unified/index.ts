@@ -6,11 +6,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Active streamer configuration mapping (only 3 active streamers)
+// Active streamer configuration mapping
 const STREAMER_CONFIG: Record<string, { table: string; prefix: string }> = {
   'ankit': { table: 'ankit_donations', prefix: 'ank_rp_' },
   'chiaa_gaming': { table: 'chiaa_gaming_donations', prefix: 'cg_rp_' },
   'looteriya_gaming': { table: 'looteriya_gaming_donations', prefix: 'lg_rp_' },
+  'clumsy_god': { table: 'clumsy_god_donations', prefix: 'cg2_rp_' },
 };
 
 // Platform floors (cannot go below these)
