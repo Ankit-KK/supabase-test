@@ -192,7 +192,7 @@ serve(async (req) => {
     // Fetch streamer info for Pusher
     const { data: streamer, error: streamerError } = await supabaseAdmin
       .from('streamers')
-      .select('streamer_slug, pusher_group, tts_enabled, tts_voice_id, telegram_moderation_enabled')
+      .select('streamer_slug, pusher_group, tts_enabled, tts_voice_id, telegram_moderation_enabled, min_tts_amount_inr')
       .eq('id', streamerId)
       .single();
 
@@ -340,26 +340,33 @@ serve(async (req) => {
         media_type: donation.media_type
       };
 
-      // Silent audio URL for text donations under ₹70 (triggers visual alert without TTS)
+      // Dynamic TTS threshold from database
+      const PLATFORM_TTS_FLOOR_INR = 40;
+      const ttsMinAmount = Math.max(
+        PLATFORM_TTS_FLOOR_INR, 
+        streamer?.min_tts_amount_inr || PLATFORM_TTS_FLOOR_INR
+      );
+      console.log(`TTS threshold for approval: ${ttsMinAmount} INR (db: ${streamer?.min_tts_amount_inr})`);
+
+      // Silent audio URL for text donations under threshold (triggers visual alert without TTS)
       const SILENT_AUDIO_URL = Deno.env.get('SILENT_AUDIO_URL') || 'https://pub-fff13c27bb0d4a1e807dfc596462b7d5.r2.dev/silent.mp3';
 
       // Generate TTS if needed
-      // Text donation >= ₹70: generates TTS (with message or "Thank you!" fallback)
+      // Text donation >= ttsMinAmount: generates TTS (with message or "Thank you!" fallback)
       // Media donation: always generate announcement
       const shouldGenerateTextTTS = donationType === 'text' && 
-        donation.amount >= 70 && 
+        donation.amount >= ttsMinAmount && 
         !donation.tts_audio_url &&
         streamer.tts_enabled !== false;
-      // REMOVED: donation.message requirement - generate-donation-tts has "Thank you!" fallback
 
       const shouldGenerateMediaTTS = donationType === 'media' && 
         !donation.tts_audio_url &&
         streamer.tts_enabled !== false;
 
-      // Text donations < ₹70 get silent audio (triggers visual alert without TTS cost)
+      // Text donations < ttsMinAmount get silent audio (triggers visual alert without TTS cost)
       const shouldUseSilentAudio = donationType === 'text' && 
         !donation.tts_audio_url &&
-        donation.amount < 70;
+        donation.amount < ttsMinAmount;
 
       const shouldGenerateTTS = shouldGenerateTextTTS || shouldGenerateMediaTTS;
 
@@ -402,9 +409,9 @@ serve(async (req) => {
           console.error('Error calling TTS function:', ttsError);
         }
       } else if (shouldUseSilentAudio) {
-        // Use silent audio for text donations under ₹70 - triggers visual alert without TTS
+        // Use silent audio for text donations under threshold - triggers visual alert without TTS
         alertData.tts_audio_url = SILENT_AUDIO_URL;
-        console.log('Using silent audio for donation under ₹70 threshold');
+        console.log(`Using silent audio for donation under ${ttsMinAmount} INR threshold`);
         
         // Update database with silent audio URL
         await supabaseAdmin
