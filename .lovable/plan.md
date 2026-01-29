@@ -1,170 +1,97 @@
 
 
-# Streamer-Controlled Minimums (Database-Only) - Updated with TTS
+# Bug Fix: TTS Minimum Incorrectly Used for All Text Donations
 
-## Overview
+## Problem Identified
 
-Admins set custom minimum amounts directly in the `streamers` table via Supabase dashboard. No frontend settings UI needed.
+When `tts_enabled = true` for a streamer, the current code uses `minTts` as the minimum for ALL text donations. This is incorrect because:
 
-## Database Columns to Add
+- Ankit has `min_tts_amount_inr = 50` in the database
+- The frontend shows "Min: 50" for text messages
+- But text donations under ₹70 are plain text (no TTS), so they should use `minText` (40)
 
-| Column | Description | Platform Default |
-|--------|-------------|------------------|
-| `min_text_amount_inr` | Minimum for text-only donations | 40 INR |
-| `min_tts_amount_inr` | Minimum for TTS (text-to-speech) donations | 40 INR |
-| `min_voice_amount_inr` | Minimum for voice recordings | 150 INR |
-| `min_hypersound_amount_inr` | Minimum for HyperSounds | 30 INR |
-| `media_min_amount` | Minimum for media uploads | 100 INR (already exists) |
+**Current database state for Ankit:**
+| Column | Value |
+|--------|-------|
+| `min_text_amount_inr` | NULL (uses platform floor 40) |
+| `min_tts_amount_inr` | 50 |
+| `tts_enabled` | true |
 
----
+**What happens now:**
+- Text donation minimum shown: ₹50 (wrong - should be ₹40)
+- TTS only kicks in at ₹70+, so ₹40-69 donations are plain text
 
-## Implementation Steps
+## The Fix
 
-### Step 1: Database Migration
+The minimum for text donations should be `minText`, not `minTts`, because:
+1. Users can donate below the TTS threshold (₹70) to send plain text
+2. The `minTts` is the minimum required to get TTS, not the minimum to send any text
 
-Add 4 nullable columns to `streamers` table:
+### Files to Modify
 
-```sql
-ALTER TABLE streamers
-ADD COLUMN IF NOT EXISTS min_text_amount_inr numeric DEFAULT NULL,
-ADD COLUMN IF NOT EXISTS min_tts_amount_inr numeric DEFAULT NULL,
-ADD COLUMN IF NOT EXISTS min_voice_amount_inr numeric DEFAULT NULL,
-ADD COLUMN IF NOT EXISTS min_hypersound_amount_inr numeric DEFAULT NULL;
-```
-
-- `NULL` = use platform default
-- `media_min_amount` already exists
-
-### Step 2: Update Edge Function
-
-Modify `create-razorpay-order-unified/index.ts`:
+**1. `src/pages/Ankit.tsx`** - Fix validation and display logic:
 
 ```typescript
-// Platform floors (cannot go below)
-const PLATFORM_FLOORS_INR = { 
-  text: 40, 
-  tts: 40, 
-  voice: 150, 
-  hypersound: 30, 
-  media: 100 
-};
+// BEFORE (incorrect):
+const textMin = pricing.ttsEnabled ? pricing.minTts : pricing.minText;
 
-// Exchange rates
-const EXCHANGE_RATES_TO_INR = { INR: 1, USD: 89, EUR: 94, GBP: 113, AED: 24, AUD: 57 };
+// AFTER (correct):
+// Text donations use minText - TTS is a bonus at higher amounts
+const textMin = pricing.minText;
+```
 
-// Auto-rounding function
-const roundToNice = (value: number, currency: string): number => {
-  if (currency === 'INR') return Math.ceil(value / 10) * 10;
-  if (currency === 'AED') return Math.ceil(value);
-  return Math.ceil(value * 2) / 2; // USD/EUR/GBP/AUD to nearest 0.50
-};
+Also update placeholder display:
+```typescript
+// BEFORE:
+placeholder={donationType === 'message' ? `Min: ${pricing.ttsEnabled ? pricing.minTts : pricing.minText}` : ...}
 
-// Fetch with custom minimums
-const { data: streamerData } = await supabase
-  .from('streamers')
-  .select('id, streamer_name, min_text_amount_inr, min_tts_amount_inr, min_voice_amount_inr, min_hypersound_amount_inr, media_min_amount, tts_enabled')
-  .eq('streamer_slug', streamer_slug)
-  .single();
+// AFTER:
+placeholder={donationType === 'message' ? `Min: ${pricing.minText}` : ...}
+```
 
-// Calculate effective minimums in INR
-const effectiveINR = {
-  text: Math.max(PLATFORM_FLOORS_INR.text, streamerData.min_text_amount_inr || 0),
-  tts: Math.max(PLATFORM_FLOORS_INR.tts, streamerData.min_tts_amount_inr || 0),
-  voice: Math.max(PLATFORM_FLOORS_INR.voice, streamerData.min_voice_amount_inr || 0),
-  hypersound: Math.max(PLATFORM_FLOORS_INR.hypersound, streamerData.min_hypersound_amount_inr || 0),
-  media: Math.max(PLATFORM_FLOORS_INR.media, streamerData.media_min_amount || 0),
-};
+**2. `src/pages/ChiaaGaming.tsx`** - Same fix
 
-// Convert to donor's currency with auto-rounding
-const rate = EXCHANGE_RATES_TO_INR[currency] || 1;
-const minimums = {
-  minText: roundToNice(effectiveINR.text / rate, currency),
-  minTts: roundToNice(effectiveINR.tts / rate, currency),
-  minVoice: roundToNice(effectiveINR.voice / rate, currency),
-  minHypersound: roundToNice(effectiveINR.hypersound / rate, currency),
-  minMedia: roundToNice(effectiveINR.media / rate, currency),
-};
+**3. `src/pages/LooteriyaGaming.tsx`** - Same fix
 
-// Validation logic (TTS vs plain text)
+**4. `supabase/functions/create-razorpay-order-unified/index.ts`** - Fix backend validation:
+
+```typescript
+// BEFORE (incorrect):
 if (!hypersoundUrl && !voiceMessageUrl && !mediaUrl) {
-  // It's a text donation - check if TTS applies
   const requiredMin = streamerData.tts_enabled ? minimums.minTts : minimums.minText;
   if (amount < requiredMin) {
     throw new Error(`Text messages require minimum ${currency} ${requiredMin}`);
   }
 }
-```
 
-### Step 3: Create Pricing API
-
-New edge function `get-streamer-pricing/index.ts`:
-
-**Request:** `POST { streamer_slug: "ankit", currency: "USD" }`
-
-**Response:**
-```json
-{
-  "minText": 1,
-  "minTts": 1,
-  "minVoice": 3,
-  "minHypersound": 1,
-  "minMedia": 2,
-  "ttsEnabled": true,
-  "currency": "USD"
+// AFTER (correct):
+if (!hypersoundUrl && !voiceMessageUrl && !mediaUrl) {
+  // Text donations always use minText - TTS is a bonus at higher amounts
+  if (amount < minimums.minText) {
+    throw new Error(`Text messages require minimum ${currency} ${minimums.minText}`);
+  }
 }
 ```
 
-### Step 4: Update Donation Pages
-
-Modify `Ankit.tsx`, `ChiaaGaming.tsx`, `LooteriyaGaming.tsx` to fetch minimums from API:
-
-```typescript
-useEffect(() => {
-  const fetchPricing = async () => {
-    const { data } = await supabase.functions.invoke('get-streamer-pricing', {
-      body: { streamer_slug: 'ankit', currency: selectedCurrency }
-    });
-    if (data) setMinimums(data);
-  };
-  fetchPricing();
-}, [selectedCurrency]);
-```
-
----
-
-## Files to Modify
+## Summary of Changes
 
 | File | Change |
 |------|--------|
-| **Database** | Add 4 columns via migration |
-| `create-razorpay-order-unified/index.ts` | Fetch DB values, apply MAX() + auto-rounding, validate TTS vs text |
-| **New** `get-streamer-pricing/index.ts` | API for frontend to fetch minimums |
-| `supabase/config.toml` | Register new edge function |
-| `Ankit.tsx`, `ChiaaGaming.tsx`, `LooteriyaGaming.tsx` | Fetch minimums from API |
-| `src/constants/currencies.ts` | Add `roundToNice()` utility |
+| `Ankit.tsx` | Use `pricing.minText` for text donations |
+| `ChiaaGaming.tsx` | Use `pricing.minText` for text donations |
+| `LooteriyaGaming.tsx` | Use `pricing.minText` for text donations |
+| `create-razorpay-order-unified` | Use `minimums.minText` for text validation |
 
----
+## Result After Fix
 
-## Admin Workflow
+For Ankit with database values:
+- `min_text_amount_inr = NULL` → Platform floor 40 INR
+- `min_tts_amount_inr = 50` → Not used for minimum validation
 
-To change a streamer's minimums in Supabase Dashboard:
+**User experience:**
+- Text donation minimum: ₹40
+- Donations ₹40-69: Plain text only
+- Donations ₹70+: Gets TTS audio
 
-| Column | Description | NULL behavior |
-|--------|-------------|---------------|
-| `min_text_amount_inr` | Plain text minimum | Uses 40 INR |
-| `min_tts_amount_inr` | TTS-enabled text minimum | Uses 40 INR |
-| `min_voice_amount_inr` | Voice recording minimum | Uses 150 INR |
-| `min_hypersound_amount_inr` | HyperSound minimum | Uses 30 INR |
-| `media_min_amount` | Media upload minimum | Uses 100 INR |
-
----
-
-## Auto-Rounding Examples
-
-| Streamer sets | Donor currency | Raw conversion | Final (rounded) |
-|---------------|----------------|----------------|-----------------|
-| TTS: 80 INR | USD | $0.90 | $1.00 |
-| Voice: 200 INR | USD | $2.25 | $2.50 |
-| Voice: 200 INR | AED | 8.3 | 9 AED |
-| Text: 45 INR | INR | 45 | 50 INR |
+The `minTts` column can now be used for **informational purposes** (e.g., "Donate ₹50+ for TTS") or for future features where you want to control the TTS threshold, but it won't incorrectly raise the base text donation minimum.
 
