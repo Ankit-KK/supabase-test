@@ -100,6 +100,7 @@ const LooteriyaGaming = () => {
       return;
     }
 
+    // Text donations use minText - TTS is a bonus at higher amounts
     const minAmount =
       donationType === "voice"
         ? pricing.minVoice
@@ -107,7 +108,7 @@ const LooteriyaGaming = () => {
           ? pricing.minHypersound
           : donationType === "media"
             ? pricing.minMedia
-            : pricing.ttsEnabled ? pricing.minTts : pricing.minText;
+            : pricing.minText;
     if (amount < minAmount) {
       toast.error(`Minimum amount for ${donationType} is ${currencySymbol}${minAmount}`);
       return;
@@ -245,8 +246,8 @@ const LooteriyaGaming = () => {
       setMediaUrl(null);
       setMediaType(null);
     } else {
-      const textMin = pricing.ttsEnabled ? pricing.minTts : pricing.minText;
-      setFormData((prev) => ({ ...prev, amount: String(textMin), message: "" }));
+      // Text donations use minText - TTS is a bonus at higher amounts
+      setFormData((prev) => ({ ...prev, amount: String(pricing.minText), message: "" }));
     }
   };
 
@@ -314,7 +315,7 @@ const LooteriyaGaming = () => {
                     <div className="font-medium text-[10px]">Text</div>
                     <div className="text-[9px] text-muted-foreground">
                       Min: {currencySymbol}
-                      {pricing.ttsEnabled ? pricing.minTts : pricing.minText}
+                      {pricing.minText}
                     </div>
                   </div>
                 </button>
