@@ -13,6 +13,32 @@ const STREAMER_CONFIG: Record<string, { table: string; prefix: string }> = {
   'looteriya_gaming': { table: 'looteriya_gaming_donations', prefix: 'lg_rp_' },
 };
 
+// Platform floors (cannot go below these)
+const PLATFORM_FLOORS_INR = { 
+  text: 40, 
+  tts: 40, 
+  voice: 150, 
+  hypersound: 30, 
+  media: 100 
+};
+
+// Exchange rates to INR
+const EXCHANGE_RATES_TO_INR: Record<string, number> = { 
+  INR: 1, 
+  USD: 89, 
+  EUR: 94, 
+  GBP: 113, 
+  AED: 24, 
+  AUD: 57 
+};
+
+// Auto-rounding function for nice currency display
+const roundToNice = (value: number, currency: string): number => {
+  if (currency === 'INR') return Math.ceil(value / 10) * 10;
+  if (currency === 'AED') return Math.ceil(value);
+  return Math.ceil(value * 2) / 2; // USD/EUR/GBP/AUD to nearest 0.50
+};
+
 // XSS sanitization for user input
 const sanitizeInput = (input: string | null | undefined): string | null => {
   if (!input) return null;
@@ -37,15 +63,6 @@ const sanitizeInput = (input: string | null | undefined): string | null => {
 const sanitizeName = (name: string | null | undefined): string => {
   if (!name) return '';
   return sanitizeInput(name)?.substring(0, 100) || '';
-};
-
-const CURRENCY_MINIMUMS: Record<string, { minText: number; minVoice: number; minHypersound: number; minMedia: number }> = {
-  'INR': { minText: 40, minVoice: 150, minHypersound: 30, minMedia: 100 },
-  'USD': { minText: 1, minVoice: 3, minHypersound: 1, minMedia: 3 },
-  'EUR': { minText: 1, minVoice: 3, minHypersound: 1, minMedia: 3 },
-  'GBP': { minText: 1, minVoice: 3, minHypersound: 1, minMedia: 3 },
-  'AED': { minText: 4, minVoice: 12, minHypersound: 3, minMedia: 10 },
-  'AUD': { minText: 2, minVoice: 5, minHypersound: 1.5, minMedia: 5 },
 };
 
 serve(async (req) => {
@@ -96,8 +113,38 @@ serve(async (req) => {
       throw new Error('Valid amount is required');
     }
 
-    // Get currency minimums
-    const minimums = CURRENCY_MINIMUMS[currency] || CURRENCY_MINIMUMS['INR'];
+    // Fetch streamer with custom minimums
+    const { data: streamerData, error: streamerError } = await supabase
+      .from('streamers')
+      .select('id, streamer_name, min_text_amount_inr, min_tts_amount_inr, min_voice_amount_inr, min_hypersound_amount_inr, media_min_amount, tts_enabled')
+      .eq('streamer_slug', streamer_slug)
+      .single();
+
+    if (streamerError || !streamerData) {
+      console.error(`[Unified] Streamer lookup error for ${streamer_slug}:`, streamerError);
+      throw new Error('Streamer not found');
+    }
+
+    // Calculate effective minimums in INR (MAX of platform floor and streamer custom)
+    const effectiveINR = {
+      text: Math.max(PLATFORM_FLOORS_INR.text, streamerData.min_text_amount_inr || 0),
+      tts: Math.max(PLATFORM_FLOORS_INR.tts, streamerData.min_tts_amount_inr || 0),
+      voice: Math.max(PLATFORM_FLOORS_INR.voice, streamerData.min_voice_amount_inr || 0),
+      hypersound: Math.max(PLATFORM_FLOORS_INR.hypersound, streamerData.min_hypersound_amount_inr || 0),
+      media: Math.max(PLATFORM_FLOORS_INR.media, streamerData.media_min_amount || 0),
+    };
+
+    // Convert to donor's currency with auto-rounding
+    const rate = EXCHANGE_RATES_TO_INR[currency] || 1;
+    const minimums = {
+      minText: roundToNice(effectiveINR.text / rate, currency),
+      minTts: roundToNice(effectiveINR.tts / rate, currency),
+      minVoice: roundToNice(effectiveINR.voice / rate, currency),
+      minHypersound: roundToNice(effectiveINR.hypersound / rate, currency),
+      minMedia: roundToNice(effectiveINR.media / rate, currency),
+    };
+
+    console.log(`[Unified] Calculated minimums:`, minimums);
 
     // Validate minimum amounts based on donation type
     if (hypersoundUrl && amount < minimums.minHypersound) {
@@ -112,20 +159,12 @@ serve(async (req) => {
       throw new Error(`Media messages require minimum ${currency} ${minimums.minMedia}`);
     }
 
-    if (!hypersoundUrl && !voiceMessageUrl && !mediaUrl && amount < minimums.minText) {
-      throw new Error(`Text messages require minimum ${currency} ${minimums.minText}`);
-    }
-
-    // Get streamer info
-    const { data: streamerData, error: streamerError } = await supabase
-      .from('streamers')
-      .select('id, streamer_name')
-      .eq('streamer_slug', streamer_slug)
-      .single();
-
-    if (streamerError || !streamerData) {
-      console.error(`[Unified] Streamer lookup error for ${streamer_slug}:`, streamerError);
-      throw new Error('Streamer not found');
+    // Text donation - check TTS vs plain text minimum
+    if (!hypersoundUrl && !voiceMessageUrl && !mediaUrl) {
+      const requiredMin = streamerData.tts_enabled ? minimums.minTts : minimums.minText;
+      if (amount < requiredMin) {
+        throw new Error(`Text messages require minimum ${currency} ${requiredMin}`);
+      }
     }
 
     // Generate unique order ID with streamer-specific prefix

@@ -56,6 +56,14 @@ export const EXCHANGE_RATES_TO_INR: Record<string, number> = {
   'AUD': 57,
 };
 
+// Auto-rounding function for nice currency display
+// INR: nearest 10, AED: nearest 1, others: nearest 0.50
+export const roundToNice = (value: number, currency: string): number => {
+  if (currency === 'INR') return Math.ceil(value / 10) * 10;
+  if (currency === 'AED') return Math.ceil(value);
+  return Math.ceil(value * 2) / 2; // USD/EUR/GBP/AUD to nearest 0.50
+};
+
 // Convert any currency amount to INR equivalent
 export const convertToINR = (amount: number, currency: string = 'INR'): number => {
   const rate = EXCHANGE_RATES_TO_INR[currency] || 1;

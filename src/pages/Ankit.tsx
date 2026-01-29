@@ -10,7 +10,8 @@ import { toast } from "@/hooks/use-toast";
 import { Gamepad2, Heart, Sparkles, Check, ChevronsUpDown, Volume2, Image, X } from "lucide-react";
 import VideoBackground from "@/components/VideoBackground";
 import { cn } from "@/lib/utils";
-import { SUPPORTED_CURRENCIES, getCurrencySymbol, getCurrencyMinimums } from "@/constants/currencies";
+import { SUPPORTED_CURRENCIES, getCurrencySymbol } from "@/constants/currencies";
+import { useStreamerPricing } from "@/hooks/useStreamerPricing";
 // Razorpay integration - SDK loaded dynamically
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -41,6 +42,9 @@ const Ankit = () => {
   const [isAmountLocked, setIsAmountLocked] = useState(false);
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const [selectedSound, setSelectedSound] = useState<string | null>(null);
+
+  // Fetch streamer-specific pricing
+  const { pricing } = useStreamerPricing('ankit', formData.currency);
 
   // Auto-resume mobile video when it gets paused by touch/interaction
   useEffect(() => {
@@ -239,30 +243,32 @@ const Ankit = () => {
       return;
     }
 
-    // Validate minimum amounts based on donation type and currency
-    const currencyMins = getCurrencyMinimums(formData.currency);
+    // Validate minimum amounts based on donation type using streamer pricing
     const currencySymbol = getCurrencySymbol(formData.currency);
     
-    if (donationType === 'message' && amount < currencyMins.minText) {
+    // For text messages, use TTS minimum if TTS is enabled
+    const textMin = pricing.ttsEnabled ? pricing.minTts : pricing.minText;
+    
+    if (donationType === 'message' && amount < textMin) {
       toast({
         title: "Insufficient Amount",
-        description: `Text messages require a minimum donation of ${currencySymbol}${currencyMins.minText}.`,
+        description: `Text messages require a minimum donation of ${currencySymbol}${textMin}.`,
         variant: "destructive"
       });
       return;
     }
-    if (donationType === 'voice' && amount < currencyMins.minVoice) {
+    if (donationType === 'voice' && amount < pricing.minVoice) {
       toast({
         title: "Insufficient Amount",
-        description: `Voice messages require a minimum donation of ${currencySymbol}${currencyMins.minVoice}.`,
+        description: `Voice messages require a minimum donation of ${currencySymbol}${pricing.minVoice}.`,
         variant: "destructive"
       });
       return;
     }
-    if (donationType === 'hypersound' && amount < currencyMins.minHypersound) {
+    if (donationType === 'hypersound' && amount < pricing.minHypersound) {
       toast({
         title: "Insufficient Amount",
-        description: `HyperSounds require a minimum donation of ${currencySymbol}${currencyMins.minHypersound}.`,
+        description: `HyperSounds require a minimum donation of ${currencySymbol}${pricing.minHypersound}.`,
         variant: "destructive"
       });
       return;
@@ -408,26 +414,32 @@ const Ankit = () => {
   const handleDonationTypeChange = (type: 'message' | 'voice' | 'hypersound' | 'image') => {
     setDonationType(type);
     if (type === 'hypersound') {
-      const minAmount = getCurrencyMinimums(formData.currency).minHypersound;
       setFormData(prev => ({
         ...prev,
-        amount: minAmount.toString(),
+        amount: pricing.minHypersound.toString(),
         message: ''
       }));
       setShowHypersoundEffect(true);
       setTimeout(() => setShowHypersoundEffect(false), 3000);
     } else if (type === 'image') {
-      const minAmount = getCurrencyMinimums(formData.currency).minText;
       setFormData(prev => ({
         ...prev,
-        amount: minAmount.toString(),
+        amount: pricing.minMedia.toString(),
+        message: ''
+      }));
+      setSelectedSound(null);
+    } else if (type === 'voice') {
+      setFormData(prev => ({
+        ...prev,
+        amount: pricing.minVoice.toString(),
         message: ''
       }));
       setSelectedSound(null);
     } else {
+      const textMin = pricing.ttsEnabled ? pricing.minTts : pricing.minText;
       setFormData(prev => ({
         ...prev,
-        amount: ''
+        amount: textMin.toString()
       }));
       setSelectedSound(null);
     }
@@ -507,14 +519,14 @@ const Ankit = () => {
                     <div className="text-center">
                       <div className="text-base mb-1">💬</div>
                       <div className="font-semibold text-[10px] text-white drop-shadow-sm">Text</div>
-                      <div className="text-[9px] text-yellow-300 drop-shadow-sm">Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minText}</div>
+                      <div className="text-[9px] text-yellow-300 drop-shadow-sm">Min: {getCurrencySymbol(formData.currency)}{pricing.ttsEnabled ? pricing.minTts : pricing.minText}</div>
                     </div>
                   </button>
                   <button type="button" onClick={() => handleDonationTypeChange('voice')} className={`p-2 rounded-lg border-2 transition-all ${donationType === 'voice' ? 'border-blue-500 bg-blue-500/10' : 'border-blue-500/30 hover:border-blue-500/50'}`}>
                     <div className="text-center">
                       <div className="text-base mb-1">🎤</div>
                       <div className="font-semibold text-[10px] text-white drop-shadow-sm">Voice</div>
-                      <div className="text-[9px] text-yellow-300 drop-shadow-sm">Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minVoice}</div>
+                      <div className="text-[9px] text-yellow-300 drop-shadow-sm">Min: {getCurrencySymbol(formData.currency)}{pricing.minVoice}</div>
                     </div>
                   </button>
                   <button type="button" onClick={() => handleDonationTypeChange('hypersound')} className={`p-2 rounded-lg border-2 transition-all ${donationType === 'hypersound' ? 'border-orange-500 bg-orange-500/10' : 'border-orange-500/30 hover:border-orange-500/50'}`}>
@@ -522,7 +534,7 @@ const Ankit = () => {
                       <div className="text-base mb-1">🔊</div>
                       <div className="font-semibold text-[10px] text-white drop-shadow-sm">Sound</div>
                       <div className="text-[9px] text-yellow-300 drop-shadow-sm">
-                        Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minHypersound}
+                        Min: {getCurrencySymbol(formData.currency)}{pricing.minHypersound}
                       </div>
                     </div>
                   </button>
@@ -530,7 +542,7 @@ const Ankit = () => {
                     <div className="text-center">
                       <div className="text-base mb-1">📷</div>
                       <div className="font-semibold text-[10px] text-white drop-shadow-sm">Image</div>
-                      <div className="text-[9px] text-yellow-300 drop-shadow-sm">Min: {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minText}</div>
+                      <div className="text-[9px] text-yellow-300 drop-shadow-sm">Min: {getCurrencySymbol(formData.currency)}{pricing.minMedia}</div>
                     </div>
                   </button>
                 </div>
@@ -587,7 +599,7 @@ const Ankit = () => {
                   id="amount" 
                   name="amount" 
                   type="number" 
-                  placeholder={donationType === 'message' ? `Min: ${getCurrencyMinimums(formData.currency).minText}` : donationType === 'voice' ? `Min: ${getCurrencyMinimums(formData.currency).minVoice}` : `Min: ${getCurrencyMinimums(formData.currency).minHypersound}`} 
+                  placeholder={donationType === 'message' ? `Min: ${pricing.ttsEnabled ? pricing.minTts : pricing.minText}` : donationType === 'voice' ? `Min: ${pricing.minVoice}` : `Min: ${pricing.minHypersound}`} 
                   value={formData.amount} 
                   onChange={handleInputChange} 
                   className="flex-1 border-blue-500/30 focus:border-blue-500 focus:ring-blue-500/20" 
@@ -601,12 +613,12 @@ const Ankit = () => {
                   🔒 Amount locked during voice recording
                 </p>}
               {formData.currency === 'INR' && donationType === 'message' && <p className="text-xs text-white/90 drop-shadow-sm">TTS above ₹70</p>}
-              {donationType === 'voice' && currentAmount >= getCurrencyMinimums(formData.currency).minVoice && <p className="text-xs text-white/90 drop-shadow-sm">
+              {donationType === 'voice' && currentAmount >= pricing.minVoice && <p className="text-xs text-white/90 drop-shadow-sm">
                   Voice duration: {getVoiceDuration(currentAmount)}s
                   {formData.currency === 'INR' && currentAmount < 200 && ' (Donate ₹200+ for 20s, ₹250+ for 30s)'}
                 </p>}
               {donationType === 'hypersound' && <p className="text-xs text-white/90 drop-shadow-sm">
-                  HyperSounds start at {getCurrencySymbol(formData.currency)}{getCurrencyMinimums(formData.currency).minHypersound}
+                  HyperSounds start at {getCurrencySymbol(formData.currency)}{pricing.minHypersound}
                 </p>}
             </div>
 

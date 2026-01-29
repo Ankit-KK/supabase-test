@@ -647,6 +647,10 @@ export type Database = {
           media_min_amount: number | null
           media_moderation_enabled: boolean | null
           media_upload_enabled: boolean | null
+          min_hypersound_amount_inr: number | null
+          min_text_amount_inr: number | null
+          min_tts_amount_inr: number | null
+          min_voice_amount_inr: number | null
           moderation_mode: string | null
           pusher_group: number | null
           streamer_name: string
@@ -674,6 +678,10 @@ export type Database = {
           media_min_amount?: number | null
           media_moderation_enabled?: boolean | null
           media_upload_enabled?: boolean | null
+          min_hypersound_amount_inr?: number | null
+          min_text_amount_inr?: number | null
+          min_tts_amount_inr?: number | null
+          min_voice_amount_inr?: number | null
           moderation_mode?: string | null
           pusher_group?: number | null
           streamer_name: string
@@ -701,6 +709,10 @@ export type Database = {
           media_min_amount?: number | null
           media_moderation_enabled?: boolean | null
           media_upload_enabled?: boolean | null
+          min_hypersound_amount_inr?: number | null
+          min_text_amount_inr?: number | null
+          min_tts_amount_inr?: number | null
+          min_voice_amount_inr?: number | null
           moderation_mode?: string | null
           pusher_group?: number | null
           streamer_name?: string
