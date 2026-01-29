@@ -201,7 +201,7 @@ serve(async (req) => {
       // Fetch streamer settings for moderation mode
       const { data: streamerSettings } = await supabase
         .from('streamers')
-        .select('moderation_mode, media_moderation_enabled, goal_is_active, goal_target_amount, goal_activated_at')
+        .select('moderation_mode, media_moderation_enabled, goal_is_active, goal_target_amount, goal_activated_at, min_tts_amount_inr, tts_enabled')
         .eq('id', donation.streamer_id)
         .single();
 
@@ -340,25 +340,46 @@ serve(async (req) => {
             console.error('[Unified] Error calculating leaderboard:', leaderboardError);
           }
 
-          // Generate TTS if needed (for text donations without voice/hypersound)
+          // Dynamic TTS threshold from database
+          const PLATFORM_TTS_FLOOR_INR = 40;
+          const ttsMinAmount = Math.max(
+            PLATFORM_TTS_FLOOR_INR, 
+            streamerSettings?.min_tts_amount_inr || PLATFORM_TTS_FLOOR_INR
+          );
+          console.log(`[Unified] TTS threshold: ${ttsMinAmount} INR (db: ${streamerSettings?.min_tts_amount_inr})`);
+
+          // Determine if TTS should be generated
+          const isTextDonation = !donation.voice_message_url && !donation.hypersound_url && !hasMedia;
+          const amountInINR = convertToINR(donation.amount, paymentCurrency);
+
+          // Generate TTS if needed (for text/media donations without voice/hypersound)
           if (!donation.voice_message_url && !donation.hypersound_url) {
-            try {
-              console.log('[Unified] Generating TTS for donation:', donation.id);
-              await supabase.functions.invoke('generate-donation-tts', {
-                body: {
-                  username: donation.name,
-                  amount: donation.amount,
-                  message: donation.message,
-                  donationId: donation.id,
-                  streamerId: donation.streamer_id,
-                  isVoiceAnnouncement: false,
-                  isMediaAnnouncement: hasMedia,
-                  mediaType: donation.media_type,
-                  currency: paymentCurrency
-                }
-              });
-            } catch (ttsError) {
-              console.error('[Unified] TTS generation error:', ttsError);
+            const shouldGenerateTTS = (isTextDonation && amountInINR >= ttsMinAmount && streamerSettings?.tts_enabled !== false) || hasMedia;
+            
+            if (shouldGenerateTTS) {
+              try {
+                console.log('[Unified] Generating TTS for donation:', donation.id);
+                await supabase.functions.invoke('generate-donation-tts', {
+                  body: {
+                    username: donation.name,
+                    amount: donation.amount,
+                    message: donation.message,
+                    donationId: donation.id,
+                    streamerId: donation.streamer_id,
+                    isVoiceAnnouncement: false,
+                    isMediaAnnouncement: hasMedia,
+                    mediaType: donation.media_type,
+                    currency: paymentCurrency
+                  }
+                });
+              } catch (ttsError) {
+                console.error('[Unified] TTS generation error:', ttsError);
+              }
+            } else if (isTextDonation) {
+              // Use silent audio for donations under threshold
+              const SILENT_AUDIO_URL = Deno.env.get('SILENT_AUDIO_URL') || 'https://pub-fff13c27bb0d4a1e807dfc596462b7d5.r2.dev/silence_no_sound.mp3';
+              await supabase.from(config.table).update({ tts_audio_url: SILENT_AUDIO_URL }).eq('id', donation.id);
+              console.log(`[Unified] Using silent audio for donation under ${ttsMinAmount} INR threshold`);
             }
           }
 
