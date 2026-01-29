@@ -14,7 +14,8 @@ import EnhancedVoiceRecorder from "@/components/EnhancedVoiceRecorder";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import HyperSoundSelector from "@/components/HyperSoundSelector";
 import MediaUploader from "@/components/MediaUploader";
-import { SUPPORTED_CURRENCIES, getCurrencyMinimums, getCurrencySymbol } from "@/constants/currencies";
+import { SUPPORTED_CURRENCIES, getCurrencySymbol } from "@/constants/currencies";
+import { useStreamerPricing } from "@/hooks/useStreamerPricing";
 import DonationPageFooter from "@/components/DonationPageFooter";
 
 const ChiaGaming = () => {
@@ -33,7 +34,8 @@ const ChiaGaming = () => {
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const navigate = useNavigate();
 
-  const minimums = getCurrencyMinimums(selectedCurrency);
+  // Fetch streamer-specific pricing
+  const { pricing } = useStreamerPricing('chiaa_gaming', selectedCurrency);
   const currencySymbol = getCurrencySymbol(selectedCurrency);
 
   const getVoiceDuration = (amount: number) => {
@@ -97,12 +99,12 @@ const ChiaGaming = () => {
 
     const minAmount =
       donationType === "voice"
-        ? minimums.minVoice
+        ? pricing.minVoice
         : donationType === "hypersound"
-          ? minimums.minHypersound
+          ? pricing.minHypersound
           : donationType === "media"
-            ? minimums.minMedia
-            : minimums.minText;
+            ? pricing.minMedia
+            : pricing.ttsEnabled ? pricing.minTts : pricing.minText;
     if (amount < minAmount) {
       toast.error(`Minimum amount for ${donationType} is ${currencySymbol}${minAmount}`);
       return;
@@ -232,15 +234,16 @@ const ChiaGaming = () => {
   const handleDonationTypeChange = (value: "text" | "voice" | "hypersound" | "media") => {
     setDonationType(value);
     if (value === "hypersound") {
-      setFormData((prev) => ({ ...prev, amount: String(minimums.minHypersound), message: "" }));
+      setFormData((prev) => ({ ...prev, amount: String(pricing.minHypersound), message: "" }));
     } else if (value === "voice") {
-      setFormData((prev) => ({ ...prev, amount: String(minimums.minVoice), message: "" }));
+      setFormData((prev) => ({ ...prev, amount: String(pricing.minVoice), message: "" }));
     } else if (value === "media") {
-      setFormData((prev) => ({ ...prev, amount: String(minimums.minMedia), message: "" }));
+      setFormData((prev) => ({ ...prev, amount: String(pricing.minMedia), message: "" }));
       setMediaUrl(null);
       setMediaType(null);
     } else {
-      setFormData((prev) => ({ ...prev, amount: String(minimums.minText), message: "" }));
+      const textMin = pricing.ttsEnabled ? pricing.minTts : pricing.minText;
+      setFormData((prev) => ({ ...prev, amount: String(textMin), message: "" }));
     }
   };
 
@@ -308,7 +311,7 @@ const ChiaGaming = () => {
                     <div className="font-medium text-[10px]">Text</div>
                     <div className="text-[9px] text-muted-foreground">
                       Min: {currencySymbol}
-                      {minimums.minText}
+                      {pricing.ttsEnabled ? pricing.minTts : pricing.minText}
                     </div>
                   </div>
                 </button>
@@ -326,7 +329,7 @@ const ChiaGaming = () => {
                     <div className="font-medium text-[10px]">Voice</div>
                     <div className="text-[9px] text-muted-foreground">
                       Min: {currencySymbol}
-                      {minimums.minVoice}
+                      {pricing.minVoice}
                     </div>
                   </div>
                 </button>
@@ -344,7 +347,7 @@ const ChiaGaming = () => {
                     <div className="font-medium text-[10px]">Sound</div>
                     <div className="text-[9px] text-muted-foreground">
                       Min: {currencySymbol}
-                      {minimums.minHypersound}
+                      {pricing.minHypersound}
                     </div>
                   </div>
                 </button>
@@ -362,7 +365,7 @@ const ChiaGaming = () => {
                     <div className="font-medium text-[10px]">Media</div>
                     <div className="text-[9px] text-muted-foreground">
                       Min: {currencySymbol}
-                      {minimums.minMedia}
+                      {pricing.minMedia}
                     </div>
                   </div>
                 </button>
@@ -396,16 +399,11 @@ const ChiaGaming = () => {
                             <CommandItem
                               key={currency.code}
                               value={currency.code}
-                              onSelect={(value) => {
+                            onSelect={(value) => {
                                 const newCurrency = value.toUpperCase();
                                 setSelectedCurrency(newCurrency);
                                 setCurrencyOpen(false);
-                                const newMins = getCurrencyMinimums(newCurrency);
-                                if (donationType === "text")
-                                  setFormData((prev) => ({ ...prev, amount: String(newMins.minText) }));
-                                else if (donationType === "voice")
-                                  setFormData((prev) => ({ ...prev, amount: String(newMins.minVoice) }));
-                                else setFormData((prev) => ({ ...prev, amount: String(newMins.minHypersound) }));
+                                // Amount will auto-update via the pricing hook when currency changes
                               }}
                             >
                               <Check
@@ -467,7 +465,7 @@ const ChiaGaming = () => {
                   }}
                   maxDurationSeconds={getVoiceDuration(currentAmount)}
                   brandColor="#ec4899"
-                  requiredAmount={minimums.minVoice}
+                  requiredAmount={pricing.minVoice}
                   currentAmount={currentAmount}
                 />
               </div>

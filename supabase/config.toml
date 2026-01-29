@@ -92,3 +92,6 @@ verify_jwt = false
 
 [functions.check-payment-status-unified]
 verify_jwt = false
+
+[functions.get-streamer-pricing]
+verify_jwt = false
