@@ -61,6 +61,7 @@ const ClumsyGod = () => {
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.async = true;
     script.onload = () => setRazorpayLoaded(true);
+    script.onerror = () => toast.error("Failed to load payment gateway");
     document.body.appendChild(script);
 
     return () => {
@@ -188,7 +189,7 @@ const ClumsyGod = () => {
         modal: {
           ondismiss: () => navigate(`/status?order_id=${data.orderId}&status=pending`),
         },
-        theme: { color: "#a855f7" }, // purple
+        theme: { color: "#a855f7" },
       }).open();
     } catch {
       toast.error("Payment failed");
@@ -212,6 +213,7 @@ const ClumsyGod = () => {
         </CardHeader>
 
         <CardContent className="space-y-4 relative z-10">
+          {/* NAME */}
           <div className="space-y-2">
             <Label className="text-purple-300">Your Name *</Label>
             <Input
@@ -224,6 +226,7 @@ const ClumsyGod = () => {
             />
           </div>
 
+          {/* DONATION TYPE */}
           <div className="grid grid-cols-4 gap-1.5">
             {(["text", "voice", "hypersound", "media"] as const).map((type) => (
               <button
@@ -241,10 +244,123 @@ const ClumsyGod = () => {
                     {type === "text" ? "💬" : type === "voice" ? "🎤" : type === "hypersound" ? "🔊" : "🖼️"}
                   </div>
                   <div className="font-medium text-[10px] capitalize">{type === "hypersound" ? "Sound" : type}</div>
+                  <div className="text-[9px] text-muted-foreground">
+                    Min: {currencySymbol}
+                    {type === "text"
+                      ? pricing.minText
+                      : type === "voice"
+                        ? pricing.minVoice
+                        : type === "hypersound"
+                          ? pricing.minHypersound
+                          : pricing.minMedia}
+                  </div>
                 </div>
               </button>
             ))}
           </div>
+
+          {/* AMOUNT */}
+          <div className="space-y-2">
+            <Label className="text-purple-300">Amount *</Label>
+            <div className="flex gap-2">
+              <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-[100px] justify-between
+                               bg-black/40 text-white
+                               border-purple-500/30
+                               hover:bg-purple-500/10"
+                  >
+                    {currencySymbol} {selectedCurrency}
+                    <ChevronsUpDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Search currency..." />
+                    <CommandList>
+                      <CommandEmpty>No currency found.</CommandEmpty>
+                      <CommandGroup>
+                        {SUPPORTED_CURRENCIES.map((c) => (
+                          <CommandItem
+                            key={c.code}
+                            value={c.code}
+                            onSelect={() => {
+                              setSelectedCurrency(c.code);
+                              setCurrencyOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn("mr-2 h-4 w-4", selectedCurrency === c.code ? "opacity-100" : "opacity-0")}
+                            />
+                            {c.symbol} {c.code}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
+              <Input
+                name="amount"
+                type="number"
+                value={formData.amount}
+                onChange={handleInputChange}
+                className="bg-black/40 text-white placeholder:text-gray-400
+                           border-purple-500/30
+                           focus:border-purple-500 focus:ring-purple-500/20"
+              />
+            </div>
+          </div>
+
+          {/* TEXT */}
+          {donationType === "text" && (
+            <textarea
+              name="message"
+              value={formData.message}
+              onChange={handleInputChange}
+              className="w-full min-h-[90px] rounded-md
+                         bg-black/40 text-white placeholder:text-gray-400
+                         border border-purple-500/30
+                         focus:border-purple-500 focus:ring-purple-500/20
+                         px-3 py-2 text-sm"
+              placeholder="Your message (optional)"
+            />
+          )}
+
+          {/* VOICE */}
+          {donationType === "voice" && (
+            <EnhancedVoiceRecorder
+              controller={voiceRecorder}
+              onRecordingComplete={() => {}}
+              maxDurationSeconds={getVoiceDuration(currentAmount)}
+              requiredAmount={pricing.minVoice}
+              currentAmount={currentAmount}
+              brandColor="#a855f7"
+            />
+          )}
+
+          {/* HYPERSOUND */}
+          {donationType === "hypersound" && (
+            <HyperSoundSelector selectedSound={selectedHypersound} onSoundSelect={setSelectedHypersound} />
+          )}
+
+          {/* MEDIA */}
+          {donationType === "media" && (
+            <MediaUploader
+              streamerSlug="clumsy_god"
+              onMediaUploaded={(url, type) => {
+                setMediaUrl(url);
+                setMediaType(type);
+              }}
+              onMediaRemoved={() => {
+                setMediaUrl(null);
+                setMediaType(null);
+              }}
+            />
+          )}
 
           <Button
             className="w-full font-semibold py-6 bg-purple-600 hover:bg-purple-700"
