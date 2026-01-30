@@ -1,95 +1,176 @@
 
+# Plan: Fix Dashboard Real-Time Moderation Sync
 
-# Plan: Add Login Credentials for Wolfy
+## Problem Summary
 
-This plan creates a login account for Wolfy and maps it to the streamer profile.
+The dashboard has three interconnected issues affecting all streamers:
 
----
-
-## What Will Be Created
-
-| Item | Details |
-|------|---------|
-| **Email** | `wolfy@hyperchat.site` |
-| **Password** | Secure bcrypt-hashed password |
-| **Streamer Mapping** | Links auth_users.id → streamers.user_id |
+| Issue | Symptom | Root Cause |
+|-------|---------|------------|
+| Approved items stay in Pending | Donations remain in moderation tab after approval | Event name mismatch: backend sends `donation-approved`, frontend listens for `donation-updated` |
+| New pending donations don't appear | Must switch tabs to see new items needing moderation | Backend doesn't send `pending` action events for new moderation items |
+| Approved Donations tab stale | Tab doesn't update after approvals | Same event mismatch + missing explicit refetch after state change |
 
 ---
 
-## Database Changes Required
+## Solution Overview
 
-### Step 1: Create Auth User for Wolfy
-
-Insert a new user into `auth_users` table with:
-- Email: `wolfy@hyperchat.site`
-- Password: bcrypt-hashed (you'll need to provide the desired password)
-- Role: `user` (matches other streamers)
-- is_active: `true`
-
-### Step 2: Link Streamer to User
-
-Update the `streamers` table to set `user_id` to the newly created auth user's ID.
+Fix the real-time sync by:
+1. Adding missing Pusher event listener for `donation-approved` 
+2. Sending `pending` action events from payment webhooks when donations need moderation
+3. Adding immediate refetch after moderation actions (per Stack Overflow proven pattern)
 
 ---
 
-## SQL Migration
+## Step 1: Fix Pusher Event Listener (Frontend)
 
-```sql
--- Step 1: Create auth user for Wolfy
--- Note: Password will be bcrypt hashed (the user should login and it will auto-upgrade)
--- Using a temporary password that should be changed
-INSERT INTO auth_users (
-  id,
-  email,
-  password_hash,
-  username,
-  role,
-  is_active,
-  failed_login_attempts
-) VALUES (
-  gen_random_uuid(),
-  'wolfy@hyperchat.site',
-  'TEMPORARY_PASSWORD_CHANGE_ME',  -- Will be auto-upgraded to bcrypt on first login
-  'wolfy',
-  'user',
-  true,
-  0
-);
+### File: `src/hooks/usePusherDashboard.ts`
 
--- Step 2: Link Wolfy streamer to the new auth user
-UPDATE streamers 
-SET user_id = (SELECT id FROM auth_users WHERE email = 'wolfy@hyperchat.site')
-WHERE streamer_slug = 'wolfy';
+**Problem:** The hook only binds to `donation-updated` but the backend sends `donation-approved` for approvals.
+
+**Fix:** Add a listener for `donation-approved` event:
+
+```typescript
+// Add after line 147 (after 'donation-updated' binding)
+channel.bind('donation-approved', (data: DonationUpdateEvent) => {
+  console.log('[PusherDashboard] Donation approved:', data);
+  // Transform to standard format with 'approve' action
+  if (onDonationUpdatedRef.current) {
+    onDonationUpdatedRef.current({ ...data, action: 'approve' });
+  }
+});
 ```
 
 ---
 
-## Password Handling
+## Step 2: Add Immediate Refetch After Moderation Actions (Frontend)
 
-The authenticate-user edge function automatically upgrades plaintext passwords to bcrypt on first login (lines 188-208 of the function). So we can:
+### File: `src/components/dashboard/moderation/ModerationPanel.tsx`
 
-1. Set a temporary plaintext password in the migration
-2. On first login, it will be automatically hashed with bcrypt
+**Problem:** Relying solely on Pusher events creates 200-500ms latency where UI can become stale.
+
+**Fix:** Add immediate refetch after successful moderation action (proven pattern):
+
+```typescript
+// In moderateDonation function, after line 247 (success check)
+if (response.data?.success) {
+  toast({ title: 'Success', description: `Donation ${action}d` });
+  
+  // IMMEDIATE: Update local state first for instant feedback
+  if (action === 'approve') {
+    const approvedDonation = pendingDonations.find(d => d.id === donationId);
+    if (approvedDonation) {
+      setPendingDonations(prev => prev.filter(d => d.id !== donationId));
+      setRecentDonations(prev => [
+        { ...approvedDonation, moderation_status: 'approved' },
+        ...prev.slice(0, 9)
+      ]);
+      setPendingCount(prev => Math.max(0, prev - 1));
+    }
+  } else if (action === 'reject' || action === 'ban_donor') {
+    setPendingDonations(prev => prev.filter(d => d.id !== donationId));
+    setPendingCount(prev => Math.max(0, prev - 1));
+  }
+}
+```
 
 ---
 
-## What You Need to Provide
+## Step 3: Send Pending Events from Webhook (Backend)
 
-Before I execute this migration, please provide:
-- **Password for Wolfy's account** (will be securely hashed)
+### File: `supabase/functions/razorpay-webhook/index.ts`
+
+**Problem:** When a donation needs moderation (manual mode or media moderation), no Pusher event is sent to the dashboard.
+
+**Fix:** Add `pending` action broadcast when donation goes to moderation queue:
+
+After the donation status update (around line 380), add:
+
+```typescript
+// When donation needs moderation, notify dashboard
+if (shouldHold) {
+  await sendPusherEvent(
+    [`${channelSlug}-dashboard`],
+    'donation-updated',
+    {
+      id: donationId,
+      action: 'pending',
+      name: donation.name,
+      amount: donation.amount,
+      currency: donation.currency || 'INR',
+      message: donation.message,
+      voice_message_url: donation.voice_message_url,
+      media_url: donation.media_url,
+      media_type: donation.media_type,
+      created_at: donation.created_at
+    },
+    pusherGroup
+  );
+  console.log(`Dashboard notified of pending donation requiring moderation`);
+}
+```
+
+### File: `supabase/functions/check-payment-status-unified/index.ts`
+
+**Same fix:** Add `pending` action broadcast when donation needs moderation.
 
 ---
 
-## After Implementation
+## Step 4: Fix Approved Donations Tab Updates (Frontend)
 
-Wolfy will be able to:
-1. Login at `/auth` with `wolfy@hyperchat.site`
-2. Access the Wolfy dashboard at `/dashboard/wolfy`
-3. Manage settings, view donations, and moderate content
+### File: `src/components/dashboard/StreamerDashboard.tsx`
+
+**Problem:** The `onNewDonation` handler adds ALL new donations to `approvedDonations`, but in manual mode, new donations should be pending.
+
+**Fix:** Only add to approved list if moderation status is approved/auto_approved:
+
+```typescript
+// In onNewDonation handler (line 84-123), add condition:
+onNewDonation: (donation) => {
+  console.log('[Dashboard] New donation via Pusher:', donation);
+  
+  // Only add to approved list if already approved (auto_approve mode)
+  const isApproved = donation.moderation_status === 'approved' || 
+                     donation.moderation_status === 'auto_approved';
+  
+  if (isApproved) {
+    const newDonation: DonationRecord = {
+      // ... existing mapping
+    };
+    setApprovedDonations(prev => [newDonation, ...prev.slice(0, 49)]);
+    // ... stats update
+  }
+  // Non-approved donations will be handled by moderation panel
+}
+```
 
 ---
 
-## Verification
+## Technical Summary
 
-After migration, the `get_user_streamers` function will return Wolfy's streamer when the user logs in, granting dashboard access.
+| File | Change |
+|------|--------|
+| `src/hooks/usePusherDashboard.ts` | Add `donation-approved` event binding |
+| `src/components/dashboard/moderation/ModerationPanel.tsx` | Add immediate local state updates after actions |
+| `src/components/dashboard/StreamerDashboard.tsx` | Filter `onNewDonation` to only add approved donations |
+| `supabase/functions/razorpay-webhook/index.ts` | Send `pending` action event for moderation queue |
+| `supabase/functions/check-payment-status-unified/index.ts` | Send `pending` action event for moderation queue |
 
+---
+
+## Expected Behavior After Fix
+
+1. **Approve donation** → Immediately removed from Pending tab, appears in Recent Approved
+2. **New donation needing moderation** → Instantly appears in Pending tab with toast notification
+3. **Approved Donations tab** → Only shows approved/auto_approved donations, updates in real-time
+4. **No page switching required** → All updates happen via Pusher + immediate local state changes
+
+---
+
+## Files to Modify
+
+- `src/hooks/usePusherDashboard.ts` (add event binding)
+- `src/components/dashboard/moderation/ModerationPanel.tsx` (immediate state updates)
+- `src/components/dashboard/StreamerDashboard.tsx` (filter by moderation status)
+- `supabase/functions/razorpay-webhook/index.ts` (send pending events)
+- `supabase/functions/check-payment-status-unified/index.ts` (send pending events)
