@@ -146,6 +146,15 @@ export const usePusherDashboard = ({
       }
     });
 
+    // Listen for donation-approved events (sent by moderate-donation)
+    channel.bind('donation-approved', (data: DonationUpdateEvent) => {
+      console.log('[PusherDashboard] Donation approved event:', data);
+      if (onDonationUpdatedRef.current) {
+        // Transform to standard format with 'approve' action
+        onDonationUpdatedRef.current({ ...data, action: 'approve' });
+      }
+    });
+
     return () => {
       console.log('[PusherDashboard] Cleaning up Pusher connection');
       channel.unbind_all();

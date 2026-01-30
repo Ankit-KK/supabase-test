@@ -246,7 +246,30 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
 
       if (response.data?.success) {
         toast({ title: 'Success', description: `Donation ${action}d` });
-        // Don't need to fetchQueue since Pusher will update
+        
+        // IMMEDIATE: Update local state for instant feedback (don't wait for Pusher)
+        if (action === 'approve') {
+          const approvedDonation = pendingDonations.find(d => d.id === donationId);
+          if (approvedDonation) {
+            setPendingDonations(prev => prev.filter(d => d.id !== donationId));
+            setRecentDonations(prev => [
+              { ...approvedDonation, moderation_status: 'approved' },
+              ...prev.slice(0, 9)
+            ]);
+            setPendingCount(prev => Math.max(0, prev - 1));
+          }
+        } else if (action === 'reject' || action === 'ban_donor') {
+          setPendingDonations(prev => prev.filter(d => d.id !== donationId));
+          setPendingCount(prev => Math.max(0, prev - 1));
+        } else if (action === 'hide_message') {
+          setRecentDonations(prev => 
+            prev.map(d => d.id === donationId ? { ...d, message_visible: false } : d)
+          );
+        } else if (action === 'unhide_message') {
+          setRecentDonations(prev => 
+            prev.map(d => d.id === donationId ? { ...d, message_visible: true } : d)
+          );
+        }
       } else {
         throw new Error(response.data?.error || 'Action failed');
       }
