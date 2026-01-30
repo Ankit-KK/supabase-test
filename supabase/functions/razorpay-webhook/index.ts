@@ -269,10 +269,10 @@ serve(async (req) => {
     const audioDelay = donation.hypersound_url ? 15000 : 60000;
     const audioScheduledAt = new Date(Date.now() + audioDelay).toISOString();
 
-    // Fetch streamer's moderation settings
+    // Fetch streamer's moderation settings including TTS thresholds
     const { data: streamerSettings, error: streamerError } = await supabase
       .from('streamers')
-      .select('moderation_mode, telegram_moderation_enabled, media_moderation_enabled')
+      .select('moderation_mode, telegram_moderation_enabled, media_moderation_enabled, min_tts_amount_inr, tts_enabled')
       .eq('id', donation.streamer_id)
       .single();
 
@@ -469,8 +469,29 @@ serve(async (req) => {
 
         // Only send audio queue events for auto-approved donations
         if (shouldAutoApprove) {
-          // Generate TTS if needed (for text donations without voice/hypersound)
-          if (!donation.voice_message_url && !donation.hypersound_url) {
+          // Dynamic TTS threshold from database
+          const PLATFORM_TTS_FLOOR_INR = 40;
+          const ttsMinAmount = Math.max(
+            PLATFORM_TTS_FLOOR_INR, 
+            streamerSettings?.min_tts_amount_inr || PLATFORM_TTS_FLOOR_INR
+          );
+          
+          const amountInINR = convertToINR(donation.amount, paymentCurrency);
+          console.log(`[Webhook] TTS threshold: ${ttsMinAmount} INR, Donation: ${amountInINR} INR`);
+
+          // Determine donation type
+          const isTextDonation = !donation.voice_message_url && !donation.hypersound_url && !hasMedia;
+          
+          // Generate TTS only if:
+          // 1. Text donation >= TTS threshold, OR
+          // 2. Media donation (always announced)
+          // 3. TTS is enabled for streamer
+          const shouldGenerateTTS = 
+            (!donation.voice_message_url && !donation.hypersound_url) &&
+            ((isTextDonation && amountInINR >= ttsMinAmount) || hasMedia) &&
+            streamerSettings?.tts_enabled !== false;
+
+          if (shouldGenerateTTS) {
             try {
               console.log('Generating TTS for donation:', donation.id);
               const ttsResponse = await supabase.functions.invoke('generate-donation-tts', {
@@ -495,6 +516,13 @@ serve(async (req) => {
             } catch (ttsError) {
               console.error('TTS generation error:', ttsError);
             }
+          } else if (isTextDonation) {
+            // Use silent audio for text donations under threshold (triggers visual alert only)
+            const SILENT_AUDIO_URL = Deno.env.get('SILENT_AUDIO_URL') || 
+              'https://pub-fff13c27bb0d4a1e807dfc596462b7d5.r2.dev/silence_no_sound.mp3';
+            
+            await supabase.from(tableName).update({ tts_audio_url: SILENT_AUDIO_URL }).eq('id', donation.id);
+            console.log(`[Webhook] Using silent audio for donation under ${ttsMinAmount} INR threshold`);
           }
 
           // Refetch donation to get updated TTS URL
