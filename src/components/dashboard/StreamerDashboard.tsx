@@ -134,23 +134,51 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
     },
     onDonationUpdated: (data) => {
       console.log('[Dashboard] Donation update via Pusher:', data);
-      // Pass to ModerationPanel
       setLastDonationUpdate(data);
-      // Incremental update - modify donation in list instead of full refetch (reduces egress)
+      
       if (data.id) {
-        const newStatus = data.action === 'approve' ? 'approved' : 
-                          data.action === 'auto_approved' ? 'auto_approved' :
-                          data.action === 'reject' ? 'rejected' : 
-                          data.action === 'pending' ? 'pending' : undefined;
-        setApprovedDonations(prev => prev.map(d => 
-          d.id === data.id 
-            ? { 
-                ...d, 
-                moderation_status: newStatus || d.moderation_status, 
-                message_visible: data.message_visible ?? d.message_visible 
-              }
-            : d
-        ));
+        if (data.action === 'approve' || data.action === 'auto_approved') {
+          // ADD newly approved donation to the list (it wasn't there before)
+          setApprovedDonations(prev => {
+            // Check if already exists to prevent duplicates
+            if (prev.some(d => d.id === data.id)) {
+              return prev.map(d => 
+                d.id === data.id 
+                  ? { ...d, moderation_status: 'approved', message_visible: data.message_visible ?? d.message_visible }
+                  : d
+              );
+            }
+            // Add new approved donation
+            const newDonation: DonationRecord = {
+              id: data.id,
+              name: data.name,
+              amount: data.amount,
+              currency: data.currency,
+              message: data.message,
+              voice_message_url: data.voice_message_url,
+              tts_audio_url: data.tts_audio_url,
+              hypersound_url: data.hypersound_url,
+              media_url: data.media_url,
+              media_type: data.media_type,
+              message_visible: data.message_visible ?? true,
+              moderation_status: 'approved',
+              payment_status: 'success',
+              created_at: data.created_at,
+              streamer_id: streamerData?.id || '',
+            };
+            return [newDonation, ...prev.slice(0, 49)];
+          });
+        } else if (data.action === 'reject') {
+          // Remove rejected donation from list
+          setApprovedDonations(prev => prev.filter(d => d.id !== data.id));
+        } else if (data.action === 'hide_message' || data.action === 'unhide_message') {
+          // Update visibility only
+          setApprovedDonations(prev => prev.map(d => 
+            d.id === data.id 
+              ? { ...d, message_visible: data.action === 'unhide_message' }
+              : d
+          ));
+        }
       }
     },
     onStatsUpdate: (newStats) => {
