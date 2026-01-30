@@ -230,6 +230,7 @@ serve(async (req) => {
       chiaa_gaming: "chiaa_gaming_donations",
       looteriya_gaming: "looteriya_gaming_donations",
       clumsy_god: "clumsy_god_donations",
+      wolfy: "wolfy_donations",
     };
 
     const donationTable = donationTableMap[streamerSlug];
