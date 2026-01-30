@@ -41,6 +41,11 @@ export const STREAMER_CONFIGS: Record<string, StreamerConfig> = {
     pusherDashboardChannel: 'clumsy_god-dashboard', pusherGoalChannel: 'clumsy_god-goal', pusherAudioChannel: 'clumsy_god-audio',
     pusherAlertsChannel: 'clumsy_god-alerts', pusherSettingsChannel: 'clumsy_god-settings', razorpayOrderPrefix: 'cg2_rp_',
   },
+  wolfy: {
+    slug: 'wolfy', name: 'Wolfy', tableName: 'wolfy_donations', brandColor: '#f59e0b',
+    pusherDashboardChannel: 'wolfy-dashboard', pusherGoalChannel: 'wolfy-goal', pusherAudioChannel: 'wolfy-audio',
+    pusherAlertsChannel: 'wolfy-alerts', pusherSettingsChannel: 'wolfy-settings', razorpayOrderPrefix: 'wf_rp_',
+  },
 };
 
 export const getStreamerConfig = (slug: string): StreamerConfig | undefined => STREAMER_CONFIGS[slug];

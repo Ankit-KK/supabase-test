@@ -22,6 +22,7 @@ const STREAMER_CONFIG: Record<string, { table: string; prefix: string }> = {
   'chiaa_gaming': { table: 'chiaa_gaming_donations', prefix: 'cg_rp_' },
   'looteriya_gaming': { table: 'looteriya_gaming_donations', prefix: 'lg_rp_' },
   'clumsy_god': { table: 'clumsy_god_donations', prefix: 'cg2_rp_' },
+  'wolfy': { table: 'wolfy_donations', prefix: 'wf_rp_' },
 };
 
 // Derive streamer_slug from order_id prefix

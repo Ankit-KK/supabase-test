@@ -51,6 +51,15 @@ export const DONATION_PAGE_CONFIGS: Record<string, DonationPageConfig> = {
     edgeFunctionName: 'create-razorpay-order-unified',
     themeDescription: 'Support Clumsy God with your donation',
   },
+  wolfy: {
+    streamerSlug: 'wolfy',
+    streamerName: 'Wolfy',
+    brandColor: '#f59e0b',
+    logoSrc: '/assets/streamers/wolfy-logo.png',
+    backgroundSrc: '/assets/streamers/wolfy-background.png',
+    edgeFunctionName: 'create-razorpay-order-unified',
+    themeDescription: 'Support Wolfy with your donation',
+  },
 };
 
 export const getDonationPageConfig = (slug: string): DonationPageConfig | undefined => {
