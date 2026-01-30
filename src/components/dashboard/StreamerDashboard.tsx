@@ -83,28 +83,37 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
     pusherCluster: pusherConfig?.cluster,
     onNewDonation: (donation) => {
       console.log('[Dashboard] New donation via Pusher:', donation);
-      // Incremental update - add donation directly instead of full refetch (reduces egress)
-      // Create a DonationRecord from the Pusher event data with ALL fields
-      const newDonation: DonationRecord = {
-        id: donation.id,
-        name: donation.name,
-        amount: donation.amount,
-        currency: donation.currency,
-        message: donation.message,
-        voice_message_url: donation.voice_message_url,
-        tts_audio_url: donation.tts_audio_url,
-        hypersound_url: donation.hypersound_url,
-        is_hyperemote: donation.is_hyperemote,
-        media_url: donation.media_url,
-        media_type: donation.media_type,
-        message_visible: donation.message_visible ?? true, // Default to true for new donations
-        moderation_status: donation.moderation_status,
-        payment_status: 'success', // Only successful donations are pushed
-        created_at: donation.created_at,
-        streamer_id: streamerData?.id || '',
-      };
-      setApprovedDonations(prev => [newDonation, ...prev.slice(0, 49)]);
-      // Update stats incrementally
+      
+      // Only add to approved list if already approved (auto_approve mode)
+      // Pending donations will be handled by moderation panel
+      const isApproved = donation.moderation_status === 'approved' || 
+                         donation.moderation_status === 'auto_approved';
+      
+      if (isApproved) {
+        // Incremental update - add donation directly instead of full refetch (reduces egress)
+        // Create a DonationRecord from the Pusher event data with ALL fields
+        const newDonation: DonationRecord = {
+          id: donation.id,
+          name: donation.name,
+          amount: donation.amount,
+          currency: donation.currency,
+          message: donation.message,
+          voice_message_url: donation.voice_message_url,
+          tts_audio_url: donation.tts_audio_url,
+          hypersound_url: donation.hypersound_url,
+          is_hyperemote: donation.is_hyperemote,
+          media_url: donation.media_url,
+          media_type: donation.media_type,
+          message_visible: donation.message_visible ?? true, // Default to true for new donations
+          moderation_status: donation.moderation_status,
+          payment_status: 'success', // Only successful donations are pushed
+          created_at: donation.created_at,
+          streamer_id: streamerData?.id || '',
+        };
+        setApprovedDonations(prev => [newDonation, ...prev.slice(0, 49)]);
+      }
+      
+      // Update stats incrementally for ALL successful donations
       const donationAmountINR = convertToINR(parseFloat(donation.amount?.toString() || '0'), donation.currency || 'INR');
       const today = new Date().toDateString();
       const isToday = new Date(donation.created_at).toDateString() === today;
@@ -116,9 +125,11 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
         averageDonation: (prev.totalRevenue + donationAmountINR) / (prev.totalDonations + 1),
         topDonation: Math.max(prev.topDonation, donationAmountINR)
       }));
+      
+      // Show toast for all donations (both approved and pending)
       toast({
-        title: "New Donation!",
-        description: `${donation.name} donated ₹${donation.amount}`,
+        title: isApproved ? "New Donation!" : "🔔 New Donation (Pending)",
+        description: `${donation.name} donated ₹${donation.amount}${!isApproved ? ' - needs approval' : ''}`,
       });
     },
     onDonationUpdated: (data) => {

@@ -280,6 +280,25 @@ serve(async (req) => {
           media_type: donation.media_type
         });
 
+        // If donation needs moderation, also send a donation-updated event with 'pending' action
+        // This ensures the moderation panel shows the new pending item in real-time
+        if (!shouldAutoApprove) {
+          await sendPusherEvent(dashboardChannel, 'donation-updated', {
+            id: donation.id,
+            action: 'pending',
+            name: donation.name,
+            amount: donation.amount,
+            currency: paymentCurrency,
+            message: donation.message,
+            message_visible: true,
+            created_at: donation.created_at,
+            voice_message_url: donation.voice_message_url,
+            media_url: donation.media_url,
+            media_type: donation.media_type
+          });
+          console.log(`[Unified] Dashboard notified of pending donation requiring moderation`);
+        }
+
         // Send goal progress update
         if (streamerSettings?.goal_is_active && streamerSettings?.goal_activated_at) {
           const { data: goalDonations } = await supabase
