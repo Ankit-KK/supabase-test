@@ -1,7 +1,7 @@
-import { BrowserSourceAlertWithAudio } from '@/components/obs/BrowserSourceAlertWithAudio';
+import { ObsAlertsWrapper } from '@/components/obs/ObsAlertsWrapper';
 
 const ClumsyGodObsAlerts = () => {
-  return <BrowserSourceAlertWithAudio streamerSlug="clumsy_god" storagePrefix="clumsy_god" />;
+  return <ObsAlertsWrapper streamerSlug="clumsy_god" storagePrefix="clumsy_god" />;
 };
 
 export default ClumsyGodObsAlerts;

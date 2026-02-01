@@ -1,7 +1,7 @@
-import { BrowserSourceAlertWithAudio } from '@/components/obs/BrowserSourceAlertWithAudio';
+import { ObsAlertsWrapper } from '@/components/obs/ObsAlertsWrapper';
 
 const WolfyObsAlerts = () => {
-  return <BrowserSourceAlertWithAudio streamerSlug="wolfy" storagePrefix="wolfy" />;
+  return <ObsAlertsWrapper streamerSlug="wolfy" storagePrefix="wolfy" />;
 };
 
 export default WolfyObsAlerts;
