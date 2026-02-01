@@ -322,6 +322,7 @@ serve(async (req) => {
       }
 
       // Prepare alert data
+      // CRITICAL FIX #2: No audio URLs in payloads - use has_audio/audio_type flags
       const alertData = {
         id: donation.id,
         name: donation.name,
@@ -329,13 +330,16 @@ serve(async (req) => {
         currency: donation.currency || 'INR',
         message: donation.message,
         type: donationType,
-        voice_message_url: donation.voice_message_url,
-        tts_audio_url: donation.tts_audio_url,
-        hypersound_url: donation.hypersound_url,
+        // Replace URLs with flags to prevent accidental pre-fetching
+        has_audio: !!(donation.voice_message_url || donation.tts_audio_url || donation.hypersound_url),
+        audio_type: donation.hypersound_url ? 'hypersound' : 
+                    donation.voice_message_url ? 'voice' : 
+                    donation.tts_audio_url ? 'tts' : null,
         is_hyperemote: donation.is_hyperemote,
         selected_gif_id: donation.selected_gif_id,
         message_visible: donation.message_visible !== false,
         created_at: donation.created_at,
+        // Media URLs for display only (not audio)
         media_url: donation.media_url,
         media_type: donation.media_type
       };

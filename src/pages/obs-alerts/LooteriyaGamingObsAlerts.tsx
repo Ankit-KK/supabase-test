@@ -1,7 +1,7 @@
-import { ObsAlertsWrapper } from '@/components/obs/ObsAlertsWrapper';
+import { BrowserSourceAlertWithAudio } from '@/components/obs/BrowserSourceAlertWithAudio';
 
 const LooteriyaGamingObsAlerts = () => {
-  return <ObsAlertsWrapper streamerSlug="looteriya_gaming" storagePrefix="looteriya_gaming" />;
+  return <BrowserSourceAlertWithAudio streamerSlug="looteriya_gaming" storagePrefix="looteriya_gaming" />;
 };
 
 export default LooteriyaGamingObsAlerts;

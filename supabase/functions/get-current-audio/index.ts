@@ -31,6 +31,21 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // CRITICAL FIX #5: Hard fail for OBS Media Source
+    // OBS Media Source re-downloads audio on every play, causing 3-10x egress amplification
+    const userAgent = req.headers.get('user-agent') || '';
+    if (userAgent.includes('OBS') && !userAgent.includes('Browser')) {
+      console.log('[get-current-audio] BLOCKED: OBS Media Source detected');
+      return new Response(JSON.stringify({
+        error: 'OBS Media Source is not supported',
+        message: 'Please use OBS Browser Source with the alerts page instead. Media Source re-downloads audio on every play, causing excessive bandwidth usage.',
+        migration_guide: 'Switch to Browser Source using /obs/alerts/[streamer] URL'
+      }), {
+        status: 410, // Gone
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const url = new URL(req.url);
     const token = url.searchParams.get('token');
 
@@ -144,16 +159,20 @@ Deno.serve(async (req) => {
           useTLS: true,
         });
 
+        // CRITICAL FIX #2: No audio URLs in payloads - client resolves from type + id
         await pusher.trigger(alertsChannel, 'audio-now-playing', {
           id: donation.id,
           name: donation.name,
           amount: donation.amount,
           message: donation.message,
-          voice_message_url: donation.voice_message_url,
-          tts_audio_url: donation.tts_audio_url,
-          hypersound_url: donation.hypersound_url,
+          currency: 'INR', // Default currency for audio-now-playing
+          // Audio flags instead of URLs - client resolves locally
+          has_audio: true,
+          audio_type: donation.hypersound_url ? 'hypersound' : 
+                      donation.voice_message_url ? 'voice' : 'tts',
           is_hyperemote: donation.is_hyperemote || false,
           created_at: donation.created_at,
+          // Media URLs for display only (not audio)
           media_url: donation.media_url,
           media_type: donation.media_type,
         });

@@ -1,7 +1,7 @@
-import { ObsAlertsWrapper } from '@/components/obs/ObsAlertsWrapper';
+import { BrowserSourceAlertWithAudio } from '@/components/obs/BrowserSourceAlertWithAudio';
 
 const ChiaGamingObsAlerts = () => {
-  return <ObsAlertsWrapper streamerSlug="chiaa_gaming" storagePrefix="chiaa-gaming" />;
+  return <BrowserSourceAlertWithAudio streamerSlug="chiaa_gaming" storagePrefix="chiaa-gaming" />;
 };
 
 export default ChiaGamingObsAlerts;

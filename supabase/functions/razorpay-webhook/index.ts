@@ -388,6 +388,7 @@ serve(async (req) => {
         };
 
         // Send dashboard notification for all successful payments
+        // CRITICAL FIX #2: No audio URLs in payloads - use has_audio/audio_type flags
         const dashboardChannel = `${streamerSlug}-dashboard`;
         await sendPusherEvent(dashboardChannel, 'new-donation', {
           id: donation.id,
@@ -399,11 +400,14 @@ serve(async (req) => {
           payment_status: 'success',
           moderation_status: moderationStatus,
           message_visible: true,
-          voice_message_url: donation.voice_message_url,
-          tts_audio_url: donation.tts_audio_url,
-          hypersound_url: donation.hypersound_url,
+          // Replace URLs with flags to prevent accidental pre-fetching
+          has_audio: !!(donation.tts_audio_url || donation.voice_message_url || donation.hypersound_url),
+          audio_type: donation.hypersound_url ? 'hypersound' : 
+                      donation.voice_message_url ? 'voice' : 
+                      donation.tts_audio_url ? 'tts' : null,
           is_hyperemote: donation.is_hyperemote,
-          media_url: donation.media_url,
+          // Media URLs for display only (not audio)
+          has_media: !!donation.media_url,
           media_type: donation.media_type
         });
 
@@ -566,7 +570,10 @@ serve(async (req) => {
             .single();
 
           // Send audio queue event
+          // CRITICAL FIX #2: No audio URLs in payloads - use has_audio/audio_type flags
           const audioChannel = `${streamerSlug}-audio`;
+          const updatedAudioUrl = updatedDonation?.tts_audio_url || updatedDonation?.voice_message_url || updatedDonation?.hypersound_url;
+          const originalAudioUrl = donation.tts_audio_url || donation.voice_message_url || donation.hypersound_url;
           await sendPusherEvent(audioChannel, 'new-audio-message', {
             id: updatedDonation?.id || donation.id,
             name: updatedDonation?.name || donation.name,
@@ -576,11 +583,13 @@ serve(async (req) => {
             created_at: updatedDonation?.created_at || donation.created_at,
             payment_status: 'success',
             moderation_status: 'auto_approved',
-            voice_message_url: updatedDonation?.voice_message_url || donation.voice_message_url,
-            tts_audio_url: updatedDonation?.tts_audio_url,
-            hypersound_url: updatedDonation?.hypersound_url || donation.hypersound_url,
+            // Replace URLs with flags
+            has_audio: !!(updatedAudioUrl || originalAudioUrl),
+            audio_type: (updatedDonation?.hypersound_url || donation.hypersound_url) ? 'hypersound' : 
+                        (updatedDonation?.voice_message_url || donation.voice_message_url) ? 'voice' : 
+                        (updatedDonation?.tts_audio_url) ? 'tts' : null,
             is_hyperemote: updatedDonation?.is_hyperemote || donation.is_hyperemote,
-            media_url: updatedDonation?.media_url || donation.media_url,
+            has_media: !!(updatedDonation?.media_url || donation.media_url),
             media_type: updatedDonation?.media_type || donation.media_type,
             audio_scheduled_at: audioScheduledAt
           });

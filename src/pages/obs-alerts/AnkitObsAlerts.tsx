@@ -1,7 +1,7 @@
-import { ObsAlertsWrapper } from '@/components/obs/ObsAlertsWrapper';
+import { BrowserSourceAlertWithAudio } from '@/components/obs/BrowserSourceAlertWithAudio';
 
 const AnkitObsAlerts = () => {
-  return <ObsAlertsWrapper streamerSlug="ankit" storagePrefix="ankit" />;
+  return <BrowserSourceAlertWithAudio streamerSlug="ankit" storagePrefix="ankit" />;
 };
 
 export default AnkitObsAlerts;
