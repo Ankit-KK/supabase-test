@@ -1,86 +1,74 @@
 
+# Fix: Add Missing Streamers to Telegram Notifications
 
-# Fix: Clear Voice Recording When Amount Drops Below Tier
+## Problem Identified
 
-## Problem
+The `notify-new-donations` edge function is missing **Wolfy** and **Clumsy God** from its donation tables list. This means:
 
-When a user:
-1. Enters ₹700 (gets 15s max duration)
-2. Records a 15-second voice message
-3. Changes amount to ₹150 (which only allows 8s max)
+1. Donations for these streamers are processed correctly (webhook sets `moderation_status: 'pending'`)
+2. But Telegram never receives the approval request with Approve/Reject buttons
+3. You only see "Donation Approved" messages (sent by `moderate-donation` when you approve from Dashboard)
 
-The 15-second recording persists, defeating the tiered system. Users could exploit this to get longer recordings than their donation amount allows.
+## Root Cause
+
+In `supabase/functions/notify-new-donations/index.ts` at lines 94-98:
+
+```typescript
+// CURRENT (BROKEN) - only 3 streamers:
+const donationTables = [
+  'ankit_donations',
+  'chiaa_gaming_donations',
+  'looteriya_gaming_donations',
+];
+```
+
+Wolfy and Clumsy God are missing!
 
 ---
 
 ## Solution
 
-Add a `useEffect` that monitors `currentAmount` changes and clears the recording if:
-1. A recording exists (`audioBlob` is present)
-2. The recorded duration exceeds the new tier's max duration
+### File: `supabase/functions/notify-new-donations/index.ts`
 
----
-
-## Files to Modify
-
-### 1. `src/components/EnhancedVoiceRecorder.tsx`
-
-Add a new `useEffect` to detect tier changes and clear recording if needed:
+Update lines 94-98 to include all active streamers:
 
 ```typescript
-// Add after line 54 (after the existing useEffect)
-
-// Clear recording if user reduces amount below their recording's tier
-useEffect(() => {
-  if (audioBlob && duration > effectiveMaxDuration) {
-    console.log(`[VoiceRecorder] Recording duration (${duration}s) exceeds new tier limit (${effectiveMaxDuration}s). Clearing.`);
-    clearRecording();
-  }
-}, [currentAmount, effectiveMaxDuration, audioBlob, duration, clearRecording]);
-```
-
-### 2. `src/components/VoiceRecorder.tsx`
-
-Same fix - add a `useEffect` to detect when recording exceeds allowed duration:
-
-```typescript
-// Add helper function at top of file (before component)
-const getMaxDurationForAmount = (amount: number): number => {
-  if (amount >= 500) return 15;
-  if (amount >= 300) return 12;
-  return 8;
-};
-
-// Inside component, add after line 42 (after existing useEffect)
-const effectiveMaxDuration = maxDurationSeconds ?? getMaxDurationForAmount(currentAmount);
-
-// Clear recording if user reduces amount below their recording's tier
-useEffect(() => {
-  if (audioBlob && duration > effectiveMaxDuration) {
-    console.log(`[VoiceRecorder] Recording duration (${duration}s) exceeds new tier limit (${effectiveMaxDuration}s). Clearing.`);
-    clearRecording();
-  }
-}, [currentAmount, effectiveMaxDuration, audioBlob, duration, clearRecording]);
+// Active donation tables (all 5 streamers)
+const donationTables = [
+  'ankit_donations',
+  'chiaa_gaming_donations',
+  'looteriya_gaming_donations',
+  'clumsy_god_donations',
+  'wolfy_donations',
+];
 ```
 
 ---
 
 ## What This Fixes
 
-| Scenario | Before | After |
-|----------|--------|-------|
-| User records 15s at ₹700, then changes to ₹150 | Recording persists (exploit) | Recording cleared, must re-record |
-| User records 8s at ₹150, then changes to ₹500 | Recording persists | Recording persists (allowed) |
-| User records 12s at ₹400, then changes to ₹200 | Recording persists (exploit) | Recording cleared |
+| Before | After |
+|--------|-------|
+| Wolfy donations: No Telegram approval request | Wolfy donations: Full moderation buttons |
+| Clumsy God donations: No Telegram approval request | Clumsy God donations: Full moderation buttons |
+| Only see "Approved" notifications | See both "Needs Approval" and action confirmations |
 
 ---
 
-## User Experience
+## Files to Modify
 
-When the recording is cleared due to tier change, the user will see:
-- The recording disappears
-- The "Start Recording" button reappears
-- The tier description updates to show the new limit
+| File | Change |
+|------|--------|
+| `supabase/functions/notify-new-donations/index.ts` | Add `clumsy_god_donations` and `wolfy_donations` to tables array |
 
-This is the expected behavior - if you want a longer recording, you need to pay more.
+---
 
+## Technical Details
+
+The notification flow after fix:
+
+1. Payment webhook sets `moderation_status: 'pending'` and `mod_notified: false`
+2. `notify-new-donations` (cron job or triggered) queries ALL tables for `mod_notified: false`
+3. For each pending donation, sends Telegram message with Approve/Reject/Hide/Ban buttons
+4. Sets `mod_notified: true` after notification sent
+5. Moderator clicks button, `moderate-donation` processes action and sends confirmation
