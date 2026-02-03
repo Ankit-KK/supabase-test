@@ -133,6 +133,7 @@ const DonationCard: React.FC<DonationCardProps> = ({
                 <div className="flex items-center space-x-2 text-sm text-muted-foreground mb-2">
                   <Mic className="h-4 w-4" />
                   <span>Voice Message</span>
+                  <span className="text-xs text-yellow-600">(preview uses data)</span>
                 </div>
                 <MiniAudioPlayer audioUrl={donation.voice_message_url} />
               </div>

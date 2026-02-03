@@ -131,6 +131,16 @@ Deno.serve(async (req) => {
       console.error('Error marking as played:', updateError);
     }
 
+    // Egress monitoring: Log structured event for tracking
+    console.log(JSON.stringify({
+      event: 'audio_served',
+      streamer: streamerSlug,
+      donation_id: donation.id,
+      audio_type: donation.hypersound_url ? 'hypersound' : 
+                  donation.voice_message_url ? 'voice' : 'tts',
+      timestamp: new Date().toISOString()
+    }));
+    
     console.log(`[get-current-audio] Serving audio for donation ${donation.id}: ${donation.name} - amount ${donation.amount}`);
 
     // Trigger Pusher event to show visual alert NOW (in sync with audio)
@@ -165,14 +175,15 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 302 Redirect to R2 URL - eliminates audio byte egress through Supabase
-    // OBS Media Source follows redirects, so this is safe
+    // CRITICAL: 302 Redirect to static R2 URL
+    // Do NOT change to signed URLs or add query params - Media Source works best with static URLs
+    // See egress-reduction plan for details. This pattern is locked for cost optimization.
     console.log(`[get-current-audio] Redirecting to R2: ${audioUrl}`);
     return new Response(null, {
       status: 302,
       headers: {
         ...corsHeaders,
-        'Location': audioUrl,
+        'Location': audioUrl,  // Static R2 URL - DO NOT MODIFY
         'Cache-Control': 'no-cache, no-store, must-revalidate',
       },
     });

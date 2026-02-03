@@ -4,9 +4,17 @@ import { Card } from '@/components/ui/card';
 import { Mic, Square, Play, Pause, RotateCcw, Check } from 'lucide-react';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 
+// Helper function to calculate max voice duration based on donation amount (INR)
+// Tiered system: ₹150-299 = 8s, ₹300-499 = 12s, ₹500+ = 15s
+const getMaxDurationForAmount = (amount: number): number => {
+  if (amount >= 500) return 15;
+  if (amount >= 300) return 12;
+  return 8; // Default for 150-299
+};
+
 interface EnhancedVoiceRecorderProps {
   onRecordingComplete: (hasRecording: boolean, duration: number) => void;
-  maxDurationSeconds?: number;
+  maxDurationSeconds?: number; // Can be overridden, but defaults to tier-based calculation
   disabled?: boolean;
   controller?: ReturnType<typeof useVoiceRecorder>;
   requiredAmount?: number;
@@ -16,7 +24,7 @@ interface EnhancedVoiceRecorderProps {
 
 const EnhancedVoiceRecorder: React.FC<EnhancedVoiceRecorderProps> = ({ 
   onRecordingComplete, 
-  maxDurationSeconds = 60,
+  maxDurationSeconds,
   disabled = false,
   controller,
   requiredAmount = 150,
@@ -24,6 +32,9 @@ const EnhancedVoiceRecorder: React.FC<EnhancedVoiceRecorderProps> = ({
   brandColor = '#6366f1'
 }) => {
   const canRecord = currentAmount >= requiredAmount;
+  
+  // Use tier-based duration if not explicitly provided
+  const effectiveMaxDuration = maxDurationSeconds ?? getMaxDurationForAmount(currentAmount);
   // Use controller if provided, otherwise fallback to internal
   const recorder = controller || useVoiceRecorder(maxDurationSeconds);
   const {
@@ -49,7 +60,15 @@ const EnhancedVoiceRecorder: React.FC<EnhancedVoiceRecorderProps> = ({
   };
 
   const getRecordingProgress = () => {
-    return Math.min((duration / maxDurationSeconds) * 100, 100);
+    return Math.min((duration / effectiveMaxDuration) * 100, 100);
+  };
+  
+  // Get tier description for UI
+  const getTierDescription = () => {
+    if (currentAmount >= 500) return '₹500+ tier: 15 seconds max';
+    if (currentAmount >= 300) return '₹300+ tier: 12 seconds max';
+    if (currentAmount >= 150) return '₹150+ tier: 8 seconds max';
+    return `Enter ₹${requiredAmount}+ to unlock recording`;
   };
 
   if (disabled) {
@@ -75,7 +94,7 @@ const EnhancedVoiceRecorder: React.FC<EnhancedVoiceRecorderProps> = ({
             Voice Message
           </h3>
           <p className="text-xs text-muted-foreground mt-1">
-            Record up to {maxDurationSeconds} seconds
+            {canRecord ? getTierDescription() : `Enter ₹${requiredAmount}+ to record`}
           </p>
         </div>
 
@@ -167,7 +186,7 @@ const EnhancedVoiceRecorder: React.FC<EnhancedVoiceRecorderProps> = ({
                 Your voice message will be played on stream with your donation!
                 <br />
                 <span className="font-medium" style={{ color: brandColor }}>
-                  You can record up to {maxDurationSeconds} seconds
+                  {getTierDescription()}
                 </span>
               </>
             )}
