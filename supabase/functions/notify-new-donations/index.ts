@@ -90,11 +90,13 @@ serve(async (req) => {
       });
     }
 
-    // Active donation tables only (3 streamers)
+    // Active donation tables (all 5 streamers)
     const donationTables = [
       'ankit_donations',
       'chiaa_gaming_donations',
       'looteriya_gaming_donations',
+      'clumsy_god_donations',
+      'wolfy_donations',
     ];
 
     let donationsToNotify: any[] = [];
