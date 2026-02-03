@@ -53,6 +53,14 @@ const EnhancedVoiceRecorder: React.FC<EnhancedVoiceRecorderProps> = ({
     onRecordingComplete(!!audioBlob, duration);
   }, [audioBlob, duration, onRecordingComplete]);
 
+  // Clear recording if user reduces amount below their recording's tier
+  useEffect(() => {
+    if (audioBlob && duration > effectiveMaxDuration) {
+      console.log(`[VoiceRecorder] Recording duration (${duration}s) exceeds new tier limit (${effectiveMaxDuration}s). Clearing.`);
+      clearRecording();
+    }
+  }, [currentAmount, effectiveMaxDuration, audioBlob, duration, clearRecording]);
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
