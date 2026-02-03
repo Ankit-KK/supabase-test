@@ -36,7 +36,6 @@ type DonationType = 'text' | 'voice' | 'hypersound' | 'media';
 export const DonationPageWrapper: React.FC<DonationPageWrapperProps> = ({ config }) => {
   const navigate = useNavigate();
   const streamerConfig = getStreamerConfig(config.streamerSlug);
-  const voiceRecorder = useVoiceRecorder(60);
   
   const [formData, setFormData] = useState({ name: '', amount: '', message: '' });
   const [currency, setCurrency] = useState('INR');
@@ -50,6 +49,16 @@ export const DonationPageWrapper: React.FC<DonationPageWrapperProps> = ({ config
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [howItWorksOpen, setHowItWorksOpen] = useState(false);
+
+  // Calculate tiered voice duration based on amount (INR): 150-299=8s, 300-499=12s, 500+=15s
+  const getVoiceDuration = (amount: number) => {
+    if (amount >= 500) return 15;
+    if (amount >= 300) return 12;
+    return 8;
+  };
+  
+  const currentAmount = parseFloat(formData.amount) || 0;
+  const voiceRecorder = useVoiceRecorder(getVoiceDuration(currentAmount));
 
   // Load Razorpay SDK
   useEffect(() => {

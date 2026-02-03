@@ -477,7 +477,15 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => moderateDonation(donation.id, 'replay')}
+                            title="Replay re-downloads audio from server"
+                            onClick={() => {
+                              const confirmed = window.confirm(
+                                'Replay will re-download the audio from the server. This uses bandwidth. Continue?'
+                              );
+                              if (confirmed) {
+                                moderateDonation(donation.id, 'replay');
+                              }
+                            }}
                           >
                             <RotateCcw className="h-4 w-4" />
                           </Button>

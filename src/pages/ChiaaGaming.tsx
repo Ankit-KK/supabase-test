@@ -38,16 +38,17 @@ const ChiaGaming = () => {
   const { pricing } = useStreamerPricing('chiaa_gaming', selectedCurrency);
   const currencySymbol = getCurrencySymbol(selectedCurrency);
 
+  // Tiered voice duration based on amount (INR): 150-299=8s, 300-499=12s, 500+=15s
   const getVoiceDuration = (amount: number) => {
     if (selectedCurrency === "INR") {
-      if (amount >= 500) return 30;
-      if (amount >= 250) return 25;
-      if (amount >= 150) return 15;
-      return 15;
+      if (amount >= 500) return 15;
+      if (amount >= 300) return 12;
+      return 8;
     }
-    if (amount >= 6) return 30;
-    if (amount >= 3) return 25;
-    return 15;
+    // For other currencies, use similar tiers (rough USD equivalents)
+    if (amount >= 6) return 15;
+    if (amount >= 4) return 12;
+    return 8;
   };
 
   const currentAmount = parseFloat(formData.amount) || 0;

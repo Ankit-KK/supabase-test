@@ -334,9 +334,11 @@ serve(async (req) => {
           vol: 5,
           pitch: 0,
         },
+        // EGRESS OPTIMIZATION: Reduced bitrate/sample rate for smaller files
+        // 24kHz/32kbps still sounds excellent for speech, ~4x smaller than 32kHz/128kbps
         audio_setting: {
-          sample_rate: 32000,
-          bitrate: 128000,
+          sample_rate: 24000,
+          bitrate: 32000,
           format: "mp3",
           channel: 1,
         },
