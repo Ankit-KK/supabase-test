@@ -5,6 +5,7 @@ import FeatureShowcaseHero from "@/components/feature-showcase/FeatureShowcaseHe
 import EngagementFeatures from "@/components/feature-showcase/EngagementFeatures";
 import StreamingFeatures from "@/components/feature-showcase/StreamingFeatures";
 import InteractiveFeatures from "@/components/feature-showcase/InteractiveFeatures";
+import ModerationFeatures from "@/components/feature-showcase/ModerationFeatures";
 
 const FeatureShowcase = () => {
   return (
@@ -13,6 +14,7 @@ const FeatureShowcase = () => {
       
       <main className="pt-16">
         <FeatureShowcaseHero />
+        <ModerationFeatures />
         <EngagementFeatures />
         <StreamingFeatures />
         <InteractiveFeatures />
