@@ -7,6 +7,7 @@ import Navbar from "@/components/Navbar";
 import HeroWithCanyonAnimation from "@/components/HeroWithCanyonAnimation";
 import PartnershipSection from "@/components/PartnershipSection";
 import Features from "@/components/Features";
+import ModerationFeatures from "@/components/feature-showcase/ModerationFeatures";
 import Services from "@/components/Services";
 import Footer from "@/components/Footer";
 import VideoBackground from "@/components/VideoBackground";
@@ -40,6 +41,7 @@ const Index = () => {
         <HeroWithCanyonAnimation />
         <PartnershipSection />
         <Features />
+        <ModerationFeatures />
         <Services />
         <AudienceValue />
         <HowItWorks />
