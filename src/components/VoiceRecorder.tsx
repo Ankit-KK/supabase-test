@@ -4,6 +4,13 @@ import { Card } from '@/components/ui/card';
 import { Mic, Square, Play, Pause, RotateCcw, Check } from 'lucide-react';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 
+// Helper function to calculate max voice duration based on donation amount (INR)
+const getMaxDurationForAmount = (amount: number): number => {
+  if (amount >= 500) return 15;
+  if (amount >= 300) return 12;
+  return 8;
+};
+
 interface VoiceRecorderProps {
   onRecordingComplete: (hasRecording: boolean, duration: number) => void;
   maxDurationSeconds?: number;
@@ -36,10 +43,21 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
     clearRecording,
   } = controller ?? internalRecorder;
 
+  // Calculate effective max duration based on tier
+  const effectiveMaxDuration = maxDurationSeconds ?? getMaxDurationForAmount(currentAmount);
+
   useEffect(() => {
     console.log('VoiceRecorder useEffect - audioBlob:', !!audioBlob, 'duration:', duration);
     onRecordingComplete(!!audioBlob, duration);
   }, [audioBlob, duration, onRecordingComplete]);
+
+  // Clear recording if user reduces amount below their recording's tier
+  useEffect(() => {
+    if (audioBlob && duration > effectiveMaxDuration) {
+      console.log(`[VoiceRecorder] Recording duration (${duration}s) exceeds new tier limit (${effectiveMaxDuration}s). Clearing.`);
+      clearRecording();
+    }
+  }, [currentAmount, effectiveMaxDuration, audioBlob, duration, clearRecording]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
