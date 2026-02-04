@@ -80,19 +80,32 @@ const ResetPassword = () => {
         }
       });
 
-      if (fnError) {
-        const errorMessage = fnError.message || 'Failed to reset password';
+      // Extract the actual error message from the response
+      let errorMessage: string | null = null;
+
+      if (data?.error) {
+        // Error returned in response body (most common case for non-2xx responses)
+        errorMessage = data.error;
+      } else if (fnError) {
+        // Try to parse error context for the actual message
+        try {
+          const errorContext = (fnError as any).context;
+          if (errorContext?.body) {
+            const parsed = JSON.parse(errorContext.body);
+            errorMessage = parsed.error || fnError.message;
+          } else {
+            errorMessage = fnError.message || 'Failed to reset password. Please try again.';
+          }
+        } catch {
+          errorMessage = fnError.message || 'Failed to reset password. Please try again.';
+        }
+      }
+
+      if (errorMessage) {
         setError(errorMessage);
         toast({
           title: "Reset Failed",
           description: errorMessage,
-          variant: "destructive",
-        });
-      } else if (data?.error) {
-        setError(data.error);
-        toast({
-          title: "Reset Failed",
-          description: data.error,
           variant: "destructive",
         });
       } else {
