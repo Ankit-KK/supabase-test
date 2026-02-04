@@ -7,7 +7,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Lock, CheckCircle2, XCircle, ArrowLeft } from 'lucide-react';
+import { Loader2, Lock, CheckCircle2, XCircle, ArrowLeft, Clock, AlertTriangle } from 'lucide-react';
+
+type TokenStatus = 'validating' | 'valid' | 'expired' | 'used' | 'invalid';
 
 const ResetPassword = () => {
   const navigate = useNavigate();
@@ -17,15 +19,46 @@ const ResetPassword = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [tokenStatus, setTokenStatus] = useState<TokenStatus>('validating');
+  const [tokenMessage, setTokenMessage] = useState<string>('');
   const [formData, setFormData] = useState({
     password: '',
     confirmPassword: ''
   });
 
+  // Validate token on mount
   useEffect(() => {
-    if (!token) {
-      setError('Invalid reset link. No token provided.');
-    }
+    const validateToken = async () => {
+      if (!token) {
+        setTokenStatus('invalid');
+        setTokenMessage('Invalid reset link. No token provided.');
+        return;
+      }
+
+      try {
+        const { data, error: fnError } = await supabase.functions.invoke('validate-reset-token', {
+          body: { token }
+        });
+
+        if (fnError) {
+          console.error('Token validation error:', fnError);
+          setTokenStatus('invalid');
+          setTokenMessage('Failed to validate reset link. Please try again.');
+          return;
+        }
+
+        setTokenStatus(data.status as TokenStatus);
+        if (data.message) {
+          setTokenMessage(data.message);
+        }
+      } catch (err) {
+        console.error('Token validation error:', err);
+        setTokenStatus('invalid');
+        setTokenMessage('Failed to validate reset link. Please try again.');
+      }
+    };
+
+    validateToken();
   }, [token]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -132,6 +165,11 @@ const ResetPassword = () => {
     navigate('/auth?redirect=/dashboard');
   };
 
+  const goToForgotPassword = () => {
+    navigate('/forgot-password');
+  };
+
+  // Success state
   if (success) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
@@ -153,6 +191,82 @@ const ResetPassword = () => {
     );
   }
 
+  // Validating state
+  if (tokenStatus === 'validating') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
+        <Card className="w-full max-w-md bg-card/95 backdrop-blur-sm border-primary/20 shadow-2xl">
+          <CardContent className="pt-8 pb-8 text-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-foreground mb-2">Validating Reset Link</h2>
+            <p className="text-muted-foreground">Please wait while we verify your reset link...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Invalid/Expired/Used token states
+  if (tokenStatus !== 'valid') {
+    const getStatusIcon = () => {
+      switch (tokenStatus) {
+        case 'expired':
+          return <Clock className="h-8 w-8 text-amber-500" />;
+        case 'used':
+          return <CheckCircle2 className="h-8 w-8 text-muted-foreground" />;
+        default:
+          return <AlertTriangle className="h-8 w-8 text-destructive" />;
+      }
+    };
+
+    const getStatusTitle = () => {
+      switch (tokenStatus) {
+        case 'expired':
+          return 'Reset Link Expired';
+        case 'used':
+          return 'Reset Link Already Used';
+        default:
+          return 'Invalid Reset Link';
+      }
+    };
+
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
+        <div className="w-full max-w-md">
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/auth')}
+            className="mb-6 hover:bg-muted/50"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Login
+          </Button>
+
+          <Card className="bg-card/95 backdrop-blur-sm border-primary/20 shadow-2xl">
+            <CardContent className="pt-8 pb-8 text-center">
+              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                {getStatusIcon()}
+              </div>
+              <h2 className="text-2xl font-bold text-foreground mb-2">{getStatusTitle()}</h2>
+              <p className="text-muted-foreground mb-6">
+                {tokenMessage || 'This reset link is no longer valid.'}
+              </p>
+              <div className="space-y-3">
+                <Button onClick={goToForgotPassword} className="w-full">
+                  Request New Reset Link
+                </Button>
+                <Button onClick={goToLogin} variant="outline" className="w-full">
+                  Go to Login
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Valid token - show password reset form
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
       {/* Background decorations */}
@@ -191,69 +305,58 @@ const ResetPassword = () => {
               </Alert>
             )}
 
-            {!token ? (
-              <div className="text-center py-4">
-                <p className="text-muted-foreground mb-4">
-                  This reset link is invalid or has expired.
-                </p>
-                <Button onClick={() => navigate('/auth')} variant="outline">
-                  Go to Login
-                </Button>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="password" className="flex items-center space-x-2">
+                  <Lock className="h-4 w-4" />
+                  <span>New Password</span>
+                </Label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  className="border-primary/30 focus:border-primary focus:ring-primary/20"
+                  required
+                  minLength={6}
+                />
               </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="flex items-center space-x-2">
-                    <Lock className="h-4 w-4" />
-                    <span>New Password</span>
-                  </Label>
-                  <Input
-                    id="password"
-                    name="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    className="border-primary/30 focus:border-primary focus:ring-primary/20"
-                    required
-                    minLength={6}
-                  />
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="flex items-center space-x-2">
-                    <Lock className="h-4 w-4" />
-                    <span>Confirm New Password</span>
-                  </Label>
-                  <Input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type="password"
-                    placeholder="••••••••"
-                    value={formData.confirmPassword}
-                    onChange={handleInputChange}
-                    className="border-primary/30 focus:border-primary focus:ring-primary/20"
-                    required
-                    minLength={6}
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword" className="flex items-center space-x-2">
+                  <Lock className="h-4 w-4" />
+                  <span>Confirm New Password</span>
+                </Label>
+                <Input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
+                  className="border-primary/30 focus:border-primary focus:ring-primary/20"
+                  required
+                  minLength={6}
+                />
+              </div>
 
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Resetting...
-                    </>
-                  ) : (
-                    'Reset Password'
-                  )}
-                </Button>
-              </form>
-            )}
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Resetting...
+                  </>
+                ) : (
+                  'Reset Password'
+                )}
+              </Button>
+            </form>
           </CardContent>
         </Card>
       </div>
