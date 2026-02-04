@@ -29,7 +29,8 @@ const Dashboard = () => {
 
       try {
         const { data, error } = await supabase.rpc('get_user_streamers', {
-          p_user_id: user.id
+          p_user_id: user.id,
+          p_user_email: user.email
         });
         
         if (error) throw error;

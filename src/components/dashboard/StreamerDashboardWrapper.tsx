@@ -31,7 +31,8 @@ const StreamerDashboardWrapper: React.FC<StreamerDashboardWrapperProps> = ({
       try {
         // Check if user has access to this streamer's dashboard or is admin
         const { data } = await supabase.rpc('get_user_streamers', {
-          p_user_id: user.id
+          p_user_id: user.id,
+          p_user_email: user.email
         });
 
         const hasStreamerAccess = data?.some((streamer: any) => 
