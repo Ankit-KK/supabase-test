@@ -1,99 +1,103 @@
 
-
-# Plan: Add IP-Based Rate Limiting for Password Reset
+# Plan: Improve Error Handling for Password Reset
 
 ## Problem
 
-The current rate limiting in `request-password-reset` only limits requests **per email address**:
-```typescript
-p_endpoint: `password_reset_${normalizedEmail}`,  // Per-email limit
-```
+When the `reset-password` edge function returns an error (like "Reset link already used"), the frontend shows a generic "Edge Function returned a non-2xx status code" message instead of the actual helpful error message.
 
-**Abuse scenario:** An attacker could send password reset requests for thousands of different email addresses from the same IP address, potentially:
-- Exhausting your Resend email quota
-- Harassing users with unwanted reset emails
-- Causing costs to spike
+## Root Cause
+
+The Supabase `functions.invoke` method has specific behavior for non-2xx responses:
+- When a function returns non-2xx, the `error` object contains a generic message
+- The actual response body with the detailed error is in `data` (even on errors)
+
+| Current Behavior | Expected Behavior |
+|------------------|-------------------|
+| "Edge Function returned a non-2xx status code" | "This reset link has already been used. Please request a new one." |
 
 ## Solution
 
-Add a **two-layer rate limiting** approach:
+Update both password reset pages to properly extract error messages from edge function responses:
 
-| Layer | Limit | Purpose |
-|-------|-------|---------|
-| **IP-based** | 10 requests/hour per IP | Prevents bulk abuse from single source |
-| **Email-based** | 3 requests/hour per email | Prevents spamming a specific user |
+### Files to Modify
 
-Both checks must pass before sending an email.
-
----
-
-## File to Modify
-
-**`supabase/functions/request-password-reset/index.ts`**
-
-### Changes (around line 49-65):
-
-Add IP-based rate limit check **before** the email-based check:
-
-```typescript
-const normalizedEmail = email.trim().toLowerCase();
-const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
-                 req.headers.get('x-real-ip') || 'unknown';
-
-// Layer 1: IP-based rate limiting (10 requests/hour per IP)
-// Prevents bulk abuse from a single source
-const { data: ipRateLimitOk } = await supabase.rpc('check_rate_limit_v2', {
-  p_endpoint: 'password_reset_ip',
-  p_ip_address: clientIP,
-  p_max_requests: 10,
-  p_window_seconds: 3600
-});
-
-if (!ipRateLimitOk) {
-  console.log(`IP rate limit exceeded for password reset from: ${clientIP}`);
-  return new Response(
-    JSON.stringify({ message: 'If an account exists with this email, a reset link has been sent.' }),
-    { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-  );
-}
-
-// Layer 2: Email-based rate limiting (3 requests/hour per email)
-// Prevents spamming a specific user
-const { data: emailRateLimitOk } = await supabase.rpc('check_rate_limit_v2', {
-  p_endpoint: `password_reset_email_${normalizedEmail}`,
-  p_ip_address: clientIP,
-  p_max_requests: 3,
-  p_window_seconds: 3600
-});
-
-if (!emailRateLimitOk) {
-  console.log(`Email rate limit exceeded for password reset: ${normalizedEmail}`);
-  return new Response(
-    JSON.stringify({ message: 'If an account exists with this email, a reset link has been sent.' }),
-    { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-  );
-}
-```
-
----
-
-## Rate Limit Summary
-
-| Scenario | Limit | Window |
-|----------|-------|--------|
-| Same IP, different emails | 10 total requests | 1 hour |
-| Same email, any IP | 3 requests | 1 hour |
-
-This protects against:
-- Bulk email abuse (hitting 10 different users = IP blocked for an hour)
-- Targeted harassment (hitting same email 3 times = email blocked for an hour)
+| File | Changes |
+|------|---------|
+| `src/pages/ResetPassword.tsx` | Better error extraction from `data.error` and `fnError` |
+| `src/pages/ForgotPassword.tsx` | Already handles errors silently (by design) - minor improvement |
 
 ---
 
 ## Technical Details
 
-- Uses the existing `check_rate_limit_v2` database function
-- Extracts client IP properly from proxy headers (`x-forwarded-for`, `x-real-ip`)
-- Returns the same generic success message to avoid information leakage
-- Logs rate limit violations for monitoring
+### ResetPassword.tsx Changes
 
+**Current code (lines 75-115):**
+```typescript
+const { data, error: fnError } = await supabase.functions.invoke('reset-password', {
+  body: { token, newPassword: formData.password }
+});
+
+if (fnError) {
+  const errorMessage = fnError.message || 'Failed to reset password';
+  setError(errorMessage);
+  // Shows generic "Edge Function returned a non-2xx status code"
+}
+```
+
+**Fixed code:**
+```typescript
+const { data, error: fnError } = await supabase.functions.invoke('reset-password', {
+  body: { token, newPassword: formData.password }
+});
+
+// Extract the actual error message from the response
+let errorMessage: string | null = null;
+
+if (data?.error) {
+  // Error returned in response body (most common case)
+  errorMessage = data.error;
+} else if (fnError) {
+  // Try to parse error context for the actual message
+  try {
+    const errorContext = fnError.context;
+    if (errorContext?.body) {
+      const parsed = JSON.parse(errorContext.body);
+      errorMessage = parsed.error || fnError.message;
+    } else {
+      errorMessage = fnError.message || 'Failed to reset password. Please try again.';
+    }
+  } catch {
+    errorMessage = 'Failed to reset password. Please try again.';
+  }
+}
+
+if (errorMessage) {
+  setError(errorMessage);
+  toast({ title: "Reset Failed", description: errorMessage, variant: "destructive" });
+} else {
+  setSuccess(true);
+  toast({ title: "Password Reset!", description: "Your password has been reset successfully." });
+}
+```
+
+### Key Improvements
+
+1. **Priority order for error extraction:**
+   - First check `data.error` (response body error)
+   - Then check `fnError.context.body` (parsed error context)
+   - Finally fallback to generic message
+
+2. **User-friendly messages:**
+   - "This reset link has already been used. Please request a new one."
+   - "This reset link has expired. Please request a new one."
+   - "Invalid reset link. Please request a new one."
+
+---
+
+## Summary
+
+| Before | After |
+|--------|-------|
+| "Edge Function returned a non-2xx status code" | "This reset link has already been used. Please request a new one." |
+| Generic error for all failures | Specific, actionable error messages |
