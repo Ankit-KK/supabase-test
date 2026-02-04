@@ -110,8 +110,9 @@ serve(async (req: Request) => {
       );
     }
 
-    // Hash new password with bcrypt (12 rounds)
-    const passwordHash = await bcrypt.hash(newPassword, 12);
+    // Hash new password with bcrypt (12 rounds) - using sync methods to avoid Worker issues in Deno
+    const salt = bcrypt.genSaltSync(12);
+    const passwordHash = bcrypt.hashSync(newPassword, salt);
 
     // Update user password and clear any lockouts
     const { error: updateError } = await supabase
