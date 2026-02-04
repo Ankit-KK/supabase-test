@@ -1,49 +1,34 @@
 
 
-# Plan: Fix Email Domain Mismatch
+# Plan: Update Password Reset Link to Use hyperchat.site
 
 ## Problem
 
-The password reset email is failing because of a domain mismatch:
+The password reset email contains a link to the Lovable preview domain instead of your production domain:
 
-| Setting | Current Value | Your Resend Verified Domain |
-|---------|---------------|----------------------------|
-| From address | `noreply@hyperchat.live` | `hyperchat.site` |
-
-Resend requires that the "from" domain matches a verified domain in your account.
-
----
+| Current URL | Should Be |
+|-------------|-----------|
+| `https://hyper-chat.lovable.app/reset-password?token=...` | `https://hyperchat.site/reset-password?token=...` |
 
 ## Solution
 
-Update the edge function to use your verified domain `hyperchat.site`.
+Update line 122 in `supabase/functions/request-password-reset/index.ts`:
 
----
+```typescript
+// Before
+const resetUrl = `https://hyper-chat.lovable.app/reset-password?token=${plainToken}`;
+
+// After  
+const resetUrl = `https://hyperchat.site/reset-password?token=${plainToken}`;
+```
 
 ## File to Modify
 
-**`supabase/functions/request-password-reset/index.ts`**
+| File | Change |
+|------|--------|
+| `supabase/functions/request-password-reset/index.ts` | Update `resetUrl` on line 122 |
 
-Change line ~131:
-```typescript
-// Before
-from: 'HyperChat <noreply@hyperchat.live>',
+## Result
 
-// After  
-from: 'HyperChat <noreply@hyperchat.site>',
-```
-
----
-
-## Quick Fix
-
-This is a one-line change - update the `from` address from `hyperchat.live` to `hyperchat.site`.
-
----
-
-## After the Fix
-
-1. Deploy the updated edge function
-2. Test password reset again
-3. Email should send successfully from `noreply@hyperchat.site`
+Password reset emails will contain links pointing to your production domain `hyperchat.site`, allowing users to reset their passwords through the proper URL.
 
