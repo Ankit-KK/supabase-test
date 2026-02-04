@@ -119,7 +119,7 @@ serve(async (req: Request) => {
     }
 
     // Build reset URL
-    const resetUrl = `https://hyper-chat.lovable.app/reset-password?token=${plainToken}`;
+    const resetUrl = `https://hyperchat.site/reset-password?token=${plainToken}`;
 
     // Send email via Resend
     const { error: emailError } = await resend.emails.send({
