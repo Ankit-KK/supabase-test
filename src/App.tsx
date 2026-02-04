@@ -29,6 +29,8 @@ import Wolfy from "./pages/Wolfy";
 // Dashboard pages
 import Dashboard from "./pages/dashboard/Dashboard";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
+import ForgotPassword from "./pages/ForgotPassword";
 import AnkitDashboard from "./pages/dashboard/AnkitDashboard";
 import ChiaGamingDashboard from "./pages/dashboard/ChiaGamingDashboard";
 import LooteriyaGamingDashboard from "./pages/dashboard/LooteriyaGamingDashboard";
@@ -92,6 +94,8 @@ const App = () => (
             
             {/* Authentication */}
             <Route path="/auth" element={<Auth />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/reset-password-request" element={<ForgotPassword />} />
             
             {/* Dashboard Routes */}
             <Route path="/dashboard" element={<Dashboard />} />
