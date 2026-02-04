@@ -166,7 +166,7 @@ const ResetPassword = () => {
   };
 
   const goToForgotPassword = () => {
-    navigate('/forgot-password');
+    navigate('/reset-password-request');
   };
 
   // Success state
