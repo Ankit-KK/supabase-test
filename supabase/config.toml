@@ -101,3 +101,6 @@ verify_jwt = false
 
 [functions.reset-password]
 verify_jwt = false
+
+[functions.validate-reset-token]
+verify_jwt = false
