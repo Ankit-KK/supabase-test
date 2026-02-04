@@ -47,17 +47,37 @@ serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const resend = new Resend(resendApiKey);
     const normalizedEmail = email.trim().toLowerCase();
+    const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
+                     req.headers.get('x-real-ip') || 'unknown';
 
-    // Rate limiting: max 3 requests per hour per email
-    const { data: rateLimitOk } = await supabase.rpc('check_rate_limit_v2', {
-      p_endpoint: `password_reset_${normalizedEmail}`,
-      p_ip_address: req.headers.get('x-forwarded-for') || 'unknown',
+    // Layer 1: IP-based rate limiting (10 requests/hour per IP)
+    // Prevents bulk abuse from a single source
+    const { data: ipRateLimitOk } = await supabase.rpc('check_rate_limit_v2', {
+      p_endpoint: 'password_reset_ip',
+      p_ip_address: clientIP,
+      p_max_requests: 10,
+      p_window_seconds: 3600
+    });
+
+    if (!ipRateLimitOk) {
+      console.log(`IP rate limit exceeded for password reset from: ${clientIP}`);
+      return new Response(
+        JSON.stringify({ message: 'If an account exists with this email, a reset link has been sent.' }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Layer 2: Email-based rate limiting (3 requests/hour per email)
+    // Prevents spamming a specific user
+    const { data: emailRateLimitOk } = await supabase.rpc('check_rate_limit_v2', {
+      p_endpoint: `password_reset_email_${normalizedEmail}`,
+      p_ip_address: clientIP,
       p_max_requests: 3,
       p_window_seconds: 3600
     });
 
-    if (!rateLimitOk) {
-      console.log(`Rate limit exceeded for password reset: ${normalizedEmail}`);
+    if (!emailRateLimitOk) {
+      console.log(`Email rate limit exceeded for password reset: ${normalizedEmail}`);
       return new Response(
         JSON.stringify({ message: 'If an account exists with this email, a reset link has been sent.' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
