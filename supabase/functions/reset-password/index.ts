@@ -145,7 +145,7 @@ serve(async (req: Request) => {
       .delete()
       .eq('user_id', user.id);
 
-    console.log(`Password reset successful for user: ${user.email}`);
+    console.log('Password reset successful');
 
     return new Response(
       JSON.stringify({ message: 'Password has been reset successfully. You can now log in with your new password.' }),
