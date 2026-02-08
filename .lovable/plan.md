@@ -1,162 +1,64 @@
 
-# Plan: Enable Admin Login for All Dashboards
 
-## Problem
+# Tiered Character Limits for Clumsy God Message Textarea
 
-The `admin_emails` table exists with `admin@example.com` but admin login doesn't work because:
-- Your app uses a **custom auth system** (`auth_users` + `auth_sessions` tables)
-- The `get_user_streamers()` function uses `auth.email()` to check admin status
-- `auth.email()` is a Supabase Auth function that returns `NULL` since you're not using Supabase Auth
-- Result: Admin email checks always fail, even for valid admins
+## Overview
 
-## Current Flow (Broken)
+Add amount-based character limits to the message textarea on the Clumsy God donation page. Higher donations unlock longer messages.
 
-```text
-User logs in → Custom session created → Dashboard loads
-                                              ↓
-                                    get_user_streamers(user_id)
-                                              ↓
-                                    is_admin_email(auth.email())
-                                              ↓
-                                    auth.email() = NULL ← Problem!
-                                              ↓
-                                    Admin check fails
-```
+## Tiers (INR)
 
-## Solution
+| Amount Range | Max Characters |
+|-------------|---------------|
+| 40 - 99     | 70            |
+| 100 - 299   | 150           |
+| 300+        | 200           |
 
-Update the system to pass the user's email (which we have from custom auth) instead of relying on `auth.email()`.
+## File to Modify
 
-### Changes Required
+**`src/pages/ClumsyGod.tsx`**
 
-| Component | Change |
-|-----------|--------|
-| Database function | Modify `get_user_streamers()` to accept email parameter |
-| Dashboard.tsx | Pass user email when calling the RPC |
-| StreamerDashboardWrapper.tsx | Pass user email when calling the RPC |
+### Change 1: Add a helper function to compute max characters based on amount
 
----
-
-## Technical Details
-
-### 1. Database Migration
-
-Update `get_user_streamers()` function to accept email as a parameter:
-
-```sql
-CREATE OR REPLACE FUNCTION public.get_user_streamers(
-  p_user_id uuid,
-  p_user_email text DEFAULT NULL
-)
-RETURNS TABLE(
-  id uuid,
-  streamer_slug text, 
-  streamer_name text,
-  brand_color text,
-  is_owner boolean,
-  is_admin boolean
-)
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = 'public'
-AS $$
-BEGIN
-  RETURN QUERY
-  SELECT 
-    s.id,
-    s.streamer_slug,
-    s.streamer_name,
-    s.brand_color,
-    (s.user_id = p_user_id) as is_owner,
-    -- Use provided email or fallback to auth.email()
-    public.is_admin_email(COALESCE(p_user_email, auth.email())) as is_admin
-  FROM public.streamers s
-  WHERE s.user_id = p_user_id 
-     OR public.is_admin_email(COALESCE(p_user_email, auth.email()));
-END;
-$$;
-```
-
-### 2. Frontend Changes
-
-**Dashboard.tsx** (lines 30-33):
 ```typescript
-// Before
-const { data, error } = await supabase.rpc('get_user_streamers', {
-  p_user_id: user.id
-});
-
-// After
-const { data, error } = await supabase.rpc('get_user_streamers', {
-  p_user_id: user.id,
-  p_user_email: user.email  // Pass email for admin check
-});
+const getMaxMessageLength = (amount: number) => {
+  if (amount >= 300) return 200;
+  if (amount >= 100) return 150;
+  return 70;
+};
 ```
 
-**StreamerDashboardWrapper.tsx** (lines 33-35):
-```typescript
-// Before
-const { data } = await supabase.rpc('get_user_streamers', {
-  p_user_id: user.id
-});
+### Change 2: Use it in the textarea section (around lines 329-341)
 
-// After
-const { data } = await supabase.rpc('get_user_streamers', {
-  p_user_id: user.id,
-  p_user_email: user.email  // Pass email for admin check
-});
+- Add `maxLength` using the helper
+- Truncate `formData.message` if the user lowers the amount and the existing message exceeds the new limit
+- Add a live character counter showing `X / Y`
+
+```tsx
+{donationType === "text" && (
+  <div className="space-y-1">
+    <textarea
+      name="message"
+      value={formData.message.slice(0, getMaxMessageLength(currentAmount))}
+      onChange={handleInputChange}
+      maxLength={getMaxMessageLength(currentAmount)}
+      className="w-full min-h-[90px] rounded-md
+                 bg-black/40 text-white placeholder:text-gray-400
+                 border border-purple-500/30
+                 focus:border-purple-500 focus:ring-purple-500/20
+                 px-3 py-2 text-sm"
+      placeholder="Your message (optional)"
+    />
+    <p className="text-xs text-right text-muted-foreground">
+      {Math.min(formData.message.length, getMaxMessageLength(currentAmount))} / {getMaxMessageLength(currentAmount)}
+    </p>
+  </div>
+)}
 ```
 
----
+### Edge case handling
 
-## How Admin Login Will Work After Fix
+When the user changes the amount downward (e.g., from 300 to 50), the message will be visually sliced to the new limit and `maxLength` will prevent further typing beyond it. The `handleInputChange` function remains unchanged -- native `maxLength` handles enforcement.
 
-```text
-Admin logs in → Custom session created → Dashboard loads
-                     ↓                         ↓
-              user.email = "admin@example.com"
-                                               ↓
-                                    get_user_streamers(user_id, user_email)
-                                               ↓
-                                    is_admin_email("admin@example.com")
-                                               ↓
-                                    Found in admin_emails table!
-                                               ↓
-                                    Returns ALL streamers with is_admin=true
-                                               ↓
-                                    Admin sees all dashboards
-```
+No other files, edge functions, or streamer pages are modified.
 
----
-
-## Setup Steps
-
-To add a new admin, insert their email into the `admin_emails` table:
-
-```sql
-INSERT INTO admin_emails (email) VALUES ('your-admin@email.com');
-```
-
-Then they can:
-1. Register/Login with that email on the auth page
-2. Access `/dashboard` and see ALL streamer dashboards
-3. Manage any streamer's settings, donations, etc.
-
----
-
-## Files to Modify
-
-| File | Action |
-|------|--------|
-| Database migration | Add `p_user_email` parameter to `get_user_streamers()` |
-| `src/pages/dashboard/Dashboard.tsx` | Pass `user.email` to RPC call |
-| `src/components/dashboard/StreamerDashboardWrapper.tsx` | Pass `user.email` to RPC call |
-
----
-
-## Security Considerations
-
-- The `is_admin_email()` function remains `SECURITY DEFINER` with restricted access
-- Admin emails table is protected and cannot be enumerated
-- The email parameter is only used for the admin check, not to grant access to arbitrary streamers
-- Non-admin users will only see their own streamer (matched by `user_id`)
