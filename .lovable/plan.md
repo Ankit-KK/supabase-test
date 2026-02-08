@@ -4,41 +4,55 @@
 
 ## Completed
 
-- ✅ **Step 1: Password Reset Tokens RLS** — deny policies added for anon/authenticated, service_role granted access.
+- Step 1: Password Reset Tokens RLS -- done
+
+## Current Status
+
+After investigation, **6 out of 7 views already have `security_invoker=on`**. Only one view remains with the default security definer behavior:
+
+| View | Status |
+|------|--------|
+| `ankit_donations_public` | `security_invoker=on` -- already safe |
+| `chiaa_gaming_donations_public` | `security_invoker=on` -- already safe |
+| `looteriya_gaming_donations_public` | `security_invoker=on` -- already safe |
+| `auth_sessions_safe` | `security_invoker=on` -- already safe |
+| `user_signups_masked` | `security_invoker=on` -- already safe |
+| `user_signups_secure` | `security_invoker=on` -- already safe |
+| **`clumsy_god_donations_public`** | **No security_invoker -- VULNERABLE** |
+
+## The Problem
+
+`clumsy_god_donations_public` runs with the view creator's (superuser) permissions, bypassing RLS on `clumsy_god_donations`. Even though the view's WHERE clause filters to approved/success donations, the lack of security invoker means RLS policies are completely ignored.
+
+## Solution
+
+Recreate the `clumsy_god_donations_public` view with `security_invoker = on`, matching the exact same column selection as the current definition.
+
+### Database Migration
+
+```sql
+CREATE OR REPLACE VIEW public.clumsy_god_donations_public
+WITH (security_invoker = on) AS
+SELECT
+  id, name, amount, currency, message, message_visible,
+  is_hyperemote, voice_message_url, hypersound_url,
+  tts_audio_url, created_at
+FROM clumsy_god_donations
+WHERE moderation_status IN ('approved', 'auto_approved')
+  AND payment_status = 'success';
+```
+
+### Impact
+
+- The view will now respect RLS policies on `clumsy_god_donations` when queried by anon/authenticated users
+- Edge functions using the service role key are unaffected (service role bypasses RLS)
+- The leaderboard and public donation display will continue to work because the underlying table already has a SELECT policy allowing anyone to view approved donations
+
+### No Code Changes Required
+
+No frontend or edge function code changes are needed.
 
 ---
 
-## Priority Order
-
-1. ~~Password Reset Tokens RLS~~ ✅
-2. **Security Definer Views** (this plan)
-3. OBS Token Exposure
-4. Exposed PII in user_signups
-5. Auth Users Credential Hardening
-
----
-
-## Step 2: Fix Security Definer Views
-
-### The Problem
-
-Views with `SECURITY DEFINER` run queries using the **view creator's permissions** (typically a superuser), completely bypassing RLS on the underlying tables. This means any user who can query these views gets unrestricted access to the data, regardless of RLS policies.
-
-### Affected Views
-
-All `_public` donation views and the `auth_sessions_safe` / `user_signups_*` views are likely defined with `SECURITY DEFINER`.
-
-### Solution
-
-Recreate each view **without** `SECURITY DEFINER` (or explicitly with `SECURITY INVOKER`), so queries respect the calling user's RLS policies.
-
-### Next Steps
-
-1. Identify all security definer views
-2. Recreate them with `SECURITY INVOKER = true`
-3. Verify edge functions still work correctly
-
----
-
-After this is approved and applied, we will move to **Step 3: OBS Token Exposure**.
+After this is applied, we move to **Step 3: OBS Token Exposure**.
 
