@@ -1,72 +1,44 @@
 
 
-# Fix Critical Security Vulnerabilities - Step 1: Password Reset Tokens RLS
+# Fix Critical Security Vulnerabilities - Step 2: Security Definer Views
 
-We will tackle the 5 critical vulnerabilities **one at a time**. Starting with the most dangerous one first.
+## Completed
+
+- ✅ **Step 1: Password Reset Tokens RLS** — deny policies added for anon/authenticated, service_role granted access.
 
 ---
 
 ## Priority Order
 
-1. **Password Reset Tokens RLS** (this plan) -- attackers could read/modify reset tokens to hijack any account
-2. Security Definer Views -- views bypass RLS entirely
-3. OBS Token Exposure -- missing deny policies allow token theft
-4. Exposed PII in user_signups -- unencrypted personal data
-5. Auth Users Credential Hardening -- password hash protection
+1. ~~Password Reset Tokens RLS~~ ✅
+2. **Security Definer Views** (this plan)
+3. OBS Token Exposure
+4. Exposed PII in user_signups
+5. Auth Users Credential Hardening
 
 ---
 
-## Step 1: Add RLS Policies to `password_reset_tokens`
+## Step 2: Fix Security Definer Views
 
 ### The Problem
 
-The `password_reset_tokens` table has **RLS enabled but zero policies defined**. This means by default no one can access it via the client SDK -- but there are no explicit deny rules for anon/authenticated roles, and no explicit service_role grant. This should be locked down properly.
+Views with `SECURITY DEFINER` run queries using the **view creator's permissions** (typically a superuser), completely bypassing RLS on the underlying tables. This means any user who can query these views gets unrestricted access to the data, regardless of RLS policies.
 
-### Database Migration
+### Affected Views
 
-Add three RLS policies:
+All `_public` donation views and the `auth_sessions_safe` / `user_signups_*` views are likely defined with `SECURITY DEFINER`.
 
-```sql
--- 1. Deny all anonymous access
-CREATE POLICY "Deny anonymous access to password_reset_tokens"
-  ON public.password_reset_tokens
-  AS RESTRICTIVE
-  FOR ALL
-  TO anon
-  USING (false)
-  WITH CHECK (false);
+### Solution
 
--- 2. Deny all authenticated user access
-CREATE POLICY "Deny authenticated access to password_reset_tokens"
-  ON public.password_reset_tokens
-  AS RESTRICTIVE
-  FOR ALL
-  TO authenticated
-  USING (false)
-  WITH CHECK (false);
+Recreate each view **without** `SECURITY DEFINER` (or explicitly with `SECURITY INVOKER`), so queries respect the calling user's RLS policies.
 
--- 3. Allow service role full access (used by edge functions)
-CREATE POLICY "Service role can manage password_reset_tokens"
-  ON public.password_reset_tokens
-  AS RESTRICTIVE
-  FOR ALL
-  TO service_role
-  USING (true)
-  WITH CHECK (true);
-```
+### Next Steps
 
-### Why This Matters
-
-Without explicit deny policies, if Supabase defaults ever change or a misconfiguration occurs, attackers could:
-- Read token hashes and brute-force them
-- Mark tokens as unused to reuse expired links
-- Delete tokens to prevent legitimate password resets
-
-### No Code Changes Required
-
-The edge functions (`request-password-reset`, `validate-reset-token`, `reset-password`) already use the service role key, so they will continue to work as before.
+1. Identify all security definer views
+2. Recreate them with `SECURITY INVOKER = true`
+3. Verify edge functions still work correctly
 
 ---
 
-After this is approved and applied, we will move to **Step 2: Security Definer Views**.
+After this is approved and applied, we will move to **Step 3: OBS Token Exposure**.
 
