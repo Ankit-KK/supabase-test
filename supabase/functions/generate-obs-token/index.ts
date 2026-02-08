@@ -24,7 +24,7 @@ serve(async (req) => {
       throw new Error('Missing required fields: streamer_id, new_token, user_email')
     }
 
-    console.log('Generating OBS token for streamer:', streamer_id, 'user email:', user_email)
+    console.log('Generating OBS token for streamer:', streamer_id)
 
     // Check if user has access to this streamer
     const { data: streamerAccess, error: accessError } = await supabase

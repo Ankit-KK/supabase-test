@@ -197,7 +197,7 @@ serve(async (req) => {
         
         if (passwordValid) {
           // Upgrade plaintext password to bcrypt hash
-          console.log('Upgrading plaintext password to bcrypt for user:', user.email);
+          console.log('Upgrading password hash for user');
           const salt = bcrypt.genSaltSync(BCRYPT_SALT_ROUNDS);
           const hashedPassword = bcrypt.hashSync(password, salt);
           

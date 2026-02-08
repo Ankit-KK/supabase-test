@@ -77,7 +77,7 @@ serve(async (req: Request) => {
     });
 
     if (!emailRateLimitOk) {
-      console.log(`Email rate limit exceeded for password reset: ${normalizedEmail}`);
+      console.log('Email rate limit exceeded for password reset');
       return new Response(
         JSON.stringify({ message: 'If an account exists with this email, a reset link has been sent.' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -94,7 +94,7 @@ serve(async (req: Request) => {
 
     if (userError || !user) {
       // Don't reveal if email exists
-      console.log(`Password reset requested for non-existent or inactive email: ${normalizedEmail}`);
+      console.log('Password reset requested for non-existent or inactive email');
       return new Response(
         JSON.stringify({ message: 'If an account exists with this email, a reset link has been sent.' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -206,7 +206,7 @@ serve(async (req: Request) => {
       );
     }
 
-    console.log(`Password reset email sent successfully to: ${normalizedEmail}`);
+    console.log('Password reset email sent successfully');
 
     return new Response(
       JSON.stringify({ message: 'If an account exists with this email, a reset link has been sent.' }),

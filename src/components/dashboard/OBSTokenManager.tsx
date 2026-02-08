@@ -212,7 +212,7 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
           throw error;
         }
 
-        console.log('Successfully fetched tokens:', data);
+        console.log('Successfully fetched tokens count:', data?.length ?? 0);
         setTokens(data || []);
       } catch (error) {
         console.error('Error fetching OBS tokens:', error);
@@ -245,7 +245,7 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
       const newToken = 'obs_' + Math.random().toString(36).substring(2, 15) + 
                       Math.random().toString(36).substring(2, 15);
 
-      console.log('Generating OBS token for streamer:', streamerId, 'user:', user.id);
+      console.log('Generating OBS token for streamer:', streamerId);
 
       // Use the service role approach via edge function
       const { data, error } = await supabase.functions.invoke('generate-obs-token', {
@@ -292,7 +292,7 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
             continue;
           }
 
-          console.log('Fetched tokens after generation:', updatedTokens);
+          console.log('Fetched tokens after generation, count:', updatedTokens?.length ?? 0);
           setTokens(updatedTokens || []);
           
           // Force re-render by clearing show token state
