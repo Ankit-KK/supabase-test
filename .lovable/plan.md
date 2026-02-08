@@ -1,64 +1,72 @@
 
 
-# Tiered Character Limits for Clumsy God Message Textarea
+# Fix Critical Security Vulnerabilities - Step 1: Password Reset Tokens RLS
 
-## Overview
+We will tackle the 5 critical vulnerabilities **one at a time**. Starting with the most dangerous one first.
 
-Add amount-based character limits to the message textarea on the Clumsy God donation page. Higher donations unlock longer messages.
+---
 
-## Tiers (INR)
+## Priority Order
 
-| Amount Range | Max Characters |
-|-------------|---------------|
-| 40 - 99     | 70            |
-| 100 - 299   | 150           |
-| 300+        | 200           |
+1. **Password Reset Tokens RLS** (this plan) -- attackers could read/modify reset tokens to hijack any account
+2. Security Definer Views -- views bypass RLS entirely
+3. OBS Token Exposure -- missing deny policies allow token theft
+4. Exposed PII in user_signups -- unencrypted personal data
+5. Auth Users Credential Hardening -- password hash protection
 
-## File to Modify
+---
 
-**`src/pages/ClumsyGod.tsx`**
+## Step 1: Add RLS Policies to `password_reset_tokens`
 
-### Change 1: Add a helper function to compute max characters based on amount
+### The Problem
 
-```typescript
-const getMaxMessageLength = (amount: number) => {
-  if (amount >= 300) return 200;
-  if (amount >= 100) return 150;
-  return 70;
-};
+The `password_reset_tokens` table has **RLS enabled but zero policies defined**. This means by default no one can access it via the client SDK -- but there are no explicit deny rules for anon/authenticated roles, and no explicit service_role grant. This should be locked down properly.
+
+### Database Migration
+
+Add three RLS policies:
+
+```sql
+-- 1. Deny all anonymous access
+CREATE POLICY "Deny anonymous access to password_reset_tokens"
+  ON public.password_reset_tokens
+  AS RESTRICTIVE
+  FOR ALL
+  TO anon
+  USING (false)
+  WITH CHECK (false);
+
+-- 2. Deny all authenticated user access
+CREATE POLICY "Deny authenticated access to password_reset_tokens"
+  ON public.password_reset_tokens
+  AS RESTRICTIVE
+  FOR ALL
+  TO authenticated
+  USING (false)
+  WITH CHECK (false);
+
+-- 3. Allow service role full access (used by edge functions)
+CREATE POLICY "Service role can manage password_reset_tokens"
+  ON public.password_reset_tokens
+  AS RESTRICTIVE
+  FOR ALL
+  TO service_role
+  USING (true)
+  WITH CHECK (true);
 ```
 
-### Change 2: Use it in the textarea section (around lines 329-341)
+### Why This Matters
 
-- Add `maxLength` using the helper
-- Truncate `formData.message` if the user lowers the amount and the existing message exceeds the new limit
-- Add a live character counter showing `X / Y`
+Without explicit deny policies, if Supabase defaults ever change or a misconfiguration occurs, attackers could:
+- Read token hashes and brute-force them
+- Mark tokens as unused to reuse expired links
+- Delete tokens to prevent legitimate password resets
 
-```tsx
-{donationType === "text" && (
-  <div className="space-y-1">
-    <textarea
-      name="message"
-      value={formData.message.slice(0, getMaxMessageLength(currentAmount))}
-      onChange={handleInputChange}
-      maxLength={getMaxMessageLength(currentAmount)}
-      className="w-full min-h-[90px] rounded-md
-                 bg-black/40 text-white placeholder:text-gray-400
-                 border border-purple-500/30
-                 focus:border-purple-500 focus:ring-purple-500/20
-                 px-3 py-2 text-sm"
-      placeholder="Your message (optional)"
-    />
-    <p className="text-xs text-right text-muted-foreground">
-      {Math.min(formData.message.length, getMaxMessageLength(currentAmount))} / {getMaxMessageLength(currentAmount)}
-    </p>
-  </div>
-)}
-```
+### No Code Changes Required
 
-### Edge case handling
+The edge functions (`request-password-reset`, `validate-reset-token`, `reset-password`) already use the service role key, so they will continue to work as before.
 
-When the user changes the amount downward (e.g., from 300 to 50), the message will be visually sliced to the new limit and `maxLength` will prevent further typing beyond it. The `handleInputChange` function remains unchanged -- native `maxLength` handles enforcement.
+---
 
-No other files, edge functions, or streamer pages are modified.
+After this is approved and applied, we will move to **Step 2: Security Definer Views**.
 
