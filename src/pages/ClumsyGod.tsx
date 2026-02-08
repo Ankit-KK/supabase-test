@@ -43,6 +43,12 @@ const ClumsyGod = () => {
 
   const currentAmount = parseFloat(formData.amount) || 0;
 
+  const getMaxMessageLength = (amount: number) => {
+    if (amount >= 300) return 200;
+    if (amount >= 100) return 150;
+    return 70;
+  };
+
   // Tiered voice duration based on amount (INR): 150-299=8s, 300-499=12s, 500+=15s
   const getVoiceDuration = (amount: number) => {
     if (selectedCurrency === "INR") {
@@ -327,17 +333,23 @@ const ClumsyGod = () => {
 
           {/* TEXT */}
           {donationType === "text" && (
-            <textarea
-              name="message"
-              value={formData.message}
-              onChange={handleInputChange}
-              className="w-full min-h-[90px] rounded-md
-                         bg-black/40 text-white placeholder:text-gray-400
-                         border border-purple-500/30
-                         focus:border-purple-500 focus:ring-purple-500/20
-                         px-3 py-2 text-sm"
-              placeholder="Your message (optional)"
-            />
+            <div className="space-y-1">
+              <textarea
+                name="message"
+                value={formData.message.slice(0, getMaxMessageLength(currentAmount))}
+                onChange={handleInputChange}
+                maxLength={getMaxMessageLength(currentAmount)}
+                className="w-full min-h-[90px] rounded-md
+                           bg-black/40 text-white placeholder:text-gray-400
+                           border border-purple-500/30
+                           focus:border-purple-500 focus:ring-purple-500/20
+                           px-3 py-2 text-sm"
+                placeholder="Your message (optional)"
+              />
+              <p className="text-xs text-right text-muted-foreground">
+                {Math.min(formData.message.length, getMaxMessageLength(currentAmount))} / {getMaxMessageLength(currentAmount)}
+              </p>
+            </div>
           )}
 
           {/* VOICE */}

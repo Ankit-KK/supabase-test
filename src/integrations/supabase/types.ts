@@ -785,6 +785,7 @@ export type Database = {
           telegram_moderation_enabled: boolean | null
           tts_enabled: boolean | null
           tts_voice_id: string | null
+          tts_volume: number | null
           updated_at: string | null
           user_id: string | null
         }
@@ -816,6 +817,7 @@ export type Database = {
           telegram_moderation_enabled?: boolean | null
           tts_enabled?: boolean | null
           tts_voice_id?: string | null
+          tts_volume?: number | null
           updated_at?: string | null
           user_id?: string | null
         }
@@ -847,6 +849,7 @@ export type Database = {
           telegram_moderation_enabled?: boolean | null
           tts_enabled?: boolean | null
           tts_voice_id?: string | null
+          tts_volume?: number | null
           updated_at?: string | null
           user_id?: string | null
         }
