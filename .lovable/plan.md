@@ -1,66 +1,59 @@
 
 
-# Add Per-Streamer TTS Accent/Language Setting
+# Fix: Enforce Tiered Character Limits on Backend
 
-## Overview
+## Problem
 
-Currently, the `language_boost` parameter in the MiniMax TTS API call is hardcoded to `"Hindi"` for all streamers. This change adds a configurable `tts_language_boost` column to the `streamers` table so each streamer can pick their preferred accent.
+The Clumsy God donation page has tiered character limits (70/150/200 chars based on amount), but these are **only enforced in the frontend UI**. The backend (`create-razorpay-order-unified`) has no such validation, allowing users to bypass limits by editing the DOM or calling the API directly.
 
-## Changes
+Evidence from the database:
+- 2nd last donation: 50 INR with 166 characters (limit should be 70)
+- Last 40 INR donation: 260 characters (limit should be 70)
 
-### 1. Database Migration
+## Solution
 
-Add a new column `tts_language_boost` to the `streamers` table:
+Add server-side message length validation in `create-razorpay-order-unified` for streamers that have tiered character limits.
 
-```sql
-ALTER TABLE public.streamers
-ADD COLUMN tts_language_boost text DEFAULT 'Hindi';
+### Step 1: Add a character limit config to the streamer table
+
+Add a new column `message_char_tiers` (jsonb, nullable) to the `streamers` table. When set, it defines amount-based character limits. Example value for Clumsy God:
+
+```json
+[
+  { "min_amount": 0, "max_chars": 70 },
+  { "min_amount": 100, "max_chars": 150 },
+  { "min_amount": 300, "max_chars": 200 }
+]
 ```
 
-Default is `'Hindi'` so existing behavior is preserved.
+When null (default for other streamers), no tiered limit is enforced beyond the existing 500-char sanitization cap.
 
-### 2. Edge Function: `generate-donation-tts/index.ts`
+### Step 2: Update `create-razorpay-order-unified`
 
-- Update the `.select()` query (line 204) to also fetch `tts_language_boost`
-- Replace the hardcoded `language_boost: "Hindi"` (line 329) with `streamerData.tts_language_boost || "Hindi"`
+- Fetch `message_char_tiers` in the streamer query
+- If tiers exist, determine the max allowed length for the given amount (converted to INR) and reject if the message exceeds it
+- Truncate or reject with a clear error message
 
-### 3. Edge Function: `update-streamer-settings/index.ts`
+### Step 3: Update `src/integrations/supabase/types.ts`
 
-- Add `'tts_language_boost'` to the `allowedSettings` array (line 35) so it can be changed from the dashboard
+- Add `message_char_tiers` to the streamers type definition
 
-### 4. Frontend: `src/components/dashboard/SettingsPanel.tsx`
+### Step 4: Set the value for Clumsy God in the database
 
-- Add a dropdown/select for "TTS Accent" with options matching MiniMax's supported `language_boost` values (e.g., Hindi, English, Arabic, Chinese, etc.)
-- Wire it to call `update-streamer-settings` with setting `tts_language_boost`
+```sql
+UPDATE public.streamers
+SET message_char_tiers = '[{"min_amount":0,"max_chars":70},{"min_amount":100,"max_chars":150},{"min_amount":300,"max_chars":200}]'::jsonb
+WHERE streamer_slug = 'clumsy_god';
+```
 
-### 5. Types: `src/integrations/supabase/types.ts`
+### Step 5: Update frontend `ClumsyGod.tsx`
 
-- Add `tts_language_boost` to the `streamers` table type definitions (Row, Insert, Update)
+- Optionally fetch tiers from the pricing endpoint so the frontend stays in sync with the database rather than hardcoding values (future improvement, not strictly required now)
 
-## Supported Language Options
+## Technical Details
 
-Based on MiniMax API, these are the `language_boost` options to offer:
-
-- Hindi
-- English
-- Arabic
-- Chinese
-- French
-- German
-- Indonesian
-- Italian
-- Japanese
-- Korean
-- Portuguese
-- Russian
-- Spanish
-- Thai
-- Turkish
-- Vietnamese
-
-## Technical Notes
-
-- No existing streamer pages or backends are modified beyond the specific lines listed
-- Default value ensures zero disruption to current behavior
-- The setting follows the same pattern as `tts_voice_id` and `tts_volume`
+- The validation uses INR-converted amounts so that currency conversion is consistent
+- Other streamers are unaffected (null = no tiered limits)
+- The existing 500-char `sanitizeInput` cap remains as a universal safety net
+- No existing edge functions or pages are modified except `create-razorpay-order-unified`
 
