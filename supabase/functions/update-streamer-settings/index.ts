@@ -32,7 +32,7 @@ serve(async (req) => {
     }
 
     // Validate allowed settings
-    const allowedSettings = ['moderation_mode', 'telegram_moderation_enabled', 'tts_enabled', 'hyperemotes_enabled', 'hyperemotes_min_amount', 'alert_box_scale', 'goal_is_active', 'goal_name', 'goal_target_amount', 'media_upload_enabled', 'media_moderation_enabled', 'media_min_amount'];
+    const allowedSettings = ['moderation_mode', 'telegram_moderation_enabled', 'tts_enabled', 'hyperemotes_enabled', 'hyperemotes_min_amount', 'alert_box_scale', 'goal_is_active', 'goal_name', 'goal_target_amount', 'media_upload_enabled', 'media_moderation_enabled', 'media_min_amount', 'tts_language_boost'];
     if (!allowedSettings.includes(setting)) {
       return new Response(
         JSON.stringify({ success: false, error: `Setting '${setting}' is not allowed` }),

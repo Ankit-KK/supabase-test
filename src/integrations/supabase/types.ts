@@ -784,6 +784,7 @@ export type Database = {
           streamer_slug: string
           telegram_moderation_enabled: boolean | null
           tts_enabled: boolean | null
+          tts_language_boost: string | null
           tts_voice_id: string | null
           tts_volume: number | null
           updated_at: string | null
@@ -816,6 +817,7 @@ export type Database = {
           streamer_slug: string
           telegram_moderation_enabled?: boolean | null
           tts_enabled?: boolean | null
+          tts_language_boost?: string | null
           tts_voice_id?: string | null
           tts_volume?: number | null
           updated_at?: string | null
@@ -848,6 +850,7 @@ export type Database = {
           streamer_slug?: string
           telegram_moderation_enabled?: boolean | null
           tts_enabled?: boolean | null
+          tts_language_boost?: string | null
           tts_voice_id?: string | null
           tts_volume?: number | null
           updated_at?: string | null

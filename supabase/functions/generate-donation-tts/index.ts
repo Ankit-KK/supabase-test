@@ -201,7 +201,7 @@ serve(async (req) => {
     // Get streamer slug and TTS configuration
     const { data: streamerData, error: streamerError } = await supabase
       .from("streamers")
-      .select("streamer_slug, tts_voice_id, tts_enabled")
+      .select("streamer_slug, tts_voice_id, tts_enabled, tts_language_boost")
       .eq("id", streamerId)
       .single();
 
@@ -326,7 +326,7 @@ serve(async (req) => {
         model: "speech-2.6-hd",
         text: donationText,
         stream: false,
-        language_boost: "Hindi",
+        language_boost: streamerData.tts_language_boost || "Hindi",
         output_format: "hex",
         voice_setting: {
           voice_id: voiceId,

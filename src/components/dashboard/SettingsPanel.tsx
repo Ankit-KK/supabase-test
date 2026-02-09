@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { 
@@ -19,7 +20,8 @@ import {
   Link,
   Copy,
   Trophy,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Languages
 } from 'lucide-react';
 
 interface SettingsPanelProps {
@@ -35,6 +37,7 @@ interface SettingsPanelProps {
     media_upload_enabled?: boolean;
     media_moderation_enabled?: boolean;
     media_min_amount?: number;
+    tts_language_boost?: string;
   };
   onSettingsUpdate: () => void;
 }
@@ -52,7 +55,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
     leaderboard_widget_enabled: streamerData.leaderboard_widget_enabled ?? true,
     media_upload_enabled: streamerData.media_upload_enabled ?? false,
     media_moderation_enabled: streamerData.media_moderation_enabled ?? true,
-    media_min_amount: streamerData.media_min_amount ?? 100
+    media_min_amount: streamerData.media_min_amount ?? 100,
+    tts_language_boost: streamerData.tts_language_boost || 'Hindi'
   });
   const [saving, setSaving] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
@@ -405,6 +409,37 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
               </Alert>
             </>
           )}
+        </CardContent>
+      </Card>
+
+      {/* TTS Accent/Language Setting */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Languages className="h-5 w-5" />
+            <span>TTS Accent</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Language Boost</Label>
+            <p className="text-sm text-muted-foreground">
+              Select the accent/language for Text-to-Speech donation alerts
+            </p>
+            <Select
+              value={settings.tts_language_boost}
+              onValueChange={(value) => handleInputChange('tts_language_boost', value)}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select accent" />
+              </SelectTrigger>
+              <SelectContent>
+                {['Hindi', 'English', 'Arabic', 'Chinese', 'French', 'German', 'Indonesian', 'Italian', 'Japanese', 'Korean', 'Portuguese', 'Russian', 'Spanish', 'Thai', 'Turkish', 'Vietnamese'].map((lang) => (
+                  <SelectItem key={lang} value={lang}>{lang}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </CardContent>
       </Card>
 

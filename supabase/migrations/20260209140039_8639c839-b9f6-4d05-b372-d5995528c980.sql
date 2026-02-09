@@ -1,0 +1,1 @@
+ALTER TABLE public.streamers ADD COLUMN tts_language_boost text DEFAULT 'Hindi';
