@@ -1,59 +1,68 @@
 
 
-# Fix: Enforce Tiered Character Limits on Backend
+# Fetch Character Tiers from Database for All Streamers
 
-## Problem
+## Overview
 
-The Clumsy God donation page has tiered character limits (70/150/200 chars based on amount), but these are **only enforced in the frontend UI**. The backend (`create-razorpay-order-unified`) has no such validation, allowing users to bypass limits by editing the DOM or calling the API directly.
+Currently, character limits are hardcoded in each donation page (ClumsyGod has `getMaxMessageLength`, Ankit has `getCharacterLimit`). Wolfy, ChiaaGaming, and LooteriyaGaming have no character limits at all. This change makes the frontend dynamically fetch `message_char_tiers` from the database via the existing `get-streamer-pricing` edge function.
 
-Evidence from the database:
-- 2nd last donation: 50 INR with 166 characters (limit should be 70)
-- Last 40 INR donation: 260 characters (limit should be 70)
+## Current State
 
-## Solution
+| Streamer | Character Limits | Source |
+|---|---|---|
+| ClumsyGod | 70 / 150 / 200 | Hardcoded in component |
+| Ankit | 100 / 200 / 250 | Hardcoded in component |
+| ChiaaGaming | None | No limit enforced |
+| LooteriyaGaming | None | No limit enforced |
+| Wolfy | None | No limit enforced |
 
-Add server-side message length validation in `create-razorpay-order-unified` for streamers that have tiered character limits.
+## Changes
 
-### Step 1: Add a character limit config to the streamer table
+### 1. Edge Function: `get-streamer-pricing/index.ts`
 
-Add a new column `message_char_tiers` (jsonb, nullable) to the `streamers` table. When set, it defines amount-based character limits. Example value for Clumsy God:
+- Add `message_char_tiers` to the `.select()` query (line 57)
+- Include it in the response JSON so the frontend receives the tiers
 
-```json
-[
-  { "min_amount": 0, "max_chars": 70 },
-  { "min_amount": 100, "max_chars": 150 },
-  { "min_amount": 300, "max_chars": 200 }
-]
-```
+### 2. Hook: `src/hooks/useStreamerPricing.ts`
 
-When null (default for other streamers), no tiered limit is enforced beyond the existing 500-char sanitization cap.
+- Add `messageCharTiers` to the `StreamerPricing` interface as `Array<{ min_amount: number; max_chars: number }> | null`
+- Map it from the API response (default `null`)
 
-### Step 2: Update `create-razorpay-order-unified`
+### 3. Create utility: `src/utils/getMaxMessageLength.ts`
 
-- Fetch `message_char_tiers` in the streamer query
-- If tiers exist, determine the max allowed length for the given amount (converted to INR) and reject if the message exceeds it
-- Truncate or reject with a clear error message
+- A shared helper function that takes `(tiers, amountInCurrentCurrency)` and returns the max character count
+- When tiers is `null`, returns a generous default (e.g., 500) so streamers without tiers configured are unaffected
 
-### Step 3: Update `src/integrations/supabase/types.ts`
+### 4. Frontend Pages
 
-- Add `message_char_tiers` to the streamers type definition
+**ClumsyGod.tsx:**
+- Remove the hardcoded `getMaxMessageLength` function
+- Import and use the shared utility with `pricing.messageCharTiers`
 
-### Step 4: Set the value for Clumsy God in the database
+**Ankit.tsx:**
+- Remove the hardcoded `getCharacterLimit` function
+- Import and use the shared utility with `pricing.messageCharTiers`
+
+**ChiaaGaming.tsx, LooteriyaGaming.tsx, Wolfy.tsx:**
+- Add `maxLength` and character counter to the textarea using the shared utility
+- These pages will only show limits when the streamer has tiers configured in the database
+
+### 5. Database: Set tiers for Ankit
+
+Run a migration to populate Ankit's existing tiers:
 
 ```sql
 UPDATE public.streamers
-SET message_char_tiers = '[{"min_amount":0,"max_chars":70},{"min_amount":100,"max_chars":150},{"min_amount":300,"max_chars":200}]'::jsonb
-WHERE streamer_slug = 'clumsy_god';
+SET message_char_tiers = '[{"min_amount":0,"max_chars":100},{"min_amount":100,"max_chars":200},{"min_amount":200,"max_chars":250}]'::jsonb
+WHERE streamer_slug = 'ankit';
 ```
 
-### Step 5: Update frontend `ClumsyGod.tsx`
-
-- Optionally fetch tiers from the pricing endpoint so the frontend stays in sync with the database rather than hardcoding values (future improvement, not strictly required now)
+Clumsy God is already set. Other streamers remain `null` (no tiered limits).
 
 ## Technical Details
 
-- The validation uses INR-converted amounts so that currency conversion is consistent
-- Other streamers are unaffected (null = no tiered limits)
-- The existing 500-char `sanitizeInput` cap remains as a universal safety net
-- No existing edge functions or pages are modified except `create-razorpay-order-unified`
+- The `message_char_tiers` column uses INR amounts as thresholds. Since `get-streamer-pricing` already handles currency conversion, the tiers will need to be converted using the same exchange rates. The converted thresholds will be included in the response so the frontend can compare directly against the user's entered amount.
+- No existing edge functions or pages beyond those listed are touched
+- The backend validation in `create-razorpay-order-unified` remains the authoritative enforcement; the frontend is just for UX
+- The shared utility keeps all pages consistent and avoids duplicated logic
 
