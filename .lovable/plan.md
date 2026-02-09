@@ -1,44 +1,66 @@
 
 
-# Audit and Clean Sensitive Console Logs
+# Add Per-Streamer TTS Accent/Language Setting
 
-## Findings Summary
+## Overview
 
-| File | Severity | Issue |
-|------|----------|-------|
-| `src/components/dashboard/OBSTokenManager.tsx` | **CRITICAL** | Logs full OBS token objects to browser console (visible to anyone with DevTools) |
-| `supabase/functions/authenticate-user/index.ts` | Medium | Logs user email during password hash upgrade |
-| `supabase/functions/request-password-reset/index.ts` | Medium | Logs user emails during reset flow |
-| `supabase/functions/reset-password/index.ts` | Medium | Logs user email on successful reset |
+Currently, the `language_boost` parameter in the MiniMax TTS API call is hardcoded to `"Hindi"` for all streamers. This change adds a configurable `tts_language_boost` column to the `streamers` table so each streamer can pick their preferred accent.
 
 ## Changes
 
-### 1. OBSTokenManager.tsx (Critical Fix)
+### 1. Database Migration
 
-Remove or redact all sensitive console.log statements:
+Add a new column `tts_language_boost` to the `streamers` table:
 
-- Line 201: `console.log('Fetching OBS tokens for streamer:', streamerId)` -- Keep (no sensitive data)
-- Line 215: `console.log('Successfully fetched tokens:', data)` -- **Remove** (leaks token values)
-- Line 248: `console.log('Generating OBS token for streamer:', streamerId, 'user:', user.id)` -- Redact user.id
-- Line 295: `console.log('Fetched tokens after generation:', updatedTokens)` -- **Remove** (leaks token values)
+```sql
+ALTER TABLE public.streamers
+ADD COLUMN tts_language_boost text DEFAULT 'Hindi';
+```
 
-### 2. authenticate-user/index.ts
+Default is `'Hindi'` so existing behavior is preserved.
 
-- Line 200: Change `console.log('Upgrading plaintext password to bcrypt for user:', user.email)` to remove the email, log only `'Upgrading password hash for user'`
+### 2. Edge Function: `generate-donation-tts/index.ts`
 
-### 3. request-password-reset/index.ts
+- Update the `.select()` query (line 204) to also fetch `tts_language_boost`
+- Replace the hardcoded `language_boost: "Hindi"` (line 329) with `streamerData.tts_language_boost || "Hindi"`
 
-- Line 80: Remove email from rate limit log
-- Line 97: Remove email from "non-existent" log
-- Line 209: Remove email from "sent successfully" log
+### 3. Edge Function: `update-streamer-settings/index.ts`
 
-### 4. reset-password/index.ts
+- Add `'tts_language_boost'` to the `allowedSettings` array (line 35) so it can be changed from the dashboard
 
-- Line 148: Remove email from success log
+### 4. Frontend: `src/components/dashboard/SettingsPanel.tsx`
 
-## Approach
+- Add a dropdown/select for "TTS Accent" with options matching MiniMax's supported `language_boost` values (e.g., Hindi, English, Arabic, Chinese, etc.)
+- Wire it to call `update-streamer-settings` with setting `tts_language_boost`
 
-- Replace sensitive data in logs with safe identifiers (e.g., user ID prefix or just a count)
-- Keep non-sensitive logs intact for debugging
-- No functional changes -- only log content is modified
+### 5. Types: `src/integrations/supabase/types.ts`
+
+- Add `tts_language_boost` to the `streamers` table type definitions (Row, Insert, Update)
+
+## Supported Language Options
+
+Based on MiniMax API, these are the `language_boost` options to offer:
+
+- Hindi
+- English
+- Arabic
+- Chinese
+- French
+- German
+- Indonesian
+- Italian
+- Japanese
+- Korean
+- Portuguese
+- Russian
+- Spanish
+- Thai
+- Turkish
+- Vietnamese
+
+## Technical Notes
+
+- No existing streamer pages or backends are modified beyond the specific lines listed
+- Default value ensures zero disruption to current behavior
+- The setting follows the same pattern as `tts_voice_id` and `tts_volume`
 
