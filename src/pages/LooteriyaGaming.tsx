@@ -16,6 +16,7 @@ import HyperSoundSelector from "@/components/HyperSoundSelector";
 import MediaUploader from "@/components/MediaUploader";
 import { SUPPORTED_CURRENCIES, getCurrencySymbol } from "@/constants/currencies";
 import { useStreamerPricing } from "@/hooks/useStreamerPricing";
+import { getMaxMessageLength } from "@/utils/getMaxMessageLength";
 import looteriyaLogo from "@/assets/looteriya-logo.jpg";
 import looteriyaCardBg from "@/assets/looteriya-card-bg.jpg";
 import looteriyaMainBanner from "@/assets/looteriya-main-banner.jpg";
@@ -55,6 +56,7 @@ const LooteriyaGaming = () => {
   };
 
   const currentAmount = parseFloat(formData.amount) || 0;
+  const maxMessageLength = getMaxMessageLength(pricing.messageCharTiers, currentAmount);
   const voiceRecorder = useVoiceRecorder(getVoiceDuration(currentAmount));
 
   useEffect(() => {
@@ -455,9 +457,13 @@ const LooteriyaGaming = () => {
                   placeholder="Enter your message"
                   value={formData.message}
                   onChange={handleInputChange}
+                  maxLength={maxMessageLength}
                   className="w-full min-h-[100px] px-3 py-2 rounded-md border border-amber-500/30 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 bg-background text-foreground placeholder:text-muted-foreground"
                   rows={3}
                 />
+                <p className="text-xs text-right text-muted-foreground">
+                  {formData.message.length}/{maxMessageLength}
+                </p>
               </div>
             )}
 

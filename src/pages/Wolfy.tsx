@@ -16,6 +16,7 @@ import HyperSoundSelector from "@/components/HyperSoundSelector";
 import MediaUploader from "@/components/MediaUploader";
 import { SUPPORTED_CURRENCIES, getCurrencySymbol } from "@/constants/currencies";
 import { useStreamerPricing } from "@/hooks/useStreamerPricing";
+import { getMaxMessageLength } from "@/utils/getMaxMessageLength";
 import DonationPageFooter from "@/components/DonationPageFooter";
 
 const Wolfy = () => {
@@ -42,6 +43,7 @@ const Wolfy = () => {
   const currencySymbol = getCurrencySymbol(selectedCurrency);
 
   const currentAmount = parseFloat(formData.amount) || 0;
+  const maxMessageLength = getMaxMessageLength(pricing.messageCharTiers, currentAmount);
 
   // Tiered voice duration based on amount (INR): 150-299=8s, 300-499=12s, 500+=15s
   const getVoiceDuration = (amount: number) => {
@@ -327,17 +329,23 @@ const Wolfy = () => {
 
           {/* TEXT */}
           {donationType === "text" && (
-            <textarea
-              name="message"
-              value={formData.message}
-              onChange={handleInputChange}
-              className="w-full min-h-[90px] rounded-md
-                         bg-black/40 text-white placeholder:text-gray-400
-                         border border-amber-500/30
-                         focus:border-amber-500 focus:ring-amber-500/20
-                         px-3 py-2 text-sm"
-              placeholder="Your message (optional)"
-            />
+            <div className="space-y-1">
+              <textarea
+                name="message"
+                value={formData.message}
+                onChange={handleInputChange}
+                maxLength={maxMessageLength}
+                className="w-full min-h-[90px] rounded-md
+                           bg-black/40 text-white placeholder:text-gray-400
+                           border border-amber-500/30
+                           focus:border-amber-500 focus:ring-amber-500/20
+                           px-3 py-2 text-sm"
+                placeholder="Your message (optional)"
+              />
+              <p className="text-xs text-right text-muted-foreground">
+                {formData.message.length}/{maxMessageLength}
+              </p>
+            </div>
           )}
 
           {/* VOICE */}
