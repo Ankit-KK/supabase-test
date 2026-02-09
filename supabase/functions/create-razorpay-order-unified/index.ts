@@ -118,7 +118,7 @@ serve(async (req) => {
     // Fetch streamer with custom minimums
     const { data: streamerData, error: streamerError } = await supabase
       .from('streamers')
-      .select('id, streamer_name, min_text_amount_inr, min_tts_amount_inr, min_voice_amount_inr, min_hypersound_amount_inr, media_min_amount, tts_enabled')
+      .select('id, streamer_name, min_text_amount_inr, min_tts_amount_inr, min_voice_amount_inr, min_hypersound_amount_inr, media_min_amount, tts_enabled, message_char_tiers')
       .eq('streamer_slug', streamer_slug)
       .single();
 
@@ -165,6 +165,25 @@ serve(async (req) => {
     if (!hypersoundUrl && !voiceMessageUrl && !mediaUrl) {
       if (amount < minimums.minText) {
         throw new Error(`Text messages require minimum ${currency} ${minimums.minText}`);
+      }
+    }
+
+    // Enforce tiered character limits if configured for this streamer
+    if (streamerData.message_char_tiers && message) {
+      const tiers = streamerData.message_char_tiers as Array<{ min_amount: number; max_chars: number }>;
+      const amountInINR = amount * (EXCHANGE_RATES_TO_INR[currency] || 1);
+      
+      // Find the highest tier that the amount qualifies for
+      const sortedTiers = [...tiers].sort((a, b) => b.min_amount - a.min_amount);
+      const matchedTier = sortedTiers.find(t => amountInINR >= t.min_amount);
+      
+      if (matchedTier) {
+        const maxChars = matchedTier.max_chars;
+        const sanitizedMsg = sanitizeInput(message);
+        if (sanitizedMsg && sanitizedMsg.length > maxChars) {
+          console.log(`[Unified] Message too long: ${sanitizedMsg.length} chars, max ${maxChars} for ${amountInINR} INR`);
+          throw new Error(`Message exceeds ${maxChars} character limit for this donation amount`);
+        }
       }
     }
 
