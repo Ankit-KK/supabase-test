@@ -774,6 +774,7 @@ export type Database = {
           media_min_amount: number | null
           media_moderation_enabled: boolean | null
           media_upload_enabled: boolean | null
+          message_char_tiers: Json | null
           min_hypersound_amount_inr: number | null
           min_text_amount_inr: number | null
           min_tts_amount_inr: number | null
@@ -807,6 +808,7 @@ export type Database = {
           media_min_amount?: number | null
           media_moderation_enabled?: boolean | null
           media_upload_enabled?: boolean | null
+          message_char_tiers?: Json | null
           min_hypersound_amount_inr?: number | null
           min_text_amount_inr?: number | null
           min_tts_amount_inr?: number | null
@@ -840,6 +842,7 @@ export type Database = {
           media_min_amount?: number | null
           media_moderation_enabled?: boolean | null
           media_upload_enabled?: boolean | null
+          message_char_tiers?: Json | null
           min_hypersound_amount_inr?: number | null
           min_text_amount_inr?: number | null
           min_tts_amount_inr?: number | null
