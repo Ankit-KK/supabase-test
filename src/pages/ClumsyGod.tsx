@@ -16,6 +16,7 @@ import HyperSoundSelector from "@/components/HyperSoundSelector";
 import MediaUploader from "@/components/MediaUploader";
 import { SUPPORTED_CURRENCIES, getCurrencySymbol } from "@/constants/currencies";
 import { useStreamerPricing } from "@/hooks/useStreamerPricing";
+import { getMaxMessageLength } from "@/utils/getMaxMessageLength";
 import DonationPageFooter from "@/components/DonationPageFooter";
 
 const ClumsyGod = () => {
@@ -43,12 +44,7 @@ const ClumsyGod = () => {
 
   const currentAmount = parseFloat(formData.amount) || 0;
 
-  const getMaxMessageLength = (amount: number) => {
-    if (amount >= 300) return 200;
-    if (amount >= 100) return 150;
-    return 70;
-  };
-
+  const maxMessageLength = getMaxMessageLength(pricing.messageCharTiers, currentAmount);
   // Tiered voice duration based on amount (INR): 150-299=8s, 300-499=12s, 500+=15s
   const getVoiceDuration = (amount: number) => {
     if (selectedCurrency === "INR") {
@@ -336,9 +332,9 @@ const ClumsyGod = () => {
             <div className="space-y-1">
               <textarea
                 name="message"
-                value={formData.message.slice(0, getMaxMessageLength(currentAmount))}
+                value={formData.message.slice(0, maxMessageLength)}
                 onChange={handleInputChange}
-                maxLength={getMaxMessageLength(currentAmount)}
+                maxLength={maxMessageLength}
                 className="w-full min-h-[90px] rounded-md
                            bg-black/40 text-white placeholder:text-gray-400
                            border border-purple-500/30
@@ -347,7 +343,7 @@ const ClumsyGod = () => {
                 placeholder="Your message (optional)"
               />
               <p className="text-xs text-right text-muted-foreground">
-                {Math.min(formData.message.length, getMaxMessageLength(currentAmount))} / {getMaxMessageLength(currentAmount)}
+                {Math.min(formData.message.length, maxMessageLength)} / {maxMessageLength}
               </p>
             </div>
           )}

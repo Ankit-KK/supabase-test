@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+export interface MessageCharTier {
+  min_amount: number;
+  max_chars: number;
+}
+
 export interface StreamerPricing {
   minText: number;
   minTts: number;
@@ -9,6 +14,7 @@ export interface StreamerPricing {
   minMedia: number;
   ttsEnabled: boolean;
   currency: string;
+  messageCharTiers: MessageCharTier[] | null;
 }
 
 // Default fallback values (platform floors)
@@ -20,6 +26,7 @@ const DEFAULT_PRICING: StreamerPricing = {
   minMedia: 100,
   ttsEnabled: true,
   currency: 'INR',
+  messageCharTiers: null,
 };
 
 export const useStreamerPricing = (streamerSlug: string, currency: string) => {
@@ -51,6 +58,7 @@ export const useStreamerPricing = (streamerSlug: string, currency: string) => {
             minMedia: data.minMedia,
             ttsEnabled: data.ttsEnabled ?? true,
             currency: data.currency || currency,
+            messageCharTiers: data.messageCharTiers || null,
           });
         }
       } catch (err) {

@@ -12,6 +12,7 @@ import VideoBackground from "@/components/VideoBackground";
 import { cn } from "@/lib/utils";
 import { SUPPORTED_CURRENCIES, getCurrencySymbol } from "@/constants/currencies";
 import { useStreamerPricing } from "@/hooks/useStreamerPricing";
+import { getMaxMessageLength } from "@/utils/getMaxMessageLength";
 // Razorpay integration - SDK loaded dynamically
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -80,14 +81,6 @@ const Ankit = () => {
     };
   }, [isMobile]);
 
-  // Calculate character limit based on amount
-  const getCharacterLimit = (amount: number): number => {
-    if (amount >= 200) return 250;
-    if (amount >= 100) return 200;
-    if (amount >= 40) return 100;
-    return 100;
-  };
-
   // Calculate voice recording duration based on amount
   const getVoiceDuration = (amount: number): number => {
     if (amount >= 250) return 30;
@@ -98,6 +91,7 @@ const Ankit = () => {
 
   // Voice recorder instance - dynamically update duration based on amount
   const currentAmount = parseFloat(formData.amount) || 0;
+  const charLimit = getMaxMessageLength(pricing.messageCharTiers, currentAmount);
   const maxVoiceDuration = getVoiceDuration(currentAmount);
   const voiceRecorder = useVoiceRecorder(maxVoiceDuration);
 
@@ -164,7 +158,7 @@ const Ankit = () => {
     // If amount changes and message exceeds new limit, truncate message
     if (name === 'amount' && donationType === 'message') {
       const newAmount = parseFloat(value) || 40;
-      const newCharLimit = getCharacterLimit(newAmount);
+      const newCharLimit = getMaxMessageLength(pricing.messageCharTiers, newAmount);
       if (formData.message.length > newCharLimit) {
         toast({
           title: "Message Shortened",
@@ -224,7 +218,6 @@ const Ankit = () => {
 
     // Validate character limits for text messages
     if (donationType === 'message' && formData.message?.trim()) {
-      const charLimit = getCharacterLimit(amount);
       if (formData.message.length > charLimit) {
         toast({
           title: "Message Too Long",
@@ -627,9 +620,9 @@ const Ankit = () => {
                 <label htmlFor="message" className="text-sm font-semibold text-white drop-shadow-md">
                   Message *
                 </label>
-                <textarea id="message" name="message" placeholder="Enter your message" value={formData.message} onChange={handleInputChange} className="w-full p-3 border border-blue-500/30 rounded-lg bg-background/50 backdrop-blur-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none resize-none" rows={3} maxLength={getCharacterLimit(currentAmount)} required />
+                <textarea id="message" name="message" placeholder="Enter your message" value={formData.message} onChange={handleInputChange} className="w-full p-3 border border-blue-500/30 rounded-lg bg-background/50 backdrop-blur-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none resize-none" rows={3} maxLength={charLimit} required />
                 <div className="text-xs text-white/90 drop-shadow-sm text-right">
-                  {formData.message.length}/{getCharacterLimit(currentAmount)} characters
+                  {formData.message.length}/{charLimit} characters
                 </div>
               </div>}
 

@@ -54,7 +54,7 @@ serve(async (req) => {
     // Fetch streamer with custom minimums
     const { data: streamerData, error: streamerError } = await supabase
       .from('streamers')
-      .select('id, streamer_name, min_text_amount_inr, min_tts_amount_inr, min_voice_amount_inr, min_hypersound_amount_inr, media_min_amount, tts_enabled')
+      .select('id, streamer_name, min_text_amount_inr, min_tts_amount_inr, min_voice_amount_inr, min_hypersound_amount_inr, media_min_amount, tts_enabled, message_char_tiers')
       .eq('streamer_slug', streamer_slug)
       .single();
 
@@ -84,11 +84,21 @@ serve(async (req) => {
 
     console.log(`[Pricing] Calculated minimums for ${streamer_slug}:`, minimums);
 
+    // Convert message_char_tiers thresholds to donor's currency
+    let messageCharTiers = null;
+    if (streamerData.message_char_tiers && Array.isArray(streamerData.message_char_tiers)) {
+      messageCharTiers = (streamerData.message_char_tiers as Array<{ min_amount: number; max_chars: number }>).map(tier => ({
+        min_amount: roundToNice(tier.min_amount / rate, currency),
+        max_chars: tier.max_chars,
+      }));
+    }
+
     return new Response(
       JSON.stringify({
         ...minimums,
         ttsEnabled: streamerData.tts_enabled ?? true,
         currency,
+        messageCharTiers,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
