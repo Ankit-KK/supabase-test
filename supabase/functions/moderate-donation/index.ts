@@ -340,13 +340,22 @@ serve(async (req) => {
         media_type: donation.media_type
       };
 
+      // Currency conversion for threshold comparison
+      const EXCHANGE_RATES_TO_INR: Record<string, number> = {
+        'INR': 1, 'USD': 89, 'EUR': 94, 'GBP': 113, 'AED': 24, 'AUD': 57
+      };
+      const convertToINR = (amount: number, currency: string): number => {
+        return amount * (EXCHANGE_RATES_TO_INR[currency] || 1);
+      };
+
       // Dynamic TTS threshold from database
       const PLATFORM_TTS_FLOOR_INR = 40;
       const ttsMinAmount = Math.max(
         PLATFORM_TTS_FLOOR_INR, 
         streamer?.min_tts_amount_inr || PLATFORM_TTS_FLOOR_INR
       );
-      console.log(`TTS threshold for approval: ${ttsMinAmount} INR (db: ${streamer?.min_tts_amount_inr})`);
+      const donationAmountINR = convertToINR(donation.amount, donation.currency || 'INR');
+      console.log(`TTS threshold for approval: ${ttsMinAmount} INR (db: ${streamer?.min_tts_amount_inr}), donation in INR: ${donationAmountINR}`);
 
       // Silent audio URL for text donations under threshold (triggers visual alert without TTS)
       const SILENT_AUDIO_URL = Deno.env.get('SILENT_AUDIO_URL') || 'https://pub-fff13c27bb0d4a1e807dfc596462b7d5.r2.dev/silent.mp3';
@@ -355,7 +364,7 @@ serve(async (req) => {
       // Text donation >= ttsMinAmount: generates TTS (with message or "Thank you!" fallback)
       // Media donation: always generate announcement
       const shouldGenerateTextTTS = donationType === 'text' && 
-        donation.amount >= ttsMinAmount && 
+        donationAmountINR >= ttsMinAmount && 
         !donation.tts_audio_url &&
         streamer.tts_enabled !== false;
 
@@ -366,7 +375,7 @@ serve(async (req) => {
       // Text donations < ttsMinAmount get silent audio (triggers visual alert without TTS cost)
       const shouldUseSilentAudio = donationType === 'text' && 
         !donation.tts_audio_url &&
-        donation.amount < ttsMinAmount;
+        donationAmountINR < ttsMinAmount;
 
       const shouldGenerateTTS = shouldGenerateTextTTS || shouldGenerateMediaTTS;
 
