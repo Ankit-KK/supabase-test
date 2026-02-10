@@ -1,26 +1,36 @@
 
 
-# Replace Donation-Related Terms in Moderation Showcase
+# Fix: TTS Not Generated for USD Donations (Currency Conversion Bug)
 
-## Problem
+## Root Cause
 
-The `ModerationFeatures.tsx` component, displayed on both the homepage and `/feature-showcase`, uses donation-specific terms that should be avoided on the public-facing website.
+The `moderate-donation` edge function compares the raw donation amount against the TTS threshold (40 INR minimum) **without converting foreign currencies to INR**.
 
-## Changes (single file: `src/components/feature-showcase/ModerationFeatures.tsx`)
+- A $2 USD donation (worth ~178 INR) is compared as `2 < 40`, so it gets silent audio instead of TTS.
+- A 100 INR donation correctly passes as `100 >= 40` and gets TTS.
 
-| Line | Current Text | Replacement |
-|------|-------------|-------------|
-| 43 | `"Donor ban list"` | `"User ban list"` |
-| 78 | `"One-click donor banning with persistent blocklist"` | `"One-click user banning with persistent blocklist"` |
-| 138 | `"💰 Donation Arrives"` | `"💬 Message Arrives"` |
+The `razorpay-webhook` function handles this correctly with `convertToINR()`, but `moderate-donation` does not.
 
-## What stays the same
+## Evidence
 
-Everything else in the component remains untouched -- layout, animations, icons, comparison table, and all other text that doesn't reference donations or donors.
+| Donation | Amount | Currency | TTS Result | Expected |
+|----------|--------|----------|------------|----------|
+| bb872fcc | 100 | INR | TTS generated | Correct |
+| 0125fa6c | 2 | USD | Silent audio | Should have TTS (2 USD = ~178 INR) |
+| 5750bb6d | 2 | USD | Silent audio | Should have TTS (2 USD = ~178 INR) |
 
-## Technical Details
+## Fix (single file: `supabase/functions/moderate-donation/index.ts`)
 
-- File: `src/components/feature-showcase/ModerationFeatures.tsx`
-- Three string replacements on lines 43, 78, and 138
-- No other files or edge functions are modified
+1. Add the `EXCHANGE_RATES_TO_INR` map and `convertToINR` helper (same one used in `razorpay-webhook`).
+2. Convert `donation.amount` to INR before comparing against `ttsMinAmount` on lines 358 and 368.
+
+```text
+Before:  donation.amount >= ttsMinAmount
+After:   convertToINR(donation.amount, donation.currency || 'INR') >= ttsMinAmount
+
+Before:  donation.amount < ttsMinAmount  
+After:   convertToINR(donation.amount, donation.currency || 'INR') < ttsMinAmount
+```
+
+No other files or edge functions are modified. The fix ensures currency-aware TTS threshold checks during manual moderation approval, matching the existing behavior in the webhook.
 
