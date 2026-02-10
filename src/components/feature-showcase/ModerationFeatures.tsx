@@ -40,7 +40,7 @@ const ModerationFeatures = () => {
     { feature: "Media preview before approval", hyperchat: true, traditional: false },
     { feature: "One-tap moderation", hyperchat: true, traditional: false },
     { feature: "Real-time Pusher sync", hyperchat: true, traditional: false },
-    { feature: "Donor ban list", hyperchat: true, traditional: "partial" },
+    { feature: "User ban list", hyperchat: true, traditional: "partial" },
   ];
 
   const featureCards = [
@@ -75,7 +75,7 @@ const ModerationFeatures = () => {
     {
       icon: Ban,
       title: "Ban Management",
-      description: "One-click donor banning with persistent blocklist",
+      description: "One-click user banning with persistent blocklist",
       color: "text-destructive",
       bgColor: "bg-destructive/10",
     },
@@ -136,7 +136,7 @@ const ModerationFeatures = () => {
             <div className="flex flex-col items-center gap-4">
               {/* Donation Arrives */}
               <div className="px-6 py-3 bg-secondary rounded-full font-semibold text-foreground">
-                💰 Donation Arrives
+                💬 Message Arrives
               </div>
               
               <ArrowDown className="w-6 h-6 text-muted-foreground animate-bounce" />
