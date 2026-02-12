@@ -146,6 +146,14 @@ serve(async (req) => {
           .eq('id', donation.streamer_id)
           .single();
 
+        // Currency symbol mapping for clean display
+        const currencySymbols: Record<string, string> = {
+          'INR': '₹', 'USD': '$', 'EUR': '€', 'GBP': '£', 'AED': 'د.إ', 'AUD': 'A$'
+        };
+        const currency = donation.currency || 'INR';
+        const currencySymbol = currencySymbols[currency] || currency;
+        const amountDisplay = `${currencySymbol}${donation.amount} ${currency}`;
+
         if (streamerError || !streamer) {
           console.log(`Streamer not found for donation ${donation.id}`);
           continue;
@@ -190,7 +198,7 @@ serve(async (req) => {
           ? `🎁 <b>New Donation - Needs Approval</b> 🎁\n\n`
           : `🎁 <b>New Donation Received!</b> 🎁\n\n`;
         
-        messageText += `💰 <b>Amount:</b> ₹${donation.amount}\n`;
+        messageText += `💰 <b>Amount:</b> ${amountDisplay}\n`;
         messageText += `👤 <b>From:</b> ${donation.name}\n`;
         messageText += `📅 <b>Time:</b> ${new Date(donation.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}\n`;
         
@@ -253,19 +261,7 @@ serve(async (req) => {
               }
               if (row2.length > 0) keyboard.push(row2);
             } else {
-              // For auto-approved: show replay and hide options
-              const row: any[] = [];
-              if (donation.message && (moderator.role === 'owner' || moderator.can_hide_message)) {
-                const hideCallback = await createCallbackMapping(
-                  supabaseAdmin, donation.id, donation.source_table, donation.streamer_id, 'hide_message'
-                );
-                row.push({ text: '🙈 Hide Msg', callback_data: hideCallback });
-              }
-              const replayCallback = await createCallbackMapping(
-                supabaseAdmin, donation.id, donation.source_table, donation.streamer_id, 'replay'
-              );
-              row.push({ text: '🔄 Replay', callback_data: replayCallback });
-              if (row.length > 0) keyboard.push(row);
+              // Auto-approved: clean notification with dashboard link only, no action buttons
             }
 
             // Dashboard link
