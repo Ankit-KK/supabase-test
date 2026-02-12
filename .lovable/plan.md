@@ -1,53 +1,108 @@
 
 
-# Telegram Notifications for Auto-Approved Donations (Backend-Only Change)
+# StreamElements Audio Alerts for Looteriya Gaming
 
-## Approach
+## What stays the same
+- Visual on-screen alerts (UnifiedAlertDisplay via OBS Browser Source) -- no changes
+- The `get-current-audio` edge function -- no changes
+- Pusher events, database, payment flow -- no changes
+- All other streamers -- no changes
 
-No new database columns. No new UI toggles. The existing **"Telegram Moderation"** toggle controls everything:
+## What changes
+Replace the OBS Media Source audio player with a **StreamElements Custom Widget** that does the same job -- polls `get-current-audio` and plays the audio. StreamElements widgets are more reliable as browser sources since they stay alive and auto-recover.
 
-- **Toggle ON + Manual mode**: Current behavior (notification with Approve/Reject/Hide/Ban buttons)
-- **Toggle ON + Auto-approve mode**: Send a clean notification-only message (amount, sender, message, time) with just a Dashboard link -- no action buttons
-- **Toggle OFF**: No Telegram messages at all (current behavior)
+## How it works
 
-## What Changes
+The current flow:
+1. OBS Media Source polls `get-current-audio` endpoint
+2. Edge function returns audio URL + triggers `audio-now-playing` Pusher event
+3. OBS Browser Source (alerts page) receives Pusher event and shows visual alert
 
-**Single file**: `supabase/functions/notify-new-donations/index.ts`
+The new flow:
+1. **StreamElements Custom Widget** polls `get-current-audio` endpoint (replaces Media Source)
+2. Edge function returns audio URL + triggers `audio-now-playing` Pusher event (unchanged)
+3. OBS Browser Source (alerts page) receives Pusher event and shows visual alert (unchanged)
 
-### Current Problem (line ~139)
+## Implementation
 
-When `telegram_moderation_enabled` is true and donations are auto-approved, the function still sends messages with Replay/Hide buttons. This is unnecessary clutter. The user wants a simple "you got a donation" alert.
+### No code changes needed in the project
 
-### Changes
+The StreamElements custom widget is configured entirely inside StreamElements' overlay editor -- it's just HTML/JS/CSS that runs in their system. Your codebase stays untouched.
 
-1. **When donation is NOT pending (auto-approved)**: Send a simplified notification message:
-   - Amount with currency
-   - Sender name
-   - Time (IST)
-   - Message preview (if any)
-   - Media indicator (if any)
-   - "Auto-Approved" status
-   - Dashboard link only -- no Replay/Hide/Ban buttons
+### StreamElements Setup Steps
 
-2. **When donation IS pending**: Keep current behavior with full moderation buttons (Approve/Reject/Hide/Ban).
+1. Go to **StreamElements Dashboard** -> **My Overlays** -> Create new overlay
+2. Add a **Custom Widget** (Static/Custom -> Custom Widget)
+3. Paste the following code into the widget's **HTML**, **JS**, and **CSS** tabs:
 
-This means the `isPending` branch (lines ~180-220) stays exactly the same. Only the `else` branch (lines ~220-240) changes to remove the action buttons and just include the Dashboard link.
+**JS (Custom Widget):**
+```javascript
+const AUDIO_ENDPOINT = 'https://vsevsjvtrshgeiudrnth.supabase.co/functions/v1/get-current-audio';
+const OBS_TOKEN = 'YOUR_LOOTERIYA_OBS_TOKEN_HERE';
+const POLL_INTERVAL = 4000; // Poll every 4 seconds
 
-### Technical Detail
+let isPlaying = false;
 
-In the `for (const moderator of moderators)` loop, the `else` block (non-pending donations) currently builds Replay and Hide buttons. This will be simplified to:
+async function checkForAudio() {
+  if (isPlaying) return;
+  
+  try {
+    const response = await fetch(`${AUDIO_ENDPOINT}?token=${OBS_TOKEN}`, {
+      redirect: 'follow'
+    });
+    
+    if (response.status === 204) return; // No audio
+    if (!response.ok) return;
+    
+    // Got audio - play it
+    isPlaying = true;
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    
+    audio.onended = () => {
+      isPlaying = false;
+      URL.revokeObjectURL(url);
+    };
+    
+    audio.onerror = () => {
+      isPlaying = false;
+      URL.revokeObjectURL(url);
+    };
+    
+    await audio.play();
+  } catch (err) {
+    console.error('Audio poll error:', err);
+    isPlaying = false;
+  }
+}
 
-```text
-// For auto-approved: just a dashboard link, no action buttons
-keyboard = [[{ text: 'Dashboard', url: `https://hyperchat.site/dashboard/${streamer.streamer_slug}` }]];
+setInterval(checkForAudio, POLL_INTERVAL);
+checkForAudio();
 ```
 
-The message text for auto-approved donations will also be simplified to a clean notification format without moderation language.
+**HTML:** (empty or minimal div)
+```html
+<div id="audio-widget"></div>
+```
 
-### Files NOT Changed
+**CSS:**
+```css
+#audio-widget { display: none; }
+```
 
-- No dashboard UI components
-- No database migrations
-- No other edge functions
-- No donation pages or OBS alerts
+4. Save the overlay and copy the **Overlay URL**
+5. In OBS, add a **Browser Source** with the StreamElements overlay URL
+6. **Remove** the old Media Source for Looteriya Gaming audio
+
+### Why this works
+- `get-current-audio` already handles everything: fetches next queued donation, marks it as played, triggers the Pusher visual alert event, and redirects to the audio file
+- The StreamElements widget just replaces the "thing that calls the endpoint and plays the audio"
+- StreamElements browser sources are more stable than OBS Media Sources -- they don't need manual reloading or Advanced Scene Switcher plugins
+
+### Important notes
+- The OBS token for Looteriya must be pasted into the widget JS
+- Only Looteriya Gaming uses this -- all other streamers keep their current setup
+- The visual alerts Browser Source stays as a separate OBS source (unchanged)
+- No edge functions, database, or frontend code is modified
 
