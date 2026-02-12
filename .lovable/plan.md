@@ -1,36 +1,53 @@
 
 
-# Fix: TTS Not Generated for USD Donations (Currency Conversion Bug)
+# Telegram Notifications for Auto-Approved Donations (Backend-Only Change)
 
-## Root Cause
+## Approach
 
-The `moderate-donation` edge function compares the raw donation amount against the TTS threshold (40 INR minimum) **without converting foreign currencies to INR**.
+No new database columns. No new UI toggles. The existing **"Telegram Moderation"** toggle controls everything:
 
-- A $2 USD donation (worth ~178 INR) is compared as `2 < 40`, so it gets silent audio instead of TTS.
-- A 100 INR donation correctly passes as `100 >= 40` and gets TTS.
+- **Toggle ON + Manual mode**: Current behavior (notification with Approve/Reject/Hide/Ban buttons)
+- **Toggle ON + Auto-approve mode**: Send a clean notification-only message (amount, sender, message, time) with just a Dashboard link -- no action buttons
+- **Toggle OFF**: No Telegram messages at all (current behavior)
 
-The `razorpay-webhook` function handles this correctly with `convertToINR()`, but `moderate-donation` does not.
+## What Changes
 
-## Evidence
+**Single file**: `supabase/functions/notify-new-donations/index.ts`
 
-| Donation | Amount | Currency | TTS Result | Expected |
-|----------|--------|----------|------------|----------|
-| bb872fcc | 100 | INR | TTS generated | Correct |
-| 0125fa6c | 2 | USD | Silent audio | Should have TTS (2 USD = ~178 INR) |
-| 5750bb6d | 2 | USD | Silent audio | Should have TTS (2 USD = ~178 INR) |
+### Current Problem (line ~139)
 
-## Fix (single file: `supabase/functions/moderate-donation/index.ts`)
+When `telegram_moderation_enabled` is true and donations are auto-approved, the function still sends messages with Replay/Hide buttons. This is unnecessary clutter. The user wants a simple "you got a donation" alert.
 
-1. Add the `EXCHANGE_RATES_TO_INR` map and `convertToINR` helper (same one used in `razorpay-webhook`).
-2. Convert `donation.amount` to INR before comparing against `ttsMinAmount` on lines 358 and 368.
+### Changes
+
+1. **When donation is NOT pending (auto-approved)**: Send a simplified notification message:
+   - Amount with currency
+   - Sender name
+   - Time (IST)
+   - Message preview (if any)
+   - Media indicator (if any)
+   - "Auto-Approved" status
+   - Dashboard link only -- no Replay/Hide/Ban buttons
+
+2. **When donation IS pending**: Keep current behavior with full moderation buttons (Approve/Reject/Hide/Ban).
+
+This means the `isPending` branch (lines ~180-220) stays exactly the same. Only the `else` branch (lines ~220-240) changes to remove the action buttons and just include the Dashboard link.
+
+### Technical Detail
+
+In the `for (const moderator of moderators)` loop, the `else` block (non-pending donations) currently builds Replay and Hide buttons. This will be simplified to:
 
 ```text
-Before:  donation.amount >= ttsMinAmount
-After:   convertToINR(donation.amount, donation.currency || 'INR') >= ttsMinAmount
-
-Before:  donation.amount < ttsMinAmount  
-After:   convertToINR(donation.amount, donation.currency || 'INR') < ttsMinAmount
+// For auto-approved: just a dashboard link, no action buttons
+keyboard = [[{ text: 'Dashboard', url: `https://hyperchat.site/dashboard/${streamer.streamer_slug}` }]];
 ```
 
-No other files or edge functions are modified. The fix ensures currency-aware TTS threshold checks during manual moderation approval, matching the existing behavior in the webhook.
+The message text for auto-approved donations will also be simplified to a clean notification format without moderation language.
+
+### Files NOT Changed
+
+- No dashboard UI components
+- No database migrations
+- No other edge functions
+- No donation pages or OBS alerts
 
