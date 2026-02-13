@@ -1,38 +1,46 @@
 
 
-# Remove Public INSERT Policies from All Donation Tables
+# Fix: Telegram Notifications Not Sent for Auto-Approved Donations
 
-## What This Fixes
+## Root Cause
 
-Currently, 4 donation tables allow anyone to insert "pending" donation records directly into the database without going through the Edge Functions. While these records can only be "pending" status, an attacker could still spam thousands of fake pending records, cluttering the moderation queue and wasting storage.
+In `supabase/functions/razorpay-webhook/index.ts` (line 590), Telegram notifications are gated by:
 
-## Tables to Update
-
-The following tables have a "Public can create pending donations" INSERT policy that needs to be dropped:
-
-1. `chiaa_gaming_donations`
-2. `clumsy_god_donations`
-3. `looteriya_gaming_donations`
-4. `wolfy_donations`
-
-`ankit_donations` is already locked down (only service_role has access).
-
-## Why This Is Safe
-
-All legitimate donation inserts go through Edge Functions like `create-razorpay-order-chiagaming`, `create-razorpay-order-looteriya-gaming`, `create-razorpay-order-unified`, etc. These functions use the `SUPABASE_SERVICE_ROLE_KEY`, which bypasses RLS entirely. Removing the public INSERT policy will have zero impact on the donation flow.
-
-## Technical Details
-
-A single database migration will run the following SQL:
-
-```sql
-DROP POLICY "Public can create pending donations" ON chiaa_gaming_donations;
-DROP POLICY "Public can create pending donations" ON clumsy_god_donations;
-DROP POLICY "Public can create pending donations" ON looteriya_gaming_donations;
-DROP POLICY "Public can create pending donations" ON wolfy_donations;
+```
+if (streamerSettings?.telegram_moderation_enabled && !shouldAutoApprove)
 ```
 
-After this, the only way to insert into these tables is via `service_role` -- which is exactly how the Edge Functions operate.
+This means auto-approved donations (like Ankit's) **never trigger Telegram notifications**. The standalone `notify-new-donations` function handles both cases but has no trigger (no cron job, no database hook) -- it is dead code in practice.
 
-No code changes are needed. No Edge Functions are affected.
+## Fix
+
+Modify the razorpay-webhook to send Telegram notifications for ALL successful donations when `telegram_moderation_enabled` is true, not just pending ones.
+
+- For **pending** donations: Send the full message with Approve/Reject/Hide/Ban action buttons (current behavior)
+- For **auto-approved** donations: Send a notification-only message with just the Dashboard link button (no action buttons needed)
+
+## Changes
+
+**File: `supabase/functions/razorpay-webhook/index.ts`**
+
+1. Change the condition on line 590 from:
+   ```
+   if (streamerSettings?.telegram_moderation_enabled && !shouldAutoApprove)
+   ```
+   to:
+   ```
+   if (streamerSettings?.telegram_moderation_enabled)
+   ```
+
+2. Inside the block, conditionally create callback mappings only when `!shouldAutoApprove` (pending donations need action buttons, auto-approved ones don't).
+
+3. Pass a flag (e.g., `is_auto_approved: shouldAutoApprove`) in the body sent to `notify-new-donations` so it knows whether to include action buttons.
+
+**No changes** to `notify-new-donations` itself -- it already handles both modes correctly based on `moderation_status`.
+
+**No changes** to any frontend code or other edge functions.
+
+## Technical Detail
+
+The webhook currently builds callback mappings (approve/reject/hide/ban) before calling `notify-new-donations`. For auto-approved donations, we skip creating those mappings and instead pass empty/null callback data, so `notify-new-donations` sends a clean notification-only message with just a Dashboard link.
 
