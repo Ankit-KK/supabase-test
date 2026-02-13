@@ -216,7 +216,7 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
   const updateSettings = async (key: keyof ModerationSettings, value: any) => {
     try {
       const response = await supabase.functions.invoke('update-streamer-settings', {
-        body: { streamerId, setting: key, value }
+        body: { streamerId, setting: key, value, authToken: localStorage.getItem('auth_token') }
       });
 
       if (response.data?.success) {

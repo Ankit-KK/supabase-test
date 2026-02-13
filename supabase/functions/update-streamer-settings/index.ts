@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-auth-token',
 };
 
 serve(async (req) => {
@@ -13,41 +13,35 @@ serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 
-    // --- Authentication ---
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Missing authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-      auth: { persistSession: false },
-    });
-
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await userClient.auth.getUser(token);
-    if (authError || !user) {
-      console.error('Auth error:', authError?.message);
-      return new Response(
-        JSON.stringify({ success: false, error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Service client for DB operations
     const serviceClient = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { persistSession: false },
     });
 
-    const { streamerId, setting, value } = await req.json();
+    const { streamerId, setting, value, authToken } = await req.json();
 
-    console.log('Update streamer settings:', { streamerId, setting, value, userId: user.id });
+    // --- Custom Auth: validate session token ---
+    if (!authToken) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Missing auth token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { data: validatedUser, error: authError } = await serviceClient
+      .rpc('validate_session_token', { p_token: authToken });
+
+    if (authError || !validatedUser || validatedUser.length === 0) {
+      console.error('Auth validation error:', authError);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized: Invalid session token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const userId = validatedUser[0].user_id;
+    console.log('Update streamer settings:', { streamerId, setting, value, userId });
 
     // Validate required fields
     if (!streamerId || !setting) {
@@ -66,7 +60,7 @@ serve(async (req) => {
       );
     }
 
-    // Verify streamer exists AND user owns it
+    // Verify streamer exists
     const { data: streamer, error: streamerError } = await serviceClient
       .from('streamers')
       .select('id, streamer_name, user_id')
@@ -80,12 +74,28 @@ serve(async (req) => {
       );
     }
 
-    if (streamer.user_id !== user.id) {
-      console.error(`Forbidden: user ${user.id} tried to update streamer ${streamerId} owned by ${streamer.user_id}`);
-      return new Response(
-        JSON.stringify({ success: false, error: 'Forbidden' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Ownership check with admin bypass
+    if (streamer.user_id !== userId) {
+      const { data: userData } = await serviceClient
+        .from('auth_users')
+        .select('email')
+        .eq('id', userId)
+        .single();
+
+      const { data: adminEntry } = await serviceClient
+        .from('admin_emails')
+        .select('email')
+        .eq('email', userData?.email)
+        .maybeSingle();
+
+      if (!adminEntry) {
+        console.error(`Forbidden: user ${userId} tried to update streamer ${streamerId} owned by ${streamer.user_id}`);
+        return new Response(
+          JSON.stringify({ success: false, error: 'Forbidden' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      console.log('Admin bypass granted for', userData?.email);
     }
 
     // Update the setting
