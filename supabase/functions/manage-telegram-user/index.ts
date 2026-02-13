@@ -49,11 +49,34 @@ serve(async (req) => {
       .eq('id', streamerId)
       .single();
 
-    if (!streamerData || streamerData.user_id !== validatedUser.user_id) {
-      return new Response(JSON.stringify({ error: 'Unauthorized: You do not own this streamer' }), {
-        status: 403,
+    if (!streamerData) {
+      return new Response(JSON.stringify({ error: 'Streamer not found' }), {
+        status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    if (streamerData.user_id !== validatedUser.user_id) {
+      // Check if user is an admin
+      const { data: userData } = await supabaseAdmin
+        .from('auth_users')
+        .select('email')
+        .eq('id', validatedUser.user_id)
+        .single();
+
+      const { data: adminEntry } = await supabaseAdmin
+        .from('admin_emails')
+        .select('email')
+        .eq('email', userData?.email)
+        .maybeSingle();
+
+      if (!adminEntry) {
+        return new Response(JSON.stringify({ error: 'Unauthorized: You do not own this streamer' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      console.log('Admin bypass granted for:', userData?.email);
     }
 
     if (action === 'add') {
