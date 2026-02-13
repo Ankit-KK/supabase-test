@@ -1,108 +1,71 @@
 
 
-# StreamElements Audio Alerts for Looteriya Gaming
+# Fix: Close Donation Table SQL Injection Vulnerability
+
+## Problem
+Someone inserted fake donations directly into `looteriya_gaming_donations` by exploiting an overly permissive RLS INSERT policy (`WITH CHECK (true)` for the `public` role). This lets anyone with the Supabase anon key insert rows with `payment_status: 'success'` -- completely bypassing Razorpay.
+
+The two fake donations (`208b35a4...` and `396f9487...`) were never processed by Razorpay and have no matching orders in your Razorpay dashboard.
+
+**Affected tables:**
+- `looteriya_gaming_donations`
+- `chiaa_gaming_donations`
+- `clumsy_god_donations`
+- `wolfy_donations`
+
+**Not affected:** `ankit_donations` (already secured -- no public INSERT policy)
+
+## Fix
+
+### Step 1: Lock down INSERT policies
+Replace the open `WITH CHECK (true)` INSERT policies with a restricted version that only allows inserts where `payment_status = 'pending'`. This way, even if someone inserts a row directly, it can never be pre-set to `'success'` -- only the edge functions (using service role) can update status to `'success'` after Razorpay confirms payment.
+
+**SQL migration:**
+```sql
+-- Drop vulnerable INSERT policies
+DROP POLICY "Anyone can create donations" ON looteriya_gaming_donations;
+DROP POLICY "Anyone can create donations" ON chiaa_gaming_donations;
+DROP POLICY "Anyone can create clumsy god donations" ON clumsy_god_donations;
+DROP POLICY "Anyone can create wolfy donations" ON wolfy_donations;
+
+-- Create restricted INSERT policies (only pending status allowed)
+CREATE POLICY "Public can create pending donations"
+  ON looteriya_gaming_donations FOR INSERT
+  WITH CHECK (payment_status = 'pending' AND moderation_status = 'pending' AND mod_notified = false);
+
+CREATE POLICY "Public can create pending donations"
+  ON chiaa_gaming_donations FOR INSERT
+  WITH CHECK (payment_status = 'pending' AND moderation_status = 'pending' AND mod_notified = false);
+
+CREATE POLICY "Public can create pending donations"
+  ON clumsy_god_donations FOR INSERT
+  WITH CHECK (payment_status = 'pending' AND moderation_status = 'pending' AND mod_notified = false);
+
+CREATE POLICY "Public can create pending donations"
+  ON wolfy_donations FOR INSERT
+  WITH CHECK (payment_status = 'pending' AND moderation_status = 'pending' AND mod_notified = false);
+```
+
+### Step 2: Delete the fake donations
+```sql
+DELETE FROM looteriya_gaming_donations
+WHERE id IN (
+  '208b35a4-097a-4737-98c1-fcf94802eb9b',
+  '396f9487-e6bf-4da1-9d98-7c639df9ad36'
+);
+```
+
+### Step 3: Verify no code changes needed
+The edge functions (`create-razorpay-order-unified`, `check-payment-status-unified`, `razorpay-webhook`) all use the **service role key**, which bypasses RLS entirely. So this policy change has zero impact on legitimate payment flow.
+
+## What this prevents
+- Direct database inserts with fake `payment_status: 'success'`
+- Pre-setting `mod_notified: true` to skip Telegram notifications
+- Pre-setting `moderation_status` to bypass moderation
 
 ## What stays the same
-- Visual on-screen alerts (UnifiedAlertDisplay via OBS Browser Source) -- no changes
-- The `get-current-audio` edge function -- no changes
-- Pusher events, database, payment flow -- no changes
-- All other streamers -- no changes
-
-## What changes
-Replace the OBS Media Source audio player with a **StreamElements Custom Widget** that does the same job -- polls `get-current-audio` and plays the audio. StreamElements widgets are more reliable as browser sources since they stay alive and auto-recover.
-
-## How it works
-
-The current flow:
-1. OBS Media Source polls `get-current-audio` endpoint
-2. Edge function returns audio URL + triggers `audio-now-playing` Pusher event
-3. OBS Browser Source (alerts page) receives Pusher event and shows visual alert
-
-The new flow:
-1. **StreamElements Custom Widget** polls `get-current-audio` endpoint (replaces Media Source)
-2. Edge function returns audio URL + triggers `audio-now-playing` Pusher event (unchanged)
-3. OBS Browser Source (alerts page) receives Pusher event and shows visual alert (unchanged)
-
-## Implementation
-
-### No code changes needed in the project
-
-The StreamElements custom widget is configured entirely inside StreamElements' overlay editor -- it's just HTML/JS/CSS that runs in their system. Your codebase stays untouched.
-
-### StreamElements Setup Steps
-
-1. Go to **StreamElements Dashboard** -> **My Overlays** -> Create new overlay
-2. Add a **Custom Widget** (Static/Custom -> Custom Widget)
-3. Paste the following code into the widget's **HTML**, **JS**, and **CSS** tabs:
-
-**JS (Custom Widget):**
-```javascript
-const AUDIO_ENDPOINT = 'https://vsevsjvtrshgeiudrnth.supabase.co/functions/v1/get-current-audio';
-const OBS_TOKEN = 'YOUR_LOOTERIYA_OBS_TOKEN_HERE';
-const POLL_INTERVAL = 4000; // Poll every 4 seconds
-
-let isPlaying = false;
-
-async function checkForAudio() {
-  if (isPlaying) return;
-  
-  try {
-    const response = await fetch(`${AUDIO_ENDPOINT}?token=${OBS_TOKEN}`, {
-      redirect: 'follow'
-    });
-    
-    if (response.status === 204) return; // No audio
-    if (!response.ok) return;
-    
-    // Got audio - play it
-    isPlaying = true;
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    const audio = new Audio(url);
-    
-    audio.onended = () => {
-      isPlaying = false;
-      URL.revokeObjectURL(url);
-    };
-    
-    audio.onerror = () => {
-      isPlaying = false;
-      URL.revokeObjectURL(url);
-    };
-    
-    await audio.play();
-  } catch (err) {
-    console.error('Audio poll error:', err);
-    isPlaying = false;
-  }
-}
-
-setInterval(checkForAudio, POLL_INTERVAL);
-checkForAudio();
-```
-
-**HTML:** (empty or minimal div)
-```html
-<div id="audio-widget"></div>
-```
-
-**CSS:**
-```css
-#audio-widget { display: none; }
-```
-
-4. Save the overlay and copy the **Overlay URL**
-5. In OBS, add a **Browser Source** with the StreamElements overlay URL
-6. **Remove** the old Media Source for Looteriya Gaming audio
-
-### Why this works
-- `get-current-audio` already handles everything: fetches next queued donation, marks it as played, triggers the Pusher visual alert event, and redirects to the audio file
-- The StreamElements widget just replaces the "thing that calls the endpoint and plays the audio"
-- StreamElements browser sources are more stable than OBS Media Sources -- they don't need manual reloading or Advanced Scene Switcher plugins
-
-### Important notes
-- The OBS token for Looteriya must be pasted into the widget JS
-- Only Looteriya Gaming uses this -- all other streamers keep their current setup
-- The visual alerts Browser Source stays as a separate OBS source (unchanged)
-- No edge functions, database, or frontend code is modified
+- All edge functions continue working (they use service role)
+- Legitimate donation flow is unchanged
+- No frontend code changes needed
+- No other streamers affected
 
