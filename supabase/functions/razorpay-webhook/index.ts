@@ -587,13 +587,22 @@ serve(async (req) => {
         }
 
         // Send Telegram notification if moderation is enabled
-        if (streamerSettings?.telegram_moderation_enabled && !shouldAutoApprove) {
+        if (streamerSettings?.telegram_moderation_enabled) {
           try {
-            // Create shortened callback mappings for each action
-            const approveCallback = await createCallbackMapping(supabase, donation.id, tableName, donation.streamer_id, 'approve');
-            const rejectCallback = await createCallbackMapping(supabase, donation.id, tableName, donation.streamer_id, 'reject');
-            const hideCallback = await createCallbackMapping(supabase, donation.id, tableName, donation.streamer_id, 'hide_message');
-            const banCallback = await createCallbackMapping(supabase, donation.id, tableName, donation.streamer_id, 'ban_donor');
+            // Only create callback mappings for pending (non-auto-approved) donations
+            let callbackData = null;
+            if (!shouldAutoApprove) {
+              const approveCallback = await createCallbackMapping(supabase, donation.id, tableName, donation.streamer_id, 'approve');
+              const rejectCallback = await createCallbackMapping(supabase, donation.id, tableName, donation.streamer_id, 'reject');
+              const hideCallback = await createCallbackMapping(supabase, donation.id, tableName, donation.streamer_id, 'hide_message');
+              const banCallback = await createCallbackMapping(supabase, donation.id, tableName, donation.streamer_id, 'ban_donor');
+              callbackData = {
+                approve: approveCallback,
+                reject: rejectCallback,
+                hide_message: hideCallback,
+                ban_donor: banCallback
+              };
+            }
 
             // Call notify-new-donations edge function
             const { error: notifyError } = await supabase.functions.invoke('notify-new-donations', {
@@ -606,16 +615,13 @@ serve(async (req) => {
                   currency: paymentCurrency,
                   voice_message_url: donation.voice_message_url,
                   media_url: donation.media_url,
-                  media_type: donation.media_type
+                  media_type: donation.media_type,
+                  moderation_status: shouldAutoApprove ? 'auto_approved' : 'pending'
                 },
                 streamer_id: donation.streamer_id,
                 table_name: tableName,
-                callback_data: {
-                  approve: approveCallback,
-                  reject: rejectCallback,
-                  hide_message: hideCallback,
-                  ban_donor: banCallback
-                }
+                is_auto_approved: shouldAutoApprove,
+                callback_data: callbackData
               }
             });
 
