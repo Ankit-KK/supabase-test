@@ -69,6 +69,38 @@ serve(async (req) => {
   }
 
   try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    // --- Authentication ---
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Missing authorization header" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+      auth: { persistSession: false },
+    });
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await userClient.auth.getUser(token);
+    if (authError || !user) {
+      console.error("[broadcast-settings-update] Auth error:", authError?.message);
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const serviceClient = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { persistSession: false },
+    });
+
     const { streamer_slug, settings } = await req.json();
 
     if (!streamer_slug) {
@@ -79,24 +111,27 @@ serve(async (req) => {
       throw new Error("settings object is required");
     }
 
-    console.log(`[broadcast-settings-update] Broadcasting for ${streamer_slug}:`, settings);
-
-    // Initialize Supabase
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // Fetch pusher_group for this streamer
-    const { data: streamer, error } = await supabase
+    // Verify ownership
+    const { data: streamer, error: streamerError } = await serviceClient
       .from("streamers")
-      .select("pusher_group")
+      .select("pusher_group, user_id, streamer_slug")
       .eq("streamer_slug", streamer_slug)
       .single();
 
-    if (error || !streamer) {
-      console.error(`[broadcast-settings-update] Streamer not found: ${streamer_slug}`, error);
+    if (streamerError || !streamer) {
+      console.error(`[broadcast-settings-update] Streamer not found: ${streamer_slug}`, streamerError);
       throw new Error("Streamer not found");
     }
+
+    if (streamer.user_id !== user.id) {
+      console.error(`[broadcast-settings-update] Forbidden: user ${user.id} tried to broadcast for ${streamer_slug} owned by ${streamer.user_id}`);
+      return new Response(
+        JSON.stringify({ error: "Forbidden" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log(`[broadcast-settings-update] Broadcasting for ${streamer_slug}:`, settings);
 
     const group = streamer.pusher_group || 1;
     console.log(`[broadcast-settings-update] ${streamer_slug} → Pusher Group ${group}`);
@@ -112,10 +147,8 @@ serve(async (req) => {
       throw new Error("Pusher configuration incomplete");
     }
 
-    // Initialize Pusher with Deno-compatible client
     const pusher = new PusherClient(pusherAppId, pusherKey, pusherSecret, pusherCluster);
 
-    // Broadcast settings update on the settings channel
     const channelName = `${streamer_slug}-settings`;
     
     await pusher.trigger(channelName, "settings-updated", {
