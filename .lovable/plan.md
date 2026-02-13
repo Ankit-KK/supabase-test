@@ -1,30 +1,23 @@
 
 
-# Fix: update-streamer-settings RPC Parameter Name Mismatch
+# Fix: Update Looteriya Gaming Goal Activation Date
 
-## Root Cause
+## What happened
+An attacker deactivated the goal for Looteriya Gaming. We need to restore it with the correct activation date.
 
-The edge function logs show:
+## Change
+Update the `streamers` table for `looteriya_gaming` with:
+- `goal_activated_at` = `2025-12-23 18:53:22+00`
+- `goal_is_active` = `true` (ensure it stays active)
 
-```
-Could not find the function public.validate_session_token(p_token) in the schema cache
-Perhaps you meant to call the function public.validate_session_token(plain_token)
-```
+This is a single SQL UPDATE using the insert/update tool (data operation, not schema change):
 
-On line 33 of `update-streamer-settings/index.ts`, the RPC is called with parameter name `p_token`, but the database function expects `plain_token`.
-
-## Fix
-
-**File: `supabase/functions/update-streamer-settings/index.ts`** (line 33)
-
-Change:
-```
-.rpc('validate_session_token', { p_token: authToken });
-```
-To:
-```
-.rpc('validate_session_token', { plain_token: authToken });
+```sql
+UPDATE streamers
+SET goal_activated_at = '2025-12-23 18:53:22+00',
+    goal_is_active = true
+WHERE streamer_slug = 'looteriya_gaming';
 ```
 
-Single line change. Redeploy the edge function after.
+This will restore the goal overlay showing approximately 7,602 INR progress toward the 18,500 INR StreamDeck target.
 
