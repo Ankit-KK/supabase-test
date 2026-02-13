@@ -1,39 +1,39 @@
 
 
-# Fix: manage-telegram-user 403 Error for Admin Users
+# Fix: update-streamer-settings 401 Unauthorized
 
 ## Root Cause
 
-The `manage-telegram-user` edge function only checks if the authenticated user's `user_id` directly matches the streamer's `user_id`. You are logged in as `ankit.hyperchat@gmail.com` (an admin listed in the `admin_emails` table), but the Ankit streamer is owned by a different account (`ankitashuk20@gmail.com`). Since there is no admin bypass in this function, it returns 403 Forbidden.
+The `update-streamer-settings` edge function authenticates using `supabase.auth.getUser(token)`, which expects a Supabase JWT. However, the app uses a custom authentication system with the `auth_users` table, so the token stored in `localStorage` is a custom session token -- not a Supabase JWT. This always fails with 401.
 
-Other parts of the system (like the dashboard itself) already check the `admin_emails` table to grant admin access -- but `manage-telegram-user` was never updated to do the same.
+Additionally, the frontend (`ModerationPanel.tsx`) does not include the `authToken` in the request body.
 
 ## Fix
 
-Add an admin email check to `manage-telegram-user` so that users listed in the `admin_emails` table can manage Telegram users for any streamer.
+Two changes needed:
 
-## Changes
+### 1. Frontend: Pass authToken in the request body
 
-**File: `supabase/functions/manage-telegram-user/index.ts`**
+**File: `src/components/dashboard/moderation/ModerationPanel.tsx`** (line ~218)
 
-After the existing ownership check (line 52), add an admin bypass:
-
-1. If the `user_id` does not match (would currently return 403), look up the authenticated user's email from the `auth_users` table using their `user_id`
-2. Check if that email exists in the `admin_emails` table
-3. If it does, allow the request to proceed
-4. If not, return 403 as before
+Add `authToken` from `localStorage` to the request body, matching the pattern used by `moderate-donation`.
 
 ```
-Pseudocode flow:
-
-if (streamerData.user_id !== validatedUser.user_id) {
-  // Check if user is an admin
-  -> Get user email from auth_users where id = validatedUser.user_id
-  -> Check if email exists in admin_emails table
-  -> If not admin, return 403
-  // If admin, continue execution
-}
+Before:  body: { streamerId, setting: key, value }
+After:   body: { streamerId, setting: key, value, authToken: localStorage.getItem('auth_token') }
 ```
 
-No frontend changes needed. No other edge functions affected. The function will be redeployed after the edit.
+### 2. Edge Function: Switch to custom auth with admin bypass
+
+**File: `supabase/functions/update-streamer-settings/index.ts`**
+
+Replace the Supabase JWT authentication (lines 19-41) with:
+- Extract `authToken` from request body
+- Validate using `validate_session_token` RPC (same as `manage-telegram-user`)
+- Add admin bypass: if user doesn't own the streamer, check `admin_emails` table
+- Add `x-auth-token` to CORS allowed headers
+
+This brings the function in line with the established authorization standard used by `manage-telegram-user`, `moderate-donation`, and `get-moderation-queue`.
+
+No other files or edge functions are affected.
 
