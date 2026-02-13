@@ -30,7 +30,7 @@ serve(async (req) => {
     }
 
     const { data: validatedUser, error: authError } = await serviceClient
-      .rpc('validate_session_token', { p_token: authToken });
+      .rpc('validate_session_token', { plain_token: authToken });
 
     if (authError || !validatedUser || validatedUser.length === 0) {
       console.error('Auth validation error:', authError);
