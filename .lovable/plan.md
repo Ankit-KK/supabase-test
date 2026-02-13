@@ -1,39 +1,30 @@
 
 
-# Fix: update-streamer-settings 401 Unauthorized
+# Fix: update-streamer-settings RPC Parameter Name Mismatch
 
 ## Root Cause
 
-The `update-streamer-settings` edge function authenticates using `supabase.auth.getUser(token)`, which expects a Supabase JWT. However, the app uses a custom authentication system with the `auth_users` table, so the token stored in `localStorage` is a custom session token -- not a Supabase JWT. This always fails with 401.
+The edge function logs show:
 
-Additionally, the frontend (`ModerationPanel.tsx`) does not include the `authToken` in the request body.
+```
+Could not find the function public.validate_session_token(p_token) in the schema cache
+Perhaps you meant to call the function public.validate_session_token(plain_token)
+```
+
+On line 33 of `update-streamer-settings/index.ts`, the RPC is called with parameter name `p_token`, but the database function expects `plain_token`.
 
 ## Fix
 
-Two changes needed:
+**File: `supabase/functions/update-streamer-settings/index.ts`** (line 33)
 
-### 1. Frontend: Pass authToken in the request body
-
-**File: `src/components/dashboard/moderation/ModerationPanel.tsx`** (line ~218)
-
-Add `authToken` from `localStorage` to the request body, matching the pattern used by `moderate-donation`.
-
+Change:
 ```
-Before:  body: { streamerId, setting: key, value }
-After:   body: { streamerId, setting: key, value, authToken: localStorage.getItem('auth_token') }
+.rpc('validate_session_token', { p_token: authToken });
+```
+To:
+```
+.rpc('validate_session_token', { plain_token: authToken });
 ```
 
-### 2. Edge Function: Switch to custom auth with admin bypass
-
-**File: `supabase/functions/update-streamer-settings/index.ts`**
-
-Replace the Supabase JWT authentication (lines 19-41) with:
-- Extract `authToken` from request body
-- Validate using `validate_session_token` RPC (same as `manage-telegram-user`)
-- Add admin bypass: if user doesn't own the streamer, check `admin_emails` table
-- Add `x-auth-token` to CORS allowed headers
-
-This brings the function in line with the established authorization standard used by `manage-telegram-user`, `moderate-donation`, and `get-moderation-queue`.
-
-No other files or edge functions are affected.
+Single line change. Redeploy the edge function after.
 
