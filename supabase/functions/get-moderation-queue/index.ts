@@ -20,6 +20,28 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
+    // Authentication: require valid session token
+    const authToken = req.headers.get('x-auth-token');
+    if (!authToken) {
+      return new Response(JSON.stringify({ success: false, error: 'Unauthorized: Missing authentication token' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const { data: sessionData, error: sessionError } = await supabaseAdmin
+      .rpc('validate_session_token', { plain_token: authToken });
+
+    if (sessionError || !sessionData || sessionData.length === 0) {
+      return new Response(JSON.stringify({ success: false, error: 'Unauthorized: Invalid or expired session' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const sessionUser = sessionData[0] as any;
+    console.log('Authenticated user for moderation queue:', sessionUser.email);
+
     let streamerId: string | null = null;
     let streamerSlug: string | null = null;
     let status = 'pending';
@@ -90,6 +112,23 @@ serve(async (req) => {
         });
       }
       streamer = data;
+    }
+
+    // Verify authenticated user has access to this streamer
+    const { data: userRecord } = await supabaseAdmin
+      .from('auth_users')
+      .select('streamer_id, role')
+      .eq('id', sessionUser.user_id)
+      .single();
+
+    const isAdmin = userRecord?.role === 'admin';
+    const ownsStreamer = userRecord?.streamer_id === streamer.id;
+
+    if (!isAdmin && !ownsStreamer) {
+      return new Response(JSON.stringify({ success: false, error: 'Forbidden: You do not have access to this streamer' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
     // Determine table name

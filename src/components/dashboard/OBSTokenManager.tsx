@@ -248,12 +248,13 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
       console.log('Generating OBS token for streamer:', streamerId);
 
       // Use the service role approach via edge function
+      const authToken = localStorage.getItem('auth_token');
       const { data, error } = await supabase.functions.invoke('generate-obs-token', {
         body: {
           streamer_id: streamerId,
-          new_token: newToken,
-          user_email: user.email
-        }
+          new_token: newToken
+        },
+        headers: authToken ? { 'x-auth-token': authToken } : {}
       });
 
       if (error) {

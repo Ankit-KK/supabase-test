@@ -179,8 +179,10 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
   // Fetch moderation queue
   const fetchQueue = useCallback(async () => {
     try {
+      const authToken = localStorage.getItem('auth_token');
       const response = await supabase.functions.invoke('get-moderation-queue', {
-        body: { streamerSlug, status: 'pending', limit: 20 }
+        body: { streamerSlug, status: 'pending', limit: 20 },
+        headers: authToken ? { 'x-auth-token': authToken } : {}
       });
 
       if (response.data?.success) {
@@ -233,6 +235,7 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
   const moderateDonation = async (donationId: string, action: string) => {
     setActionLoading(donationId);
     try {
+      const authToken = localStorage.getItem('auth_token');
       const response = await supabase.functions.invoke('moderate-donation', {
         body: {
           action,
@@ -241,7 +244,8 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
           streamerId,
           moderatorName: 'Dashboard',
           source: 'dashboard'
-        }
+        },
+        headers: authToken ? { 'x-auth-token': authToken } : {}
       });
 
       if (response.data?.success) {

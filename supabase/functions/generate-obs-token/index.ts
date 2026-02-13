@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { streamer_id, new_token, user_email } = await req.json()
+    const { streamer_id, new_token } = await req.json()
 
     // Initialize Supabase client with service role
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -20,13 +20,34 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // Validate input
-    if (!streamer_id || !new_token || !user_email) {
-      throw new Error('Missing required fields: streamer_id, new_token, user_email')
+    if (!streamer_id || !new_token) {
+      throw new Error('Missing required fields: streamer_id, new_token')
     }
 
-    console.log('Generating OBS token for streamer:', streamer_id)
+    // Authentication: require valid session token instead of trusting user_email
+    const authToken = req.headers.get('x-auth-token')
+    if (!authToken) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized: Missing authentication token' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      )
+    }
 
-    // Check if user has access to this streamer
+    const { data: sessionData, error: sessionError } = await supabase
+      .rpc('validate_session_token', { plain_token: authToken })
+
+    if (sessionError || !sessionData || sessionData.length === 0) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized: Invalid or expired session' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      )
+    }
+
+    const sessionUser = sessionData[0] as any
+    const user_email = sessionUser.email
+    console.log('Generating OBS token for streamer:', streamer_id, 'by user:', user_email)
+
+    // Check if user has access to this streamer using verified email
     const { data: streamerAccess, error: accessError } = await supabase
       .rpc('get_streamer_by_email', {
         user_email: user_email
