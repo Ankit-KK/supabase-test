@@ -7,21 +7,47 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      { auth: { persistSession: false } }
-    );
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+
+    // --- Authentication ---
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Missing authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+      auth: { persistSession: false },
+    });
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await userClient.auth.getUser(token);
+    if (authError || !user) {
+      console.error('Auth error:', authError?.message);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Service client for DB operations
+    const serviceClient = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { persistSession: false },
+    });
 
     const { streamerId, setting, value } = await req.json();
 
-    console.log('Update streamer settings:', { streamerId, setting, value });
+    console.log('Update streamer settings:', { streamerId, setting, value, userId: user.id });
 
     // Validate required fields
     if (!streamerId || !setting) {
@@ -40,10 +66,10 @@ serve(async (req) => {
       );
     }
 
-    // Verify streamer exists
-    const { data: streamer, error: streamerError } = await supabaseClient
+    // Verify streamer exists AND user owns it
+    const { data: streamer, error: streamerError } = await serviceClient
       .from('streamers')
-      .select('id, streamer_name')
+      .select('id, streamer_name, user_id')
       .eq('id', streamerId)
       .single();
 
@@ -54,8 +80,16 @@ serve(async (req) => {
       );
     }
 
+    if (streamer.user_id !== user.id) {
+      console.error(`Forbidden: user ${user.id} tried to update streamer ${streamerId} owned by ${streamer.user_id}`);
+      return new Response(
+        JSON.stringify({ success: false, error: 'Forbidden' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Update the setting
-    const { error: updateError } = await supabaseClient
+    const { error: updateError } = await serviceClient
       .from('streamers')
       .update({ [setting]: value, updated_at: new Date().toISOString() })
       .eq('id', streamerId);
