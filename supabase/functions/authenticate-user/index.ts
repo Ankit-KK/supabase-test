@@ -67,86 +67,10 @@ serve(async (req) => {
     const { action, email, password, username }: AuthRequest = await req.json();
 
     if (action === 'register') {
-      // Check if user already exists
-      const { data: existingUser } = await supabase
-        .from('auth_users')
-        .select('id')
-        .eq('email', email.toLowerCase())
-        .single();
-
-      if (existingUser) {
-        return new Response(
-          JSON.stringify({ error: 'User already exists with this email' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      // Hash password using bcrypt with proper salt rounds (sync to avoid Worker issues in Deno)
-      const salt = bcrypt.genSaltSync(BCRYPT_SALT_ROUNDS);
-      const hashedPassword = bcrypt.hashSync(password, salt);
-
-      // Create user with properly hashed password
-      const { data: newUser, error: createError } = await supabase
-        .from('auth_users')
-        .insert({
-          email: email.toLowerCase(),
-          password_hash: hashedPassword,
-          username: username || null,
-          role: 'user'
-        })
-        .select('id, email, username, role')
-        .single();
-
-      if (createError) {
-        console.error('Create user error:', createError);
-        return new Response(
-          JSON.stringify({ error: 'Failed to create user' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      // Generate session token
-      const { data: sessionToken, error: tokenError } = await supabase
-        .rpc('generate_session_token');
-
-      if (tokenError || !sessionToken) {
-        console.error('Token generation error:', tokenError);
-        return new Response(
-          JSON.stringify({ error: 'Failed to generate session token' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      // Create session with hashed token (secure storage)
-      const { error: sessionError } = await supabase
-        .rpc('create_session_with_hashed_token', {
-          p_user_id: newUser.id,
-          p_plain_token: sessionToken
-        });
-
-      if (sessionError) {
-        console.error('Session creation error:', sessionError);
-        return new Response(
-          JSON.stringify({ error: 'Failed to create session' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
+      // Registration is disabled for public access to prevent unauthorized account creation
       return new Response(
-        JSON.stringify({
-          user: {
-            id: newUser.id,
-            email: newUser.email,
-            username: newUser.username,
-            role: newUser.role
-          },
-          session: {
-            access_token: sessionToken,
-            token_type: 'bearer',
-            expires_in: 7 * 24 * 60 * 60 // 7 days in seconds
-          }
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Registration is currently disabled. Contact admin for access.' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 

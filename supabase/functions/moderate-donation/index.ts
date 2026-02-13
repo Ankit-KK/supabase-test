@@ -127,6 +127,78 @@ serve(async (req) => {
 
     console.log('Moderation request:', JSON.stringify(body, null, 2));
 
+    // Authentication check based on source
+    if (source === 'dashboard' || !source) {
+      // Dashboard calls must include a valid session token
+      const authToken = req.headers.get('x-auth-token');
+      if (!authToken) {
+        console.error('Missing auth token for dashboard moderation request');
+        return new Response(JSON.stringify({ success: false, error: 'Unauthorized: Missing authentication token' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      // Validate session token
+      const { data: sessionData, error: sessionError } = await supabaseAdmin
+        .rpc('validate_session_token', { plain_token: authToken });
+
+      if (sessionError || !sessionData || sessionData.length === 0) {
+        console.error('Invalid session token for moderation request');
+        return new Response(JSON.stringify({ success: false, error: 'Unauthorized: Invalid or expired session' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      const sessionUser = sessionData[0] as any;
+      
+      // Verify user has access to this streamer
+      const { data: streamerAccess } = await supabaseAdmin
+        .rpc('get_streamer_by_email', { user_email: sessionUser.email });
+
+      const hasAccess = streamerAccess?.some((access: any) => {
+        // Check if user's streamer matches the target streamer
+        return access.is_admin === true || 
+          supabaseAdmin.from('streamers').select('streamer_slug').eq('id', streamerId).single()
+            .then(r => r.data?.streamer_slug === access.streamer_slug);
+      });
+
+      // Simpler ownership check: verify the user's streamer_id matches
+      const { data: userRecord } = await supabaseAdmin
+        .from('auth_users')
+        .select('streamer_id, role')
+        .eq('id', sessionUser.user_id)
+        .single();
+
+      const isAdmin = userRecord?.role === 'admin';
+      const ownsStreamer = userRecord?.streamer_id === streamerId;
+
+      if (!isAdmin && !ownsStreamer) {
+        console.error('User does not have access to this streamer:', streamerId);
+        return new Response(JSON.stringify({ success: false, error: 'Forbidden: You do not have access to this streamer' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      console.log('Dashboard auth verified for user:', sessionUser.email);
+    } else if (source === 'telegram') {
+      // Telegram calls are validated by moderator ID check below
+      // The telegram-webhook function calls this internally, so we verify moderator exists
+      if (!moderatorId && !moderatorTelegramId) {
+        return new Response(JSON.stringify({ success: false, error: 'Telegram source requires moderator identification' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+    } else {
+      return new Response(JSON.stringify({ success: false, error: 'Invalid source' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     // Validate required fields
     if (!action || !donationId || !donationTable || !streamerId) {
       return new Response(JSON.stringify({ 
