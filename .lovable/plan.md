@@ -1,71 +1,69 @@
 
-
-# Fix: Close Donation Table SQL Injection Vulnerability
+# Fix: Unauthenticated Edge Functions Allowing Settings Hijacking
 
 ## Problem
-Someone inserted fake donations directly into `looteriya_gaming_donations` by exploiting an overly permissive RLS INSERT policy (`WITH CHECK (true)` for the `public` role). This lets anyone with the Supabase anon key insert rows with `payment_status: 'success'` -- completely bypassing Razorpay.
+Two edge functions have **no authentication checks**, allowing anyone with the public anon key to:
+1. **`update-streamer-settings`**: Change any streamer's moderation mode, TTS, media settings by just passing a `streamerId`
+2. **`broadcast-settings-update`**: Push fake overlay colors/settings to OBS in real-time by passing any `streamer_slug`
 
-The two fake donations (`208b35a4...` and `396f9487...`) were never processed by Razorpay and have no matching orders in your Razorpay dashboard.
-
-**Affected tables:**
-- `looteriya_gaming_donations`
-- `chiaa_gaming_donations`
-- `clumsy_god_donations`
-- `wolfy_donations`
-
-**Not affected:** `ankit_donations` (already secured -- no public INSERT policy)
+This is how the attacker changed overlay colors -- they called `broadcast-settings-update` with a custom `brand_color` and it was pushed directly to the OBS overlay via Pusher.
 
 ## Fix
 
-### Step 1: Lock down INSERT policies
-Replace the open `WITH CHECK (true)` INSERT policies with a restricted version that only allows inserts where `payment_status = 'pending'`. This way, even if someone inserts a row directly, it can never be pre-set to `'success'` -- only the edge functions (using service role) can update status to `'success'` after Razorpay confirms payment.
+### Step 1: Add authentication to `update-streamer-settings`
+- Extract the JWT from the `Authorization` header
+- Verify the user via `supabase.auth.getUser()`
+- Check that the authenticated user's ID matches the streamer's `user_id`
+- Reject unauthenticated or unauthorized requests with 401/403
 
-**SQL migration:**
-```sql
--- Drop vulnerable INSERT policies
-DROP POLICY "Anyone can create donations" ON looteriya_gaming_donations;
-DROP POLICY "Anyone can create donations" ON chiaa_gaming_donations;
-DROP POLICY "Anyone can create clumsy god donations" ON clumsy_god_donations;
-DROP POLICY "Anyone can create wolfy donations" ON wolfy_donations;
+### Step 2: Add authentication to `broadcast-settings-update`
+- Same auth check: extract JWT, verify user, confirm ownership of the streamer slug
+- This prevents anyone from pushing fake settings to OBS overlays
 
--- Create restricted INSERT policies (only pending status allowed)
-CREATE POLICY "Public can create pending donations"
-  ON looteriya_gaming_donations FOR INSERT
-  WITH CHECK (payment_status = 'pending' AND moderation_status = 'pending' AND mod_notified = false);
+### Step 3: Verify no other edge functions are open
+Based on the codebase scan, the following edge functions are public-facing by design (donation/payment flow):
+- `create-razorpay-order-*` (creates pending orders -- safe with new INSERT RLS)
+- `check-payment-status-*` (reads Razorpay status -- safe)
+- `get-streamer-pricing`, `list-hypersounds`, `get-pusher-config` (read-only public data)
+- `upload-voice-message-direct`, `upload-donation-media` (tied to pending donations)
 
-CREATE POLICY "Public can create pending donations"
-  ON chiaa_gaming_donations FOR INSERT
-  WITH CHECK (payment_status = 'pending' AND moderation_status = 'pending' AND mod_notified = false);
+The webhook functions (`razorpay-webhook`, `telegram-webhook`) validate signatures server-side, so they're safe.
 
-CREATE POLICY "Public can create pending donations"
-  ON clumsy_god_donations FOR INSERT
-  WITH CHECK (payment_status = 'pending' AND moderation_status = 'pending' AND mod_notified = false);
+## Technical Details
 
-CREATE POLICY "Public can create pending donations"
-  ON wolfy_donations FOR INSERT
-  WITH CHECK (payment_status = 'pending' AND moderation_status = 'pending' AND mod_notified = false);
+### `update-streamer-settings/index.ts` changes:
+```
+// Add at the top of the handler, after CORS check:
+const authHeader = req.headers.get('Authorization');
+if (!authHeader) {
+  return 401 error "Missing authorization header"
+}
+
+// Create a user-context client to verify the JWT
+const userClient = createClient(url, anonKey, {
+  global: { headers: { Authorization: authHeader } }
+});
+const { data: { user }, error } = await userClient.auth.getUser();
+if (!user) return 401 error
+
+// Verify the user owns this streamer
+const streamer = await serviceClient.from('streamers')
+  .select('id, user_id, streamer_name')
+  .eq('id', streamerId).single();
+if (streamer.user_id !== user.id) return 403 error
 ```
 
-### Step 2: Delete the fake donations
-```sql
-DELETE FROM looteriya_gaming_donations
-WHERE id IN (
-  '208b35a4-097a-4737-98c1-fcf94802eb9b',
-  '396f9487-e6bf-4da1-9d98-7c639df9ad36'
-);
+### `broadcast-settings-update/index.ts` changes:
+```
+// Same auth pattern:
+// 1. Extract Authorization header
+// 2. Verify JWT via auth.getUser()
+// 3. Look up streamer by slug, confirm user_id matches
+// 4. Only then proceed with Pusher broadcast
 ```
 
-### Step 3: Verify no code changes needed
-The edge functions (`create-razorpay-order-unified`, `check-payment-status-unified`, `razorpay-webhook`) all use the **service role key**, which bypasses RLS entirely. So this policy change has zero impact on legitimate payment flow.
-
-## What this prevents
-- Direct database inserts with fake `payment_status: 'success'`
-- Pre-setting `mod_notified: true` to skip Telegram notifications
-- Pre-setting `moderation_status` to bypass moderation
-
-## What stays the same
-- All edge functions continue working (they use service role)
-- Legitimate donation flow is unchanged
+## Impact
+- Zero impact on legitimate dashboard usage (dashboard already sends auth headers)
+- Blocks all unauthenticated settings changes
+- Prevents OBS overlay hijacking via Pusher
 - No frontend code changes needed
-- No other streamers affected
-
