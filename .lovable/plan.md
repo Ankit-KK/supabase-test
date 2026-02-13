@@ -1,46 +1,39 @@
 
 
-# Fix: Telegram Notifications Not Sent for Auto-Approved Donations
+# Fix: manage-telegram-user 403 Error for Admin Users
 
 ## Root Cause
 
-In `supabase/functions/razorpay-webhook/index.ts` (line 590), Telegram notifications are gated by:
+The `manage-telegram-user` edge function only checks if the authenticated user's `user_id` directly matches the streamer's `user_id`. You are logged in as `ankit.hyperchat@gmail.com` (an admin listed in the `admin_emails` table), but the Ankit streamer is owned by a different account (`ankitashuk20@gmail.com`). Since there is no admin bypass in this function, it returns 403 Forbidden.
 
-```
-if (streamerSettings?.telegram_moderation_enabled && !shouldAutoApprove)
-```
-
-This means auto-approved donations (like Ankit's) **never trigger Telegram notifications**. The standalone `notify-new-donations` function handles both cases but has no trigger (no cron job, no database hook) -- it is dead code in practice.
+Other parts of the system (like the dashboard itself) already check the `admin_emails` table to grant admin access -- but `manage-telegram-user` was never updated to do the same.
 
 ## Fix
 
-Modify the razorpay-webhook to send Telegram notifications for ALL successful donations when `telegram_moderation_enabled` is true, not just pending ones.
-
-- For **pending** donations: Send the full message with Approve/Reject/Hide/Ban action buttons (current behavior)
-- For **auto-approved** donations: Send a notification-only message with just the Dashboard link button (no action buttons needed)
+Add an admin email check to `manage-telegram-user` so that users listed in the `admin_emails` table can manage Telegram users for any streamer.
 
 ## Changes
 
-**File: `supabase/functions/razorpay-webhook/index.ts`**
+**File: `supabase/functions/manage-telegram-user/index.ts`**
 
-1. Change the condition on line 590 from:
-   ```
-   if (streamerSettings?.telegram_moderation_enabled && !shouldAutoApprove)
-   ```
-   to:
-   ```
-   if (streamerSettings?.telegram_moderation_enabled)
-   ```
+After the existing ownership check (line 52), add an admin bypass:
 
-2. Inside the block, conditionally create callback mappings only when `!shouldAutoApprove` (pending donations need action buttons, auto-approved ones don't).
+1. If the `user_id` does not match (would currently return 403), look up the authenticated user's email from the `auth_users` table using their `user_id`
+2. Check if that email exists in the `admin_emails` table
+3. If it does, allow the request to proceed
+4. If not, return 403 as before
 
-3. Pass a flag (e.g., `is_auto_approved: shouldAutoApprove`) in the body sent to `notify-new-donations` so it knows whether to include action buttons.
+```
+Pseudocode flow:
 
-**No changes** to `notify-new-donations` itself -- it already handles both modes correctly based on `moderation_status`.
+if (streamerData.user_id !== validatedUser.user_id) {
+  // Check if user is an admin
+  -> Get user email from auth_users where id = validatedUser.user_id
+  -> Check if email exists in admin_emails table
+  -> If not admin, return 403
+  // If admin, continue execution
+}
+```
 
-**No changes** to any frontend code or other edge functions.
-
-## Technical Detail
-
-The webhook currently builds callback mappings (approve/reject/hide/ban) before calling `notify-new-donations`. For auto-approved donations, we skip creating those mappings and instead pass empty/null callback data, so `notify-new-donations` sends a clean notification-only message with just a Dashboard link.
+No frontend changes needed. No other edge functions affected. The function will be redeployed after the edit.
 
