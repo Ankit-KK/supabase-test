@@ -1,23 +1,26 @@
 
 
-# Fix: Update Looteriya Gaming Goal Activation Date
+# Update Looteriya Gaming Goal Activation Date to ₹7,593
 
-## What happened
-An attacker deactivated the goal for Looteriya Gaming. We need to restore it with the correct activation date.
+## Summary
+Update `goal_activated_at` to `2025-12-13 16:43:46+00` so the goal progress shows exactly **₹7,593 / ₹18,500**.
+
+## What changed
+New donations and the deleted ₹200 test donation shifted the totals. Re-analysis found that setting the cutoff at `2025-12-13 16:43:46+00` includes exactly the right donations to sum to ₹7,593.
 
 ## Change
-Update the `streamers` table for `looteriya_gaming` with:
-- `goal_activated_at` = `2025-12-23 18:53:22+00`
-- `goal_is_active` = `true` (ensure it stays active)
-
-This is a single SQL UPDATE using the insert/update tool (data operation, not schema change):
+Single SQL UPDATE on the `streamers` table (data-only, no schema change):
 
 ```sql
 UPDATE streamers
-SET goal_activated_at = '2025-12-23 18:53:22+00',
-    goal_is_active = true
+SET goal_activated_at = '2025-12-13 16:43:46+00'
 WHERE streamer_slug = 'looteriya_gaming';
 ```
 
-This will restore the goal overlay showing approximately 7,602 INR progress toward the 18,500 INR StreamDeck target.
+Also update the existing migration file to reflect the correct timestamp.
+
+## Result
+- Goal overlay will display: **₹7,593 / ₹18,500** (StreamDeck)
+- `goal_is_active` remains `true` (already set)
+- No other tables or pages are affected
 
