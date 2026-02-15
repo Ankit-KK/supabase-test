@@ -24,6 +24,7 @@ const streamerSlugMap: Record<string, string> = {
   'ankit': 'ankit',
   'clumsygod': 'clumsy_god',
   'wolfy': 'wolfy',
+  'dorpplays': 'dorp_plays',
 };
 
 // Generate short ID for callback mapping (8 characters)
@@ -187,7 +188,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // Determine table based on order ID - only active streamers
-    let streamerType: 'ankit' | 'looteriyagaming' | 'chiagaming' | 'clumsygod' | 'wolfy'
+    let streamerType: 'ankit' | 'looteriyagaming' | 'chiagaming' | 'clumsygod' | 'wolfy' | 'dorpplays'
     let tableName: string
     
     // Get donation from the appropriate table using Razorpay order ID
@@ -254,7 +255,20 @@ serve(async (req) => {
               streamerType = 'wolfy'
               tableName = 'wolfy_donations'
             } else {
-              fetchError = ankitResult.error || looteriyaGamingResult.error || chiagamingResult.error || clumsyGodResult.error || wolfyResult.error
+              // Try dorp_plays
+              const dorpPlaysResult = await supabase
+                .from('dorp_plays_donations')
+                .select('*')
+                .eq('razorpay_order_id', razorpayOrderId)
+                .maybeSingle()
+              
+              if (dorpPlaysResult.data) {
+                donation = dorpPlaysResult.data
+                streamerType = 'dorpplays'
+                tableName = 'dorp_plays_donations'
+              } else {
+                fetchError = ankitResult.error || looteriyaGamingResult.error || chiagamingResult.error || clumsyGodResult.error || wolfyResult.error || dorpPlaysResult.error
+              }
             }
           }
         }

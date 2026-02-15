@@ -13,6 +13,7 @@ const STREAMER_CONFIG: Record<string, { table: string; prefix: string }> = {
   'looteriya_gaming': { table: 'looteriya_gaming_donations', prefix: 'lg_rp_' },
   'clumsy_god': { table: 'clumsy_god_donations', prefix: 'cg2_rp_' },
   'wolfy': { table: 'wolfy_donations', prefix: 'wf_rp_' },
+  'dorp_plays': { table: 'dorp_plays_donations', prefix: 'dp2_rp_' },
 };
 
 // Platform floors (cannot go below these)

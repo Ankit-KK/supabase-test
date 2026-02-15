@@ -60,6 +60,15 @@ export const DONATION_PAGE_CONFIGS: Record<string, DonationPageConfig> = {
     edgeFunctionName: 'create-razorpay-order-unified',
     themeDescription: 'Support Wolfy with your donation',
   },
+  dorp_plays: {
+    streamerSlug: 'dorp_plays',
+    streamerName: 'DorpPlays',
+    brandColor: '#6366f1',
+    logoSrc: '/assets/streamers/dorp-plays-logo.png',
+    backgroundSrc: '/assets/streamers/dorp-plays-background.png',
+    edgeFunctionName: 'create-razorpay-order-unified',
+    themeDescription: 'Support DorpPlays with your donation',
+  },
 };
 
 export const getDonationPageConfig = (slug: string): DonationPageConfig | undefined => {

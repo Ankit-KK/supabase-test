@@ -46,6 +46,11 @@ export const STREAMER_CONFIGS: Record<string, StreamerConfig> = {
     pusherDashboardChannel: 'wolfy-dashboard', pusherGoalChannel: 'wolfy-goal', pusherAudioChannel: 'wolfy-audio',
     pusherAlertsChannel: 'wolfy-alerts', pusherSettingsChannel: 'wolfy-settings', razorpayOrderPrefix: 'wf_rp_',
   },
+  dorp_plays: {
+    slug: 'dorp_plays', name: 'DorpPlays', tableName: 'dorp_plays_donations', brandColor: '#6366f1',
+    pusherDashboardChannel: 'dorp_plays-dashboard', pusherGoalChannel: 'dorp_plays-goal', pusherAudioChannel: 'dorp_plays-audio',
+    pusherAlertsChannel: 'dorp_plays-alerts', pusherSettingsChannel: 'dorp_plays-settings', razorpayOrderPrefix: 'dp2_rp_',
+  },
 };
 
 export const getStreamerConfig = (slug: string): StreamerConfig | undefined => STREAMER_CONFIGS[slug];

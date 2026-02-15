@@ -13,6 +13,7 @@ const STREAMER_TABLE_MAP: Record<string, string> = {
   'looteriya_gaming': 'looteriya_gaming_donations',
   'clumsy_god': 'clumsy_god_donations',
   'wolfy': 'wolfy_donations',
+  'dorp_plays': 'dorp_plays_donations',
 };
 
 // Active streamers only - mapping slugs to Pusher alert channel names
@@ -22,6 +23,7 @@ const STREAMER_CHANNEL_MAP: Record<string, string> = {
   'looteriya_gaming': 'looteriya_gaming-alerts',
   'clumsy_god': 'clumsy_god-alerts',
   'wolfy': 'wolfy-alerts',
+  'dorp_plays': 'dorp_plays-alerts',
 };
 
 Deno.serve(async (req) => {
