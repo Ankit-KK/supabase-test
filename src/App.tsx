@@ -25,6 +25,7 @@ import ChiaaGaming from "./pages/ChiaaGaming";
 import LooteriyaGaming from "./pages/LooteriyaGaming";
 import ClumsyGod from "./pages/ClumsyGod";
 import Wolfy from "./pages/Wolfy";
+import DorpPlays from "./pages/DorpPlays";
 
 // Dashboard pages
 import Dashboard from "./pages/dashboard/Dashboard";
@@ -36,6 +37,7 @@ import ChiaGamingDashboard from "./pages/dashboard/ChiaGamingDashboard";
 import LooteriyaGamingDashboard from "./pages/dashboard/LooteriyaGamingDashboard";
 import ClumsyGodDashboard from "./pages/dashboard/ClumsyGodDashboard";
 import WolfyDashboard from "./pages/dashboard/WolfyDashboard";
+import DorpPlaysDashboard from "./pages/dashboard/DorpPlaysDashboard";
 
 // OBS Alert pages
 import AnkitObsAlerts from "./pages/obs-alerts/AnkitObsAlerts";
@@ -48,6 +50,8 @@ import ClumsyGodObsAlerts from "./pages/obs-alerts/ClumsyGodObsAlerts";
 import ClumsyGodGoalOverlay from "./pages/obs-alerts/ClumsyGodGoalOverlay";
 import WolfyObsAlerts from "./pages/obs-alerts/WolfyObsAlerts";
 import WolfyGoalOverlay from "./pages/obs-alerts/WolfyGoalOverlay";
+import DorpPlaysObsAlerts from "./pages/obs-alerts/DorpPlaysObsAlerts";
+import DorpPlaysGoalOverlay from "./pages/obs-alerts/DorpPlaysGoalOverlay";
 
 // Audio Player pages
 import AnkitAudioPlayer from "./pages/audio-player/AnkitAudioPlayer";
@@ -57,6 +61,7 @@ import ChiaGamingMediaSourcePlayer from "./pages/audio-player/ChiaGamingMediaSou
 import LooteriyaGamingMediaSourcePlayer from "./pages/audio-player/LooteriyaGamingMediaSourcePlayer";
 import ClumsyGodMediaSourcePlayer from "./pages/audio-player/ClumsyGodMediaSourcePlayer";
 import WolfyMediaSourcePlayer from "./pages/audio-player/WolfyMediaSourcePlayer";
+import DorpPlaysMediaSourcePlayer from "./pages/audio-player/DorpPlaysMediaSourcePlayer";
 
 const queryClient = new QueryClient();
 
@@ -91,6 +96,7 @@ const App = () => (
             <Route path="/looteriya_gaming" element={<LooteriyaGaming />} />
             <Route path="/clumsy_god" element={<ClumsyGod />} />
             <Route path="/wolfy" element={<Wolfy />} />
+            <Route path="/dorp_plays" element={<DorpPlays />} />
             
             {/* Authentication */}
             <Route path="/auth" element={<Auth />} />
@@ -104,6 +110,7 @@ const App = () => (
             <Route path="/dashboard/looteriya_gaming" element={<LooteriyaGamingDashboard />} />
             <Route path="/dashboard/clumsy_god" element={<ClumsyGodDashboard />} />
             <Route path="/dashboard/wolfy" element={<WolfyDashboard />} />
+            <Route path="/dashboard/dorp_plays" element={<DorpPlaysDashboard />} />
             
             {/* OBS Alert routes */}
             <Route path="/ankit/obs-alerts" element={<AnkitObsAlerts />} />
@@ -116,6 +123,8 @@ const App = () => (
             <Route path="/clumsy_god/goal-overlay" element={<ClumsyGodGoalOverlay />} />
             <Route path="/wolfy/obs-alerts" element={<WolfyObsAlerts />} />
             <Route path="/wolfy/goal-overlay" element={<WolfyGoalOverlay />} />
+            <Route path="/dorp_plays/obs-alerts" element={<DorpPlaysObsAlerts />} />
+            <Route path="/dorp_plays/goal-overlay" element={<DorpPlaysGoalOverlay />} />
             
             {/* Audio Player routes */}
             <Route path="/ankit/audio-player" element={<AnkitAudioPlayer />} />
@@ -125,6 +134,7 @@ const App = () => (
             <Route path="/looteriya_gaming/media-audio-player" element={<LooteriyaGamingMediaSourcePlayer />} />
             <Route path="/clumsy_god/media-audio-player" element={<ClumsyGodMediaSourcePlayer />} />
             <Route path="/wolfy/media-audio-player" element={<WolfyMediaSourcePlayer />} />
+            <Route path="/dorp_plays/media-audio-player" element={<DorpPlaysMediaSourcePlayer />} />
             
             {/* Catch all 404 */}
             <Route path="*" element={<NotFound />} />
