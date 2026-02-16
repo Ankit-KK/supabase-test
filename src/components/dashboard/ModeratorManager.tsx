@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, UserPlus, MessageSquare } from 'lucide-react';
+import { Trash2, UserPlus, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -28,10 +28,7 @@ export const ModeratorManager: React.FC<ModeratorManagerProps> = ({ streamerId }
   const [newModeratorName, setNewModeratorName] = useState('');
   const [newTelegramId, setNewTelegramId] = useState('');
   const [newDiscordId, setNewDiscordId] = useState('');
-  const [setupStatus, setSetupStatus] = useState<'idle' | 'setting-up' | 'success' | 'error'>('idle');
-  const [discordSetupStatus, setDiscordSetupStatus] = useState<'idle' | 'setting-up' | 'success' | 'error'>('idle');
   const { toast } = useToast();
-
   const getAuthToken = (): string | null => {
     return localStorage.getItem('auth_token');
   };
@@ -149,115 +146,10 @@ export const ModeratorManager: React.FC<ModeratorManagerProps> = ({ streamerId }
     }
   };
 
-  const setupTelegramWebhook = async () => {
-    setSetupStatus('setting-up');
-    try {
-      const { data, error } = await supabase.functions.invoke('setup-telegram-webhook');
-      
-      if (error) throw error;
-
-      if (data.success) {
-        setSetupStatus('success');
-        toast({
-          title: "Success",
-          description: "Telegram webhook configured successfully"
-        });
-      } else {
-        throw new Error(data.error || 'Unknown error');
-      }
-    } catch (error: any) {
-      console.error('Error setting up webhook:', error);
-      setSetupStatus('error');
-      toast({
-        title: "Error",
-        description: error.message || "Failed to setup Telegram webhook",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const setupDiscordWebhook = async () => {
-    setDiscordSetupStatus('setting-up');
-    try {
-      const { data, error } = await supabase.functions.invoke('setup-discord-webhook');
-      if (error) throw error;
-      if (data.success) {
-        setDiscordSetupStatus('success');
-        toast({ title: "Success", description: "Discord interactions endpoint configured successfully" });
-      } else {
-        throw new Error(data.error || 'Unknown error');
-      }
-    } catch (error: any) {
-      console.error('Error setting up Discord webhook:', error);
-      setDiscordSetupStatus('error');
-      toast({ title: "Error", description: error.message || "Failed to setup Discord webhook", variant: "destructive" });
-    }
-  };
-
   const activeModerators = moderators.filter(mod => mod.is_active);
 
   return (
     <div className="space-y-6">
-      {/* Telegram Setup */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
-            Telegram Bot Setup
-          </CardTitle>
-          <CardDescription>
-            Configure the Telegram bot to receive donation notifications
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button 
-            onClick={setupTelegramWebhook}
-            disabled={setupStatus === 'setting-up'}
-            variant={setupStatus === 'success' ? 'outline' : 'default'}
-          >
-            {setupStatus === 'setting-up' && 'Setting up...'}
-            {setupStatus === 'success' && 'Webhook Configured ✓'}
-            {setupStatus === 'error' && 'Setup Failed - Retry'}
-            {setupStatus === 'idle' && 'Setup Telegram Webhook'}
-          </Button>
-          {setupStatus === 'success' && (
-            <p className="text-sm text-muted-foreground mt-2">
-              Bot is ready! Your moderators can now approve donations via Telegram.
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Discord Setup */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
-            Discord Bot Setup
-          </CardTitle>
-          <CardDescription>
-            Configure the Discord bot to receive donation notifications via DMs
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button 
-            onClick={setupDiscordWebhook}
-            disabled={discordSetupStatus === 'setting-up'}
-            variant={discordSetupStatus === 'success' ? 'outline' : 'default'}
-          >
-            {discordSetupStatus === 'setting-up' && 'Setting up...'}
-            {discordSetupStatus === 'success' && 'Endpoint Configured ✓'}
-            {discordSetupStatus === 'error' && 'Setup Failed - Retry'}
-            {discordSetupStatus === 'idle' && 'Setup Discord Interactions'}
-          </Button>
-          {discordSetupStatus === 'success' && (
-            <p className="text-sm text-muted-foreground mt-2">
-              Discord bot is ready! Moderators with Discord IDs will receive DM notifications.
-            </p>
-          )}
-        </CardContent>
-      </Card>
-
       {/* Moderator Management */}
       <Card>
         <CardHeader>
@@ -298,6 +190,19 @@ export const ModeratorManager: React.FC<ModeratorManagerProps> = ({ streamerId }
                 value={newDiscordId}
                 onChange={(e) => setNewDiscordId(e.target.value)}
               />
+              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                <ExternalLink className="h-3 w-3" />
+                Moderator must{' '}
+                <a
+                  href="https://discord.com/oauth2/authorize?client_id=1473061793189593219"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary underline hover:text-primary/80"
+                >
+                  authorize the bot
+                </a>
+                {' '}to receive DMs.
+              </p>
             </div>
             <div className="flex items-end">
               <Button
