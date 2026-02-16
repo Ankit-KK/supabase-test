@@ -128,6 +128,7 @@ serve(async (req) => {
       'looteriya_gaming_donations',
       'clumsy_god_donations',
       'wolfy_donations',
+      'dorp_plays_donations',
     ];
 
     let donationsToNotify: any[] = [];
@@ -203,7 +204,7 @@ serve(async (req) => {
         // Get moderators
         const { data: moderators, error: modError } = await supabaseAdmin
           .from('streamers_moderators')
-          .select('telegram_user_id, mod_name, role, can_approve, can_reject, can_hide_message, can_ban')
+          .select('telegram_user_id, discord_user_id, mod_name, role, can_approve, can_reject, can_hide_message, can_ban')
           .eq('streamer_id', donation.streamer_id)
           .eq('is_active', true);
 
