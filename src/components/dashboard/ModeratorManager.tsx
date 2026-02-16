@@ -59,10 +59,10 @@ export const ModeratorManager: React.FC<ModeratorManagerProps> = ({ streamerId }
   };
 
   const addModerator = async () => {
-    if (!newModeratorName.trim() || !newTelegramId.trim()) {
+    if (!newModeratorName.trim() || (!newTelegramId.trim() && !newDiscordId.trim())) {
       toast({
         title: "Error",
-        description: "Please fill in all fields",
+        description: "Please provide a name and at least one of Telegram ID or Discord ID",
         variant: "destructive"
       });
       return;
@@ -74,7 +74,7 @@ export const ModeratorManager: React.FC<ModeratorManagerProps> = ({ streamerId }
         .from('streamers_moderators')
         .insert({
           streamer_id: streamerId,
-          telegram_user_id: newTelegramId.trim(),
+          telegram_user_id: newTelegramId.trim() || null,
           mod_name: newModeratorName.trim(),
           discord_user_id: newDiscordId.trim() || null
         })
@@ -286,7 +286,7 @@ export const ModeratorManager: React.FC<ModeratorManagerProps> = ({ streamerId }
             <div className="flex items-end">
               <Button
                 onClick={addModerator}
-                disabled={adding || !newModeratorName.trim() || !newTelegramId.trim()}
+                disabled={adding || !newModeratorName.trim() || (!newTelegramId.trim() && !newDiscordId.trim())}
                 className="w-full"
               >
                 {adding ? 'Adding...' : 'Add Moderator'}
