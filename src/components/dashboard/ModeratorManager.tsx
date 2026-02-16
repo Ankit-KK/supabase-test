@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 interface Moderator {
   id: string;
   telegram_user_id: string;
+  discord_user_id: string | null;
   mod_name: string;
   is_active: boolean;
   created_at: string;
@@ -26,7 +27,9 @@ export const ModeratorManager: React.FC<ModeratorManagerProps> = ({ streamerId }
   const [adding, setAdding] = useState(false);
   const [newModeratorName, setNewModeratorName] = useState('');
   const [newTelegramId, setNewTelegramId] = useState('');
+  const [newDiscordId, setNewDiscordId] = useState('');
   const [setupStatus, setSetupStatus] = useState<'idle' | 'setting-up' | 'success' | 'error'>('idle');
+  const [discordSetupStatus, setDiscordSetupStatus] = useState<'idle' | 'setting-up' | 'success' | 'error'>('idle');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -72,7 +75,8 @@ export const ModeratorManager: React.FC<ModeratorManagerProps> = ({ streamerId }
         .insert({
           streamer_id: streamerId,
           telegram_user_id: newTelegramId.trim(),
-          mod_name: newModeratorName.trim()
+          mod_name: newModeratorName.trim(),
+          discord_user_id: newDiscordId.trim() || null
         })
         .select()
         .single();
@@ -82,6 +86,7 @@ export const ModeratorManager: React.FC<ModeratorManagerProps> = ({ streamerId }
       setModerators(prev => [data, ...prev]);
       setNewModeratorName('');
       setNewTelegramId('');
+      setNewDiscordId('');
       
       toast({
         title: "Success",
@@ -155,6 +160,24 @@ export const ModeratorManager: React.FC<ModeratorManagerProps> = ({ streamerId }
     }
   };
 
+  const setupDiscordWebhook = async () => {
+    setDiscordSetupStatus('setting-up');
+    try {
+      const { data, error } = await supabase.functions.invoke('setup-discord-webhook');
+      if (error) throw error;
+      if (data.success) {
+        setDiscordSetupStatus('success');
+        toast({ title: "Success", description: "Discord interactions endpoint configured successfully" });
+      } else {
+        throw new Error(data.error || 'Unknown error');
+      }
+    } catch (error: any) {
+      console.error('Error setting up Discord webhook:', error);
+      setDiscordSetupStatus('error');
+      toast({ title: "Error", description: error.message || "Failed to setup Discord webhook", variant: "destructive" });
+    }
+  };
+
   const activeModerators = moderators.filter(mod => mod.is_active);
 
   return (
@@ -181,10 +204,39 @@ export const ModeratorManager: React.FC<ModeratorManagerProps> = ({ streamerId }
             {setupStatus === 'error' && 'Setup Failed - Retry'}
             {setupStatus === 'idle' && 'Setup Telegram Webhook'}
           </Button>
-          
           {setupStatus === 'success' && (
             <p className="text-sm text-muted-foreground mt-2">
               Bot is ready! Your moderators can now approve donations via Telegram.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Discord Setup */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" />
+            Discord Bot Setup
+          </CardTitle>
+          <CardDescription>
+            Configure the Discord bot to receive donation notifications via DMs
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button 
+            onClick={setupDiscordWebhook}
+            disabled={discordSetupStatus === 'setting-up'}
+            variant={discordSetupStatus === 'success' ? 'outline' : 'default'}
+          >
+            {discordSetupStatus === 'setting-up' && 'Setting up...'}
+            {discordSetupStatus === 'success' && 'Endpoint Configured ✓'}
+            {discordSetupStatus === 'error' && 'Setup Failed - Retry'}
+            {discordSetupStatus === 'idle' && 'Setup Discord Interactions'}
+          </Button>
+          {discordSetupStatus === 'success' && (
+            <p className="text-sm text-muted-foreground mt-2">
+              Discord bot is ready! Moderators with Discord IDs will receive DM notifications.
             </p>
           )}
         </CardContent>
@@ -195,15 +247,15 @@ export const ModeratorManager: React.FC<ModeratorManagerProps> = ({ streamerId }
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5" />
-            Telegram Moderators
+            Moderators
           </CardTitle>
           <CardDescription>
-            Add moderators who can approve donations via Telegram bot
+            Add moderators who can approve donations via Telegram or Discord
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Add Moderator Form */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <Label htmlFor="moderator-name">Moderator Name</Label>
               <Input
@@ -220,6 +272,15 @@ export const ModeratorManager: React.FC<ModeratorManagerProps> = ({ streamerId }
                 placeholder="Enter Telegram ID"
                 value={newTelegramId}
                 onChange={(e) => setNewTelegramId(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="discord-id">Discord User ID (optional)</Label>
+              <Input
+                id="discord-id"
+                placeholder="Enter Discord ID"
+                value={newDiscordId}
+                onChange={(e) => setNewDiscordId(e.target.value)}
               />
             </div>
             <div className="flex items-end">
@@ -251,8 +312,13 @@ export const ModeratorManager: React.FC<ModeratorManagerProps> = ({ streamerId }
                       <div>
                         <p className="font-medium">{moderator.mod_name}</p>
                         <p className="text-sm text-muted-foreground">
-                          ID: {moderator.telegram_user_id}
+                          Telegram: {moderator.telegram_user_id}
                         </p>
+                        {moderator.discord_user_id && (
+                          <p className="text-sm text-muted-foreground">
+                            Discord: {moderator.discord_user_id}
+                          </p>
+                        )}
                       </div>
                       <Badge variant="secondary">Active</Badge>
                     </div>
@@ -270,14 +336,25 @@ export const ModeratorManager: React.FC<ModeratorManagerProps> = ({ streamerId }
           </div>
 
           {/* Instructions */}
-          <div className="bg-muted/50 p-4 rounded-lg">
-            <h4 className="font-medium mb-2">How to get Telegram User ID:</h4>
-            <ol className="text-sm text-muted-foreground space-y-1">
-              <li>1. Message @userinfobot on Telegram</li>
-              <li>2. Send any message to the bot</li>
-              <li>3. The bot will reply with your User ID</li>
-              <li>4. Copy the ID and paste it above</li>
-            </ol>
+          <div className="bg-muted/50 p-4 rounded-lg space-y-4">
+            <div>
+              <h4 className="font-medium mb-2">How to get Telegram User ID:</h4>
+              <ol className="text-sm text-muted-foreground space-y-1">
+                <li>1. Message @userinfobot on Telegram</li>
+                <li>2. Send any message to the bot</li>
+                <li>3. The bot will reply with your User ID</li>
+                <li>4. Copy the ID and paste it above</li>
+              </ol>
+            </div>
+            <div>
+              <h4 className="font-medium mb-2">How to get Discord User ID:</h4>
+              <ol className="text-sm text-muted-foreground space-y-1">
+                <li>1. Open Discord Settings → Advanced → Enable Developer Mode</li>
+                <li>2. Right-click on the user's name</li>
+                <li>3. Click "Copy User ID"</li>
+                <li>4. Paste the ID above</li>
+              </ol>
+            </div>
           </div>
         </CardContent>
       </Card>

@@ -59,6 +59,7 @@ interface Donation {
 interface ModerationSettings {
   moderation_mode: 'auto_approve' | 'manual';
   telegram_moderation_enabled: boolean;
+  discord_moderation_enabled: boolean;
   media_moderation_enabled: boolean;
 }
 
@@ -73,6 +74,7 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
   const [settings, setSettings] = useState<ModerationSettings>({
     moderation_mode: 'auto_approve',
     telegram_moderation_enabled: true,
+    discord_moderation_enabled: false,
     media_moderation_enabled: false
   });
   const [pendingDonations, setPendingDonations] = useState<Donation[]>([]);
@@ -159,7 +161,7 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
     const fetchSettings = async () => {
       const { data, error } = await supabase
         .from('streamers')
-        .select('moderation_mode, telegram_moderation_enabled, media_moderation_enabled')
+        .select('moderation_mode, telegram_moderation_enabled, discord_moderation_enabled, media_moderation_enabled')
         .eq('id', streamerId)
         .single();
 
@@ -169,6 +171,7 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
         setSettings({
           moderation_mode: mode,
           telegram_moderation_enabled: data.telegram_moderation_enabled ?? true,
+          discord_moderation_enabled: data.discord_moderation_enabled ?? false,
           media_moderation_enabled: data.media_moderation_enabled ?? false
         });
       }
@@ -334,6 +337,16 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
             <Switch
               checked={settings.telegram_moderation_enabled}
               onCheckedChange={(checked) => updateSettings('telegram_moderation_enabled', checked)}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <Label>Discord Moderation</Label>
+              <p className="text-sm text-muted-foreground">Enable moderation via Discord bot DMs</p>
+            </div>
+            <Switch
+              checked={settings.discord_moderation_enabled}
+              onCheckedChange={(checked) => updateSettings('discord_moderation_enabled', checked)}
             />
           </div>
 
