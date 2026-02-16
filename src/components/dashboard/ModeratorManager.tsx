@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 
 interface Moderator {
   id: string;
-  telegram_user_id: string;
+  telegram_user_id: string | null;
   discord_user_id: string | null;
   mod_name: string;
   is_active: boolean;
@@ -32,21 +32,29 @@ export const ModeratorManager: React.FC<ModeratorManagerProps> = ({ streamerId }
   const [discordSetupStatus, setDiscordSetupStatus] = useState<'idle' | 'setting-up' | 'success' | 'error'>('idle');
   const { toast } = useToast();
 
+  const getAuthToken = (): string | null => {
+    return localStorage.getItem('auth_token');
+  };
+
   useEffect(() => {
     fetchModerators();
   }, [streamerId]);
 
   const fetchModerators = async () => {
     try {
-      const { data, error } = await supabase
-        .from('streamers_moderators')
-        .select('*')
-        .eq('streamer_id', streamerId)
-        .order('created_at', { ascending: false });
+      const authToken = getAuthToken();
+      if (!authToken) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase.functions.invoke('manage-moderators', {
+        body: { action: 'list', streamerId },
+        headers: { 'x-auth-token': authToken },
+      });
 
       if (error) throw error;
-      setModerators(data || []);
-    } catch (error) {
+      if (!data.success) throw new Error(data.error);
+
+      setModerators(data.moderators || []);
+    } catch (error: any) {
       console.error('Error fetching moderators:', error);
       toast({
         title: "Error",
@@ -70,20 +78,24 @@ export const ModeratorManager: React.FC<ModeratorManagerProps> = ({ streamerId }
 
     setAdding(true);
     try {
-      const { data, error } = await supabase
-        .from('streamers_moderators')
-        .insert({
-          streamer_id: streamerId,
-          telegram_user_id: newTelegramId.trim() || null,
-          mod_name: newModeratorName.trim(),
-          discord_user_id: newDiscordId.trim() || null
-        })
-        .select()
-        .single();
+      const authToken = getAuthToken();
+      if (!authToken) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase.functions.invoke('manage-moderators', {
+        body: {
+          action: 'add',
+          streamerId,
+          modName: newModeratorName.trim(),
+          telegramId: newTelegramId.trim() || null,
+          discordId: newDiscordId.trim() || null,
+        },
+        headers: { 'x-auth-token': authToken },
+      });
 
       if (error) throw error;
+      if (!data.success) throw new Error(data.error);
 
-      setModerators(prev => [data, ...prev]);
+      setModerators(prev => [data.moderator, ...prev]);
       setNewModeratorName('');
       setNewTelegramId('');
       setNewDiscordId('');
@@ -106,12 +118,16 @@ export const ModeratorManager: React.FC<ModeratorManagerProps> = ({ streamerId }
 
   const removeModerator = async (moderatorId: string) => {
     try {
-      const { error } = await supabase
-        .from('streamers_moderators')
-        .update({ is_active: false })
-        .eq('id', moderatorId);
+      const authToken = getAuthToken();
+      if (!authToken) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase.functions.invoke('manage-moderators', {
+        body: { action: 'remove', streamerId, moderatorId },
+        headers: { 'x-auth-token': authToken },
+      });
 
       if (error) throw error;
+      if (!data.success) throw new Error(data.error);
 
       setModerators(prev => 
         prev.map(mod => 
@@ -123,7 +139,7 @@ export const ModeratorManager: React.FC<ModeratorManagerProps> = ({ streamerId }
         title: "Success",
         description: "Moderator removed successfully"
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error removing moderator:', error);
       toast({
         title: "Error",
@@ -311,9 +327,11 @@ export const ModeratorManager: React.FC<ModeratorManagerProps> = ({ streamerId }
                     <div className="flex items-center gap-3">
                       <div>
                         <p className="font-medium">{moderator.mod_name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Telegram: {moderator.telegram_user_id}
-                        </p>
+                        {moderator.telegram_user_id && (
+                          <p className="text-sm text-muted-foreground">
+                            Telegram: {moderator.telegram_user_id}
+                          </p>
+                        )}
                         {moderator.discord_user_id && (
                           <p className="text-sm text-muted-foreground">
                             Discord: {moderator.discord_user_id}
