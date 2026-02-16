@@ -1,30 +1,38 @@
 
-# Make Telegram ID and Discord ID Both Optional (Require At Least One)
 
-## Problem
-Currently, adding a moderator requires a Telegram User ID (mandatory) with Discord User ID being optional. This prevents adding Discord-only moderators.
+# Fix 401 Error When Adding Moderators
+
+## Root Cause
+The `ModeratorManager` component calls `supabase.from('streamers_moderators').insert(...)` directly using the anon key. However, the RLS policies on `streamers_moderators` require either Supabase Auth (`auth.email()`) or `service_role` access. Since this project uses a **custom auth system** (tokens in `localStorage`), `auth.email()` is always null, and the anon client is blocked.
 
 ## Solution
-Allow either field to be optional, but require at least one of the two to be provided.
+Create a new edge function `manage-moderators` that handles add/remove/list operations using the service role key, with custom auth token validation -- matching the pattern used by other dashboard operations (e.g., `moderate-donation`, `update-streamer-settings`).
 
 ## Changes
 
-### 1. Database Migration
-- Alter `streamers_moderators.telegram_user_id` from `NOT NULL` to nullable:
-```sql
-ALTER TABLE streamers_moderators ALTER COLUMN telegram_user_id DROP NOT NULL;
-```
+### 1. New Edge Function: `supabase/functions/manage-moderators/index.ts`
+- Accepts actions: `list`, `add`, `remove`
+- Validates the custom auth token via `validate_session_token` RPC
+- Verifies ownership (streamer's `user_id` matches the authenticated user) with admin bypass
+- Uses service role client for database operations
+- Follows the exact same pattern as `update-streamer-settings`
 
-### 2. `src/components/dashboard/ModeratorManager.tsx`
-- Update validation logic: instead of requiring Telegram ID, require **at least one** of Telegram ID or Discord ID
-- Update the error message to say "Please provide a name and at least one of Telegram ID or Discord ID"
-- Update the button disabled condition to reflect the new rule
-- Update the insert to pass `null` for empty Telegram ID (same as Discord ID already does)
+### 2. Update `src/components/dashboard/ModeratorManager.tsx`
+- Replace all 3 direct Supabase calls with edge function invocations:
+  - `fetchModerators` -> `supabase.functions.invoke('manage-moderators', { body: { action: 'list', streamerId }, headers: { 'x-auth-token': authToken } })`
+  - `addModerator` -> `supabase.functions.invoke('manage-moderators', { body: { action: 'add', streamerId, modName, telegramId, discordId }, headers: { 'x-auth-token': authToken } })`
+  - `removeModerator` -> `supabase.functions.invoke('manage-moderators', { body: { action: 'remove', streamerId, moderatorId }, headers: { 'x-auth-token': authToken } })`
 
-### 3. `supabase/functions/notify-new-donations/index.ts`
-- Already filters moderators by `discord_user_id` for Discord and `telegram_user_id` for Telegram notifications -- just need to confirm it handles `null` Telegram IDs gracefully (skip sending Telegram DM if no Telegram ID)
+### 3. No database or RLS changes needed
+The edge function uses the service role key, bypassing RLS entirely. Auth is enforced in the function code via token validation and ownership checks.
 
-### 4. `supabase/functions/manage-telegram-user/index.ts`
-- No changes needed -- this function operates on specific Telegram user IDs passed in the request
+## Technical Details
 
-No other files need to change. The edge functions that query moderators already filter by the relevant ID column, so null values will naturally be excluded.
+Edge function structure (follows `update-streamer-settings` pattern):
+1. CORS handling
+2. Parse `x-auth-token` header
+3. Validate token via `validate_session_token` RPC
+4. Verify streamer ownership (with admin bypass via `admin_emails` table)
+5. Execute the requested action using service role client
+6. Return result
+
