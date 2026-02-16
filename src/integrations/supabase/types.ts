@@ -444,6 +444,47 @@ export type Database = {
           },
         ]
       }
+      discord_callback_mapping: {
+        Row: {
+          action_type: string
+          created_at: string | null
+          donation_id: string
+          expires_at: string
+          id: string
+          short_id: string
+          streamer_id: string
+          table_name: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string | null
+          donation_id: string
+          expires_at?: string
+          id?: string
+          short_id: string
+          streamer_id: string
+          table_name: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string | null
+          donation_id?: string
+          expires_at?: string
+          id?: string
+          short_id?: string
+          streamer_id?: string
+          table_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discord_callback_mapping_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dorp_plays_donations: {
         Row: {
           amount: number
@@ -854,6 +895,7 @@ export type Database = {
           brand_color: string | null
           brand_logo_url: string | null
           created_at: string | null
+          discord_moderation_enabled: boolean | null
           goal_activated_at: string | null
           goal_is_active: boolean | null
           goal_name: string | null
@@ -888,6 +930,7 @@ export type Database = {
           brand_color?: string | null
           brand_logo_url?: string | null
           created_at?: string | null
+          discord_moderation_enabled?: boolean | null
           goal_activated_at?: string | null
           goal_is_active?: boolean | null
           goal_name?: string | null
@@ -922,6 +965,7 @@ export type Database = {
           brand_color?: string | null
           brand_logo_url?: string | null
           created_at?: string | null
+          discord_moderation_enabled?: boolean | null
           goal_activated_at?: string | null
           goal_is_active?: boolean | null
           goal_name?: string | null
@@ -962,6 +1006,7 @@ export type Database = {
           can_reject: boolean | null
           can_replay: boolean | null
           created_at: string
+          discord_user_id: string | null
           id: string
           is_active: boolean
           last_action_at: string | null
@@ -979,6 +1024,7 @@ export type Database = {
           can_reject?: boolean | null
           can_replay?: boolean | null
           created_at?: string
+          discord_user_id?: string | null
           id?: string
           is_active?: boolean
           last_action_at?: string | null
@@ -996,6 +1042,7 @@ export type Database = {
           can_reject?: boolean | null
           can_replay?: boolean | null
           created_at?: string
+          discord_user_id?: string | null
           id?: string
           is_active?: boolean
           last_action_at?: string | null
