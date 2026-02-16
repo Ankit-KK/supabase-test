@@ -1,26 +1,30 @@
 
-
-# Update "Telegram" Tab to Include Discord UI
+# Make Telegram ID and Discord ID Both Optional (Require At Least One)
 
 ## Problem
-The "Telegram" tab in the streamer dashboard only renders the legacy `TelegramDashboard` component, which has no Discord functionality. The `ModeratorManager` component already has full Discord support (bot setup, Discord User IDs, instructions) but is not wired into the dashboard.
+Currently, adding a moderator requires a Telegram User ID (mandatory) with Discord User ID being optional. This prevents adding Discord-only moderators.
 
 ## Solution
-Replace the `TelegramDashboard` usage in `StreamerDashboard.tsx` with `ModeratorManager`, and rename the tab to "Notifications" to reflect that it now covers both Telegram and Discord.
+Allow either field to be optional, but require at least one of the two to be provided.
 
 ## Changes
 
-### 1. `src/components/dashboard/StreamerDashboard.tsx`
-- Replace `import TelegramDashboard` with `import { ModeratorManager }`
-- Rename the tab trigger from "Telegram" to "Notifications"
-- Replace `<TelegramDashboard>` with `<ModeratorManager streamerId={streamerData.id} />`
+### 1. Database Migration
+- Alter `streamers_moderators.telegram_user_id` from `NOT NULL` to nullable:
+```sql
+ALTER TABLE streamers_moderators ALTER COLUMN telegram_user_id DROP NOT NULL;
+```
 
-This is a minimal 3-line change. The `ModeratorManager` already has:
-- Telegram bot setup button
-- Discord bot setup button
-- Moderator add form with Telegram ID + Discord ID fields
-- Moderator list showing both IDs
-- Instructions for obtaining both IDs
+### 2. `src/components/dashboard/ModeratorManager.tsx`
+- Update validation logic: instead of requiring Telegram ID, require **at least one** of Telegram ID or Discord ID
+- Update the error message to say "Please provide a name and at least one of Telegram ID or Discord ID"
+- Update the button disabled condition to reflect the new rule
+- Update the insert to pass `null` for empty Telegram ID (same as Discord ID already does)
 
-No other files need to change. The `TelegramDashboard` component file will remain intact (per project rules -- do not modify/delete existing components unless explicitly instructed).
+### 3. `supabase/functions/notify-new-donations/index.ts`
+- Already filters moderators by `discord_user_id` for Discord and `telegram_user_id` for Telegram notifications -- just need to confirm it handles `null` Telegram IDs gracefully (skip sending Telegram DM if no Telegram ID)
 
+### 4. `supabase/functions/manage-telegram-user/index.ts`
+- No changes needed -- this function operates on specific Telegram user IDs passed in the request
+
+No other files need to change. The edge functions that query moderators already filter by the relevant ID column, so null values will naturally be excluded.
