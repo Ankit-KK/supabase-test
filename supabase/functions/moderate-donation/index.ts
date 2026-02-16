@@ -15,7 +15,7 @@ interface ModerationRequest {
   moderatorId?: string;
   moderatorTelegramId?: string;
   moderatorName?: string;
-  source: 'telegram' | 'dashboard';
+  source: 'telegram' | 'dashboard' | 'discord';
   notes?: string;
   banReason?: string;
 }
@@ -183,11 +183,11 @@ serve(async (req) => {
       }
 
       console.log('Dashboard auth verified for user:', sessionUser.email);
-    } else if (source === 'telegram') {
-      // Telegram calls are validated by moderator ID check below
-      // The telegram-webhook function calls this internally, so we verify moderator exists
+    } else if (source === 'telegram' || source === 'discord') {
+      // Telegram/Discord calls are validated by moderator ID check below
+      // The webhook functions call this internally, so we verify moderator exists
       if (!moderatorId && !moderatorTelegramId) {
-        return new Response(JSON.stringify({ success: false, error: 'Telegram source requires moderator identification' }), {
+        return new Response(JSON.stringify({ success: false, error: `${source} source requires moderator identification` }), {
           status: 401,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         });
@@ -598,7 +598,7 @@ serve(async (req) => {
               `${actionEmoji} <b>Donation ${actionText}</b>\n\n` +
               `💰 ₹${donation.amount} from ${donation.name}\n` +
               `👤 By: ${moderatorInfo}\n` +
-              `📱 Via: ${source === 'telegram' ? 'Telegram' : 'Dashboard'}`;
+              `📱 Via: ${source === 'telegram' ? 'Telegram' : source === 'discord' ? 'Discord' : 'Dashboard'}`;
 
             for (const mod of moderators) {
               try {

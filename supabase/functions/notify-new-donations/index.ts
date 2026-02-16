@@ -65,6 +65,37 @@ async function createCallbackMapping(
   }
 }
 
+// Create a Discord callback mapping (uses discord_callback_mapping table)
+async function createDiscordCallbackMapping(
+  supabase: any,
+  donationId: string,
+  tableName: string,
+  streamerId: string,
+  action: string
+): Promise<string> {
+  const shortId = generateShortId();
+  try {
+    const { error } = await supabase
+      .from('discord_callback_mapping')
+      .insert({
+        short_id: shortId,
+        donation_id: donationId,
+        table_name: tableName,
+        streamer_id: streamerId,
+        action_type: action,
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+      });
+    if (error) {
+      console.error(`Failed to create Discord callback mapping for ${action}:`, error);
+      return donationId.substring(0, 8);
+    }
+    return shortId;
+  } catch (err) {
+    console.error(`Exception creating Discord callback mapping:`, err);
+    return donationId.substring(0, 8);
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -139,10 +170,10 @@ serve(async (req) => {
 
     for (const donation of donationsToNotify) {
       try {
-        // Get streamer settings
+        // Get streamer settings (include discord_moderation_enabled)
         const { data: streamer, error: streamerError } = await supabaseAdmin
           .from('streamers')
-          .select('id, streamer_slug, streamer_name, moderation_mode, telegram_moderation_enabled')
+          .select('id, streamer_slug, streamer_name, moderation_mode, telegram_moderation_enabled, discord_moderation_enabled')
           .eq('id', donation.streamer_id)
           .single();
 
@@ -159,8 +190,8 @@ serve(async (req) => {
           continue;
         }
 
-        // Skip if telegram moderation is disabled
-        if (!streamer.telegram_moderation_enabled) {
+        // Skip if both telegram and discord moderation are disabled
+        if (!streamer.telegram_moderation_enabled && !streamer.discord_moderation_enabled) {
           // Mark as notified to avoid retry
           await supabaseAdmin
             .from(donation.source_table)
@@ -220,81 +251,199 @@ serve(async (req) => {
 
         let notificationSent = false;
 
-        for (const moderator of moderators) {
-          try {
-            // Build keyboard based on pending status and permissions
-            const keyboard: any[][] = [];
-            
-            // FIX #3: Show approve/reject buttons for ANY pending donation
-            // (not just manual mode - includes media moderation)
-            if (isPending) {
-              // Row 1: Approve/Reject for pending donations
-              const row1: any[] = [];
-              if (moderator.role === 'owner' || moderator.can_approve) {
-                // FIX #2: Use shortened callback mapping
-                const approveCallback = await createCallbackMapping(
-                  supabaseAdmin, donation.id, donation.source_table, donation.streamer_id, 'approve'
-                );
-                row1.push({ text: '✅ Approve', callback_data: approveCallback });
-              }
-              if (moderator.role === 'owner' || moderator.can_reject) {
-                const rejectCallback = await createCallbackMapping(
-                  supabaseAdmin, donation.id, donation.source_table, donation.streamer_id, 'reject'
-                );
-                row1.push({ text: '❌ Reject', callback_data: rejectCallback });
-              }
-              if (row1.length > 0) keyboard.push(row1);
+        // === TELEGRAM NOTIFICATIONS ===
+        if (streamer.telegram_moderation_enabled) {
+          const telegramModerators = moderators.filter((m: any) => m.telegram_user_id);
+          
+          for (const moderator of telegramModerators) {
+            try {
+              // Build keyboard based on pending status and permissions
+              const keyboard: any[][] = [];
+              
+              if (isPending) {
+                const row1: any[] = [];
+                if (moderator.role === 'owner' || moderator.can_approve) {
+                  const approveCallback = await createCallbackMapping(
+                    supabaseAdmin, donation.id, donation.source_table, donation.streamer_id, 'approve'
+                  );
+                  row1.push({ text: '✅ Approve', callback_data: approveCallback });
+                }
+                if (moderator.role === 'owner' || moderator.can_reject) {
+                  const rejectCallback = await createCallbackMapping(
+                    supabaseAdmin, donation.id, donation.source_table, donation.streamer_id, 'reject'
+                  );
+                  row1.push({ text: '❌ Reject', callback_data: rejectCallback });
+                }
+                if (row1.length > 0) keyboard.push(row1);
 
-              // Row 2: Hide/Ban
-              const row2: any[] = [];
-              if ((moderator.role === 'owner' || moderator.can_hide_message) && donation.message) {
-                const hideCallback = await createCallbackMapping(
-                  supabaseAdmin, donation.id, donation.source_table, donation.streamer_id, 'hide_message'
-                );
-                row2.push({ text: '🙈 Hide Msg', callback_data: hideCallback });
+                const row2: any[] = [];
+                if ((moderator.role === 'owner' || moderator.can_hide_message) && donation.message) {
+                  const hideCallback = await createCallbackMapping(
+                    supabaseAdmin, donation.id, donation.source_table, donation.streamer_id, 'hide_message'
+                  );
+                  row2.push({ text: '🙈 Hide Msg', callback_data: hideCallback });
+                }
+                if (moderator.role === 'owner' || moderator.can_ban) {
+                  const banCallback = await createCallbackMapping(
+                    supabaseAdmin, donation.id, donation.source_table, donation.streamer_id, 'ban_donor'
+                  );
+                  row2.push({ text: '🚫 Ban', callback_data: banCallback });
+                }
+                if (row2.length > 0) keyboard.push(row2);
               }
-              if (moderator.role === 'owner' || moderator.can_ban) {
-                const banCallback = await createCallbackMapping(
-                  supabaseAdmin, donation.id, donation.source_table, donation.streamer_id, 'ban_donor'
-                );
-                row2.push({ text: '🚫 Ban', callback_data: banCallback });
+
+              keyboard.push([{ text: '📊 Dashboard', url: `https://hyperchat.site/dashboard/${streamer.streamer_slug}` }]);
+
+              const payload: any = {
+                chat_id: parseInt(moderator.telegram_user_id),
+                text: messageText,
+                parse_mode: 'HTML',
+                disable_web_page_preview: true
+              };
+
+              if (keyboard.length > 0) {
+                payload.reply_markup = { inline_keyboard: keyboard };
               }
-              if (row2.length > 0) keyboard.push(row2);
-            } else {
-              // Auto-approved: clean notification with dashboard link only, no action buttons
+
+              console.log(`Sending Telegram to ${moderator.mod_name} (${moderator.telegram_user_id}), isPending: ${isPending}`);
+
+              const resp = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+              });
+
+              if (resp.ok) {
+                console.log(`Telegram sent to ${moderator.mod_name}`);
+                notificationSent = true;
+              } else {
+                const errText = await resp.text();
+                console.error(`Telegram failed for ${moderator.mod_name}:`, errText);
+              }
+            } catch (e) {
+              console.error(`Error notifying ${moderator.mod_name} via Telegram:`, e);
             }
+          }
+        }
 
-            // Dashboard link
-            keyboard.push([{ text: '📊 Dashboard', url: `https://hyperchat.site/dashboard/${streamer.streamer_slug}` }]);
+        // === DISCORD NOTIFICATIONS ===
+        const discordBotToken = Deno.env.get('DISCORD_BOT_TOKEN');
+        if (streamer.discord_moderation_enabled && discordBotToken) {
+          const discordModerators = moderators.filter((m: any) => m.discord_user_id);
+          
+          for (const moderator of discordModerators) {
+            try {
+              // Create DM channel
+              const dmChannelResp = await fetch('https://discord.com/api/v10/users/@me/channels', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bot ${discordBotToken}`,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ recipient_id: moderator.discord_user_id })
+              });
 
-            const payload: any = {
-              chat_id: parseInt(moderator.telegram_user_id),
-              text: messageText,
-              parse_mode: 'HTML',
-              disable_web_page_preview: true
-            };
+              if (!dmChannelResp.ok) {
+                console.error(`Failed to create DM channel for ${moderator.mod_name}:`, await dmChannelResp.text());
+                continue;
+              }
 
-            if (keyboard.length > 0) {
-              payload.reply_markup = { inline_keyboard: keyboard };
+              const dmChannel = await dmChannelResp.json();
+
+              // Build Discord message embed
+              const embed: any = {
+                title: isPending ? '🎁 New Donation - Needs Approval' : '🎁 New Donation Received!',
+                color: isPending ? 0xFFA500 : 0x00FF00,
+                fields: [
+                  { name: '💰 Amount', value: amountDisplay, inline: true },
+                  { name: '👤 From', value: donation.name, inline: true },
+                  { name: '📅 Time', value: new Date(donation.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }), inline: true }
+                ],
+                footer: { text: isPending ? '⏳ Pending Approval' : '✅ Auto-Approved' }
+              };
+
+              if (donation.message) {
+                embed.fields.push({ name: '💬 Message', value: donation.message.substring(0, 200), inline: false });
+              }
+              if (donation.voice_message_url) {
+                embed.fields.push({ name: '🎵 Voice', value: 'Available', inline: true });
+              }
+              if (donation.media_url) {
+                const mediaType = donation.media_type || 'media';
+                embed.fields.push({ name: '📎 Media', value: mediaType.charAt(0).toUpperCase() + mediaType.slice(1) + ' attached', inline: true });
+              }
+
+              // Build action row buttons for pending donations
+              const components: any[] = [];
+              if (isPending) {
+                const row1Buttons: any[] = [];
+                if (moderator.role === 'owner' || moderator.can_approve) {
+                  const shortId = await createDiscordCallbackMapping(
+                    supabaseAdmin, donation.id, donation.source_table, donation.streamer_id, 'approve'
+                  );
+                  row1Buttons.push({ type: 2, style: 3, label: '✅ Approve', custom_id: `a_${shortId}` });
+                }
+                if (moderator.role === 'owner' || moderator.can_reject) {
+                  const shortId = await createDiscordCallbackMapping(
+                    supabaseAdmin, donation.id, donation.source_table, donation.streamer_id, 'reject'
+                  );
+                  row1Buttons.push({ type: 2, style: 4, label: '❌ Reject', custom_id: `r_${shortId}` });
+                }
+                if (row1Buttons.length > 0) {
+                  components.push({ type: 1, components: row1Buttons });
+                }
+
+                const row2Buttons: any[] = [];
+                if ((moderator.role === 'owner' || moderator.can_hide_message) && donation.message) {
+                  const shortId = await createDiscordCallbackMapping(
+                    supabaseAdmin, donation.id, donation.source_table, donation.streamer_id, 'hide_message'
+                  );
+                  row2Buttons.push({ type: 2, style: 2, label: '🙈 Hide Msg', custom_id: `h_${shortId}` });
+                }
+                if (moderator.role === 'owner' || moderator.can_ban) {
+                  const shortId = await createDiscordCallbackMapping(
+                    supabaseAdmin, donation.id, donation.source_table, donation.streamer_id, 'ban_donor'
+                  );
+                  row2Buttons.push({ type: 2, style: 4, label: '🚫 Ban', custom_id: `b_${shortId}` });
+                }
+                if (row2Buttons.length > 0) {
+                  components.push({ type: 1, components: row2Buttons });
+                }
+              }
+
+              // Dashboard link button
+              components.push({
+                type: 1,
+                components: [{
+                  type: 2, style: 5, label: '📊 Dashboard',
+                  url: `https://hyperchat.site/dashboard/${streamer.streamer_slug}`
+                }]
+              });
+
+              // Send the DM
+              const msgPayload: any = { embeds: [embed] };
+              if (components.length > 0) {
+                msgPayload.components = components;
+              }
+
+              const msgResp = await fetch(`https://discord.com/api/v10/channels/${dmChannel.id}/messages`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bot ${discordBotToken}`,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(msgPayload)
+              });
+
+              if (msgResp.ok) {
+                console.log(`Discord DM sent to ${moderator.mod_name}`);
+                notificationSent = true;
+              } else {
+                console.error(`Discord DM failed for ${moderator.mod_name}:`, await msgResp.text());
+              }
+            } catch (e) {
+              console.error(`Error notifying ${moderator.mod_name} via Discord:`, e);
             }
-
-            console.log(`Sending to ${moderator.mod_name} (${moderator.telegram_user_id}), isPending: ${isPending}`);
-
-            const resp = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
-            });
-
-            if (resp.ok) {
-              console.log(`Sent to ${moderator.mod_name}`);
-              notificationSent = true;
-            } else {
-              const errText = await resp.text();
-              console.error(`Failed for ${moderator.mod_name}:`, errText);
-            }
-          } catch (e) {
-            console.error(`Error notifying ${moderator.mod_name}:`, e);
           }
         }
 
