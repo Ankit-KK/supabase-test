@@ -110,3 +110,6 @@ verify_jwt = false
 
 [functions.setup-discord-webhook]
 verify_jwt = false
+
+[functions.manage-moderators]
+verify_jwt = false
