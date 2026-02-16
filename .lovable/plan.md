@@ -1,33 +1,28 @@
 
 
-# Fix Moderation Alerts Not Sending (Telegram + Discord)
-
-## Root Causes
-
-### Bug 1: Discord notifications never sent
-The moderator query in `notify-new-donations` (line 206) does not include `discord_user_id` in the SELECT fields. This means when the code later filters moderators by `discord_user_id`, the field is always `undefined`, and zero Discord DMs are sent.
-
-### Bug 2: Telegram "chat not found" error
-The stored Telegram User ID for the "Ankit" moderator is `7HA068059`, which is not a valid Telegram numeric ID. Telegram requires a pure numeric chat ID. This causes the API to return `400 Bad Request: chat not found`.
-
-### Bug 3: Missing donation table
-`dorp_plays_donations` is absent from the `donationTables` array, so DorpPlays donations never trigger notifications.
+# Show Discord Auth Link + Remove Bot Setup Cards
 
 ## Changes
 
-### 1. `supabase/functions/notify-new-donations/index.ts`
+### 1. `src/components/dashboard/ModeratorManager.tsx`
 
-**Fix the SELECT query (line 206):** Add `discord_user_id` to the selected fields:
+**Remove the two setup cards**: Delete the "Telegram Bot Setup" card and the "Discord Bot Setup" card entirely (the sections with `setupTelegramWebhook` and `setupDiscordWebhook` buttons). Also remove all related state variables (`setupStatus`, `discordSetupStatus`) and handler functions (`setupTelegramWebhook`, `setupDiscordWebhook`).
+
+**Add Discord auth link in the "Add Moderator" form**: When the Discord ID field is visible or filled, show a helper message with the authorization link:
+
 ```
-.select('telegram_user_id, discord_user_id, mod_name, role, can_approve, can_reject, can_hide_message, can_ban')
+To receive DMs, the moderator must first authorize the bot:
+https://discord.com/oauth2/authorize?client_id=1473061793189593219
 ```
 
-**Add missing table (line 125-131):** Add `'dorp_plays_donations'` to the `donationTables` array.
+This link will be displayed as a clickable link below the Discord User ID input field, so moderators know to authorize the bot before expecting DM notifications.
 
-### 2. Database: Fix invalid Telegram User ID
-The moderator record for "Ankit" has `telegram_user_id = '7HA068059'`. The correct numeric Telegram ID needs to be obtained by messaging @userinfobot on Telegram, and then updating the record. If the correct ID is not known, we can set it to `null` so it stops failing.
+### 2. No edge function changes
+
+The `setup-telegram-webhook` and `setup-discord-webhook` edge functions remain untouched (per project rules -- do not delete existing backend code). They just won't be called from the UI anymore.
 
 ## Technical Summary
-- 1 edge function file edited (2 small fixes)
-- 1 database record to update (invalid Telegram ID)
-- Redeploy `notify-new-donations`
+- 1 file modified: `ModeratorManager.tsx`
+- Remove ~60 lines (two Card sections + state/handlers)
+- Add ~5 lines (Discord auth link below the input)
+
