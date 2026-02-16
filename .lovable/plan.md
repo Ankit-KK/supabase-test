@@ -1,38 +1,33 @@
 
 
-# Fix 401 Error When Adding Moderators
+# Fix Moderation Alerts Not Sending (Telegram + Discord)
 
-## Root Cause
-The `ModeratorManager` component calls `supabase.from('streamers_moderators').insert(...)` directly using the anon key. However, the RLS policies on `streamers_moderators` require either Supabase Auth (`auth.email()`) or `service_role` access. Since this project uses a **custom auth system** (tokens in `localStorage`), `auth.email()` is always null, and the anon client is blocked.
+## Root Causes
 
-## Solution
-Create a new edge function `manage-moderators` that handles add/remove/list operations using the service role key, with custom auth token validation -- matching the pattern used by other dashboard operations (e.g., `moderate-donation`, `update-streamer-settings`).
+### Bug 1: Discord notifications never sent
+The moderator query in `notify-new-donations` (line 206) does not include `discord_user_id` in the SELECT fields. This means when the code later filters moderators by `discord_user_id`, the field is always `undefined`, and zero Discord DMs are sent.
+
+### Bug 2: Telegram "chat not found" error
+The stored Telegram User ID for the "Ankit" moderator is `7HA068059`, which is not a valid Telegram numeric ID. Telegram requires a pure numeric chat ID. This causes the API to return `400 Bad Request: chat not found`.
+
+### Bug 3: Missing donation table
+`dorp_plays_donations` is absent from the `donationTables` array, so DorpPlays donations never trigger notifications.
 
 ## Changes
 
-### 1. New Edge Function: `supabase/functions/manage-moderators/index.ts`
-- Accepts actions: `list`, `add`, `remove`
-- Validates the custom auth token via `validate_session_token` RPC
-- Verifies ownership (streamer's `user_id` matches the authenticated user) with admin bypass
-- Uses service role client for database operations
-- Follows the exact same pattern as `update-streamer-settings`
+### 1. `supabase/functions/notify-new-donations/index.ts`
 
-### 2. Update `src/components/dashboard/ModeratorManager.tsx`
-- Replace all 3 direct Supabase calls with edge function invocations:
-  - `fetchModerators` -> `supabase.functions.invoke('manage-moderators', { body: { action: 'list', streamerId }, headers: { 'x-auth-token': authToken } })`
-  - `addModerator` -> `supabase.functions.invoke('manage-moderators', { body: { action: 'add', streamerId, modName, telegramId, discordId }, headers: { 'x-auth-token': authToken } })`
-  - `removeModerator` -> `supabase.functions.invoke('manage-moderators', { body: { action: 'remove', streamerId, moderatorId }, headers: { 'x-auth-token': authToken } })`
+**Fix the SELECT query (line 206):** Add `discord_user_id` to the selected fields:
+```
+.select('telegram_user_id, discord_user_id, mod_name, role, can_approve, can_reject, can_hide_message, can_ban')
+```
 
-### 3. No database or RLS changes needed
-The edge function uses the service role key, bypassing RLS entirely. Auth is enforced in the function code via token validation and ownership checks.
+**Add missing table (line 125-131):** Add `'dorp_plays_donations'` to the `donationTables` array.
 
-## Technical Details
+### 2. Database: Fix invalid Telegram User ID
+The moderator record for "Ankit" has `telegram_user_id = '7HA068059'`. The correct numeric Telegram ID needs to be obtained by messaging @userinfobot on Telegram, and then updating the record. If the correct ID is not known, we can set it to `null` so it stops failing.
 
-Edge function structure (follows `update-streamer-settings` pattern):
-1. CORS handling
-2. Parse `x-auth-token` header
-3. Validate token via `validate_session_token` RPC
-4. Verify streamer ownership (with admin bypass via `admin_emails` table)
-5. Execute the requested action using service role client
-6. Return result
-
+## Technical Summary
+- 1 edge function file edited (2 small fixes)
+- 1 database record to update (invalid Telegram ID)
+- Redeploy `notify-new-donations`
