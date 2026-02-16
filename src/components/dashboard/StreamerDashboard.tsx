@@ -9,7 +9,7 @@ import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { DollarSign, Users, TrendingUp, Clock, AlertCircle, LogOut, Shield } from 'lucide-react';
 import DonationCard from './DonationCard';
-import TelegramDashboard from './telegram/TelegramDashboard';
+import { ModeratorManager } from './ModeratorManager';
 import OBSTokenManager from './OBSTokenManager';
 import CSVExportButton from './CSVExportButton';
 import ModerationPanel from './moderation/ModerationPanel';
@@ -461,7 +461,7 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
               <Shield className="h-4 w-4" /> Moderation
             </TabsTrigger>
             <TabsTrigger value="donations">Approved Donations</TabsTrigger>
-            <TabsTrigger value="telegram">Telegram</TabsTrigger>
+            <TabsTrigger value="telegram">Notifications</TabsTrigger>
             <TabsTrigger value="obs">OBS Setup</TabsTrigger>
           </TabsList>
 
@@ -514,9 +514,8 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
           </TabsContent>
 
           <TabsContent value="telegram" className="space-y-6 data-[state=inactive]:hidden" forceMount>
-            <TelegramDashboard
+            <ModeratorManager
               streamerId={streamerData.id}
-              streamerSlug={streamerSlug}
             />
           </TabsContent>
 
