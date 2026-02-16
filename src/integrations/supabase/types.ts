@@ -1013,7 +1013,7 @@ export type Database = {
           mod_name: string
           role: Database["public"]["Enums"]["moderator_role"] | null
           streamer_id: string
-          telegram_user_id: string
+          telegram_user_id: string | null
           total_actions: number | null
         }
         Insert: {
@@ -1031,7 +1031,7 @@ export type Database = {
           mod_name: string
           role?: Database["public"]["Enums"]["moderator_role"] | null
           streamer_id: string
-          telegram_user_id: string
+          telegram_user_id?: string | null
           total_actions?: number | null
         }
         Update: {
@@ -1049,7 +1049,7 @@ export type Database = {
           mod_name?: string
           role?: Database["public"]["Enums"]["moderator_role"] | null
           streamer_id?: string
-          telegram_user_id?: string
+          telegram_user_id?: string | null
           total_actions?: number | null
         }
         Relationships: [

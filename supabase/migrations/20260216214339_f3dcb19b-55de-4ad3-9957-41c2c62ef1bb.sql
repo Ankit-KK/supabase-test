@@ -1,0 +1,1 @@
+ALTER TABLE streamers_moderators ALTER COLUMN telegram_user_id DROP NOT NULL;
