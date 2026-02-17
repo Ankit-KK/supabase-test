@@ -201,13 +201,16 @@ const Zishu = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-purple-950 via-violet-900 to-purple-900">
-      <div className="absolute inset-0 bg-black/40" />
+    <div className="min-h-screen flex items-center justify-center p-4 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('/assets/streamers/zishu-background.png')" }}>
+      <div className="absolute inset-0 bg-black/60" />
 
-      <Card className="w-full max-w-sm bg-card/90 backdrop-blur-sm border-purple-500/20 shadow-2xl relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 via-violet-500/20 to-purple-500/20 blur-xl opacity-50" />
+      <Card className="w-full max-w-sm backdrop-blur-sm border-purple-500/20 shadow-2xl relative overflow-hidden bg-cover bg-center" style={{ backgroundImage: "url('/assets/streamers/zishu-background.png')" }}>
+        <div className="absolute inset-0 bg-black/70" />
 
-        <CardHeader className="text-center relative z-10 pb-2">
+        <CardHeader className="text-center relative z-10 pb-2 flex flex-col items-center">
+          <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-purple-500 shadow-xl mb-3">
+            <img src="/assets/streamers/zishu-logo.png" alt="Zishu Logo" className="w-full h-full object-cover" />
+          </div>
           <CardTitle className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent">
             Zishu
           </CardTitle>
