@@ -72,7 +72,7 @@ export const DONATION_PAGE_CONFIGS: Record<string, DonationPageConfig> = {
   zishu: {
     streamerSlug: 'zishu',
     streamerName: 'Zishu',
-    brandColor: '#e11d48',
+    brandColor: '#a855f7',
     logoSrc: '/assets/streamers/zishu-logo.png',
     backgroundSrc: '/assets/streamers/zishu-background.png',
     edgeFunctionName: 'create-razorpay-order-unified',

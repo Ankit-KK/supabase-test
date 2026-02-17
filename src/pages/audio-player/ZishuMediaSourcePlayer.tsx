@@ -6,7 +6,7 @@ const ZishuMediaSourcePlayer = () => (
     streamerName="Zishu"
     tableName="zishu_donations"
     browserSourcePath="/zishu/media-audio-player"
-    brandColor="#e11d48"
+    brandColor="#a855f7"
   />
 );
 

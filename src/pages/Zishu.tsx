@@ -191,7 +191,7 @@ const Zishu = () => {
         modal: {
           ondismiss: () => navigate(`/status?order_id=${data.orderId}&status=pending`),
         },
-        theme: { color: "#e11d48" },
+        theme: { color: "#a855f7" },
       }).open();
     } catch {
       toast.error("Payment failed");
@@ -201,14 +201,14 @@ const Zishu = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-rose-950 via-red-900 to-pink-900">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-purple-950 via-violet-900 to-purple-900">
       <div className="absolute inset-0 bg-black/40" />
 
-      <Card className="w-full max-w-sm bg-card/90 backdrop-blur-sm border-rose-500/20 shadow-2xl relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-rose-500/20 via-red-500/20 to-pink-500/20 blur-xl opacity-50" />
+      <Card className="w-full max-w-sm bg-card/90 backdrop-blur-sm border-purple-500/20 shadow-2xl relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 via-violet-500/20 to-purple-500/20 blur-xl opacity-50" />
 
         <CardHeader className="text-center relative z-10 pb-2">
-          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-rose-400 to-pink-400 bg-clip-text text-transparent">
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent">
             Zishu
           </CardTitle>
           <p className="text-xs text-muted-foreground">Support Zishu with your donation</p>
@@ -217,14 +217,14 @@ const Zishu = () => {
         <CardContent className="space-y-4 relative z-10">
           {/* NAME */}
           <div className="space-y-2">
-            <Label className="text-rose-300">Your Name *</Label>
+            <Label className="text-purple-300">Your Name *</Label>
             <Input
               name="name"
               value={formData.name}
               onChange={handleInputChange}
               className="bg-black/40 text-white placeholder:text-gray-400
-                         border-rose-500/30
-                         focus:border-rose-500 focus:ring-rose-500/20"
+                         border-purple-500/30
+                         focus:border-purple-500 focus:ring-purple-500/20"
             />
           </div>
 
@@ -237,8 +237,8 @@ const Zishu = () => {
                 onClick={() => handleDonationTypeChange(type)}
                 className={`p-2 rounded-lg border-2 transition-all ${
                   donationType === type
-                    ? "border-rose-500 bg-rose-500/10"
-                    : "border-rose-500/30 hover:border-rose-500/50"
+                    ? "border-purple-500 bg-purple-500/10"
+                    : "border-purple-500/30 hover:border-purple-500/50"
                 }`}
               >
                 <div className="text-center">
@@ -263,7 +263,7 @@ const Zishu = () => {
 
           {/* AMOUNT */}
           <div className="space-y-2">
-            <Label className="text-rose-300">Amount *</Label>
+            <Label className="text-purple-300">Amount *</Label>
             <div className="flex gap-2">
               <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
                 <PopoverTrigger asChild>
@@ -271,8 +271,8 @@ const Zishu = () => {
                     variant="outline"
                     className="w-[100px] justify-between
                                bg-black/40 text-white
-                               border-rose-500/30
-                               hover:bg-rose-500/10"
+                               border-purple-500/30
+                               hover:bg-purple-500/10"
                   >
                     {currencySymbol} {selectedCurrency}
                     <ChevronsUpDown className="h-4 w-4 opacity-50" />
@@ -311,13 +311,13 @@ const Zishu = () => {
                 value={formData.amount}
                 onChange={handleInputChange}
                 className="bg-black/40 text-white placeholder:text-gray-400
-                           border-rose-500/30
-                           focus:border-rose-500 focus:ring-rose-500/20"
+                           border-purple-500/30
+                           focus:border-purple-500 focus:ring-purple-500/20"
               />
             </div>
 
             {pricing.ttsEnabled && (
-              <p className="text-xs text-rose-300">
+              <p className="text-xs text-purple-300">
                 TTS above {currencySymbol}
                 {pricing.minTts}
               </p>
@@ -334,8 +334,8 @@ const Zishu = () => {
                 maxLength={maxMessageLength}
                 className="w-full min-h-[90px] rounded-md
                            bg-black/40 text-white placeholder:text-gray-400
-                           border border-rose-500/30
-                           focus:border-rose-500 focus:ring-rose-500/20
+                           border border-purple-500/30
+                           focus:border-purple-500 focus:ring-purple-500/20
                            px-3 py-2 text-sm"
                 placeholder="Your message (optional)"
               />
@@ -353,7 +353,7 @@ const Zishu = () => {
               maxDurationSeconds={getVoiceDuration(currentAmount)}
               requiredAmount={pricing.minVoice}
               currentAmount={currentAmount}
-              brandColor="#e11d48"
+              brandColor="#a855f7"
             />
           )}
 
@@ -378,14 +378,14 @@ const Zishu = () => {
           )}
 
           <Button
-            className="w-full font-semibold py-6 bg-rose-600 hover:bg-rose-700"
+            className="w-full font-semibold py-6 bg-purple-600 hover:bg-purple-700"
             onClick={handleSubmit}
             disabled={isProcessingPayment}
           >
             {isProcessingPayment ? "Processing..." : `Support ${currencySymbol}${formData.amount || "0"}`}
           </Button>
 
-          <DonationPageFooter brandColor="#e11d48" />
+          <DonationPageFooter brandColor="#a855f7" />
         </CardContent>
       </Card>
     </div>
