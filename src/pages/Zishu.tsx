@@ -204,8 +204,8 @@ const Zishu = () => {
     <div className="min-h-screen flex items-center justify-center p-4 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('/assets/streamers/zishu-background.png')" }}>
       <div className="absolute inset-0 bg-black/60" />
 
-      <Card className="w-full max-w-sm backdrop-blur-sm border-purple-500/20 shadow-2xl relative overflow-hidden bg-cover bg-center" style={{ backgroundImage: "url('/assets/streamers/zishu-background.png')" }}>
-        <div className="absolute inset-0 bg-black/70" />
+      <Card className="w-full max-w-sm backdrop-blur-sm border-purple-500/40 shadow-[0_0_30px_rgba(168,85,247,0.15)] relative overflow-hidden bg-cover bg-center" style={{ backgroundImage: "url('/assets/streamers/zishu-background.png')" }}>
+        <div className="absolute inset-0 bg-black/80 backdrop-blur-md" />
 
         <CardHeader className="text-center relative z-10 pb-2 flex flex-col items-center">
           <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-purple-500 shadow-xl mb-3">
