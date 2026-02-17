@@ -101,6 +101,7 @@ export default function Status() {
           if (orderId.startsWith('cg2_rp_')) return 'check-payment-status-unified'; // Clumsy God
           if (orderId.startsWith('wf_rp_')) return 'check-payment-status-unified'; // Wolfy
           if (orderId.startsWith('dp2_rp_')) return 'check-payment-status-unified'; // DorpPlays
+          if (orderId.startsWith('zs_rp_')) return 'check-payment-status-unified'; // Zishu
           if (orderId.startsWith('chiagaming_rp_')) return 'check-payment-status-unified';
           
           // Legacy Ankit prefix
@@ -228,6 +229,7 @@ export default function Status() {
     if (orderId.startsWith('cg2_rp_')) return "/clumsy_god";
     if (orderId.startsWith('wf_rp_')) return "/wolfy";
     if (orderId.startsWith('dp2_rp_')) return "/dorp_plays";
+    if (orderId.startsWith('zs_rp_')) return "/zishu";
     
     console.warn('[Status] Unknown order_id prefix for navigation, redirecting to homepage:', orderId);
     return "/";

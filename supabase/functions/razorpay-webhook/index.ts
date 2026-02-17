@@ -25,6 +25,7 @@ const streamerSlugMap: Record<string, string> = {
   'clumsygod': 'clumsy_god',
   'wolfy': 'wolfy',
   'dorpplays': 'dorp_plays',
+  'zishu': 'zishu',
 };
 
 // Generate short ID for callback mapping (8 characters)
@@ -267,7 +268,20 @@ serve(async (req) => {
                 streamerType = 'dorpplays'
                 tableName = 'dorp_plays_donations'
               } else {
-                fetchError = ankitResult.error || looteriyaGamingResult.error || chiagamingResult.error || clumsyGodResult.error || wolfyResult.error || dorpPlaysResult.error
+                // Try zishu
+                const zishuResult = await supabase
+                  .from('zishu_donations')
+                  .select('*')
+                  .eq('razorpay_order_id', razorpayOrderId)
+                  .maybeSingle()
+                
+                if (zishuResult.data) {
+                  donation = zishuResult.data
+                  streamerType = 'zishu'
+                  tableName = 'zishu_donations'
+                } else {
+                  fetchError = ankitResult.error || looteriyaGamingResult.error || chiagamingResult.error || clumsyGodResult.error || wolfyResult.error || dorpPlaysResult.error || zishuResult.error
+                }
               }
             }
           }

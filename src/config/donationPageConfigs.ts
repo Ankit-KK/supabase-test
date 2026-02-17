@@ -69,6 +69,15 @@ export const DONATION_PAGE_CONFIGS: Record<string, DonationPageConfig> = {
     edgeFunctionName: 'create-razorpay-order-unified',
     themeDescription: 'Support DorpPlays with your donation',
   },
+  zishu: {
+    streamerSlug: 'zishu',
+    streamerName: 'Zishu',
+    brandColor: '#e11d48',
+    logoSrc: '/assets/streamers/zishu-logo.png',
+    backgroundSrc: '/assets/streamers/zishu-background.png',
+    edgeFunctionName: 'create-razorpay-order-unified',
+    themeDescription: 'Support Zishu with your donation',
+  },
 };
 
 export const getDonationPageConfig = (slug: string): DonationPageConfig | undefined => {

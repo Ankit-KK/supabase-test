@@ -232,6 +232,7 @@ serve(async (req) => {
       clumsy_god: "clumsy_god_donations",
       wolfy: "wolfy_donations",
       dorp_plays: "dorp_plays_donations",
+      zishu: "zishu_donations",
     };
 
     const donationTable = donationTableMap[streamerSlug];
