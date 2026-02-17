@@ -1,0 +1,2 @@
+-- Set explicit text minimums for streamers that had NULL (were relying on old 40 floor)
+UPDATE streamers SET min_text_amount_inr = 40 WHERE streamer_slug IN ('chiaa_gaming', 'clumsy_god', 'dorp_plays') AND min_text_amount_inr IS NULL;
