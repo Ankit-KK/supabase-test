@@ -51,6 +51,11 @@ export const STREAMER_CONFIGS: Record<string, StreamerConfig> = {
     pusherDashboardChannel: 'dorp_plays-dashboard', pusherGoalChannel: 'dorp_plays-goal', pusherAudioChannel: 'dorp_plays-audio',
     pusherAlertsChannel: 'dorp_plays-alerts', pusherSettingsChannel: 'dorp_plays-settings', razorpayOrderPrefix: 'dp2_rp_',
   },
+  zishu: {
+    slug: 'zishu', name: 'Zishu', tableName: 'zishu_donations', brandColor: '#e11d48',
+    pusherDashboardChannel: 'zishu-dashboard', pusherGoalChannel: 'zishu-goal', pusherAudioChannel: 'zishu-audio',
+    pusherAlertsChannel: 'zishu-alerts', pusherSettingsChannel: 'zishu-settings', razorpayOrderPrefix: 'zs_rp_',
+  },
 };
 
 export const getStreamerConfig = (slug: string): StreamerConfig | undefined => STREAMER_CONFIGS[slug];

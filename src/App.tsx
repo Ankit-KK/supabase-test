@@ -26,6 +26,7 @@ import LooteriyaGaming from "./pages/LooteriyaGaming";
 import ClumsyGod from "./pages/ClumsyGod";
 import Wolfy from "./pages/Wolfy";
 import DorpPlays from "./pages/DorpPlays";
+import Zishu from "./pages/Zishu";
 
 // Dashboard pages
 import Dashboard from "./pages/dashboard/Dashboard";
@@ -38,6 +39,7 @@ import LooteriyaGamingDashboard from "./pages/dashboard/LooteriyaGamingDashboard
 import ClumsyGodDashboard from "./pages/dashboard/ClumsyGodDashboard";
 import WolfyDashboard from "./pages/dashboard/WolfyDashboard";
 import DorpPlaysDashboard from "./pages/dashboard/DorpPlaysDashboard";
+import ZishuDashboard from "./pages/dashboard/ZishuDashboard";
 
 // OBS Alert pages
 import AnkitObsAlerts from "./pages/obs-alerts/AnkitObsAlerts";
@@ -52,6 +54,8 @@ import WolfyObsAlerts from "./pages/obs-alerts/WolfyObsAlerts";
 import WolfyGoalOverlay from "./pages/obs-alerts/WolfyGoalOverlay";
 import DorpPlaysObsAlerts from "./pages/obs-alerts/DorpPlaysObsAlerts";
 import DorpPlaysGoalOverlay from "./pages/obs-alerts/DorpPlaysGoalOverlay";
+import ZishuObsAlerts from "./pages/obs-alerts/ZishuObsAlerts";
+import ZishuGoalOverlay from "./pages/obs-alerts/ZishuGoalOverlay";
 
 // Audio Player pages
 import AnkitAudioPlayer from "./pages/audio-player/AnkitAudioPlayer";
@@ -62,6 +66,7 @@ import LooteriyaGamingMediaSourcePlayer from "./pages/audio-player/LooteriyaGami
 import ClumsyGodMediaSourcePlayer from "./pages/audio-player/ClumsyGodMediaSourcePlayer";
 import WolfyMediaSourcePlayer from "./pages/audio-player/WolfyMediaSourcePlayer";
 import DorpPlaysMediaSourcePlayer from "./pages/audio-player/DorpPlaysMediaSourcePlayer";
+import ZishuMediaSourcePlayer from "./pages/audio-player/ZishuMediaSourcePlayer";
 
 const queryClient = new QueryClient();
 
@@ -97,6 +102,7 @@ const App = () => (
             <Route path="/clumsy_god" element={<ClumsyGod />} />
             <Route path="/wolfy" element={<Wolfy />} />
             <Route path="/dorp_plays" element={<DorpPlays />} />
+            <Route path="/zishu" element={<Zishu />} />
             
             {/* Authentication */}
             <Route path="/auth" element={<Auth />} />
@@ -111,6 +117,7 @@ const App = () => (
             <Route path="/dashboard/clumsy_god" element={<ClumsyGodDashboard />} />
             <Route path="/dashboard/wolfy" element={<WolfyDashboard />} />
             <Route path="/dashboard/dorp_plays" element={<DorpPlaysDashboard />} />
+            <Route path="/dashboard/zishu" element={<ZishuDashboard />} />
             
             {/* OBS Alert routes */}
             <Route path="/ankit/obs-alerts" element={<AnkitObsAlerts />} />
@@ -125,6 +132,8 @@ const App = () => (
             <Route path="/wolfy/goal-overlay" element={<WolfyGoalOverlay />} />
             <Route path="/dorp_plays/obs-alerts" element={<DorpPlaysObsAlerts />} />
             <Route path="/dorp_plays/goal-overlay" element={<DorpPlaysGoalOverlay />} />
+            <Route path="/zishu/obs-alerts" element={<ZishuObsAlerts />} />
+            <Route path="/zishu/goal-overlay" element={<ZishuGoalOverlay />} />
             
             {/* Audio Player routes */}
             <Route path="/ankit/audio-player" element={<AnkitAudioPlayer />} />
@@ -135,6 +144,7 @@ const App = () => (
             <Route path="/clumsy_god/media-audio-player" element={<ClumsyGodMediaSourcePlayer />} />
             <Route path="/wolfy/media-audio-player" element={<WolfyMediaSourcePlayer />} />
             <Route path="/dorp_plays/media-audio-player" element={<DorpPlaysMediaSourcePlayer />} />
+            <Route path="/zishu/media-audio-player" element={<ZishuMediaSourcePlayer />} />
             
             {/* Catch all 404 */}
             <Route path="*" element={<NotFound />} />
