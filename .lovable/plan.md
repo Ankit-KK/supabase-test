@@ -1,31 +1,33 @@
 
 
-## Update Zishu Branding: Purple Theme and New Images
+## Use Zishu Images on the Donation Page
 
-### What Changes
-1. **Save uploaded images** to the project as Zishu's logo and background
-2. **Change brand color** from red (`#e11d48`) to purple (`#a855f7`) across all Zishu-related files
+### Problem
+The uploaded images were saved to `public/assets/streamers/zishu-logo.png` and `zishu-background.png`, but `src/pages/Zishu.tsx` never references them. The page only shows a plain purple CSS gradient.
 
-### Files to Update
+### Solution
+Update `src/pages/Zishu.tsx` to display both images, following the same pattern used by ChiaaGaming:
 
-**New assets (copy from uploads):**
-- `user-uploads://channels4_profile-15.jpg` -> `public/assets/streamers/zishu-logo.png`
-- `user-uploads://channels4_banner-15.jpg` -> `public/assets/streamers/zishu-background.png`
+### Changes (all in `src/pages/Zishu.tsx`)
 
-**Color changes (`#e11d48` -> `#a855f7`):**
+1. **Full-page background** -- Replace the plain gradient `div` with one that uses `zishu-background.png` as a `background-image`:
+   ```
+   style={{ backgroundImage: "url('/assets/streamers/zishu-background.png')" }}
+   ```
+   Keep the dark overlay (`bg-black/40`) on top for readability.
 
-1. **`src/config/streamers.ts`** (line 55) - Central brand color
-2. **`src/config/donationPageConfigs.ts`** (line 75) - Donation page config
-3. **`src/pages/Zishu.tsx`** - Three hardcoded color references (lines 194, 356, 388) plus all `rose-*` Tailwind classes replaced with `purple-*` equivalents:
-   - Background gradient: `from-rose-950 via-red-900 to-pink-900` -> `from-purple-950 via-violet-900 to-purple-900`
-   - Border/accent colors: `rose-500` -> `purple-500`, `rose-300` -> `purple-300`, `rose-400` -> `purple-400`
-   - Button: `bg-rose-600 hover:bg-rose-700` -> `bg-purple-600 hover:bg-purple-700`
-   - Glow overlays: `from-rose-500/20 via-red-500/20 to-pink-500/20` -> `from-purple-500/20 via-violet-500/20 to-purple-500/20`
-4. **`src/pages/audio-player/ZishuMediaSourcePlayer.tsx`** (line 9) - Brand color prop
+2. **Card background** -- Add the background image to the Card as well (with overlay), matching how ChiaaGaming layers its card:
+   ```
+   style={{ backgroundImage: "url('/assets/streamers/zishu-background.png')", backgroundSize: "cover", backgroundPosition: "center" }}
+   ```
 
-### Technical Details
-- All `rose-*` Tailwind utility classes in `Zishu.tsx` will be replaced with `purple-*` equivalents
-- The hex color `#a855f7` (Tailwind purple-500) matches the purple glow aesthetic from Zishu's profile image
-- No other streamer pages or shared components are modified
-- The uploaded profile image will serve as the logo, and the banner as the background
+3. **Circular logo** -- Add a circular logo image above the title text in the CardHeader:
+   ```html
+   <div class="w-20 h-20 rounded-full overflow-hidden border-4 border-purple-500 shadow-xl">
+     <img src="/assets/streamers/zishu-logo.png" alt="Zishu Logo" />
+   </div>
+   ```
+
+### No other files are modified
+Only `src/pages/Zishu.tsx` is changed. No other streamer pages, configs, or edge functions are touched.
 
