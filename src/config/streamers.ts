@@ -52,7 +52,7 @@ export const STREAMER_CONFIGS: Record<string, StreamerConfig> = {
     pusherAlertsChannel: 'dorp_plays-alerts', pusherSettingsChannel: 'dorp_plays-settings', razorpayOrderPrefix: 'dp2_rp_',
   },
   zishu: {
-    slug: 'zishu', name: 'Zishu', tableName: 'zishu_donations', brandColor: '#e11d48',
+    slug: 'zishu', name: 'Zishu', tableName: 'zishu_donations', brandColor: '#a855f7',
     pusherDashboardChannel: 'zishu-dashboard', pusherGoalChannel: 'zishu-goal', pusherAudioChannel: 'zishu-audio',
     pusherAlertsChannel: 'zishu-alerts', pusherSettingsChannel: 'zishu-settings', razorpayOrderPrefix: 'zs_rp_',
   },
