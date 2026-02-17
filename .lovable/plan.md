@@ -1,20 +1,40 @@
 
 
-## Improve Zishu Donation Card Readability
+## Lower Text Minimum to 20 for Zishu
 
-### Problem
-The donation card blends into the page background, making text hard to read because both use the same background image with similar dark overlays.
+### The Problem
+The `get-streamer-pricing` edge function enforces a platform-wide floor of 40 INR for text donations:
+```
+PLATFORM_FLOORS_INR = { text: 40, ... }
+```
+The formula is `MAX(40, streamer_custom)`, so setting Zishu's custom to 20 still yields 40.
 
-### Solution
-Make the inner card visually distinct with a stronger dark overlay and subtle border glow.
+### Recommended Solution: Lower the Platform Text Floor to 20
 
-### Changes (only `src/pages/Zishu.tsx`)
+Since the platform floor is meant to be the absolute minimum the system allows, lowering it to 20 INR lets any streamer (including Zishu) set their text minimum as low as 20. Other streamers already have their own custom minimums in the database, so they won't be affected -- their `MAX(20, custom)` will still resolve to their existing values.
 
-1. **Increase card overlay darkness**: Change `bg-black/70` to `bg-black/80` for better text contrast
-2. **Add a backdrop-blur** to the card overlay div so the background image becomes softer: `bg-black/80 backdrop-blur-md`
-3. **Strengthen card border**: Change `border-purple-500/20` to `border-purple-500/40` so the card edge is more visible
-4. **Add a subtle inner shadow/glow** to the Card: add `shadow-[0_0_30px_rgba(168,85,247,0.15)]` for a soft purple glow that separates it from the page
+### Changes
 
-### No other files modified
-Only styling tweaks in `src/pages/Zishu.tsx`. No other streamer pages, configs, or edge functions are touched.
+**1. `supabase/functions/get-streamer-pricing/index.ts`** -- Change one value:
+```
+PLATFORM_FLOORS_INR = { text: 20, ... }  // was 40
+```
 
+**2. Database update** -- Set Zishu's custom text minimum:
+```sql
+UPDATE streamers SET min_text_amount_inr = 20 WHERE streamer_slug = 'zishu';
+```
+
+**3. `src/hooks/useStreamerPricing.ts`** -- Update the frontend fallback default from 40 to 20:
+```
+minText: 20  // was 40
+```
+
+### What stays the same
+- All other streamers keep their current minimums (their custom values are >= 20 already)
+- No changes to Zishu's donation page UI code
+- No changes to order creation or payment validation logic
+- The `create-razorpay-order-unified` function uses the same pricing logic, so it will accept 20 INR text donations for Zishu automatically
+
+### Risk Check
+Other streamers with `min_text_amount_inr` set to NULL or 0 would also get a floor of 20 instead of 40. If any streamer relies on the 40 floor, their `min_text_amount_inr` should be explicitly set to 40 in the database.
