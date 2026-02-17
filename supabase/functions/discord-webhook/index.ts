@@ -171,52 +171,34 @@ serve(async (req) => {
         }), { headers: { 'Content-Type': 'application/json' } });
       }
 
-      // Execute moderation action via moderate-donation
-      try {
-        const response = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/moderate-donation`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
-          },
-          body: JSON.stringify({
-            action,
-            donationId: mapping.donation_id,
-            donationTable: mapping.table_name,
-            streamerId: mapping.streamer_id,
-            moderatorId: moderator.id,
-            moderatorName: moderator.mod_name || userName,
-            source: 'discord'
-          })
-        });
+      // Fire moderate-donation WITHOUT awaiting -- respond to Discord immediately
+      fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/moderate-donation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
+        },
+        body: JSON.stringify({
+          action,
+          donationId: mapping.donation_id,
+          donationTable: mapping.table_name,
+          streamerId: mapping.streamer_id,
+          moderatorId: moderator.id,
+          moderatorName: moderator.mod_name || userName,
+          source: 'discord'
+        })
+      }).catch(err => console.error('Background moderate-donation error:', err));
 
-        const result = await response.json();
+      const emoji = actionEmojis[action] || '✅';
+      const label = actionLabels[action] || action;
 
-        if (result.success) {
-          const emoji = actionEmojis[action] || '✅';
-          const label = actionLabels[action] || action;
-
-          // Respond by updating the message
-          return new Response(JSON.stringify({
-            type: 7, // UPDATE_MESSAGE
-            data: {
-              content: `${emoji} **${label}** by ${moderator.mod_name || userName}`,
-              components: [] // Remove buttons after action
-            }
-          }), { headers: { 'Content-Type': 'application/json' } });
-        } else {
-          return new Response(JSON.stringify({
-            type: 4,
-            data: { content: `❌ ${result.error || 'Action failed'}`, flags: 64 }
-          }), { headers: { 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({
+        type: 7,
+        data: {
+          content: `${emoji} **${label}** by ${moderator.mod_name || userName}`,
+          components: []
         }
-      } catch (error) {
-        console.error('Error calling moderate-donation:', error);
-        return new Response(JSON.stringify({
-          type: 4,
-          data: { content: '❌ Error processing action', flags: 64 }
-        }), { headers: { 'Content-Type': 'application/json' } });
-      }
+      }), { headers: { 'Content-Type': 'application/json' } });
     }
 
     // Unknown interaction type
