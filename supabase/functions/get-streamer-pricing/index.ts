@@ -8,7 +8,7 @@ const corsHeaders = {
 
 // Platform floors (cannot go below these)
 const PLATFORM_FLOORS_INR = { 
-  text: 40, 
+  text: 20, 
   tts: 40, 
   voice: 150, 
   hypersound: 30, 
