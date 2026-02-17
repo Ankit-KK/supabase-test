@@ -19,7 +19,7 @@ export interface StreamerPricing {
 
 // Default fallback values (platform floors)
 const DEFAULT_PRICING: StreamerPricing = {
-  minText: 40,
+  minText: 20,
   minTts: 40,
   minVoice: 150,
   minHypersound: 30,
