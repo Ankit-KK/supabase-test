@@ -130,6 +130,7 @@ serve(async (req) => {
       'wolfy_donations',
       'dorp_plays_donations',
       'zishu_donations',
+      'brigzard_donations',
     ];
 
     let donationsToNotify: any[] = [];
