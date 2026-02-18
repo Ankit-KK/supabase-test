@@ -395,6 +395,14 @@ async function sendDonationCard(chatId: number, donation: any, tableName: string
   }
   if (row2.length > 0) keyboard.push(row2);
 
+  // Media/Voice preview buttons (URL links, no egress until clicked)
+  if (donation.voice_message_url) {
+    keyboard.push([{ text: '🎵 Listen Voice', url: donation.voice_message_url }]);
+  }
+  if (donation.media_url) {
+    keyboard.push([{ text: '📎 View Media', url: donation.media_url }]);
+  }
+
   await sendMessageWithKeyboard(chatId, messageText, keyboard, botToken);
 }
 
