@@ -294,6 +294,14 @@ serve(async (req) => {
                 if (row2.length > 0) keyboard.push(row2);
               }
 
+              // Media/Voice preview buttons (URL links, no egress until clicked)
+              if (donation.voice_message_url) {
+                keyboard.push([{ text: '🎵 Listen Voice', url: donation.voice_message_url }]);
+              }
+              if (donation.media_url) {
+                keyboard.push([{ text: '📎 View Media', url: donation.media_url }]);
+              }
+
               keyboard.push([{ text: '📊 Dashboard', url: `https://hyperchat.site/dashboard/${streamer.streamer_slug}` }]);
 
               const payload: any = {
@@ -411,6 +419,20 @@ serve(async (req) => {
                 if (row2Buttons.length > 0) {
                   components.push({ type: 1, components: row2Buttons });
                 }
+              }
+
+              // Media/Voice preview buttons (URL links, no egress until clicked)
+              if (donation.voice_message_url) {
+                components.push({
+                  type: 1,
+                  components: [{ type: 2, style: 5, label: '🎵 Listen Voice', url: donation.voice_message_url }]
+                });
+              }
+              if (donation.media_url) {
+                components.push({
+                  type: 1,
+                  components: [{ type: 2, style: 5, label: '📎 View Media', url: donation.media_url }]
+                });
               }
 
               // Dashboard link button
