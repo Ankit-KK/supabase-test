@@ -15,6 +15,7 @@ const STREAMER_TABLE_MAP: Record<string, string> = {
   'wolfy': 'wolfy_donations',
   'dorp_plays': 'dorp_plays_donations',
   'zishu': 'zishu_donations',
+  'brigzard': 'brigzard_donations',
 };
 
 // Active streamers only - mapping slugs to Pusher alert channel names
@@ -26,6 +27,7 @@ const STREAMER_CHANNEL_MAP: Record<string, string> = {
   'wolfy': 'wolfy-alerts',
   'dorp_plays': 'dorp_plays-alerts',
   'zishu': 'zishu-alerts',
+  'brigzard': 'brigzard-alerts',
 };
 
 Deno.serve(async (req) => {
