@@ -1,49 +1,42 @@
 
 
-## Fix: Add Media/Voice Preview Buttons to Moderation Notifications
+## Fix: Add `brigzard_donations` to Notification System + Redeploy
 
-### Problem
+### Root Cause
 
-When a donation includes an image, GIF, video, or voice message, moderators on Telegram and Discord only see a text label like "Media: Image attached" or "Voice: Available" -- they cannot actually view the content before approving/rejecting.
+The `notify-new-donations` edge function does NOT include `brigzard_donations` in its `donationTables` array (line 125-133). The deployed code only has 7 tables. This is why:
 
-### Solution
+1. The `razorpay-webhook` correctly processes the Brigzard payment and invokes `notify-new-donations`
+2. But `notify-new-donations` polls only the 7 listed tables, skips `brigzard_donations`, finds nothing, and returns "No donations need notification"
+3. The donation stays with `mod_notified = false` and no Telegram/Discord alert is ever sent
 
-Instead of embedding media files directly (which would increase egress costs), add clickable URL buttons that link moderators to the content. This keeps the notification lightweight while giving moderators the ability to review media before making a decision.
+### Fix
 
-### Changes Required
+**File:** `supabase/functions/notify-new-donations/index.ts` (line ~133)
 
-**File:** `supabase/functions/notify-new-donations/index.ts`
+Add `'brigzard_donations'` to the `donationTables` array:
 
-**1. Telegram section (~lines 256-328):** Add URL buttons for media and voice before the Dashboard button row.
+```text
+const donationTables = [
+  'ankit_donations',
+  'chiaa_gaming_donations',
+  'looteriya_gaming_donations',
+  'clumsy_god_donations',
+  'wolfy_donations',
+  'dorp_plays_donations',
+  'zishu_donations',
+  'brigzard_donations',    // <-- add this
+];
+```
 
-- If `donation.voice_message_url` exists, add a button row:
-  `[{ text: '🎵 Listen Voice', url: donation.voice_message_url }]`
-
-- If `donation.media_url` exists, add a button row:
-  `[{ text: '📎 View Media', url: donation.media_url }]`
-
-These buttons go into the `keyboard` array right before the Dashboard link row (line 297).
-
-**2. Discord section (~lines 331-440):** Add URL buttons for media and voice before the Dashboard button row.
-
-- If `donation.voice_message_url` exists, add a component row:
-  `{ type: 1, components: [{ type: 2, style: 5, label: '🎵 Listen Voice', url: donation.voice_message_url }] }`
-
-- If `donation.media_url` exists, add a component row:
-  `{ type: 1, components: [{ type: 2, style: 5, label: '📎 View Media', url: donation.media_url }] }`
-
-These go into the `components` array right before the Dashboard link component.
-
-**3. Telegram `/pending` command -- `sendDonationCard` function (~lines 355-398):** Add the same URL buttons for voice and media so moderators using `/pending` can also preview content.
+Then redeploy the `notify-new-donations` edge function.
 
 ### No Other Changes
 
-- No frontend changes needed
-- No database changes needed
-- No other edge functions affected
-- Existing notification text labels ("Voice: Available", "Media: Image attached") remain as-is for context
+- The media/voice preview buttons (added in the previous edit) are already in place and will work once Brigzard donations are actually queried
+- No frontend or database changes needed
 
-### Egress Consideration
+### Verification
 
-URL buttons only open the link when clicked by a moderator -- no automatic download or embedding occurs. This approach has zero additional egress cost compared to the current text-only approach, while giving moderators the ability to review content on demand.
+After deployment, the existing unnotified donation (`ed5a11ac`, mod_notified=false) should be picked up on the next invocation and sent to moderators with the media preview button.
 
