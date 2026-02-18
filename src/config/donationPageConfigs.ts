@@ -78,6 +78,15 @@ export const DONATION_PAGE_CONFIGS: Record<string, DonationPageConfig> = {
     edgeFunctionName: 'create-razorpay-order-unified',
     themeDescription: 'Support Zishu with your donation',
   },
+  brigzard: {
+    streamerSlug: 'brigzard',
+    streamerName: 'BRIGZARD',
+    brandColor: '#4a5c3e',
+    logoSrc: '/assets/streamers/brigzard-logo.png',
+    backgroundSrc: '/assets/streamers/brigzard-background.png',
+    edgeFunctionName: 'create-razorpay-order-unified',
+    themeDescription: 'Support BRIGZARD with your donation',
+  },
 };
 
 export const getDonationPageConfig = (slug: string): DonationPageConfig | undefined => {

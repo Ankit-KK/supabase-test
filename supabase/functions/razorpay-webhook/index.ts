@@ -26,6 +26,7 @@ const streamerSlugMap: Record<string, string> = {
   'wolfy': 'wolfy',
   'dorpplays': 'dorp_plays',
   'zishu': 'zishu',
+  'brigzard': 'brigzard',
 };
 
 // Generate short ID for callback mapping (8 characters)
@@ -280,7 +281,20 @@ serve(async (req) => {
                   streamerType = 'zishu'
                   tableName = 'zishu_donations'
                 } else {
-                  fetchError = ankitResult.error || looteriyaGamingResult.error || chiagamingResult.error || clumsyGodResult.error || wolfyResult.error || dorpPlaysResult.error || zishuResult.error
+                  // Try brigzard
+                  const brigzardResult = await supabase
+                    .from('brigzard_donations')
+                    .select('*')
+                    .eq('razorpay_order_id', razorpayOrderId)
+                    .maybeSingle()
+                  
+                  if (brigzardResult.data) {
+                    donation = brigzardResult.data
+                    streamerType = 'brigzard'
+                    tableName = 'brigzard_donations'
+                  } else {
+                    fetchError = ankitResult.error || looteriyaGamingResult.error || chiagamingResult.error || clumsyGodResult.error || wolfyResult.error || dorpPlaysResult.error || zishuResult.error || brigzardResult.error
+                  }
                 }
               }
             }

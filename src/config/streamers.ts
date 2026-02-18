@@ -56,6 +56,11 @@ export const STREAMER_CONFIGS: Record<string, StreamerConfig> = {
     pusherDashboardChannel: 'zishu-dashboard', pusherGoalChannel: 'zishu-goal', pusherAudioChannel: 'zishu-audio',
     pusherAlertsChannel: 'zishu-alerts', pusherSettingsChannel: 'zishu-settings', razorpayOrderPrefix: 'zs_rp_',
   },
+  brigzard: {
+    slug: 'brigzard', name: 'BRIGZARD', tableName: 'brigzard_donations', brandColor: '#4a5c3e',
+    pusherDashboardChannel: 'brigzard-dashboard', pusherGoalChannel: 'brigzard-goal', pusherAudioChannel: 'brigzard-audio',
+    pusherAlertsChannel: 'brigzard-alerts', pusherSettingsChannel: 'brigzard-settings', razorpayOrderPrefix: 'bz_rp_',
+  },
 };
 
 export const getStreamerConfig = (slug: string): StreamerConfig | undefined => STREAMER_CONFIGS[slug];

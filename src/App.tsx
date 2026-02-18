@@ -27,6 +27,7 @@ import ClumsyGod from "./pages/ClumsyGod";
 import Wolfy from "./pages/Wolfy";
 import DorpPlays from "./pages/DorpPlays";
 import Zishu from "./pages/Zishu";
+import Brigzard from "./pages/Brigzard";
 
 // Dashboard pages
 import Dashboard from "./pages/dashboard/Dashboard";
@@ -40,6 +41,7 @@ import ClumsyGodDashboard from "./pages/dashboard/ClumsyGodDashboard";
 import WolfyDashboard from "./pages/dashboard/WolfyDashboard";
 import DorpPlaysDashboard from "./pages/dashboard/DorpPlaysDashboard";
 import ZishuDashboard from "./pages/dashboard/ZishuDashboard";
+import BrigzardDashboard from "./pages/dashboard/BrigzardDashboard";
 
 // OBS Alert pages
 import AnkitObsAlerts from "./pages/obs-alerts/AnkitObsAlerts";
@@ -56,6 +58,8 @@ import DorpPlaysObsAlerts from "./pages/obs-alerts/DorpPlaysObsAlerts";
 import DorpPlaysGoalOverlay from "./pages/obs-alerts/DorpPlaysGoalOverlay";
 import ZishuObsAlerts from "./pages/obs-alerts/ZishuObsAlerts";
 import ZishuGoalOverlay from "./pages/obs-alerts/ZishuGoalOverlay";
+import BrigzardObsAlerts from "./pages/obs-alerts/BrigzardObsAlerts";
+import BrigzardGoalOverlay from "./pages/obs-alerts/BrigzardGoalOverlay";
 
 // Audio Player pages
 import AnkitAudioPlayer from "./pages/audio-player/AnkitAudioPlayer";
@@ -67,6 +71,7 @@ import ClumsyGodMediaSourcePlayer from "./pages/audio-player/ClumsyGodMediaSourc
 import WolfyMediaSourcePlayer from "./pages/audio-player/WolfyMediaSourcePlayer";
 import DorpPlaysMediaSourcePlayer from "./pages/audio-player/DorpPlaysMediaSourcePlayer";
 import ZishuMediaSourcePlayer from "./pages/audio-player/ZishuMediaSourcePlayer";
+import BrigzardMediaSourcePlayer from "./pages/audio-player/BrigzardMediaSourcePlayer";
 
 const queryClient = new QueryClient();
 
@@ -103,6 +108,7 @@ const App = () => (
             <Route path="/wolfy" element={<Wolfy />} />
             <Route path="/dorp_plays" element={<DorpPlays />} />
             <Route path="/zishu" element={<Zishu />} />
+            <Route path="/brigzard" element={<Brigzard />} />
             
             {/* Authentication */}
             <Route path="/auth" element={<Auth />} />
@@ -118,6 +124,7 @@ const App = () => (
             <Route path="/dashboard/wolfy" element={<WolfyDashboard />} />
             <Route path="/dashboard/dorp_plays" element={<DorpPlaysDashboard />} />
             <Route path="/dashboard/zishu" element={<ZishuDashboard />} />
+            <Route path="/dashboard/brigzard" element={<BrigzardDashboard />} />
             
             {/* OBS Alert routes */}
             <Route path="/ankit/obs-alerts" element={<AnkitObsAlerts />} />
@@ -134,6 +141,8 @@ const App = () => (
             <Route path="/dorp_plays/goal-overlay" element={<DorpPlaysGoalOverlay />} />
             <Route path="/zishu/obs-alerts" element={<ZishuObsAlerts />} />
             <Route path="/zishu/goal-overlay" element={<ZishuGoalOverlay />} />
+            <Route path="/brigzard/obs-alerts" element={<BrigzardObsAlerts />} />
+            <Route path="/brigzard/goal-overlay" element={<BrigzardGoalOverlay />} />
             
             {/* Audio Player routes */}
             <Route path="/ankit/audio-player" element={<AnkitAudioPlayer />} />
@@ -145,6 +154,7 @@ const App = () => (
             <Route path="/wolfy/media-audio-player" element={<WolfyMediaSourcePlayer />} />
             <Route path="/dorp_plays/media-audio-player" element={<DorpPlaysMediaSourcePlayer />} />
             <Route path="/zishu/media-audio-player" element={<ZishuMediaSourcePlayer />} />
+            <Route path="/brigzard/media-audio-player" element={<BrigzardMediaSourcePlayer />} />
             
             {/* Catch all 404 */}
             <Route path="*" element={<NotFound />} />
