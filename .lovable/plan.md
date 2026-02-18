@@ -1,42 +1,29 @@
 
 
-## Fix: Add `brigzard_donations` to Notification System + Redeploy
+## Fix: Update OBS Media Source Network Buffering Instruction
 
-### Root Cause
+### Problem
 
-The `notify-new-donations` edge function does NOT include `brigzard_donations` in its `donationTables` array (line 125-133). The deployed code only has 7 tables. This is why:
+The current instruction in `MediaSourcePlayer.tsx` says to set "Network Buffering" to "100-500 MB", but the user wants to update this to recommend a minimum value of 2 MB (not 0, as setting it to 0 crashes OBS).
 
-1. The `razorpay-webhook` correctly processes the Brigzard payment and invokes `notify-new-donations`
-2. But `notify-new-donations` polls only the 7 listed tables, skips `brigzard_donations`, finds nothing, and returns "No donations need notification"
-3. The donation stays with `mod_notified = false` and no Telegram/Discord alert is ever sent
+### Change
 
-### Fix
+**File:** `src/components/audio-player/MediaSourcePlayer.tsx` (line 193)
 
-**File:** `supabase/functions/notify-new-donations/index.ts` (line ~133)
+Update the network buffering instruction from:
 
-Add `'brigzard_donations'` to the `donationTables` array:
-
-```text
-const donationTables = [
-  'ankit_donations',
-  'chiaa_gaming_donations',
-  'looteriya_gaming_donations',
-  'clumsy_god_donations',
-  'wolfy_donations',
-  'dorp_plays_donations',
-  'zishu_donations',
-  'brigzard_donations',    // <-- add this
-];
+```
+Set "Network Buffering" to 100-500 MB
 ```
 
-Then redeploy the `notify-new-donations` edge function.
+To:
+
+```
+Set "Network Buffering" to 2 MB or above (do NOT set to 0 — it will crash OBS)
+```
 
 ### No Other Changes
 
-- The media/voice preview buttons (added in the previous edit) are already in place and will work once Brigzard donations are actually queried
-- No frontend or database changes needed
-
-### Verification
-
-After deployment, the existing unnotified donation (`ed5a11ac`, mod_notified=false) should be picked up on the next invocation and sent to moderators with the media preview button.
+- Single line text update
+- No logic, backend, or database changes needed
 
