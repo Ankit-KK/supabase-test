@@ -1,44 +1,49 @@
 
 
-## Add BRIGZARD Auth Credentials and Link to Dashboard
+## Fix: Add Media/Voice Preview Buttons to Moderation Notifications
 
-### What will be done
+### Problem
 
-Create a new login account for BRIGZARD using placeholder credentials and link it to the streamer record so the dashboard is accessible.
+When a donation includes an image, GIF, video, or voice message, moderators on Telegram and Discord only see a text label like "Media: Image attached" or "Voice: Available" -- they cannot actually view the content before approving/rejecting.
 
-### Credentials
+### Solution
 
-- **Email**: `brigzard@hyperchat.com`
-- **Password**: `BrigzardTemp123!` (plaintext -- will auto-upgrade to bcrypt on first login)
+Instead of embedding media files directly (which would increase egress costs), add clickable URL buttons that link moderators to the content. This keeps the notification lightweight while giving moderators the ability to review media before making a decision.
 
-### Database Changes
+### Changes Required
 
-A single INSERT into `auth_users`:
+**File:** `supabase/functions/notify-new-donations/index.ts`
 
-```sql
-INSERT INTO auth_users (email, password_hash, username, role, streamer_id, is_active)
-VALUES (
-  'brigzard@hyperchat.com',
-  'BrigzardTemp123!',
-  'brigzard',
-  'user',
-  'adb22f13-08b9-4b93-8fcc-4336ebd0f7a2',
-  true
-);
-```
+**1. Telegram section (~lines 256-328):** Add URL buttons for media and voice before the Dashboard button row.
 
-- `streamer_id` is set to BRIGZARD's ID from the `streamers` table (`adb22f13-...`)
-- The password is stored as plaintext initially and will be automatically upgraded to a bcrypt hash on first successful login (existing platform behavior)
-- Role is `user` (matching other streamers like Zishu, Wolfy, etc.)
+- If `donation.voice_message_url` exists, add a button row:
+  `[{ text: '🎵 Listen Voice', url: donation.voice_message_url }]`
 
-### No Code Changes Required
+- If `donation.media_url` exists, add a button row:
+  `[{ text: '📎 View Media', url: donation.media_url }]`
 
-The existing `StreamerDashboardWrapper` and `Dashboard.tsx` already use the `get_user_streamers` RPC which checks `auth_users.streamer_id` to grant access. Once the row is inserted, logging in at `/auth` with these credentials will grant access to `/dashboard/brigzard`.
+These buttons go into the `keyboard` array right before the Dashboard link row (line 297).
 
-### Post-Setup
+**2. Discord section (~lines 331-440):** Add URL buttons for media and voice before the Dashboard button row.
 
-After implementation, you can:
-1. Go to `/auth` and log in with `brigzard@hyperchat.com` / `BrigzardTemp123!`
-2. You'll be auto-redirected to `/dashboard/brigzard`
-3. Change the password later via the reset password flow
+- If `donation.voice_message_url` exists, add a component row:
+  `{ type: 1, components: [{ type: 2, style: 5, label: '🎵 Listen Voice', url: donation.voice_message_url }] }`
+
+- If `donation.media_url` exists, add a component row:
+  `{ type: 1, components: [{ type: 2, style: 5, label: '📎 View Media', url: donation.media_url }] }`
+
+These go into the `components` array right before the Dashboard link component.
+
+**3. Telegram `/pending` command -- `sendDonationCard` function (~lines 355-398):** Add the same URL buttons for voice and media so moderators using `/pending` can also preview content.
+
+### No Other Changes
+
+- No frontend changes needed
+- No database changes needed
+- No other edge functions affected
+- Existing notification text labels ("Voice: Available", "Media: Image attached") remain as-is for context
+
+### Egress Consideration
+
+URL buttons only open the link when clicked by a moderator -- no automatic download or embedding occurs. This approach has zero additional egress cost compared to the current text-only approach, while giving moderators the ability to review content on demand.
 
