@@ -219,7 +219,7 @@ const MediaSourcePlayer: React.FC<MediaSourcePlayerProps> = ({
                 <ul className="list-disc list-inside ml-4 mt-2 space-y-1">
                   <li>Check <strong>"Restart playback when source becomes active"</strong></li>
                   <li>Check <strong>"Close file when inactive"</strong></li>
-                  <li>Set <strong>"Network Buffering"</strong> to 100-500 MB</li>
+                  <li>Set <strong>"Network Buffering"</strong> to 2 MB or above (do NOT set to 0 — it will crash OBS)</li>
                 </ul>
               </li>
               <li>
