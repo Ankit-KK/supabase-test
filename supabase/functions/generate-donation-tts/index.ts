@@ -234,6 +234,8 @@ serve(async (req) => {
       dorp_plays: "dorp_plays_donations",
       zishu: "zishu_donations",
       brigzard: "brigzard_donations",
+      w_era: "w_era_donations",
+      mr_champion: "mr_champion_donations",
     };
 
     const donationTable = donationTableMap[streamerSlug];
