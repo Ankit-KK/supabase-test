@@ -1,65 +1,95 @@
 
-## Root Cause: RESTRICTIVE RLS Policies Blocking All Dashboard Data
+## Problem: Voice Message Audio Alert Not Playing for Brigzard
 
-### The Problem
+### What Is Actually Happening
 
-Both RLS policies on `brigzard_donations` are set as **RESTRICTIVE** instead of **PERMISSIVE**. This is a critical PostgreSQL RLS distinction:
+The investigation reveals **two separate but compounding problems**:
 
-- **PERMISSIVE** policies: rows are accessible if ANY permissive policy passes (OR logic)
-- **RESTRICTIVE** policies: rows are ONLY accessible if ALL restrictive policies pass (AND logic)
+---
 
-Current state on `brigzard_donations`:
-- Policy 1 (RESTRICTIVE, for `public`): approved + success rows pass
-- Policy 2 (RESTRICTIVE, for `service_role`): only passes when the DB role is literally `service_role`
+### Problem 1: `tts_voice_id` Never Fixed (Planned Migration Not Applied)
 
-When the frontend queries using the **anon key**, it's operating as the `anon` role, not `service_role`. Because both policies are RESTRICTIVE, BOTH must pass simultaneously — but policy #2 fails for anon role users. Result: **zero rows returned**, even for the ₹150 approved+success donation.
+The database still shows `tts_voice_id = 'English_radiant_girl'` for Brigzard. The SQL fix that was planned in a previous session was **never executed**. This means:
 
-This explains why:
-- Total revenue shows ₹0
-- No donations appear in any tab
-- Stats show all zeros
+- Every text donation that goes through TTS generation fails silently
+- `tts_audio_url` stays NULL for text donations
+- Those donations are permanently skipped by `get-current-audio`
 
-This is the same issue previously fixed for other tables (see memory: `global-rls-and-service-role-fix`), but `brigzard_donations` was not included in that fix.
+This does NOT affect the current voice message donation (which has `voice_message_url` set), but it will break every future text donation.
+
+---
+
+### Problem 2: The Replay "Race Condition" — Audio Marked Played Before OBS Hears It
+
+The specific donation (`Secret Admirer, ₹150`) has a `voice_message_url` set correctly. Here is the exact timeline from the logs and database:
+
+```text
+19:26:37  → Replay #1 triggered: audio_played_at = NULL, audio_scheduled_at = now()
+19:28:37  → audio_scheduled_at set (from replay #2 attempt at 19:28:36)
+19:28:40  → get-current-audio picks up donation, marks audio_played_at = 19:28:40
+            → Redirects OBS to the voice_message_url
+            → OBS must now download + buffer + play the audio
+```
+
+Currently, `audio_played_at` is set to `19:28:40` — but OBS never played the audio because either:
+
+1. **OBS Media Source is not actively polling**: The Media Source URL must be constantly refreshed by OBS (every 3-5 seconds). If OBS is not set up with auto-reload (via Advanced Scene Switcher or a timed source), the `get-current-audio` function serves the file but OBS never fetches the redirect.
+
+2. **OBS is using Browser Source instead of Media Source**: The Browser Source player works differently — it uses Pusher real-time events (`audio-now-playing`) to trigger playback. The voice message gets played via an HTML audio element in the browser. The `audio-now-playing` Pusher event IS being fired (logs confirm it), but the browser source audio context may be blocked (requires "Control Audio via OBS" to be enabled).
 
 ---
 
 ### The Fix
 
-The RLS policies need to be restructured to use **PERMISSIVE** policies with proper role targeting:
+**Two changes needed:**
 
-**Drop and recreate the policies as PERMISSIVE:**
+#### Fix 1: Apply the `tts_voice_id` database update (missed from before)
+
+This is a single SQL migration:
 
 ```sql
--- Drop the broken restrictive policies
-DROP POLICY IF EXISTS "Anyone can view approved brigzard donations" ON brigzard_donations;
-DROP POLICY IF EXISTS "Service role can manage brigzard donations" ON brigzard_donations;
-
--- Recreate as PERMISSIVE policies
-CREATE POLICY "Anyone can view approved brigzard donations"
-  ON brigzard_donations
-  FOR SELECT
-  TO anon, authenticated
-  USING (
-    moderation_status = ANY (ARRAY['approved', 'auto_approved']) 
-    AND payment_status = 'success'
-  );
-
-CREATE POLICY "Service role can manage brigzard donations"
-  ON brigzard_donations
-  FOR ALL
-  TO service_role
-  USING (true)
-  WITH CHECK (true);
+UPDATE streamers 
+SET tts_voice_id = 'moss_audio_3e9334b7-e32a-11f0-ba34-ee3bcee0a7c9'
+WHERE streamer_slug = 'brigzard';
 ```
 
-This mirrors the working pattern used on tables like `wolfy_donations`, `w_era_donations`, `mr_champion_donations`, etc.
+This ensures all future text donations generate TTS correctly.
+
+#### Fix 2: Reset the current stuck donation so it can be replayed cleanly
+
+The current donation has `audio_played_at` already set (the function consumed it but OBS didn't hear it). To replay it properly:
+
+```sql
+UPDATE brigzard_donations
+SET 
+  audio_played_at = NULL,
+  audio_scheduled_at = NOW() + interval '5 seconds'
+WHERE id = '6c854092-bbed-4d8b-9155-1a6559e85b86';
+```
+
+Setting `audio_scheduled_at` 5 seconds in the future prevents an immediate race condition where `get-current-audio` marks it played before OBS has time to poll and fetch the audio.
 
 ---
 
-### Files Changed
+### What the Streamer Needs to Do in OBS
 
-**Database migration only** — no frontend code changes required. The ₹150 donation from Secret Admirer will immediately appear in the dashboard after the fix.
+After the DB fix, for the audio to actually play:
 
-### Scope
+**If using Media Source Player:**
+- The OBS Media Source must be set to **auto-reload every 3-5 seconds** (using Advanced Scene Switcher plugin or similar)
+- Network Buffering must be 2 MB or above (not 0 — crashes OBS)
+- When the Media Source reloads and `get-current-audio` returns the audio, OBS downloads and plays it
 
-Only `brigzard_donations` is affected. No other streamer pages, edge functions, or UI components will be touched.
+**If using Browser Source Player:**
+- Must have **"Control Audio via OBS"** checked in the Browser Source properties
+- The `audio-now-playing` Pusher event triggers the alert (already firing correctly per logs)
+
+---
+
+### Files to Change
+
+**Database migration only** — two SQL statements:
+1. Fix the invalid `tts_voice_id` for Brigzard
+2. Reset the stuck voice donation so it can be replayed from OBS
+
+No frontend code, no edge function changes. No other streamers are affected.
