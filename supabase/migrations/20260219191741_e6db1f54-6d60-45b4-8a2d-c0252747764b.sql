@@ -1,0 +1,1 @@
+UPDATE auth_users SET role = 'streamer' WHERE id = 'd233d47e-0dee-4d98-ae96-4690dba8abcb';
