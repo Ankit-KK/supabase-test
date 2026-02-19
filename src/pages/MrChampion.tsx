@@ -206,9 +206,6 @@ const MrChampion = () => {
         <div className="absolute inset-0 bg-black/60 backdrop-blur-md" />
 
         <CardHeader className="text-center relative z-10 pb-2 flex flex-col items-center">
-          <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-[#facc15] shadow-xl mb-3 bg-[#2d2200] flex items-center justify-center">
-            <span className="text-3xl font-black text-[#facc15]">MC</span>
-          </div>
           <CardTitle className="text-2xl font-bold bg-gradient-to-r from-[#facc15] to-[#eab308] bg-clip-text text-transparent tracking-wider">
             Mr Champion
           </CardTitle>
