@@ -1,78 +1,35 @@
 
-## Apple Pay Domain Verification Setup for HyperChat
+## Fix: Apple Pay Verification File Has Wrong Content (Hex Instead of JSON)
 
-### What Needs to Happen
+### Root Cause
 
-Apple Pay's domain verification requires hosting a specific file at an exact path on your website:
+When the binary file was uploaded to Lovable, it was stored as a hex-encoded string instead of its actual content. The file currently contains:
 
 ```
-https://www.hyperchat.site/.well-known/apple-developer-merchantid-domain-association
+7b2276657273696f6e223a312c...7d
 ```
 
-The file must:
-- Return HTTP **200** directly (no redirects)
-- Be served as `Content-Type: text/plain`
-- Be publicly accessible with no authentication
+But Apple's verification servers expect the decoded JSON content:
 
-### The Problem with the Current Setup
-
-The `vercel.json` currently has a **catch-all rewrite rule**:
 ```json
-"source": "/(.*)",
-"destination": "/index.html"
+{"version":1,"pspId":"1EDBF0FDBF5FA2065E29979C27D7CC7C95341B4E065BD8D883165802200 9A572","createdOn":1749646752541}
 ```
 
-This means **every** request — including `/.well-known/apple-developer-merchantid-domain-association` — gets rewritten to `/index.html` with a 200 OK but serving the React app HTML instead of the verification file. Apple's servers will reject this because it expects the raw verification content, not an HTML page.
-
-This rewrite rule must be updated to **exclude** the `.well-known` path.
+Apple reads this file directly. If it receives a hex string instead of valid content, it rejects the domain verification.
 
 ---
 
-### Changes Required
+### The Fix
 
-**1. Extract and place the verification file**
+Replace the hex content in `public/.well-known/apple-developer-merchantid-domain-association` with the decoded JSON content.
 
-The uploaded zip contains the file `apple-developer-merchantid-domain-association`. This needs to go into:
-```
-public/.well-known/apple-developer-merchantid-domain-association
-```
-
-Placing it in `public/` ensures Vite/Vercel serves it as a static file at the root of the domain.
-
-**2. Update `vercel.json` to exclude `.well-known` from the catch-all rewrite**
-
-The rewrite must be changed to only match paths that are NOT the `.well-known` directory. Vercel supports negative lookaheads in source patterns:
+The hex string decodes to exactly:
 
 ```json
-{
-  "rewrites": [
-    {
-      "source": "/((?!.well-known).*)",
-      "destination": "/index.html"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [...]
-    },
-    {
-      "source": "/.well-known/apple-developer-merchantid-domain-association",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "text/plain"
-        }
-      ]
-    }
-  ]
-}
+{"version":1,"pspId":"1EDBF0FDBF5FA2065E29979C27D7CC7C95341B4E065BD8D883165802200 9A572","createdOn":1749646752541}
 ```
 
-This ensures:
-- All React app routes still work (everything except `.well-known` hits `index.html`)
-- The Apple verification file is served directly as `text/plain` with HTTP 200
-- No redirects occur
+This is the content Apple needs to read and verify.
 
 ---
 
@@ -80,22 +37,24 @@ This ensures:
 
 | File | Change |
 |---|---|
-| `public/.well-known/apple-developer-merchantid-domain-association` | New file — copy from the uploaded zip |
-| `vercel.json` | Update rewrite to exclude `.well-known`, add `Content-Type: text/plain` header for the verification path |
+| `public/.well-known/apple-developer-merchantid-domain-association` | Replace hex string with the decoded JSON content |
 
 ---
 
-### After Deployment
+### After the Fix
 
-Once published, verify the file is accessible:
-```
-https://www.hyperchat.site/.well-known/apple-developer-merchantid-domain-association
-```
+Once published (NOT just previewed — the published URL is what Razorpay/Apple checks):
 
-Then go to Razorpay Dashboard → Account & Settings → International Payments → Apple Pay → click **Verify domains**. The domain status will change to "Verified" and Apple Pay will automatically appear on checkout for eligible Apple device users — no code changes to the checkout flow required.
+1. Go to: `https://hyperchat.site/.well-known/apple-developer-merchantid-domain-association`
+2. You should see the raw JSON text in the browser
+3. Then go to **Razorpay Dashboard** → Account & Settings → International Payments → Apple Pay → **Verify domains**
 
 ---
+
+### Note on Hosting
+
+The `vercel.json` is already correctly configured with the negative lookahead to bypass the SPA rewrite for `.well-known`. No changes needed there. This fix is purely the file content.
 
 ### Scope
 
-Only `vercel.json` and the new static file are affected. No edge functions, no streamer pages, no React components are touched.
+Only `public/.well-known/apple-developer-merchantid-domain-association` is changed. No edge functions, no streamer pages, no other files are touched.
