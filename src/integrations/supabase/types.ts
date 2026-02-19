@@ -827,6 +827,98 @@ export type Database = {
           },
         ]
       }
+      mr_champion_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          audio_scheduled_at: string | null
+          created_at: string | null
+          currency: string | null
+          hypersound_url: string | null
+          id: string
+          is_hyperemote: boolean | null
+          media_type: string | null
+          media_url: string | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string | null
+          payment_status: string | null
+          razorpay_order_id: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          audio_scheduled_at?: string | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id?: string | null
+          payment_status?: string | null
+          razorpay_order_id?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          audio_scheduled_at?: string | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string | null
+          payment_status?: string | null
+          razorpay_order_id?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mr_champion_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       obs_tokens: {
         Row: {
           created_at: string | null
@@ -1263,6 +1355,98 @@ export type Database = {
           visited_at?: string | null
         }
         Relationships: []
+      }
+      w_era_donations: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          audio_scheduled_at: string | null
+          created_at: string | null
+          currency: string | null
+          hypersound_url: string | null
+          id: string
+          is_hyperemote: boolean | null
+          media_type: string | null
+          media_url: string | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string | null
+          payment_status: string | null
+          razorpay_order_id: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          audio_scheduled_at?: string | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id?: string | null
+          payment_status?: string | null
+          razorpay_order_id?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          audio_scheduled_at?: string | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string | null
+          payment_status?: string | null
+          razorpay_order_id?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "w_era_donations_streamer_id_fkey"
+            columns: ["streamer_id"]
+            isOneToOne: false
+            referencedRelation: "streamers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       wolfy_donations: {
         Row: {

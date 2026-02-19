@@ -131,6 +131,8 @@ serve(async (req) => {
       'dorp_plays_donations',
       'zishu_donations',
       'brigzard_donations',
+      'w_era_donations',
+      'mr_champion_donations',
     ];
 
     let donationsToNotify: any[] = [];

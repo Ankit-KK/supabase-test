@@ -61,6 +61,16 @@ export const STREAMER_CONFIGS: Record<string, StreamerConfig> = {
     pusherDashboardChannel: 'brigzard-dashboard', pusherGoalChannel: 'brigzard-goal', pusherAudioChannel: 'brigzard-audio',
     pusherAlertsChannel: 'brigzard-alerts', pusherSettingsChannel: 'brigzard-settings', razorpayOrderPrefix: 'bz_rp_',
   },
+  w_era: {
+    slug: 'w_era', name: 'W Era', tableName: 'w_era_donations', brandColor: '#3b82f6',
+    pusherDashboardChannel: 'w_era-dashboard', pusherGoalChannel: 'w_era-goal', pusherAudioChannel: 'w_era-audio',
+    pusherAlertsChannel: 'w_era-alerts', pusherSettingsChannel: 'w_era-settings', razorpayOrderPrefix: 'we_rp_',
+  },
+  mr_champion: {
+    slug: 'mr_champion', name: 'Mr Champion', tableName: 'mr_champion_donations', brandColor: '#eab308',
+    pusherDashboardChannel: 'mr_champion-dashboard', pusherGoalChannel: 'mr_champion-goal', pusherAudioChannel: 'mr_champion-audio',
+    pusherAlertsChannel: 'mr_champion-alerts', pusherSettingsChannel: 'mr_champion-settings', razorpayOrderPrefix: 'mc_rp_',
+  },
 };
 
 export const getStreamerConfig = (slug: string): StreamerConfig | undefined => STREAMER_CONFIGS[slug];

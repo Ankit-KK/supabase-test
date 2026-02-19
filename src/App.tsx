@@ -28,6 +28,8 @@ import Wolfy from "./pages/Wolfy";
 import DorpPlays from "./pages/DorpPlays";
 import Zishu from "./pages/Zishu";
 import Brigzard from "./pages/Brigzard";
+import WEra from "./pages/WEra";
+import MrChampion from "./pages/MrChampion";
 
 // Dashboard pages
 import Dashboard from "./pages/dashboard/Dashboard";
@@ -42,6 +44,8 @@ import WolfyDashboard from "./pages/dashboard/WolfyDashboard";
 import DorpPlaysDashboard from "./pages/dashboard/DorpPlaysDashboard";
 import ZishuDashboard from "./pages/dashboard/ZishuDashboard";
 import BrigzardDashboard from "./pages/dashboard/BrigzardDashboard";
+import WEraDashboard from "./pages/dashboard/WEraDashboard";
+import MrChampionDashboard from "./pages/dashboard/MrChampionDashboard";
 
 // OBS Alert pages
 import AnkitObsAlerts from "./pages/obs-alerts/AnkitObsAlerts";
@@ -60,6 +64,10 @@ import ZishuObsAlerts from "./pages/obs-alerts/ZishuObsAlerts";
 import ZishuGoalOverlay from "./pages/obs-alerts/ZishuGoalOverlay";
 import BrigzardObsAlerts from "./pages/obs-alerts/BrigzardObsAlerts";
 import BrigzardGoalOverlay from "./pages/obs-alerts/BrigzardGoalOverlay";
+import WEraObsAlerts from "./pages/obs-alerts/WEraObsAlerts";
+import WEraGoalOverlay from "./pages/obs-alerts/WEraGoalOverlay";
+import MrChampionObsAlerts from "./pages/obs-alerts/MrChampionObsAlerts";
+import MrChampionGoalOverlay from "./pages/obs-alerts/MrChampionGoalOverlay";
 
 // Audio Player pages
 import AnkitAudioPlayer from "./pages/audio-player/AnkitAudioPlayer";
@@ -72,6 +80,8 @@ import WolfyMediaSourcePlayer from "./pages/audio-player/WolfyMediaSourcePlayer"
 import DorpPlaysMediaSourcePlayer from "./pages/audio-player/DorpPlaysMediaSourcePlayer";
 import ZishuMediaSourcePlayer from "./pages/audio-player/ZishuMediaSourcePlayer";
 import BrigzardMediaSourcePlayer from "./pages/audio-player/BrigzardMediaSourcePlayer";
+import WEraMediaSourcePlayer from "./pages/audio-player/WEraMediaSourcePlayer";
+import MrChampionMediaSourcePlayer from "./pages/audio-player/MrChampionMediaSourcePlayer";
 
 const queryClient = new QueryClient();
 
@@ -109,6 +119,8 @@ const App = () => (
             <Route path="/dorp_plays" element={<DorpPlays />} />
             <Route path="/zishu" element={<Zishu />} />
             <Route path="/brigzard" element={<Brigzard />} />
+            <Route path="/w_era" element={<WEra />} />
+            <Route path="/mr_champion" element={<MrChampion />} />
             
             {/* Authentication */}
             <Route path="/auth" element={<Auth />} />
@@ -125,6 +137,8 @@ const App = () => (
             <Route path="/dashboard/dorp_plays" element={<DorpPlaysDashboard />} />
             <Route path="/dashboard/zishu" element={<ZishuDashboard />} />
             <Route path="/dashboard/brigzard" element={<BrigzardDashboard />} />
+            <Route path="/dashboard/w_era" element={<WEraDashboard />} />
+            <Route path="/dashboard/mr_champion" element={<MrChampionDashboard />} />
             
             {/* OBS Alert routes */}
             <Route path="/ankit/obs-alerts" element={<AnkitObsAlerts />} />
@@ -143,6 +157,10 @@ const App = () => (
             <Route path="/zishu/goal-overlay" element={<ZishuGoalOverlay />} />
             <Route path="/brigzard/obs-alerts" element={<BrigzardObsAlerts />} />
             <Route path="/brigzard/goal-overlay" element={<BrigzardGoalOverlay />} />
+            <Route path="/w_era/obs-alerts" element={<WEraObsAlerts />} />
+            <Route path="/w_era/goal-overlay" element={<WEraGoalOverlay />} />
+            <Route path="/mr_champion/obs-alerts" element={<MrChampionObsAlerts />} />
+            <Route path="/mr_champion/goal-overlay" element={<MrChampionGoalOverlay />} />
             
             {/* Audio Player routes */}
             <Route path="/ankit/audio-player" element={<AnkitAudioPlayer />} />
@@ -155,6 +173,8 @@ const App = () => (
             <Route path="/dorp_plays/media-audio-player" element={<DorpPlaysMediaSourcePlayer />} />
             <Route path="/zishu/media-audio-player" element={<ZishuMediaSourcePlayer />} />
             <Route path="/brigzard/media-audio-player" element={<BrigzardMediaSourcePlayer />} />
+            <Route path="/w_era/media-audio-player" element={<WEraMediaSourcePlayer />} />
+            <Route path="/mr_champion/media-audio-player" element={<MrChampionMediaSourcePlayer />} />
             
             {/* Catch all 404 */}
             <Route path="*" element={<NotFound />} />
