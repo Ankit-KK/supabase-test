@@ -1,44 +1,51 @@
 
-## Root Cause: Payment Failure for Mr Champion
+## Root Cause: MD5 Not Supported by Deno's Built-in Web Crypto
 
-The payment itself **succeeds** on Razorpay's side (database shows 2 successful `mc_rp_` donations), but the status check function crashes during post-payment processing, causing the status page to show "payment failed."
+The `.tableName` typo is now fixed, but there is a second crash in the same function. The `sendPusherEvent` helper inside `check-payment-status-unified` uses:
 
-### The Bug
-
-In `supabase/functions/check-payment-status-unified/index.ts` at **line 334**, the leaderboard query uses `.tableName` which does not exist on the `STREAMER_CONFIG` object in that file:
-
-```
-// STREAMER_CONFIG shape in this file:
-{ table: 'mr_champion_donations', prefix: 'mc_rp_' }
-//        ^--- correct key is .table, NOT .tableName
-```
-
-The faulty line:
 ```typescript
-.from(STREAMER_CONFIG[streamerSlug].tableName)  // ❌ undefined → crashes
+crypto.subtle.digest('MD5', ...)
 ```
 
-This throws an unhandled runtime error inside the `shouldAutoApprove` block. Since the `try/catch` for the leaderboard only wraps the leaderboard logic (lines 331–367), and the crash propagates up, the entire edge function returns a 400 error — even though payment was actually successful.
+Deno's built-in `crypto.subtle` (Web Crypto API) **does not support MD5** — only SHA-family algorithms. This throws `NotSupportedError: Unrecognized algorithm name` every time a payment succeeds and the function tries to send a Pusher event.
+
+The other two functions that send Pusher events solve this correctly:
+- **`razorpay-webhook`** uses `createHash('md5')` from `https://deno.land/std@0.177.0/node/crypto.ts`
+- **`moderate-donation`** uses `stdCrypto.subtle.digest("MD5", ...)` from `https://deno.land/std@0.190.0/crypto/mod.ts` (Deno's std crypto library, which extends Web Crypto with MD5 support)
 
 ### The Fix
 
-**File to edit:** `supabase/functions/check-payment-status-unified/index.ts`
+**File:** `supabase/functions/check-payment-status-unified/index.ts`
 
-**Change at line 334:**
+**Step 1 — Add the missing import at the top of the file:**
+
+The file currently imports `createHmac` from `node/crypto` for HMAC signing, but is missing `createHash` for MD5. Add it:
+
 ```typescript
-// FROM (broken):
-.from(STREAMER_CONFIG[streamerSlug].tableName)
+// FROM:
+import { createHmac } from "https://deno.land/std@0.177.0/node/crypto.ts";
 
-// TO (correct):
-.from(config.table)
+// TO:
+import { createHmac, createHash } from "https://deno.land/std@0.177.0/node/crypto.ts";
 ```
 
-`config` is already defined earlier in the function as `const config = STREAMER_CONFIG[streamerSlug]` and has the `.table` property. This is consistent with how all other queries in this function reference the donations table.
+**Step 2 — Replace the broken MD5 computation inside `sendPusherEvent` (lines 248–249):**
+
+```typescript
+// FROM (broken — Deno Web Crypto doesn't support MD5):
+const md5Hash = await crypto.subtle.digest('MD5', new TextEncoder().encode(bodyStr));
+const md5Hex = Array.from(new Uint8Array(md5Hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+// TO (correct — uses node/crypto createHash which supports MD5):
+const md5Hex = createHash('md5').update(bodyStr).digest('hex');
+```
+
+This is the exact same pattern used by `razorpay-webhook` and is already imported in the file (just missing `createHash`).
 
 ### What This Fix Does
-
-- Fixes the leaderboard query to use the correct table name
-- Prevents the edge function from crashing after a successful Razorpay payment
-- The status page will correctly show "success" instead of "payment failed"
-- No other streamer pages, edge functions, or database tables are affected
-- The two existing successful Mr Champion donations already in the database confirm the payment system works end-to-end — only this post-payment step was broken
+- Resolves the `NotSupportedError: Unrecognized algorithm name` crash
+- Allows `sendPusherEvent` to complete successfully
+- Pusher events (dashboard notification, audio queue, goal progress, leaderboard) will all fire correctly after payment
+- The status page will show "success" instead of "payment failed"
+- No other streamer pages, functions, or database tables are affected
+- Consistent with how `razorpay-webhook` already handles this
