@@ -27,6 +27,8 @@ const streamerSlugMap: Record<string, string> = {
   'dorpplays': 'dorp_plays',
   'zishu': 'zishu',
   'brigzard': 'brigzard',
+  'w_era': 'w_era',
+  'mr_champion': 'mr_champion',
 };
 
 // Generate short ID for callback mapping (8 characters)
@@ -190,7 +192,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // Determine table based on order ID - only active streamers
-    let streamerType: 'ankit' | 'looteriyagaming' | 'chiagaming' | 'clumsygod' | 'wolfy' | 'dorpplays'
+    let streamerType: 'ankit' | 'looteriyagaming' | 'chiagaming' | 'clumsygod' | 'wolfy' | 'dorpplays' | 'zishu' | 'brigzard' | 'w_era' | 'mr_champion'
     let tableName: string
     
     // Get donation from the appropriate table using Razorpay order ID
@@ -293,7 +295,33 @@ serve(async (req) => {
                     streamerType = 'brigzard'
                     tableName = 'brigzard_donations'
                   } else {
-                    fetchError = ankitResult.error || looteriyaGamingResult.error || chiagamingResult.error || clumsyGodResult.error || wolfyResult.error || dorpPlaysResult.error || zishuResult.error || brigzardResult.error
+                    // Try w_era
+                    const wEraResult = await supabase
+                      .from('w_era_donations')
+                      .select('*')
+                      .eq('razorpay_order_id', razorpayOrderId)
+                      .maybeSingle()
+                    
+                    if (wEraResult.data) {
+                      donation = wEraResult.data
+                      streamerType = 'w_era'
+                      tableName = 'w_era_donations'
+                    } else {
+                      // Try mr_champion
+                      const mrChampionResult = await supabase
+                        .from('mr_champion_donations')
+                        .select('*')
+                        .eq('razorpay_order_id', razorpayOrderId)
+                        .maybeSingle()
+                      
+                      if (mrChampionResult.data) {
+                        donation = mrChampionResult.data
+                        streamerType = 'mr_champion'
+                        tableName = 'mr_champion_donations'
+                      } else {
+                        fetchError = ankitResult.error || looteriyaGamingResult.error || chiagamingResult.error || clumsyGodResult.error || wolfyResult.error || dorpPlaysResult.error || zishuResult.error || brigzardResult.error || wEraResult.error || mrChampionResult.error
+                      }
+                    }
                   }
                 }
               }
