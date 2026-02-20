@@ -244,8 +244,15 @@ serve(async (req) => {
       if (pusherCreds.appId && pusherCreds.key && pusherCreds.secret && pusherCreds.cluster) {
         const sendPusherEvent = async (channel: string, eventName: string, data: any) => {
           const timestamp = Math.floor(Date.now() / 1000);
-          const bodyStr = JSON.stringify(data);
-          const md5Hex = createHash('md5').update(bodyStr).digest('hex');
+          
+          // Build the full POST body first, then compute MD5 on that exact string
+          const body = JSON.stringify({
+            name: eventName,
+            channel: channel,
+            data: JSON.stringify(data)
+          });
+          
+          const md5Hex = createHash('md5').update(body).digest('hex');
           
           const stringToSign = `POST\n/apps/${pusherCreds.appId}/events\nauth_key=${pusherCreds.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${md5Hex}`;
           const signature = createHmac('sha256', pusherCreds.secret!).update(stringToSign).digest('hex');
@@ -255,7 +262,7 @@ serve(async (req) => {
           const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: eventName, channel, data: bodyStr })
+            body: body  // Send the SAME string the MD5 was computed on
           });
           
           if (!response.ok) {
