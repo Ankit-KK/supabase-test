@@ -331,7 +331,7 @@ serve(async (req) => {
           try {
             // Calculate top donator from all donations (matches moderate-donation logic)
             const { data: allDonations } = await supabase
-              .from(STREAMER_CONFIG[streamerSlug].tableName)
+              .from(config.table)
               .select('name, amount, currency')
               .eq('payment_status', 'success')
               .in('moderation_status', ['auto_approved', 'approved']);
