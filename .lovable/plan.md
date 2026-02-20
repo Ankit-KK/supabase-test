@@ -1,51 +1,70 @@
 
-## Root Cause: MD5 Not Supported by Deno's Built-in Web Crypto
+## Root Cause: MD5 Computed on Wrong String
 
-The `.tableName` typo is now fixed, but there is a second crash in the same function. The `sendPusherEvent` helper inside `check-payment-status-unified` uses:
+The `sendPusherEvent` function in `check-payment-status-unified` computes the MD5 hash on the **inner data payload** but sends a **different, larger string** as the actual HTTP body. Pusher verifies the MD5 against the actual body it receives — so the hashes never match, and every Pusher event is rejected with "Invalid body_md5".
 
-```typescript
-crypto.subtle.digest('MD5', ...)
-```
-
-Deno's built-in `crypto.subtle` (Web Crypto API) **does not support MD5** — only SHA-family algorithms. This throws `NotSupportedError: Unrecognized algorithm name` every time a payment succeeds and the function tries to send a Pusher event.
-
-The other two functions that send Pusher events solve this correctly:
-- **`razorpay-webhook`** uses `createHash('md5')` from `https://deno.land/std@0.177.0/node/crypto.ts`
-- **`moderate-donation`** uses `stdCrypto.subtle.digest("MD5", ...)` from `https://deno.land/std@0.190.0/crypto/mod.ts` (Deno's std crypto library, which extends Web Crypto with MD5 support)
-
-### The Fix
-
-**File:** `supabase/functions/check-payment-status-unified/index.ts`
-
-**Step 1 — Add the missing import at the top of the file:**
-
-The file currently imports `createHmac` from `node/crypto` for HMAC signing, but is missing `createHash` for MD5. Add it:
+### The Bug (Current broken code)
 
 ```typescript
-// FROM:
-import { createHmac } from "https://deno.land/std@0.177.0/node/crypto.ts";
+const sendPusherEvent = async (channel: string, eventName: string, data: any) => {
+  const timestamp = Math.floor(Date.now() / 1000);
+  const bodyStr = JSON.stringify(data);              // ← MD5 computed on THIS
+  const md5Hex = createHash('md5').update(bodyStr).digest('hex');
 
-// TO:
-import { createHmac, createHash } from "https://deno.land/std@0.177.0/node/crypto.ts";
+  // ... signature calculation using md5Hex ...
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: eventName, channel, data: bodyStr })  // ← But THIS is actually sent
+    //                                                                      ^^^ DIFFERENT string!
+  });
+};
 ```
 
-**Step 2 — Replace the broken MD5 computation inside `sendPusherEvent` (lines 248–249):**
+The MD5 is computed on `{"amount":100,"name":"Test"}` but the actual POST body sent is `{"name":"new-donation","channel":"mr_champion-dashboard","data":"{\"amount\":100,\"name\":\"Test\"}"}` — Pusher rejects this mismatch every time.
+
+### The Fix (Matching the working razorpay-webhook pattern exactly)
+
+Build the **full body first**, compute MD5 on that full body, then send that same body string:
 
 ```typescript
-// FROM (broken — Deno Web Crypto doesn't support MD5):
-const md5Hash = await crypto.subtle.digest('MD5', new TextEncoder().encode(bodyStr));
-const md5Hex = Array.from(new Uint8Array(md5Hash)).map(b => b.toString(16).padStart(2, '0')).join('');
-
-// TO (correct — uses node/crypto createHash which supports MD5):
-const md5Hex = createHash('md5').update(bodyStr).digest('hex');
+const sendPusherEvent = async (channel: string, eventName: string, data: any) => {
+  const timestamp = Math.floor(Date.now() / 1000);
+  
+  // Build the full POST body first
+  const body = JSON.stringify({
+    name: eventName,
+    channel: channel,
+    data: JSON.stringify(data)    // inner data is JSON-stringified
+  });
+  
+  // Compute MD5 on the ACTUAL body being sent
+  const md5Hex = createHash('md5').update(body).digest('hex');
+  
+  const stringToSign = `POST\n/apps/${pusherCreds.appId}/events\nauth_key=${pusherCreds.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${md5Hex}`;
+  const signature = createHmac('sha256', pusherCreds.secret!).update(stringToSign).digest('hex');
+  
+  const url = `https://api-${pusherCreds.cluster}.pusher.com/apps/${pusherCreds.appId}/events?auth_key=${pusherCreds.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${md5Hex}&auth_signature=${signature}`;
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: body    // Send the SAME string the MD5 was computed on
+  });
+  
+  if (!response.ok) {
+    console.error(`[Unified] Pusher ${eventName} failed:`, await response.text());
+  } else {
+    console.log(`[Unified] Pusher ${eventName} sent to ${channel}`);
+  }
+};
 ```
 
-This is the exact same pattern used by `razorpay-webhook` and is already imported in the file (just missing `createHash`).
+### Technical Details
 
-### What This Fix Does
-- Resolves the `NotSupportedError: Unrecognized algorithm name` crash
-- Allows `sendPusherEvent` to complete successfully
-- Pusher events (dashboard notification, audio queue, goal progress, leaderboard) will all fire correctly after payment
-- The status page will show "success" instead of "payment failed"
-- No other streamer pages, functions, or database tables are affected
-- Consistent with how `razorpay-webhook` already handles this
+- File to edit: `supabase/functions/check-payment-status-unified/index.ts`
+- Lines to replace: the `sendPusherEvent` function body (lines 245-266)
+- No other files, functions, database tables, or streamer pages are affected
+- This is identical to the pattern already working in `razorpay-webhook`
+- After the fix, all Pusher events (dashboard, audio, goal, leaderboard) will fire correctly for Mr Champion and all other streamers using this function
