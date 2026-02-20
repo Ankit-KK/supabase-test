@@ -1,60 +1,44 @@
 
-## Fix: Apple Pay Verification File Has Wrong Content (Hex Instead of JSON)
+## Root Cause: Payment Failure for Mr Champion
 
-### Root Cause
+The payment itself **succeeds** on Razorpay's side (database shows 2 successful `mc_rp_` donations), but the status check function crashes during post-payment processing, causing the status page to show "payment failed."
 
-When the binary file was uploaded to Lovable, it was stored as a hex-encoded string instead of its actual content. The file currently contains:
+### The Bug
+
+In `supabase/functions/check-payment-status-unified/index.ts` at **line 334**, the leaderboard query uses `.tableName` which does not exist on the `STREAMER_CONFIG` object in that file:
 
 ```
-7b2276657273696f6e223a312c...7d
+// STREAMER_CONFIG shape in this file:
+{ table: 'mr_champion_donations', prefix: 'mc_rp_' }
+//        ^--- correct key is .table, NOT .tableName
 ```
 
-But Apple's verification servers expect the decoded JSON content:
-
-```json
-{"version":1,"pspId":"1EDBF0FDBF5FA2065E29979C27D7CC7C95341B4E065BD8D883165802200 9A572","createdOn":1749646752541}
+The faulty line:
+```typescript
+.from(STREAMER_CONFIG[streamerSlug].tableName)  // ❌ undefined → crashes
 ```
 
-Apple reads this file directly. If it receives a hex string instead of valid content, it rejects the domain verification.
-
----
+This throws an unhandled runtime error inside the `shouldAutoApprove` block. Since the `try/catch` for the leaderboard only wraps the leaderboard logic (lines 331–367), and the crash propagates up, the entire edge function returns a 400 error — even though payment was actually successful.
 
 ### The Fix
 
-Replace the hex content in `public/.well-known/apple-developer-merchantid-domain-association` with the decoded JSON content.
+**File to edit:** `supabase/functions/check-payment-status-unified/index.ts`
 
-The hex string decodes to exactly:
+**Change at line 334:**
+```typescript
+// FROM (broken):
+.from(STREAMER_CONFIG[streamerSlug].tableName)
 
-```json
-{"version":1,"pspId":"1EDBF0FDBF5FA2065E29979C27D7CC7C95341B4E065BD8D883165802200 9A572","createdOn":1749646752541}
+// TO (correct):
+.from(config.table)
 ```
 
-This is the content Apple needs to read and verify.
+`config` is already defined earlier in the function as `const config = STREAMER_CONFIG[streamerSlug]` and has the `.table` property. This is consistent with how all other queries in this function reference the donations table.
 
----
+### What This Fix Does
 
-### Files to Change
-
-| File | Change |
-|---|---|
-| `public/.well-known/apple-developer-merchantid-domain-association` | Replace hex string with the decoded JSON content |
-
----
-
-### After the Fix
-
-Once published (NOT just previewed — the published URL is what Razorpay/Apple checks):
-
-1. Go to: `https://hyperchat.site/.well-known/apple-developer-merchantid-domain-association`
-2. You should see the raw JSON text in the browser
-3. Then go to **Razorpay Dashboard** → Account & Settings → International Payments → Apple Pay → **Verify domains**
-
----
-
-### Note on Hosting
-
-The `vercel.json` is already correctly configured with the negative lookahead to bypass the SPA rewrite for `.well-known`. No changes needed there. This fix is purely the file content.
-
-### Scope
-
-Only `public/.well-known/apple-developer-merchantid-domain-association` is changed. No edge functions, no streamer pages, no other files are touched.
+- Fixes the leaderboard query to use the correct table name
+- Prevents the edge function from crashing after a successful Razorpay payment
+- The status page will correctly show "success" instead of "payment failed"
+- No other streamer pages, edge functions, or database tables are affected
+- The two existing successful Mr Champion donations already in the database confirm the payment system works end-to-end — only this post-payment step was broken
