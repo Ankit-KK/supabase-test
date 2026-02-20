@@ -1,70 +1,77 @@
 
-## Root Cause: MD5 Computed on Wrong String
+## Root Cause: razorpay-webhook Missing mr_champion and w_era
 
-The `sendPusherEvent` function in `check-payment-status-unified` computes the MD5 hash on the **inner data payload** but sends a **different, larger string** as the actual HTTP body. Pusher verifies the MD5 against the actual body it receives — so the hashes never match, and every Pusher event is rejected with "Invalid body_md5".
+### Why Ankit Updates Dashboard Before Status Page, But Mr Champion Doesn't
 
-### The Bug (Current broken code)
+The Razorpay payment flow works in two phases:
+1. **Razorpay fires its webhook** (`razorpay-webhook` edge function) immediately when payment is captured — this is what updates Ankit's dashboard *before* the user even sees the status page
+2. **User is redirected to `/status`** → `check-payment-status-unified` runs → sends Pusher events as a fallback
 
-```typescript
-const sendPusherEvent = async (channel: string, eventName: string, data: any) => {
-  const timestamp = Math.floor(Date.now() / 1000);
-  const bodyStr = JSON.stringify(data);              // ← MD5 computed on THIS
-  const md5Hex = createHash('md5').update(bodyStr).digest('hex');
+For **Ankit**: the webhook fires → finds the donation in `ankit_donations` → updates DB → sends all Pusher events → dashboard updates. By the time the user reaches the status page, the dashboard is already updated.
 
-  // ... signature calculation using md5Hex ...
+For **Mr Champion**: the webhook fires → searches all tables in order → **cannot find the donation** (because `mr_champion_donations` is not in the search list) → logs "Donation not found" → exits. The user reaches the status page, `check-payment-status-unified` runs, *that* sends the Pusher events. Result: dashboard only updates when user is already on the status page, and OBS alerts fire late/incorrectly.
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: eventName, channel, data: bodyStr })  // ← But THIS is actually sent
-    //                                                                      ^^^ DIFFERENT string!
-  });
-};
+This is confirmed by the edge function logs showing:
+```
+"Donation not found for Razorpay order: order_SIOVPaS4BzQoAc"
 ```
 
-The MD5 is computed on `{"amount":100,"name":"Test"}` but the actual POST body sent is `{"name":"new-donation","channel":"mr_champion-dashboard","data":"{\"amount\":100,\"name\":\"Test\"}"}` — Pusher rejects this mismatch every time.
+### The Fix
 
-### The Fix (Matching the working razorpay-webhook pattern exactly)
+**File to edit:** `supabase/functions/razorpay-webhook/index.ts`
 
-Build the **full body first**, compute MD5 on that full body, then send that same body string:
+Add `mr_champion` and `w_era` to the table search chain (after `brigzard`):
 
 ```typescript
-const sendPusherEvent = async (channel: string, eventName: string, data: any) => {
-  const timestamp = Math.floor(Date.now() / 1000);
+// After brigzard lookup (line ~290):
+} else {
+  // Try w_era
+  const wEraResult = await supabase
+    .from('w_era_donations')
+    .select('*')
+    .eq('razorpay_order_id', razorpayOrderId)
+    .maybeSingle()
   
-  // Build the full POST body first
-  const body = JSON.stringify({
-    name: eventName,
-    channel: channel,
-    data: JSON.stringify(data)    // inner data is JSON-stringified
-  });
-  
-  // Compute MD5 on the ACTUAL body being sent
-  const md5Hex = createHash('md5').update(body).digest('hex');
-  
-  const stringToSign = `POST\n/apps/${pusherCreds.appId}/events\nauth_key=${pusherCreds.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${md5Hex}`;
-  const signature = createHmac('sha256', pusherCreds.secret!).update(stringToSign).digest('hex');
-  
-  const url = `https://api-${pusherCreds.cluster}.pusher.com/apps/${pusherCreds.appId}/events?auth_key=${pusherCreds.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${md5Hex}&auth_signature=${signature}`;
-  
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: body    // Send the SAME string the MD5 was computed on
-  });
-  
-  if (!response.ok) {
-    console.error(`[Unified] Pusher ${eventName} failed:`, await response.text());
+  if (wEraResult.data) {
+    donation = wEraResult.data
+    streamerType = 'w_era'
+    tableName = 'w_era_donations'
   } else {
-    console.log(`[Unified] Pusher ${eventName} sent to ${channel}`);
+    // Try mr_champion
+    const mrChampionResult = await supabase
+      .from('mr_champion_donations')
+      .select('*')
+      .eq('razorpay_order_id', razorpayOrderId)
+      .maybeSingle()
+    
+    if (mrChampionResult.data) {
+      donation = mrChampionResult.data
+      streamerType = 'mr_champion'
+      tableName = 'mr_champion_donations'
+    } else {
+      fetchError = ... // include wEraResult.error and mrChampionResult.error
+    }
   }
-};
+}
 ```
+
+Also add these two streamers to the `streamerSlugMap` at the top of the file:
+```typescript
+'w_era': 'w_era',
+'mr_champion': 'mr_champion',
+```
+
+And update the type for `streamerType` to include these two new values.
 
 ### Technical Details
 
-- File to edit: `supabase/functions/check-payment-status-unified/index.ts`
-- Lines to replace: the `sendPusherEvent` function body (lines 245-266)
-- No other files, functions, database tables, or streamer pages are affected
-- This is identical to the pattern already working in `razorpay-webhook`
-- After the fix, all Pusher events (dashboard, audio, goal, leaderboard) will fire correctly for Mr Champion and all other streamers using this function
+- File to edit: `supabase/functions/razorpay-webhook/index.ts`
+- The `streamerSlugMap` (lines 21–30) needs `w_era` and `mr_champion` added
+- The `streamerType` TypeScript union (line ~193) needs these values added
+- The sequential table search chain (lines ~200–304) needs two new lookup blocks appended after `brigzard`
+- The `fetchError` aggregation line (line ~296) needs to include the new result errors
+- No database changes needed — tables already exist
+- No frontend changes needed
+- No other edge functions affected
+- After this fix, Mr Champion payments will trigger dashboard updates immediately upon payment capture (same timing as Ankit), not only when the user reaches the status page
+- W Era gets the same fix as a bonus, since it has the identical problem
