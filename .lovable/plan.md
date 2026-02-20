@@ -1,77 +1,47 @@
 
-## Root Cause: razorpay-webhook Missing mr_champion and w_era
+## Fix: Remove Space from pspId in Apple Pay Domain Association File
 
-### Why Ankit Updates Dashboard Before Status Page, But Mr Champion Doesn't
+### What's Wrong
 
-The Razorpay payment flow works in two phases:
-1. **Razorpay fires its webhook** (`razorpay-webhook` edge function) immediately when payment is captured — this is what updates Ankit's dashboard *before* the user even sees the status page
-2. **User is redirected to `/status`** → `check-payment-status-unified` runs → sends Pusher events as a fallback
+The file `public/.well-known/apple-developer-merchantid-domain-association` has a stray space character inside the `pspId` hex string:
 
-For **Ankit**: the webhook fires → finds the donation in `ankit_donations` → updates DB → sends all Pusher events → dashboard updates. By the time the user reaches the status page, the dashboard is already updated.
-
-For **Mr Champion**: the webhook fires → searches all tables in order → **cannot find the donation** (because `mr_champion_donations` is not in the search list) → logs "Donation not found" → exits. The user reaches the status page, `check-payment-status-unified` runs, *that* sends the Pusher events. Result: dashboard only updates when user is already on the status page, and OBS alerts fire late/incorrectly.
-
-This is confirmed by the edge function logs showing:
+Current (broken):
 ```
-"Donation not found for Razorpay order: order_SIOVPaS4BzQoAc"
+"pspId":"1EDBF0FDBF5FA2065E29979C27D7CC7C95341B4E065BD8D883165802200 9A572"
+                                                                      ^
+                                                              space here!
 ```
+
+Correct (from Razorpay dashboard, decoded from the uploaded hex file):
+```
+"pspId":"1EDBF0FDBF5FA2065E29979C27D7CC7C95341B4E065BD8D8831658022009A572"
+```
+
+Apple's verification server downloads this file and compares it byte-for-byte against what Razorpay registered. The single space character causes the match to fail every time — even though the file is correctly hosted and reachable via HTTPS.
 
 ### The Fix
 
-**File to edit:** `supabase/functions/razorpay-webhook/index.ts`
+**File:** `public/.well-known/apple-developer-merchantid-domain-association`
 
-Add `mr_champion` and `w_era` to the table search chain (after `brigzard`):
+Replace the entire file content with the exact string decoded from the Razorpay dashboard upload:
 
-```typescript
-// After brigzard lookup (line ~290):
-} else {
-  // Try w_era
-  const wEraResult = await supabase
-    .from('w_era_donations')
-    .select('*')
-    .eq('razorpay_order_id', razorpayOrderId)
-    .maybeSingle()
-  
-  if (wEraResult.data) {
-    donation = wEraResult.data
-    streamerType = 'w_era'
-    tableName = 'w_era_donations'
-  } else {
-    // Try mr_champion
-    const mrChampionResult = await supabase
-      .from('mr_champion_donations')
-      .select('*')
-      .eq('razorpay_order_id', razorpayOrderId)
-      .maybeSingle()
-    
-    if (mrChampionResult.data) {
-      donation = mrChampionResult.data
-      streamerType = 'mr_champion'
-      tableName = 'mr_champion_donations'
-    } else {
-      fetchError = ... // include wEraResult.error and mrChampionResult.error
-    }
-  }
-}
+```json
+{"version":1,"pspId":"1EDBF0FDBF5FA2065E29979C27D7CC7C95341B4E065BD8D8831658022009A572","createdOn":1749646752541}
 ```
 
-Also add these two streamers to the `streamerSlugMap` at the top of the file:
-```typescript
-'w_era': 'w_era',
-'mr_champion': 'mr_champion',
-```
+The only change is `802200 9A572` → `8022009A572` (space removed).
 
-And update the type for `streamerType` to include these two new values.
+### Steps After Publishing
+
+1. Publish the project (this deploys the corrected file to hyperchat.site and hyperchat.space)
+2. Go to Razorpay Dashboard → Settings → Apple Pay
+3. Click Verify for `hyperchat.site`
+4. Verification should pass immediately — the file is already reachable at the correct URL with HTTP 200 and no redirects
 
 ### Technical Details
 
-- File to edit: `supabase/functions/razorpay-webhook/index.ts`
-- The `streamerSlugMap` (lines 21–30) needs `w_era` and `mr_champion` added
-- The `streamerType` TypeScript union (line ~193) needs these values added
-- The sequential table search chain (lines ~200–304) needs two new lookup blocks appended after `brigzard`
-- The `fetchError` aggregation line (line ~296) needs to include the new result errors
-- No database changes needed — tables already exist
-- No frontend changes needed
-- No other edge functions affected
-- After this fix, Mr Champion payments will trigger dashboard updates immediately upon payment capture (same timing as Ankit), not only when the user reaches the status page
-- W Era gets the same fix as a bonus, since it has the identical problem
+- No backend changes needed
+- No edge function changes needed
+- No DNS changes needed — the hosting infrastructure is already correct
+- Both `hyperchat.site` and `hyperchat.space` share the same deployed file, so both will be verifiable after this single fix
+- The `vercel.json` exclusion rule for `.well-known` is already correct and does not need modification
