@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { createHmac } from "https://deno.land/std@0.177.0/node/crypto.ts";
+import { createHmac, createHash } from "https://deno.land/std@0.177.0/node/crypto.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -245,8 +245,7 @@ serve(async (req) => {
         const sendPusherEvent = async (channel: string, eventName: string, data: any) => {
           const timestamp = Math.floor(Date.now() / 1000);
           const bodyStr = JSON.stringify(data);
-          const md5Hash = await crypto.subtle.digest('MD5', new TextEncoder().encode(bodyStr));
-          const md5Hex = Array.from(new Uint8Array(md5Hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+          const md5Hex = createHash('md5').update(bodyStr).digest('hex');
           
           const stringToSign = `POST\n/apps/${pusherCreds.appId}/events\nauth_key=${pusherCreds.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${md5Hex}`;
           const signature = createHmac('sha256', pusherCreds.secret!).update(stringToSign).digest('hex');
