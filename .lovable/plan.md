@@ -1,17 +1,22 @@
 
 
-## Change Password Reset Email Sender Domain
+## Clear Rate Limit Entries for Password Reset Testing
 
-### Problem
-The `request-password-reset` edge function sends emails from `noreply@hyperchat.site`, but the verified Resend domain is `hyperchat.space`. This causes a "domain not verified" error.
+### What's Happening
+The rate limiter is blocking your password reset attempts because you've already hit the 3-requests-per-hour limit. The fix to use `@hyperchat.space` is deployed but hasn't been tested yet because requests never reach the Resend API.
 
-### Change
-**File:** `supabase/functions/request-password-reset/index.ts`
+### Action
+Delete the rate limit entries related to password reset from the `rate_limits` table using a SQL delete operation:
 
-Update the `from` field in the `resend.emails.send()` call:
+```sql
+DELETE FROM rate_limits WHERE endpoint LIKE 'password_reset%';
+```
 
-- **Before:** `'HyperChat <noreply@hyperchat.site>'`
-- **After:** `'HyperChat <noreply@hyperchat.space>'`
+This will clear both the IP-based and email-based rate limit entries, allowing you to immediately test the password reset flow with the corrected sender domain.
 
-This is a single-line change (line ~138). No other files or edge functions are affected.
+### After Clearing
+You should be able to request a password reset and verify that:
+1. The edge function reaches the Resend API call
+2. Resend shows the request in its logs
+3. The email arrives successfully
 
