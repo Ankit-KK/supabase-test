@@ -10,6 +10,7 @@ const ZishuDashboard = () => {
       streamerName={config.name}
       tableName={config.tableName}
       brandColor={config.brandColor}
+      enableVoiceTranscription={true}
     />
   );
 };

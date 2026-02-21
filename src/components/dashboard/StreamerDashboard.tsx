@@ -9,6 +9,7 @@ import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { DollarSign, Users, TrendingUp, Clock, AlertCircle, LogOut, Shield } from 'lucide-react';
 import DonationCard from './DonationCard';
+import VoiceTranscriber from './VoiceTranscriber';
 import { ModeratorManager } from './ModeratorManager';
 import OBSTokenManager from './OBSTokenManager';
 import CSVExportButton from './CSVExportButton';
@@ -23,6 +24,7 @@ interface StreamerDashboardProps {
   streamerName: string;
   brandColor?: string;
   tableName: string;
+  enableVoiceTranscription?: boolean;
 }
 
 interface DashboardStats {
@@ -56,7 +58,8 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
   streamerSlug,
   streamerName,
   brandColor = '#3b82f6',
-  tableName
+  tableName,
+  enableVoiceTranscription = false
 }) => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -501,11 +504,20 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
                     </p>
                   ) : (
                     approvedDonations.map((donation) => (
-                      <DonationCard 
-                        key={donation.id} 
-                        donation={donation} 
-                        brandColor={brandColor}
-                      />
+                      <div key={donation.id}>
+                        <DonationCard 
+                          donation={donation} 
+                          brandColor={brandColor}
+                        />
+                        {enableVoiceTranscription && donation.voice_message_url && (
+                          <VoiceTranscriber
+                            voiceUrl={donation.voice_message_url}
+                            donationId={donation.id}
+                            streamerSlug={streamerSlug}
+                            brandColor={brandColor}
+                          />
+                        )}
+                      </div>
                     ))
                   )}
                 </div>
