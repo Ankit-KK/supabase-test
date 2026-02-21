@@ -9,6 +9,7 @@ interface StreamerDashboardWrapperProps {
   streamerName: string;
   tableName: string;
   brandColor?: string;
+  enableVoiceTranscription?: boolean;
 }
 
 const StreamerDashboardWrapper: React.FC<StreamerDashboardWrapperProps> = ({
@@ -16,6 +17,7 @@ const StreamerDashboardWrapper: React.FC<StreamerDashboardWrapperProps> = ({
   streamerName,
   tableName,
   brandColor,
+  enableVoiceTranscription,
 }) => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -76,6 +78,7 @@ const StreamerDashboardWrapper: React.FC<StreamerDashboardWrapperProps> = ({
       streamerName={streamerName}
       tableName={tableName}
       brandColor={brandColor}
+      enableVoiceTranscription={enableVoiceTranscription}
     />
   );
 };

@@ -113,3 +113,6 @@ verify_jwt = false
 
 [functions.manage-moderators]
 verify_jwt = false
+
+[functions.transcribe-voice-sarvam]
+verify_jwt = false
