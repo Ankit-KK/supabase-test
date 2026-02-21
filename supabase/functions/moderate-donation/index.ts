@@ -108,6 +108,23 @@ async function sendPusherEvent(
   }
 }
 
+// Origin validation for CSRF protection (only for dashboard source, not telegram/discord)
+const ALLOWED_ORIGINS = [
+  'https://hyper-chat.lovable.app',
+  'https://id-preview--854a7833-ea4b-49d4-a1e0-c38c31892630.lovable.app',
+];
+
+function validateOrigin(req: Request): Response | null {
+  const origin = req.headers.get('origin');
+  if (origin && !ALLOWED_ORIGINS.some(allowed => origin.startsWith(allowed))) {
+    return new Response(
+      JSON.stringify({ success: false, error: 'Forbidden: Invalid origin' }),
+      { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+  return null;
+}
+
 console.log('moderate-donation: function loaded');
 
 serve(async (req) => {
@@ -116,6 +133,9 @@ serve(async (req) => {
   }
 
   try {
+    // CSRF: Validate origin
+    const originError = validateOrigin(req);
+    if (originError) return originError;
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
