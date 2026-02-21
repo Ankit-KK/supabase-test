@@ -6,12 +6,32 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-auth-token",
 };
 
+// Origin validation for CSRF protection
+const ALLOWED_ORIGINS = [
+  'https://hyper-chat.lovable.app',
+  'https://id-preview--854a7833-ea4b-49d4-a1e0-c38c31892630.lovable.app',
+];
+
+function validateOrigin(req: Request): Response | null {
+  const origin = req.headers.get('origin');
+  if (origin && !ALLOWED_ORIGINS.some(allowed => origin.startsWith(allowed))) {
+    return new Response(
+      JSON.stringify({ error: 'Forbidden: Invalid origin' }),
+      { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+  return null;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // CSRF: Validate origin
+    const originError = validateOrigin(req);
+    if (originError) return originError;
     // --- Auth: validate session token (same pattern as other admin edge functions) ---
     const authToken = req.headers.get("x-auth-token");
     if (!authToken) {

@@ -6,12 +6,32 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-auth-token, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 }
 
+// Origin validation for CSRF protection
+const ALLOWED_ORIGINS = [
+  'https://hyper-chat.lovable.app',
+  'https://id-preview--854a7833-ea4b-49d4-a1e0-c38c31892630.lovable.app',
+]
+
+function validateOrigin(req: Request): Response | null {
+  const origin = req.headers.get('origin')
+  if (origin && !ALLOWED_ORIGINS.some(allowed => origin.startsWith(allowed))) {
+    return new Response(
+      JSON.stringify({ success: false, error: 'Forbidden: Invalid origin' }),
+      { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+  return null
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
+    // CSRF: Validate origin
+    const originError = validateOrigin(req)
+    if (originError) return originError
     const { streamer_id, new_token } = await req.json()
 
     // Initialize Supabase client with service role
