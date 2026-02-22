@@ -115,7 +115,10 @@ function validateOrigin(req: Request): Response | null {
   if (origin) {
     try {
       const url = new URL(origin);
-      if (!url.hostname.endsWith('.lovable.app')) {
+      const allowed = url.hostname.endsWith('.lovable.app') ||
+          url.hostname === 'hyperchat.site' || url.hostname === 'www.hyperchat.site' ||
+          url.hostname === 'hyperchat.space' || url.hostname === 'www.hyperchat.space';
+      if (!allowed) {
         console.warn('[broadcast-settings-update] Rejected origin:', origin);
         return new Response(
           JSON.stringify({ error: 'Forbidden: Invalid origin' }),
