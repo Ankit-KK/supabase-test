@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import SignupDialog from "@/components/SignupDialog";
 import { Link } from "react-router-dom";
+import { ExternalLink } from "lucide-react";
 const Navbar: React.FC = () => {
   const [showSignupDialog, setShowSignupDialog] = useState(false);
   return <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/40">
@@ -25,6 +26,12 @@ const Navbar: React.FC = () => {
           <Link to="/contact" className="text-sm hover:text-hyperchat-purple transition-colors">
             Contact
           </Link>
+          <a href="https://hyperchat.space" target="_blank" rel="noopener noreferrer" className="text-sm hover:text-hyperchat-purple transition-colors inline-flex items-center gap-1">
+            hyperchat.space <ExternalLink size={12} />
+          </a>
+          <a href="https://hyperchat.site" target="_blank" rel="noopener noreferrer" className="text-sm hover:text-hyperchat-purple transition-colors inline-flex items-center gap-1">
+            hyperchat.site <ExternalLink size={12} />
+          </a>
         </div>
         <div className="flex items-center space-x-4">
           <Button size="sm" className="bg-hero-gradient hover:opacity-90 transition-opacity text-xs sm:text-sm px-3 sm:px-4" onClick={() => setShowSignupDialog(true)}>
