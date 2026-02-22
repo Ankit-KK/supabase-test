@@ -1,9 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { ExternalLink } from "lucide-react";
 const Footer: React.FC = () => {
   return <footer className="border-t border-white/10 bg-background">
       <div className="container px-4 md:px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
           <div className="col-span-1">
             <div className="text-xl font-bold bg-clip-text text-transparent bg-hero-gradient mb-4">
               🎉 HyperChat
@@ -36,6 +37,21 @@ const Footer: React.FC = () => {
             </ul>
           </div>
           <div>
+            <h3 className="font-medium mb-4">Our Websites</h3>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li>
+                <a href="https://hyperchat.space" target="_blank" rel="noopener noreferrer" className="hover:text-hyperchat-purple transition-colors inline-flex items-center gap-1">
+                  hyperchat.space <ExternalLink size={12} />
+                </a>
+              </li>
+              <li>
+                <a href="https://hyperchat.site" target="_blank" rel="noopener noreferrer" className="hover:text-hyperchat-purple transition-colors inline-flex items-center gap-1">
+                  hyperchat.site <ExternalLink size={12} />
+                </a>
+              </li>
+            </ul>
+          </div>
+          <div>
             <h3 className="font-medium mb-4">Company</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><Link to="/about" className="hover:text-hyperchat-purple transition-colors">About HyperChat</Link></li>
@@ -51,207 +67,7 @@ const Footer: React.FC = () => {
               <div className="text-sm text-muted-foreground">
                 <p>© {new Date().getFullYear()} HyperChat - Digital Engagement Platform. All rights reserved.</p>
                 <p className="mt-1">A product of <span className="font-medium text-foreground">STREAMHEART PRIVATE LIMITED</span></p>
-                <p className="mt-2 text-xs text-left">HyperChat is a digital engagement platform that enhances presence and communication between creators and their audiences.                                              
-
-
-                                                            
-
-
-
-                                                            
-                                              
-
-
-                                                            
-                                             
-
-
-                                                            
-                                            
-
-
-                                                            
-                                           
-
-
-                                                            
-                                          
-
-
-                                                            
-                                         
-
-
-                                                            
-                                        
-
-
-                                                            
-                                       
-
-
-                                                            
-                                      
-
-
-                                                            
-                                     
-
-
-                                                            
-                                    
-
-
-                                                            
-                                   
-
-
-                                                            
-                                  
-
-
-                                                            
-                                 
-
-
-                                                            
-                                
-
-
-                                                            
-                               
-
-
-                                                            
-                              
-
-
-                                                            
-                             
-
-
-                                                            
-                            
-
-
-                                                            
-                           
-
-
-                                                            
-                          
-
-
-                                                            
-                         
-
-
-                                                            
-                        
-
-
-                                                            
-                       
-
-
-                                                            
-                      
-
-
-                                                            
-                     
-
-
-                                                            
-                    
-
-
-                                                            
-                   
-
-
-                                                            
-                  
-
-
-                                                            
-                 
-
-
-                                                            
-                
-
-
-                                                            
-               
-
-
-                                                            
-              
-
-
-                                                            
-             
-
-
-                                                            
-            
-
-
-                                                            
-           
-
-
-                                                            
-          
-
-
-                                                            
-         
-
-
-                                                            
-        
-
-
-                                                            
-       
-
-
-                                                            
-      
-
-
-                                                            
-     
-
-
-                                                            
-    
-
-
-                                                            
-   
-
-
-                                                            
-  
-
-
-                                                            
- 
-
-
-                                                            
-
-
-
-                                                            
-
-
-
-          </p>
-                
+                <p className="mt-2 text-xs text-left">HyperChat is a digital engagement platform that enhances presence and communication between creators and their audiences.</p>
               </div>
           <div className="flex space-x-4 mt-4 md:mt-0">
             <a href="#" className="text-muted-foreground hover:text-hyperchat-purple transition-colors">
