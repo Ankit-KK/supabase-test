@@ -7,18 +7,24 @@ const corsHeaders = {
 };
 
 // Origin validation for CSRF protection
-const ALLOWED_ORIGINS = [
-  'https://hyper-chat.lovable.app',
-  'https://id-preview--854a7833-ea4b-49d4-a1e0-c38c31892630.lovable.app',
-];
-
 function validateOrigin(req: Request): Response | null {
   const origin = req.headers.get('origin');
-  if (origin && !ALLOWED_ORIGINS.some(allowed => origin.startsWith(allowed))) {
-    return new Response(
-      JSON.stringify({ success: false, error: 'Forbidden: Invalid origin' }),
-      { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+  if (origin) {
+    try {
+      const url = new URL(origin);
+      if (!url.hostname.endsWith('.lovable.app')) {
+        console.warn('[update-streamer-settings] Rejected origin:', origin);
+        return new Response(
+          JSON.stringify({ success: false, error: 'Forbidden: Invalid origin' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    } catch {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Forbidden: Invalid origin' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
   }
   return null;
 }
