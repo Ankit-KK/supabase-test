@@ -1,29 +1,45 @@
 
 
-# Add External Website Links (hyperchat.space & hyperchat.site)
+# Fix: Allow hyperchat.site and hyperchat.space in Origin Validation
 
-## Overview
-Add links to the two external websites in both the Navbar and Footer for visibility and cross-navigation.
+## Root Cause
+The edge function logs show the request is coming from `https://www.hyperchat.site`, which is your custom domain. The current `validateOrigin` only allows `*.lovable.app` subdomains, so requests from your published custom domains are rejected.
 
-## Changes
+## Fix
+Update the `validateOrigin` function in all 6 authenticated edge functions to also allow:
+- `hyperchat.site` and `www.hyperchat.site`
+- `hyperchat.space` and `www.hyperchat.space`
 
-### 1. Navbar (`src/components/Navbar.tsx`)
-Add two external links in the desktop navigation area (alongside "For Creators", "Features", "Contact"):
-- **hyperchat.space** - links to `https://hyperchat.space`
-- **hyperchat.site** - links to `https://hyperchat.site`
+## Files to Change (same pattern in each)
 
-Both will open in a new tab (`target="_blank"` with `rel="noopener noreferrer"`).
+1. `supabase/functions/manage-moderators/index.ts`
+2. `supabase/functions/update-streamer-settings/index.ts`
+3. `supabase/functions/broadcast-settings-update/index.ts`
+4. `supabase/functions/moderate-donation/index.ts`
+5. `supabase/functions/generate-obs-token/index.ts`
+6. `supabase/functions/transcribe-voice-sarvam/index.ts`
 
-### 2. Footer (`src/components/Footer.tsx`)
-Add a new "Our Websites" section (or add to the existing "Company" column) with links to both external sites. Also clean up the excessive whitespace in the footer bottom text (lines 54-253).
+## Change Detail
 
-### 3. No Other Changes
+Replace the hostname check in `validateOrigin` from:
+
+```text
+if (!url.hostname.endsWith('.lovable.app')) {
+```
+
+To:
+
+```text
+const allowed = 
+  url.hostname.endsWith('.lovable.app') ||
+  url.hostname === 'hyperchat.site' || url.hostname === 'www.hyperchat.site' ||
+  url.hostname === 'hyperchat.space' || url.hostname === 'www.hyperchat.space';
+if (!allowed) {
+```
+
+This keeps the same security posture (only your domains are allowed) while supporting all your custom domains.
+
+## No Other Changes
 - No database changes
-- No edge function changes
+- No frontend changes
 - No donation page changes
-
-## Technical Details
-- Use standard `<a>` tags (not React Router `<Link>`) since these are external URLs
-- Add `target="_blank"` and `rel="noopener noreferrer"` for security
-- Follow existing styling: `text-sm hover:text-hyperchat-purple transition-colors`
-- Add an `ExternalLink` icon from lucide-react next to each link for clarity
