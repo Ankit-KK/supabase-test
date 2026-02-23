@@ -140,12 +140,14 @@ serve(async (req) => {
     // Query each table
     for (const tableName of donationTables) {
       try {
+        const now = new Date().toISOString();
         const { data, error } = await supabaseAdmin
           .from(tableName)
           .select('*')
           .eq('payment_status', 'success')
           .eq('mod_notified', false)
-          .not('streamer_id', 'is', null);
+          .not('streamer_id', 'is', null)
+          .or(`audio_scheduled_at.is.null,audio_scheduled_at.lte.${now}`);
 
         if (!error && data && data.length > 0) {
           const donationsWithTable = data.map(d => ({ ...d, source_table: tableName }));

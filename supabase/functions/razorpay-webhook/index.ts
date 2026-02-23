@@ -356,7 +356,7 @@ serve(async (req) => {
     // Fetch streamer's moderation settings including TTS thresholds
     const { data: streamerSettings, error: streamerError } = await supabase
       .from('streamers')
-      .select('moderation_mode, telegram_moderation_enabled, media_moderation_enabled, min_tts_amount_inr, tts_enabled')
+      .select('moderation_mode, telegram_moderation_enabled, discord_moderation_enabled, media_moderation_enabled, min_tts_amount_inr, tts_enabled')
       .eq('id', donation.streamer_id)
       .single();
 
@@ -656,8 +656,9 @@ serve(async (req) => {
           });
         }
 
-        // Send Telegram notification if moderation is enabled
-        if (streamerSettings?.telegram_moderation_enabled) {
+        // Send Telegram/Discord notification only for donations that NEED moderation
+        // Auto-approved donations will be notified by the cron after audio_scheduled_at passes
+        if ((streamerSettings?.telegram_moderation_enabled || streamerSettings?.discord_moderation_enabled) && !shouldAutoApprove) {
           try {
             // Only create callback mappings for pending (non-auto-approved) donations
             let callbackData = null;
