@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
     // audio_scheduled_at <= NOW() means the delay period is over and it's ready to play
     const { data: donation, error: fetchError } = await supabase
       .from(tableName)
-      .select('id, name, amount, message, tts_audio_url, voice_message_url, hypersound_url, is_hyperemote, created_at, audio_scheduled_at, media_url, media_type')
+      .select('id, name, amount, message, tts_audio_url, voice_message_url, hypersound_url, is_hyperemote, created_at, audio_scheduled_at, media_url, media_type, mod_notified')
       .is('audio_played_at', null)
       .in('moderation_status', ['auto_approved', 'approved'])
       .eq('payment_status', 'success')
@@ -183,6 +183,21 @@ Deno.serve(async (req) => {
         console.error('[get-current-audio] Failed to trigger Pusher event:', pusherError);
         // Continue serving audio even if Pusher fails
       }
+    }
+
+    // Fire-and-forget: trigger notification for this donation NOW (at exact audio play time)
+    if (!donation.mod_notified) {
+      fetch(
+        `${supabaseUrl}/functions/v1/notify-new-donations`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseServiceKey}`
+          },
+          body: JSON.stringify({ donation_id: donation.id, table_name: tableName })
+        }
+      ).catch(err => console.error('[get-current-audio] Notification trigger failed:', err));
     }
 
     // CRITICAL: 302 Redirect to static R2 URL
