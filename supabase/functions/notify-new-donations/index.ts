@@ -121,41 +121,75 @@ serve(async (req) => {
       });
     }
 
-    // Active donation tables (all 5 streamers)
-    const donationTables = [
-      'ankit_donations',
-      'chiaa_gaming_donations',
-      'looteriya_gaming_donations',
-      'clumsy_god_donations',
-      'wolfy_donations',
-      'dorp_plays_donations',
-      'zishu_donations',
-      'brigzard_donations',
-      'w_era_donations',
-      'mr_champion_donations',
-    ];
+    // Check if this is a targeted single-donation trigger (from get-current-audio)
+    let targetDonationId: string | null = null;
+    let targetTableName: string | null = null;
+    try {
+      const body = await req.json();
+      targetDonationId = body?.donation_id || null;
+      targetTableName = body?.table_name || null;
+    } catch {
+      // No body or invalid JSON - fall back to full scan
+    }
 
     let donationsToNotify: any[] = [];
 
-    // Query each table
-    for (const tableName of donationTables) {
+    if (targetDonationId && targetTableName) {
+      // Targeted mode: process only the specific donation (real-time trigger)
+      console.log(`Targeted notification for donation ${targetDonationId} from ${targetTableName}`);
       try {
-        const now = new Date().toISOString();
         const { data, error } = await supabaseAdmin
-          .from(tableName)
+          .from(targetTableName)
           .select('*')
+          .eq('id', targetDonationId)
           .eq('payment_status', 'success')
           .eq('mod_notified', false)
           .not('streamer_id', 'is', null)
-          .or(`audio_scheduled_at.is.null,audio_scheduled_at.lte.${now}`);
+          .maybeSingle();
 
-        if (!error && data && data.length > 0) {
-          const donationsWithTable = data.map(d => ({ ...d, source_table: tableName }));
-          donationsToNotify = [...donationsToNotify, ...donationsWithTable];
-          console.log(`Found ${data.length} donations from ${tableName}`);
+        if (!error && data) {
+          donationsToNotify = [{ ...data, source_table: targetTableName }];
+          console.log(`Found targeted donation: ${data.name} - ${data.amount}`);
+        } else if (!data) {
+          console.log('Targeted donation not found or already notified');
         }
       } catch (err) {
-        console.error(`Exception querying ${tableName}:`, err);
+        console.error(`Exception querying targeted donation:`, err);
+      }
+    } else {
+      // Full scan mode: cron job safety net
+      const donationTables = [
+        'ankit_donations',
+        'chiaa_gaming_donations',
+        'looteriya_gaming_donations',
+        'clumsy_god_donations',
+        'wolfy_donations',
+        'dorp_plays_donations',
+        'zishu_donations',
+        'brigzard_donations',
+        'w_era_donations',
+        'mr_champion_donations',
+      ];
+
+      for (const tableName of donationTables) {
+        try {
+          const now = new Date().toISOString();
+          const { data, error } = await supabaseAdmin
+            .from(tableName)
+            .select('*')
+            .eq('payment_status', 'success')
+            .eq('mod_notified', false)
+            .not('streamer_id', 'is', null)
+            .or(`audio_scheduled_at.is.null,audio_scheduled_at.lte.${now}`);
+
+          if (!error && data && data.length > 0) {
+            const donationsWithTable = data.map(d => ({ ...d, source_table: tableName }));
+            donationsToNotify = [...donationsToNotify, ...donationsWithTable];
+            console.log(`Found ${data.length} donations from ${tableName}`);
+          }
+        } catch (err) {
+          console.error(`Exception querying ${tableName}:`, err);
+        }
       }
     }
 
