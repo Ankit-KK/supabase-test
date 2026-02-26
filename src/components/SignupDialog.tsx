@@ -1,11 +1,11 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, MessageSquare } from "lucide-react";
+import { ArrowLeft, MessageSquare, Loader2 } from "lucide-react";
 
 import {
   Dialog,
@@ -25,8 +25,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-
-const DISCORD_INVITE_LINK = "https://discord.gg/your-invite";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -51,6 +49,23 @@ const DiscordIcon = ({ className }: { className?: string }) => (
 
 const SignupDialog: React.FC<SignupDialogProps> = ({ open, onOpenChange }) => {
   const [view, setView] = useState<'options' | 'form'>('options');
+  const [discordLink, setDiscordLink] = useState<string | null>(null);
+  const [loadingLink, setLoadingLink] = useState(false);
+  const cachedLink = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (open && !cachedLink.current) {
+      setLoadingLink(true);
+      supabase.functions.invoke('get-discord-link').then(({ data, error }) => {
+        const url = error ? '' : data?.url || '';
+        cachedLink.current = url;
+        setDiscordLink(url);
+        setLoadingLink(false);
+      });
+    } else if (open && cachedLink.current) {
+      setDiscordLink(cachedLink.current);
+    }
+  }, [open]);
 
   if (!open) {
     return null;
@@ -62,7 +77,8 @@ const SignupDialog: React.FC<SignupDialogProps> = ({ open, onOpenChange }) => {
   };
 
   const handleDiscordClick = () => {
-    window.open(DISCORD_INVITE_LINK, '_blank', 'noopener,noreferrer');
+    if (!discordLink) return;
+    window.open(discordLink, '_blank', 'noopener,noreferrer');
     handleOpenChange(false);
   };
 
@@ -81,12 +97,17 @@ const SignupDialog: React.FC<SignupDialogProps> = ({ open, onOpenChange }) => {
               {/* Discord Card */}
               <button
                 onClick={handleDiscordClick}
-                className="group relative flex flex-col items-center gap-3 rounded-lg border border-border p-6 text-center transition-all hover:border-[#5865F2]/50 hover:bg-[#5865F2]/5 focus:outline-none focus:ring-2 focus:ring-ring"
+                disabled={loadingLink || !discordLink}
+                className="group relative flex flex-col items-center gap-3 rounded-lg border border-border p-6 text-center transition-all hover:border-[#5865F2]/50 hover:bg-[#5865F2]/5 focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Badge className="absolute -top-2.5 right-2 bg-emerald-500 text-white hover:bg-emerald-500 text-[10px] px-2 py-0.5">
                   Faster Response
                 </Badge>
-                <DiscordIcon className="h-10 w-10 text-[#5865F2]" />
+                {loadingLink ? (
+                  <Loader2 className="h-10 w-10 text-[#5865F2] animate-spin" />
+                ) : (
+                  <DiscordIcon className="h-10 w-10 text-[#5865F2]" />
+                )}
                 <span className="font-semibold text-foreground">Discord</span>
                 <span className="text-xs text-muted-foreground">
                   Join our server for instant support
