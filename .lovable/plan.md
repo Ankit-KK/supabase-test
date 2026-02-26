@@ -1,59 +1,58 @@
 
 
-# Fix: Trigger Notifications at Exact Audio Play Time
+# Add Discord Option to "Get Connected" Dialog
 
-## Problem
-The cron job runs every minute, so even after `audio_scheduled_at` passes, there can be up to 60 seconds of additional delay before the notification is sent. You want notifications to arrive at the **exact moment** the audio plays on stream.
+## What Changes
 
-## Solution
-The `get-current-audio` edge function is called by OBS the instant the audio is ready to play. It already marks the donation as played and triggers Pusher visual alerts at that exact moment. We can piggyback on this to also trigger the notification.
+Modify `src/components/SignupDialog.tsx` to show a two-option landing screen when the dialog opens:
 
-### File: `supabase/functions/get-current-audio/index.ts`
+1. **Discord** -- Links to your Discord server with a "Faster Response" badge
+2. **Signup Form** -- The existing form, shown when the user clicks this option
 
-After marking the donation as played (line 137) and triggering the Pusher alert, add a **fire-and-forget** call to `notify-new-donations` for this specific donation. This ensures the streamer gets notified at the exact second the audio plays.
+## How It Works
 
-**What to add (after the Pusher block, around line 186):**
+When the user clicks "Get Connected", the dialog opens showing two cards side by side (stacked on mobile):
 
 ```text
-// Fire-and-forget: trigger notification for this donation NOW
-if (!donation.mod_notified) {
-  fetch(
-    `${Deno.env.get('SUPABASE_URL')}/functions/v1/notify-new-donations`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
-      },
-      body: JSON.stringify({ donation_id: donation.id, table_name: tableName })
-    }
-  ).catch(err => console.error('Notification trigger failed:', err));
-}
++----------------------------------+
+|    Get Connected with HyperChat  |
+|    Choose how you'd like to      |
+|    reach us                      |
+|                                  |
+|  +------------+  +------------+  |
+|  | Discord    |  | Signup     |  |
+|  | (icon)     |  | Form      |  |
+|  |            |  | (icon)     |  |
+|  | Join our   |  | Fill in    |  |
+|  | server for |  | your       |  |
+|  | instant    |  | details    |  |
+|  | support    |  |            |  |
+|  |            |  |            |  |
+|  | [FASTER    |  |            |  |
+|  |  RESPONSE] |  |            |  |
+|  +------------+  +------------+  |
++----------------------------------+
 ```
 
-### File: `supabase/functions/notify-new-donations/index.ts`
+- Clicking **Discord** opens the Discord invite link in a new tab (e.g., `https://discord.gg/your-invite`) and closes the dialog.
+- Clicking **Signup Form** transitions the dialog content to show the existing form (no changes to the form itself).
+- A back arrow on the form view returns to the two-option screen.
 
-Update to accept an optional `donation_id` + `table_name` in the request body. When provided, it processes only that single donation instead of scanning all tables. This makes the real-time trigger fast and targeted.
+## Technical Details
 
-**Changes:**
-1. Parse the request body for `donation_id` and `table_name`
-2. If both are present, query only that specific donation from that table
-3. If not present, fall back to the existing full-scan behavior (for the cron safety net)
+### File: `src/components/SignupDialog.tsx`
 
-### File: `supabase/functions/get-current-audio/index.ts` (query update)
+1. Add a `view` state: `'options' | 'form'`, defaulting to `'options'`
+2. Reset `view` to `'options'` when dialog closes (in `onOpenChange`)
+3. When `view === 'options'`: render two clickable cards
+   - Discord card: opens invite link via `window.open()`, closes dialog
+   - Form card: sets `view` to `'form'`
+4. When `view === 'form'`: render the existing form as-is, with a back button to return to options
+5. Use the Discord SVG icon (inline) and a `MessageSquare` icon from lucide-react for the form option
+6. Add a small green badge/pill saying "Faster Response" on the Discord card
 
-Add `mod_notified` to the select query so we know whether to trigger the notification.
-
-### What about the cron job?
-The cron job remains as a safety net for edge cases (e.g., donations without audio, or if the fire-and-forget call fails). But in the normal flow, notifications will now arrive at the exact moment the audio plays -- zero delay.
-
-### Summary of timing:
-- **Moderation ON**: Instant notification (from webhook) with approve/reject buttons -- unchanged
-- **Auto-approved**: Notification sent at exact audio play time (from `get-current-audio`) -- fixed
-- **Cron fallback**: Still runs every minute as safety net -- unchanged
-
-### No Other Changes
+### No other files changed
+- Navbar stays the same (still calls `setShowSignupDialog(true)`)
 - No database changes
-- No frontend changes  
-- No donation page changes
+- No edge function changes
 
