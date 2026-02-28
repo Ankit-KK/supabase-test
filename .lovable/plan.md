@@ -1,34 +1,31 @@
 
 
-# Store Discord Link as a Secret
+# Switch Supabase Endpoints from `.co` to `.com`
 
-## Why Secrets Over Database
-- No new table needed
-- Simpler to manage via Supabase Secrets dashboard
-- Already the pattern used for other config (Pusher keys, API keys, etc.)
+## Why
+Supabase is migrating away from `.supabase.co` domains. Switching to `.supabase.com` ensures continued reliability.
 
-## Changes
+## What Changes
 
-### 1. Add Secret
-- Store `DISCORD_INVITE_LINK` as a Supabase secret (e.g., value: `https://discord.gg/your-invite`)
+Replace `vsevsjvtrshgeiudrnth.supabase.co` with `vsevsjvtrshgeiudrnth.supabase.com` in these files:
 
-### 2. New Edge Function: `get-discord-link`
-A minimal edge function that reads the secret and returns it:
-- File: `supabase/functions/get-discord-link/index.ts`
-- Reads `DISCORD_INVITE_LINK` from `Deno.env.get()`
-- Returns `{ url: "https://discord.gg/..." }`
-- Includes standard CORS headers
-- Falls back to empty string if not set
+### 1. `.env`
+- Update `VITE_SUPABASE_URL` from `.supabase.co` to `.supabase.com`
 
-### 3. Update Frontend: `src/components/SignupDialog.tsx`
-- Remove hardcoded `DISCORD_INVITE_LINK` constant
-- Fetch from the edge function when dialog opens (in the options view)
-- Show a brief loading state on the Discord button while fetching
-- Cache the result so repeated opens don't re-fetch
-- Fallback: if fetch fails, disable the Discord button or show a toast
+### 2. `src/integrations/supabase/client.ts`
+- Update `SUPABASE_URL` constant
 
-## No Other Changes
-- No database migrations
-- No other components or edge functions modified
-- Streamer pages untouched
+### 3. `src/components/audio-player/MediaSourcePlayer.tsx`
+- Update `SUPABASE_PROJECT_URL` constant
 
+### 4. `src/components/dashboard/OBSTokenManager.tsx`
+- Update the two hardcoded URLs used for the media source / OBS token display
+
+## What Does NOT Change
+- No edge functions modified
+- No database changes
+- No streamer pages affected
+- The anon key stays the same (it's tied to the project, not the domain)
+
+## Risk
+None -- Supabase `.supabase.com` endpoints are fully supported and equivalent to `.supabase.co`.
