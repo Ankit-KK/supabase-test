@@ -1,31 +1,26 @@
 
 
-# Switch Supabase Endpoints from `.co` to `.com`
+# Fix CSP to Allow `.supabase.com` Connections
 
-## Why
-Supabase is migrating away from `.supabase.co` domains. Switching to `.supabase.com` ensures continued reliability.
+## Problem
+The Content Security Policy in `index.html` only allows `https://*.supabase.co` and `wss://*.supabase.co` in the `connect-src` directive. After switching endpoints to `.supabase.com`, all Supabase requests are blocked by the browser.
 
-## What Changes
+## Fix
 
-Replace `vsevsjvtrshgeiudrnth.supabase.co` with `vsevsjvtrshgeiudrnth.supabase.com` in these files:
+### `index.html` - Update CSP `connect-src`
 
-### 1. `.env`
-- Update `VITE_SUPABASE_URL` from `.supabase.co` to `.supabase.com`
+Add `https://*.supabase.com` and `wss://*.supabase.com` alongside the existing `.co` entries (keep `.co` for backward compatibility during any transition):
 
-### 2. `src/integrations/supabase/client.ts`
-- Update `SUPABASE_URL` constant
+```
+connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.supabase.com wss://*.supabase.com https://*.pusher.com wss://*.pusher.com https://*.cashfree.com https://*.razorpay.com
+```
 
-### 3. `src/components/audio-player/MediaSourcePlayer.tsx`
-- Update `SUPABASE_PROJECT_URL` constant
+Also update `media-src` to include `.supabase.com`:
+```
+media-src 'self' https://*.supabase.co https://*.supabase.com https://*.r2.dev blob:
+```
 
-### 4. `src/components/dashboard/OBSTokenManager.tsx`
-- Update the two hardcoded URLs used for the media source / OBS token display
-
-## What Does NOT Change
+### No other files changed
 - No edge functions modified
-- No database changes
 - No streamer pages affected
-- The anon key stays the same (it's tied to the project, not the domain)
 
-## Risk
-None -- Supabase `.supabase.com` endpoints are fully supported and equivalent to `.supabase.co`.
