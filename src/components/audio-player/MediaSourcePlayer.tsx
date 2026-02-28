@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { usePusherAudioQueue } from '@/hooks/usePusherAudioQueue';
 import { usePusherConfig } from '@/hooks/usePusherConfig';
 
-const SUPABASE_PROJECT_URL = 'https://vsevsjvtrshgeiudrnth.supabase.co';
+const SUPABASE_PROJECT_URL = 'https://vsevsjvtrshgeiudrnth.supabase.com';
 
 interface MediaSourcePlayerProps {
   streamerSlug: string;
