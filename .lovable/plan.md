@@ -1,26 +1,51 @@
 
-# Revert Supabase Endpoints Back to `.supabase.co`
 
-## Problem
-`vsevsjvtrshgeiudrnth.supabase.com` does not resolve (DNS error). Supabase API/project endpoints use `.supabase.co`, not `.supabase.com`. The `.com` domain is only for the Supabase website/dashboard.
+# Add Rewards Banner to Ankit Donation Page
 
-## Fix
-Revert all four files that were changed from `.co` to `.com` back to `.co`:
+## What
+A compact, eye-catching banner on Ankit's donation page showing reward points earned per donation. Pure frontend -- no backend logic needed.
 
-### 1. `src/integrations/supabase/client.ts`
-- Change `SUPABASE_URL` back to `https://vsevsjvtrshgeiudrnth.supabase.co`
+## Reward Rule
+- 50 points per Rs.1000 donated (only for INR, only for amounts >= Rs.1000)
+- Formula: `Math.floor(amount / 1000) * 50`
+- Non-INR currencies or amounts below Rs.1000 show "No points earned"
 
-### 2. `src/components/audio-player/MediaSourcePlayer.tsx`
-- Change `SUPABASE_PROJECT_URL` back to `https://vsevsjvtrshgeiudrnth.supabase.co`
+## New Component: `RewardsBanner`
 
-### 3. `src/components/dashboard/OBSTokenManager.tsx`
-- Change the two hardcoded URLs back to `.supabase.co`
+Create `src/components/RewardsBanner.tsx` -- a small, reusable component that takes `amount` (number) and `currency` (string).
 
-### 4. `.env`
-- Already reverted to `.supabase.co` in the last diff -- no change needed
+**Display logic:**
+- If currency is not INR or amount < 1000: show "No points earned"
+- Otherwise: show calculated points
 
-### CSP in `index.html`
-- Keep the added `.supabase.com` entries (they don't hurt and provide future-proofing), no change needed
+**Layout (matches the spec):**
+```
++------------------------------------------+
+| Gift  Earn Reward Points for Real Products |
+|                                          |
+| Rs.1000 donation = 50 points               |
+| Points apply only to donations Rs.1000+    |
+|                                          |
+| This donation will earn: XXX points      |
++------------------------------------------+
+```
 
-## No other files changed
-- No edge functions, streamer pages, or database changes
+**Styling:** Uses Ankit's existing blue/purple theme with a subtle gradient border, semi-transparent background (`bg-gradient-to-br from-yellow-500/10 to-orange-500/10`), gold/yellow accent text for points.
+
+## Placement in `src/pages/Ankit.tsx`
+
+Insert the banner directly above the Submit/Donate button (around line 701), so the user sees it right before confirming payment.
+
+```tsx
+<RewardsBanner amount={currentAmount} currency={formData.currency} />
+```
+
+## Files Changed
+1. **New:** `src/components/RewardsBanner.tsx` -- the banner component
+2. **Edit:** `src/pages/Ankit.tsx` -- import and place the banner above the donate button
+
+## What Does NOT Change
+- No other streamer pages modified
+- No backend/edge functions changed
+- No database changes
+
