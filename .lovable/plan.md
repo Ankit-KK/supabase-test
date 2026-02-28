@@ -1,26 +1,26 @@
 
-
-# Fix CSP to Allow `.supabase.com` Connections
+# Revert Supabase Endpoints Back to `.supabase.co`
 
 ## Problem
-The Content Security Policy in `index.html` only allows `https://*.supabase.co` and `wss://*.supabase.co` in the `connect-src` directive. After switching endpoints to `.supabase.com`, all Supabase requests are blocked by the browser.
+`vsevsjvtrshgeiudrnth.supabase.com` does not resolve (DNS error). Supabase API/project endpoints use `.supabase.co`, not `.supabase.com`. The `.com` domain is only for the Supabase website/dashboard.
 
 ## Fix
+Revert all four files that were changed from `.co` to `.com` back to `.co`:
 
-### `index.html` - Update CSP `connect-src`
+### 1. `src/integrations/supabase/client.ts`
+- Change `SUPABASE_URL` back to `https://vsevsjvtrshgeiudrnth.supabase.co`
 
-Add `https://*.supabase.com` and `wss://*.supabase.com` alongside the existing `.co` entries (keep `.co` for backward compatibility during any transition):
+### 2. `src/components/audio-player/MediaSourcePlayer.tsx`
+- Change `SUPABASE_PROJECT_URL` back to `https://vsevsjvtrshgeiudrnth.supabase.co`
 
-```
-connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.supabase.com wss://*.supabase.com https://*.pusher.com wss://*.pusher.com https://*.cashfree.com https://*.razorpay.com
-```
+### 3. `src/components/dashboard/OBSTokenManager.tsx`
+- Change the two hardcoded URLs back to `.supabase.co`
 
-Also update `media-src` to include `.supabase.com`:
-```
-media-src 'self' https://*.supabase.co https://*.supabase.com https://*.r2.dev blob:
-```
+### 4. `.env`
+- Already reverted to `.supabase.co` in the last diff -- no change needed
 
-### No other files changed
-- No edge functions modified
-- No streamer pages affected
+### CSP in `index.html`
+- Keep the added `.supabase.com` entries (they don't hurt and provide future-proofing), no change needed
 
+## No other files changed
+- No edge functions, streamer pages, or database changes
