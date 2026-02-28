@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { SUPPORTED_CURRENCIES, getCurrencySymbol } from "@/constants/currencies";
 import { useStreamerPricing } from "@/hooks/useStreamerPricing";
 import { getMaxMessageLength } from "@/utils/getMaxMessageLength";
+import RewardsBanner from "@/components/RewardsBanner";
 // Razorpay integration - SDK loaded dynamically
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -697,6 +698,9 @@ const Ankit = () => {
                   )}
                 </div>
               </div>}
+
+            {/* Rewards Banner */}
+            <RewardsBanner amount={currentAmount} currency={formData.currency} />
 
             {/* Submit Button */}
             <Button type="submit" className="w-full bg-hero-gradient hover:opacity-90 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none" disabled={isProcessing || !razorpayLoaded}>
