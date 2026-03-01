@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, SUPABASE_FUNCTIONS_BASE } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   Monitor, 
@@ -659,7 +659,7 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
                     </label>
                     <div className="flex items-center space-x-2">
                       <Input
-                        value={`https://supabase.hyperchat.space/functions/v1/get-current-audio?token=${activeToken.token}`}
+                        value={`${SUPABASE_FUNCTIONS_BASE}/get-current-audio?token=${activeToken.token}`}
                         readOnly
                         className="font-mono text-xs bg-white dark:bg-gray-900"
                       />
@@ -667,7 +667,7 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
                         variant="outline"
                         size="sm"
                         onClick={() => copyToClipboard(
-                          `https://supabase.hyperchat.space/functions/v1/get-current-audio?token=${activeToken.token}`,
+                          `${SUPABASE_FUNCTIONS_BASE}/get-current-audio?token=${activeToken.token}`,
                           `media_source_${activeToken.id}`
                         )}
                       >
