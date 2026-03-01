@@ -2,10 +2,64 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = "https://supabase.hyperchat.space";
+// Primary: custom domain (required for India accessibility)
+const PRIMARY_URL = "https://supabase.hyperchat.space";
+// Fallback: direct Supabase endpoint (works globally except where blocked)
+const FALLBACK_URL = import.meta.env.VITE_SUPABASE_URL || "https://vsevsjvtrshgeiudrnth.supabase.co";
+
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzZXZzanZ0cnNoZ2VpdWRybnRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI1ODE1ODEsImV4cCI6MjA1ODE1NzU4MX0.uLkTc3a0kdMNfgIg2qYKnnaLjbvtXGKPOoWbqntibmw";
+
+/**
+ * Exported base URL for manually constructed function URLs (OBS media source, etc.).
+ * Always uses the custom domain so India users can access it.
+ */
+export const SUPABASE_FUNCTIONS_BASE = `${PRIMARY_URL}/functions/v1`;
+
+/**
+ * Fetch wrapper that tries the custom domain first, then falls back to
+ * the direct .supabase.co endpoint on network/CORS errors only.
+ * HTTP error responses (4xx/5xx) are NOT retried — only thrown TypeError
+ * (network failure, DNS, CORS preflight block) triggers the fallback.
+ */
+const fetchWithFailover: typeof globalThis.fetch = async (input, init) => {
+  try {
+    const response = await globalThis.fetch(input, init);
+    return response;
+  } catch (err) {
+    // Only retry on network-level errors (TypeError from fetch = network/CORS failure)
+    if (err instanceof TypeError) {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : (input as Request).url;
+
+      if (url.startsWith(PRIMARY_URL)) {
+        const fallbackUrl = url.replace(PRIMARY_URL, FALLBACK_URL);
+        console.warn(`[Supabase failover] Primary domain failed, retrying via direct endpoint: ${fallbackUrl.split('?')[0]}`);
+
+        // Clone init — if input was a Request we need to reconstruct
+        if (typeof input !== 'string' && !(input instanceof URL) && 'clone' in input) {
+          const clonedReq = (input as Request).clone();
+          const newReq = new Request(fallbackUrl, {
+            method: clonedReq.method,
+            headers: clonedReq.headers,
+            body: clonedReq.body,
+            credentials: clonedReq.credentials,
+            mode: clonedReq.mode,
+            redirect: clonedReq.redirect,
+            referrer: clonedReq.referrer,
+            signal: clonedReq.signal,
+          });
+          return globalThis.fetch(newReq);
+        }
+
+        return globalThis.fetch(fallbackUrl, init);
+      }
+    }
+    throw err;
+  }
+};
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+export const supabase = createClient<Database>(PRIMARY_URL, SUPABASE_PUBLISHABLE_KEY, {
+  global: { fetch: fetchWithFailover },
+});

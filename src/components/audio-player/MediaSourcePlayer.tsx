@@ -4,11 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Copy, Check, RefreshCw, AlertCircle, Info, LucideIcon } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, SUPABASE_FUNCTIONS_BASE } from '@/integrations/supabase/client';
 import { usePusherAudioQueue } from '@/hooks/usePusherAudioQueue';
 import { usePusherConfig } from '@/hooks/usePusherConfig';
-
-const SUPABASE_PROJECT_URL = 'https://supabase.hyperchat.space';
 
 interface MediaSourcePlayerProps {
   streamerSlug: string;
@@ -93,7 +91,7 @@ const MediaSourcePlayer: React.FC<MediaSourcePlayerProps> = ({
   }, [tableName]);
 
   // Use the generic edge function
-  const mediaSourceUrl = `${SUPABASE_PROJECT_URL}/functions/v1/get-current-audio?token=${obsToken}`;
+  const mediaSourceUrl = `${SUPABASE_FUNCTIONS_BASE}/get-current-audio?token=${obsToken}`;
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(mediaSourceUrl);
