@@ -659,7 +659,7 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
                     </label>
                     <div className="flex items-center space-x-2">
                       <Input
-                        value={`https://vsevsjvtrshgeiudrnth.supabase.co/functions/v1/get-current-audio?token=${activeToken.token}`}
+                        value={`https://supabase.hyperchat.space/functions/v1/get-current-audio?token=${activeToken.token}`}
                         readOnly
                         className="font-mono text-xs bg-white dark:bg-gray-900"
                       />
@@ -667,7 +667,7 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
                         variant="outline"
                         size="sm"
                         onClick={() => copyToClipboard(
-                          `https://vsevsjvtrshgeiudrnth.supabase.co/functions/v1/get-current-audio?token=${activeToken.token}`,
+                          `https://supabase.hyperchat.space/functions/v1/get-current-audio?token=${activeToken.token}`,
                           `media_source_${activeToken.id}`
                         )}
                       >
