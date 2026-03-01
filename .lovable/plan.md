@@ -1,29 +1,29 @@
 
 
-# Compact Rewards Banner with Info Tooltip
+# Fix Media Source URL to Use Custom Proxy Domain
 
-## Change
-Replace the expanded banner with a single-line display showing only the title, plus an info icon button that reveals full details on click.
+## Problem
+The Media Source URL is hardcoded to `vsevsjvtrshgeiudrnth.supabase.co`, which is blocked in India. Streamers in India cannot use the Media Source audio player in OBS because the URL doesn't resolve.
 
-## New Layout
+## Solution
+Replace the hardcoded Supabase domain with `supabase.hyperchat.space` (the reverse proxy) in both places where the Media Source URL is constructed.
 
-```
-🎁 Earn Reward Points for Real Products  (i)
-```
+## Files to Change
 
-Clicking/tapping the (i) button shows a popover with:
-- ₹1000 donation = 50 points
-- Points apply only to donations ₹1000+
-- Dynamic line: "This donation will earn: XXX points" or "No points earned"
+### 1. `src/components/audio-player/MediaSourcePlayer.tsx`
+- Line 11: Change the constant from:
+  `const SUPABASE_PROJECT_URL = 'https://vsevsjvtrshgeiudrnth.supabase.co';`
+  to:
+  `const SUPABASE_PROJECT_URL = 'https://supabase.hyperchat.space';`
+- This fixes the Media Source URL shown to all streamers on their `/media-audio-player` pages.
 
-## Technical Details
+### 2. `src/components/dashboard/OBSTokenManager.tsx`
+- Lines 662 and 670: Replace `https://vsevsjvtrshgeiudrnth.supabase.co/functions/v1/get-current-audio` with `https://supabase.hyperchat.space/functions/v1/get-current-audio`
+- This fixes the Media Source URL shown in the streamer dashboard's OBS Token section.
 
-**File:** `src/components/RewardsBanner.tsx`
-
-- Keep the same props (`amount`, `currency`) and points calculation logic
-- Replace the multi-line card with a single flex row: Gift icon + title text + info Popover
-- Use the existing `Popover` component (already used in Ankit.tsx for currency selector) to show details on click
-- The popover content contains the rules and dynamic points line
-
-**No other files changed** -- Ankit.tsx import and placement stays the same.
+## What Does NOT Change
+- No edge functions modified
+- No other streamer pages or components touched
+- No database changes
+- The `get-current-audio` edge function itself stays the same -- only the client-side URL that points to it changes
 
