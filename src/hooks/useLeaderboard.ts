@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { convertToINR } from "@/constants/currencies";
 import Pusher from "pusher-js";
 
 export interface DonationData {
@@ -42,15 +41,26 @@ export const useLeaderboard = ({
 
   const fetchDonations = useCallback(async () => {
     try {
-      // Query 1: Fetch all successful donations for Top Donator calculation
-      const { data: allDonations, error: allError } = await supabase
-        .from(donationsTable as any)
-        .select("name, amount, currency, created_at")
-        .eq("payment_status", "success")
-        .in("moderation_status", ["auto_approved", "approved"])
-        .order("created_at", { ascending: false });
+      // === EGRESS OPTIMIZATION: Read from aggregation table (1 row, index-only scan) ===
+      const { data: topData, error: topError } = await supabase
+        .from('streamer_donator_totals' as any)
+        .select('donator_name, total_amount')
+        .eq('streamer_slug', streamerSlug)
+        .order('total_amount', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-      // Query 2: Fetch latest 5 donations for !hyperchat
+      if (topError) {
+        console.error(`[useLeaderboard] Error fetching top donator for ${streamerSlug}:`, topError);
+      }
+
+      if (topData) {
+        setTopDonator({ name: (topData as any).donator_name, totalAmount: (topData as any).total_amount });
+      } else {
+        setTopDonator(null);
+      }
+
+      // Fetch latest 5 donations (already limited, low egress)
       const { data: latestDonationsData, error: latestError } = await supabase
         .from(donationsTable as any)
         .select("name, amount, currency, created_at")
@@ -59,32 +69,10 @@ export const useLeaderboard = ({
         .order("created_at", { ascending: false })
         .limit(5);
 
-      if (allError) {
-        console.error(`[useLeaderboard] Error fetching all donations from ${donationsTable}:`, allError);
-      }
       if (latestError) {
         console.error(`[useLeaderboard] Error fetching latest donations from ${donationsTable}:`, latestError);
       }
 
-      // Calculate top donator from all donations
-      if (allDonations && allDonations.length > 0) {
-        const donatorTotals: Record<string, { name: string; totalAmount: number }> = {};
-        allDonations.forEach((d: any) => {
-          const key = d.name.toLowerCase();
-          const amountInINR = convertToINR(d.amount, d.currency || "INR");
-          if (!donatorTotals[key]) {
-            donatorTotals[key] = { name: d.name, totalAmount: 0 };
-          }
-          donatorTotals[key].totalAmount += amountInINR;
-        });
-
-        const sortedDonators = Object.values(donatorTotals).sort((a, b) => b.totalAmount - a.totalAmount);
-        setTopDonator(sortedDonators[0] || null);
-      } else {
-        setTopDonator(null);
-      }
-
-      // Set latest 5 donations for !hyperchat rotation
       if (latestDonationsData) {
         setLatestDonations(latestDonationsData as unknown as DonationData[]);
       } else {

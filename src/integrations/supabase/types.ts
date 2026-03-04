@@ -35,6 +35,7 @@ export type Database = {
       ankit_donations: {
         Row: {
           amount: number
+          amount_inr: number | null
           approved_at: string | null
           approved_by: string | null
           audio_played_at: string | null
@@ -62,6 +63,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          amount_inr?: number | null
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
@@ -89,6 +91,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          amount_inr?: number | null
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
@@ -263,6 +266,7 @@ export type Database = {
       brigzard_donations: {
         Row: {
           amount: number
+          amount_inr: number | null
           approved_at: string | null
           approved_by: string | null
           audio_played_at: string | null
@@ -290,6 +294,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          amount_inr?: number | null
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
@@ -317,6 +322,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          amount_inr?: number | null
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
@@ -355,6 +361,7 @@ export type Database = {
       chiaa_gaming_donations: {
         Row: {
           amount: number
+          amount_inr: number | null
           approved_at: string | null
           approved_by: string | null
           audio_played_at: string | null
@@ -382,6 +389,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          amount_inr?: number | null
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
@@ -409,6 +417,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          amount_inr?: number | null
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
@@ -447,6 +456,7 @@ export type Database = {
       clumsy_god_donations: {
         Row: {
           amount: number
+          amount_inr: number | null
           approved_at: string | null
           approved_by: string | null
           audio_played_at: string | null
@@ -474,6 +484,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          amount_inr?: number | null
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
@@ -501,6 +512,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          amount_inr?: number | null
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
@@ -580,6 +592,7 @@ export type Database = {
       dorp_plays_donations: {
         Row: {
           amount: number
+          amount_inr: number | null
           approved_at: string | null
           approved_by: string | null
           audio_played_at: string | null
@@ -607,6 +620,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          amount_inr?: number | null
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
@@ -634,6 +648,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          amount_inr?: number | null
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
@@ -672,6 +687,7 @@ export type Database = {
       looteriya_gaming_donations: {
         Row: {
           amount: number
+          amount_inr: number | null
           approved_at: string | null
           approved_by: string | null
           audio_played_at: string | null
@@ -700,6 +716,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          amount_inr?: number | null
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
@@ -728,6 +745,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          amount_inr?: number | null
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
@@ -830,6 +848,7 @@ export type Database = {
       mr_champion_donations: {
         Row: {
           amount: number
+          amount_inr: number | null
           approved_at: string | null
           approved_by: string | null
           audio_played_at: string | null
@@ -857,6 +876,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          amount_inr?: number | null
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
@@ -884,6 +904,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          amount_inr?: number | null
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
@@ -962,6 +983,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      order_lookup: {
+        Row: {
+          created_at: string | null
+          donation_id: string
+          donation_table_id: number
+          id: string
+          order_id: string
+          razorpay_order_id: string
+          streamer_slug: string
+        }
+        Insert: {
+          created_at?: string | null
+          donation_id: string
+          donation_table_id: number
+          id?: string
+          order_id: string
+          razorpay_order_id: string
+          streamer_slug: string
+        }
+        Update: {
+          created_at?: string | null
+          donation_id?: string
+          donation_table_id?: number
+          id?: string
+          order_id?: string
+          razorpay_order_id?: string
+          streamer_slug?: string
+        }
+        Relationships: []
       }
       password_reset_tokens: {
         Row: {
@@ -1070,6 +1121,36 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+        }
+        Relationships: []
+      }
+      streamer_donator_totals: {
+        Row: {
+          donation_count: number
+          donator_name: string
+          donator_name_lower: string
+          id: string
+          streamer_slug: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          donation_count?: number
+          donator_name: string
+          donator_name_lower: string
+          id?: string
+          streamer_slug: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          donation_count?: number
+          donator_name?: string
+          donator_name_lower?: string
+          id?: string
+          streamer_slug?: string
+          total_amount?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1359,6 +1440,7 @@ export type Database = {
       w_era_donations: {
         Row: {
           amount: number
+          amount_inr: number | null
           approved_at: string | null
           approved_by: string | null
           audio_played_at: string | null
@@ -1386,6 +1468,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          amount_inr?: number | null
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
@@ -1413,6 +1496,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          amount_inr?: number | null
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
@@ -1451,6 +1535,7 @@ export type Database = {
       wolfy_donations: {
         Row: {
           amount: number
+          amount_inr: number | null
           approved_at: string | null
           approved_by: string | null
           audio_played_at: string | null
@@ -1478,6 +1563,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          amount_inr?: number | null
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
@@ -1505,6 +1591,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          amount_inr?: number | null
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
@@ -1543,6 +1630,7 @@ export type Database = {
       zishu_donations: {
         Row: {
           amount: number
+          amount_inr: number | null
           approved_at: string | null
           approved_by: string | null
           audio_played_at: string | null
@@ -1570,6 +1658,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          amount_inr?: number | null
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
@@ -1597,6 +1686,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          amount_inr?: number | null
           approved_at?: string | null
           approved_by?: string | null
           audio_played_at?: string | null
@@ -2143,6 +2233,14 @@ export type Database = {
         Returns: undefined
       }
       create_visits_table: { Args: never; Returns: boolean }
+      decrement_donator_total: {
+        Args: {
+          p_amount: number
+          p_donator_name: string
+          p_streamer_slug: string
+        }
+        Returns: undefined
+      }
       encrypt_obs_token: { Args: { token_text: string }; Returns: string }
       export_user_signups_for_compliance: {
         Args: { export_reason: string; requested_by?: string }
@@ -2658,6 +2756,14 @@ export type Database = {
       http_set_curlopt: {
         Args: { curlopt: string; value: string }
         Returns: boolean
+      }
+      increment_donator_total: {
+        Args: {
+          p_amount: number
+          p_donator_name: string
+          p_streamer_slug: string
+        }
+        Returns: undefined
       }
       is_admin_email: { Args: { check_email: string }; Returns: boolean }
       is_admin_user: { Args: never; Returns: boolean }

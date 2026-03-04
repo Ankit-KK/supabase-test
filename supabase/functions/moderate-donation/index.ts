@@ -272,10 +272,10 @@ serve(async (req) => {
       }
     }
 
-    // Get current donation state
+    // Get current donation state (scoped fields - no select('*'))
     const { data: donation, error: donError } = await supabaseAdmin
       .from(donationTable)
-      .select('*')
+      .select('id, name, amount, amount_inr, currency, message, voice_message_url, tts_audio_url, hypersound_url, is_hyperemote, media_url, media_type, moderation_status, payment_status, message_visible, streamer_id, selected_gif_id, created_at')
       .eq('id', donationId)
       .single();
 
@@ -558,46 +558,53 @@ serve(async (req) => {
         pusherGroup
       );
 
-      // Calculate and send leaderboard update when approving (reduces egress vs full table scan on client)
+      // === EGRESS OPTIMIZATION: RPC leaderboard instead of full table scan ===
       if (action === 'approve') {
         try {
           const EXCHANGE_RATES_TO_INR: Record<string, number> = {
             'INR': 1, 'USD': 89, 'EUR': 94, 'GBP': 113, 'AED': 24, 'AUD': 57
           };
-          
-          const { data: allDonations } = await supabaseAdmin
-            .from(donationTable)
-            .select('name, amount, currency')
-            .eq('payment_status', 'success')
-            .in('moderation_status', ['auto_approved', 'approved']);
-          
-          if (allDonations && allDonations.length > 0) {
-            const donatorTotals: Record<string, { name: string; totalAmount: number }> = {};
-            allDonations.forEach((d: any) => {
-              const key = d.name.toLowerCase();
-              const amountInINR = (d.amount || 0) * (EXCHANGE_RATES_TO_INR[d.currency || 'INR'] || 1);
-              if (!donatorTotals[key]) {
-                donatorTotals[key] = { name: d.name, totalAmount: 0 };
-              }
-              donatorTotals[key].totalAmount += amountInINR;
-            });
-            
-            const sortedDonators = Object.values(donatorTotals)
-              .sort((a, b) => b.totalAmount - a.totalAmount);
-            
-            await sendPusherEvent([`${channelSlug}-dashboard`], 'leaderboard-updated', {
-              topDonator: sortedDonators[0] || null,
-              latestDonation: {
-                name: donation.name,
-                amount: donation.amount,
-                currency: donation.currency || 'INR',
-                created_at: donation.created_at,
-              }
-            }, pusherGroup);
-            console.log(`Leaderboard update sent for ${channelSlug}`);
-          }
+          const donationAmountINR = donation.amount_inr || donation.amount * (EXCHANGE_RATES_TO_INR[donation.currency || 'INR'] || 1);
+
+          // Atomic increment
+          await supabaseAdmin.rpc('increment_donator_total', {
+            p_streamer_slug: channelSlug,
+            p_donator_name: donation.name,
+            p_amount: donationAmountINR
+          });
+
+          // Read top donator (index-only scan, 1 row)
+          const { data: topDonator } = await supabaseAdmin
+            .from('streamer_donator_totals')
+            .select('donator_name, total_amount')
+            .eq('streamer_slug', channelSlug)
+            .order('total_amount', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          await sendPusherEvent([`${channelSlug}-dashboard`], 'leaderboard-updated', {
+            topDonator: topDonator ? { name: topDonator.donator_name, totalAmount: topDonator.total_amount } : null,
+            latestDonation: { name: donation.name, amount: donation.amount, currency: donation.currency || 'INR', created_at: donation.created_at }
+          }, pusherGroup);
+          console.log(`Leaderboard update sent for ${channelSlug}`);
         } catch (leaderboardError) {
-          console.error('Error calculating leaderboard:', leaderboardError);
+          console.error('Error with leaderboard RPC:', leaderboardError);
+        }
+      } else if (action === 'reject' && previousStatus === 'approved') {
+        // Decrement if rejecting a previously approved donation
+        try {
+          const EXCHANGE_RATES_TO_INR: Record<string, number> = {
+            'INR': 1, 'USD': 89, 'EUR': 94, 'GBP': 113, 'AED': 24, 'AUD': 57
+          };
+          const donationAmountINR = donation.amount_inr || donation.amount * (EXCHANGE_RATES_TO_INR[donation.currency || 'INR'] || 1);
+          await supabaseAdmin.rpc('decrement_donator_total', {
+            p_streamer_slug: channelSlug,
+            p_donator_name: donation.name,
+            p_amount: donationAmountINR
+          });
+          console.log(`Leaderboard decremented for rejected donation ${donationId}`);
+        } catch (decrementError) {
+          console.error('Error decrementing leaderboard:', decrementError);
         }
       }
 

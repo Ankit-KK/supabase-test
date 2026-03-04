@@ -124,10 +124,10 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get donation from database
+    // Get donation from database (scoped fields - no select('*'))
     const { data: donation, error: dbError } = await supabase
       .from(config.table)
-      .select('*')
+      .select('id, payment_status, amount, amount_inr, currency, name, message, streamer_id, razorpay_order_id, voice_message_url, tts_audio_url, hypersound_url, is_hyperemote, media_url, media_type, order_id, created_at, moderation_status')
       .eq('order_id', orderId)
       .single();
 
@@ -226,15 +226,30 @@ serve(async (req) => {
       
       const moderationStatus = shouldAutoApprove ? 'auto_approved' : 'pending';
 
-      // Update the database
-      await supabase
+      // Compute amount_inr at write time
+      const amountInINR = convertToINR(donation.amount, paymentCurrency);
+
+      // Idempotent update: only update if not already 'success'
+      const { data: updatedRow } = await supabase
         .from(config.table)
         .update({ 
           payment_status: 'success',
           moderation_status: moderationStatus,
-          currency: paymentCurrency
+          currency: paymentCurrency,
+          amount_inr: amountInINR,
         })
-        .eq('id', donation.id);
+        .eq('id', donation.id)
+        .neq('payment_status', 'success')
+        .select('id')
+        .maybeSingle();
+
+      if (!updatedRow) {
+        console.log(`[Unified] Already processed (race condition) for ${orderId}`);
+        return new Response(
+          JSON.stringify({ order_id: orderId, final_status: 'SUCCESS', payment_status: 'success', order_status: 'PAID', customer_name: donation.name }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
         
       console.log(`[Unified] Updated payment status to success for ${orderId}`);
 
@@ -332,44 +347,33 @@ serve(async (req) => {
           });
         }
 
-        // Send leaderboard update for auto-approved donations
+        // === EGRESS OPTIMIZATION: RPC leaderboard instead of full table scan ===
         if (shouldAutoApprove) {
           try {
-            // Calculate top donator from all donations (matches moderate-donation logic)
-            const { data: allDonations } = await supabase
-              .from(config.table)
-              .select('name, amount, currency')
-              .eq('payment_status', 'success')
-              .in('moderation_status', ['auto_approved', 'approved']);
-            
-            if (allDonations && allDonations.length > 0) {
-              const donatorTotals: Record<string, { name: string; totalAmount: number }> = {};
-              allDonations.forEach((d: any) => {
-                const key = d.name.toLowerCase();
-                const amountInINR = convertToINR(d.amount, d.currency || 'INR');
-                if (!donatorTotals[key]) {
-                  donatorTotals[key] = { name: d.name, totalAmount: 0 };
-                }
-                donatorTotals[key].totalAmount += amountInINR;
-              });
-              
-              const sortedDonators = Object.values(donatorTotals)
-                .sort((a, b) => b.totalAmount - a.totalAmount);
-              
-              // Send to dashboard channel (matches frontend subscription)
-              await sendPusherEvent(dashboardChannel, 'leaderboard-updated', {
-                topDonator: sortedDonators[0] || null,
-                latestDonation: {
-                  name: donation.name,
-                  amount: donation.amount,
-                  currency: paymentCurrency,
-                  created_at: donation.created_at,
-                }
-              });
-              console.log(`[Unified] Leaderboard update sent to ${dashboardChannel}`);
-            }
+            const donationAmountINR = donation.amount_inr || amountInINR;
+            // Atomic increment (no full table scan)
+            await supabase.rpc('increment_donator_total', {
+              p_streamer_slug: streamerSlug,
+              p_donator_name: donation.name,
+              p_amount: donationAmountINR
+            });
+
+            // Read top donator (index-only scan, 1 row)
+            const { data: topDonator } = await supabase
+              .from('streamer_donator_totals')
+              .select('donator_name, total_amount')
+              .eq('streamer_slug', streamerSlug)
+              .order('total_amount', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            await sendPusherEvent(dashboardChannel, 'leaderboard-updated', {
+              topDonator: topDonator ? { name: topDonator.donator_name, totalAmount: topDonator.total_amount } : null,
+              latestDonation: { name: donation.name, amount: donation.amount, currency: paymentCurrency, created_at: donation.created_at }
+            });
+            console.log(`[Unified] Leaderboard update sent to ${dashboardChannel}`);
           } catch (leaderboardError) {
-            console.error('[Unified] Error calculating leaderboard:', leaderboardError);
+            console.error('[Unified] Error with leaderboard RPC:', leaderboardError);
           }
 
           // Dynamic TTS threshold from database
@@ -384,6 +388,7 @@ serve(async (req) => {
           const isTextDonation = !donation.voice_message_url && !donation.hypersound_url && !hasMedia;
           const amountInINR = convertToINR(donation.amount, paymentCurrency);
 
+          let ttsAudioUrl = donation.tts_audio_url;
           // Generate TTS if needed (for text/media donations without voice/hypersound)
           if (!donation.voice_message_url && !donation.hypersound_url) {
             const shouldGenerateTTS = (isTextDonation && amountInINR >= ttsMinAmount && streamerSettings?.tts_enabled !== false) || hasMedia;
@@ -391,7 +396,7 @@ serve(async (req) => {
             if (shouldGenerateTTS) {
               try {
                 console.log('[Unified] Generating TTS for donation:', donation.id);
-                await supabase.functions.invoke('generate-donation-tts', {
+                const ttsResponse = await supabase.functions.invoke('generate-donation-tts', {
                   body: {
                     username: donation.name,
                     amount: donation.amount,
@@ -404,6 +409,9 @@ serve(async (req) => {
                     currency: paymentCurrency
                   }
                 });
+                if (!ttsResponse.error) {
+                  ttsAudioUrl = ttsResponse.data?.audioUrl || ttsAudioUrl;
+                }
               } catch (ttsError) {
                 console.error('[Unified] TTS generation error:', ttsError);
               }
@@ -411,35 +419,29 @@ serve(async (req) => {
               // Use silent audio for donations under threshold
               const SILENT_AUDIO_URL = Deno.env.get('SILENT_AUDIO_URL') || 'https://pub-fff13c27bb0d4a1e807dfc596462b7d5.r2.dev/silence_no_sound.mp3';
               await supabase.from(config.table).update({ tts_audio_url: SILENT_AUDIO_URL }).eq('id', donation.id);
+              ttsAudioUrl = SILENT_AUDIO_URL;
               console.log(`[Unified] Using silent audio for donation under ${ttsMinAmount} INR threshold`);
             }
           }
 
-          // Refetch donation to get updated TTS URL
-          const { data: updatedDonation } = await supabase
-            .from(config.table)
-            .select('*')
-            .eq('id', donation.id)
-            .single();
-
-          // Send audio queue event
+          // === EGRESS OPTIMIZATION: No post-TTS refetch - use ttsAudioUrl directly ===
           const audioChannel = `${streamerSlug}-audio`;
           await sendPusherEvent(audioChannel, 'new-audio-message', {
-            id: updatedDonation?.id || donation.id,
-            name: updatedDonation?.name || donation.name,
-            amount: updatedDonation?.amount || donation.amount,
-            message: updatedDonation?.message || donation.message,
+            id: donation.id,
+            name: donation.name,
+            amount: donation.amount,
+            message: donation.message,
             currency: paymentCurrency,
-            created_at: updatedDonation?.created_at || donation.created_at,
+            created_at: donation.created_at,
             payment_status: 'success',
             moderation_status: 'auto_approved',
             message_visible: true,
-            voice_message_url: updatedDonation?.voice_message_url || donation.voice_message_url,
-            tts_audio_url: updatedDonation?.tts_audio_url,
-            hypersound_url: updatedDonation?.hypersound_url || donation.hypersound_url,
-            is_hyperemote: updatedDonation?.is_hyperemote || donation.is_hyperemote,
-            media_url: updatedDonation?.media_url || donation.media_url,
-            media_type: updatedDonation?.media_type || donation.media_type
+            voice_message_url: donation.voice_message_url,
+            tts_audio_url: ttsAudioUrl,
+            hypersound_url: donation.hypersound_url,
+            is_hyperemote: donation.is_hyperemote,
+            media_url: donation.media_url,
+            media_type: donation.media_type
           });
         }
       } else {

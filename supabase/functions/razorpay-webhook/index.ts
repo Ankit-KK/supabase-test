@@ -1,4 +1,5 @@
-// Updated: 2026-01-25 - Cleaned up legacy streamers, only active: Ankit, Chiaa Gaming, Looteriya Gaming
+// Egress-optimized razorpay-webhook: uses order_lookup (2 indexed queries instead of 10 sequential scans),
+// RPC leaderboard aggregation, idempotent updates, and no post-TTS refetch.
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { createHash, createHmac } from 'https://deno.land/std@0.177.0/node/crypto.ts'
@@ -8,76 +9,50 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-razorpay-signature',
 }
 
-// Exchange rates to INR for TTS threshold conversion
 const EXCHANGE_RATES_TO_INR: Record<string, number> = {
   'INR': 1, 'USD': 89, 'EUR': 94, 'GBP': 113, 'AED': 24, 'AUD': 57
 };
+const convertToINR = (amount: number, currency: string): number => amount * (EXCHANGE_RATES_TO_INR[currency] || 1);
 
-const convertToINR = (amount: number, currency: string): number => {
-  return amount * (EXCHANGE_RATES_TO_INR[currency] || 1);
+// donation_table_id -> table name mapping (matches order_lookup)
+const DONATION_TABLE_ID_MAP: Record<number, string> = {
+  0: 'ankit_donations', 1: 'chiaa_gaming_donations', 2: 'looteriya_gaming_donations',
+  3: 'clumsy_god_donations', 4: 'wolfy_donations', 5: 'dorp_plays_donations',
+  6: 'zishu_donations', 7: 'brigzard_donations', 8: 'w_era_donations', 9: 'mr_champion_donations',
 };
 
-// Mapping from streamerType to correct streamer_slug (for database lookup)
-const streamerSlugMap: Record<string, string> = {
-  'looteriyagaming': 'looteriya_gaming',
-  'chiagaming': 'chiaa_gaming',
-  'ankit': 'ankit',
-  'clumsygod': 'clumsy_god',
-  'wolfy': 'wolfy',
-  'dorpplays': 'dorp_plays',
-  'zishu': 'zishu',
-  'brigzard': 'brigzard',
-  'w_era': 'w_era',
-  'mr_champion': 'mr_champion',
+// table name -> streamer_slug mapping (for Pusher channels)
+const TABLE_TO_SLUG: Record<string, string> = {
+  'ankit_donations': 'ankit', 'chiaa_gaming_donations': 'chiaa_gaming',
+  'looteriya_gaming_donations': 'looteriya_gaming', 'clumsy_god_donations': 'clumsy_god',
+  'wolfy_donations': 'wolfy', 'dorp_plays_donations': 'dorp_plays',
+  'zishu_donations': 'zishu', 'brigzard_donations': 'brigzard',
+  'w_era_donations': 'w_era', 'mr_champion_donations': 'mr_champion',
 };
 
-// Generate short ID for callback mapping (8 characters)
+// Scoped fields for donation fetch (no select('*'))
+const DONATION_FIELDS = 'id, payment_status, amount, amount_inr, currency, name, message, streamer_id, voice_message_url, tts_audio_url, hypersound_url, is_hyperemote, media_url, media_type, order_id, razorpay_order_id, mod_notified, created_at';
+
 function generateShortId(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
   let result = '';
-  for (let i = 0; i < 8; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
+  for (let i = 0; i < 8; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
   return result;
 }
 
-// Create callback mapping and return short callback_data
-async function createCallbackMapping(
-  supabase: any,
-  donationId: string,
-  tableName: string,
-  streamerId: string,
-  action: string
-): Promise<string> {
+async function createCallbackMapping(supabase: any, donationId: string, tableName: string, streamerId: string, action: string): Promise<string> {
   const shortId = generateShortId();
-  
   try {
-    const { error } = await supabase
-      .from('telegram_callback_mapping')
-      .insert({
-        short_id: shortId,
-        donation_id: donationId,
-        table_name: tableName,
-        streamer_id: streamerId,
-        action_type: action,
-        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours
-      });
-    
+    const { error } = await supabase.from('telegram_callback_mapping').insert({
+      short_id: shortId, donation_id: donationId, table_name: tableName,
+      streamer_id: streamerId, action_type: action,
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+    });
     if (error) {
       console.error('Error creating callback mapping:', error);
-      // Fallback to truncated format if mapping fails
       return `${action.charAt(0)}_${donationId.substring(0, 8)}`;
     }
-    
-    // Return shortened format: action_prefix + short_id (max ~11 chars)
-    const actionPrefix = {
-      'approve': 'a',
-      'reject': 'r', 
-      'hide_message': 'h',
-      'ban_donor': 'b',
-      'replay': 'p'
-    }[action] || action.charAt(0);
-    
+    const actionPrefix = { 'approve': 'a', 'reject': 'r', 'hide_message': 'h', 'ban_donor': 'b', 'replay': 'p' }[action] || action.charAt(0);
     return `${actionPrefix}_${shortId}`;
   } catch (err) {
     console.error('Error in createCallbackMapping:', err);
@@ -85,47 +60,19 @@ async function createCallbackMapping(
   }
 }
 
-// Helper function to get Pusher credentials based on streamer_slug
 async function getPusherCredentials(streamerSlug: string, supabase: any) {
   try {
     const { data: streamer, error } = await supabase
-      .from('streamers')
-      .select('pusher_group, streamer_name')
-      .eq('streamer_slug', streamerSlug)
-      .single();
-
+      .from('streamers').select('pusher_group, streamer_name').eq('streamer_slug', streamerSlug).single();
     if (error || !streamer) {
       console.error(`[Pusher] Failed to fetch pusher_group for ${streamerSlug}:`, error);
-      return {
-        appId: Deno.env.get('PUSHER_APP_ID_1') || Deno.env.get('PUSHER_APP_ID'),
-        key: Deno.env.get('PUSHER_KEY_1') || Deno.env.get('PUSHER_KEY'),
-        secret: Deno.env.get('PUSHER_SECRET_1') || Deno.env.get('PUSHER_SECRET'),
-        cluster: Deno.env.get('PUSHER_CLUSTER_1') || Deno.env.get('PUSHER_CLUSTER'),
-        group: 1
-      };
+      return { appId: Deno.env.get('PUSHER_APP_ID_1') || Deno.env.get('PUSHER_APP_ID'), key: Deno.env.get('PUSHER_KEY_1') || Deno.env.get('PUSHER_KEY'), secret: Deno.env.get('PUSHER_SECRET_1') || Deno.env.get('PUSHER_SECRET'), cluster: Deno.env.get('PUSHER_CLUSTER_1') || Deno.env.get('PUSHER_CLUSTER'), group: 1 };
     }
-
     const group = streamer.pusher_group || 1;
-    
-    const credentials = {
-      appId: Deno.env.get(`PUSHER_APP_ID_${group}`),
-      key: Deno.env.get(`PUSHER_KEY_${group}`),
-      secret: Deno.env.get(`PUSHER_SECRET_${group}`),
-      cluster: Deno.env.get(`PUSHER_CLUSTER_${group}`),
-      group
-    };
-
-    console.log(`[Pusher] Using Group ${group} credentials for ${streamerSlug}`);
-    return credentials;
+    return { appId: Deno.env.get(`PUSHER_APP_ID_${group}`), key: Deno.env.get(`PUSHER_KEY_${group}`), secret: Deno.env.get(`PUSHER_SECRET_${group}`), cluster: Deno.env.get(`PUSHER_CLUSTER_${group}`), group };
   } catch (err) {
     console.error('[Pusher] Error fetching credentials:', err);
-    return {
-      appId: Deno.env.get('PUSHER_APP_ID_1') || Deno.env.get('PUSHER_APP_ID'),
-      key: Deno.env.get('PUSHER_KEY_1') || Deno.env.get('PUSHER_KEY'),
-      secret: Deno.env.get('PUSHER_SECRET_1') || Deno.env.get('PUSHER_SECRET'),
-      cluster: Deno.env.get('PUSHER_CLUSTER_1') || Deno.env.get('PUSHER_CLUSTER'),
-      group: 1
-    };
+    return { appId: Deno.env.get('PUSHER_APP_ID_1') || Deno.env.get('PUSHER_APP_ID'), key: Deno.env.get('PUSHER_KEY_1') || Deno.env.get('PUSHER_KEY'), secret: Deno.env.get('PUSHER_SECRET_1') || Deno.env.get('PUSHER_SECRET'), cluster: Deno.env.get('PUSHER_CLUSTER_1') || Deno.env.get('PUSHER_CLUSTER'), group: 1 };
   }
 }
 
@@ -141,204 +88,99 @@ serve(async (req) => {
 
     console.log('Razorpay webhook received')
 
-    // SECURITY: Verify webhook signature - reject if secret or signature is missing
     if (!webhookSecret) {
       console.error('SECURITY: Webhook secret not configured - rejecting request')
       return new Response('Unauthorized - webhook secret not configured', { status: 401, headers: corsHeaders })
     }
-
     if (!webhookSignature) {
       console.error('SECURITY: No signature in webhook request - rejecting request')
       return new Response('Unauthorized - missing signature', { status: 401, headers: corsHeaders })
     }
 
-    const expectedSignature = createHmac('sha256', webhookSecret)
-      .update(webhookBody)
-      .digest('hex')
-
+    const expectedSignature = createHmac('sha256', webhookSecret).update(webhookBody).digest('hex')
     if (webhookSignature !== expectedSignature) {
       console.error('SECURITY: Invalid webhook signature - rejecting request')
       return new Response('Unauthorized - invalid signature', { status: 401, headers: corsHeaders })
     }
-    
     console.log('Webhook signature verified ✓')
 
-    // Parse webhook data
     const webhookData = JSON.parse(webhookBody)
     const event = webhookData.event
-    
     console.log('Webhook event:', event)
 
-    // Only process payment.captured and payment.failed events
     if (event !== 'payment.captured' && event !== 'payment.failed') {
       console.log('Ignoring event:', event)
       return new Response('Event ignored', { status: 200, headers: corsHeaders })
     }
 
-    // Extract Razorpay order ID and currency from payment entity
     const razorpayOrderId = webhookData.payload?.payment?.entity?.order_id
     const paymentCurrency = webhookData.payload?.payment?.entity?.currency || 'INR'
-    
     console.log('Razorpay Order ID:', razorpayOrderId, 'Currency:', paymentCurrency)
-    
+
     if (!razorpayOrderId) {
       console.log('No Razorpay order ID found, ignoring')
       return new Response('No order ID', { status: 400, headers: corsHeaders })
     }
 
-    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Determine table based on order ID - only active streamers
-    let streamerType: 'ankit' | 'looteriyagaming' | 'chiagaming' | 'clumsygod' | 'wolfy' | 'dorpplays' | 'zishu' | 'brigzard' | 'w_era' | 'mr_champion'
-    let tableName: string
-    
-    // Get donation from the appropriate table using Razorpay order ID
-    let donation: any
-    let fetchError: any
-    
-    // Try ankit first
-    const ankitResult = await supabase
-      .from('ankit_donations')
-      .select('*')
+    // === EGRESS OPTIMIZATION: Use order_lookup instead of 10-table sequential scan ===
+    const { data: lookup, error: lookupError } = await supabase
+      .from('order_lookup')
+      .select('streamer_slug, donation_table_id, donation_id')
       .eq('razorpay_order_id', razorpayOrderId)
-      .maybeSingle()
-    
-    if (ankitResult.data) {
-      donation = ankitResult.data
-      streamerType = 'ankit'
-      tableName = 'ankit_donations'
+      .maybeSingle();
+
+    let tableName: string;
+    let streamerSlug: string;
+    let donation: any;
+
+    if (lookup) {
+      // Fast path: order_lookup found (2 indexed queries total)
+      tableName = DONATION_TABLE_ID_MAP[lookup.donation_table_id];
+      streamerSlug = lookup.streamer_slug;
+
+      if (!tableName) {
+        console.error('Invalid donation_table_id:', lookup.donation_table_id);
+        return new Response('Invalid table mapping', { status: 500, headers: corsHeaders });
+      }
+
+      const { data: donationData, error: donationError } = await supabase
+        .from(tableName)
+        .select(DONATION_FIELDS)
+        .eq('id', lookup.donation_id)
+        .single();
+
+      if (donationError || !donationData) {
+        console.error('Donation not found via order_lookup:', donationError);
+        return new Response('Donation not found', { status: 404, headers: corsHeaders });
+      }
+      donation = donationData;
     } else {
-      // Try looteriya_gaming
-      const looteriyaGamingResult = await supabase
-        .from('looteriya_gaming_donations')
-        .select('*')
-        .eq('razorpay_order_id', razorpayOrderId)
-        .maybeSingle()
-      
-      if (looteriyaGamingResult.data) {
-        donation = looteriyaGamingResult.data
-        streamerType = 'looteriyagaming'
-        tableName = 'looteriya_gaming_donations'
-      } else {
-        // Try chiaa_gaming
-        const chiagamingResult = await supabase
-          .from('chiaa_gaming_donations')
-          .select('*')
-          .eq('razorpay_order_id', razorpayOrderId)
-          .maybeSingle()
-        
-        if (chiagamingResult.data) {
-          donation = chiagamingResult.data
-          streamerType = 'chiagaming'
-          tableName = 'chiaa_gaming_donations'
-        } else {
-          // Try clumsy_god
-          const clumsyGodResult = await supabase
-            .from('clumsy_god_donations')
-            .select('*')
-            .eq('razorpay_order_id', razorpayOrderId)
-            .maybeSingle()
-          
-          if (clumsyGodResult.data) {
-            donation = clumsyGodResult.data
-            streamerType = 'clumsygod'
-            tableName = 'clumsy_god_donations'
-          } else {
-            // Try wolfy
-            const wolfyResult = await supabase
-              .from('wolfy_donations')
-              .select('*')
-              .eq('razorpay_order_id', razorpayOrderId)
-              .maybeSingle()
-            
-            if (wolfyResult.data) {
-              donation = wolfyResult.data
-              streamerType = 'wolfy'
-              tableName = 'wolfy_donations'
-            } else {
-              // Try dorp_plays
-              const dorpPlaysResult = await supabase
-                .from('dorp_plays_donations')
-                .select('*')
-                .eq('razorpay_order_id', razorpayOrderId)
-                .maybeSingle()
-              
-              if (dorpPlaysResult.data) {
-                donation = dorpPlaysResult.data
-                streamerType = 'dorpplays'
-                tableName = 'dorp_plays_donations'
-              } else {
-                // Try zishu
-                const zishuResult = await supabase
-                  .from('zishu_donations')
-                  .select('*')
-                  .eq('razorpay_order_id', razorpayOrderId)
-                  .maybeSingle()
-                
-                if (zishuResult.data) {
-                  donation = zishuResult.data
-                  streamerType = 'zishu'
-                  tableName = 'zishu_donations'
-                } else {
-                  // Try brigzard
-                  const brigzardResult = await supabase
-                    .from('brigzard_donations')
-                    .select('*')
-                    .eq('razorpay_order_id', razorpayOrderId)
-                    .maybeSingle()
-                  
-                  if (brigzardResult.data) {
-                    donation = brigzardResult.data
-                    streamerType = 'brigzard'
-                    tableName = 'brigzard_donations'
-                  } else {
-                    // Try w_era
-                    const wEraResult = await supabase
-                      .from('w_era_donations')
-                      .select('*')
-                      .eq('razorpay_order_id', razorpayOrderId)
-                      .maybeSingle()
-                    
-                    if (wEraResult.data) {
-                      donation = wEraResult.data
-                      streamerType = 'w_era'
-                      tableName = 'w_era_donations'
-                    } else {
-                      // Try mr_champion
-                      const mrChampionResult = await supabase
-                        .from('mr_champion_donations')
-                        .select('*')
-                        .eq('razorpay_order_id', razorpayOrderId)
-                        .maybeSingle()
-                      
-                      if (mrChampionResult.data) {
-                        donation = mrChampionResult.data
-                        streamerType = 'mr_champion'
-                        tableName = 'mr_champion_donations'
-                      } else {
-                        fetchError = ankitResult.error || looteriyaGamingResult.error || chiagamingResult.error || clumsyGodResult.error || wolfyResult.error || dorpPlaysResult.error || zishuResult.error || brigzardResult.error || wEraResult.error || mrChampionResult.error
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
+      // Fallback: legacy orders without order_lookup - search by razorpay_order_id across tables
+      console.warn('[Webhook] order_lookup miss, falling back to sequential scan for:', razorpayOrderId);
+      let found = false;
+      for (const [tableId, tName] of Object.entries(DONATION_TABLE_ID_MAP)) {
+        const { data } = await supabase.from(tName).select(DONATION_FIELDS).eq('razorpay_order_id', razorpayOrderId).maybeSingle();
+        if (data) {
+          donation = data;
+          tableName = tName;
+          streamerSlug = TABLE_TO_SLUG[tName];
+          found = true;
+          break;
         }
+      }
+      if (!found) {
+        console.error('Donation not found for Razorpay order:', razorpayOrderId);
+        return new Response('Donation not found', { status: 404, headers: corsHeaders });
       }
     }
 
-    if (fetchError || !donation) {
-      console.error('Donation not found for Razorpay order:', razorpayOrderId)
-      return new Response('Donation not found', { status: 404, headers: corsHeaders })
-    }
-    
-    console.log('Found donation:', donation.order_id)
+    console.log('Found donation:', donation.order_id, 'table:', tableName);
 
-    // Check if already processed
+    // Idempotency guard: skip if already processed
     if (donation.payment_status === 'success') {
       console.log('Payment already processed:', donation.order_id)
       return new Response('Already processed', { status: 200, headers: corsHeaders })
@@ -346,377 +188,232 @@ serve(async (req) => {
 
     const isSuccess = event === 'payment.captured'
     const newStatus = isSuccess ? 'success' : 'failed'
-
     console.log('Updating payment status to:', newStatus)
 
-    // Calculate audio_scheduled_at based on donation type
     const audioDelay = donation.hypersound_url ? 15000 : 60000;
     const audioScheduledAt = new Date(Date.now() + audioDelay).toISOString();
 
-    // Fetch streamer's moderation settings including TTS thresholds
+    // Fetch streamer settings (scoped fields)
     const { data: streamerSettings, error: streamerError } = await supabase
       .from('streamers')
       .select('moderation_mode, telegram_moderation_enabled, discord_moderation_enabled, media_moderation_enabled, min_tts_amount_inr, tts_enabled')
       .eq('id', donation.streamer_id)
       .single();
 
-    if (streamerError) {
-      console.error('Error fetching streamer settings:', streamerError);
-    }
+    if (streamerError) console.error('Error fetching streamer settings:', streamerError);
 
     const moderationMode = streamerSettings?.moderation_mode || 'auto_approve';
-    // HyperSounds/HyperEmotes always auto-approve (no user content to moderate)
     const isHypersound = donation.hypersound_url || donation.is_hyperemote;
-    // Check if this is a media donation that requires moderation
     const hasMedia = donation.media_url && donation.media_url.length > 0;
     const mediaRequiresModeration = hasMedia && streamerSettings?.media_moderation_enabled;
+    const shouldAutoApprove = isHypersound || (moderationMode === 'auto_approve' && !mediaRequiresModeration);
     
-    // HyperSounds always bypass moderation, media goes to moderation if enabled
-    const shouldAutoApprove = isHypersound || 
-      (moderationMode === 'auto_approve' && !mediaRequiresModeration);
-    
-    // Determine the moderation status
     let moderationStatus = 'pending';
-    if (shouldAutoApprove) {
-      moderationStatus = 'auto_approved';
-    } else if (mediaRequiresModeration) {
-      moderationStatus = 'pending'; // Media donations go to moderation queue
-    }
+    if (shouldAutoApprove) moderationStatus = 'auto_approved';
 
-    console.log('Moderation decision:', {
-      moderationMode,
-      isHypersound,
-      hasMedia,
-      mediaRequiresModeration,
-      shouldAutoApprove,
-      moderationStatus
-    });
+    console.log('Moderation decision:', { moderationMode, isHypersound, hasMedia, mediaRequiresModeration, shouldAutoApprove, moderationStatus });
 
-    // Update donation with payment status and moderation status
+    // Compute amount_inr if not already set
+    const amountInINR = donation.amount_inr || convertToINR(donation.amount, paymentCurrency);
+
     const updateData: any = {
       payment_status: newStatus,
-      moderation_status: isSuccess ? moderationStatus : 'rejected'
+      moderation_status: isSuccess ? moderationStatus : 'rejected',
+      amount_inr: amountInINR,
     };
-    
-    // Only set audio_scheduled_at for auto-approved donations
-    if (isSuccess && shouldAutoApprove) {
-      updateData.audio_scheduled_at = audioScheduledAt;
-    }
+    if (isSuccess && shouldAutoApprove) updateData.audio_scheduled_at = audioScheduledAt;
 
-    const { error: updateError } = await supabase
+    // Idempotent DB update: only update if not already 'success' (prevents race conditions)
+    const { data: updatedRow, error: updateError } = await supabase
       .from(tableName)
       .update(updateData)
       .eq('id', donation.id)
+      .neq('payment_status', 'success')
+      .select('id')
+      .maybeSingle();
 
     if (updateError) {
-      console.error('Error updating donation:', updateError)
-      throw updateError
+      console.error('Error updating donation:', updateError);
+      throw updateError;
     }
 
-    console.log('Donation updated successfully')
+    if (!updatedRow) {
+      console.log('Already processed (race condition), skipping');
+      return new Response('Already processed', { status: 200, headers: corsHeaders });
+    }
 
-    // If payment successful, trigger TTS/audio and send Pusher events
+    console.log('Donation updated successfully');
+
     if (isSuccess) {
-      // Determine the correct streamer_slug for Pusher channel
-      const streamerSlug = streamerSlugMap[streamerType] || streamerType;
-      
-      // Get Pusher credentials for this streamer
       const pusherCredentials = await getPusherCredentials(streamerSlug, supabase);
-      
+
       if (!pusherCredentials.appId || !pusherCredentials.key || !pusherCredentials.secret || !pusherCredentials.cluster) {
         console.error('Missing Pusher credentials for streamer:', streamerSlug);
       } else {
-        // Build Pusher auth signature
         const timestamp = Math.floor(Date.now() / 1000).toString();
         
-        // Helper function to create Pusher event
         const sendPusherEvent = async (channel: string, eventName: string, eventData: any) => {
-          const body = JSON.stringify({
-            name: eventName,
-            channel: channel,
-            data: JSON.stringify(eventData)
-          });
-          
+          const body = JSON.stringify({ name: eventName, channel: channel, data: JSON.stringify(eventData) });
           const bodyMd5 = createHash('md5').update(body).digest('hex');
           const stringToSign = `POST\n/apps/${pusherCredentials.appId}/events\nauth_key=${pusherCredentials.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${bodyMd5}`;
           const signature = createHmac('sha256', pusherCredentials.secret!).update(stringToSign).digest('hex');
-          
           const pusherUrl = `https://api-${pusherCredentials.cluster}.pusher.com/apps/${pusherCredentials.appId}/events?auth_key=${pusherCredentials.key}&auth_timestamp=${timestamp}&auth_version=1.0&body_md5=${bodyMd5}&auth_signature=${signature}`;
-          
-          const response = await fetch(pusherUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: body
-          });
-          
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error(`Pusher ${eventName} failed:`, errorText);
-          } else {
-            console.log(`Pusher ${eventName} sent successfully to ${channel}`);
-          }
+          const response = await fetch(pusherUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+          if (!response.ok) { const errorText = await response.text(); console.error(`Pusher ${eventName} failed:`, errorText); }
+          else { console.log(`Pusher ${eventName} sent successfully to ${channel}`); }
         };
 
-        // Send dashboard notification for all successful payments
         const dashboardChannel = `${streamerSlug}-dashboard`;
         await sendPusherEvent(dashboardChannel, 'new-donation', {
-          id: donation.id,
-          name: donation.name,
-          amount: donation.amount,
-          message: donation.message,
-          currency: paymentCurrency,
-          created_at: donation.created_at,
-          payment_status: 'success',
-          moderation_status: moderationStatus,
-          message_visible: true,
-          voice_message_url: donation.voice_message_url,
-          tts_audio_url: donation.tts_audio_url,
-          hypersound_url: donation.hypersound_url,
-          is_hyperemote: donation.is_hyperemote,
-          media_url: donation.media_url,
-          media_type: donation.media_type
+          id: donation.id, name: donation.name, amount: donation.amount, message: donation.message,
+          currency: paymentCurrency, created_at: donation.created_at, payment_status: 'success',
+          moderation_status: moderationStatus, message_visible: true,
+          voice_message_url: donation.voice_message_url, tts_audio_url: donation.tts_audio_url,
+          hypersound_url: donation.hypersound_url, is_hyperemote: donation.is_hyperemote,
+          media_url: donation.media_url, media_type: donation.media_type
         });
 
-        // If donation needs moderation, also send a donation-updated event with 'pending' action
-        // This ensures the moderation panel shows the new pending item in real-time
         if (!shouldAutoApprove) {
           await sendPusherEvent(dashboardChannel, 'donation-updated', {
-            id: donation.id,
-            action: 'pending',
-            name: donation.name,
-            amount: donation.amount,
-            currency: paymentCurrency,
-            message: donation.message,
-            message_visible: true,
-            created_at: donation.created_at,
-            voice_message_url: donation.voice_message_url,
-            media_url: donation.media_url,
-            media_type: donation.media_type
+            id: donation.id, action: 'pending', name: donation.name, amount: donation.amount,
+            currency: paymentCurrency, message: donation.message, message_visible: true,
+            created_at: donation.created_at, voice_message_url: donation.voice_message_url,
+            media_url: donation.media_url, media_type: donation.media_type
           });
-          console.log(`Dashboard notified of pending donation requiring moderation`);
+          console.log('Dashboard notified of pending donation requiring moderation');
         }
 
-        // Send goal progress update
+        // Goal progress update
         const goalChannel = `${streamerSlug}-goal`;
         try {
-          const { data: streamerGoal } = await supabase
-            .from('streamers')
+          const { data: streamerGoal } = await supabase.from('streamers')
             .select('goal_is_active, goal_target_amount, goal_activated_at')
-            .eq('id', donation.streamer_id)
-            .single();
+            .eq('id', donation.streamer_id).single();
 
           if (streamerGoal?.goal_is_active && streamerGoal?.goal_activated_at) {
-            const { data: goalDonations } = await supabase
-              .from(tableName)
-              .select('amount, currency')
-              .eq('payment_status', 'success')
+            const { data: goalDonations } = await supabase.from(tableName)
+              .select('amount, currency').eq('payment_status', 'success')
               .gte('created_at', streamerGoal.goal_activated_at);
-
-            const currentAmount = (goalDonations || []).reduce((sum: number, d: any) => 
-              sum + convertToINR(d.amount, d.currency || 'INR'), 0);
-
+            const currentAmount = (goalDonations || []).reduce((sum: number, d: any) => sum + convertToINR(d.amount, d.currency || 'INR'), 0);
             await sendPusherEvent(goalChannel, 'goal-progress', {
-              currentAmount,
-              targetAmount: streamerGoal.goal_target_amount,
-              newDonation: { 
-                amount: convertToINR(donation.amount, paymentCurrency), 
-                name: donation.name 
-              }
+              currentAmount, targetAmount: streamerGoal.goal_target_amount,
+              newDonation: { amount: amountInINR, name: donation.name }
             });
             console.log(`Goal progress sent: ${currentAmount}/${streamerGoal.goal_target_amount}`);
           }
-        } catch (goalError) {
-          console.error('Goal progress update error:', goalError);
-        }
+        } catch (goalError) { console.error('Goal progress update error:', goalError); }
 
-        // Send leaderboard update for auto-approved donations
+        // === EGRESS OPTIMIZATION: RPC leaderboard instead of full table scan ===
         if (shouldAutoApprove) {
           try {
-            // Calculate top donator from all donations (matches moderate-donation logic)
-            const { data: allDonations } = await supabase
-              .from(tableName)
-              .select('name, amount, currency')
-              .eq('payment_status', 'success')
-              .in('moderation_status', ['auto_approved', 'approved']);
-            
-            if (allDonations && allDonations.length > 0) {
-              const donatorTotals: Record<string, { name: string; totalAmount: number }> = {};
-              allDonations.forEach((d: any) => {
-                const key = d.name.toLowerCase();
-                const amountInINR = convertToINR(d.amount, d.currency || 'INR');
-                if (!donatorTotals[key]) {
-                  donatorTotals[key] = { name: d.name, totalAmount: 0 };
-                }
-                donatorTotals[key].totalAmount += amountInINR;
-              });
-              
-              const sortedDonators = Object.values(donatorTotals)
-                .sort((a, b) => b.totalAmount - a.totalAmount);
-              
-              // Send to dashboard channel (matches frontend subscription)
-              await sendPusherEvent(dashboardChannel, 'leaderboard-updated', {
-                topDonator: sortedDonators[0] || null,
-                latestDonation: {
-                  name: donation.name,
-                  amount: donation.amount,
-                  currency: paymentCurrency,
-                  created_at: donation.created_at,
-                }
-              });
-              console.log(`Leaderboard update sent to ${dashboardChannel}`);
-            }
-          } catch (leaderboardError) {
-            console.error('Error calculating leaderboard:', leaderboardError);
-          }
+            // Atomic increment (no full table scan)
+            await supabase.rpc('increment_donator_total', {
+              p_streamer_slug: streamerSlug,
+              p_donator_name: donation.name,
+              p_amount: amountInINR
+            });
+
+            // Read top donator (index-only scan, 1 row)
+            const { data: topDonator } = await supabase
+              .from('streamer_donator_totals')
+              .select('donator_name, total_amount')
+              .eq('streamer_slug', streamerSlug)
+              .order('total_amount', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            await sendPusherEvent(dashboardChannel, 'leaderboard-updated', {
+              topDonator: topDonator ? { name: topDonator.donator_name, totalAmount: topDonator.total_amount } : null,
+              latestDonation: { name: donation.name, amount: donation.amount, currency: paymentCurrency, created_at: donation.created_at }
+            });
+            console.log(`Leaderboard update sent to ${dashboardChannel}`);
+          } catch (leaderboardError) { console.error('Error with leaderboard RPC:', leaderboardError); }
         }
 
-        // Only send audio queue events for auto-approved donations
+        // Audio queue for auto-approved donations
         if (shouldAutoApprove) {
-          // Dynamic TTS threshold from database
           const PLATFORM_TTS_FLOOR_INR = 40;
-          const ttsMinAmount = Math.max(
-            PLATFORM_TTS_FLOOR_INR, 
-            streamerSettings?.min_tts_amount_inr || PLATFORM_TTS_FLOOR_INR
-          );
-          
-          const amountInINR = convertToINR(donation.amount, paymentCurrency);
+          const ttsMinAmount = Math.max(PLATFORM_TTS_FLOOR_INR, streamerSettings?.min_tts_amount_inr || PLATFORM_TTS_FLOOR_INR);
           console.log(`[Webhook] TTS threshold: ${ttsMinAmount} INR, Donation: ${amountInINR} INR`);
 
-          // Determine donation type
           const isTextDonation = !donation.voice_message_url && !donation.hypersound_url && !hasMedia;
-          
-          // Generate TTS only if:
-          // 1. Text donation >= TTS threshold, OR
-          // 2. Media donation (always announced)
-          // 3. TTS is enabled for streamer
-          const shouldGenerateTTS = 
-            (!donation.voice_message_url && !donation.hypersound_url) &&
+          const shouldGenerateTTS = (!donation.voice_message_url && !donation.hypersound_url) &&
             ((isTextDonation && amountInINR >= ttsMinAmount) || hasMedia) &&
             streamerSettings?.tts_enabled !== false;
+
+          let ttsAudioUrl = donation.tts_audio_url;
 
           if (shouldGenerateTTS) {
             try {
               console.log('Generating TTS for donation:', donation.id);
               const ttsResponse = await supabase.functions.invoke('generate-donation-tts', {
                 body: {
-                  username: donation.name,
-                  amount: donation.amount,
-                  message: donation.message,
-                  donationId: donation.id,
-                  streamerId: donation.streamer_id,
-                  isVoiceAnnouncement: false,
-                  isMediaAnnouncement: hasMedia,
-                  mediaType: donation.media_type,
-                  currency: paymentCurrency
+                  username: donation.name, amount: donation.amount, message: donation.message,
+                  donationId: donation.id, streamerId: donation.streamer_id,
+                  isVoiceAnnouncement: false, isMediaAnnouncement: hasMedia,
+                  mediaType: donation.media_type, currency: paymentCurrency
                 }
               });
-              
-              if (ttsResponse.error) {
-                console.error('TTS generation failed:', ttsResponse.error);
-              } else {
-                console.log('TTS generated successfully:', ttsResponse.data?.audioUrl);
+              if (ttsResponse.error) { console.error('TTS generation failed:', ttsResponse.error); }
+              else {
+                ttsAudioUrl = ttsResponse.data?.audioUrl || ttsAudioUrl;
+                console.log('TTS generated successfully:', ttsAudioUrl);
               }
-            } catch (ttsError) {
-              console.error('TTS generation error:', ttsError);
-            }
+            } catch (ttsError) { console.error('TTS generation error:', ttsError); }
           } else if (isTextDonation) {
-            // Use silent audio for text donations under threshold (triggers visual alert only)
-            const SILENT_AUDIO_URL = Deno.env.get('SILENT_AUDIO_URL') || 
-              'https://pub-fff13c27bb0d4a1e807dfc596462b7d5.r2.dev/silence_no_sound.mp3';
-            
+            const SILENT_AUDIO_URL = Deno.env.get('SILENT_AUDIO_URL') || 'https://pub-fff13c27bb0d4a1e807dfc596462b7d5.r2.dev/silence_no_sound.mp3';
             await supabase.from(tableName).update({ tts_audio_url: SILENT_AUDIO_URL }).eq('id', donation.id);
+            ttsAudioUrl = SILENT_AUDIO_URL;
             console.log(`[Webhook] Using silent audio for donation under ${ttsMinAmount} INR threshold`);
           }
 
-          // Refetch donation to get updated TTS URL
-          const { data: updatedDonation } = await supabase
-            .from(tableName)
-            .select('*')
-            .eq('id', donation.id)
-            .single();
-
-          // Send audio queue event
+          // === EGRESS OPTIMIZATION: No post-TTS refetch - use ttsAudioUrl directly ===
           const audioChannel = `${streamerSlug}-audio`;
           await sendPusherEvent(audioChannel, 'new-audio-message', {
-            id: updatedDonation?.id || donation.id,
-            name: updatedDonation?.name || donation.name,
-            amount: updatedDonation?.amount || donation.amount,
-            message: updatedDonation?.message || donation.message,
-            currency: paymentCurrency,
-            created_at: updatedDonation?.created_at || donation.created_at,
-            payment_status: 'success',
-            moderation_status: 'auto_approved',
-            voice_message_url: updatedDonation?.voice_message_url || donation.voice_message_url,
-            tts_audio_url: updatedDonation?.tts_audio_url,
-            hypersound_url: updatedDonation?.hypersound_url || donation.hypersound_url,
-            is_hyperemote: updatedDonation?.is_hyperemote || donation.is_hyperemote,
-            media_url: updatedDonation?.media_url || donation.media_url,
-            media_type: updatedDonation?.media_type || donation.media_type,
-            audio_scheduled_at: audioScheduledAt
+            id: donation.id, name: donation.name, amount: donation.amount, message: donation.message,
+            currency: paymentCurrency, created_at: donation.created_at, payment_status: 'success',
+            moderation_status: 'auto_approved', voice_message_url: donation.voice_message_url,
+            tts_audio_url: ttsAudioUrl, hypersound_url: donation.hypersound_url,
+            is_hyperemote: donation.is_hyperemote, media_url: donation.media_url,
+            media_type: donation.media_type, audio_scheduled_at: audioScheduledAt
           });
         }
 
-        // Send Telegram/Discord notification only for donations that NEED moderation
-        // Auto-approved donations will be notified by the cron after audio_scheduled_at passes
+        // Telegram/Discord notifications for moderation-required donations
         if ((streamerSettings?.telegram_moderation_enabled || streamerSettings?.discord_moderation_enabled) && !shouldAutoApprove) {
           try {
-            // Only create callback mappings for pending (non-auto-approved) donations
             let callbackData = null;
             if (!shouldAutoApprove) {
               const approveCallback = await createCallbackMapping(supabase, donation.id, tableName, donation.streamer_id, 'approve');
               const rejectCallback = await createCallbackMapping(supabase, donation.id, tableName, donation.streamer_id, 'reject');
               const hideCallback = await createCallbackMapping(supabase, donation.id, tableName, donation.streamer_id, 'hide_message');
               const banCallback = await createCallbackMapping(supabase, donation.id, tableName, donation.streamer_id, 'ban_donor');
-              callbackData = {
-                approve: approveCallback,
-                reject: rejectCallback,
-                hide_message: hideCallback,
-                ban_donor: banCallback
-              };
+              callbackData = { approve: approveCallback, reject: rejectCallback, hide_message: hideCallback, ban_donor: banCallback };
             }
 
-            // Call notify-new-donations edge function
             const { error: notifyError } = await supabase.functions.invoke('notify-new-donations', {
               body: {
                 donation: {
-                  id: donation.id,
-                  name: donation.name,
-                  amount: donation.amount,
-                  message: donation.message,
-                  currency: paymentCurrency,
+                  id: donation.id, name: donation.name, amount: donation.amount,
+                  message: donation.message, currency: paymentCurrency,
                   voice_message_url: donation.voice_message_url,
-                  media_url: donation.media_url,
-                  media_type: donation.media_type,
+                  media_url: donation.media_url, media_type: donation.media_type,
                   moderation_status: shouldAutoApprove ? 'auto_approved' : 'pending'
                 },
-                streamer_id: donation.streamer_id,
-                table_name: tableName,
-                is_auto_approved: shouldAutoApprove,
-                callback_data: callbackData
+                streamer_id: donation.streamer_id, table_name: tableName,
+                is_auto_approved: shouldAutoApprove, callback_data: callbackData
               }
             });
-
-            if (notifyError) {
-              console.error('Failed to send Telegram notification:', notifyError);
-            } else {
-              console.log('Telegram notification sent successfully');
-            }
-          } catch (telegramError) {
-            console.error('Telegram notification error:', telegramError);
-          }
+            if (notifyError) console.error('Failed to send notification:', notifyError);
+            else console.log('Notification sent successfully');
+          } catch (telegramError) { console.error('Notification error:', telegramError); }
         }
       }
     }
 
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    })
+    return new Response(JSON.stringify({ success: true }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   } catch (error) {
     console.error('Webhook error:', error)
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    })
+    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   }
 })

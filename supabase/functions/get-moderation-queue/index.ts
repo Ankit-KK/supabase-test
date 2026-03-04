@@ -134,10 +134,10 @@ serve(async (req) => {
     // Determine table name
     const tableName = `${streamer.streamer_slug.replace(/-/g, '_')}_donations`;
 
-    // Build query
+    // Scoped fields + planned count (no select('*'), no exact count full scan)
     let query = supabaseAdmin
       .from(tableName)
-      .select('*', { count: 'exact' })
+      .select('id, name, amount, currency, created_at, media_type, payment_status, moderation_status, message_visible, is_hyperemote, message, voice_message_url, tts_audio_url, hypersound_url, media_url, approved_by, approved_at', { count: 'planned' })
       .eq('payment_status', 'success')
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
@@ -165,10 +165,10 @@ serve(async (req) => {
       });
     }
 
-    // Get pending count for badge
+    // Get pending count for badge (planned count, not exact)
     const { count: pendingCount } = await supabaseAdmin
       .from(tableName)
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'planned', head: true })
       .eq('payment_status', 'success')
       .eq('moderation_status', 'pending');
 
