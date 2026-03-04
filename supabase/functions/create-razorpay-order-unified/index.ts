@@ -7,17 +7,17 @@ const corsHeaders = {
 };
 
 // Active streamer configuration mapping
-const STREAMER_CONFIG: Record<string, { table: string; prefix: string }> = {
-  'ankit': { table: 'ankit_donations', prefix: 'ank_rp_' },
-  'chiaa_gaming': { table: 'chiaa_gaming_donations', prefix: 'cg_rp_' },
-  'looteriya_gaming': { table: 'looteriya_gaming_donations', prefix: 'lg_rp_' },
-  'clumsy_god': { table: 'clumsy_god_donations', prefix: 'cg2_rp_' },
-  'wolfy': { table: 'wolfy_donations', prefix: 'wf_rp_' },
-  'dorp_plays': { table: 'dorp_plays_donations', prefix: 'dp2_rp_' },
-  'zishu': { table: 'zishu_donations', prefix: 'zs_rp_' },
-  'brigzard': { table: 'brigzard_donations', prefix: 'bz_rp_' },
-  'w_era': { table: 'w_era_donations', prefix: 'we_rp_' },
-  'mr_champion': { table: 'mr_champion_donations', prefix: 'mc_rp_' },
+const STREAMER_CONFIG: Record<string, { table: string; prefix: string; tableId: number }> = {
+  'ankit': { table: 'ankit_donations', prefix: 'ank_rp_', tableId: 0 },
+  'chiaa_gaming': { table: 'chiaa_gaming_donations', prefix: 'cg_rp_', tableId: 1 },
+  'looteriya_gaming': { table: 'looteriya_gaming_donations', prefix: 'lg_rp_', tableId: 2 },
+  'clumsy_god': { table: 'clumsy_god_donations', prefix: 'cg2_rp_', tableId: 3 },
+  'wolfy': { table: 'wolfy_donations', prefix: 'wf_rp_', tableId: 4 },
+  'dorp_plays': { table: 'dorp_plays_donations', prefix: 'dp2_rp_', tableId: 5 },
+  'zishu': { table: 'zishu_donations', prefix: 'zs_rp_', tableId: 6 },
+  'brigzard': { table: 'brigzard_donations', prefix: 'bz_rp_', tableId: 7 },
+  'w_era': { table: 'w_era_donations', prefix: 'we_rp_', tableId: 8 },
+  'mr_champion': { table: 'mr_champion_donations', prefix: 'mc_rp_', tableId: 9 },
 };
 
 // Platform floors (cannot go below these)
@@ -197,6 +197,9 @@ serve(async (req) => {
     const randomString = Math.random().toString(36).substring(2, 10);
     const orderId = `${config.prefix}${timestamp}_${randomString}`;
 
+    // Compute amount_inr at write time (currency normalization)
+    const amountInINR = amount * (EXCHANGE_RATES_TO_INR[currency] || 1);
+
     // Convert amount to subunits
     const amountInSubunits = Math.round(amount * 100);
 
@@ -232,13 +235,14 @@ serve(async (req) => {
       throw new Error('Invalid name provided');
     }
 
-    // Store donation in the streamer-specific table
+    // Store donation in the streamer-specific table (with amount_inr)
     const { data: donation, error: donationError } = await supabase
       .from(config.table)
       .insert({
         streamer_id: streamerData.id,
         name: sanitizedName,
         amount,
+        amount_inr: amountInINR,
         currency: currency,
         message: sanitizedMessage,
         voice_message_url: voiceMessageUrl || null,
@@ -257,6 +261,22 @@ serve(async (req) => {
     if (donationError) {
       console.error(`[Unified] Database insert error for ${streamer_slug}:`, donationError);
       throw new Error('Failed to store donation');
+    }
+
+    // Insert into order_lookup for fast webhook resolution (replaces 10-table scan)
+    const { error: lookupError } = await supabase
+      .from('order_lookup')
+      .insert({
+        razorpay_order_id: razorpayOrder.id,
+        order_id: orderId,
+        streamer_slug: streamer_slug,
+        donation_table_id: config.tableId,
+        donation_id: donation.id,
+      });
+
+    if (lookupError) {
+      console.error(`[Unified] order_lookup insert error:`, lookupError);
+      // Non-fatal: webhook will still work via prefix-based lookup as fallback
     }
 
     console.log(`[Unified] Donation created for ${streamer_slug}:`, donation.id);

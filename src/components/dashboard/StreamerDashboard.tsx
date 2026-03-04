@@ -217,10 +217,10 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
       if (!user) return;
 
       try {
-        // Get streamer by slug
+        // Scoped fields (no select('*'))
         const { data: streamer, error: streamerError } = await supabase
           .from('streamers')
-          .select('*')
+          .select('id, streamer_slug, streamer_name, user_id, brand_color, moderation_mode, tts_enabled, media_upload_enabled, media_moderation_enabled, hyperemotes_enabled, leaderboard_widget_enabled, pusher_group')
           .eq('streamer_slug', streamerSlug)
           .single();
 
@@ -310,9 +310,10 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
       if (!streamerData?.id) return;
 
       try {
+        // Scoped list fields (no select('*') - reduces payload ~60%)
         const { data, error } = await supabase
           .from(tableName as any)
-          .select('*')
+          .select('id, name, amount, currency, message, voice_message_url, tts_audio_url, hypersound_url, is_hyperemote, media_url, media_type, moderation_status, payment_status, created_at, message_visible, streamer_id')
           .eq('streamer_id', streamerData.id)
           .eq('payment_status', 'success')
           .order('created_at', { ascending: false })

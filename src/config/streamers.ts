@@ -80,6 +80,25 @@ export const getAllStreamerConfigs = (): StreamerConfig[] => Object.values(STREA
 export const EXCHANGE_RATES_TO_INR: Record<string, number> = { 'INR': 1, 'USD': 89, 'EUR': 94, 'GBP': 113, 'AED': 24, 'AUD': 57 };
 export const convertToINR = (amount: number, currency: string = 'INR'): number => (EXCHANGE_RATES_TO_INR[currency] || 1) * amount;
 
+// Mapping from donation_table_id (smallint) in order_lookup to table name
+export const DONATION_TABLE_ID_MAP: Record<number, string> = {
+  0: 'ankit_donations',
+  1: 'chiaa_gaming_donations',
+  2: 'looteriya_gaming_donations',
+  3: 'clumsy_god_donations',
+  4: 'wolfy_donations',
+  5: 'dorp_plays_donations',
+  6: 'zishu_donations',
+  7: 'brigzard_donations',
+  8: 'w_era_donations',
+  9: 'mr_champion_donations',
+};
+
+// Reverse mapping: table name -> donation_table_id
+export const TABLE_NAME_TO_ID: Record<string, number> = Object.fromEntries(
+  Object.entries(DONATION_TABLE_ID_MAP).map(([id, name]) => [name, parseInt(id)])
+);
+
 export const PUSHER_EVENTS = { NEW_DONATION: 'new-donation', DONATION_APPROVED: 'donation-approved', DONATION_UPDATED: 'donation-updated', NEW_AUDIO_MESSAGE: 'new-audio-message', GOAL_PROGRESS: 'goal-progress', STATS_UPDATED: 'stats-updated' } as const;
 export const MODERATION_STATUS = { PENDING: 'pending', AUTO_APPROVED: 'auto_approved', APPROVED: 'approved', REJECTED: 'rejected' } as const;
 export const ENV_KEYS = { RAZORPAY_KEY_ID: 'razorpay-keyid', RAZORPAY_KEY_SECRET: 'razorpay-keysecret', SUPABASE_URL: 'SUPABASE_URL', SUPABASE_SERVICE_ROLE_KEY: 'SUPABASE_SERVICE_ROLE_KEY' } as const;
