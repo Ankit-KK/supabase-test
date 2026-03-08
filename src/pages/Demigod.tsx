@@ -356,7 +356,7 @@ const Demigod = () => {
           )}
 
           <Button
-            className="w-full font-semibold py-6 bg-[#ac1117] hover:bg-[#8e0e13] text-white"
+            className="w-full font-semibold py-6 bg-[#AC1117] hover:bg-[#8e0e13] text-[#EDE7E7]"
             onClick={handleSubmit}
             disabled={isProcessingPayment}
           >
