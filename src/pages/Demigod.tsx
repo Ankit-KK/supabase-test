@@ -256,13 +256,13 @@ const Demigod = () => {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-[#d43a3a]">Amount *</Label>
+            <Label className="text-[#EDE7E7]">Amount *</Label>
             <div className="flex gap-2">
               <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className="w-[100px] justify-between bg-black/40 text-white border-[#ac1117]/30 hover:bg-[#ac1117]/10"
+                    className="w-[100px] justify-between bg-[#24201D]/60 text-[#EDE7E7] border-[#3D4158] hover:bg-[#3D4158]/40"
                   >
                     {currencySymbol} {selectedCurrency}
                     <ChevronsUpDown className="h-4 w-4 opacity-50" />
