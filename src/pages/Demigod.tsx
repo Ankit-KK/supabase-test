@@ -303,7 +303,7 @@ const Demigod = () => {
             </div>
 
             {pricing.ttsEnabled && (
-              <p className="text-xs text-[#d43a3a]">
+              <p className="text-xs text-[#7E797D]">
                 TTS above {currencySymbol}
                 {pricing.minTts}
               </p>
