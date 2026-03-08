@@ -298,7 +298,7 @@ const Demigod = () => {
                 type="number"
                 value={formData.amount}
                 onChange={handleInputChange}
-                className="bg-black/40 text-white placeholder:text-gray-400 border-[#8b5cf6]/30 focus:border-[#a78bfa] focus:ring-[#a78bfa]/20"
+                className="bg-black/40 text-white placeholder:text-gray-400 border-[#ac1117]/30 focus:border-[#d43a3a] focus:ring-[#d43a3a]/20"
               />
             </div>
 
