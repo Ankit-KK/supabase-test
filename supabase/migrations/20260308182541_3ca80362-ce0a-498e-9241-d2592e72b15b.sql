@@ -1,0 +1,1 @@
+DELETE FROM streamer_donator_totals WHERE streamer_slug = 'demigod';
