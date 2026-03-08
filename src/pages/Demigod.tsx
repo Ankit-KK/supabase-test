@@ -201,25 +201,25 @@ const Demigod = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-[#1a1520] via-[#2a2035] to-[#1a1520]">
-      <Card className="w-full max-w-sm backdrop-blur-sm border-[#ac1117]/40 shadow-[0_0_30px_rgba(172,17,23,0.2)] relative overflow-hidden bg-gradient-to-br from-[#1e1a2a] to-[#2a2540]">
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-md" />
+    <div className="min-h-screen flex items-center justify-center p-4 bg-[#24201D]">
+      <Card className="w-full max-w-sm backdrop-blur-sm border-[#3D4158] shadow-[0_0_30px_rgba(172,17,23,0.15)] relative overflow-hidden bg-gradient-to-br from-[#24201D] to-[#3D4158]">
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-md" />
 
         <CardHeader className="text-center relative z-10 pb-2 flex flex-col items-center">
-          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-[#d43a3a] to-[#ac1117] bg-clip-text text-transparent tracking-wider">
+          <CardTitle className="text-2xl font-bold text-[#EDE7E7] tracking-wider">
             Demigod
           </CardTitle>
-          <p className="text-xs text-gray-400">Support Demigod with your donation</p>
+          <p className="text-xs text-[#7E797D]">Support Demigod with your donation</p>
         </CardHeader>
 
         <CardContent className="space-y-4 relative z-10">
           <div className="space-y-2">
-            <Label className="text-[#d43a3a]">Your Name *</Label>
+            <Label className="text-[#EDE7E7]">Your Name *</Label>
             <Input
               name="name"
               value={formData.name}
               onChange={handleInputChange}
-              className="bg-black/40 text-white placeholder:text-gray-400 border-[#ac1117]/30 focus:border-[#d43a3a] focus:ring-[#d43a3a]/20"
+              className="bg-[#24201D]/60 text-[#EDE7E7] placeholder:text-[#7E797D] border-[#3D4158] focus:border-[#AC1117] focus:ring-[#AC1117]/20"
             />
           </div>
 
