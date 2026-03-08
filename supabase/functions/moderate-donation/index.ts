@@ -275,7 +275,7 @@ serve(async (req) => {
     // Get current donation state (scoped fields - no select('*'))
     const { data: donation, error: donError } = await supabaseAdmin
       .from(donationTable)
-      .select('id, name, amount, amount_inr, currency, message, voice_message_url, tts_audio_url, hypersound_url, is_hyperemote, media_url, media_type, moderation_status, payment_status, message_visible, streamer_id, selected_gif_id, created_at')
+      .select('id, name, amount, amount_inr, currency, message, voice_message_url, tts_audio_url, hypersound_url, is_hyperemote, media_url, media_type, moderation_status, payment_status, message_visible, streamer_id, created_at')
       .eq('id', donationId)
       .single();
 
