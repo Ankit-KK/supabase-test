@@ -191,7 +191,7 @@ const Demigod = () => {
         modal: {
           ondismiss: () => navigate(`/status?order_id=${data.orderId}&status=pending`),
         },
-        theme: { color: "#8b5cf6" },
+        theme: { color: "#ac1117" },
       }).open();
     } catch {
       toast.error("Payment failed");
@@ -201,12 +201,12 @@ const Demigod = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-[#1a0a2e] via-[#2d1b4e] to-[#1a0a2e]">
-      <Card className="w-full max-w-sm backdrop-blur-sm border-[#8b5cf6]/40 shadow-[0_0_30px_rgba(139,92,246,0.2)] relative overflow-hidden bg-gradient-to-br from-[#1a0a2e] to-[#2d1b4e]">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-[#1a1520] via-[#2a2035] to-[#1a1520]">
+      <Card className="w-full max-w-sm backdrop-blur-sm border-[#ac1117]/40 shadow-[0_0_30px_rgba(172,17,23,0.2)] relative overflow-hidden bg-gradient-to-br from-[#1e1a2a] to-[#2a2540]">
         <div className="absolute inset-0 bg-black/60 backdrop-blur-md" />
 
         <CardHeader className="text-center relative z-10 pb-2 flex flex-col items-center">
-          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-[#a78bfa] to-[#8b5cf6] bg-clip-text text-transparent tracking-wider">
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-[#d43a3a] to-[#ac1117] bg-clip-text text-transparent tracking-wider">
             Demigod
           </CardTitle>
           <p className="text-xs text-gray-400">Support Demigod with your donation</p>
@@ -214,12 +214,12 @@ const Demigod = () => {
 
         <CardContent className="space-y-4 relative z-10">
           <div className="space-y-2">
-            <Label className="text-[#a78bfa]">Your Name *</Label>
+            <Label className="text-[#d43a3a]">Your Name *</Label>
             <Input
               name="name"
               value={formData.name}
               onChange={handleInputChange}
-              className="bg-black/40 text-white placeholder:text-gray-400 border-[#8b5cf6]/30 focus:border-[#a78bfa] focus:ring-[#a78bfa]/20"
+              className="bg-black/40 text-white placeholder:text-gray-400 border-[#ac1117]/30 focus:border-[#d43a3a] focus:ring-[#d43a3a]/20"
             />
           </div>
 
@@ -231,8 +231,8 @@ const Demigod = () => {
                 onClick={() => handleDonationTypeChange(type)}
                 className={`p-2 rounded-lg border-2 transition-all ${
                   donationType === type
-                    ? "border-[#a78bfa] bg-[#a78bfa]/10"
-                    : "border-[#8b5cf6]/30 hover:border-[#8b5cf6]/50"
+                    ? "border-[#d43a3a] bg-[#d43a3a]/10"
+                    : "border-[#ac1117]/30 hover:border-[#ac1117]/50"
                 }`}
               >
                 <div className="text-center">
@@ -256,13 +256,13 @@ const Demigod = () => {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-[#a78bfa]">Amount *</Label>
+            <Label className="text-[#d43a3a]">Amount *</Label>
             <div className="flex gap-2">
               <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className="w-[100px] justify-between bg-black/40 text-white border-[#8b5cf6]/30 hover:bg-[#8b5cf6]/10"
+                    className="w-[100px] justify-between bg-black/40 text-white border-[#ac1117]/30 hover:bg-[#ac1117]/10"
                   >
                     {currencySymbol} {selectedCurrency}
                     <ChevronsUpDown className="h-4 w-4 opacity-50" />
@@ -298,12 +298,12 @@ const Demigod = () => {
                 type="number"
                 value={formData.amount}
                 onChange={handleInputChange}
-                className="bg-black/40 text-white placeholder:text-gray-400 border-[#8b5cf6]/30 focus:border-[#a78bfa] focus:ring-[#a78bfa]/20"
+                className="bg-black/40 text-white placeholder:text-gray-400 border-[#ac1117]/30 focus:border-[#d43a3a] focus:ring-[#d43a3a]/20"
               />
             </div>
 
             {pricing.ttsEnabled && (
-              <p className="text-xs text-[#a78bfa]">
+              <p className="text-xs text-[#d43a3a]">
                 TTS above {currencySymbol}
                 {pricing.minTts}
               </p>
@@ -317,7 +317,7 @@ const Demigod = () => {
                 value={formData.message}
                 onChange={handleInputChange}
                 maxLength={maxMessageLength}
-                className="w-full min-h-[90px] rounded-md bg-black/40 text-white placeholder:text-gray-400 border border-[#8b5cf6]/30 focus:border-[#a78bfa] focus:ring-[#a78bfa]/20 px-3 py-2 text-sm"
+                className="w-full min-h-[90px] rounded-md bg-black/40 text-white placeholder:text-gray-400 border border-[#ac1117]/30 focus:border-[#d43a3a] focus:ring-[#d43a3a]/20 px-3 py-2 text-sm"
                 placeholder="Your message (optional)"
               />
               <p className="text-xs text-right text-muted-foreground">
@@ -333,7 +333,7 @@ const Demigod = () => {
               maxDurationSeconds={getVoiceDuration(currentAmount)}
               requiredAmount={pricing.minVoice}
               currentAmount={currentAmount}
-              brandColor="#8b5cf6"
+              brandColor="#ac1117"
             />
           )}
 
@@ -356,14 +356,14 @@ const Demigod = () => {
           )}
 
           <Button
-            className="w-full font-semibold py-6 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white"
+            className="w-full font-semibold py-6 bg-[#ac1117] hover:bg-[#8e0e13] text-white"
             onClick={handleSubmit}
             disabled={isProcessingPayment}
           >
             {isProcessingPayment ? "Processing..." : `Support ${currencySymbol}${formData.amount || "0"}`}
           </Button>
 
-          <DonationPageFooter brandColor="#8b5cf6" />
+          <DonationPageFooter brandColor="#ac1117" />
         </CardContent>
       </Card>
     </div>
