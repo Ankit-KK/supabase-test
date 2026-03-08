@@ -191,7 +191,7 @@ const Demigod = () => {
         modal: {
           ondismiss: () => navigate(`/status?order_id=${data.orderId}&status=pending`),
         },
-        theme: { color: "#8b5cf6" },
+        theme: { color: "#ac1117" },
       }).open();
     } catch {
       toast.error("Payment failed");
