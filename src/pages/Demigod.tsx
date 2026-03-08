@@ -262,7 +262,7 @@ const Demigod = () => {
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className="w-[100px] justify-between bg-black/40 text-white border-[#8b5cf6]/30 hover:bg-[#8b5cf6]/10"
+                    className="w-[100px] justify-between bg-black/40 text-white border-[#ac1117]/30 hover:bg-[#ac1117]/10"
                   >
                     {currencySymbol} {selectedCurrency}
                     <ChevronsUpDown className="h-4 w-4 opacity-50" />
