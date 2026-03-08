@@ -363,7 +363,7 @@ const Demigod = () => {
             {isProcessingPayment ? "Processing..." : `Support ${currencySymbol}${formData.amount || "0"}`}
           </Button>
 
-          <DonationPageFooter brandColor="#8b5cf6" />
+          <DonationPageFooter brandColor="#ac1117" />
         </CardContent>
       </Card>
     </div>

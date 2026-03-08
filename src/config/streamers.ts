@@ -72,7 +72,7 @@ export const STREAMER_CONFIGS: Record<string, StreamerConfig> = {
     pusherAlertsChannel: 'mr_champion-alerts', pusherSettingsChannel: 'mr_champion-settings', razorpayOrderPrefix: 'mc_rp_',
   },
   demigod: {
-    slug: 'demigod', name: 'Demigod', tableName: 'demigod_donations', brandColor: '#8b5cf6',
+    slug: 'demigod', name: 'Demigod', tableName: 'demigod_donations', brandColor: '#ac1117',
     pusherDashboardChannel: 'demigod-dashboard', pusherGoalChannel: 'demigod-goal', pusherAudioChannel: 'demigod-audio',
     pusherAlertsChannel: 'demigod-alerts', pusherSettingsChannel: 'demigod-settings', razorpayOrderPrefix: 'dg_rp_',
   },
