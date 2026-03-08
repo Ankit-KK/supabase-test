@@ -201,12 +201,12 @@ const Demigod = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-[#1a0a2e] via-[#2d1b4e] to-[#1a0a2e]">
-      <Card className="w-full max-w-sm backdrop-blur-sm border-[#8b5cf6]/40 shadow-[0_0_30px_rgba(139,92,246,0.2)] relative overflow-hidden bg-gradient-to-br from-[#1a0a2e] to-[#2d1b4e]">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-[#1a1520] via-[#2a2035] to-[#1a1520]">
+      <Card className="w-full max-w-sm backdrop-blur-sm border-[#ac1117]/40 shadow-[0_0_30px_rgba(172,17,23,0.2)] relative overflow-hidden bg-gradient-to-br from-[#1e1a2a] to-[#2a2540]">
         <div className="absolute inset-0 bg-black/60 backdrop-blur-md" />
 
         <CardHeader className="text-center relative z-10 pb-2 flex flex-col items-center">
-          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-[#a78bfa] to-[#8b5cf6] bg-clip-text text-transparent tracking-wider">
+          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-[#d43a3a] to-[#ac1117] bg-clip-text text-transparent tracking-wider">
             Demigod
           </CardTitle>
           <p className="text-xs text-gray-400">Support Demigod with your donation</p>
