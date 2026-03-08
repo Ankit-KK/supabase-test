@@ -231,8 +231,8 @@ const Demigod = () => {
                 onClick={() => handleDonationTypeChange(type)}
                 className={`p-2 rounded-lg border-2 transition-all ${
                   donationType === type
-                    ? "border-[#d43a3a] bg-[#d43a3a]/10"
-                    : "border-[#ac1117]/30 hover:border-[#ac1117]/50"
+                    ? "border-[#AC1117] bg-[#AC1117]/10 text-[#EDE7E7]"
+                    : "border-[#3D4158] hover:border-[#7E797D] text-[#7E797D]"
                 }`}
               >
                 <div className="text-center">
