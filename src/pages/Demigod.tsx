@@ -317,7 +317,7 @@ const Demigod = () => {
                 value={formData.message}
                 onChange={handleInputChange}
                 maxLength={maxMessageLength}
-                className="w-full min-h-[90px] rounded-md bg-black/40 text-white placeholder:text-gray-400 border border-[#8b5cf6]/30 focus:border-[#a78bfa] focus:ring-[#a78bfa]/20 px-3 py-2 text-sm"
+                className="w-full min-h-[90px] rounded-md bg-black/40 text-white placeholder:text-gray-400 border border-[#ac1117]/30 focus:border-[#d43a3a] focus:ring-[#d43a3a]/20 px-3 py-2 text-sm"
                 placeholder="Your message (optional)"
               />
               <p className="text-xs text-right text-muted-foreground">
