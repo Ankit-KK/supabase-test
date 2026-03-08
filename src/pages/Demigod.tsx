@@ -333,7 +333,7 @@ const Demigod = () => {
               maxDurationSeconds={getVoiceDuration(currentAmount)}
               requiredAmount={pricing.minVoice}
               currentAmount={currentAmount}
-              brandColor="#8b5cf6"
+              brandColor="#ac1117"
             />
           )}
 
