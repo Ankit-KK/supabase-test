@@ -214,12 +214,12 @@ const Demigod = () => {
 
         <CardContent className="space-y-4 relative z-10">
           <div className="space-y-2">
-            <Label className="text-[#a78bfa]">Your Name *</Label>
+            <Label className="text-[#d43a3a]">Your Name *</Label>
             <Input
               name="name"
               value={formData.name}
               onChange={handleInputChange}
-              className="bg-black/40 text-white placeholder:text-gray-400 border-[#8b5cf6]/30 focus:border-[#a78bfa] focus:ring-[#a78bfa]/20"
+              className="bg-black/40 text-white placeholder:text-gray-400 border-[#ac1117]/30 focus:border-[#d43a3a] focus:ring-[#d43a3a]/20"
             />
           </div>
 
