@@ -256,7 +256,7 @@ const Demigod = () => {
           </div>
 
           <div className="space-y-2">
-            <Label className="text-[#a78bfa]">Amount *</Label>
+            <Label className="text-[#d43a3a]">Amount *</Label>
             <div className="flex gap-2">
               <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
                 <PopoverTrigger asChild>
