@@ -1,27 +1,28 @@
 
 
-## Diagnosis: `moderate-donation` 404 via Proxy
+## Plan: Fix `moderate-donation` 404 — Missing `selected_gif_id` Column
 
-The `moderate-donation` edge function exists, is configured in `config.toml`, and logs show it has been executing recently (see the edge function logs in the context). The 404 is specifically from `https://supabase.hyperchat.space/functions/v1/moderate-donation`.
+### Root Cause
 
-**Root cause options:**
-1. **Proxy misconfiguration** — the custom domain `supabase.hyperchat.space` may have stale routing or the function path isn't being forwarded. This is outside Lovable's control (it's your DNS/proxy setup).
-2. **Function not deployed** — the function code exists but may not be currently deployed to Supabase.
+The `moderate-donation` edge function queries `selected_gif_id` on line 278 for ALL donation tables, but only `looteriya_gaming_donations` has that column. When called for `ankit_donations`, it fails with a Postgres error (`column does not exist`), which the function catches and returns as a 404 "Donation not found".
 
-**Verification step:** The edge function logs from context show `moderate-donation` booted and ran recently (it even logged a moderation request). So the function IS deployed. The 404 is from the proxy layer.
+### Fix
 
-### Fix Options
+**`supabase/functions/moderate-donation/index.ts`** — Remove `selected_gif_id` from the generic select query on line 278. Instead, handle it conditionally or omit it since it's only used in the alert data (line 437) and can default to `null`.
 
-**Option A: Redeploy the edge function**
-Use the deploy tool to redeploy `moderate-donation`. This ensures it's live.
+Change line 278 from:
+```ts
+.select('id, name, amount, amount_inr, currency, message, voice_message_url, tts_audio_url, hypersound_url, is_hyperemote, media_url, media_type, moderation_status, payment_status, message_visible, streamer_id, selected_gif_id, created_at')
+```
+to:
+```ts
+.select('id, name, amount, amount_inr, currency, message, voice_message_url, tts_audio_url, hypersound_url, is_hyperemote, media_url, media_type, moderation_status, payment_status, message_visible, streamer_id, created_at')
+```
 
-**Option B: Check the proxy**
-Verify that `supabase.hyperchat.space` correctly proxies all paths to `vsevsjvtrshgeiudrnth.supabase.co`. The 404 may be from the proxy itself (e.g., Cloudflare, Vercel, or whatever reverse proxy is in front) rather than Supabase.
+And on line 437, default `selected_gif_id` to `null`:
+```ts
+selected_gif_id: (donation as any).selected_gif_id || null,
+```
 
-**Option C: No code changes needed**
-The failover logic in `client.ts` only retries on network errors (TypeError), not HTTP 404s. If the proxy intermittently returns 404, the failover won't help. However, since this is a proxy issue, the right fix is fixing the proxy — not changing client code.
-
-### Recommended Action
-1. **Redeploy `moderate-donation`** to ensure it's live
-2. If 404 persists, the issue is with the `supabase.hyperchat.space` proxy configuration — check your DNS/CDN settings for that domain
+This keeps the field available for tables that have it (like looteriya_gaming) without breaking tables that don't.
 
