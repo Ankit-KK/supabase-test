@@ -105,6 +105,7 @@ export default function Status() {
           if (orderId.startsWith('bz_rp_')) return 'check-payment-status-unified'; // Brigzard
           if (orderId.startsWith('we_rp_')) return 'check-payment-status-unified'; // W Era
           if (orderId.startsWith('mc_rp_')) return 'check-payment-status-unified'; // Mr Champion
+          if (orderId.startsWith('dg_rp_')) return 'check-payment-status-unified'; // Demigod
           if (orderId.startsWith('chiagaming_rp_')) return 'check-payment-status-unified';
           
           // Legacy Ankit prefix
