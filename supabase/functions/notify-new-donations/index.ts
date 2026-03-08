@@ -169,6 +169,7 @@ serve(async (req) => {
         'brigzard_donations',
         'w_era_donations',
         'mr_champion_donations',
+        'demigod_donations',
       ];
 
       for (const tableName of donationTables) {

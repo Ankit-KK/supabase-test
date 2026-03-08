@@ -236,6 +236,7 @@ serve(async (req) => {
       brigzard: "brigzard_donations",
       w_era: "w_era_donations",
       mr_champion: "mr_champion_donations",
+      demigod: "demigod_donations",
     };
 
     const donationTable = donationTableMap[streamerSlug];

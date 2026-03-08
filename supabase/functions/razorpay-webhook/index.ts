@@ -19,6 +19,7 @@ const DONATION_TABLE_ID_MAP: Record<number, string> = {
   0: 'ankit_donations', 1: 'chiaa_gaming_donations', 2: 'looteriya_gaming_donations',
   3: 'clumsy_god_donations', 4: 'wolfy_donations', 5: 'dorp_plays_donations',
   6: 'zishu_donations', 7: 'brigzard_donations', 8: 'w_era_donations', 9: 'mr_champion_donations',
+  10: 'demigod_donations',
 };
 
 // table name -> streamer_slug mapping (for Pusher channels)
@@ -28,6 +29,7 @@ const TABLE_TO_SLUG: Record<string, string> = {
   'wolfy_donations': 'wolfy', 'dorp_plays_donations': 'dorp_plays',
   'zishu_donations': 'zishu', 'brigzard_donations': 'brigzard',
   'w_era_donations': 'w_era', 'mr_champion_donations': 'mr_champion',
+  'demigod_donations': 'demigod',
 };
 
 // Scoped fields for donation fetch (no select('*'))
