@@ -230,15 +230,32 @@ serve(async (req) => {
       // Compute amount_inr at write time
       const amountInINR = convertToINR(donation.amount, paymentCurrency);
 
+      // Compute audio_scheduled_at for auto-approved donations
+      // HyperSound/HyperEmote: 15s delay, Voice/Text/Media: 60s delay
+      let audioScheduledAt: string | null = null;
+      if (shouldAutoApprove) {
+        const isQuickAudio = !!donation.hypersound_url || donation.is_hyperemote === true;
+        const delaySeconds = isQuickAudio ? 15 : 60;
+        const scheduledTime = new Date(Date.now() + delaySeconds * 1000);
+        audioScheduledAt = scheduledTime.toISOString();
+        console.log(`[Unified] audio_scheduled_at set to ${audioScheduledAt} (delay: ${delaySeconds}s)`);
+      }
+
+      // Build update payload
+      const updatePayload: Record<string, any> = {
+        payment_status: 'success',
+        moderation_status: moderationStatus,
+        currency: paymentCurrency,
+        amount_inr: amountInINR,
+      };
+      if (audioScheduledAt) {
+        updatePayload.audio_scheduled_at = audioScheduledAt;
+      }
+
       // Idempotent update: only update if not already 'success'
       const { data: updatedRow } = await supabase
         .from(config.table)
-        .update({ 
-          payment_status: 'success',
-          moderation_status: moderationStatus,
-          currency: paymentCurrency,
-          amount_inr: amountInINR,
-        })
+        .update(updatePayload)
         .eq('id', donation.id)
         .neq('payment_status', 'success')
         .select('id')
