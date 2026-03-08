@@ -33,6 +33,7 @@ const STREAMER_CHANNEL_MAP: Record<string, string> = {
   'brigzard': 'brigzard-alerts',
   'w_era': 'w_era-alerts',
   'mr_champion': 'mr_champion-alerts',
+  'demigod': 'demigod-alerts',
 };
 
 Deno.serve(async (req) => {
