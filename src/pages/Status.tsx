@@ -237,6 +237,7 @@ export default function Status() {
     if (orderId.startsWith('bz_rp_')) return "/brigzard";
     if (orderId.startsWith('we_rp_')) return "/w_era";
     if (orderId.startsWith('mc_rp_')) return "/mr_champion";
+    if (orderId.startsWith('dg_rp_')) return "/demigod";
     
     console.warn('[Status] Unknown order_id prefix for navigation, redirecting to homepage:', orderId);
     return "/";

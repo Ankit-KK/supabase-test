@@ -87,6 +87,15 @@ export const DONATION_PAGE_CONFIGS: Record<string, DonationPageConfig> = {
     edgeFunctionName: 'create-razorpay-order-unified',
     themeDescription: 'Support BRIGZARD with your donation',
   },
+  demigod: {
+    streamerSlug: 'demigod',
+    streamerName: 'Demigod',
+    brandColor: '#8b5cf6',
+    logoSrc: '/assets/streamers/demigod-logo.png',
+    backgroundSrc: '/assets/streamers/demigod-background.png',
+    edgeFunctionName: 'create-razorpay-order-unified',
+    themeDescription: 'Support Demigod with your donation',
+  },
 };
 
 export const getDonationPageConfig = (slug: string): DonationPageConfig | undefined => {
