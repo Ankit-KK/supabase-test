@@ -434,7 +434,7 @@ serve(async (req) => {
         tts_audio_url: donation.tts_audio_url,
         hypersound_url: donation.hypersound_url,
         is_hyperemote: donation.is_hyperemote,
-        selected_gif_id: donation.selected_gif_id,
+        selected_gif_id: (donation as any).selected_gif_id || null,
         message_visible: donation.message_visible !== false,
         created_at: donation.created_at,
         media_url: donation.media_url,
