@@ -299,7 +299,8 @@ const WEra = () => {
                 type="number"
                 value={formData.amount}
                 onChange={handleInputChange}
-                className="bg-black/40 text-white placeholder:text-gray-400 border-[#3b82f6]/30 focus:border-[#60a5fa] focus:ring-[#60a5fa]/20"
+                readOnly={donationType === "hypersound"}
+                className={`bg-black/40 text-white placeholder:text-gray-400 border-[#3b82f6]/30 focus:border-[#60a5fa] focus:ring-[#60a5fa]/20 ${donationType === "hypersound" ? "opacity-50 cursor-not-allowed" : ""}`}
               />
             </div>
 

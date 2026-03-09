@@ -299,7 +299,8 @@ const MrChampion = () => {
                 type="number"
                 value={formData.amount}
                 onChange={handleInputChange}
-                className="bg-black/40 text-white placeholder:text-gray-400 border-[#eab308]/30 focus:border-[#facc15] focus:ring-[#facc15]/20"
+                readOnly={donationType === "hypersound"}
+                className={`bg-black/40 text-white placeholder:text-gray-400 border-[#eab308]/30 focus:border-[#facc15] focus:ring-[#facc15]/20 ${donationType === "hypersound" ? "opacity-50 cursor-not-allowed" : ""}`}
               />
             </div>
 

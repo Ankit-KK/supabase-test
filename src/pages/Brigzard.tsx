@@ -305,7 +305,8 @@ const Brigzard = () => {
                 type="number"
                 value={formData.amount}
                 onChange={handleInputChange}
-                className="bg-black/40 text-white placeholder:text-gray-400 border-[#4a5c3e]/30 focus:border-[#c4a747] focus:ring-[#c4a747]/20"
+                readOnly={donationType === "hypersound"}
+                className={`bg-black/40 text-white placeholder:text-gray-400 border-[#4a5c3e]/30 focus:border-[#c4a747] focus:ring-[#c4a747]/20 ${donationType === "hypersound" ? "opacity-50 cursor-not-allowed" : ""}`}
               />
             </div>
 

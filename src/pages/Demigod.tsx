@@ -299,7 +299,8 @@ const Demigod = () => {
                 type="number"
                 value={formData.amount}
                 onChange={handleInputChange}
-                className="bg-[#24201D]/60 text-[#EDE7E7] placeholder:text-[#7E797D] border-[#3D4158] focus:border-[#AC1117] focus:ring-[#AC1117]/20"
+                readOnly={donationType === "hypersound"}
+                className={`bg-[#24201D]/60 text-[#EDE7E7] placeholder:text-[#7E797D] border-[#3D4158] focus:border-[#AC1117] focus:ring-[#AC1117]/20 ${donationType === "hypersound" ? "opacity-50 cursor-not-allowed" : ""}`}
               />
             </div>
 
