@@ -45,6 +45,7 @@ const Index = () => {
         <ModerationFeatures />
         <Services />
         <AudienceValue />
+        <HyperstoreShowcase />
         <HowItWorks />
         <BlogSection />
         <FAQSection />
