@@ -18,6 +18,7 @@ import { SUPPORTED_CURRENCIES, getCurrencySymbol } from "@/constants/currencies"
 import { useStreamerPricing } from "@/hooks/useStreamerPricing";
 import { getMaxMessageLength } from "@/utils/getMaxMessageLength";
 import DonationPageFooter from "@/components/DonationPageFooter";
+import RewardsBanner from "@/components/RewardsBanner";
 
 const Zishu = () => {
   const navigate = useNavigate();
@@ -379,6 +380,8 @@ const Zishu = () => {
               }}
             />
           )}
+
+          <RewardsBanner amount={Number(formData.amount)} currency={selectedCurrency} />
 
           <Button
             className="w-full font-semibold py-6 bg-purple-600 hover:bg-purple-700"

@@ -21,6 +21,7 @@ import looteriyaLogo from "@/assets/looteriya-logo.jpg";
 import looteriyaCardBg from "@/assets/looteriya-card-bg.jpg";
 import looteriyaMainBanner from "@/assets/looteriya-main-banner.jpg";
 import DonationPageFooter from "@/components/DonationPageFooter";
+import RewardsBanner from "@/components/RewardsBanner";
 
 const LooteriyaGaming = () => {
   const [formData, setFormData] = useState({
@@ -508,6 +509,8 @@ const LooteriyaGaming = () => {
                 />
               </div>
             )}
+
+            <RewardsBanner amount={Number(formData.amount)} currency={selectedCurrency} />
 
             <Button
               type="submit"

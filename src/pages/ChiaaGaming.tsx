@@ -18,6 +18,7 @@ import { SUPPORTED_CURRENCIES, getCurrencySymbol } from "@/constants/currencies"
 import { useStreamerPricing } from "@/hooks/useStreamerPricing";
 import { getMaxMessageLength } from "@/utils/getMaxMessageLength";
 import DonationPageFooter from "@/components/DonationPageFooter";
+import RewardsBanner from "@/components/RewardsBanner";
 
 const ChiaGaming = () => {
   const [formData, setFormData] = useState({
@@ -505,6 +506,8 @@ const ChiaGaming = () => {
                 />
               </div>
             )}
+
+            <RewardsBanner amount={Number(formData.amount)} currency={selectedCurrency} />
 
             <Button
               type="submit"

@@ -18,6 +18,7 @@ import { SUPPORTED_CURRENCIES, getCurrencySymbol } from "@/constants/currencies"
 import { useStreamerPricing } from "@/hooks/useStreamerPricing";
 import { getMaxMessageLength } from "@/utils/getMaxMessageLength";
 import DonationPageFooter from "@/components/DonationPageFooter";
+import RewardsBanner from "@/components/RewardsBanner";
 
 const WEra = () => {
   const navigate = useNavigate();
@@ -354,6 +355,8 @@ const WEra = () => {
               }}
             />
           )}
+
+          <RewardsBanner amount={Number(formData.amount)} currency={selectedCurrency} />
 
           <Button
             className="w-full font-semibold py-6 bg-[#3b82f6] hover:bg-[#2563eb] text-white"
