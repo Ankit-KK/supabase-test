@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, XCircle, ArrowLeft, RefreshCw } from "lucide-react";
+import { CheckCircle, XCircle, ArrowLeft, RefreshCw, Gift, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import hyperchatLogo from "@/assets/hyperchat-logo-short.png";
 
@@ -295,6 +295,27 @@ export default function Status() {
         
         {paymentDetails?.customer_name && (
           <p className="status-amount">Name: {paymentDetails.customer_name}</p>
+        )}
+
+        {/* Hyperpoints CTA - only on success */}
+        {showResult && paymentStatus === 'success' && (
+          <a
+            href="https://hyperchat.store/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block w-full my-4 p-4 rounded-xl border border-yellow-500/40 bg-yellow-500/10 backdrop-blur-sm shadow-[0_0_20px_rgba(234,179,8,0.15)] hover:shadow-[0_0_30px_rgba(234,179,8,0.25)] hover:border-yellow-400/60 transition-all duration-300 group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-yellow-500/20">
+                <Gift className="h-5 w-5 text-yellow-400" />
+              </div>
+              <div className="flex-1 text-left">
+                <p className="text-sm font-bold text-yellow-300">Check your Hyperpoints here ✨</p>
+                <p className="text-xs text-yellow-400/60 mt-0.5">View & redeem your reward points</p>
+              </div>
+              <ExternalLink className="h-4 w-4 text-yellow-400/50 group-hover:text-yellow-300 transition-colors" />
+            </div>
+          </a>
         )}
 
         {/* Action Buttons */}
