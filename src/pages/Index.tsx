@@ -41,11 +41,11 @@ const Index = () => {
         <Navbar />
         <HeroWithCanyonAnimation />
         <PartnershipSection />
+        <HyperstoreShowcase />
         <Features />
         <ModerationFeatures />
         <Services />
         <AudienceValue />
-        <HyperstoreShowcase />
         <HowItWorks />
         <BlogSection />
         <FAQSection />
