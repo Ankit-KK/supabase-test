@@ -40,8 +40,8 @@ const Index = () => {
       <div className="content-overlay">
         <Navbar />
         <HeroWithCanyonAnimation />
-        <PartnershipSection />
         <HyperstoreShowcase />
+        <PartnershipSection />
         <Features />
         <ModerationFeatures />
         <Services />
