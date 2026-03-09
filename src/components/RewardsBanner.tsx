@@ -13,8 +13,8 @@ const RewardsBanner: React.FC<RewardsBannerProps> = ({ amount, currency }) => {
 
   return (
     <div className="flex items-center gap-1.5 px-2 py-1">
-      <Gift className="h-3 w-3 shrink-0 text-yellow-500/60" />
-      <span className="text-xs text-white/40 flex-1">Earn Reward Points</span>
+      <Gift className="h-4 w-4 shrink-0 text-yellow-500/60" />
+      <span className="text-sm font-semibold text-yellow-400/80 flex-1">Earn Reward Points</span>
       <Popover>
         <PopoverTrigger asChild>
           <button type="button" className="shrink-0 rounded-full p-0.5 text-yellow-400/70 hover:text-yellow-300 transition-colors">
