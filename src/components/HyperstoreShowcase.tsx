@@ -6,20 +6,20 @@ const HyperstoreShowcase: React.FC = () => {
   const categories = [
     {
       icon: <ShoppingBag className="text-white" size={24} />,
-      title: "Merch",
-      description: "Rep your favorite creators with exclusive apparel and accessories",
+      title: "Streaming Gear",
+      description: "Top-rated microphones, webcams, and capture cards used by pro streamers",
       gradient: "bg-gradient-to-br from-hyperchat-purple to-hyperchat-blue",
     },
     {
       icon: <Star className="text-white" size={24} />,
-      title: "Collectibles",
-      description: "Limited-edition items and digital collectibles from top streamers",
+      title: "Gaming Peripherals",
+      description: "High-performance mice, keyboards, and mousepads for competitive gaming",
       gradient: "bg-gradient-to-br from-hyperchat-pink to-hyperchat-purple",
     },
     {
       icon: <Zap className="text-white" size={24} />,
-      title: "Exclusive Drops",
-      description: "Time-limited releases you won't find anywhere else",
+      title: "Monitors & Displays",
+      description: "Gaming monitors and displays handpicked for the best streaming experience",
       gradient: "bg-gradient-to-br from-hyperchat-orange to-hyperchat-pink",
     },
   ];
