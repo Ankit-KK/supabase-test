@@ -355,6 +355,8 @@ const WEra = () => {
             />
           )}
 
+          <RewardsBanner amount={Number(formData.amount)} currency={selectedCurrency} />
+
           <Button
             className="w-full font-semibold py-6 bg-[#3b82f6] hover:bg-[#2563eb] text-white"
             onClick={handleSubmit}

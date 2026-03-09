@@ -377,6 +377,8 @@ const DorpPlays = () => {
             />
           )}
 
+          <RewardsBanner amount={Number(formData.amount)} currency={selectedCurrency} />
+
           <Button
             className="w-full font-semibold py-6 bg-indigo-600 hover:bg-indigo-700"
             onClick={handleSubmit}

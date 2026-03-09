@@ -509,6 +509,8 @@ const LooteriyaGaming = () => {
               </div>
             )}
 
+            <RewardsBanner amount={Number(formData.amount)} currency={selectedCurrency} />
+
             <Button
               type="submit"
               className="w-full font-semibold py-6"

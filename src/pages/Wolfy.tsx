@@ -380,6 +380,8 @@ const Wolfy = () => {
             />
           )}
 
+          <RewardsBanner amount={Number(formData.amount)} currency={selectedCurrency} />
+
           <Button
             className="w-full font-semibold py-6 bg-amber-600 hover:bg-amber-700"
             onClick={handleSubmit}

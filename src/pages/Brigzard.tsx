@@ -365,6 +365,8 @@ const Brigzard = () => {
             />
           )}
 
+          <RewardsBanner amount={Number(formData.amount)} currency={selectedCurrency} />
+
           <Button
             className="w-full font-semibold py-6 bg-[#4a5c3e] hover:bg-[#3a4c2e] text-[#c4a747]"
             onClick={handleSubmit}

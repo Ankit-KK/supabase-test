@@ -398,6 +398,8 @@ export const DonationPageWrapper: React.FC<DonationPageWrapperProps> = ({ config
               />
             )}
 
+            <RewardsBanner amount={Number(formData.amount)} currency={currency} />
+
             {/* Submit Button */}
             <Button
               type="submit"

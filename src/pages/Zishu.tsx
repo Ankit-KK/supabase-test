@@ -380,6 +380,8 @@ const Zishu = () => {
             />
           )}
 
+          <RewardsBanner amount={Number(formData.amount)} currency={selectedCurrency} />
+
           <Button
             className="w-full font-semibold py-6 bg-purple-600 hover:bg-purple-700"
             onClick={handleSubmit}

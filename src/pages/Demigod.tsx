@@ -356,6 +356,8 @@ const Demigod = () => {
             />
           )}
 
+          <RewardsBanner amount={Number(formData.amount)} currency={selectedCurrency} />
+
           <Button
             className="w-full font-semibold py-6 bg-[#AC1117] hover:bg-[#8e0e13] text-[#EDE7E7]"
             onClick={handleSubmit}

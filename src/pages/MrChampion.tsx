@@ -355,6 +355,8 @@ const MrChampion = () => {
             />
           )}
 
+          <RewardsBanner amount={Number(formData.amount)} currency={selectedCurrency} />
+
           <Button
             className="w-full font-semibold py-6 bg-[#eab308] hover:bg-[#ca8a04] text-black"
             onClick={handleSubmit}
