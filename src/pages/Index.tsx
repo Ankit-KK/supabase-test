@@ -15,6 +15,7 @@ import HowItWorks from "@/components/HowItWorks";
 import BlogSection from "@/components/BlogSection";
 import FAQSection from "@/components/FAQSection";
 import AudienceValue from "@/components/AudienceValue";
+import HyperstoreShowcase from "@/components/HyperstoreShowcase";
 
 const Index = () => {
   const [videoUrl, setVideoUrl] = useState<string>('');
