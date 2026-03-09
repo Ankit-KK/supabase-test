@@ -597,7 +597,7 @@ const Ankit = () => {
                   className="flex-1 border-blue-500/30 focus:border-blue-500 focus:ring-blue-500/20" 
                   min="1" 
                   max="100000" 
-                  disabled={isAmountLocked} 
+                  disabled={isAmountLocked || donationType === 'hypersound'} 
                   required 
                 />
               </div>

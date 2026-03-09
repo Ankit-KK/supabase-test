@@ -313,9 +313,8 @@ const ClumsyGod = () => {
                 type="number"
                 value={formData.amount}
                 onChange={handleInputChange}
-                className="bg-black/40 text-white placeholder:text-gray-400
-                           border-purple-500/30
-                           focus:border-purple-500 focus:ring-purple-500/20"
+                readOnly={donationType === "hypersound"}
+                className={`bg-black/40 text-white placeholder:text-gray-400 border-purple-500/30 focus:border-purple-500 focus:ring-purple-500/20 ${donationType === "hypersound" ? "opacity-50 cursor-not-allowed" : ""}`}
               />
             </div>
 

@@ -311,9 +311,8 @@ const DorpPlays = () => {
                 type="number"
                 value={formData.amount}
                 onChange={handleInputChange}
-                className="bg-black/40 text-white placeholder:text-gray-400
-                           border-indigo-500/30
-                           focus:border-indigo-500 focus:ring-indigo-500/20"
+                readOnly={donationType === "hypersound"}
+                className={`bg-black/40 text-white placeholder:text-gray-400 border-indigo-500/30 focus:border-indigo-500 focus:ring-indigo-500/20 ${donationType === "hypersound" ? "opacity-50 cursor-not-allowed" : ""}`}
               />
             </div>
 

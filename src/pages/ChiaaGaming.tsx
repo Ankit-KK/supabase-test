@@ -432,7 +432,8 @@ const ChiaGaming = () => {
                   placeholder="Enter amount"
                   value={formData.amount}
                   onChange={handleInputChange}
-                  className="flex-1 border-pink-500/30 focus:border-pink-500 focus:ring-pink-500/20"
+                  readOnly={donationType === "hypersound"}
+                  className={`flex-1 border-pink-500/30 focus:border-pink-500 focus:ring-pink-500/20 ${donationType === "hypersound" ? "opacity-50 cursor-not-allowed" : ""}`}
                   required
                   min="1"
                 />

@@ -435,7 +435,8 @@ const LooteriyaGaming = () => {
                   placeholder="Enter amount"
                   value={formData.amount}
                   onChange={handleInputChange}
-                  className="flex-1 border-amber-500/30 focus:border-amber-500 focus:ring-amber-500/20"
+                  readOnly={donationType === "hypersound"}
+                  className={`flex-1 border-amber-500/30 focus:border-amber-500 focus:ring-amber-500/20 ${donationType === "hypersound" ? "opacity-50 cursor-not-allowed" : ""}`}
                   required
                   min="1"
                 />
