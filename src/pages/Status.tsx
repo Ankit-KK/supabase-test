@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, XCircle, ArrowLeft, RefreshCw } from "lucide-react";
+import { CheckCircle, XCircle, ArrowLeft, RefreshCw, Gift, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import hyperchatLogo from "@/assets/hyperchat-logo-short.png";
 
