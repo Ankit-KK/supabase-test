@@ -1059,6 +1059,96 @@ export type Database = {
           },
         ]
       }
+      nova_plays_donations: {
+        Row: {
+          amount: number
+          amount_inr: number | null
+          approved_at: string | null
+          approved_by: string | null
+          audio_played_at: string | null
+          audio_scheduled_at: string | null
+          created_at: string | null
+          currency: string | null
+          hypersound_url: string | null
+          id: string
+          is_hyperemote: boolean | null
+          media_type: string | null
+          media_url: string | null
+          message: string | null
+          message_visible: boolean | null
+          mod_notified: boolean | null
+          moderation_status: string | null
+          name: string
+          order_id: string | null
+          payment_status: string | null
+          razorpay_order_id: string | null
+          status_token_hash: string | null
+          streamer_id: string | null
+          temp_voice_data: string | null
+          tts_audio_url: string | null
+          updated_at: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount: number
+          amount_inr?: number | null
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          audio_scheduled_at?: string | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name: string
+          order_id?: string | null
+          payment_status?: string | null
+          razorpay_order_id?: string | null
+          status_token_hash?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number
+          amount_inr?: number | null
+          approved_at?: string | null
+          approved_by?: string | null
+          audio_played_at?: string | null
+          audio_scheduled_at?: string | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string
+          is_hyperemote?: boolean | null
+          media_type?: string | null
+          media_url?: string | null
+          message?: string | null
+          message_visible?: boolean | null
+          mod_notified?: boolean | null
+          moderation_status?: string | null
+          name?: string
+          order_id?: string | null
+          payment_status?: string | null
+          razorpay_order_id?: string | null
+          status_token_hash?: string | null
+          streamer_id?: string | null
+          temp_voice_data?: string | null
+          tts_audio_url?: string | null
+          updated_at?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: []
+      }
       obs_tokens: {
         Row: {
           created_at: string | null
@@ -2173,6 +2263,48 @@ export type Database = {
           message_visible?: boolean | null
           name?: string | null
           selected_gif_id?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Relationships: []
+      }
+      nova_plays_donations_public: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          currency: string | null
+          hypersound_url: string | null
+          id: string | null
+          is_hyperemote: boolean | null
+          message: string | null
+          message_visible: boolean | null
+          name: string | null
+          tts_audio_url: string | null
+          voice_message_url: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
+          tts_audio_url?: string | null
+          voice_message_url?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          currency?: string | null
+          hypersound_url?: string | null
+          id?: string | null
+          is_hyperemote?: boolean | null
+          message?: string | null
+          message_visible?: boolean | null
+          name?: string | null
           tts_audio_url?: string | null
           voice_message_url?: string | null
         }
