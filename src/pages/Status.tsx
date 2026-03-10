@@ -58,6 +58,7 @@ export default function Status() {
   
   const orderId = searchParams.get('order_id');
   const status = searchParams.get('status');
+  const statusToken = searchParams.get('st');
 
   // Cycle through progress steps while loading
   useEffect(() => {
