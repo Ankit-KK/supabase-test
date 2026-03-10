@@ -346,19 +346,19 @@ const Ankit = () => {
         },
         handler: function (response: any) {
           console.log('Payment success:', response);
-          navigate(`/status?order_id=${data.order_id}&status=success`);
+          navigate(`/status?order_id=${data.order_id}&status=success&st=${data.status_token}`);
         },
         modal: {
           ondismiss: function () {
             console.log('Payment cancelled');
-            navigate(`/status?order_id=${data.order_id}&status=pending`);
+            navigate(`/status?order_id=${data.order_id}&status=pending&st=${data.status_token}`);
           }
         }
-      };
-      const rzp = new (window as any).Razorpay(options);
+      });
+
       rzp.on('payment.failed', function (response: any) {
         console.log('Payment failed:', response);
-        navigate(`/status?order_id=${data.order_id}&status=failed`);
+        navigate(`/status?order_id=${data.order_id}&status=failed&st=${data.status_token}`);
       });
       rzp.open();
     } catch (error) {

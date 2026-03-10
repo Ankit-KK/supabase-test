@@ -188,9 +188,9 @@ const MrChampion = () => {
         order_id: data.razorpay_order_id,
         name: "Mr Champion",
         description: "Support Mr Champion",
-        handler: () => navigate(`/status?order_id=${data.orderId}&status=success`),
+        handler: () => navigate(`/status?order_id=${data.orderId}&status=success&st=${data.status_token}`),
         modal: {
-          ondismiss: () => navigate(`/status?order_id=${data.orderId}&status=pending`),
+          ondismiss: () => navigate(`/status?order_id=${data.orderId}&status=pending&st=${data.status_token}`),
         },
         theme: { color: "#eab308" },
       }).open();
