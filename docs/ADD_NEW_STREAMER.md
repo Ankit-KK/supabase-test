@@ -945,6 +945,7 @@ These are fully dynamic and require no manual updates:
 | `transcribe-voice-sarvam` | Generic, no streamer-specific config |
 | `setup-discord-webhook` | Uses `streamer_id` from request |
 | `setup-telegram-webhook` | Uses `streamer_id` from request |
+| `get-moderation-queue` | Dynamic table from `streamers`; requires Step 14 account link |
 
 ---
 
