@@ -268,6 +268,7 @@ serve(async (req) => {
         razorpay_order_id: razorpayOrder.id,
         payment_status: 'pending',
         moderation_status: 'pending',
+        status_token_hash: statusTokenHash,
       })
       .select()
       .single();
