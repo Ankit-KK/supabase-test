@@ -105,6 +105,15 @@ export const DONATION_PAGE_CONFIGS: Record<string, DonationPageConfig> = {
   edgeFunctionName: 'create-razorpay-order-unified',
   themeDescription: 'Support NovaPlays with your donation',
 },
+  starlight_anya: {
+  streamerSlug: 'starlight_anya',
+  streamerName: 'Starlight Anya',
+  brandColor: '#e879f9',
+  logoSrc: '/assets/streamers/starlight-anya-logo.png',
+  backgroundSrc: '/assets/streamers/starlight-anya-background.png',
+  edgeFunctionName: 'create-razorpay-order-unified',
+  themeDescription: 'Support Starlight Anya with your donation',
+},
 };
 
 export const getDonationPageConfig = (slug: string): DonationPageConfig | undefined => {
