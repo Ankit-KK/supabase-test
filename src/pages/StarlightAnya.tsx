@@ -179,6 +179,7 @@ const StarlightAnya = () => {
         <div className="absolute inset-0 bg-black/50"></div>
         <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-500/20 via-fuchsia-600/20 to-fuchsia-400/20 opacity-50 blur-xl"></div>
 
+        <CardHeader className="text-center relative z-10 pb-2">
           <CardTitle className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-fuchsia-400 to-fuchsia-600 bg-clip-text text-transparent">
             Starlight Anya
           </CardTitle>
