@@ -96,6 +96,15 @@ export const DONATION_PAGE_CONFIGS: Record<string, DonationPageConfig> = {
     edgeFunctionName: 'create-razorpay-order-unified',
     themeDescription: 'Support Demigod with your donation',
   },
+  nova_plays: {
+  streamerSlug: 'nova_plays',
+  streamerName: 'NovaPlays',
+  brandColor: '#6366f1',
+  logoSrc: '/assets/streamers/nova-plays-logo.png',
+  backgroundSrc: '/assets/streamers/nova-plays-background.png',
+  edgeFunctionName: 'create-razorpay-order-unified',
+  themeDescription: 'Support NovaPlays with your donation',
+},
 };
 
 export const getDonationPageConfig = (slug: string): DonationPageConfig | undefined => {
