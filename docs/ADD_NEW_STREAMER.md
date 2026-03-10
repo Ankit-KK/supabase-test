@@ -185,9 +185,9 @@ Add table name to `ALLOWED_DONATION_TABLES` array (~line 243):
 
 ---
 
-## STEP 9: Frontend — `src/config/donationPageConfigs.ts`
+## STEP 9: Frontend — `src/config/donationPageConfigs.ts` (optional)
 
-Add to `DONATION_PAGE_CONFIGS`:
+> **Note:** This config file exists but is **not used by any current donation page**. All pages are standalone. You may add an entry here for future reference, but it has no functional effect.
 
 ```typescript
 [SLUG]: {
