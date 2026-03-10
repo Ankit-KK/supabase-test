@@ -238,6 +238,9 @@ serve(async (req) => {
 
     const razorpayOrder = await razorpayResponse.json();
 
+    // Generate status token for secure status checks
+    const { token: statusToken, hash: statusTokenHash } = await generateStatusToken();
+
     // Sanitize user inputs
     const sanitizedName = sanitizeName(name);
     const sanitizedMessage = sanitizeInput(message);
