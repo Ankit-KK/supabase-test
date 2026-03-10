@@ -239,6 +239,32 @@ serve(async (req) => {
       });
     }
 
+    // CRITICAL: Validate donationTable against strict allowlist to prevent SQL table injection
+    const ALLOWED_DONATION_TABLES = [
+      'ankit_donations',
+      'chiaa_gaming_donations',
+      'looteriya_gaming_donations',
+      'clumsy_god_donations',
+      'wolfy_donations',
+      'dorp_plays_donations',
+      'zishu_donations',
+      'brigzard_donations',
+      'w_era_donations',
+      'mr_champion_donations',
+      'demigod_donations',
+    ];
+
+    if (!ALLOWED_DONATION_TABLES.includes(donationTable)) {
+      console.error('[SECURITY] Rejected invalid donation table name:', donationTable);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Invalid donation table' 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     // Verify moderator exists and has permission if moderatorId provided
     if (moderatorId) {
       const { data: moderator, error: modError } = await supabaseAdmin
