@@ -146,7 +146,6 @@ serve(async (req) => {
           final_status: 'SUCCESS',
           payment_status: 'success',
           order_status: 'PAID',
-          customer_name: donation.name,
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -476,8 +475,6 @@ serve(async (req) => {
         final_status: final_status === 'success' ? 'SUCCESS' : 'PENDING',
         payment_status: final_status,
         amount: orderData.amount / 100,
-        payment_details: paymentDetails,
-        customer_name: donation.name,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
