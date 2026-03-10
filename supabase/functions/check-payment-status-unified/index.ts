@@ -99,6 +99,7 @@ serve(async (req) => {
     
     // Support both order_id and orderId for backwards compatibility
     const orderId = body.order_id || body.orderId;
+    const statusToken = body.status_token;
     // Support explicit streamer_slug or derive from order_id
     let streamerSlug = body.streamer_slug;
 
