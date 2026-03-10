@@ -76,6 +76,18 @@ export const STREAMER_CONFIGS: Record<string, StreamerConfig> = {
     pusherDashboardChannel: 'demigod-dashboard', pusherGoalChannel: 'demigod-goal', pusherAudioChannel: 'demigod-audio',
     pusherAlertsChannel: 'demigod-alerts', pusherSettingsChannel: 'demigod-settings', razorpayOrderPrefix: 'dg_rp_',
   },
+  nova_plays: {
+  slug: 'nova_plays',
+  name: 'NovaPlays',
+  tableName: 'nova_plays_donations',
+  brandColor: '#6366f1',
+  pusherDashboardChannel: 'nova_plays-dashboard',
+  pusherGoalChannel: 'nova_plays-goal',
+  pusherAudioChannel: 'nova_plays-audio',
+  pusherAlertsChannel: 'nova_plays-alerts',
+  pusherSettingsChannel: 'nova_plays-settings',
+  razorpayOrderPrefix: 'np_rp_',
+},
 };
 
 export const getStreamerConfig = (slug: string): StreamerConfig | undefined => STREAMER_CONFIGS[slug];
@@ -98,6 +110,7 @@ export const DONATION_TABLE_ID_MAP: Record<number, string> = {
   8: 'w_era_donations',
   9: 'mr_champion_donations',
   10: 'demigod_donations',
+  11: 'nova_plays_donations',
 };
 
 // Reverse mapping: table name -> donation_table_id
