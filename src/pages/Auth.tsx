@@ -14,7 +14,11 @@ const Auth = () => {
   const { user, signIn, signUp, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const redirectTo = searchParams.get('redirect') || '/dashboard';
+  const rawRedirect = searchParams.get('redirect');
+  const redirectTo =
+    rawRedirect && rawRedirect.startsWith('/') && !rawRedirect.includes('://') && !rawRedirect.includes('//')
+      ? rawRedirect
+      : '/dashboard';
   const isDashboardLogin = redirectTo.includes('dashboard');
 
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
