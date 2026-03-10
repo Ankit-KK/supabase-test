@@ -685,7 +685,7 @@ const OBSTokenManager: React.FC<OBSTokenManagerProps> = ({
                       <li>Add a new "Media Source" (not Browser Source)</li>
                       <li>Uncheck "Local File", paste the URL above</li>
                       <li>Enable "Restart playback when source becomes active"</li>
-                      <li>Set "Network Buffer" to 0 or minimal value</li>
+                      <li>Set "Network Buffering" to 2 MB or above (do NOT set to 0 — it crashes OBS)</li>
                     </ol>
                   </div>
                 </div>
