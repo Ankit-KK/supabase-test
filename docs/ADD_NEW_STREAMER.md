@@ -199,6 +199,12 @@ Add table name to `ALLOWED_DONATION_TABLES` array (~line 243):
 '[SLUG]_donations',
 ```
 
+> ℹ️ **`get-moderation-queue`** does NOT need code changes — it dynamically
+> constructs the table name from the `streamers` table (Step 2). However, the
+> dashboard Moderation tab will return **403 Forbidden** until **Step 14** is
+> completed (linking `auth_users.streamer_id` to the streamer's row). Admin
+> users bypass this check.
+
 ---
 
 ## STEP 8: Frontend — `src/config/streamers.ts`
