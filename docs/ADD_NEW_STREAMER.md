@@ -864,12 +864,13 @@ if (orderId.startsWith('[PREFIX]')) return "/[SLUG]";
 
 ## STEP 13: Assets
 
-Place in `public/assets/streamers/`:
+The donation page template imports 3 asset files directly. Place them in `src/assets/`:
 
-- `[LOGO_FILE]` — Streamer logo (PNG, transparent background recommended)
-- `[BG_FILE]` — Background image (PNG/JPG) or video (MP4)
+- `[LOGO_FILE]` — Streamer logo (PNG/JPG, used in the circular avatar)
+- `[CARD_BG_FILE]` — Card background image (JPG recommended)
+- `[MAIN_BG_FILE]` — Full-page background image/banner (JPG recommended)
 
-> **Only needed if using Option A (DonationPageWrapper)**. Option B (standalone) doesn't reference external logo/background files unless you add them manually.
+> **These are ES6 imports** (not public/ references), so they must go in `src/assets/`. Update the import paths at the top of your donation page if your filenames differ from the placeholders.
 
 ---
 
