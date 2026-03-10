@@ -99,8 +99,6 @@ serve(async (req) => {
     
     // Support both order_id and orderId for backwards compatibility
     const orderId = body.order_id || body.orderId;
-    // Require razorpay_order_id as proof-of-knowledge to prevent enumeration
-    const razorpayOrderId = body.razorpay_order_id || body.razorpayOrderId;
     // Support explicit streamer_slug or derive from order_id
     let streamerSlug = body.streamer_slug;
 
@@ -108,11 +106,6 @@ serve(async (req) => {
 
     if (!orderId) {
       throw new Error('Order ID is required');
-    }
-
-    if (!razorpayOrderId) {
-      console.warn(`[SECURITY] check-payment-status called without razorpay_order_id for order: ${orderId}`);
-      throw new Error('Razorpay order ID is required');
     }
 
     // Derive streamer from order prefix if not explicitly provided
@@ -132,13 +125,11 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get donation from database - require BOTH order_id AND razorpay_order_id match
-    // This prevents enumeration attacks since an attacker needs both values
+    // Get donation from database (scoped fields - no select('*'))
     const { data: donation, error: dbError } = await supabase
       .from(config.table)
       .select('id, payment_status, amount, amount_inr, currency, name, message, streamer_id, razorpay_order_id, voice_message_url, tts_audio_url, hypersound_url, is_hyperemote, media_url, media_type, order_id, created_at, moderation_status')
       .eq('order_id', orderId)
-      .eq('razorpay_order_id', razorpayOrderId)
       .single();
 
     if (dbError || !donation) {
