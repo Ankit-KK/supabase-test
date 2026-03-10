@@ -107,6 +107,7 @@ export default function Status() {
           if (orderId.startsWith('we_rp_')) return 'check-payment-status-unified'; // W Era
           if (orderId.startsWith('mc_rp_')) return 'check-payment-status-unified'; // Mr Champion
           if (orderId.startsWith('dg_rp_')) return 'check-payment-status-unified'; // Demigod
+          if (orderId.startsWith('np_rp_')) return 'check-payment-status-unified'; //novaplays
           if (orderId.startsWith('chiagaming_rp_')) return 'check-payment-status-unified';
           
           // Legacy Ankit prefix
@@ -239,6 +240,7 @@ export default function Status() {
     if (orderId.startsWith('we_rp_')) return "/w_era";
     if (orderId.startsWith('mc_rp_')) return "/mr_champion";
     if (orderId.startsWith('dg_rp_')) return "/demigod";
+    if (orderId.startsWith('np_rp_')) return "/nova_plays";
     
     console.warn('[Status] Unknown order_id prefix for navigation, redirecting to homepage:', orderId);
     return "/";
