@@ -207,87 +207,38 @@ Add to `DONATION_PAGE_CONFIGS`:
 
 ### 10A: Donation Page — `src/pages/[PASCAL].tsx`
 
-**Option A — DonationPageWrapper (recommended for standard UI):**
+All streamer donation pages are standalone custom pages (~375 lines each). There is no shared wrapper component — each page is self-contained.
 
-The wrapper component lives at `src/components/donation/DonationPageWrapper.tsx` (443 lines). It accepts a single prop:
+**Copy `src/pages/Demigod.tsx` → `src/pages/[PASCAL].tsx`**, then make these replacements:
 
-```typescript
-interface DonationPageWrapperProps {
-  config: DonationPageConfig;  // from src/config/donationPageConfigs.ts
-}
-```
-
-The `DonationPageConfig` interface (from `src/config/donationPageConfigs.ts`):
-```typescript
-interface DonationPageConfig {
-  streamerSlug: string;      // Used for API calls, voice upload path, media upload
-  streamerName: string;      // Displayed in UI, Razorpay checkout
-  brandColor: string;        // Active button color, logo border, submit button
-  logoSrc: string;           // Circular logo at top of page
-  backgroundSrc: string;     // Full-page background image (CSS background-image)
-  cardBackgroundSrc?: string; // Optional card background image
-  edgeFunctionName: string;  // Always 'create-razorpay-order-unified' for new streamers
-  themeDescription?: string; // Not used by wrapper (only in config registry)
-  socialLinks?: { ... };     // Not used by wrapper currently
-}
-```
-
-**What the wrapper handles automatically:**
-- Razorpay SDK loading + checkout flow
-- All 4 donation types (text, voice, hypersound, media)
-- Voice recording with tiered durations (₹150-299=8s, ₹300-499=12s, ₹500+=15s)
-- Currency selector with all supported currencies
-- Streamer pricing via `useStreamerPricing` hook
-- Status page navigation after payment
-- Voice upload to Supabase storage
-- HowItWorks dialog + DonationPageFooter
-
-**The page file (3 lines):**
-
-```tsx
-import { DonationPageWrapper } from '@/components/donation/DonationPageWrapper';
-import { DONATION_PAGE_CONFIGS } from '@/config/donationPageConfigs';
-
-const [PASCAL] = () => <DonationPageWrapper config={DONATION_PAGE_CONFIGS.[SLUG]} />;
-export default [PASCAL];
-```
-
----
-
-**Option B — Standalone page (custom UI like Demigod.tsx):**
-
-Use this when the streamer needs a unique visual design (custom colors, layout, gradients). Here is exactly what to change in `Demigod.tsx` (375 lines):
-
-Copy `src/pages/Demigod.tsx` → `src/pages/[PASCAL].tsx`, then make these replacements:
-
-| Line(s) | What | Change from | Change to |
+| Line(s) | What | Find (Demigod value) | Replace with |
 |---|---|---|---|
-| 23 | Component name | `const Demigod` | `const [PASCAL]` |
+| 23 | Component declaration | `const Demigod` | `const [PASCAL]` |
 | 43 | Pricing hook slug | `"demigod"` | `"[SLUG]"` |
 | 161 | Voice upload slug | `streamerSlug: "demigod"` | `streamerSlug: "[SLUG]"` |
-| 168-169 | Order function body | `streamer_slug: "demigod"` | `streamer_slug: "[SLUG]"` |
-| 189 | Razorpay name | `"Demigod"` | `"[NAME]"` |
-| 190 | Razorpay description | `"Support Demigod"` | `"Support [NAME]"` |
-| 195 | Razorpay theme color | `"#ac1117"` | `"[COLOR]"` |
-| 205 | Background color | `bg-[#24201D]` | Your bg color |
-| 206 | Card gradient | `from-[#24201D] to-[#3D4158]` | Your gradient |
-| 210-211 | Title + subtitle | `Demigod` | `[NAME]` |
-| 213 | Subtitle text | `Support Demigod...` | `Support [NAME]...` |
-| 338 | Voice recorder brandColor | `"#ac1117"` | `"[COLOR]"` |
-| 348 | Media uploader slug | `"demigod"` | `"[SLUG]"` |
-| 363 | Submit button colors | `bg-[#AC1117] hover:bg-[#8e0e13]` | Your colors |
-| 370 | Footer brandColor | `"#ac1117"` | `"[COLOR]"` |
-| 377 | Export name | `export default Demigod` | `export default [PASCAL]` |
+| 168-169 | Order creation slug | `streamer_slug: "demigod"` | `streamer_slug: "[SLUG]"` |
+| 189 | Razorpay checkout name | `name: "Demigod"` | `name: "[NAME]"` |
+| 190 | Razorpay description | `description: "Support Demigod"` | `description: "Support [NAME]"` |
+| 195 | Razorpay theme color | `color: "#ac1117"` | `color: "[COLOR]"` |
+| 210 | Card title text | `Demigod` | `[NAME]` |
+| 213 | Subtitle text | `Support Demigod with your donation` | `Support [NAME] with your donation` |
+| 338 | Voice recorder prop | `brandColor="#ac1117"` | `brandColor="[COLOR]"` |
+| 348 | Media uploader slug | `streamerSlug="demigod"` | `streamerSlug="[SLUG]"` |
+| 370 | Footer prop | `brandColor="#ac1117"` | `brandColor="[COLOR]"` |
+| 377 | Export statement | `export default Demigod` | `export default [PASCAL]` |
 
 **Hardcoded color classes to replace (Demigod's palette):**
-- `#24201D` — dark background
-- `#3D4158` — card/border gray
-- `#AC1117` / `#ac1117` — brand red (buttons, focus rings, borders)
-- `#8e0e13` — hover state for brand color
-- `#EDE7E7` — light text
-- `#7E797D` — muted text
 
-**No images/logos are hardcoded inside Demigod.tsx** — it uses no logo image. If you want a logo, add it manually (the wrapper has one; standalone pages don't by default).
+| Hex | Usage | Occurrences | Replace with |
+|---|---|---|---|
+| `#24201D` | Dark background, input bg | 4 (lines 205, 206, 207, 222, 303) | Your dark bg color |
+| `#3D4158` | Card border, input border, type button border | 7 (lines 206, 223, 233, 236, 266, 303, 322) | Your border color |
+| `#AC1117` / `#ac1117` | Brand accent (buttons, focus rings, active borders) | 7 (lines 195, 234, 236, 303, 338, 363, 370) | `[COLOR]` |
+| `#8e0e13` | Button hover state | 1 (line 363) | Darker variant of `[COLOR]` |
+| `#EDE7E7` | Primary text color | 5 (lines 210, 218, 224, 260, 266, 303, 322, 363, 367) | Your text color |
+| `#7E797D` | Muted/placeholder text | 3 (lines 213, 223, 303, 322) | Your muted text color |
+
+**No images/logos are referenced inside Demigod.tsx** — it uses no logo image. If you want a logo at the top of the card, add an `<img>` tag inside `CardHeader` manually.
 
 ---
 
