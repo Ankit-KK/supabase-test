@@ -33,6 +33,7 @@ import MrChampion from "./pages/MrChampion";
 import Demigod from "./pages/Demigod";
 import NovaPlays from "./pages/NovaPlays";
 import StarlightAnya from "./pages/StarlightAnya";
+import ReynaYadav from "./pages/ReynaYadav";
 
 // Dashboard pages
 import Dashboard from "./pages/dashboard/Dashboard";
@@ -52,6 +53,7 @@ import MrChampionDashboard from "./pages/dashboard/MrChampionDashboard";
 import DemigodDashboard from "./pages/dashboard/DemigodDashboard";
 import NovaPlaysDashboard from "./pages/dashboard/NovaPlaysDashboard";
 import StarlightAnyaDashboard from "./pages/dashboard/StarlightAnyaDashboard";
+import ReynaYadavDashboard from "./pages/dashboard/ReynaYadavDashboard";
 
 // OBS Alert pages
 import AnkitObsAlerts from "./pages/obs-alerts/AnkitObsAlerts";
@@ -80,6 +82,8 @@ import NovaPlaysObsAlerts from "./pages/obs-alerts/NovaPlaysObsAlerts";
 import NovaPlaysGoalOverlay from "./pages/obs-alerts/NovaPlaysGoalOverlay";
 import StarlightAnyaObsAlerts from "./pages/obs-alerts/StarlightAnyaObsAlerts";
 import StarlightAnyaGoalOverlay from "./pages/obs-alerts/StarlightAnyaGoalOverlay";
+import ReynaYadavObsAlerts from "./pages/obs-alerts/ReynaYadavObsAlerts";
+import ReynaYadavGoalOverlay from "./pages/obs-alerts/ReynaYadavGoalOverlay";
 
 // Audio Player pages
 import AnkitAudioPlayer from "./pages/audio-player/AnkitAudioPlayer";
@@ -97,6 +101,7 @@ import MrChampionMediaSourcePlayer from "./pages/audio-player/MrChampionMediaSou
 import DemigodMediaSourcePlayer from "./pages/audio-player/DemigodMediaSourcePlayer";
 import NovaPlaysMediaSourcePlayer from "./pages/audio-player/NovaPlaysMediaSourcePlayer";
 import StarlightAnyaMediaSourcePlayer from "./pages/audio-player/StarlightAnyaMediaSourcePlayer";
+import ReynaYadavMediaSourcePlayer from "./pages/audio-player/ReynaYadavMediaSourcePlayer";
 
 const queryClient = new QueryClient();
 
@@ -122,6 +127,7 @@ const App = () => (
             <Route path="/feature-showcase" element={<FeatureShowcase />} />
             <Route path="/status" element={<Status />} />
             
+            
             {/* Blog posts */}
             <Route path="/blog/upi-security-best-practices" element={<UpiSecurityBestPractices />} />
             
@@ -139,6 +145,8 @@ const App = () => (
             <Route path="/demigod" element={<Demigod />} />
             <Route path="/nova_plays" element={<NovaPlays />} />
             <Route path="/starlight_anya" element={<StarlightAnya />} />
+            <Route path="/reyna_yadav" element={<ReynaYadav />} />
+            
             
             {/* Authentication */}
             <Route path="/auth" element={<Auth />} />
@@ -160,6 +168,7 @@ const App = () => (
             <Route path="/dashboard/demigod" element={<DemigodDashboard />} />
             <Route path="/dashboard/nova_plays" element={<NovaPlaysDashboard />} />
             <Route path="/dashboard/starlight_anya" element={<StarlightAnyaDashboard />} />
+            <Route path="/dashboard/reyna_yadav" element={<ReynaYadavDashboard />} />
             
             {/* OBS Alert routes */}
             <Route path="/ankit/obs-alerts" element={<AnkitObsAlerts />} />
@@ -188,6 +197,8 @@ const App = () => (
             <Route path="/nova_plays/goal-overlay" element={<NovaPlaysGoalOverlay />} />
             <Route path="/starlight_anya/obs-alerts" element={<StarlightAnyaObsAlerts />} />
             <Route path="/starlight_anya/goal-overlay" element={<StarlightAnyaGoalOverlay />} />
+            <Route path="/reyna_yadav/obs-alerts" element={<ReynaYadavObsAlerts />} />
+            <Route path="/reyna_yadav/goal-overlay" element={<ReynaYadavGoalOverlay />} />
             
             {/* Audio Player routes */}
             <Route path="/ankit/audio-player" element={<AnkitAudioPlayer />} />
@@ -205,6 +216,7 @@ const App = () => (
             <Route path="/demigod/media-audio-player" element={<DemigodMediaSourcePlayer />} />
             <Route path="/nova_plays/media-audio-player" element={<NovaPlaysMediaSourcePlayer />} />
             <Route path="/starlight_anya/media-audio-player" element={<StarlightAnyaMediaSourcePlayer />} />
+            <Route path="/reyna_yadav/media-audio-player" element={<ReynaYadavMediaSourcePlayer />} />
             
             {/* Catch all 404 */}
             <Route path="*" element={<NotFound />} />
