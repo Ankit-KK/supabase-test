@@ -73,6 +73,16 @@ const sanitizeName = (name: string | null | undefined): string => {
   return sanitizeInput(name)?.substring(0, 100) || '';
 };
 
+// Crypto helper: generate random hex token and SHA-256 hash
+const generateStatusToken = async (): Promise<{ token: string; hash: string }> => {
+  const array = new Uint8Array(32); // 256 bits
+  crypto.getRandomValues(array);
+  const token = Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
+  const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
+  const hash = Array.from(new Uint8Array(hashBuffer), b => b.toString(16).padStart(2, '0')).join('');
+  return { token, hash };
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -228,6 +238,9 @@ serve(async (req) => {
 
     const razorpayOrder = await razorpayResponse.json();
 
+    // Generate status token for secure status checks
+    const { token: statusToken, hash: statusTokenHash } = await generateStatusToken();
+
     // Sanitize user inputs
     const sanitizedName = sanitizeName(name);
     const sanitizedMessage = sanitizeInput(message);
@@ -255,6 +268,7 @@ serve(async (req) => {
         razorpay_order_id: razorpayOrder.id,
         payment_status: 'pending',
         moderation_status: 'pending',
+        status_token_hash: statusTokenHash,
       })
       .select()
       .single();
@@ -291,6 +305,7 @@ serve(async (req) => {
         currency: razorpayOrder.currency,
         donationId: donation.id,
         internalOrderId: orderId,
+        status_token: statusToken,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
