@@ -19,6 +19,7 @@ const STREAMER_TABLE_MAP: Record<string, string> = {
   'w_era': 'w_era_donations',
   'mr_champion': 'mr_champion_donations',
   'demigod': 'demigod_donations',
+  'nova_plays': 'nova_plays_donations',
 };
 
 // Active streamers only - mapping slugs to Pusher alert channel names
