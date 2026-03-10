@@ -188,9 +188,9 @@ const WEra = () => {
         order_id: data.razorpay_order_id,
         name: "W Era",
         description: "Support W Era",
-        handler: () => navigate(`/status?order_id=${data.orderId}&status=success`),
+        handler: () => navigate(`/status?order_id=${data.orderId}&status=success&st=${data.status_token}`),
         modal: {
-          ondismiss: () => navigate(`/status?order_id=${data.orderId}&status=pending`),
+          ondismiss: () => navigate(`/status?order_id=${data.orderId}&status=pending&st=${data.status_token}`),
         },
         theme: { color: "#3b82f6" },
       }).open();

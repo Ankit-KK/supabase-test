@@ -125,8 +125,8 @@ const NovaPlays = () => {
         order_id: data.razorpay_order_id,
         name: "NovaPlays",
         description: "Support NovaPlays",
-        handler: (response: any) => navigate(`/status?order_id=${data.orderId}&status=success`),
-        modal: { ondismiss: () => navigate(`/status?order_id=${data.orderId}&status=pending`) },
+        handler: (response: any) => navigate(`/status?order_id=${data.orderId}&status=success&st=${data.status_token}`),
+        modal: { ondismiss: () => navigate(`/status?order_id=${data.orderId}&status=pending&st=${data.status_token}`) },
         theme: { color: "#6366f1" },
       };
       const razorpay = new (window as any).Razorpay(options);
