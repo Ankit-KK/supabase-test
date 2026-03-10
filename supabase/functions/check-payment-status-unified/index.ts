@@ -146,7 +146,6 @@ serve(async (req) => {
           final_status: 'SUCCESS',
           payment_status: 'success',
           order_status: 'PAID',
-          customer_name: donation.name,
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
