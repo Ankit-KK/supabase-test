@@ -5,13 +5,18 @@ Replace these placeholders throughout:
 | Placeholder | Example | Description |
 |---|---|---|
 | `[SLUG]` | `shadow_x` | Snake_case identifier (used everywhere) |
-| `[NAME]` | `ShadowX` | Display name |
+| `[NAME]` | `ShadowX` | Display name (spaces allowed, e.g. `Shadow X`) |
 | `[COLOR]` | `#ff6b35` | Brand hex color |
 | `[PREFIX]` | `sx_rp_` | Razorpay order prefix (unique, 2-3 chars + `_rp_`) |
 | `[TABLE_ID]` | `11` | Next smallint — see "How to pick TABLE_ID" below |
 | `[PASCAL]` | `ShadowX` | PascalCase for component names |
 | `[LOGO_FILE]` | `shadow-x-logo.png` | Logo filename (kebab-case) |
 | `[BG_FILE]` | `shadow-x-background.png` | Background filename |
+| `[CARD_BG_FILE]` | `shadow-x-card-bg.jpg` | Card background filename |
+| `[MAIN_BG_FILE]` | `shadow-x-main-banner.jpg` | Main page background filename |
+| `[TW_COLOR]` | `amber-500` | Tailwind color class (no `#`, no prefix like `text-`/`border-`) |
+| `[TW_COLOR_DARK]` | `amber-600` | Darker Tailwind variant for gradients |
+| `[TW_COLOR_LIGHT]` | `amber-400` | Lighter Tailwind variant for gradients/glows |
 
 ### How to pick `[TABLE_ID]`
 
