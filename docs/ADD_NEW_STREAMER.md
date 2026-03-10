@@ -411,10 +411,10 @@ These are fully dynamic and require no manual updates:
 - [ ] Edge: `razorpay-webhook` → `DONATION_TABLE_ID_MAP` + `TABLE_TO_SLUG`
 - [ ] Edge: `moderate-donation` → `ALLOWED_DONATION_TABLES`
 - [ ] Frontend: `src/config/streamers.ts` → `STREAMER_CONFIGS` + `DONATION_TABLE_ID_MAP`
-- [ ] Frontend: `src/config/donationPageConfigs.ts` → `DONATION_PAGE_CONFIGS`
-- [ ] Pages: Donation, Dashboard, OBS Alerts, Goal Overlay, Audio Player
+- [ ] Frontend: `src/config/donationPageConfigs.ts` → optional registry entry
+- [ ] Pages: Donation (copy Demigod.tsx), Dashboard, OBS Alerts, Goal Overlay, Audio Player
 - [ ] Routes: 5 entries in `src/App.tsx`
 - [ ] Status: Prefix mapping in `Status.tsx` (2 functions)
-- [ ] Assets: Logo + background in `public/assets/streamers/` (Option A only)
+- [ ] Assets: Logo + background in `public/assets/streamers/` (optional, not referenced by default template)
 - [ ] Post-signup: Link `user_id` in `streamers` + `auth_users`
-- [ ] Verify: Edge functions deployed (auto in Lovable)
+- [ ] Verify: Edge functions deployed (auto in Lovable, manual outside)
