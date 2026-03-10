@@ -973,4 +973,5 @@ These are fully dynamic and require no manual updates:
 - [ ] Assets: 3 files in `src/assets/` — logo, card background, main background
 - [ ] Assets: Logo + background in `public/assets/streamers/` (optional, not referenced by default template)
 - [ ] Post-signup: Link `user_id` in `streamers` + `auth_users`
+- [ ] Post-signup: Verify moderation queue loads (403 = Step 14 incomplete)
 - [ ] Verify: Edge functions deployed (auto in Lovable, manual outside)
