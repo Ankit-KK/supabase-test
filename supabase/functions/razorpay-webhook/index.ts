@@ -31,6 +31,7 @@ const TABLE_TO_SLUG: Record<string, string> = {
   'zishu_donations': 'zishu', 'brigzard_donations': 'brigzard',
   'w_era_donations': 'w_era', 'mr_champion_donations': 'mr_champion',
   'demigod_donations': 'demigod',
+  'nova_plays_donations': 'nova_plays',
 };
 
 // Scoped fields for donation fetch (no select('*'))
