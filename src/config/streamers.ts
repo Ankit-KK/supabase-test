@@ -100,6 +100,18 @@ export const STREAMER_CONFIGS: Record<string, StreamerConfig> = {
   pusherSettingsChannel: 'starlight_anya-settings',
   razorpayOrderPrefix: 'sa_rp_',
 },
+  reyna_yadav: {
+  slug: 'reyna_yadav',
+  name: 'Reyna Yadav',
+  tableName: 'reyna_yadav_donations',
+  brandColor: '#f43f5e',
+  pusherDashboardChannel: 'reyna_yadav-dashboard',
+  pusherGoalChannel: 'reyna_yadav-goal',
+  pusherAudioChannel: 'reyna_yadav-audio',
+  pusherAlertsChannel: 'reyna_yadav-alerts',
+  pusherSettingsChannel: 'reyna_yadav-settings',
+  razorpayOrderPrefix: 'ry_rp_',
+},
 };
 
 export const getStreamerConfig = (slug: string): StreamerConfig | undefined => STREAMER_CONFIGS[slug];
@@ -124,6 +136,7 @@ export const DONATION_TABLE_ID_MAP: Record<number, string> = {
   10: 'demigod_donations',
   11: 'nova_plays_donations',
   12: 'starlight_anya_donations',
+  13: 'reyna_yadav_donations',
 };
 
 // Reverse mapping: table name -> donation_table_id
