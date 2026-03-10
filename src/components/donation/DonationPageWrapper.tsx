@@ -205,7 +205,8 @@ export const DonationPageWrapper: React.FC<DonationPageWrapperProps> = ({ config
         description: `Donation to ${config.streamerName}`,
         order_id: orderData.orderId,
         handler: function(response: any) {
-          navigate(`/status?order_id=${orderData.orderId}&status=success`);
+          const st = orderData.status_token || '';
+          navigate(`/status?order_id=${orderData.orderId}&status=success&st=${encodeURIComponent(st)}`);
         },
         prefill: {
           name: formData.name,

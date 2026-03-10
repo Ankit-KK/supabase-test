@@ -129,13 +129,34 @@ serve(async (req) => {
     // Get donation from database (scoped fields - no select('*'))
     const { data: donation, error: dbError } = await supabase
       .from(config.table)
-      .select('id, payment_status, amount, amount_inr, currency, name, message, streamer_id, razorpay_order_id, voice_message_url, tts_audio_url, hypersound_url, is_hyperemote, media_url, media_type, order_id, created_at, moderation_status')
+      .select('id, payment_status, amount, amount_inr, currency, name, message, streamer_id, razorpay_order_id, voice_message_url, tts_audio_url, hypersound_url, is_hyperemote, media_url, media_type, order_id, created_at, moderation_status, status_token_hash')
       .eq('order_id', orderId)
       .single();
 
     if (dbError || !donation) {
       console.error(`[Unified] Donation not found for ${orderId}:`, dbError);
       throw new Error('Donation not found');
+    }
+
+    // Validate status_token (skip for already-successful donations without tokens for backward compat)
+    if (donation.status_token_hash) {
+      if (!statusToken) {
+        console.warn(`[Unified] Missing status_token for ${orderId}`);
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized: status_token required' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      // Hash the provided token and compare
+      const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(statusToken));
+      const providedHash = Array.from(new Uint8Array(hashBuffer), b => b.toString(16).padStart(2, '0')).join('');
+      if (providedHash !== donation.status_token_hash) {
+        console.warn(`[Unified] Invalid status_token for ${orderId}`);
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized: invalid status_token' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     // If already successful, return immediately

@@ -124,7 +124,7 @@ export default function Status() {
         
         // Call the appropriate edge function to check payment status
         const { data, error } = await supabase.functions.invoke(functionName, {
-          body: { order_id: orderId }
+          body: { order_id: orderId, status_token: statusToken }
         });
 
         if (error) {
