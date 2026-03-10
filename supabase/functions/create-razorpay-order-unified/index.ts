@@ -305,6 +305,7 @@ serve(async (req) => {
         currency: razorpayOrder.currency,
         donationId: donation.id,
         internalOrderId: orderId,
+        status_token: statusToken,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
