@@ -31,6 +31,7 @@ import Brigzard from "./pages/Brigzard";
 import WEra from "./pages/WEra";
 import MrChampion from "./pages/MrChampion";
 import Demigod from "./pages/Demigod";
+import NovaPlays from "./pages/NovaPlays";
 
 // Dashboard pages
 import Dashboard from "./pages/dashboard/Dashboard";
@@ -48,6 +49,7 @@ import BrigzardDashboard from "./pages/dashboard/BrigzardDashboard";
 import WEraDashboard from "./pages/dashboard/WEraDashboard";
 import MrChampionDashboard from "./pages/dashboard/MrChampionDashboard";
 import DemigodDashboard from "./pages/dashboard/DemigodDashboard";
+import NovaPlaysDashboard from "./pages/dashboard/NovaPlaysDashboard";
 
 // OBS Alert pages
 import AnkitObsAlerts from "./pages/obs-alerts/AnkitObsAlerts";
@@ -72,6 +74,8 @@ import MrChampionObsAlerts from "./pages/obs-alerts/MrChampionObsAlerts";
 import MrChampionGoalOverlay from "./pages/obs-alerts/MrChampionGoalOverlay";
 import DemigodObsAlerts from "./pages/obs-alerts/DemigodObsAlerts";
 import DemigodGoalOverlay from "./pages/obs-alerts/DemigodGoalOverlay";
+import NovaPlaysObsAlerts from "./pages/obs-alerts/NovaPlaysObsAlerts";
+import NovaPlaysGoalOverlay from "./pages/obs-alerts/NovaPlaysGoalOverlay";
 
 // Audio Player pages
 import AnkitAudioPlayer from "./pages/audio-player/AnkitAudioPlayer";
@@ -87,6 +91,7 @@ import BrigzardMediaSourcePlayer from "./pages/audio-player/BrigzardMediaSourceP
 import WEraMediaSourcePlayer from "./pages/audio-player/WEraMediaSourcePlayer";
 import MrChampionMediaSourcePlayer from "./pages/audio-player/MrChampionMediaSourcePlayer";
 import DemigodMediaSourcePlayer from "./pages/audio-player/DemigodMediaSourcePlayer";
+import NovaPlaysMediaSourcePlayer from "./pages/audio-player/NovaPlaysMediaSourcePlayer";
 
 const queryClient = new QueryClient();
 
@@ -127,6 +132,7 @@ const App = () => (
             <Route path="/w_era" element={<WEra />} />
             <Route path="/mr_champion" element={<MrChampion />} />
             <Route path="/demigod" element={<Demigod />} />
+            <Route path="/nova_plays" element={<NovaPlays />} />
             
             {/* Authentication */}
             <Route path="/auth" element={<Auth />} />
@@ -146,6 +152,7 @@ const App = () => (
             <Route path="/dashboard/w_era" element={<WEraDashboard />} />
             <Route path="/dashboard/mr_champion" element={<MrChampionDashboard />} />
             <Route path="/dashboard/demigod" element={<DemigodDashboard />} />
+            <Route path="/dashboard/nova_plays" element={<NovaPlaysDashboard />} />
             
             {/* OBS Alert routes */}
             <Route path="/ankit/obs-alerts" element={<AnkitObsAlerts />} />
@@ -170,6 +177,8 @@ const App = () => (
             <Route path="/mr_champion/goal-overlay" element={<MrChampionGoalOverlay />} />
             <Route path="/demigod/obs-alerts" element={<DemigodObsAlerts />} />
             <Route path="/demigod/goal-overlay" element={<DemigodGoalOverlay />} />
+            <Route path="/nova_plays/obs-alerts" element={<NovaPlaysObsAlerts />} />
+            <Route path="/nova_plays/goal-overlay" element={<NovaPlaysGoalOverlay />} />
             
             {/* Audio Player routes */}
             <Route path="/ankit/audio-player" element={<AnkitAudioPlayer />} />
@@ -185,6 +194,7 @@ const App = () => (
             <Route path="/w_era/media-audio-player" element={<WEraMediaSourcePlayer />} />
             <Route path="/mr_champion/media-audio-player" element={<MrChampionMediaSourcePlayer />} />
             <Route path="/demigod/media-audio-player" element={<DemigodMediaSourcePlayer />} />
+            <Route path="/nova_plays/media-audio-player" element={<NovaPlaysMediaSourcePlayer />} />
             
             {/* Catch all 404 */}
             <Route path="*" element={<NotFound />} />
