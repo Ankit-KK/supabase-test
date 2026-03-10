@@ -252,6 +252,7 @@ serve(async (req) => {
       'w_era_donations',
       'mr_champion_donations',
       'demigod_donations',
+      'nova_plays_donations',
     ];
 
     if (!ALLOWED_DONATION_TABLES.includes(donationTable)) {

@@ -199,6 +199,12 @@ Add table name to `ALLOWED_DONATION_TABLES` array (~line 243):
 '[SLUG]_donations',
 ```
 
+> ℹ️ **`get-moderation-queue`** does NOT need code changes — it dynamically
+> constructs the table name from the `streamers` table (Step 2). However, the
+> dashboard Moderation tab will return **403 Forbidden** until **Step 14** is
+> completed (linking `auth_users.streamer_id` to the streamer's row). Admin
+> users bypass this check.
+
 ---
 
 ## STEP 8: Frontend — `src/config/streamers.ts`
@@ -939,6 +945,7 @@ These are fully dynamic and require no manual updates:
 | `transcribe-voice-sarvam` | Generic, no streamer-specific config |
 | `setup-discord-webhook` | Uses `streamer_id` from request |
 | `setup-telegram-webhook` | Uses `streamer_id` from request |
+| `get-moderation-queue` | Dynamic table from `streamers`; requires Step 14 account link |
 
 ---
 
@@ -966,4 +973,5 @@ These are fully dynamic and require no manual updates:
 - [ ] Assets: 3 files in `src/assets/` — logo, card background, main background
 - [ ] Assets: Logo + background in `public/assets/streamers/` (optional, not referenced by default template)
 - [ ] Post-signup: Link `user_id` in `streamers` + `auth_users`
+- [ ] Post-signup: Verify moderation queue loads (403 = Step 14 incomplete)
 - [ ] Verify: Edge functions deployed (auto in Lovable, manual outside)
