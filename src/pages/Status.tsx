@@ -109,6 +109,7 @@ export default function Status() {
           if (orderId.startsWith('dg_rp_')) return 'check-payment-status-unified'; // Demigod
           if (orderId.startsWith('np_rp_')) return 'check-payment-status-unified'; //novaplays
           if (orderId.startsWith('sa_rp_')) return 'check-payment-status-unified';// starlight
+          if (orderId.startsWith('ry_rp_')) return 'check-payment-status-unified';//reyna_yadav
           if (orderId.startsWith('chiagaming_rp_')) return 'check-payment-status-unified';
           
           
@@ -244,6 +245,7 @@ export default function Status() {
     if (orderId.startsWith('dg_rp_')) return "/demigod";
     if (orderId.startsWith('np_rp_')) return "/nova_plays";
     if (orderId.startsWith('sa_rp_')) return "/starlight_anya";
+    if (orderId.startsWith('ry_rp_')) return "/reyna_yadav";
     
     console.warn('[Status] Unknown order_id prefix for navigation, redirecting to homepage:', orderId);
     return "/";
