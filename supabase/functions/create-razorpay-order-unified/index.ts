@@ -73,6 +73,16 @@ const sanitizeName = (name: string | null | undefined): string => {
   return sanitizeInput(name)?.substring(0, 100) || '';
 };
 
+// Crypto helper: generate random hex token and SHA-256 hash
+const generateStatusToken = async (): Promise<{ token: string; hash: string }> => {
+  const array = new Uint8Array(32); // 256 bits
+  crypto.getRandomValues(array);
+  const token = Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
+  const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
+  const hash = Array.from(new Uint8Array(hashBuffer), b => b.toString(16).padStart(2, '0')).join('');
+  return { token, hash };
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
