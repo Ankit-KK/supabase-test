@@ -114,6 +114,15 @@ export const DONATION_PAGE_CONFIGS: Record<string, DonationPageConfig> = {
   edgeFunctionName: 'create-razorpay-order-unified',
   themeDescription: 'Support Starlight Anya with your donation',
 },
+  reyna_yadav: {
+  streamerSlug: 'reyna_yadav',
+  streamerName: 'Reyna Yadav',
+  brandColor: '#f43f5e',
+  logoSrc: '/assets/streamers/reyna-yadav-logo.png',
+  backgroundSrc: '/assets/streamers/reyna-yadav-background.png',
+  edgeFunctionName: 'create-razorpay-order-unified',
+  themeDescription: 'Support Reyna Yadav with your donation',
+},
 };
 
 export const getDonationPageConfig = (slug: string): DonationPageConfig | undefined => {
