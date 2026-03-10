@@ -89,6 +89,7 @@ const StarlightAnya = () => {
     try {
       let voiceMessageUrl: string | null = null;
       if (donationType === "voice" && voiceRecorder.audioBlob) {
+        // ✅ Extra validation: guard against empty blob edge case
         if (!voiceRecorder.audioBlob || voiceRecorder.audioBlob.size === 0) {
           throw new Error("No voice recording found. Please record your message again.");
         }
@@ -141,12 +142,14 @@ const StarlightAnya = () => {
         description: "Support Starlight Anya",
         handler: (response: any) => {
           console.log("Payment successful:", response);
-          navigate(`/status?order_id=${data.orderId}&status=success`);
+          // ✅ Fix: include status_token in navigate URL
+          navigate(`/status?order_id=${data.orderId}&status=success&st=${data.status_token}`);
         },
         modal: {
           ondismiss: () => {
             console.log("Payment cancelled");
-            navigate(`/status?order_id=${data.orderId}&status=pending`);
+            // ✅ Fix: include status_token in navigate URL
+            navigate(`/status?order_id=${data.orderId}&status=pending&st=${data.status_token}`);
           },
         },
         theme: { color: "#e879f9" },
@@ -209,7 +212,7 @@ const StarlightAnya = () => {
                       <div className="text-sm mb-0.5">{type === "text" ? "💬" : type === "voice" ? "🎤" : type === "hypersound" ? "🔊" : "🖼️"}</div>
                       <div className="font-medium text-[10px] capitalize">{type === "hypersound" ? "Sound" : type}</div>
                       <div className="text-[9px] text-muted-foreground">
-                        Min: {currencySymbol}{type === "text" ? pricing.minimum : type === "voice" ? pricing.minVoice : type === "hypersound" ? pricing.minHypersound : pricing.minMedia}
+                        Min: {currencySymbol}{type === "text" ? pricing.minText : type === "voice" ? pricing.minVoice : type === "hypersound" ? pricing.minHypersound : pricing.minMedia}
                       </div>
                     </div>
                   </button>
