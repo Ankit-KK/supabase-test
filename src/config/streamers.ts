@@ -88,6 +88,18 @@ export const STREAMER_CONFIGS: Record<string, StreamerConfig> = {
   pusherSettingsChannel: 'nova_plays-settings',
   razorpayOrderPrefix: 'np_rp_',
 },
+  starlight_anya: {
+  slug: 'starlight_anya',
+  name: 'Starlight Anya',
+  tableName: 'starlight_anya_donations',
+  brandColor: '#e879f9',
+  pusherDashboardChannel: 'starlight_anya-dashboard',
+  pusherGoalChannel: 'starlight_anya-goal',
+  pusherAudioChannel: 'starlight_anya-audio',
+  pusherAlertsChannel: 'starlight_anya-alerts',
+  pusherSettingsChannel: 'starlight_anya-settings',
+  razorpayOrderPrefix: 'sa_rp_',
+},
 };
 
 export const getStreamerConfig = (slug: string): StreamerConfig | undefined => STREAMER_CONFIGS[slug];
