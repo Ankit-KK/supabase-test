@@ -328,7 +328,7 @@ const Ankit = () => {
       console.log('Razorpay order created:', data.razorpay_order_id);
 
       // Initialize Razorpay Checkout
-      const options = {
+      const rzp = new (window as any).Razorpay({
         key: data.razorpay_key_id,
         amount: data.amount,
         currency: formData.currency,
