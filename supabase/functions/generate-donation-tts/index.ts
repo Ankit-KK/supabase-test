@@ -329,7 +329,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "speech-2.6-hd",
+        model: "speech-2.8-hd",
         text: donationText,
         stream: false,
         language_boost: streamerData.tts_language_boost || "Hindi",
@@ -340,11 +340,10 @@ serve(async (req) => {
           vol: 5,
           pitch: 0,
         },
-        // EGRESS OPTIMIZATION: Reduced bitrate/sample rate for smaller files
-        // 24kHz/32kbps still sounds excellent for speech, ~4x smaller than 32kHz/128kbps
+        // HIGH QUALITY: 32kHz/128kbps for best speech clarity and tonal nuances
         audio_setting: {
-          sample_rate: 24000,
-          bitrate: 32000,
+          sample_rate: 32000,
+          bitrate: 128000,
           format: "mp3",
           channel: 1,
         },
