@@ -41,40 +41,25 @@ export const useLeaderboard = ({
 
   const fetchDonations = useCallback(async () => {
     try {
-      // === EGRESS OPTIMIZATION: Read from aggregation table (1 row, index-only scan) ===
-      const { data: topData, error: topError } = await supabase
-        .from('streamer_donator_totals' as any)
-        .select('donator_name, total_amount')
-        .eq('streamer_slug', streamerSlug)
-        .order('total_amount', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      // === EGRESS OPTIMIZATION: Fetch via edge function (service_role, no public table access) ===
+      const { data, error } = await supabase.functions.invoke('get-leaderboard-data', {
+        body: { streamerSlug },
+      });
 
-      if (topError) {
-        console.error(`[useLeaderboard] Error fetching top donator for ${streamerSlug}:`, topError);
+      if (error) {
+        console.error(`[useLeaderboard] Error fetching leaderboard for ${streamerSlug}:`, error);
+        setIsLoading(false);
+        return;
       }
 
-      if (topData) {
-        setTopDonator({ name: (topData as any).donator_name, totalAmount: (topData as any).total_amount });
+      if (data?.topDonator) {
+        setTopDonator(data.topDonator);
       } else {
         setTopDonator(null);
       }
 
-      // Fetch latest 5 donations (already limited, low egress)
-      const { data: latestDonationsData, error: latestError } = await supabase
-        .from(donationsTable as any)
-        .select("name, amount, currency, created_at")
-        .eq("payment_status", "success")
-        .in("moderation_status", ["auto_approved", "approved"])
-        .order("created_at", { ascending: false })
-        .limit(5);
-
-      if (latestError) {
-        console.error(`[useLeaderboard] Error fetching latest donations from ${donationsTable}:`, latestError);
-      }
-
-      if (latestDonationsData) {
-        setLatestDonations(latestDonationsData as unknown as DonationData[]);
+      if (data?.latestDonations) {
+        setLatestDonations(data.latestDonations as DonationData[]);
       } else {
         setLatestDonations([]);
       }
@@ -83,7 +68,7 @@ export const useLeaderboard = ({
       console.error(`[useLeaderboard] Error processing donations for ${streamerSlug}:`, error);
       setIsLoading(false);
     }
-  }, [donationsTable, streamerSlug]);
+  }, [streamerSlug]);
 
   // Initial fetch
   useEffect(() => {
@@ -123,8 +108,6 @@ export const useLeaderboard = ({
         });
       }
     });
-
-    // Note: donation-approved fallback removed - leaderboard-updated events now handle this case
 
     return () => {
       channel.unbind_all();
