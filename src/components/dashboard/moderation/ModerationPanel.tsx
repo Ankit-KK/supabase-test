@@ -1,20 +1,20 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { MediaPreview } from '@/components/ui/MediaPreview';
-import { VoiceMessagePlayer } from '@/components/ui/VoiceMessagePlayer';
-import { DonationTypeBadge } from '@/components/ui/DonationTypeBadge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { Check, X, Eye, EyeOff, Ban, RotateCcw, Shield, Wifi, WifiOff, Image as ImageIcon } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { MediaPreview } from "@/components/ui/MediaPreview";
+import { VoiceMessagePlayer } from "@/components/ui/VoiceMessagePlayer";
+import { DonationTypeBadge } from "@/components/ui/DonationTypeBadge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Check, X, Eye, EyeOff, Ban, RotateCcw, Shield, Wifi, WifiOff, Image as ImageIcon } from "lucide-react";
 
 interface DonationUpdateEvent {
   id: string;
-  action: 'approve' | 'reject' | 'pending' | 'auto_approved' | 'hide_message' | 'unhide_message';
+  action: "approve" | "reject" | "pending" | "auto_approved" | "hide_message" | "unhide_message";
   name: string;
   amount: number;
   currency?: string;
@@ -57,7 +57,7 @@ interface Donation {
 }
 
 interface ModerationSettings {
-  moderation_mode: 'auto_approve' | 'manual';
+  moderation_mode: "auto_approve" | "manual";
   telegram_moderation_enabled: boolean;
   discord_moderation_enabled: boolean;
   media_moderation_enabled: boolean;
@@ -67,15 +67,15 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
   streamerId,
   streamerSlug,
   tableName,
-  brandColor = '#3b82f6',
+  brandColor = "#3b82f6",
   isConnected = false,
-  onDonationUpdate
+  onDonationUpdate,
 }) => {
   const [settings, setSettings] = useState<ModerationSettings>({
-    moderation_mode: 'auto_approve',
+    moderation_mode: "auto_approve",
     telegram_moderation_enabled: true,
     discord_moderation_enabled: false,
-    media_moderation_enabled: false
+    media_moderation_enabled: false,
   });
   const [pendingDonations, setPendingDonations] = useState<Donation[]>([]);
   const [recentDonations, setRecentDonations] = useState<Donation[]>([]);
@@ -86,15 +86,15 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
   // Handle donation updates from parent Pusher connection
   useEffect(() => {
     if (!onDonationUpdate) return;
-    
+
     const data = onDonationUpdate;
-    console.log('ModerationPanel received donation update:', data);
-    
-    if (data.action === 'approve' || data.action === 'auto_approved') {
+    console.log("ModerationPanel received donation update:", data);
+
+    if (data.action === "approve" || data.action === "auto_approved") {
       // Move from pending to recent
-      setPendingDonations(prev => prev.filter(d => d.id !== data.id));
-      setRecentDonations(prev => {
-        const exists = prev.some(d => d.id === data.id);
+      setPendingDonations((prev) => prev.filter((d) => d.id !== data.id));
+      setRecentDonations((prev) => {
+        const exists = prev.some((d) => d.id === data.id);
         if (exists) return prev;
         const newDonation: Donation = {
           id: data.id,
@@ -102,24 +102,24 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
           amount: data.amount,
           message: data.message,
           message_visible: data.message_visible !== false,
-          moderation_status: 'approved',
-          payment_status: 'success',
+          moderation_status: "approved",
+          payment_status: "success",
           created_at: data.created_at,
           voice_message_url: data.voice_message_url,
           currency: data.currency,
           tts_audio_url: data.tts_audio_url,
           hypersound_url: data.hypersound_url,
           media_url: data.media_url,
-          media_type: data.media_type
+          media_type: data.media_type,
         };
         return [newDonation, ...prev.slice(0, 9)];
       });
-      setPendingCount(prev => Math.max(0, prev - 1));
-    } else if (data.action === 'reject') {
+      setPendingCount((prev) => Math.max(0, prev - 1));
+    } else if (data.action === "reject") {
       // Remove from pending
-      setPendingDonations(prev => prev.filter(d => d.id !== data.id));
-      setPendingCount(prev => Math.max(0, prev - 1));
-    } else if (data.action === 'pending') {
+      setPendingDonations((prev) => prev.filter((d) => d.id !== data.id));
+      setPendingCount((prev) => Math.max(0, prev - 1));
+    } else if (data.action === "pending") {
       // New pending donation
       const newDonation: Donation = {
         id: data.id,
@@ -127,32 +127,30 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
         amount: data.amount,
         message: data.message,
         message_visible: true,
-        moderation_status: 'pending',
-        payment_status: 'success',
+        moderation_status: "pending",
+        payment_status: "success",
         created_at: data.created_at,
         voice_message_url: data.voice_message_url,
         currency: data.currency,
         media_url: data.media_url,
-        media_type: data.media_type
+        media_type: data.media_type,
       };
-      setPendingDonations(prev => {
-        const exists = prev.some(d => d.id === data.id);
+      setPendingDonations((prev) => {
+        const exists = prev.some((d) => d.id === data.id);
         if (exists) return prev;
         return [newDonation, ...prev];
       });
-      setPendingCount(prev => prev + 1);
-      
+      setPendingCount((prev) => prev + 1);
+
       // Show toast for new pending donation
       toast({
-        title: '🔔 New Donation Pending',
-        description: `₹${data.amount} from ${data.name} needs approval`
+        title: "🔔 New Donation Pending",
+        description: `₹${data.amount} from ${data.name} needs approval`,
       });
-    } else if (data.action === 'hide_message' || data.action === 'unhide_message') {
+    } else if (data.action === "hide_message" || data.action === "unhide_message") {
       // Update message visibility
-      const isVisible = data.action === 'unhide_message';
-      setRecentDonations(prev => 
-        prev.map(d => d.id === data.id ? { ...d, message_visible: isVisible } : d)
-      );
+      const isVisible = data.action === "unhide_message";
+      setRecentDonations((prev) => prev.map((d) => (d.id === data.id ? { ...d, message_visible: isVisible } : d)));
     }
   }, [onDonationUpdate]);
 
@@ -160,19 +158,19 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
   useEffect(() => {
     const fetchSettings = async () => {
       const { data, error } = await supabase
-        .from('streamers')
-        .select('moderation_mode, telegram_moderation_enabled, discord_moderation_enabled, media_moderation_enabled')
-        .eq('id', streamerId)
+        .from("streamers")
+        .select("moderation_mode, telegram_moderation_enabled, discord_moderation_enabled, media_moderation_enabled")
+        .eq("id", streamerId)
         .single();
 
       if (!error && data) {
         const modeValue = data.moderation_mode;
-        const mode: 'auto_approve' | 'manual' = modeValue === 'manual' ? 'manual' : 'auto_approve';
+        const mode: "auto_approve" | "manual" = modeValue === "manual" ? "manual" : "auto_approve";
         setSettings({
           moderation_mode: mode,
           telegram_moderation_enabled: data.telegram_moderation_enabled ?? true,
           discord_moderation_enabled: data.discord_moderation_enabled ?? false,
-          media_moderation_enabled: data.media_moderation_enabled ?? false
+          media_moderation_enabled: data.media_moderation_enabled ?? false,
         });
       }
     };
@@ -182,10 +180,10 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
   // Fetch moderation queue
   const fetchQueue = useCallback(async () => {
     try {
-      const authToken = localStorage.getItem('auth_token');
-      const response = await supabase.functions.invoke('get-moderation-queue', {
-        body: { streamerSlug, status: 'pending', limit: 20 },
-        headers: authToken ? { 'x-auth-token': authToken } : {}
+      const authToken = localStorage.getItem("auth_token");
+      const response = await supabase.functions.invoke("get-moderation-queue", {
+        body: { streamerSlug, status: "pending", limit: 20 },
+        headers: authToken ? { "x-auth-token": authToken } : {},
       });
 
       if (response.data?.success) {
@@ -196,15 +194,15 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
       // Fetch recent approved
       const { data: recent } = await supabase
         .from(tableName as any)
-        .select('*')
-        .eq('payment_status', 'success')
-        .in('moderation_status', ['approved', 'auto_approved'])
-        .order('created_at', { ascending: false })
+        .select("*")
+        .eq("payment_status", "success")
+        .or("moderation_status.eq.approved,moderation_status.eq.auto_approved,moderation_status.is.null")
+        .order("created_at", { ascending: false })
         .limit(10);
 
       setRecentDonations((recent as unknown as Donation[]) || []);
     } catch (error) {
-      console.error('Error fetching queue:', error);
+      console.error("Error fetching queue:", error);
     } finally {
       setLoading(false);
     }
@@ -218,19 +216,19 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
   // Update settings via edge function (bypasses RLS)
   const updateSettings = async (key: keyof ModerationSettings, value: any) => {
     try {
-      const response = await supabase.functions.invoke('update-streamer-settings', {
-        body: { streamerId, setting: key, value, authToken: localStorage.getItem('auth_token') }
+      const response = await supabase.functions.invoke("update-streamer-settings", {
+        body: { streamerId, setting: key, value, authToken: localStorage.getItem("auth_token") },
       });
 
       if (response.data?.success) {
-        setSettings(prev => ({ ...prev, [key]: value }));
-        toast({ title: 'Settings Updated', description: `${key} has been updated` });
+        setSettings((prev) => ({ ...prev, [key]: value }));
+        toast({ title: "Settings Updated", description: `${key} has been updated` });
       } else {
-        throw new Error(response.data?.error || 'Failed to update settings');
+        throw new Error(response.data?.error || "Failed to update settings");
       }
     } catch (error: any) {
-      console.error('Settings update error:', error);
-      toast({ title: 'Error', description: error.message || 'Failed to update settings', variant: 'destructive' });
+      console.error("Settings update error:", error);
+      toast({ title: "Error", description: error.message || "Failed to update settings", variant: "destructive" });
     }
   };
 
@@ -238,50 +236,43 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
   const moderateDonation = async (donationId: string, action: string) => {
     setActionLoading(donationId);
     try {
-      const authToken = localStorage.getItem('auth_token');
-      const response = await supabase.functions.invoke('moderate-donation', {
+      const authToken = localStorage.getItem("auth_token");
+      const response = await supabase.functions.invoke("moderate-donation", {
         body: {
           action,
           donationId,
           donationTable: tableName,
           streamerId,
-          moderatorName: 'Dashboard',
-          source: 'dashboard'
+          moderatorName: "Dashboard",
+          source: "dashboard",
         },
-        headers: authToken ? { 'x-auth-token': authToken } : {}
+        headers: authToken ? { "x-auth-token": authToken } : {},
       });
 
       if (response.data?.success) {
-        toast({ title: 'Success', description: `Donation ${action}d` });
-        
+        toast({ title: "Success", description: `Donation ${action}d` });
+
         // IMMEDIATE: Update local state for instant feedback (don't wait for Pusher)
-        if (action === 'approve') {
-          const approvedDonation = pendingDonations.find(d => d.id === donationId);
+        if (action === "approve") {
+          const approvedDonation = pendingDonations.find((d) => d.id === donationId);
           if (approvedDonation) {
-            setPendingDonations(prev => prev.filter(d => d.id !== donationId));
-            setRecentDonations(prev => [
-              { ...approvedDonation, moderation_status: 'approved' },
-              ...prev.slice(0, 9)
-            ]);
-            setPendingCount(prev => Math.max(0, prev - 1));
+            setPendingDonations((prev) => prev.filter((d) => d.id !== donationId));
+            setRecentDonations((prev) => [{ ...approvedDonation, moderation_status: "approved" }, ...prev.slice(0, 9)]);
+            setPendingCount((prev) => Math.max(0, prev - 1));
           }
-        } else if (action === 'reject' || action === 'ban_donor') {
-          setPendingDonations(prev => prev.filter(d => d.id !== donationId));
-          setPendingCount(prev => Math.max(0, prev - 1));
-        } else if (action === 'hide_message') {
-          setRecentDonations(prev => 
-            prev.map(d => d.id === donationId ? { ...d, message_visible: false } : d)
-          );
-        } else if (action === 'unhide_message') {
-          setRecentDonations(prev => 
-            prev.map(d => d.id === donationId ? { ...d, message_visible: true } : d)
-          );
+        } else if (action === "reject" || action === "ban_donor") {
+          setPendingDonations((prev) => prev.filter((d) => d.id !== donationId));
+          setPendingCount((prev) => Math.max(0, prev - 1));
+        } else if (action === "hide_message") {
+          setRecentDonations((prev) => prev.map((d) => (d.id === donationId ? { ...d, message_visible: false } : d)));
+        } else if (action === "unhide_message") {
+          setRecentDonations((prev) => prev.map((d) => (d.id === donationId ? { ...d, message_visible: true } : d)));
         }
       } else {
-        throw new Error(response.data?.error || 'Action failed');
+        throw new Error(response.data?.error || "Action failed");
       }
     } catch (error: any) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({ title: "Error", description: error.message, variant: "destructive" });
       // Refresh on error to ensure UI is in sync
       fetchQueue();
     } finally {
@@ -319,14 +310,14 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
             <div>
               <Label>Moderation Mode</Label>
               <p className="text-sm text-muted-foreground">
-                {settings.moderation_mode === 'manual' 
-                  ? 'Donations require approval before showing on stream'
-                  : 'Donations are auto-approved immediately'}
+                {settings.moderation_mode === "manual"
+                  ? "Donations require approval before showing on stream"
+                  : "Donations are auto-approved immediately"}
               </p>
             </div>
             <Switch
-              checked={settings.moderation_mode === 'manual'}
-              onCheckedChange={(checked) => updateSettings('moderation_mode', checked ? 'manual' : 'auto_approve')}
+              checked={settings.moderation_mode === "manual"}
+              onCheckedChange={(checked) => updateSettings("moderation_mode", checked ? "manual" : "auto_approve")}
             />
           </div>
           <div className="flex items-center justify-between">
@@ -336,7 +327,7 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
             </div>
             <Switch
               checked={settings.telegram_moderation_enabled}
-              onCheckedChange={(checked) => updateSettings('telegram_moderation_enabled', checked)}
+              onCheckedChange={(checked) => updateSettings("telegram_moderation_enabled", checked)}
             />
           </div>
           <div className="flex items-center justify-between">
@@ -346,7 +337,7 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
             </div>
             <Switch
               checked={settings.discord_moderation_enabled}
-              onCheckedChange={(checked) => updateSettings('discord_moderation_enabled', checked)}
+              onCheckedChange={(checked) => updateSettings("discord_moderation_enabled", checked)}
             />
           </div>
 
@@ -357,11 +348,13 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
                 <ImageIcon className="h-4 w-4" />
                 Require Approval for Media
               </Label>
-              <p className="text-sm text-muted-foreground">Media donations go to moderation queue before showing on stream</p>
+              <p className="text-sm text-muted-foreground">
+                Media donations go to moderation queue before showing on stream
+              </p>
             </div>
             <Switch
               checked={settings.media_moderation_enabled}
-              onCheckedChange={(checked) => updateSettings('media_moderation_enabled', checked)}
+              onCheckedChange={(checked) => updateSettings("media_moderation_enabled", checked)}
             />
           </div>
         </CardContent>
@@ -372,9 +365,7 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
         <TabsList>
           <TabsTrigger value="pending" className="relative">
             Pending
-            {pendingCount > 0 && (
-              <Badge className="ml-2 bg-orange-500">{pendingCount}</Badge>
-            )}
+            {pendingCount > 0 && <Badge className="ml-2 bg-orange-500">{pendingCount}</Badge>}
           </TabsTrigger>
           <TabsTrigger value="recent">Recent Approved</TabsTrigger>
         </TabsList>
@@ -397,29 +388,25 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
                         <div>
                           <span className="font-semibold">{donation.name}</span>
                           {donation.is_donor_banned && (
-                            <Badge variant="destructive" className="ml-2">Banned</Badge>
+                            <Badge variant="destructive" className="ml-2">
+                              Banned
+                            </Badge>
                           )}
                         </div>
                         <Badge style={{ backgroundColor: brandColor }}>₹{donation.amount}</Badge>
                       </div>
-                      {donation.message && (
-                        <p className="text-sm text-muted-foreground mb-3">{donation.message}</p>
-                      )}
-                      {donation.voice_message_url && (
-                        <DonationTypeBadge type="voice" className="mb-3" />
-                      )}
-                      {donation.hypersound_url && (
-                        <DonationTypeBadge type="hypersound" className="mb-3" />
-                      )}
+                      {donation.message && <p className="text-sm text-muted-foreground mb-3">{donation.message}</p>}
+                      {donation.voice_message_url && <DonationTypeBadge type="voice" className="mb-3" />}
+                      {donation.hypersound_url && <DonationTypeBadge type="hypersound" className="mb-3" />}
                       {donation.media_url && (
                         <div className="mb-3 space-y-2">
-                          <DonationTypeBadge 
-                            type="media" 
-                            mediaType={donation.media_type as 'image' | 'gif' | 'video'} 
+                          <DonationTypeBadge
+                            type="media"
+                            mediaType={donation.media_type as "image" | "gif" | "video"}
                           />
                           <MediaPreview
                             url={donation.media_url}
-                            type={donation.media_type as 'image' | 'gif' | 'video' || 'image'}
+                            type={(donation.media_type as "image" | "gif" | "video") || "image"}
                             maxWidth={200}
                             maxHeight={120}
                           />
@@ -428,7 +415,7 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
                       <div className="flex gap-2 flex-wrap">
                         <Button
                           size="sm"
-                          onClick={() => moderateDonation(donation.id, 'approve')}
+                          onClick={() => moderateDonation(donation.id, "approve")}
                           disabled={actionLoading === donation.id}
                         >
                           <Check className="h-4 w-4 mr-1" /> Approve
@@ -436,7 +423,7 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => moderateDonation(donation.id, 'reject')}
+                          onClick={() => moderateDonation(donation.id, "reject")}
                           disabled={actionLoading === donation.id}
                         >
                           <X className="h-4 w-4 mr-1" /> Reject
@@ -445,7 +432,7 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => moderateDonation(donation.id, 'hide_message')}
+                            onClick={() => moderateDonation(donation.id, "hide_message")}
                             disabled={actionLoading === donation.id}
                           >
                             <EyeOff className="h-4 w-4 mr-1" /> Hide Msg
@@ -454,7 +441,7 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => moderateDonation(donation.id, 'ban_donor')}
+                          onClick={() => moderateDonation(donation.id, "ban_donor")}
                           disabled={actionLoading === donation.id}
                         >
                           <Ban className="h-4 w-4 mr-1" /> Ban
@@ -481,13 +468,22 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
                         <div>
                           <span className="font-medium">{donation.name}</span>
                           <span className="text-muted-foreground ml-2">₹{donation.amount}</span>
-                          {!donation.message_visible && <Badge variant="secondary" className="ml-2">Hidden</Badge>}
+                          {!donation.message_visible && (
+                            <Badge variant="secondary" className="ml-2">
+                              Hidden
+                            </Badge>
+                          )}
                         </div>
                         <div className="flex gap-1">
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => moderateDonation(donation.id, donation.message_visible ? 'hide_message' : 'unhide_message')}
+                            onClick={() =>
+                              moderateDonation(
+                                donation.id,
+                                donation.message_visible ? "hide_message" : "unhide_message",
+                              )
+                            }
                           >
                             {donation.message_visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </Button>
@@ -497,10 +493,10 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
                             title="Replay re-downloads audio from server"
                             onClick={() => {
                               const confirmed = window.confirm(
-                                'Replay will re-download the audio from the server. This uses bandwidth. Continue?'
+                                "Replay will re-download the audio from the server. This uses bandwidth. Continue?",
                               );
                               if (confirmed) {
-                                moderateDonation(donation.id, 'replay');
+                                moderateDonation(donation.id, "replay");
                               }
                             }}
                           >
@@ -508,35 +504,30 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
                           </Button>
                         </div>
                       </div>
-                      
+
                       {/* Message */}
-                      {donation.message && (
-                        <p className="text-sm text-muted-foreground mb-2">{donation.message}</p>
-                      )}
-                      
+                      {donation.message && <p className="text-sm text-muted-foreground mb-2">{donation.message}</p>}
+
                       {/* Media Preview */}
                       {donation.media_url && (
                         <div className="mb-2 space-y-2">
-                          <DonationTypeBadge 
-                            type="media" 
-                            mediaType={donation.media_type as 'image' | 'gif' | 'video'} 
+                          <DonationTypeBadge
+                            type="media"
+                            mediaType={donation.media_type as "image" | "gif" | "video"}
                             variant="outline"
                           />
                           <MediaPreview
                             url={donation.media_url}
-                            type={donation.media_type as 'image' | 'gif' | 'video' || 'image'}
+                            type={(donation.media_type as "image" | "gif" | "video") || "image"}
                             maxWidth={150}
                             maxHeight={100}
                           />
                         </div>
                       )}
-                      
+
                       {/* Voice Message Audio Player */}
                       {donation.voice_message_url && (
-                        <VoiceMessagePlayer 
-                          url={donation.voice_message_url} 
-                          className="mb-2"
-                        />
+                        <VoiceMessagePlayer url={donation.voice_message_url} className="mb-2" />
                       )}
                     </div>
                   ))}
