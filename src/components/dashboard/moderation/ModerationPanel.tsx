@@ -191,14 +191,16 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
         setPendingCount(response.data.pagination?.pendingCount || 0);
       }
 
-      // Fetch recent approved
-      const { data: recent } = await supabase
-        .from(tableName as any)
-        .select("*")
-        .eq("payment_status", "success")
-        .in("moderation_status", ["approved", "auto_approved"])
-        .order("created_at", { ascending: false })
-        .limit(10);
+      const authToken = localStorage.getItem("auth_token");
+
+      const recentResponse = await supabase.functions.invoke("get-moderation-queue", {
+        body: { streamerSlug, status: "recent", limit: 10 },
+        headers: authToken ? { "x-auth-token": authToken } : {},
+      });
+
+      if (recentResponse.data?.success) {
+        setRecentDonations(recentResponse.data.donations || []);
+      }
 
       setRecentDonations((recent as unknown as Donation[]) || []);
     } catch (error) {
