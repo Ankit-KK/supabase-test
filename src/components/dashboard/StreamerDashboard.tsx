@@ -262,72 +262,33 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
     fetchStreamerData();
   }, [user, streamerSlug]);
 
-  // Fetch dashboard statistics
+  // Fetch dashboard stats and donations via edge function (donation tables are locked down)
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchDashboardData = async () => {
       if (!streamerData?.id) return;
 
       try {
-        // Fetch donation statistics
-        const { data: donations, error } = await supabase
-          .from(tableName as any)
-          .select('amount, currency, created_at, moderation_status, payment_status')
-          .eq('streamer_id', streamerData.id) as { data: DonationRecord[] | null, error: any };
-
-        if (error) throw error;
-
-        // Calculate stats
-        const successfulDonations = donations?.filter(d => d.payment_status === 'success') || [];
-        const today = new Date().toDateString();
-        const todayDonations = successfulDonations.filter(d => 
-          new Date(d.created_at).toDateString() === today
-        );
-
-        // Convert all amounts to INR for accurate revenue calculation
-        const totalRevenue = successfulDonations.reduce((sum, d) => sum + convertToINR(parseFloat(d.amount.toString()) || 0, d.currency || 'INR'), 0);
-        const todayRevenue = todayDonations.reduce((sum, d) => sum + convertToINR(parseFloat(d.amount.toString()) || 0, d.currency || 'INR'), 0);
-        const amounts = successfulDonations.map(d => convertToINR(parseFloat(d.amount.toString()) || 0, d.currency || 'INR'));
-
-        setStats({
-          totalRevenue,
-          todayRevenue,
-          totalDonations: successfulDonations.length,
-          averageDonation: amounts.length ? totalRevenue / amounts.length : 0,
-          topDonation: amounts.length ? Math.max(...amounts) : 0
+        const authToken = localStorage.getItem('auth_token');
+        const { data, error } = await supabase.functions.invoke('get-dashboard-donations', {
+          body: { streamerSlug },
+          headers: authToken ? { 'x-auth-token': authToken } : {},
         });
 
-      } catch (error) {
-        console.error('Error fetching stats:', error);
-      }
-    };
-
-    fetchStats();
-  }, [streamerData?.id, tableName, refreshKey]);
-
-  // Fetch all successful donations (moderation only affects OBS alerts, not dashboard visibility)
-  useEffect(() => {
-    const fetchAllDonations = async () => {
-      if (!streamerData?.id) return;
-
-      try {
-        // Scoped list fields (no select('*') - reduces payload ~60%)
-        const { data, error } = await supabase
-          .from(tableName as any)
-          .select('id, name, amount, currency, message, voice_message_url, tts_audio_url, hypersound_url, is_hyperemote, media_url, media_type, moderation_status, payment_status, created_at, message_visible, streamer_id')
-          .eq('streamer_id', streamerData.id)
-          .eq('payment_status', 'success')
-          .order('created_at', { ascending: false })
-          .limit(50) as { data: DonationRecord[] | null, error: any };
-
         if (error) throw error;
-        setApprovedDonations(data || []);
+
+        if (data?.stats) {
+          setStats(data.stats);
+        }
+        if (data?.donations) {
+          setApprovedDonations(data.donations);
+        }
       } catch (error) {
-        console.error('Error fetching donations:', error);
+        console.error('Error fetching dashboard data:', error);
       }
     };
 
-    fetchAllDonations();
-  }, [streamerData?.id, tableName, refreshKey]);
+    fetchDashboardData();
+  }, [streamerData?.id, streamerSlug, refreshKey]);
 
   if (!user) {
     return (

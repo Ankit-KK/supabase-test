@@ -125,3 +125,6 @@ verify_jwt = false
 
 [functions.get-goal-progress]
 verify_jwt = false
+
+[functions.get-dashboard-donations]
+verify_jwt = false
