@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import GoalOverlay from '@/components/GoalOverlay';
-import { STREAMER_CONFIGS, getStreamerConfig, convertToINR } from '@/config/streamers';
+import { STREAMER_CONFIGS, getStreamerConfig } from '@/config/streamers';
 import Pusher from 'pusher-js';
 
 interface GoalData {
