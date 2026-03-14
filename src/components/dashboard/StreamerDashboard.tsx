@@ -1,23 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
-import { DollarSign, Users, TrendingUp, Clock, AlertCircle, LogOut, Shield } from 'lucide-react';
-import DonationCard from './DonationCard';
-import VoiceTranscriber from './VoiceTranscriber';
-import { ModeratorManager } from './ModeratorManager';
-import OBSTokenManager from './OBSTokenManager';
-import CSVExportButton from './CSVExportButton';
-import ModerationPanel from './moderation/ModerationPanel';
-import { usePusherDashboard } from '@/hooks/usePusherDashboard';
-import { usePusherConfig } from '@/hooks/usePusherConfig';
-import { convertToINR } from '@/constants/currencies';
-
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+import { DollarSign, Users, TrendingUp, Clock, AlertCircle, LogOut, Shield } from "lucide-react";
+import DonationCard from "./DonationCard";
+import VoiceTranscriber from "./VoiceTranscriber";
+import { ModeratorManager } from "./ModeratorManager";
+import OBSTokenManager from "./OBSTokenManager";
+import CSVExportButton from "./CSVExportButton";
+import ModerationPanel from "./moderation/ModerationPanel";
+import { usePusherDashboard } from "@/hooks/usePusherDashboard";
+import { usePusherConfig } from "@/hooks/usePusherConfig";
+import { convertToINR } from "@/constants/currencies";
 
 interface StreamerDashboardProps {
   streamerSlug: string;
@@ -57,9 +56,9 @@ interface DonationRecord {
 const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
   streamerSlug,
   streamerName,
-  brandColor = '#3b82f6',
+  brandColor = "#3b82f6",
   tableName,
-  enableVoiceTranscription = false
+  enableVoiceTranscription = false,
 }) => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -70,28 +69,27 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
     todayRevenue: 0,
     totalDonations: 0,
     averageDonation: 0,
-    topDonation: 0
+    topDonation: 0,
   });
   const [approvedDonations, setApprovedDonations] = useState<DonationRecord[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [lastDonationUpdate, setLastDonationUpdate] = useState<any>(null);
-  
+
   // Get Pusher config from backend
   const { config: pusherConfig } = usePusherConfig(streamerSlug);
-  
+
   // Real-time dashboard updates via Pusher
   const { connectionStatus: pusherStatus, stats: pusherStats } = usePusherDashboard({
     streamerSlug,
     pusherKey: pusherConfig?.key,
     pusherCluster: pusherConfig?.cluster,
     onNewDonation: (donation) => {
-      console.log('[Dashboard] New donation via Pusher:', donation);
-      
+      console.log("[Dashboard] New donation via Pusher:", donation);
+
       // Only add to approved list if already approved (auto_approve mode)
       // Pending donations will be handled by moderation panel
-      const isApproved = donation.moderation_status === 'approved' || 
-                         donation.moderation_status === 'auto_approved';
-      
+      const isApproved = donation.moderation_status === "approved" || donation.moderation_status === "auto_approved";
+
       if (isApproved) {
         // Incremental update - add donation directly instead of full refetch (reduces egress)
         // Create a DonationRecord from the Pusher event data with ALL fields
@@ -109,46 +107,49 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
           media_type: donation.media_type,
           message_visible: donation.message_visible ?? true, // Default to true for new donations
           moderation_status: donation.moderation_status,
-          payment_status: 'success', // Only successful donations are pushed
+          payment_status: "success", // Only successful donations are pushed
           created_at: donation.created_at,
-          streamer_id: streamerData?.id || '',
+          streamer_id: streamerData?.id || "",
         };
-        setApprovedDonations(prev => [newDonation, ...prev.slice(0, 49)]);
+        setApprovedDonations((prev) => [newDonation, ...prev.slice(0, 49)]);
       }
-      
+
       // Update stats incrementally for ALL successful donations
-      const donationAmountINR = convertToINR(parseFloat(donation.amount?.toString() || '0'), donation.currency || 'INR');
+      const donationAmountINR = convertToINR(
+        parseFloat(donation.amount?.toString() || "0"),
+        donation.currency || "INR",
+      );
       const today = new Date().toDateString();
       const isToday = new Date(donation.created_at).toDateString() === today;
-      setStats(prev => ({
+      setStats((prev) => ({
         ...prev,
         totalRevenue: prev.totalRevenue + donationAmountINR,
         todayRevenue: isToday ? prev.todayRevenue + donationAmountINR : prev.todayRevenue,
         totalDonations: prev.totalDonations + 1,
         averageDonation: (prev.totalRevenue + donationAmountINR) / (prev.totalDonations + 1),
-        topDonation: Math.max(prev.topDonation, donationAmountINR)
+        topDonation: Math.max(prev.topDonation, donationAmountINR),
       }));
-      
+
       // Show toast for all donations (both approved and pending)
       toast({
         title: isApproved ? "New Donation!" : "🔔 New Donation (Pending)",
-        description: `${donation.name} donated ₹${donation.amount}${!isApproved ? ' - needs approval' : ''}`,
+        description: `${donation.name} donated ₹${donation.amount}${!isApproved ? " - needs approval" : ""}`,
       });
     },
     onDonationUpdated: (data) => {
-      console.log('[Dashboard] Donation update via Pusher:', data);
+      console.log("[Dashboard] Donation update via Pusher:", data);
       setLastDonationUpdate(data);
-      
+
       if (data.id) {
-        if (data.action === 'approve' || data.action === 'auto_approved') {
+        if (data.action === "approve" || data.action === "auto_approved") {
           // ADD newly approved donation to the list (it wasn't there before)
-          setApprovedDonations(prev => {
+          setApprovedDonations((prev) => {
             // Check if already exists to prevent duplicates
-            if (prev.some(d => d.id === data.id)) {
-              return prev.map(d => 
-                d.id === data.id 
-                  ? { ...d, moderation_status: 'approved', message_visible: data.message_visible ?? d.message_visible }
-                  : d
+            if (prev.some((d) => d.id === data.id)) {
+              return prev.map((d) =>
+                d.id === data.id
+                  ? { ...d, moderation_status: "approved", message_visible: data.message_visible ?? d.message_visible }
+                  : d,
               );
             }
             // Add new approved donation
@@ -164,32 +165,30 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
               media_url: data.media_url,
               media_type: data.media_type,
               message_visible: data.message_visible ?? true,
-              moderation_status: 'approved',
-              payment_status: 'success',
+              moderation_status: "approved",
+              payment_status: "success",
               created_at: data.created_at,
-              streamer_id: streamerData?.id || '',
+              streamer_id: streamerData?.id || "",
             };
             return [newDonation, ...prev.slice(0, 49)];
           });
-        } else if (data.action === 'reject') {
+        } else if (data.action === "reject") {
           // Remove rejected donation from list
-          setApprovedDonations(prev => prev.filter(d => d.id !== data.id));
-        } else if (data.action === 'hide_message' || data.action === 'unhide_message') {
+          setApprovedDonations((prev) => prev.filter((d) => d.id !== data.id));
+        } else if (data.action === "hide_message" || data.action === "unhide_message") {
           // Update visibility only
-          setApprovedDonations(prev => prev.map(d => 
-            d.id === data.id 
-              ? { ...d, message_visible: data.action === 'unhide_message' }
-              : d
-          ));
+          setApprovedDonations((prev) =>
+            prev.map((d) => (d.id === data.id ? { ...d, message_visible: data.action === "unhide_message" } : d)),
+          );
         }
       }
     },
     onStatsUpdate: (newStats) => {
-      console.log('[Dashboard] Stats update via Pusher:', newStats);
-      setStats(prev => ({ ...prev, ...newStats }));
-    }
+      console.log("[Dashboard] Stats update via Pusher:", newStats);
+      setStats((prev) => ({ ...prev, ...newStats }));
+    },
   });
-  
+
   // Handle logout
   const handleLogout = async () => {
     try {
@@ -198,7 +197,7 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
         title: "Logged out successfully",
         description: "You have been logged out of your dashboard.",
       });
-      navigate('/auth');
+      navigate("/auth");
     } catch (error) {
       toast({
         title: "Logout Error",
@@ -219,9 +218,11 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
       try {
         // Scoped fields (no select('*'))
         const { data: streamer, error: streamerError } = await supabase
-          .from('streamers')
-          .select('id, streamer_slug, streamer_name, user_id, brand_color, moderation_mode, tts_enabled, media_upload_enabled, media_moderation_enabled, hyperemotes_enabled, leaderboard_widget_enabled, pusher_group')
-          .eq('streamer_slug', streamerSlug)
+          .from("streamers")
+          .select(
+            "id, streamer_slug, streamer_name, user_id, brand_color, moderation_mode, tts_enabled, media_upload_enabled, media_moderation_enabled, hyperemotes_enabled, leaderboard_widget_enabled, pusher_group",
+          )
+          .eq("streamer_slug", streamerSlug)
           .single();
 
         if (streamerError) throw streamerError;
@@ -230,13 +231,13 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
         // For the custom auth system, check if streamer has no user_id (legacy) or matches current user
         const isOwner = !streamer.user_id || streamer.user_id === user.id;
         // TODO: Add admin check here when admin system is implemented
-        const isAdmin = user?.role === 'admin';
+        const isAdmin = user?.role === "admin";
 
         if (!isOwner && !isAdmin) {
-          console.log('Access check failed:', { 
-            streamerUserId: streamer.user_id, 
-            currentUserId: user.id, 
-            userRole: user?.role 
+          console.log("Access check failed:", {
+            streamerUserId: streamer.user_id,
+            currentUserId: user.id,
+            userRole: user?.role,
           });
           toast({
             title: "Access Denied",
@@ -248,7 +249,7 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
 
         setStreamerData(streamer);
       } catch (error) {
-        console.error('Error fetching streamer data:', error);
+        console.error("Error fetching streamer data:", error);
         toast({
           title: "Error",
           description: "Failed to load dashboard data.",
@@ -268,13 +269,14 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
       if (!streamerData?.id) return;
 
       try {
-        const authToken = localStorage.getItem('auth_token');
+        const authToken = localStorage.getItem("auth_token");
         if (!authToken) {
-          console.error('No auth token found');
+          console.error("No auth token found");
           return;
         }
-        const { data, error } = await supabase.functions.invoke('get-dashboard-donations', {
-          body: { streamerSlug, authToken },
+        const { data, error } = await supabase.functions.invoke("get-dashboard-donations", {
+          headers: { "x-auth-token": authToken },
+          body: { streamerSlug },
         });
 
         if (error) throw error;
@@ -286,7 +288,7 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
           setApprovedDonations(data.donations);
         }
       } catch (error) {
-        console.error('Error fetching dashboard data:', error);
+        console.error("Error fetching dashboard data:", error);
       }
     };
 
@@ -301,7 +303,7 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
             <AlertCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <h2 className="text-xl font-semibold mb-2">Authentication Required</h2>
             <p className="text-muted-foreground mb-4">Please log in to access your dashboard.</p>
-            <Button 
+            <Button
               onClick={() => navigate(`/auth?redirect=${encodeURIComponent(window.location.pathname)}`)}
               className="w-full"
             >
@@ -348,28 +350,38 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
               <h1 className="text-3xl font-bold" style={{ color: brandColor }}>
                 {streamerName} Dashboard
               </h1>
-              <p className="text-muted-foreground mt-1">
-                Manage your donations and settings
-              </p>
+              <p className="text-muted-foreground mt-1">Manage your donations and settings</p>
               <div className="flex items-center mt-2 space-x-2">
-                <Badge 
-                  variant={pusherStatus === 'connected' ? 'default' : 'secondary'}
-                  className={pusherStatus === 'connected' ? 'bg-green-600' : pusherStatus === 'connecting' ? 'bg-yellow-500' : 'bg-red-500'}
+                <Badge
+                  variant={pusherStatus === "connected" ? "default" : "secondary"}
+                  className={
+                    pusherStatus === "connected"
+                      ? "bg-green-600"
+                      : pusherStatus === "connecting"
+                        ? "bg-yellow-500"
+                        : "bg-red-500"
+                  }
                 >
-                  {pusherStatus === 'connected' ? '🟢 Live' : 
-                   pusherStatus === 'connecting' ? '🟡 Connecting...' : 
-                   '🔴 Disconnected'}
+                  {pusherStatus === "connected"
+                    ? "🟢 Live"
+                    : pusherStatus === "connecting"
+                      ? "🟡 Connecting..."
+                      : "🔴 Disconnected"}
                 </Badge>
                 <span className="text-sm text-muted-foreground">
-                  {pusherStatus === 'connected' ? 'Real-time updates active' : 'Click refresh for latest data'}
+                  {pusherStatus === "connected" ? "Real-time updates active" : "Click refresh for latest data"}
                 </span>
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              <Button variant="outline" onClick={() => setRefreshKey(prev => prev + 1)}>
+              <Button variant="outline" onClick={() => setRefreshKey((prev) => prev + 1)}>
                 Refresh Data
               </Button>
-              <Button variant="outline" onClick={handleLogout} className="text-red-600 hover:text-red-700 hover:bg-red-50">
+              <Button
+                variant="outline"
+                onClick={handleLogout}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
                 <LogOut className="h-4 w-4 mr-2" />
                 Logout
               </Button>
@@ -388,9 +400,7 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">₹{stats.totalRevenue.toFixed(2)}</div>
-              <p className="text-xs text-muted-foreground">
-                From {stats.totalDonations} donations
-              </p>
+              <p className="text-xs text-muted-foreground">From {stats.totalDonations} donations</p>
             </CardContent>
           </Card>
 
@@ -401,9 +411,7 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">₹{stats.todayRevenue.toFixed(2)}</div>
-              <p className="text-xs text-muted-foreground">
-                Today's earnings
-              </p>
+              <p className="text-xs text-muted-foreground">Today's earnings</p>
             </CardContent>
           </Card>
 
@@ -414,12 +422,9 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">₹{stats.averageDonation.toFixed(2)}</div>
-              <p className="text-xs text-muted-foreground">
-                Per donation
-              </p>
+              <p className="text-xs text-muted-foreground">Per donation</p>
             </CardContent>
           </Card>
-
         </div>
 
         {/* Main Content Tabs */}
@@ -439,7 +444,7 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
               streamerSlug={streamerSlug}
               tableName={tableName}
               brandColor={brandColor}
-              isConnected={pusherStatus === 'connected'}
+              isConnected={pusherStatus === "connected"}
               onDonationUpdate={lastDonationUpdate}
             />
           </TabsContent>
@@ -454,11 +459,7 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
                       Donations that have been approved and are visible to viewers
                     </p>
                   </div>
-                  <CSVExportButton 
-                    streamerId={streamerData.id}
-                    tableName={tableName}
-                    streamerName={streamerName}
-                  />
+                  <CSVExportButton streamerId={streamerData.id} tableName={tableName} streamerName={streamerName} />
                 </div>
               </CardHeader>
               <CardContent>
@@ -470,10 +471,7 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
                   ) : (
                     approvedDonations.map((donation) => (
                       <div key={donation.id}>
-                        <DonationCard 
-                          donation={donation} 
-                          brandColor={brandColor}
-                        />
+                        <DonationCard donation={donation} brandColor={brandColor} />
                         {enableVoiceTranscription && donation.voice_message_url && (
                           <VoiceTranscriber
                             voiceUrl={donation.voice_message_url}
@@ -491,13 +489,11 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
           </TabsContent>
 
           <TabsContent value="telegram" className="space-y-6 data-[state=inactive]:hidden" forceMount>
-            <ModeratorManager
-              streamerId={streamerData.id}
-            />
+            <ModeratorManager streamerId={streamerData.id} />
           </TabsContent>
 
           <TabsContent value="obs" className="space-y-6">
-            <OBSTokenManager 
+            <OBSTokenManager
               streamerId={streamerData.id}
               streamerSlug={streamerSlug}
               brandColor={brandColor}
