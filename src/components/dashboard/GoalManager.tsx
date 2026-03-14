@@ -46,8 +46,7 @@ export const GoalManager = ({ streamerId, streamerSlug, tableName }: GoalManager
       if (data.goal_is_active && data.goal_activated_at) {
         const authToken = localStorage.getItem('auth_token');
         const { data: progressData, error: progressError } = await supabase.functions.invoke('get-goal-progress', {
-          body: { streamerSlug, streamerId, goalActivatedAt: data.goal_activated_at },
-          headers: authToken ? { 'x-auth-token': authToken } : {},
+          body: { streamerSlug, streamerId, goalActivatedAt: data.goal_activated_at, authToken },
         });
 
         if (!progressError && progressData?.currentProgress !== undefined) {
