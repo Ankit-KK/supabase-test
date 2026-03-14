@@ -88,11 +88,11 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
 
       // Only add to approved list if already approved (auto_approve mode)
       // Pending donations will be handled by moderation panel
+      // Only add to approved list if already approved (auto_approve mode)
       const isApproved =
-        donation.payment_status === "success" &&
-        (donation.moderation_status === "approved" ||
-          donation.moderation_status === "auto_approved" ||
-          donation.moderation_status === null);
+        donation.moderation_status === "approved" ||
+        donation.moderation_status === "auto_approved" ||
+        donation.moderation_status === null;
 
       if (isApproved) {
         // Incremental update - add donation directly instead of full refetch (reduces egress)
@@ -110,7 +110,7 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
           media_url: donation.media_url,
           media_type: donation.media_type,
           message_visible: donation.message_visible ?? true, // Default to true for new donations
-          moderation_status: donation.moderation_status | null,
+          moderation_status: donation.moderation_status,
           payment_status: "success", // Only successful donations are pushed
           created_at: donation.created_at,
           streamer_id: streamerData?.id || "",
