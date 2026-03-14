@@ -32,7 +32,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const authToken = req.headers.get('x-auth-token');
+    const body = await req.json();
+    const authToken = req.headers.get('x-auth-token') || body.authToken;
     if (!authToken) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
@@ -57,7 +58,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { streamerSlug } = await req.json();
+    const { streamerSlug } = body;
 
     if (!streamerSlug) {
       return new Response(JSON.stringify({ error: 'streamerSlug is required' }), {

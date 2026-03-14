@@ -37,8 +37,8 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    const authToken = req.headers.get('x-auth-token');
     const body = await req.json();
+    const authToken = req.headers.get('x-auth-token') || body.authToken;
     const { streamerSlug, streamerId, goalActivatedAt } = body;
 
     if (!streamerSlug) {

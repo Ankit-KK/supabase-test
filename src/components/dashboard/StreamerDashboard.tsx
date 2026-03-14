@@ -269,9 +269,12 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
 
       try {
         const authToken = localStorage.getItem('auth_token');
+        if (!authToken) {
+          console.error('No auth token found');
+          return;
+        }
         const { data, error } = await supabase.functions.invoke('get-dashboard-donations', {
-          body: { streamerSlug },
-          headers: authToken ? { 'x-auth-token': authToken } : {},
+          body: { streamerSlug, authToken },
         });
 
         if (error) throw error;
