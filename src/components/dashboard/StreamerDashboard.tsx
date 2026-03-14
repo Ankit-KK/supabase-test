@@ -110,7 +110,7 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
           media_url: donation.media_url,
           media_type: donation.media_type,
           message_visible: donation.message_visible ?? true, // Default to true for new donations
-          moderation_status: donation.moderation_status,
+          moderation_status: donation.moderation_status | null,
           payment_status: "success", // Only successful donations are pushed
           created_at: donation.created_at,
           streamer_id: streamerData?.id || "",
