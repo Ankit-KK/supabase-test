@@ -196,7 +196,7 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
         .from(tableName as any)
         .select("*")
         .eq("payment_status", "success")
-        .or("moderation_status.eq.approved,moderation_status.eq.auto_approved,moderation_status.is.null")
+        .in("moderation_status", ["approved", "auto_approved"])
         .order("created_at", { ascending: false })
         .limit(10);
 
@@ -268,6 +268,7 @@ const ModerationPanel: React.FC<ModerationPanelProps> = ({
         } else if (action === "unhide_message") {
           setRecentDonations((prev) => prev.map((d) => (d.id === donationId ? { ...d, message_visible: true } : d)));
         }
+        await fetchQueue();
       } else {
         throw new Error(response.data?.error || "Action failed");
       }
