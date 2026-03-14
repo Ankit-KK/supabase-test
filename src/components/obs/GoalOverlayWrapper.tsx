@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import GoalOverlay from '@/components/GoalOverlay';
-import { STREAMER_CONFIGS, getStreamerConfig, convertToINR } from '@/config/streamers';
+import { STREAMER_CONFIGS, getStreamerConfig } from '@/config/streamers';
 import Pusher from 'pusher-js';
 
 interface GoalData {
@@ -73,26 +73,19 @@ export const GoalOverlayWrapper: React.FC<GoalOverlayWrapperProps> = ({ streamer
       isActive: streamerData.goal_is_active,
     });
 
-    // Calculate current amount from donations since goal activation
-    const activatedAt = streamerData.goal_activated_at || new Date().toISOString();
-    
-    // Use RPC or direct query based on table name
-    const { data: donations, error: donationsError } = await supabase
-      .from(config.tableName as any)
-      .select('amount, currency')
-      .eq('payment_status', 'success')
-      .gte('created_at', activatedAt);
+    // Fetch goal progress via edge function (donation tables are locked down)
+    const { data: progressData, error: progressError } = await supabase.functions.invoke('get-goal-progress', {
+      body: { streamerSlug },
+    });
 
-    if (donationsError) {
-      console.error('Error fetching donations:', donationsError);
+    if (progressError) {
+      console.error('Error fetching goal progress:', progressError);
       return;
     }
 
-    const totalAmount = (donations || []).reduce((sum: number, d: any) => {
-      return sum + convertToINR(d.amount, d.currency || 'INR');
-    }, 0);
-
-    setCurrentAmount(totalAmount);
+    if (progressData?.currentProgress !== undefined) {
+      setCurrentAmount(progressData.currentProgress);
+    }
   }, [streamerSlug, config.tableName]);
 
   // Initial fetch only - real-time updates come via Pusher (no polling to reduce egress)

@@ -42,18 +42,16 @@ export const GoalManager = ({ streamerId, streamerSlug, tableName }: GoalManager
       setGoalName(data.goal_name || '');
       setTargetAmount(data.goal_target_amount?.toString() || '');
 
-      // Calculate current progress if goal is active
+      // Calculate current progress via edge function (donation tables are locked down)
       if (data.goal_is_active && data.goal_activated_at) {
-        const { data: donations, error: donError } = await supabase
-          .from(tableName as any)
-          .select('amount')
-          .eq('streamer_id', streamerId)
-          .eq('payment_status', 'success')
-          .gte('created_at', data.goal_activated_at);
+        const authToken = localStorage.getItem('auth_token');
+        const { data: progressData, error: progressError } = await supabase.functions.invoke('get-goal-progress', {
+          body: { streamerSlug, streamerId, goalActivatedAt: data.goal_activated_at },
+          headers: authToken ? { 'x-auth-token': authToken } : {},
+        });
 
-        if (!donError && donations) {
-          const total = donations.reduce((sum: number, d: any) => sum + Number(d.amount), 0);
-          setCurrentProgress(total);
+        if (!progressError && progressData?.currentProgress !== undefined) {
+          setCurrentProgress(progressData.currentProgress);
         }
       }
     } catch (error) {

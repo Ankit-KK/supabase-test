@@ -9,7 +9,6 @@ const EXCHANGE_RATES_TO_INR: Record<string, number> = {
   'INR': 1, 'USD': 89, 'EUR': 94, 'GBP': 113, 'AED': 24, 'AUD': 57,
 };
 
-// Allowed donation table names (security allowlist)
 const ALLOWED_TABLES: Record<string, string> = {
   ankit: 'ankit_donations',
   chiaa_gaming: 'chiaa_gaming_donations',
@@ -33,35 +32,17 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const authToken = req.headers.get('x-auth-token');
-    if (!authToken) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    // Validate session
-    const { data: session, error: sessionError } = await supabase.rpc('validate_session_token', {
-      p_token: authToken,
-    });
+    const authToken = req.headers.get('x-auth-token');
+    const body = await req.json();
+    const { streamerSlug, streamerId, goalActivatedAt } = body;
 
-    if (sessionError || !session) {
-      return new Response(JSON.stringify({ error: 'Invalid session' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const { streamerId, streamerSlug, goalActivatedAt } = await req.json();
-
-    if (!streamerId || !streamerSlug || !goalActivatedAt) {
-      return new Response(JSON.stringify({ error: 'streamerId, streamerSlug, and goalActivatedAt are required' }), {
+    if (!streamerSlug) {
+      return new Response(JSON.stringify({ error: 'streamerSlug is required' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -75,37 +56,83 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Verify user has access to this streamer
-    const { data: user } = await supabase
-      .from('auth_users')
-      .select('streamer_id')
-      .eq('id', session)
-      .single();
+    // Two modes:
+    // 1. Authenticated (dashboard): requires auth token, validates session + ownership
+    // 2. Public (OBS overlay): no auth token, read-only progress number
 
-    const { data: isAdmin } = await supabase
-      .from('admin_emails')
-      .select('id')
-      .eq('email', (await supabase.from('auth_users').select('email').eq('id', session).single()).data?.email || '')
-      .maybeSingle();
-
-    if (!isAdmin && user?.streamer_id !== streamerId) {
-      return new Response(JSON.stringify({ error: 'Forbidden' }), {
-        status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    if (authToken) {
+      // Authenticated mode
+      const { data: session, error: sessionError } = await supabase.rpc('validate_session_token', {
+        p_token: authToken,
       });
+
+      if (sessionError || !session) {
+        return new Response(JSON.stringify({ error: 'Invalid session' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Verify access
+      const { data: user } = await supabase
+        .from('auth_users')
+        .select('streamer_id, email')
+        .eq('id', session)
+        .single();
+
+      const { data: isAdmin } = await supabase
+        .from('admin_emails')
+        .select('id')
+        .eq('email', user?.email || '')
+        .maybeSingle();
+
+      if (!isAdmin && streamerId && user?.streamer_id !== streamerId) {
+        return new Response(JSON.stringify({ error: 'Forbidden' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
+    // Look up streamer data if needed
+    let resolvedStreamerId = streamerId;
+    let resolvedGoalActivatedAt = goalActivatedAt;
+
+    if (!resolvedStreamerId || !resolvedGoalActivatedAt) {
+      const { data: streamerData, error: streamerError } = await supabase
+        .from('streamers')
+        .select('id, goal_activated_at, goal_is_active')
+        .eq('streamer_slug', streamerSlug)
+        .single();
+
+      if (streamerError || !streamerData) {
+        return new Response(JSON.stringify({ error: 'Streamer not found' }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      resolvedStreamerId = streamerData.id;
+      resolvedGoalActivatedAt = resolvedGoalActivatedAt || streamerData.goal_activated_at;
+
+      if (!streamerData.goal_is_active || !resolvedGoalActivatedAt) {
+        return new Response(JSON.stringify({ currentProgress: 0 }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
     }
 
     // Fetch donations since goal activation
     const { data: donations, error: donError } = await supabase
       .from(tableName)
       .select('amount, currency')
-      .eq('streamer_id', streamerId)
+      .eq('streamer_id', resolvedStreamerId)
       .eq('payment_status', 'success')
       .in('moderation_status', ['auto_approved', 'approved'])
-      .gte('created_at', goalActivatedAt);
+      .gte('created_at', resolvedGoalActivatedAt);
 
     if (donError) {
-      console.error(`[get-goal-progress] Error fetching donations:`, donError);
+      console.error('[get-goal-progress] Error fetching donations:', donError);
       return new Response(JSON.stringify({ error: 'Failed to fetch donations' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
