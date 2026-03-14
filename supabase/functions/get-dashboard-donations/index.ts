@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { streamerSlug } = await req.json();
+    const { streamerSlug } = body;
 
     if (!streamerSlug) {
       return new Response(JSON.stringify({ error: 'streamerSlug is required' }), {
