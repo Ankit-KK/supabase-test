@@ -1,33 +1,47 @@
 
 
-# Update ADD_NEW_STREAMER.md — Post-Security-Lockdown
+# Fix: Migrate remaining direct donation table queries to edge functions
 
-The existing guide at `docs/ADD_NEW_STREAMER.md` is thorough but outdated after the recent donation table lockdown. Three corrections are needed:
+## Root Cause
+The donation table lockdown removed all public SELECT policies, but 3 components still query those tables directly via the client. They silently return empty arrays — causing "No approved donations", "₹0 progress", and empty goal overlays.
 
-## Changes
+## Changes Required
 
-### 1. Step 1 SQL — Remove public SELECT policy and public view
-Lines 73-91 create a public SELECT policy and a `_donations_public` view. Both were removed in the lockdown migration. The SQL should only have:
-- `ENABLE ROW LEVEL SECURITY`
-- Service role ALL policy (keep existing)
-- **Remove** the `Anyone can view approved...` SELECT policy
-- **Remove** the `CREATE VIEW` block
-- Add a comment explaining why no public access exists
+### 1. New edge function: `get-dashboard-donations`
+Authenticated endpoint returning both stats and donation list for the dashboard.
 
-### 2. Add new Steps for `get-leaderboard-data` and `get-goal-progress` edge functions
-These were created in the lockdown and contain hardcoded `ALLOWED_TABLES` maps. A new streamer must be added to both:
+- Input: `streamerSlug`, auth via `x-auth-token`
+- Uses service_role to query the locked donation table
+- Returns: `{ stats: { totalRevenue, todayRevenue, totalDonations, averageDonation, topDonation }, donations: [...] }`
+- Auth: validate_session_token + owner/admin check (same pattern as get-goal-progress)
 
-- **`get-leaderboard-data`**: Add `'[SLUG]': '[SLUG]_donations'` to `ALLOWED_TABLES`
-- **`get-goal-progress`**: Add `'[SLUG]': '[SLUG]_donations'` to `ALLOWED_TABLES`
+### 2. Update `get-goal-progress` to support public (OBS) access
+Currently requires auth. The OBS goal overlay has no auth token.
 
-Insert these as new steps after the current Step 7 (moderate-donation), shifting subsequent step numbers.
+- If `x-auth-token` is provided: validate session + owner/admin check (dashboard use)
+- If no auth token but `streamerSlug` is provided: allow read-only access (OBS overlay use — public data, just a single number)
+- Remove the requirement for `streamerId` when unauthenticated — look it up from `streamerSlug`
 
-### 3. Update Quick Checklist
-Add two new checklist items for the new edge functions. Remove mention of `_donations_public` view from Step 1 checklist item.
+### 3. Update `StreamerDashboard.tsx`
+Replace the two direct queries (fetchStats + fetchAllDonations) with a single call to `get-dashboard-donations`.
 
-### 4. Add to "Edge Functions That Do NOT Need Changes" note
-No additions needed — both new functions require manual mapping.
+### 4. Update `GoalManager.tsx`
+Replace the direct donation table query (lines 47-52) with a call to `get-goal-progress` edge function.
 
-## Files Modified
-- `docs/ADD_NEW_STREAMER.md` — three edits (SQL block, new steps, checklist)
+### 5. Update `GoalOverlayWrapper.tsx`
+Replace the direct donation table query (lines 80-84) with a call to `get-goal-progress` (unauthenticated mode).
+
+### 6. Config
+Add `get-dashboard-donations` to `supabase/config.toml` with `verify_jwt = false`.
+
+## Files
+
+| File | Action |
+|------|--------|
+| `supabase/functions/get-dashboard-donations/index.ts` | Create — authenticated edge function |
+| `supabase/functions/get-goal-progress/index.ts` | Edit — add unauthenticated OBS mode |
+| `src/components/dashboard/StreamerDashboard.tsx` | Edit — use edge function instead of direct queries |
+| `src/components/dashboard/GoalManager.tsx` | Edit — use get-goal-progress edge function |
+| `src/components/obs/GoalOverlayWrapper.tsx` | Edit — use get-goal-progress edge function (no auth) |
+| `supabase/config.toml` | Edit — add get-dashboard-donations |
 
