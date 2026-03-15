@@ -20,6 +20,7 @@ const STREAMER_CONFIG: Record<string, { table: string; prefix: string; tableId: 
   'mr_champion': { table: 'mr_champion_donations', prefix: 'mc_rp_', tableId: 9 },
   'demigod': { table: 'demigod_donations', prefix: 'dg_rp_', tableId: 10 },
   'nova_plays': { table: 'nova_plays_donations', prefix: 'np_rp_', tableId: 11 },
+  'starlight_anya': { table: 'starlight_anya_donations', prefix: 'sa_rp_', tableId: 12 },
 };
 
 // Platform floors (cannot go below these)
