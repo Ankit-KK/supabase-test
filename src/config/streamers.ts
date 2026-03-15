@@ -112,6 +112,30 @@ export const STREAMER_CONFIGS: Record<string, StreamerConfig> = {
   pusherSettingsChannel: 'reyna_yadav-settings',
   razorpayOrderPrefix: 'ry_rp_',
 },
+  slidey_playz: {
+  slug: 'slidey_playz',
+  name: 'Slidey Playz',
+  tableName: 'slidey_playz_donations',
+  brandColor: '#10b981',
+  pusherDashboardChannel: 'slidey_playz-dashboard',
+  pusherGoalChannel: 'slidey_playz-goal',
+  pusherAudioChannel: 'slidey_playz-audio',
+  pusherAlertsChannel: 'slidey_playz-alerts',
+  pusherSettingsChannel: 'slidey_playz-settings',
+  razorpayOrderPrefix: 'slp_rp_',
+},
+eryx: {
+  slug: 'eryx',
+  name: 'Eryx',
+  tableName: 'eryx_donations',
+  brandColor: '#f97316',
+  pusherDashboardChannel: 'eryx-dashboard',
+  pusherGoalChannel: 'eryx-goal',
+  pusherAudioChannel: 'eryx-audio',
+  pusherAlertsChannel: 'eryx-alerts',
+  pusherSettingsChannel: 'eryx-settings',
+  razorpayOrderPrefix: 'ex_rp_',
+},
 };
 
 export const getStreamerConfig = (slug: string): StreamerConfig | undefined => STREAMER_CONFIGS[slug];
@@ -137,6 +161,8 @@ export const DONATION_TABLE_ID_MAP: Record<number, string> = {
   11: 'nova_plays_donations',
   12: 'starlight_anya_donations',
   13: 'reyna_yadav_donations',
+  14: 'slidey_playz_donations',
+  15: 'eryx_donations',
 };
 
 // Reverse mapping: table name -> donation_table_id
