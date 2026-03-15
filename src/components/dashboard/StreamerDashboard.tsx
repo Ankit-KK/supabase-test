@@ -276,7 +276,7 @@ const StreamerDashboard: React.FC<StreamerDashboardProps> = ({
         }
         const { data, error } = await supabase.functions.invoke("get-dashboard-donations", {
           headers: { "x-auth-token": authToken },
-          body: { streamerSlug },
+          body: { streamerSlug, authToken },
         });
 
         if (error) throw error;
