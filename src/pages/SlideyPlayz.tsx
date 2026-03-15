@@ -30,7 +30,6 @@ const STYLES = `
     --v-purple:  #9b59ff;
     --v-bg:      #0f1923;
     --v-card:    #131f2b;
-    --v-surface: #0d1820;
   }
 
   .vl-root { font-family: 'Rajdhani', sans-serif; }
@@ -42,7 +41,7 @@ const STYLES = `
     overflow: hidden; position: relative;
   }
 
-  /* Valorant-style subtle grid */
+  /* Valorant grid */
   .vl-grid {
     position: fixed; inset: 0; pointer-events: none; z-index: 0;
     background-image:
@@ -55,23 +54,21 @@ const STYLES = `
     background: radial-gradient(ellipse 80% 60% at 50% 50%, transparent 35%, var(--v-bg) 100%);
   }
 
-  /* Ambient glow */
   .vl-atm {
     position: fixed; inset: 0; pointer-events: none; z-index: 0;
     background:
-      radial-gradient(ellipse 55% 45% at 5% 5%,   rgba(16,255,160,0.1)  0%, transparent 55%),
-      radial-gradient(ellipse 45% 40% at 95% 90%,  rgba(255,70,85,0.08)  0%, transparent 55%),
-      radial-gradient(ellipse 40% 35% at 60% 40%,  rgba(0,228,255,0.04)  0%, transparent 55%);
+      radial-gradient(ellipse 55% 45% at 5%  5%,  rgba(16,255,160,0.1)  0%, transparent 55%),
+      radial-gradient(ellipse 45% 40% at 95% 90%, rgba(255,70,85,0.08)  0%, transparent 55%),
+      radial-gradient(ellipse 40% 35% at 60% 40%, rgba(0,228,255,0.04)  0%, transparent 55%);
   }
 
-  /* ── Scale wrapper ── */
+  /* Scale wrapper */
   .vl-scale-wrap { width: 440px; transform-origin: top center; position: relative; z-index: 10; }
 
-  /* ── Card — Valorant sharp style ── */
+  /* Card — Valorant diagonal cut */
   .vl-card {
     width: 440px;
     background: var(--v-card);
-    /* Diagonal cut top-right corner */
     clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
     position: relative;
     border: 1px solid rgba(16,255,160,0.2);
@@ -82,7 +79,6 @@ const STYLES = `
       0 24px 64px rgba(0,0,0,0.6);
     overflow: visible;
   }
-  /* Inner glow overlay */
   .vl-card::before {
     content: '';
     position: absolute; inset: 0;
@@ -91,7 +87,7 @@ const STYLES = `
     pointer-events: none; z-index: 0;
   }
 
-  /* ── HERO ── */
+  /* HERO */
   .vl-hero {
     position: relative; z-index: 1;
     padding: 16px 20px 14px;
@@ -100,7 +96,6 @@ const STYLES = `
     background: linear-gradient(135deg, rgba(16,255,160,0.1) 0%, rgba(0,228,255,0.05) 50%, transparent 100%);
     border-bottom: 1px solid rgba(16,255,160,0.15);
   }
-  /* Top accent line */
   .vl-hero::before {
     content: '';
     position: absolute; top: 0; left: 0; right: 0; height: 2px;
@@ -110,23 +105,18 @@ const STYLES = `
     box-shadow: 0 0 8px var(--v-green), 0 0 18px rgba(16,255,160,0.4);
   }
   @keyframes vl-slide { 0%{background-position:0%} 100%{background-position:200%} }
-
-  /* Diagonal cut accent bottom-right of hero */
   .vl-hero::after {
     content: '';
     position: absolute; bottom: -1px; right: 0;
     border-bottom: 28px solid var(--v-card);
     border-left: 28px solid transparent;
   }
-
   .vl-hero-blob {
     position: absolute; top: -20px; right: -20px;
     width: 110px; height: 110px; border-radius: 50%;
     background: radial-gradient(circle, rgba(16,255,160,0.18) 0%, transparent 65%);
     pointer-events: none;
   }
-
-  /* Corner bracket TL */
   .vl-corner-tl {
     position: absolute; top: 8px; left: 8px;
     width: 12px; height: 12px;
@@ -134,7 +124,6 @@ const STYLES = `
     z-index: 2;
   }
 
-  /* Glitch name */
   @keyframes vl-g1 {
     0%,90%,100%{clip-path:none;transform:none;}
     91%{clip-path:polygon(0 20%,100% 20%,100% 40%,0 40%);transform:translateX(-3px);}
@@ -148,7 +137,7 @@ const STYLES = `
     93%{opacity:0;}
   }
   .vl-name {
-    font-family: 'Orbitron', sans-serif; font-size: 24px; font-weight: 900;
+    font-family: 'Orbitron', sans-serif; font-size: 22px; font-weight: 900;
     letter-spacing: 0.06em; color: #fff; line-height: 1;
     position: relative; z-index: 1;
     animation: vl-g1 10s ease-in-out infinite;
@@ -165,7 +154,6 @@ const STYLES = `
     color: rgba(16,255,160,0.45); margin-top: 3px; position: relative; z-index: 1;
   }
 
-  /* Live badge */
   @keyframes vl-pulse { 0%,100%{box-shadow:0 0 5px var(--v-green);} 50%{box-shadow:none;} }
   .vl-live {
     display: inline-flex; align-items: center; gap: 5px;
@@ -174,21 +162,21 @@ const STYLES = `
   }
   .vl-live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--v-green); animation: vl-pulse 1.5s ease-in-out infinite; }
 
-  /* ── Body ── */
+  /* Body */
   .vl-body { padding: 14px 20px 18px; display: flex; flex-direction: column; gap: 12px; position: relative; z-index: 1; }
 
-  /* Labels — Valorant uppercase */
   .vl-lbl {
     font-family: 'Rajdhani', sans-serif;
     font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
     display: block; margin-bottom: 5px; color: rgba(16,255,160,0.5);
   }
 
-  /* Inputs — sharp corners, thin green border */
+  /* Inputs */
   .vl-iw input {
     width: 100% !important;
     background: rgba(0,0,0,0.4) !important;
     border: 1px solid rgba(16,255,160,0.2) !important;
+    border-left: 2px solid rgba(16,255,160,0.4) !important;
     border-radius: 2px !important;
     color: #e0fff8 !important;
     font-family: 'Rajdhani', sans-serif !important;
@@ -196,8 +184,6 @@ const STYLES = `
     padding: 8px 12px !important;
     outline: none !important; transition: all .2s !important;
     caret-color: var(--v-green);
-    /* Left accent bar */
-    border-left: 2px solid rgba(16,255,160,0.35) !important;
   }
   .vl-iw input:focus {
     border-color: rgba(16,255,160,0.6) !important;
@@ -210,7 +196,7 @@ const STYLES = `
 
   .vl-ta {
     width: 100%; background: rgba(0,0,0,0.4);
-    border: 1px solid rgba(16,255,160,0.2); border-left: 2px solid rgba(16,255,160,0.35);
+    border: 1px solid rgba(16,255,160,0.2); border-left: 2px solid rgba(16,255,160,0.4);
     border-radius: 2px; color: #e0fff8;
     font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 600;
     padding: 8px 12px; resize: none; outline: none; line-height: 1.5;
@@ -226,58 +212,102 @@ const STYLES = `
   .vl-cbar { height: 2px; margin-top: 4px; background: rgba(16,255,160,0.08); overflow: hidden; }
   .vl-cbar-fill { height: 100%; transition: width .12s, background .2s; }
 
-  /* Thin divider */
   .vl-div { height: 1px; background: linear-gradient(90deg, transparent, rgba(16,255,160,0.18), rgba(0,228,255,0.12), transparent); }
 
-  /* ══════════════════════════════════
-     3D TYPE BUTTONS — Valorant sharp
-  ══════════════════════════════════ */
+  /* ═══════════════════════════════════════════════
+     3D TYPE BUTTONS — NO clip-path on wrapper/after
+     clip-path only on the .vl-tb-face (visual only)
+  ═══════════════════════════════════════════════ */
   .vl-types { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; padding-bottom: 6px; }
 
+  /* Wrapper: plain rectangle — clip-path would hide ::after */
   .vl-tb {
-    position: relative; padding: 0; border: none; background: none;
-    cursor: pointer; outline: none; display: block; width: 100%;
-    /* Sharp cut top-right corner */
-    clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%);
+    position: relative;
+    padding: 0; border: none; background: none;
+    cursor: pointer; outline: none;
+    display: block; width: 100%;
+    border-radius: 4px;
   }
+
+  /* Face: gets the Valorant cut-corner look */
   .vl-tb-face {
     position: relative; z-index: 2;
     padding: 9px 3px 8px; text-align: center;
     clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%);
     transition: transform .1s ease, box-shadow .1s ease;
-    transform: translateY(-5px);
+    transform: translateY(-6px);
   }
+
+  /* Side face: plain rect so it's always fully visible */
   .vl-tb::after {
-    content: ''; position: absolute; bottom: 0; left: 0; right: 0;
-    height: calc(100% - 3px);
-    clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%);
+    content: '';
+    position: absolute; bottom: 0; left: 0; right: 0;
+    height: calc(100% - 4px);
+    border-radius: 4px;
     z-index: 1;
   }
 
-  /* Green */
-  .vl-tb-gn .vl-tb-face { background: linear-gradient(160deg, rgba(16,255,160,0.15), rgba(0,80,50,0.55)); border: 1px solid rgba(16,255,160,0.55); box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 0 8px rgba(16,255,160,0.18); }
-  .vl-tb-gn::after { background: #004030; border: 1px solid rgba(16,255,160,0.3); }
-  .vl-tb-gn:hover .vl-tb-face { box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 0 16px rgba(16,255,160,0.45); }
-  .vl-tb-gn.vl-on .vl-tb-face { transform: translateY(0); background: linear-gradient(160deg, rgba(16,255,160,0.28), rgba(0,110,65,0.6)); border-color: var(--v-green); box-shadow: inset 0 2px 4px rgba(0,0,0,0.3), 0 0 16px rgba(16,255,160,0.7), 0 0 32px rgba(16,255,160,0.25), inset 0 0 10px rgba(16,255,160,0.12); }
+  /* GREEN */
+  .vl-tb-gn .vl-tb-face {
+    background: linear-gradient(160deg, rgba(16,255,160,0.18), rgba(0,80,50,0.6));
+    border: 1.5px solid rgba(16,255,160,0.6);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 0 10px rgba(16,255,160,0.2);
+  }
+  .vl-tb-gn::after { background: #003d28; border: 1.5px solid rgba(16,255,160,0.3); }
+  .vl-tb-gn:hover .vl-tb-face { box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 0 18px rgba(16,255,160,0.5), 0 0 30px rgba(16,255,160,0.15); transform: translateY(-8px); }
+  .vl-tb-gn.vl-on .vl-tb-face {
+    transform: translateY(0);
+    background: linear-gradient(160deg, rgba(16,255,160,0.3), rgba(0,110,65,0.65));
+    border-color: var(--v-green);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3), 0 0 18px rgba(16,255,160,0.75), 0 0 36px rgba(16,255,160,0.28), inset 0 0 12px rgba(16,255,160,0.14);
+  }
 
-  /* Cyan */
-  .vl-tb-cy .vl-tb-face { background: linear-gradient(160deg, rgba(0,228,255,0.15), rgba(0,80,110,0.55)); border: 1px solid rgba(0,228,255,0.55); box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 0 8px rgba(0,228,255,0.18); }
-  .vl-tb-cy::after { background: #003a50; border: 1px solid rgba(0,228,255,0.3); }
-  .vl-tb-cy:hover .vl-tb-face { box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 0 16px rgba(0,228,255,0.45); }
-  .vl-tb-cy.vl-on .vl-tb-face { transform: translateY(0); background: linear-gradient(160deg, rgba(0,228,255,0.28), rgba(0,130,160,0.6)); border-color: var(--v-cyan); box-shadow: inset 0 2px 4px rgba(0,0,0,0.3), 0 0 16px rgba(0,228,255,0.7), 0 0 32px rgba(0,228,255,0.25), inset 0 0 10px rgba(0,228,255,0.12); }
+  /* CYAN */
+  .vl-tb-cy .vl-tb-face {
+    background: linear-gradient(160deg, rgba(0,228,255,0.18), rgba(0,80,110,0.6));
+    border: 1.5px solid rgba(0,228,255,0.6);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 0 10px rgba(0,228,255,0.2);
+  }
+  .vl-tb-cy::after { background: #003348; border: 1.5px solid rgba(0,228,255,0.3); }
+  .vl-tb-cy:hover .vl-tb-face { box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 0 18px rgba(0,228,255,0.5), 0 0 30px rgba(0,228,255,0.15); transform: translateY(-8px); }
+  .vl-tb-cy.vl-on .vl-tb-face {
+    transform: translateY(0);
+    background: linear-gradient(160deg, rgba(0,228,255,0.3), rgba(0,130,160,0.65));
+    border-color: var(--v-cyan);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3), 0 0 18px rgba(0,228,255,0.75), 0 0 36px rgba(0,228,255,0.28), inset 0 0 12px rgba(0,228,255,0.14);
+  }
 
-  /* Orange */
-  .vl-tb-or .vl-tb-face { background: linear-gradient(160deg, rgba(255,144,0,0.18), rgba(130,55,0,0.55)); border: 1px solid rgba(255,144,0,0.55); box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 0 8px rgba(255,144,0,0.18); }
-  .vl-tb-or::after { background: #5a2800; border: 1px solid rgba(255,144,0,0.3); }
-  .vl-tb-or:hover .vl-tb-face { box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 0 16px rgba(255,144,0,0.45); }
-  .vl-tb-or.vl-on .vl-tb-face { transform: translateY(0); background: linear-gradient(160deg, rgba(255,144,0,0.28), rgba(170,75,0,0.6)); border-color: var(--v-orange); box-shadow: inset 0 2px 4px rgba(0,0,0,0.3), 0 0 16px rgba(255,144,0,0.7), 0 0 32px rgba(255,144,0,0.25), inset 0 0 10px rgba(255,144,0,0.12); }
+  /* ORANGE */
+  .vl-tb-or .vl-tb-face {
+    background: linear-gradient(160deg, rgba(255,144,0,0.2), rgba(130,55,0,0.6));
+    border: 1.5px solid rgba(255,144,0,0.6);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 0 10px rgba(255,144,0,0.2);
+  }
+  .vl-tb-or::after { background: #512200; border: 1.5px solid rgba(255,144,0,0.3); }
+  .vl-tb-or:hover .vl-tb-face { box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 0 18px rgba(255,144,0,0.5), 0 0 30px rgba(255,144,0,0.15); transform: translateY(-8px); }
+  .vl-tb-or.vl-on .vl-tb-face {
+    transform: translateY(0);
+    background: linear-gradient(160deg, rgba(255,144,0,0.3), rgba(170,75,0,0.65));
+    border-color: var(--v-orange);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3), 0 0 18px rgba(255,144,0,0.75), 0 0 36px rgba(255,144,0,0.28), inset 0 0 12px rgba(255,144,0,0.14);
+  }
 
-  /* Purple */
-  .vl-tb-pu .vl-tb-face { background: linear-gradient(160deg, rgba(155,89,255,0.18), rgba(75,0,140,0.55)); border: 1px solid rgba(155,89,255,0.55); box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 0 8px rgba(155,89,255,0.18); }
-  .vl-tb-pu::after { background: #360060; border: 1px solid rgba(155,89,255,0.3); }
-  .vl-tb-pu:hover .vl-tb-face { box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 0 16px rgba(155,89,255,0.45); }
-  .vl-tb-pu.vl-on .vl-tb-face { transform: translateY(0); background: linear-gradient(160deg, rgba(155,89,255,0.28), rgba(100,0,180,0.6)); border-color: var(--v-purple); box-shadow: inset 0 2px 4px rgba(0,0,0,0.3), 0 0 16px rgba(155,89,255,0.7), 0 0 32px rgba(155,89,255,0.25), inset 0 0 10px rgba(155,89,255,0.12); }
+  /* PURPLE */
+  .vl-tb-pu .vl-tb-face {
+    background: linear-gradient(160deg, rgba(155,89,255,0.2), rgba(75,0,140,0.6));
+    border: 1.5px solid rgba(155,89,255,0.6);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 0 10px rgba(155,89,255,0.2);
+  }
+  .vl-tb-pu::after { background: #300058; border: 1.5px solid rgba(155,89,255,0.3); }
+  .vl-tb-pu:hover .vl-tb-face { box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 0 18px rgba(155,89,255,0.5), 0 0 30px rgba(155,89,255,0.15); transform: translateY(-8px); }
+  .vl-tb-pu.vl-on .vl-tb-face {
+    transform: translateY(0);
+    background: linear-gradient(160deg, rgba(155,89,255,0.3), rgba(100,0,180,0.65));
+    border-color: var(--v-purple);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3), 0 0 18px rgba(155,89,255,0.75), 0 0 36px rgba(155,89,255,0.28), inset 0 0 12px rgba(155,89,255,0.14);
+  }
 
+  /* Press */
   .vl-tb:active .vl-tb-face { transform: translateY(0px) !important; }
 
   .vl-tb-emoji { font-size: 17px; display: block; line-height: 1; }
@@ -288,13 +318,13 @@ const STYLES = `
   }
   .vl-tb-min { font-family: 'Rajdhani', sans-serif; font-size: 8px; font-weight: 600; color: rgba(255,229,0,0.65); display: block; margin-top: 1px; }
 
-  /* Amount row */
+  /* Amount */
   .vl-amt { display: flex; gap: 7px; }
   .vl-cur {
     display: flex; align-items: center; justify-content: space-between; gap: 4px;
     background: rgba(0,0,0,0.4) !important;
     border: 1px solid rgba(16,255,160,0.2) !important;
-    border-left: 2px solid rgba(16,255,160,0.35) !important;
+    border-left: 2px solid rgba(16,255,160,0.4) !important;
     border-radius: 2px !important; color: #e0fff8 !important;
     font-family: 'Rajdhani', sans-serif !important;
     font-size: 13px !important; font-weight: 700 !important; padding: 0 10px !important;
@@ -308,50 +338,44 @@ const STYLES = `
 
   /* Sub panels */
   .vl-sp { padding: 10px 12px; }
-  .vl-sp-or {
-    background: rgba(255,144,0,0.05); border: 1px solid rgba(255,144,0,0.3);
-    border-left: 2px solid rgba(255,144,0,0.6);
-    box-shadow: 0 0 12px rgba(255,144,0,0.08);
-  }
-  .vl-sp-pu {
-    background: rgba(155,89,255,0.05); border: 1px solid rgba(155,89,255,0.3);
-    border-left: 2px solid rgba(155,89,255,0.6);
-    box-shadow: 0 0 12px rgba(155,89,255,0.08);
-  }
-  .vl-sp-gn {
-    background: rgba(16,255,160,0.04); border: 1px solid rgba(16,255,160,0.25);
-    border-left: 2px solid rgba(16,255,160,0.5);
-    box-shadow: 0 0 12px rgba(16,255,160,0.07);
-  }
+  .vl-sp-or { background: rgba(255,144,0,0.05); border: 1px solid rgba(255,144,0,0.3); border-left: 2px solid rgba(255,144,0,0.6); box-shadow: 0 0 12px rgba(255,144,0,0.08); }
+  .vl-sp-pu { background: rgba(155,89,255,0.05); border: 1px solid rgba(155,89,255,0.3); border-left: 2px solid rgba(155,89,255,0.6); box-shadow: 0 0 12px rgba(155,89,255,0.08); }
+  .vl-sp-gn { background: rgba(16,255,160,0.04); border: 1px solid rgba(16,255,160,0.25); border-left: 2px solid rgba(16,255,160,0.5); box-shadow: 0 0 12px rgba(16,255,160,0.07); }
 
-  /* ═══════════════════════════════════════
-     3D DONATE BUTTON — Valorant clip-path
-  ═══════════════════════════════════════ */
+  /* ═══════════════════════════════════════════
+     3D DONATE BUTTON — no clip-path on wrapper
+     Clip-path only on the .vl-btn face
+  ═══════════════════════════════════════════ */
   .vl-btn-wrap {
-    position: relative; width: 100%; padding-bottom: 6px;
-    clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+    position: relative; width: 100%;
+    padding-bottom: 7px; /* space for the side */
+    border-radius: 4px;
   }
+  /* Side face — plain rect, fully visible */
   .vl-btn-wrap::after {
     content: ''; position: absolute; bottom: 0; left: 0; right: 0;
-    height: calc(100% - 4px); z-index: 1;
-    clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
-    background: linear-gradient(90deg, #005030, #007050, #003020);
+    height: calc(100% - 5px);
+    border-radius: 4px; z-index: 1;
+    background: linear-gradient(90deg, #004d30, #006840, #003820);
+    border: 1px solid rgba(16,255,160,0.25);
   }
   .vl-btn {
     position: relative; z-index: 2;
     width: 100%; padding: 13px; border: none; cursor: pointer;
     font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 700;
-    letter-spacing: .1em; text-transform: uppercase; color: #0a1a14;
+    letter-spacing: .1em; text-transform: uppercase; color: #071a0f;
+    /* Cut-corner on the face only */
     clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
     transition: transform .1s ease, box-shadow .1s ease;
-    transform: translateY(-6px);
+    transform: translateY(-7px);
     background: linear-gradient(135deg, #10ffa0 0%, #00e4aa 50%, #00c890 100%);
     border-top: 1px solid rgba(255,255,255,0.35);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), 0 0 20px rgba(16,255,160,0.45), 0 0 40px rgba(16,255,160,0.18);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 0 20px rgba(16,255,160,0.5), 0 0 40px rgba(16,255,160,0.2);
     overflow: hidden;
   }
   .vl-btn:hover:not(:disabled) {
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 0 30px rgba(16,255,160,0.7), 0 0 60px rgba(16,255,160,0.28);
+    transform: translateY(-9px);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 0 32px rgba(16,255,160,0.75), 0 0 64px rgba(16,255,160,0.3);
   }
   .vl-btn:active:not(:disabled) { transform: translateY(0px) !important; box-shadow: inset 0 2px 6px rgba(0,0,0,0.3), 0 0 14px rgba(16,255,160,0.3) !important; }
   .vl-btn:disabled { opacity: .35; cursor: not-allowed; }
@@ -368,7 +392,7 @@ const STYLES = `
   .vl-fu { animation: vl-fu .2s ease forwards; }
 
   @keyframes vl-sp-a { to{transform:rotate(360deg);} }
-  .vl-spin { width: 14px; height: 14px; border: 2px solid rgba(10,26,20,0.4); border-top-color: #0a1a14; border-radius: 50%; display: inline-block; animation: vl-sp-a .6s linear infinite; }
+  .vl-spin { width: 14px; height: 14px; border: 2px solid rgba(7,26,15,0.4); border-top-color: #071a0f; border-radius: 50%; display: inline-block; animation: vl-sp-a .6s linear infinite; }
 
   @keyframes vl-in { from{opacity:0;transform:scale(0.97);} to{opacity:1;transform:scale(1);} }
   .vl-in { animation: vl-in .4s cubic-bezier(0.22,1,0.36,1) both; }
@@ -400,7 +424,6 @@ const SlideyPlayz = () => {
   };
   const voiceRecorder = useVoiceRecorder(getVoiceDuration(currentAmount));
 
-  /* ── Auto-scale ── */
   const applyScale = useCallback(() => {
     const wrap=wrapRef.current; const card=cardRef.current;
     if (!wrap||!card) return;
@@ -434,12 +457,12 @@ const SlideyPlayz = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!razorpayLoaded||!(window as any).Razorpay) { toast.error("Payment system is still loading. Please wait."); return; }
+    if (!razorpayLoaded||!(window as any).Razorpay) { toast.error("Payment system is still loading."); return; }
     if (!formData.name||!formData.amount) { toast.error("Please fill in all required fields"); return; }
     const amount=parseFloat(formData.amount);
     if (isNaN(amount)||amount<=0) { toast.error("Please enter a valid amount"); return; }
-    const minAmount = donationType==="voice"?pricing.minVoice:donationType==="hypersound"?pricing.minHypersound:donationType==="media"?pricing.minMedia:pricing.minText;
-    if (amount<minAmount) { toast.error(`Minimum amount for ${donationType} is ${currencySymbol}${minAmount}`); return; }
+    const minAmount=donationType==="voice"?pricing.minVoice:donationType==="hypersound"?pricing.minHypersound:donationType==="media"?pricing.minMedia:pricing.minText;
+    if (amount<minAmount) { toast.error(`Minimum for ${donationType} is ${currencySymbol}${minAmount}`); return; }
     if (donationType==="voice"&&!voiceRecorder.audioBlob) { toast.error("Please record a voice message"); return; }
     if (donationType==="hypersound"&&!selectedHypersound) { toast.error("Please select a sound"); return; }
     if (donationType==="media"&&!mediaUrl) { toast.error("Please upload a media file"); return; }
@@ -454,7 +477,7 @@ const SlideyPlayz = () => {
         if (!voiceRecorder.audioBlob||voiceRecorder.audioBlob.size===0) throw new Error("No voice recording found.");
         const voiceDataBase64=await new Promise<string>((resolve,reject)=>{
           const reader=new FileReader();
-          reader.onload=()=>{ const r=reader.result as string; if (!r||!r.includes(",")) { reject(new Error("Failed to read voice data")); return; } resolve(r.split(",")[1]); };
+          reader.onload=()=>{ const r=reader.result as string; if(!r||!r.includes(",")){ reject(new Error("Failed to read voice data")); return; } resolve(r.split(",")[1]); };
           reader.onerror=()=>reject(new Error("Failed to read voice recording"));
           reader.readAsDataURL(voiceRecorder.audioBlob!);
         });
@@ -463,16 +486,16 @@ const SlideyPlayz = () => {
         voiceMessageUrl=up.voice_message_url;
       }
       const {data,error}=await supabase.functions.invoke("create-razorpay-order-unified",{
-        body:{ streamer_slug:'slidey_playz', name:formData.name, amount:parseFloat(formData.amount),
+        body:{streamer_slug:'slidey_playz',name:formData.name,amount:parseFloat(formData.amount),
           message:donationType==="text"?formData.message:null,
-          voiceMessageUrl, hypersoundUrl:donationType==="hypersound"?selectedHypersound:null,
-          mediaUrl:donationType==="media"?mediaUrl:null, mediaType:donationType==="media"?mediaType:null,
-          currency:selectedCurrency }
+          voiceMessageUrl,hypersoundUrl:donationType==="hypersound"?selectedHypersound:null,
+          mediaUrl:donationType==="media"?mediaUrl:null,mediaType:donationType==="media"?mediaType:null,
+          currency:selectedCurrency}
       });
       if (error) throw error;
       const rzp=new (window as any).Razorpay({
-        key:data.razorpay_key_id, amount:data.amount, currency:data.currency,
-        order_id:data.razorpay_order_id, name:"Slidey Playz", description:"Support Slidey Playz",
+        key:data.razorpay_key_id,amount:data.amount,currency:data.currency,
+        order_id:data.razorpay_order_id,name:"Slidey Playz",description:"Support Slidey Playz",
         handler:(response:any)=>navigate(`/status?order_id=${data.orderId}&status=success&st=${data.status_token}`),
         modal:{ondismiss:()=>navigate(`/status?order_id=${data.orderId}&status=pending&st=${data.status_token}`)},
         theme:{color:"#10b981"},
@@ -488,7 +511,7 @@ const SlideyPlayz = () => {
     setDonationType(value);
     if (value==="hypersound") setFormData(p=>({...p,amount:String(pricing.minHypersound),message:""}));
     else if (value==="voice") setFormData(p=>({...p,amount:String(pricing.minVoice),message:""}));
-    else if (value==="media") { setFormData(p=>({...p,amount:String(pricing.minMedia),message:""})); setMediaUrl(null); setMediaType(null); }
+    else if (value==="media"){setFormData(p=>({...p,amount:String(pricing.minMedia),message:""}));setMediaUrl(null);setMediaType(null);}
     else setFormData(p=>({...p,amount:String(pricing.minText),message:""}));
   };
 
@@ -544,7 +567,7 @@ const SlideyPlayz = () => {
                       <button key={t.key} type="button" onClick={()=>handleDonationTypeChange(t.key)} className={cn('vl-tb',t.tc,donationType===t.key?'vl-on':'')}>
                         <div className="vl-tb-face">
                           <span className="vl-tb-emoji">{t.emoji}</span>
-                          <span className="vl-tb-name" style={{color:donationType===t.key?t.nc:'rgba(255,255,255,0.4)',textShadow:donationType===t.key?`0 0 10px ${t.nc}, 0 0 20px ${t.nc}`:'none'}}>{t.label}</span>
+                          <span className="vl-tb-name" style={{color:donationType===t.key?t.nc:'rgba(255,255,255,0.4)',textShadow:donationType===t.key?`0 0 10px ${t.nc},0 0 20px ${t.nc}`:'none'}}>{t.label}</span>
                           <span className="vl-tb-min">{currencySymbol}{t.min}+</span>
                         </div>
                       </button>
@@ -570,7 +593,7 @@ const SlideyPlayz = () => {
                             <CommandEmpty>No currency found.</CommandEmpty>
                             <CommandGroup>
                               {SUPPORTED_CURRENCIES.map(currency=>(
-                                <CommandItem key={currency.code} value={currency.code} onSelect={v=>{ setSelectedCurrency(v.toUpperCase()); setCurrencyOpen(false); }}>
+                                <CommandItem key={currency.code} value={currency.code} onSelect={v=>{setSelectedCurrency(v.toUpperCase());setCurrencyOpen(false);}}>
                                   <Check className={cn("mr-2 h-4 w-4",selectedCurrency===currency.code?"opacity-100":"opacity-0")}/>
                                   {currency.symbol} {currency.code} - {currency.name}
                                 </CommandItem>
@@ -581,8 +604,8 @@ const SlideyPlayz = () => {
                       </PopoverContent>
                     </Popover>
                     <div className="vl-iw" style={{flex:1}}>
-                      <Input id="amount" name="amount" type="number" placeholder="0" value={formData.amount} onChange={handleInputChange}
-                        readOnly={donationType==="hypersound"} required min="1"/>
+                      <Input id="amount" name="amount" type="number" placeholder="0" value={formData.amount}
+                        onChange={handleInputChange} readOnly={donationType==="hypersound"} required min="1"/>
                     </div>
                   </div>
                   {pricing.ttsEnabled&&<p className="vl-hint">⚡ TTS above {currencySymbol}{pricing.minTts}</p>}
@@ -608,13 +631,9 @@ const SlideyPlayz = () => {
                   <div className="vl-fu">
                     <label className="vl-lbl">Voice Message</label>
                     <div className="vl-sp vl-sp-gn">
-                      <EnhancedVoiceRecorder
-                        controller={voiceRecorder}
-                        onRecordingComplete={()=>{}}
-                        maxDurationSeconds={getVoiceDuration(currentAmount)}
-                        brandColor="#10b981"
-                        requiredAmount={pricing.minVoice}
-                        currentAmount={currentAmount}/>
+                      <EnhancedVoiceRecorder controller={voiceRecorder} onRecordingComplete={()=>{}}
+                        maxDurationSeconds={getVoiceDuration(currentAmount)} brandColor="#10b981"
+                        requiredAmount={pricing.minVoice} currentAmount={currentAmount}/>
                     </div>
                   </div>
                 )}
@@ -637,17 +656,16 @@ const SlideyPlayz = () => {
                       <span style={{fontSize:15}}>🖼️</span>
                       <span style={{fontFamily:"'Rajdhani',sans-serif",fontSize:13,fontWeight:700,letterSpacing:'0.1em',color:'var(--v-purple)',textShadow:'0 0 8px var(--v-purple)',textTransform:'uppercase'}}>Media Upload</span>
                     </div>
-                    <MediaUploader
-                      streamerSlug="slidey_playz"
-                      onMediaUploaded={(url,type)=>{ setMediaUrl(url); setMediaType(type); }}
-                      onMediaRemoved={()=>{ setMediaUrl(null); setMediaType(null); }}
+                    <MediaUploader streamerSlug="slidey_playz"
+                      onMediaUploaded={(url,type)=>{setMediaUrl(url);setMediaType(type);}}
+                      onMediaRemoved={()=>{setMediaUrl(null);setMediaType(null);}}
                       maxFileSizeMB={10} maxVideoDurationSeconds={15}/>
                   </div>
                 )}
 
                 <RewardsBanner amount={Number(formData.amount)} currency={selectedCurrency}/>
 
-                {/* 3D Donate — Valorant clip-path button */}
+                {/* 3D Donate */}
                 <div className="vl-btn-wrap">
                   <button type="submit" className="vl-btn" disabled={isProcessingPayment}>
                     {isProcessingPayment?(
