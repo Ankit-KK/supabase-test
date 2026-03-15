@@ -358,12 +358,25 @@ serve(async (req) => {
                   mediaType: donation.media_type, currency: paymentCurrency
                 }
               });
-              if (ttsResponse.error) { console.error('TTS generation failed:', ttsResponse.error); }
-              else {
+              if (ttsResponse.error) {
+                console.error('TTS generation failed:', ttsResponse.error);
+                // Fallback to silent audio so visual alert still shows
+                const SILENT_AUDIO_URL = Deno.env.get('SILENT_AUDIO_URL') || 'https://pub-fff13c27bb0d4a1e807dfc596462b7d5.r2.dev/silence_no_sound.mp3';
+                ttsAudioUrl = SILENT_AUDIO_URL;
+                await supabase.from(tableName).update({ tts_audio_url: SILENT_AUDIO_URL }).eq('id', donation.id);
+                console.log('[Webhook] TTS failed, using silent audio fallback for visual alert');
+              } else {
                 ttsAudioUrl = ttsResponse.data?.audioUrl || ttsAudioUrl;
                 console.log('TTS generated successfully:', ttsAudioUrl);
               }
-            } catch (ttsError) { console.error('TTS generation error:', ttsError); }
+            } catch (ttsError) {
+              console.error('TTS generation error:', ttsError);
+              // Fallback to silent audio so visual alert still shows
+              const SILENT_AUDIO_URL = Deno.env.get('SILENT_AUDIO_URL') || 'https://pub-fff13c27bb0d4a1e807dfc596462b7d5.r2.dev/silence_no_sound.mp3';
+              ttsAudioUrl = SILENT_AUDIO_URL;
+              await supabase.from(tableName).update({ tts_audio_url: SILENT_AUDIO_URL }).eq('id', donation.id);
+              console.log('[Webhook] TTS error, using silent audio fallback for visual alert');
+            }
           } else if (isTextDonation) {
             const SILENT_AUDIO_URL = Deno.env.get('SILENT_AUDIO_URL') || 'https://pub-fff13c27bb0d4a1e807dfc596462b7d5.r2.dev/silence_no_sound.mp3';
             await supabase.from(tableName).update({ tts_audio_url: SILENT_AUDIO_URL }).eq('id', donation.id);
