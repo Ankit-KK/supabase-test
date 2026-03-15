@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -34,14 +34,13 @@ const STYLES = `
 
   .v-root { font-family: 'Nunito', sans-serif; }
 
-  /* ── Full-viewport layout ── */
+  /* Page: full viewport, centers the card */
   .v-page {
-    width: 100%;
+    width: 100vw;
     height: 100dvh;
-    min-height: 100dvh;
     background: var(--bg);
     display: flex;
-    align-items: stretch;
+    align-items: center;
     justify-content: center;
     overflow: hidden;
     position: relative;
@@ -55,25 +54,38 @@ const STYLES = `
       radial-gradient(ellipse 50% 40% at 50% 50%, rgba(0,238,255,0.07) 0%, transparent 60%);
   }
 
-  /* ── Card fills full height, max 460px wide, centered ── */
+  /*
+    The scale wrapper:
+    - Natural width = 420px, natural height determined by content (~680px)
+    - We set a JS-computed --scale CSS variable on it
+    - transform-origin: top center so it scales from the top
+  */
+  .v-scale-wrap {
+    width: 420px;
+    transform-origin: top center;
+    /* transform: scale(var(--scale, 1)) applied inline */
+    position: relative;
+    z-index: 10;
+  }
+
+  /* Card: fixed design, no dynamic sizing */
   .v-card {
-    width: 100%;
-    max-width: 460px;
-    height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    position: relative; z-index: 10;
+    width: 420px;
     background: var(--card);
-    border-left: 1px solid rgba(255,0,153,0.2);
-    border-right: 1px solid rgba(255,0,153,0.2);
+    border-radius: 20px;
+    border: 1px solid rgba(255,0,153,0.3);
+    box-shadow:
+      0 0 0 1px rgba(170,0,255,0.15),
+      0 0 25px rgba(255,0,153,0.2),
+      0 0 60px rgba(170,0,255,0.12),
+      0 30px 80px rgba(0,0,0,0.7);
     overflow: hidden;
   }
 
-  /* ── HERO: compact horizontal strip ── */
+  /* ── HERO ── */
   .v-hero {
-    flex-shrink: 0;
     position: relative;
-    padding: 10px 16px 10px;
+    padding: 14px 18px 12px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -91,53 +103,30 @@ const STYLES = `
     box-shadow: 0 0 8px var(--hot-pink), 0 0 16px rgba(255,0,153,0.4);
   }
   @keyframes v-shift { 0%{background-position:0%} 100%{background-position:200%} }
-
   .v-hero-blob { position:absolute; top:-30px; right:-30px; width:120px; height:120px; border-radius:50%; background:radial-gradient(circle, rgba(255,0,153,0.25) 0%, transparent 65%); pointer-events:none; }
 
   @keyframes v-flicker {
     0%,18%,20%,22%,52%,54%,64%,100% { text-shadow: 0 0 4px #fff, 0 0 10px #fff, 0 0 20px var(--hot-pink), 0 0 40px var(--hot-pink), 0 0 70px var(--hot-pink); }
     19%,21%,53%,63% { text-shadow:none; opacity:0.75; }
   }
-  .v-name {
-    font-family:'Pacifico',cursive; font-size:32px; color:#fff; line-height:1;
-    animation: v-flicker 9s infinite; position:relative; z-index:1;
-  }
+  .v-name { font-family:'Pacifico',cursive; font-size:34px; color:#fff; line-height:1; animation:v-flicker 9s infinite; position:relative; z-index:1; }
   .v-hero-sub { font-size:10px; font-weight:700; color:rgba(255,255,255,0.4); margin-top:2px; position:relative; z-index:1; }
 
   @keyframes v-pulse { 0%,100%{box-shadow:0 0 5px var(--green);} 50%{box-shadow:none;} }
-  .v-live {
-    display:inline-flex; align-items:center; gap:5px;
-    background:rgba(0,255,136,0.1); border:1.5px solid rgba(0,255,136,0.4);
-    border-radius:20px; padding:3px 10px; flex-shrink:0; position:relative; z-index:1;
-  }
+  .v-live { display:inline-flex; align-items:center; gap:5px; background:rgba(0,255,136,0.1); border:1.5px solid rgba(0,255,136,0.4); border-radius:20px; padding:3px 10px; flex-shrink:0; position:relative; z-index:1; }
   .v-live-dot { width:6px; height:6px; border-radius:50%; background:var(--green); animation:v-pulse 1.5s ease-in-out infinite; }
 
-  /* ── Form: fills remaining space ── */
-  .v-form-wrap {
-    flex: 1;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
+  /* ── Form body ── */
+  .v-body { padding: 14px 18px 16px; display:flex; flex-direction:column; gap:11px; }
 
-  .v-body {
-    flex: 1;
-    padding: 12px 16px 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    overflow: hidden;
-  }
-
-  /* ── Labels ── */
   .v-lbl { font-size:10px; font-weight:900; letter-spacing:0.1em; text-transform:uppercase; display:block; margin-bottom:5px; color:rgba(255,255,255,0.45); }
 
-  /* ── Inputs ── */
+  /* Inputs */
   .v-iw input {
     width:100% !important; background:rgba(255,255,255,0.05) !important;
     border:1.5px solid rgba(255,255,255,0.12) !important; border-radius:8px !important;
     color:#fff !important; font-family:'Nunito',sans-serif !important;
-    font-size:14px !important; font-weight:700 !important; padding:7px 12px !important;
+    font-size:14px !important; font-weight:700 !important; padding:8px 12px !important;
     outline:none !important; transition:all .2s !important; caret-color:var(--cyan);
   }
   .v-iw input:focus { border-color:var(--cyan) !important; background:rgba(0,238,255,0.06) !important; box-shadow:0 0 0 2px rgba(0,238,255,0.15),0 0 14px rgba(0,238,255,0.12) !important; }
@@ -147,69 +136,49 @@ const STYLES = `
   .v-ta {
     width:100%; background:rgba(255,255,255,0.05); border:1.5px solid rgba(255,255,255,0.12);
     border-radius:8px; color:#fff; font-family:'Nunito',sans-serif; font-size:13px; font-weight:700;
-    padding:7px 12px; resize:none; outline:none; line-height:1.5; caret-color:var(--cyan); transition:all .2s;
+    padding:8px 12px; resize:none; outline:none; line-height:1.5; caret-color:var(--cyan); transition:all .2s;
   }
   .v-ta:focus { border-color:var(--cyan); background:rgba(0,238,255,0.06); box-shadow:0 0 0 2px rgba(0,238,255,0.15),0 0 14px rgba(0,238,255,0.12); }
   .v-ta::placeholder { color:rgba(255,255,255,0.22); }
 
-  .v-cbar { height:2px; margin-top:3px; background:rgba(255,255,255,0.07); border-radius:2px; overflow:hidden; }
+  .v-cbar { height:2px; margin-top:4px; background:rgba(255,255,255,0.07); border-radius:2px; overflow:hidden; }
   .v-cbar-fill { height:100%; border-radius:2px; transition:width .12s,background .2s; }
 
-  /* ══════════════════════════════════
-     3D ARCADE TYPE BUTTONS — compact
-  ══════════════════════════════════ */
-  .v-types { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; padding-bottom:6px; }
+  /* ══════════════════════
+     3D TYPE BUTTONS
+  ══════════════════════ */
+  .v-types { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; padding-bottom:6px; }
 
-  .v-tb {
-    position:relative; padding:0; border:none; background:none;
-    cursor:pointer; outline:none; border-radius:10px; display:block; width:100%;
-  }
+  .v-tb { position:relative; padding:0; border:none; background:none; cursor:pointer; outline:none; border-radius:10px; display:block; width:100%; }
 
-  /* Top face */
-  .v-tb-face {
-    position:relative; z-index:2;
-    padding:8px 3px 7px; border-radius:10px; text-align:center;
-    transition:transform .1s ease, box-shadow .1s ease;
-    transform:translateY(-5px);
-  }
+  .v-tb-face { position:relative; z-index:2; padding:10px 4px 9px; border-radius:10px; text-align:center; transition:transform .1s ease, box-shadow .1s ease; transform:translateY(-5px); }
 
-  /* Side face */
-  .v-tb::after {
-    content:''; position:absolute; bottom:0; left:0; right:0;
-    height:calc(100% - 3px); border-radius:10px; z-index:1;
-    transition:height .1s ease;
-  }
+  .v-tb::after { content:''; position:absolute; bottom:0; left:0; right:0; height:calc(100% - 3px); border-radius:10px; z-index:1; }
 
-  /* CYAN */
   .v-tb-cy .v-tb-face { background:linear-gradient(160deg,rgba(0,238,255,0.2),rgba(0,100,140,0.5)); border:1.5px solid rgba(0,238,255,0.65); box-shadow:inset 0 1px 0 rgba(255,255,255,0.2),0 0 10px rgba(0,238,255,0.2); }
   .v-tb-cy::after { background:#005566; border:1.5px solid rgba(0,238,255,0.35); }
   .v-tb-cy:hover .v-tb-face { box-shadow:inset 0 1px 0 rgba(255,255,255,0.25),0 0 18px rgba(0,238,255,0.5); }
 
-  /* PINK */
   .v-tb-pk .v-tb-face { background:linear-gradient(160deg,rgba(255,0,153,0.22),rgba(140,0,80,0.5)); border:1.5px solid rgba(255,0,153,0.65); box-shadow:inset 0 1px 0 rgba(255,255,255,0.2),0 0 10px rgba(255,0,153,0.2); }
   .v-tb-pk::after { background:#700038; border:1.5px solid rgba(255,0,153,0.35); }
   .v-tb-pk:hover .v-tb-face { box-shadow:inset 0 1px 0 rgba(255,255,255,0.25),0 0 18px rgba(255,0,153,0.5); }
 
-  /* ORANGE */
   .v-tb-or .v-tb-face { background:linear-gradient(160deg,rgba(255,102,0,0.22),rgba(140,50,0,0.5)); border:1.5px solid rgba(255,102,0,0.65); box-shadow:inset 0 1px 0 rgba(255,255,255,0.2),0 0 10px rgba(255,102,0,0.2); }
   .v-tb-or::after { background:#6a2800; border:1.5px solid rgba(255,102,0,0.35); }
   .v-tb-or:hover .v-tb-face { box-shadow:inset 0 1px 0 rgba(255,255,255,0.25),0 0 18px rgba(255,102,0,0.5); }
 
-  /* PURPLE */
   .v-tb-pu .v-tb-face { background:linear-gradient(160deg,rgba(170,0,255,0.22),rgba(90,0,140,0.5)); border:1.5px solid rgba(170,0,255,0.65); box-shadow:inset 0 1px 0 rgba(255,255,255,0.2),0 0 10px rgba(170,0,255,0.2); }
   .v-tb-pu::after { background:#460070; border:1.5px solid rgba(170,0,255,0.35); }
   .v-tb-pu:hover .v-tb-face { box-shadow:inset 0 1px 0 rgba(255,255,255,0.25),0 0 18px rgba(170,0,255,0.5); }
 
-  /* Active press */
   .v-tb:active .v-tb-face { transform:translateY(0px) !important; }
 
-  /* Selected = pressed in + glowing */
   .v-tb-cy.v-on .v-tb-face { transform:translateY(0); background:linear-gradient(160deg,rgba(0,238,255,0.32),rgba(0,150,180,0.55)); border-color:var(--cyan); box-shadow:inset 0 2px 5px rgba(0,0,0,0.3),0 0 18px rgba(0,238,255,0.7),0 0 32px rgba(0,238,255,0.25),inset 0 0 12px rgba(0,238,255,0.12); }
   .v-tb-pk.v-on .v-tb-face { transform:translateY(0); background:linear-gradient(160deg,rgba(255,0,153,0.32),rgba(180,0,100,0.55)); border-color:var(--hot-pink); box-shadow:inset 0 2px 5px rgba(0,0,0,0.3),0 0 18px rgba(255,0,153,0.7),0 0 32px rgba(255,0,153,0.25),inset 0 0 12px rgba(255,0,153,0.12); }
   .v-tb-or.v-on .v-tb-face { transform:translateY(0); background:linear-gradient(160deg,rgba(255,102,0,0.32),rgba(180,70,0,0.55)); border-color:var(--orange); box-shadow:inset 0 2px 5px rgba(0,0,0,0.3),0 0 18px rgba(255,102,0,0.7),0 0 32px rgba(255,102,0,0.25),inset 0 0 12px rgba(255,102,0,0.12); }
   .v-tb-pu.v-on .v-tb-face { transform:translateY(0); background:linear-gradient(160deg,rgba(170,0,255,0.32),rgba(120,0,180,0.55)); border-color:var(--purple); box-shadow:inset 0 2px 5px rgba(0,0,0,0.3),0 0 18px rgba(170,0,255,0.7),0 0 32px rgba(170,0,255,0.25),inset 0 0 12px rgba(170,0,255,0.12); }
 
-  .v-tb-emoji { font-size:17px; display:block; line-height:1; }
+  .v-tb-emoji { font-size:18px; display:block; line-height:1; }
   .v-tb-name  { font-size:9px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; display:block; margin-top:4px; transition:color .15s, text-shadow .15s; }
   .v-tb-min   { font-size:7px; font-weight:700; color:rgba(255,228,0,0.7); display:block; margin-top:1px; }
 
@@ -220,50 +189,34 @@ const STYLES = `
     background:rgba(255,255,255,0.05) !important; border:1.5px solid rgba(255,255,255,0.12) !important;
     border-radius:8px !important; color:#fff !important; font-family:'Nunito',sans-serif !important;
     font-size:12px !important; font-weight:800 !important; padding:0 10px !important;
-    min-width:84px; height:36px; cursor:pointer; transition:all .2s; flex-shrink:0;
+    min-width:84px; height:38px; cursor:pointer; transition:all .2s; flex-shrink:0;
   }
   .v-cur:hover { border-color:var(--cyan) !important; box-shadow:0 0 10px rgba(0,238,255,0.2) !important; }
 
-  .v-div { height:1px; background:linear-gradient(90deg,transparent,rgba(255,0,153,0.3),rgba(0,238,255,0.25),transparent); flex-shrink:0; }
+  .v-div { height:1px; background:linear-gradient(90deg,transparent,rgba(255,0,153,0.3),rgba(0,238,255,0.25),transparent); }
 
-  /* Sub panels */
   .v-sp { border-radius:10px; padding:10px 12px; }
   .v-sp-or { background:rgba(255,102,0,0.07); border:1.5px solid rgba(255,102,0,0.4); box-shadow:0 0 14px rgba(255,102,0,0.1); }
   .v-sp-pu { background:rgba(170,0,255,0.07); border:1.5px solid rgba(170,0,255,0.4); box-shadow:0 0 14px rgba(170,0,255,0.1); }
 
-  /* ══════════════════════════════
-     3D DONATE BUTTON — full width
-  ══════════════════════════════ */
-  .v-btn-wrap {
-    position:relative; width:100%; border-radius:12px; flex-shrink:0;
-    padding-bottom:6px; /* space for the 3D side */
-  }
-  .v-btn-wrap::after {
-    content:''; position:absolute; bottom:0; left:0; right:0;
-    height:calc(100% - 4px); border-radius:12px; z-index:1;
-    background:linear-gradient(90deg,#7700aa,#aa0055,#aa3300);
-  }
+  /* ══════════════════════
+     3D DONATE BUTTON
+  ══════════════════════ */
+  .v-btn-wrap { position:relative; width:100%; border-radius:12px; padding-bottom:6px; }
+  .v-btn-wrap::after { content:''; position:absolute; bottom:0; left:0; right:0; height:calc(100% - 4px); border-radius:12px; z-index:1; background:linear-gradient(90deg,#7700aa,#aa0055,#aa3300); }
   .v-btn {
-    position:relative; z-index:2;
-    width:100%; padding:12px; border:none; cursor:pointer;
-    font-family:'Nunito',sans-serif; font-size:15px; font-weight:900;
-    letter-spacing:.04em; color:#fff; border-radius:12px;
-    transition:transform .1s ease, box-shadow .1s ease;
-    transform:translateY(-6px);
+    position:relative; z-index:2; width:100%; padding:13px; border:none; cursor:pointer;
+    font-family:'Nunito',sans-serif; font-size:15px; font-weight:900; letter-spacing:.04em; color:#fff;
+    border-radius:12px; transition:transform .1s ease, box-shadow .1s ease; transform:translateY(-6px);
     background:linear-gradient(135deg,#cc00ff 0%,#ff0099 50%,#ff6600 100%);
-    border-top:1.5px solid rgba(255,255,255,0.3);
-    border-left:1.5px solid rgba(255,255,255,0.15);
+    border-top:1.5px solid rgba(255,255,255,0.3); border-left:1.5px solid rgba(255,255,255,0.15);
     box-shadow:inset 0 1px 0 rgba(255,255,255,0.2),0 0 18px rgba(255,0,153,0.4),0 0 36px rgba(170,0,255,0.15);
     overflow:hidden;
   }
   .v-btn:hover:not(:disabled) { box-shadow:inset 0 1px 0 rgba(255,255,255,0.25),0 0 26px rgba(255,0,153,0.65),0 0 50px rgba(170,0,255,0.25); }
   .v-btn:active:not(:disabled) { transform:translateY(0px) !important; box-shadow:inset 0 2px 8px rgba(0,0,0,0.4),0 0 14px rgba(255,0,153,0.3) !important; }
   .v-btn:disabled { opacity:.38; cursor:not-allowed; }
-  .v-btn::before {
-    content:''; position:absolute; top:0; left:-110%; width:55%; height:100%;
-    background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);
-    transform:skewX(-20deg); transition:left .5s;
-  }
+  .v-btn::before { content:''; position:absolute; top:0; left:-110%; width:55%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent); transform:skewX(-20deg); transition:left .5s; }
   .v-btn:hover:not(:disabled)::before { left:160%; }
 
   .v-hint { font-size:10px; font-weight:700; color:rgba(0,238,255,0.55); margin-top:3px; }
@@ -280,20 +233,14 @@ const STYLES = `
 
   @keyframes v-in { from{opacity:0;transform:scale(0.97);} to{opacity:1;transform:scale(1);} }
   .v-in { animation:v-in .4s cubic-bezier(0.22,1,0.36,1) both; }
-
-  /* Footer strip at bottom */
-  .v-footer-strip {
-    flex-shrink: 0;
-    padding: 6px 16px 8px;
-    border-top: 1px solid rgba(255,255,255,0.05);
-    background: rgba(0,0,0,0.2);
-  }
 `;
 
 const Ankit = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const mobileVideoRef = useRef<HTMLVideoElement>(null);
+  const cardRef   = useRef<HTMLDivElement>(null);
+  const wrapRef   = useRef<HTMLDivElement>(null);
 
   const [formData, setFormData] = useState({ name:'', amount:'', message:'', currency:'INR' });
   const [isProcessing, setIsProcessing] = useState(false);
@@ -310,6 +257,42 @@ const Ankit = () => {
   const [selectedSound, setSelectedSound] = useState<string|null>(null);
 
   const { pricing } = useStreamerPricing('ankit', formData.currency);
+
+  // ── Auto-scale: fit card to viewport ──
+  const applyScale = useCallback(() => {
+    const wrap = wrapRef.current;
+    const card = cardRef.current;
+    if (!wrap || !card) return;
+
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    // Card natural size: 420px wide
+    const cardNaturalW = 420;
+    const cardNaturalH = card.scrollHeight;
+
+    // Scale to fit width (with 16px padding each side) AND height (with 24px padding each side)
+    const scaleW = Math.min(1, (vw - 32) / cardNaturalW);
+    const scaleH = cardNaturalH > 0 ? Math.min(1, (vh - 48) / cardNaturalH) : 1;
+    const scale  = Math.min(scaleW, scaleH);
+
+    wrap.style.transform = `scale(${scale})`;
+    // Compensate the wrapper height so the page doesn't overflow
+    wrap.style.height = `${cardNaturalH * scale}px`;
+  }, []);
+
+  useEffect(() => {
+    // Small delay to let fonts & layout settle
+    const t = setTimeout(applyScale, 80);
+    window.addEventListener('resize', applyScale);
+    return () => { clearTimeout(t); window.removeEventListener('resize', applyScale); };
+  }, [applyScale]);
+
+  // Re-scale when donation type changes (content height changes)
+  useEffect(() => {
+    const t = setTimeout(applyScale, 60);
+    return () => clearTimeout(t);
+  }, [donationType, applyScale]);
 
   useEffect(() => {
     const video = mobileVideoRef.current;
@@ -404,6 +387,7 @@ const Ankit = () => {
     setSelectedImage(file); setImagePreview(URL.createObjectURL(file));
   };
   const handleRemoveImage=()=>{ setSelectedImage(null); if (imagePreview) URL.revokeObjectURL(imagePreview); setImagePreview(null); };
+
   const handleDonationTypeChange=(type:'message'|'voice'|'hypersound'|'image')=>{
     setDonationType(type);
     const mins={message:pricing.minText,voice:pricing.minVoice,hypersound:pricing.minHypersound,image:pricing.minMedia};
@@ -440,174 +424,171 @@ const Ankit = () => {
             <div style={{position:'fixed',inset:0,background:'rgba(13,0,21,0.82)',pointerEvents:'none',zIndex:1}}/></>
         )}
 
-        <div className="v-card v-in">
+        {/* Scale wrapper — JS sets transform: scale() on this */}
+        <div ref={wrapRef} className="v-scale-wrap" style={{transformOrigin:'top center'}}>
+          <div ref={cardRef} className="v-card v-in">
 
-          {/* ── COMPACT HERO ── */}
-          <div className="v-hero">
-            <div className="v-hero-blob"/>
-            <div>
-              <div className="v-name">Ankit</div>
-              <div className="v-hero-sub">Send a message live on stream ✦</div>
+            {/* HERO */}
+            <div className="v-hero">
+              <div className="v-hero-blob"/>
+              <div>
+                <div className="v-name">Ankit</div>
+                <div className="v-hero-sub">Send a message live on stream ✦</div>
+              </div>
+              <div className="v-live">
+                <div className="v-live-dot"/>
+                <span style={{fontSize:10,fontWeight:800,color:'var(--green)',letterSpacing:'0.05em',textShadow:'0 0 6px var(--green)'}}>Live</span>
+              </div>
             </div>
-            <div className="v-live">
-              <div className="v-live-dot"/>
-              <span style={{fontSize:10,fontWeight:800,color:'var(--green)',letterSpacing:'0.05em',textShadow:'0 0 6px var(--green)'}}>Live</span>
-            </div>
-          </div>
 
-          {/* ── FORM (fills remaining height) ── */}
-          <form onSubmit={handleSubmit} className="v-form-wrap">
-            <div className="v-body">
+            {/* FORM */}
+            <form onSubmit={handleSubmit}>
+              <div className="v-body">
 
-              {/* Name */}
-              <div>
-                <label className="v-lbl">Your Name</label>
-                <div className="v-iw"><Input id="name" name="name" value={formData.name} onChange={handleInputChange} placeholder="Enter your name" required/></div>
-              </div>
-
-              {/* 3D Type buttons */}
-              <div>
-                <label className="v-lbl">Donation Type</label>
-                <div className="v-types">
-                  {TYPES.map(t=>(
-                    <button key={t.key} type="button" onClick={()=>handleDonationTypeChange(t.key)} className={cn('v-tb',t.tc,donationType===t.key?'v-on':'')}>
-                      <div className="v-tb-face">
-                        <span className="v-tb-emoji">{t.emoji}</span>
-                        <span className="v-tb-name" style={{color:donationType===t.key?t.nc:'rgba(255,255,255,0.5)',textShadow:donationType===t.key?`0 0 10px ${t.nc},0 0 20px ${t.nc}`:'none'}}>{t.label}</span>
-                        <span className="v-tb-min">{sym}{t.min}+</span>
-                      </div>
-                    </button>
-                  ))}
+                {/* Name */}
+                <div>
+                  <label className="v-lbl">Your Name</label>
+                  <div className="v-iw"><Input id="name" name="name" value={formData.name} onChange={handleInputChange} placeholder="Enter your name" required/></div>
                 </div>
-              </div>
 
-              {/* Amount */}
-              <div>
-                <label className="v-lbl">Amount</label>
-                <div className="v-amt">
-                  <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
-                    <PopoverTrigger asChild>
-                      <button type="button" className="v-cur">
-                        <span>{sym} {formData.currency}</span>
-                        <ChevronsUpDown style={{width:11,height:11,opacity:0.4,marginLeft:'auto',flexShrink:0}}/>
+                {/* 3D Type buttons */}
+                <div>
+                  <label className="v-lbl">Donation Type</label>
+                  <div className="v-types">
+                    {TYPES.map(t=>(
+                      <button key={t.key} type="button" onClick={()=>handleDonationTypeChange(t.key)} className={cn('v-tb',t.tc,donationType===t.key?'v-on':'')}>
+                        <div className="v-tb-face">
+                          <span className="v-tb-emoji">{t.emoji}</span>
+                          <span className="v-tb-name" style={{color:donationType===t.key?t.nc:'rgba(255,255,255,0.5)',textShadow:donationType===t.key?`0 0 10px ${t.nc},0 0 20px ${t.nc}`:'none'}}>{t.label}</span>
+                          <span className="v-tb-min">{sym}{t.min}+</span>
+                        </div>
                       </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[220px] p-0" align="start">
-                      <Command>
-                        <CommandInput placeholder="Search currency..."/>
-                        <CommandList>
-                          <CommandEmpty>No currency found.</CommandEmpty>
-                          <CommandGroup>
-                            {SUPPORTED_CURRENCIES.map(c=>(
-                              <CommandItem key={c.code} value={`${c.code} ${c.name}`} onSelect={()=>{ setFormData(p=>({...p,currency:c.code})); setCurrencyOpen(false); }}>
-                                <Check className={cn("mr-2 h-4 w-4",formData.currency===c.code?"opacity-100":"opacity-0")}/>
-                                {c.symbol} {c.code} — {c.name}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  <div className="v-iw" style={{flex:1}}>
-                    <Input id="amount" name="amount" type="number" value={formData.amount} onChange={handleInputChange}
-                      min="1" max="100000" placeholder="0" disabled={isAmountLocked||donationType==='hypersound'} required/>
+                    ))}
                   </div>
                 </div>
-                {isAmountLocked&&<p className="v-lock">🔒 Locked during recording</p>}
-                {donationType==='message'&&pricing.ttsEnabled&&<p className="v-hint">⚡ TTS above {sym}{pricing.minTts}</p>}
-                {donationType==='voice'&&currentAmount>=pricing.minVoice&&<p className="v-hint">⏱ {getVoiceDuration(currentAmount)}s{formData.currency==='INR'&&currentAmount<200?' · ₹200+ for 20s':''}</p>}
-              </div>
 
-              <div className="v-div"/>
-
-              {/* Dynamic section */}
-              {donationType==='message'&&(
-                <div className="v-fu">
-                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}}>
-                    <label className="v-lbl" style={{margin:0}}>Message</label>
-                    <span style={{fontSize:10,fontWeight:800,color:charClr,textShadow:`0 0 6px ${charClr}`}}>{formData.message.length}/{charLimit}</span>
-                  </div>
-                  <textarea id="message" name="message" value={formData.message} onChange={handleInputChange}
-                    placeholder="Type your message..." className="v-ta" rows={2} maxLength={charLimit} required/>
-                  <div className="v-cbar"><div className="v-cbar-fill" style={{width:`${charPct}%`,background:charClr,boxShadow:`0 0 6px ${charClr}`}}/></div>
-                </div>
-              )}
-
-              {donationType==='voice'&&(
-                <div className="v-fu">
-                  <label className="v-lbl">Voice Message</label>
-                  <VoiceRecorder onRecordingComplete={(has,dur)=>{ setHasVoiceRecording(has); setVoiceDuration(dur); }}
-                    maxDurationSeconds={maxVoiceDuration} controller={voiceRecorder} requiredAmount={150} currentAmount={currentAmount}/>
-                </div>
-              )}
-
-              {donationType==='hypersound'&&(
-                <div className="v-fu v-sp v-sp-or">
-                  <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
-                    <Volume2 style={{width:14,height:14,color:'var(--orange)',filter:'drop-shadow(0 0 5px var(--orange))'}}/>
-                    <span style={{fontSize:13,fontWeight:900,color:'var(--orange)',textShadow:'0 0 8px var(--orange)'}}>HyperSounds</span>
-                  </div>
-                  <HyperSoundSelector selectedSound={selectedSound} onSoundSelect={setSelectedSound}/>
-                </div>
-              )}
-
-              {donationType==='image'&&(
-                <div className="v-fu v-sp v-sp-pu">
-                  <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
-                    <Image style={{width:14,height:14,color:'var(--purple)',filter:'drop-shadow(0 0 5px var(--purple))'}}/>
-                    <span style={{fontSize:13,fontWeight:900,color:'var(--purple)',textShadow:'0 0 8px var(--purple)'}}>Image Upload</span>
-                    <span style={{fontSize:8,fontWeight:800,color:'var(--yellow)',border:'1.5px solid rgba(255,228,0,0.3)',borderRadius:20,padding:'1px 6px',marginLeft:4}}>DEMO</span>
-                  </div>
-                  {!imagePreview?(
-                    <label style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:70,border:'1.5px dashed rgba(170,0,255,0.4)',borderRadius:10,cursor:'pointer',background:'rgba(170,0,255,0.03)'}}>
-                      <Image style={{width:18,height:18,color:'rgba(170,0,255,0.6)',marginBottom:4}}/>
-                      <span style={{fontSize:11,fontWeight:800,color:'rgba(170,0,255,0.7)'}}>Click to upload</span>
-                      <span style={{fontSize:9,fontWeight:600,color:'rgba(255,255,255,0.28)',marginTop:1}}>PNG, JPG · max 5MB</span>
-                      <input type="file" style={{display:'none'}} accept="image/*" onChange={handleImageSelect}/>
-                    </label>
-                  ):(
-                    <div style={{position:'relative'}}>
-                      <img src={imagePreview} alt="Preview" style={{width:'100%',height:70,objectFit:'cover',borderRadius:8,display:'block'}}/>
-                      <button type="button" onClick={handleRemoveImage} style={{position:'absolute',top:5,right:5,background:'rgba(255,0,153,0.9)',border:'none',borderRadius:'50%',width:22,height:22,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
-                        <X style={{width:12,height:12,color:'#fff'}}/>
-                      </button>
+                {/* Amount */}
+                <div>
+                  <label className="v-lbl">Amount</label>
+                  <div className="v-amt">
+                    <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
+                      <PopoverTrigger asChild>
+                        <button type="button" className="v-cur">
+                          <span>{sym} {formData.currency}</span>
+                          <ChevronsUpDown style={{width:11,height:11,opacity:0.4,marginLeft:'auto',flexShrink:0}}/>
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[220px] p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search currency..."/>
+                          <CommandList>
+                            <CommandEmpty>No currency found.</CommandEmpty>
+                            <CommandGroup>
+                              {SUPPORTED_CURRENCIES.map(c=>(
+                                <CommandItem key={c.code} value={`${c.code} ${c.name}`} onSelect={()=>{ setFormData(p=>({...p,currency:c.code})); setCurrencyOpen(false); }}>
+                                  <Check className={cn("mr-2 h-4 w-4",formData.currency===c.code?"opacity-100":"opacity-0")}/>
+                                  {c.symbol} {c.code} — {c.name}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    <div className="v-iw" style={{flex:1}}>
+                      <Input id="amount" name="amount" type="number" value={formData.amount} onChange={handleInputChange}
+                        min="1" max="100000" placeholder="0" disabled={isAmountLocked||donationType==='hypersound'} required/>
                     </div>
-                  )}
+                  </div>
+                  {isAmountLocked&&<p className="v-lock">🔒 Locked during recording</p>}
+                  {donationType==='message'&&pricing.ttsEnabled&&<p className="v-hint">⚡ TTS above {sym}{pricing.minTts}</p>}
+                  {donationType==='voice'&&currentAmount>=pricing.minVoice&&<p className="v-hint">⏱ {getVoiceDuration(currentAmount)}s{formData.currency==='INR'&&currentAmount<200?' · ₹200+ for 20s':''}</p>}
                 </div>
-              )}
 
-              {/* Rewards — compact */}
-              <RewardsBanner amount={currentAmount} currency={formData.currency}/>
+                <div className="v-div"/>
 
-              {/* 3D Donate */}
-              <div className="v-btn-wrap">
-                <button type="submit" className="v-btn" disabled={isProcessing||!razorpayLoaded}>
-                  {isProcessing||!razorpayLoaded?(
-                    <span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:9}}>
-                      <span className="v-spin"/>
-                      {isProcessing?'Processing...':'Loading...'}
-                    </span>
-                  ):(
-                    <span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:9}}>
-                      <Heart style={{width:15,height:15}}/>
-                      Donate {sym}{formData.amount||'0'}
-                    </span>
-                  )}
-                </button>
+                {donationType==='message'&&(
+                  <div className="v-fu">
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}}>
+                      <label className="v-lbl" style={{margin:0}}>Message</label>
+                      <span style={{fontSize:10,fontWeight:800,color:charClr,textShadow:`0 0 6px ${charClr}`}}>{formData.message.length}/{charLimit}</span>
+                    </div>
+                    <textarea id="message" name="message" value={formData.message} onChange={handleInputChange}
+                      placeholder="Type your message..." className="v-ta" rows={2} maxLength={charLimit} required/>
+                    <div className="v-cbar"><div className="v-cbar-fill" style={{width:`${charPct}%`,background:charClr,boxShadow:`0 0 6px ${charClr}`}}/></div>
+                  </div>
+                )}
+
+                {donationType==='voice'&&(
+                  <div className="v-fu">
+                    <label className="v-lbl">Voice Message</label>
+                    <VoiceRecorder onRecordingComplete={(has,dur)=>{ setHasVoiceRecording(has); setVoiceDuration(dur); }}
+                      maxDurationSeconds={maxVoiceDuration} controller={voiceRecorder} requiredAmount={150} currentAmount={currentAmount}/>
+                  </div>
+                )}
+
+                {donationType==='hypersound'&&(
+                  <div className="v-fu v-sp v-sp-or">
+                    <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+                      <Volume2 style={{width:14,height:14,color:'var(--orange)',filter:'drop-shadow(0 0 5px var(--orange))'}}/>
+                      <span style={{fontSize:13,fontWeight:900,color:'var(--orange)',textShadow:'0 0 8px var(--orange)'}}>HyperSounds</span>
+                    </div>
+                    <HyperSoundSelector selectedSound={selectedSound} onSoundSelect={setSelectedSound}/>
+                  </div>
+                )}
+
+                {donationType==='image'&&(
+                  <div className="v-fu v-sp v-sp-pu">
+                    <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+                      <Image style={{width:14,height:14,color:'var(--purple)',filter:'drop-shadow(0 0 5px var(--purple))'}}/>
+                      <span style={{fontSize:13,fontWeight:900,color:'var(--purple)',textShadow:'0 0 8px var(--purple)'}}>Image Upload</span>
+                      <span style={{fontSize:8,fontWeight:800,color:'var(--yellow)',border:'1.5px solid rgba(255,228,0,0.3)',borderRadius:20,padding:'1px 6px',marginLeft:4}}>DEMO</span>
+                    </div>
+                    {!imagePreview?(
+                      <label style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:70,border:'1.5px dashed rgba(170,0,255,0.4)',borderRadius:10,cursor:'pointer',background:'rgba(170,0,255,0.03)'}}>
+                        <Image style={{width:18,height:18,color:'rgba(170,0,255,0.6)',marginBottom:4}}/>
+                        <span style={{fontSize:11,fontWeight:800,color:'rgba(170,0,255,0.7)'}}>Click to upload</span>
+                        <span style={{fontSize:9,fontWeight:600,color:'rgba(255,255,255,0.28)',marginTop:1}}>PNG, JPG · max 5MB</span>
+                        <input type="file" style={{display:'none'}} accept="image/*" onChange={handleImageSelect}/>
+                      </label>
+                    ):(
+                      <div style={{position:'relative'}}>
+                        <img src={imagePreview} alt="Preview" style={{width:'100%',height:70,objectFit:'cover',borderRadius:8,display:'block'}}/>
+                        <button type="button" onClick={handleRemoveImage} style={{position:'absolute',top:5,right:5,background:'rgba(255,0,153,0.9)',border:'none',borderRadius:'50%',width:22,height:22,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+                          <X style={{width:12,height:12,color:'#fff'}}/>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <RewardsBanner amount={currentAmount} currency={formData.currency}/>
+
+                {/* 3D Donate */}
+                <div className="v-btn-wrap">
+                  <button type="submit" className="v-btn" disabled={isProcessing||!razorpayLoaded}>
+                    {isProcessing||!razorpayLoaded?(
+                      <span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:9}}>
+                        <span className="v-spin"/>
+                        {isProcessing?'Processing...':'Loading...'}
+                      </span>
+                    ):(
+                      <span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:9}}>
+                        <Heart style={{width:15,height:15}}/>
+                        Donate {sym}{formData.amount||'0'}
+                      </span>
+                    )}
+                  </button>
+                </div>
+
+                <p style={{fontSize:9,fontWeight:600,color:'rgba(255,255,255,0.18)',textAlign:'center',lineHeight:1.5}}>
+                  Phone numbers collected by Razorpay as per RBI regulations
+                </p>
+
+                <DonationPageFooter brandColor="#ff0099"/>
               </div>
-
-            </div>
-
-            {/* Footer strip */}
-            <div className="v-footer-strip">
-              <p style={{fontSize:9,fontWeight:600,color:'rgba(255,255,255,0.18)',textAlign:'center',lineHeight:1.5,margin:0}}>
-                Phone numbers collected by Razorpay as per RBI regulations
-              </p>
-              <DonationPageFooter brandColor="#ff0099"/>
-            </div>
-
-          </form>
+            </form>
+          </div>
         </div>
       </div>
 
