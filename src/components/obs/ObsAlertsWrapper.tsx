@@ -45,9 +45,9 @@ export const ObsAlertsWrapper: React.FC<ObsAlertsWrapperProps> = ({
     pusherKey: pusherConfig?.key || '',
     pusherCluster: pusherConfig?.cluster || '',
     delayByType: {
-      hypersound: 15000,
-      text: 60000,
-      voice: 60000,
+      hypersound: 10000,
+      text: 10000,
+      voice: 10000,
     },
   });
 

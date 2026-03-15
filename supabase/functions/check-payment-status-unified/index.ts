@@ -257,7 +257,7 @@ serve(async (req) => {
       let audioScheduledAt: string | null = null;
       if (shouldAutoApprove) {
         const isQuickAudio = !!donation.hypersound_url || donation.is_hyperemote === true;
-        const delaySeconds = isQuickAudio ? 15 : 60;
+        const delaySeconds = 10;
         const scheduledTime = new Date(Date.now() + delaySeconds * 1000);
         audioScheduledAt = scheduledTime.toISOString();
         console.log(`[Unified] audio_scheduled_at set to ${audioScheduledAt} (delay: ${delaySeconds}s)`);

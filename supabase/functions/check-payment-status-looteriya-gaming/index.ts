@@ -205,8 +205,8 @@ Deno.serve(async (req) => {
 
       console.log(`[Looteriya Gaming] Moderation: mode=${moderationMode}, shouldAutoApprove=${shouldAutoApprove}`);
 
-      // Calculate audio_scheduled_at (60 seconds from now for fraud protection)
-      const audioScheduledAt = new Date(Date.now() + 60 * 1000).toISOString();
+      // Calculate audio_scheduled_at (10 seconds delay)
+      const audioScheduledAt = new Date(Date.now() + 10 * 1000).toISOString();
 
       // Silent audio URL for text donations under ₹70 (triggers visual alert without TTS)
       const SILENT_AUDIO_URL = Deno.env.get('SILENT_AUDIO_URL') || 'https://pub-fff13c27bb0d4a1e807dfc596462b7d5.r2.dev/silent.mp3';
