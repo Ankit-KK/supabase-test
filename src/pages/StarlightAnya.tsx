@@ -1,15 +1,12 @@
-import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Check, ChevronsUpDown, Heart } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Check, ChevronsUpDown } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import EnhancedVoiceRecorder from "@/components/EnhancedVoiceRecorder";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import HyperSoundSelector from "@/components/HyperSoundSelector";
@@ -20,292 +17,476 @@ import { getMaxMessageLength } from "@/utils/getMaxMessageLength";
 import DonationPageFooter from "@/components/DonationPageFooter";
 import RewardsBanner from "@/components/RewardsBanner";
 
-const StarlightAnya = () => {
-  const [formData, setFormData] = useState({ name: "", amount: "", message: "" });
-  const [selectedCurrency, setSelectedCurrency] = useState("INR");
-  const [currencyOpen, setCurrencyOpen] = useState(false);
-  const [donationType, setDonationType] = useState<"text" | "voice" | "hypersound" | "media">("text");
-  const [selectedHypersound, setSelectedHypersound] = useState<string | null>(null);
-  const [mediaUrl, setMediaUrl] = useState<string | null>(null);
-  const [mediaType, setMediaType] = useState<string | null>(null);
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
-  const navigate = useNavigate();
+const STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Pacifico&display=swap');
 
-  const { pricing } = useStreamerPricing('starlight_anya', selectedCurrency);
-  const currencySymbol = getCurrencySymbol(selectedCurrency);
+  :root {
+    --sa-pink:   #ff00cc;
+    --sa-fuchsia:#e879f9;
+    --sa-cyan:   #00eeff;
+    --sa-purple: #aa00ff;
+    --sa-yellow: #ffe500;
+    --sa-orange: #ff6600;
+    --sa-green:  #00ff88;
+    --sa-bg:     #0d0015;
+    --sa-card:   #140018;
+  }
+
+  .sa-root { font-family: 'Nunito', sans-serif; }
+
+  .sa-page {
+    width: 100vw; height: 100dvh;
+    background: var(--sa-bg);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; position: relative;
+  }
+
+  .sa-atm {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(ellipse 70% 55% at 15% 10%, rgba(232,121,249,0.2) 0%, transparent 55%),
+      radial-gradient(ellipse 60% 50% at 85% 85%, rgba(255,0,204,0.18) 0%, transparent 55%),
+      radial-gradient(ellipse 50% 40% at 50% 50%, rgba(170,0,255,0.08) 0%, transparent 60%);
+  }
+
+  .sa-scale-wrap { width: 420px; transform-origin: top center; position: relative; z-index: 10; }
+
+  .sa-card {
+    width: 420px; background: var(--sa-card); border-radius: 20px;
+    border: 1px solid rgba(232,121,249,0.3);
+    box-shadow: 0 0 0 1px rgba(170,0,255,0.12), 0 0 25px rgba(232,121,249,0.2), 0 0 60px rgba(170,0,255,0.1), 0 30px 80px rgba(0,0,0,0.7);
+    overflow: hidden;
+  }
+
+  .sa-hero {
+    position: relative; padding: 14px 18px 12px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    overflow: hidden;
+    background: linear-gradient(135deg, rgba(232,121,249,0.16) 0%, rgba(255,0,204,0.1) 60%, transparent 100%);
+    border-bottom: 1px solid rgba(232,121,249,0.18);
+  }
+  .sa-hero::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--sa-purple), var(--sa-pink), var(--sa-fuchsia), var(--sa-cyan), var(--sa-purple));
+    background-size: 200% 100%; animation: sa-shift 3s linear infinite;
+    box-shadow: 0 0 8px var(--sa-pink), 0 0 16px rgba(255,0,204,0.4);
+  }
+  @keyframes sa-shift { 0%{background-position:0%} 100%{background-position:200%} }
+  .sa-hero-blob { position:absolute; top:-30px; right:-30px; width:130px; height:130px; border-radius:50%; background:radial-gradient(circle, rgba(232,121,249,0.28) 0%, transparent 65%); pointer-events:none; }
+
+  @keyframes sa-flicker {
+    0%,18%,20%,22%,52%,54%,64%,100% { text-shadow: 0 0 4px #fff, 0 0 10px #fff, 0 0 22px var(--sa-fuchsia), 0 0 42px var(--sa-fuchsia), 0 0 75px var(--sa-fuchsia); }
+    19%,21%,53%,63% { text-shadow:none; opacity:0.75; }
+  }
+  .sa-name { font-family:'Pacifico',cursive; font-size:26px; color:#fff; line-height:1; animation:sa-flicker 9s infinite; position:relative; z-index:1; }
+  .sa-hero-sub { font-size:10px; font-weight:700; color:rgba(255,255,255,0.38); margin-top:2px; position:relative; z-index:1; }
+
+  @keyframes sa-pulse { 0%,100%{box-shadow:0 0 5px var(--sa-green);} 50%{box-shadow:none;} }
+  .sa-live { display:inline-flex; align-items:center; gap:5px; background:rgba(0,255,136,0.1); border:1.5px solid rgba(0,255,136,0.4); border-radius:20px; padding:3px 10px; flex-shrink:0; position:relative; z-index:1; }
+  .sa-live-dot { width:6px; height:6px; border-radius:50%; background:var(--sa-green); animation:sa-pulse 1.5s ease-in-out infinite; }
+
+  .sa-body { padding: 14px 18px 16px; display:flex; flex-direction:column; gap:11px; }
+  .sa-lbl { font-size:10px; font-weight:900; letter-spacing:0.1em; text-transform:uppercase; display:block; margin-bottom:5px; color:rgba(255,255,255,0.45); }
+
+  .sa-iw input {
+    width:100% !important; background:rgba(255,255,255,0.05) !important;
+    border:1.5px solid rgba(232,121,249,0.18) !important; border-radius:8px !important;
+    color:#fff !important; font-family:'Nunito',sans-serif !important;
+    font-size:14px !important; font-weight:700 !important; padding:8px 12px !important;
+    outline:none !important; transition:all .2s !important; caret-color:var(--sa-fuchsia);
+  }
+  .sa-iw input:focus { border-color:var(--sa-fuchsia) !important; background:rgba(232,121,249,0.07) !important; box-shadow:0 0 0 2px rgba(232,121,249,0.15),0 0 14px rgba(232,121,249,0.12) !important; }
+  .sa-iw input::placeholder { color:rgba(255,255,255,0.22) !important; }
+  .sa-iw input:disabled, .sa-iw input[readonly] { opacity:.38 !important; cursor:not-allowed !important; }
+
+  .sa-ta {
+    width:100%; background:rgba(255,255,255,0.05); border:1.5px solid rgba(232,121,249,0.18);
+    border-radius:8px; color:#fff; font-family:'Nunito',sans-serif; font-size:13px; font-weight:700;
+    padding:8px 12px; resize:none; outline:none; line-height:1.5; caret-color:var(--sa-fuchsia); transition:all .2s;
+  }
+  .sa-ta:focus { border-color:var(--sa-fuchsia); background:rgba(232,121,249,0.07); box-shadow:0 0 0 2px rgba(232,121,249,0.15),0 0 14px rgba(232,121,249,0.12); }
+  .sa-ta::placeholder { color:rgba(255,255,255,0.22); }
+
+  .sa-cbar { height:2px; margin-top:4px; background:rgba(255,255,255,0.07); border-radius:2px; overflow:hidden; }
+  .sa-cbar-fill { height:100%; border-radius:2px; transition:width .12s,background .2s; }
+
+  /* 3D TYPE BUTTONS */
+  .sa-types { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; padding-bottom:6px; }
+  .sa-tb { position:relative; padding:0; border:none; background:none; cursor:pointer; outline:none; border-radius:10px; display:block; width:100%; }
+  .sa-tb-face { position:relative; z-index:2; padding:10px 4px 9px; border-radius:10px; text-align:center; transition:transform .1s ease, box-shadow .1s ease; transform:translateY(-5px); }
+  .sa-tb::after { content:''; position:absolute; bottom:0; left:0; right:0; height:calc(100% - 3px); border-radius:10px; z-index:1; }
+
+  .sa-tb-fu .sa-tb-face { background:linear-gradient(160deg,rgba(232,121,249,0.2),rgba(140,0,160,0.5)); border:1.5px solid rgba(232,121,249,0.65); box-shadow:inset 0 1px 0 rgba(255,255,255,0.2),0 0 10px rgba(232,121,249,0.2); }
+  .sa-tb-fu::after { background:#660077; border:1.5px solid rgba(232,121,249,0.35); }
+  .sa-tb-fu:hover .sa-tb-face { box-shadow:inset 0 1px 0 rgba(255,255,255,0.25),0 0 18px rgba(232,121,249,0.55); }
+  .sa-tb-fu.sa-on .sa-tb-face { transform:translateY(0); background:linear-gradient(160deg,rgba(232,121,249,0.32),rgba(180,0,200,0.55)); border-color:var(--sa-fuchsia); box-shadow:inset 0 2px 5px rgba(0,0,0,0.3),0 0 18px rgba(232,121,249,0.75),0 0 34px rgba(232,121,249,0.28),inset 0 0 12px rgba(232,121,249,0.14); }
+
+  .sa-tb-cy .sa-tb-face { background:linear-gradient(160deg,rgba(0,238,255,0.2),rgba(0,100,140,0.5)); border:1.5px solid rgba(0,238,255,0.65); box-shadow:inset 0 1px 0 rgba(255,255,255,0.2),0 0 10px rgba(0,238,255,0.2); }
+  .sa-tb-cy::after { background:#005566; border:1.5px solid rgba(0,238,255,0.35); }
+  .sa-tb-cy:hover .sa-tb-face { box-shadow:inset 0 1px 0 rgba(255,255,255,0.25),0 0 18px rgba(0,238,255,0.5); }
+  .sa-tb-cy.sa-on .sa-tb-face { transform:translateY(0); background:linear-gradient(160deg,rgba(0,238,255,0.32),rgba(0,150,180,0.55)); border-color:var(--sa-cyan); box-shadow:inset 0 2px 5px rgba(0,0,0,0.3),0 0 18px rgba(0,238,255,0.7),0 0 32px rgba(0,238,255,0.25),inset 0 0 12px rgba(0,238,255,0.12); }
+
+  .sa-tb-or .sa-tb-face { background:linear-gradient(160deg,rgba(255,102,0,0.22),rgba(140,50,0,0.5)); border:1.5px solid rgba(255,102,0,0.65); box-shadow:inset 0 1px 0 rgba(255,255,255,0.2),0 0 10px rgba(255,102,0,0.2); }
+  .sa-tb-or::after { background:#6a2800; border:1.5px solid rgba(255,102,0,0.35); }
+  .sa-tb-or:hover .sa-tb-face { box-shadow:inset 0 1px 0 rgba(255,255,255,0.25),0 0 18px rgba(255,102,0,0.5); }
+  .sa-tb-or.sa-on .sa-tb-face { transform:translateY(0); background:linear-gradient(160deg,rgba(255,102,0,0.32),rgba(180,70,0,0.55)); border-color:var(--sa-orange); box-shadow:inset 0 2px 5px rgba(0,0,0,0.3),0 0 18px rgba(255,102,0,0.7),0 0 32px rgba(255,102,0,0.25),inset 0 0 12px rgba(255,102,0,0.12); }
+
+  .sa-tb-pu .sa-tb-face { background:linear-gradient(160deg,rgba(170,0,255,0.22),rgba(90,0,140,0.5)); border:1.5px solid rgba(170,0,255,0.65); box-shadow:inset 0 1px 0 rgba(255,255,255,0.2),0 0 10px rgba(170,0,255,0.2); }
+  .sa-tb-pu::after { background:#460070; border:1.5px solid rgba(170,0,255,0.35); }
+  .sa-tb-pu:hover .sa-tb-face { box-shadow:inset 0 1px 0 rgba(255,255,255,0.25),0 0 18px rgba(170,0,255,0.5); }
+  .sa-tb-pu.sa-on .sa-tb-face { transform:translateY(0); background:linear-gradient(160deg,rgba(170,0,255,0.32),rgba(120,0,180,0.55)); border-color:var(--sa-purple); box-shadow:inset 0 2px 5px rgba(0,0,0,0.3),0 0 18px rgba(170,0,255,0.7),0 0 32px rgba(170,0,255,0.25),inset 0 0 12px rgba(170,0,255,0.12); }
+
+  .sa-tb:active .sa-tb-face { transform:translateY(0px) !important; }
+  .sa-tb-emoji { font-size:18px; display:block; line-height:1; }
+  .sa-tb-name  { font-size:9px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; display:block; margin-top:4px; transition:color .15s, text-shadow .15s; }
+  .sa-tb-min   { font-size:7px; font-weight:700; color:rgba(255,228,0,0.7); display:block; margin-top:1px; }
+
+  .sa-amt { display:flex; gap:7px; }
+  .sa-cur {
+    display:flex; align-items:center; justify-content:space-between; gap:4px;
+    background:rgba(255,255,255,0.05) !important; border:1.5px solid rgba(232,121,249,0.18) !important;
+    border-radius:8px !important; color:#fff !important; font-family:'Nunito',sans-serif !important;
+    font-size:12px !important; font-weight:800 !important; padding:0 10px !important;
+    min-width:84px; height:38px; cursor:pointer; transition:all .2s; flex-shrink:0;
+  }
+  .sa-cur:hover { border-color:var(--sa-fuchsia) !important; box-shadow:0 0 10px rgba(232,121,249,0.2) !important; }
+
+  .sa-div { height:1px; background:linear-gradient(90deg,transparent,rgba(232,121,249,0.3),rgba(0,238,255,0.2),transparent); }
+
+  .sa-sp { border-radius:10px; padding:10px 12px; }
+  .sa-sp-or { background:rgba(255,102,0,0.07); border:1.5px solid rgba(255,102,0,0.4); box-shadow:0 0 14px rgba(255,102,0,0.1); }
+  .sa-sp-pu { background:rgba(170,0,255,0.07); border:1.5px solid rgba(170,0,255,0.4); box-shadow:0 0 14px rgba(170,0,255,0.1); }
+  .sa-sp-cy { background:rgba(0,238,255,0.05); border:1.5px solid rgba(0,238,255,0.28); box-shadow:0 0 14px rgba(0,238,255,0.08); }
+
+  /* 3D DONATE BUTTON */
+  .sa-btn-wrap { position:relative; width:100%; border-radius:12px; padding-bottom:6px; }
+  .sa-btn-wrap::after { content:''; position:absolute; bottom:0; left:0; right:0; height:calc(100% - 4px); border-radius:12px; z-index:1; background:linear-gradient(90deg,#7700aa,#bb0088,#880055); }
+  .sa-btn {
+    position:relative; z-index:2; width:100%; padding:13px; border:none; cursor:pointer;
+    font-family:'Nunito',sans-serif; font-size:15px; font-weight:900; letter-spacing:.04em; color:#fff;
+    border-radius:12px; transition:transform .1s ease, box-shadow .1s ease; transform:translateY(-6px);
+    background:linear-gradient(135deg,#cc00ff 0%,#ff00cc 45%,#ff6600 100%);
+    border-top:1.5px solid rgba(255,255,255,0.3); border-left:1.5px solid rgba(255,255,255,0.15);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.2),0 0 18px rgba(232,121,249,0.45),0 0 36px rgba(170,0,255,0.18);
+    overflow:hidden;
+  }
+  .sa-btn:hover:not(:disabled) { box-shadow:inset 0 1px 0 rgba(255,255,255,0.25),0 0 26px rgba(232,121,249,0.7),0 0 52px rgba(170,0,255,0.28); }
+  .sa-btn:active:not(:disabled) { transform:translateY(0px) !important; box-shadow:inset 0 2px 8px rgba(0,0,0,0.4),0 0 14px rgba(232,121,249,0.3) !important; }
+  .sa-btn:disabled { opacity:.38; cursor:not-allowed; }
+  .sa-btn::before { content:''; position:absolute; top:0; left:-110%; width:55%; height:100%; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent); transform:skewX(-20deg); transition:left .5s; }
+  .sa-btn:hover:not(:disabled)::before { left:160%; }
+
+  .sa-hint { font-size:10px; font-weight:700; color:rgba(232,121,249,0.55); margin-top:3px; }
+
+  @keyframes sa-fu { from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:translateY(0);} }
+  .sa-fu { animation:sa-fu .2s ease forwards; }
+
+  @keyframes sa-sp-a { to{transform:rotate(360deg);} }
+  .sa-spin { width:14px; height:14px; border:2px solid rgba(255,255,255,0.35); border-top-color:#fff; border-radius:50%; display:inline-block; animation:sa-sp-a .65s linear infinite; }
+
+  @keyframes sa-in { from{opacity:0;transform:scale(0.97);} to{opacity:1;transform:scale(1);} }
+  .sa-in { animation:sa-in .4s cubic-bezier(0.22,1,0.36,1) both; }
+`;
+
+const StarlightAnya = () => {
+  const navigate  = useNavigate();
+  const cardRef   = useRef<HTMLDivElement>(null);
+  const wrapRef   = useRef<HTMLDivElement>(null);
+
+  const [formData, setFormData]                   = useState({ name:"", amount:"", message:"" });
+  const [selectedCurrency, setSelectedCurrency]   = useState("INR");
+  const [currencyOpen, setCurrencyOpen]           = useState(false);
+  const [donationType, setDonationType]           = useState<"text"|"voice"|"hypersound"|"media">("text");
+  const [selectedHypersound, setSelectedHypersound] = useState<string|null>(null);
+  const [mediaUrl, setMediaUrl]                   = useState<string|null>(null);
+  const [mediaType, setMediaType]                 = useState<string|null>(null);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [razorpayLoaded, setRazorpayLoaded]       = useState(false);
+
+  const { pricing }      = useStreamerPricing('starlight_anya', selectedCurrency);
+  const currencySymbol   = getCurrencySymbol(selectedCurrency);
+  const currentAmount    = parseFloat(formData.amount) || 0;
+  const maxMessageLength = getMaxMessageLength(pricing.messageCharTiers, currentAmount);
 
   const getVoiceDuration = (amount: number) => {
-    if (selectedCurrency === "INR") {
-      if (amount >= 500) return 15;
-      if (amount >= 300) return 12;
-      return 8;
-    }
-    if (amount >= 6) return 15;
-    if (amount >= 4) return 12;
-    return 8;
+    if (selectedCurrency==="INR") { if (amount>=500) return 15; if (amount>=300) return 12; return 8; }
+    if (amount>=6) return 15; if (amount>=4) return 12; return 8;
   };
-
-  const currentAmount = parseFloat(formData.amount) || 0;
-  const maxMessageLength = getMaxMessageLength(pricing.messageCharTiers, currentAmount);
   const voiceRecorder = useVoiceRecorder(getVoiceDuration(currentAmount));
 
-  useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.async = true;
-    script.onload = () => {
-      setRazorpayLoaded(true);
-      console.log('Razorpay SDK loaded');
-    };
-    script.onerror = () => console.error('Failed to load Razorpay SDK');
-    document.body.appendChild(script);
-    return () => { if (document.body.contains(script)) document.body.removeChild(script); };
+  /* Auto-scale to fit any viewport */
+  const applyScale = useCallback(() => {
+    const wrap = wrapRef.current; const card = cardRef.current;
+    if (!wrap || !card) return;
+    const scaleW = Math.min(1, (window.innerWidth  - 32) / 420);
+    const scaleH = card.scrollHeight > 0 ? Math.min(1, (window.innerHeight - 48) / card.scrollHeight) : 1;
+    const scale  = Math.min(scaleW, scaleH);
+    wrap.style.transform = `scale(${scale})`;
+    wrap.style.height    = `${card.scrollHeight * scale}px`;
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+  useEffect(() => {
+    const t = setTimeout(applyScale, 80);
+    window.addEventListener('resize', applyScale);
+    return () => { clearTimeout(t); window.removeEventListener('resize', applyScale); };
+  }, [applyScale]);
+
+  useEffect(() => { const t = setTimeout(applyScale, 60); return ()=>clearTimeout(t); }, [donationType, applyScale]);
+
+  useEffect(() => {
+    const s = document.createElement("script");
+    s.src="https://checkout.razorpay.com/v1/checkout.js"; s.async=true;
+    s.onload=()=>setRazorpayLoaded(true);
+    s.onerror=()=>console.error('Failed to load Razorpay SDK');
+    document.body.appendChild(s);
+    return ()=>{ if (document.body.contains(s)) document.body.removeChild(s); };
+  }, []);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement|HTMLTextAreaElement>) => {
+    const {name,value}=e.target; setFormData(prev=>({...prev,[name]:value}));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!razorpayLoaded || !window.Razorpay) { toast.error("Payment system is still loading. Please wait."); return; }
-    if (!formData.name || !formData.amount) { toast.error("Please fill in all required fields"); return; }
-    const amount = parseFloat(formData.amount);
-    if (isNaN(amount) || amount <= 0) { toast.error("Please enter a valid amount"); return; }
-    const minAmount = donationType === "voice" ? pricing.minVoice
-      : donationType === "hypersound" ? pricing.minHypersound
-      : donationType === "media" ? pricing.minMedia : pricing.minText;
-    if (amount < minAmount) { toast.error(`Minimum amount for ${donationType} is ${currencySymbol}${minAmount}`); return; }
-    if (donationType === "voice" && !voiceRecorder.audioBlob) { toast.error("Please record a voice message"); return; }
-    if (donationType === "hypersound" && !selectedHypersound) { toast.error("Please select a sound"); return; }
-    if (donationType === "media" && !mediaUrl) { toast.error("Please upload a media file"); return; }
+    if (!razorpayLoaded || !(window as any).Razorpay) { toast.error("Payment system loading. Please wait."); return; }
+    if (!formData.name||!formData.amount) { toast.error("Please fill in all required fields"); return; }
+    const amount=parseFloat(formData.amount);
+    if (isNaN(amount)||amount<=0) { toast.error("Please enter a valid amount"); return; }
+    const minAmount=donationType==="voice"?pricing.minVoice:donationType==="hypersound"?pricing.minHypersound:donationType==="media"?pricing.minMedia:pricing.minText;
+    if (amount<minAmount) { toast.error(`Minimum for ${donationType} is ${currencySymbol}${minAmount}`); return; }
+    if (donationType==="voice"&&!voiceRecorder.audioBlob) { toast.error("Please record a voice message"); return; }
+    if (donationType==="hypersound"&&!selectedHypersound) { toast.error("Please select a sound"); return; }
+    if (donationType==="media"&&!mediaUrl) { toast.error("Please upload a media file"); return; }
     await processPayment();
   };
 
   const processPayment = async () => {
     setIsProcessingPayment(true);
     try {
-      let voiceMessageUrl: string | null = null;
-      if (donationType === "voice" && voiceRecorder.audioBlob) {
-        // ✅ Extra validation: guard against empty blob edge case
-        if (!voiceRecorder.audioBlob || voiceRecorder.audioBlob.size === 0) {
-          throw new Error("No voice recording found. Please record your message again.");
-        }
-        console.log("Uploading voice message before payment...", {
-          blobSize: voiceRecorder.audioBlob.size,
-          blobType: voiceRecorder.audioBlob.type,
-        });
-        const voiceDataBase64 = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            const result = reader.result as string;
-            if (!result || !result.includes(",")) { reject(new Error("Failed to read voice data")); return; }
-            const base64 = result.split(",")[1];
-            console.log("Voice data converted to base64, length:", base64.length);
-            resolve(base64);
-          };
-          reader.onerror = () => reject(new Error("Failed to read voice recording"));
+      let voiceMessageUrl:string|null=null;
+      if (donationType==="voice"&&voiceRecorder.audioBlob) {
+        if (voiceRecorder.audioBlob.size===0) throw new Error("No voice recording found.");
+        const voiceDataBase64 = await new Promise<string>((resolve,reject)=>{
+          const reader=new FileReader();
+          reader.onload=()=>{ const r=reader.result as string; if(!r||!r.includes(",")) { reject(new Error("Failed to read voice data")); return; } resolve(r.split(",")[1]); };
+          reader.onerror=()=>reject(new Error("Failed to read voice recording"));
           reader.readAsDataURL(voiceRecorder.audioBlob!);
         });
-        const { data: uploadResult, error: uploadError } = await supabase.functions.invoke(
-          "upload-voice-message-direct",
-          { body: { voiceData: voiceDataBase64, streamerSlug: "starlight_anya" } }
-        );
-        if (uploadError) { console.error("Voice upload error:", uploadError); throw new Error("Failed to upload voice message"); }
-        voiceMessageUrl = uploadResult.voice_message_url;
-        console.log("Voice message uploaded successfully:", voiceMessageUrl);
+        const {data:up,error:ue}=await supabase.functions.invoke("upload-voice-message-direct",{body:{voiceData:voiceDataBase64,streamerSlug:"starlight_anya"}});
+        if (ue) throw new Error("Failed to upload voice message");
+        voiceMessageUrl=up.voice_message_url;
       }
-
-      const { data, error } = await supabase.functions.invoke("create-razorpay-order-unified", {
-        body: {
-          streamer_slug: 'starlight_anya',
-          name: formData.name,
-          amount: parseFloat(formData.amount),
-          message: donationType === "text" ? formData.message : null,
-          voiceMessageUrl,
-          hypersoundUrl: donationType === "hypersound" ? selectedHypersound : null,
-          mediaUrl: donationType === "media" ? mediaUrl : null,
-          mediaType: donationType === "media" ? mediaType : null,
-          currency: selectedCurrency,
-        },
+      const {data,error}=await supabase.functions.invoke("create-razorpay-order-unified",{
+        body:{ streamer_slug:'starlight_anya', name:formData.name, amount:parseFloat(formData.amount),
+          message:donationType==="text"?formData.message:null,
+          voiceMessageUrl, hypersoundUrl:donationType==="hypersound"?selectedHypersound:null,
+          mediaUrl:donationType==="media"?mediaUrl:null, mediaType:donationType==="media"?mediaType:null,
+          currency:selectedCurrency }
       });
       if (error) throw error;
-
-      const options = {
-        key: data.razorpay_key_id,
-        amount: data.amount,
-        currency: data.currency,
-        order_id: data.razorpay_order_id,
-        name: "Starlight Anya",
-        description: "Support Starlight Anya",
-        handler: (response: any) => {
-          console.log("Payment successful:", response);
-          // ✅ Fix: include status_token in navigate URL
-          navigate(`/status?order_id=${data.orderId}&status=success&st=${data.status_token}`);
-        },
-        modal: {
-          ondismiss: () => {
-            console.log("Payment cancelled");
-            // ✅ Fix: include status_token in navigate URL
-            navigate(`/status?order_id=${data.orderId}&status=pending&st=${data.status_token}`);
-          },
-        },
-        theme: { color: "#e879f9" },
-      };
-      const razorpay = new (window as any).Razorpay(options);
-      razorpay.open();
-    } catch (error) {
-      console.error("Payment error:", error);
+      const rzp=new (window as any).Razorpay({
+        key:data.razorpay_key_id, amount:data.amount, currency:data.currency,
+        order_id:data.razorpay_order_id, name:"Starlight Anya",
+        description:"Support Starlight Anya",
+        handler:(response:any)=>{ navigate(`/status?order_id=${data.orderId}&status=success&st=${data.status_token}`); },
+        modal:{ondismiss:()=>{ navigate(`/status?order_id=${data.orderId}&status=pending&st=${data.status_token}`); }},
+        theme:{color:"#e879f9"},
+      });
+      rzp.open();
+    } catch(error) {
+      console.error("Payment error:",error);
       toast.error("Failed to process payment. Please try again.");
-    } finally {
-      setIsProcessingPayment(false);
-    }
+    } finally { setIsProcessingPayment(false); }
   };
 
-  const handleDonationTypeChange = (value: "text" | "voice" | "hypersound" | "media") => {
+  const handleDonationTypeChange=(value:"text"|"voice"|"hypersound"|"media")=>{
     setDonationType(value);
-    if (value === "hypersound") setFormData(p => ({ ...p, amount: String(pricing.minHypersound), message: "" }));
-    else if (value === "voice") setFormData(p => ({ ...p, amount: String(pricing.minVoice), message: "" }));
-    else if (value === "media") { setFormData(p => ({ ...p, amount: String(pricing.minMedia), message: "" })); setMediaUrl(null); setMediaType(null); }
-    else setFormData(p => ({ ...p, amount: String(pricing.minText), message: "" }));
+    if (value==="hypersound") setFormData(p=>({...p,amount:String(pricing.minHypersound),message:""}));
+    else if (value==="voice") setFormData(p=>({...p,amount:String(pricing.minVoice),message:""}));
+    else if (value==="media") { setFormData(p=>({...p,amount:String(pricing.minMedia),message:""})); setMediaUrl(null); setMediaType(null); }
+    else setFormData(p=>({...p,amount:String(pricing.minText),message:""}));
   };
+
+  const msgPct = maxMessageLength>0?(formData.message.length/maxMessageLength)*100:0;
+  const msgClr = msgPct>90?'var(--sa-pink)':msgPct>70?'var(--sa-yellow)':'var(--sa-fuchsia)';
+
+  const TYPES=[
+    {key:'text' as const,      emoji:'💬', label:'Text',  min:pricing.minText,       tc:'sa-tb-fu', nc:'var(--sa-fuchsia)'},
+    {key:'voice' as const,     emoji:'🎤', label:'Voice', min:pricing.minVoice,      tc:'sa-tb-cy', nc:'var(--sa-cyan)'},
+    {key:'hypersound' as const,emoji:'🔊', label:'Sound', min:pricing.minHypersound, tc:'sa-tb-or', nc:'var(--sa-orange)'},
+    {key:'media' as const,     emoji:'🖼️', label:'Media', min:pricing.minMedia,      tc:'sa-tb-pu', nc:'var(--sa-purple)'},
+  ];
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative bg-gradient-to-br from-fuchsia-950 via-slate-900 to-fuchsia-900">
-      <div className="absolute inset-0 bg-black/20"></div>
-      <Card className="w-full max-w-sm mx-auto bg-card/95 backdrop-blur-sm border-fuchsia-500/20 shadow-2xl relative overflow-hidden">
-        <div className="absolute inset-0 bg-black/50"></div>
-        <div className="absolute inset-0 bg-gradient-to-r from-fuchsia-500/20 via-fuchsia-600/20 to-fuchsia-400/20 opacity-50 blur-xl"></div>
+    <>
+      <style dangerouslySetInnerHTML={{__html:STYLES}}/>
+      <div className="sa-root sa-page">
+        <div className="sa-atm"/>
 
-        <CardHeader className="text-center relative z-10 pb-2">
-          <CardTitle className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-fuchsia-400 to-fuchsia-600 bg-clip-text text-transparent">
-            Starlight Anya
-          </CardTitle>
-          <p className="text-muted-foreground text-xs">Support Starlight Anya with your donation</p>
-        </CardHeader>
+        <div ref={wrapRef} className="sa-scale-wrap" style={{transformOrigin:'top center'}}>
+          <div ref={cardRef} className="sa-card sa-in">
 
-        <CardContent className="space-y-4 relative z-10">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-medium text-fuchsia-400">Your Name *</label>
-              <Input id="name" name="name" placeholder="Enter your name" value={formData.name}
-                onChange={handleInputChange}
-                className="border-fuchsia-500/30 focus:border-fuchsia-500 focus:ring-fuchsia-500/20" required />
+            {/* HERO */}
+            <div className="sa-hero">
+              <div className="sa-hero-blob"/>
+              <div>
+                <div className="sa-name">Starlight Anya</div>
+                <div className="sa-hero-sub">Support with a donation ✦</div>
+              </div>
+              <div className="sa-live">
+                <div className="sa-live-dot"/>
+                <span style={{fontSize:10,fontWeight:800,color:'var(--sa-green)',letterSpacing:'0.05em',textShadow:'0 0 6px var(--sa-green)'}}>Live</span>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-fuchsia-400">Choose your donation type</label>
-              <div className="grid grid-cols-4 gap-1.5">
-                {(["text", "voice", "hypersound", "media"] as const).map(type => (
-                  <button key={type} type="button" onClick={() => handleDonationTypeChange(type)}
-                    className={`p-2 rounded-lg border-2 transition-all ${donationType === type
-                      ? "border-fuchsia-500 bg-fuchsia-500/10"
-                      : "border-fuchsia-500/30 hover:border-fuchsia-500/50"}`}>
-                    <div className="text-center">
-                      <div className="text-sm mb-0.5">{type === "text" ? "💬" : type === "voice" ? "🎤" : type === "hypersound" ? "🔊" : "🖼️"}</div>
-                      <div className="font-medium text-[10px] capitalize">{type === "hypersound" ? "Sound" : type}</div>
-                      <div className="text-[9px] text-muted-foreground">
-                        Min: {currencySymbol}{type === "text" ? pricing.minText : type === "voice" ? pricing.minVoice : type === "hypersound" ? pricing.minHypersound : pricing.minMedia}
-                      </div>
+            {/* FORM */}
+            <form onSubmit={handleSubmit}>
+              <div className="sa-body">
+
+                {/* Name */}
+                <div>
+                  <label className="sa-lbl">Your Name</label>
+                  <div className="sa-iw"><Input id="name" name="name" value={formData.name} onChange={handleInputChange} placeholder="Enter your name" required/></div>
+                </div>
+
+                {/* 3D Type buttons */}
+                <div>
+                  <label className="sa-lbl">Donation Type</label>
+                  <div className="sa-types">
+                    {TYPES.map(t=>(
+                      <button key={t.key} type="button" onClick={()=>handleDonationTypeChange(t.key)} className={cn('sa-tb',t.tc,donationType===t.key?'sa-on':'')}>
+                        <div className="sa-tb-face">
+                          <span className="sa-tb-emoji">{t.emoji}</span>
+                          <span className="sa-tb-name" style={{color:donationType===t.key?t.nc:'rgba(255,255,255,0.5)',textShadow:donationType===t.key?`0 0 10px ${t.nc},0 0 20px ${t.nc}`:'none'}}>{t.label}</span>
+                          <span className="sa-tb-min">{currencySymbol}{t.min}+</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Amount */}
+                <div>
+                  <label className="sa-lbl">Amount</label>
+                  <div className="sa-amt">
+                    <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
+                      <PopoverTrigger asChild>
+                        <button type="button" className="sa-cur">
+                          <span>{currencySymbol} {selectedCurrency}</span>
+                          <ChevronsUpDown style={{width:11,height:11,opacity:0.4,marginLeft:'auto',flexShrink:0}}/>
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[220px] p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search currency..."/>
+                          <CommandList>
+                            <CommandEmpty>No currency found.</CommandEmpty>
+                            <CommandGroup>
+                              {SUPPORTED_CURRENCIES.map(c=>(
+                                <CommandItem key={c.code} value={c.code} onSelect={v=>{ setSelectedCurrency(v.toUpperCase()); setCurrencyOpen(false); }}>
+                                  <Check className={cn("mr-2 h-4 w-4",selectedCurrency===c.code?"opacity-100":"opacity-0")}/>
+                                  {c.symbol} {c.code} — {c.name}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    <div className="sa-iw" style={{flex:1}}>
+                      <Input id="amount" name="amount" type="number" value={formData.amount} onChange={handleInputChange}
+                        min="1" placeholder="0" readOnly={donationType==="hypersound"} required/>
                     </div>
+                  </div>
+                  {pricing.ttsEnabled&&<p className="sa-hint">⚡ TTS above {currencySymbol}{pricing.minTts}</p>}
+                </div>
+
+                <div className="sa-div"/>
+
+                {/* Text message */}
+                {donationType==="text"&&(
+                  <div className="sa-fu">
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}}>
+                      <label className="sa-lbl" style={{margin:0}}>Message</label>
+                      <span style={{fontSize:10,fontWeight:800,color:msgClr,textShadow:`0 0 6px ${msgClr}`}}>{formData.message.length}/{maxMessageLength}</span>
+                    </div>
+                    <textarea id="message" name="message" value={formData.message} onChange={handleInputChange}
+                      placeholder="Type your message..." className="sa-ta" rows={2} maxLength={maxMessageLength}/>
+                    <div className="sa-cbar"><div className="sa-cbar-fill" style={{width:`${msgPct}%`,background:msgClr,boxShadow:`0 0 6px ${msgClr}`}}/></div>
+                  </div>
+                )}
+
+                {/* Voice */}
+                {donationType==="voice"&&(
+                  <div className="sa-fu">
+                    <label className="sa-lbl">Voice Message</label>
+                    <div className="sa-sp sa-sp-cy">
+                      <EnhancedVoiceRecorder
+                        controller={voiceRecorder}
+                        onRecordingComplete={(hasRecording,duration)=>console.log("Recording complete:",hasRecording,duration)}
+                        maxDurationSeconds={getVoiceDuration(currentAmount)}
+                        brandColor="#e879f9"
+                        requiredAmount={pricing.minVoice}
+                        currentAmount={currentAmount}/>
+                    </div>
+                  </div>
+                )}
+
+                {/* HyperSound */}
+                {donationType==="hypersound"&&(
+                  <div className="sa-fu sa-sp sa-sp-or">
+                    <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+                      <span style={{fontSize:16}}>🔊</span>
+                      <span style={{fontSize:13,fontWeight:900,color:'var(--sa-orange)',textShadow:'0 0 8px var(--sa-orange)'}}>HyperSounds</span>
+                    </div>
+                    <HyperSoundSelector selectedSound={selectedHypersound} onSoundSelect={setSelectedHypersound}/>
+                  </div>
+                )}
+
+                {/* Media */}
+                {donationType==="media"&&(
+                  <div className="sa-fu sa-sp sa-sp-pu">
+                    <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+                      <span style={{fontSize:16}}>🖼️</span>
+                      <span style={{fontSize:13,fontWeight:900,color:'var(--sa-purple)',textShadow:'0 0 8px var(--sa-purple)'}}>Media Upload</span>
+                    </div>
+                    <MediaUploader
+                      streamerSlug="starlight_anya"
+                      onMediaUploaded={(url,type)=>{ setMediaUrl(url); setMediaType(type); }}
+                      onMediaRemoved={()=>{ setMediaUrl(null); setMediaType(null); }}
+                      maxFileSizeMB={10}
+                      maxVideoDurationSeconds={15}/>
+                  </div>
+                )}
+
+                <RewardsBanner amount={Number(formData.amount)} currency={selectedCurrency}/>
+
+                {/* 3D Donate button */}
+                <div className="sa-btn-wrap">
+                  <button type="submit" className="sa-btn" disabled={isProcessingPayment}>
+                    {isProcessingPayment?(
+                      <span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:9}}>
+                        <span className="sa-spin"/>Processing...
+                      </span>
+                    ):(
+                      <span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:9}}>
+                        <Heart style={{width:15,height:15}}/>
+                        Support with {currencySymbol}{formData.amount||'0'}
+                      </span>
+                    )}
                   </button>
-                ))}
+                </div>
+
+                <p style={{fontSize:9,fontWeight:600,color:'rgba(255,255,255,0.18)',textAlign:'center',lineHeight:1.5}}>
+                  Phone numbers collected by Razorpay as per RBI regulations
+                </p>
+                <DonationPageFooter brandColor="#e879f9"/>
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <label htmlFor="amount" className="text-sm font-medium text-fuchsia-400">Amount *</label>
-              <div className="flex gap-2">
-                <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" role="combobox" aria-expanded={currencyOpen}
-                      className="w-[100px] justify-between border-fuchsia-500/30 hover:bg-fuchsia-500/10">
-                      {currencySymbol} {selectedCurrency}
-                      <ChevronsUpDown className="ml-1 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[200px] p-0">
-                    <Command>
-                      <CommandInput placeholder="Search currency..." />
-                      <CommandList>
-                        <CommandEmpty>No currency found.</CommandEmpty>
-                        <CommandGroup>
-                          {SUPPORTED_CURRENCIES.map(currency => (
-                            <CommandItem key={currency.code} value={currency.code}
-                              onSelect={value => { setSelectedCurrency(value.toUpperCase()); setCurrencyOpen(false); }}>
-                              <Check className={cn("mr-2 h-4 w-4", selectedCurrency === currency.code ? "opacity-100" : "opacity-0")} />
-                              {currency.symbol} {currency.code} - {currency.name}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-                <Input id="amount" name="amount" type="number" placeholder="Enter amount"
-                  value={formData.amount} onChange={handleInputChange}
-                  readOnly={donationType === "hypersound"}
-                  className={`flex-1 border-fuchsia-500/30 focus:border-fuchsia-500 focus:ring-fuchsia-500/20 ${donationType === "hypersound" ? "opacity-50 cursor-not-allowed" : ""}`}
-                  required min="1" />
-              </div>
-              {pricing.ttsEnabled && (
-                <p className="text-xs text-muted-foreground">TTS above {currencySymbol}{pricing.minTts}</p>
-              )}
-            </div>
-
-            {donationType === "text" && (
-              <div className="space-y-2">
-                <label htmlFor="message" className="text-sm font-medium text-fuchsia-400">Your Message (Optional)</label>
-                <textarea id="message" name="message" placeholder="Enter your message"
-                  value={formData.message} onChange={handleInputChange}
-                  maxLength={maxMessageLength} rows={3}
-                  className="w-full min-h-[100px] px-3 py-2 rounded-md border border-fuchsia-500/30 focus:border-fuchsia-500 focus:ring-2 focus:ring-fuchsia-500/20 bg-background text-foreground placeholder:text-muted-foreground" />
-                <p className="text-xs text-right text-muted-foreground">{formData.message.length}/{maxMessageLength}</p>
-              </div>
-            )}
-
-            {donationType === "voice" && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-fuchsia-400">Voice Message *</label>
-                <EnhancedVoiceRecorder controller={voiceRecorder}
-                  onRecordingComplete={(hasRecording, duration) => console.log("Recording complete:", hasRecording, duration)}
-                  maxDurationSeconds={getVoiceDuration(currentAmount)}
-                  brandColor="#e879f9"
-                  requiredAmount={pricing.minVoice}
-                  currentAmount={currentAmount} />
-              </div>
-            )}
-
-            {donationType === "hypersound" && (
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-fuchsia-400">Select a Sound</Label>
-                <HyperSoundSelector selectedSound={selectedHypersound} onSoundSelect={setSelectedHypersound} />
-              </div>
-            )}
-
-            {donationType === "media" && (
-              <div className="space-y-2">
-                <Label className="text-sm font-medium text-fuchsia-400">Upload Media</Label>
-                <MediaUploader streamerSlug="starlight_anya"
-                  onMediaUploaded={(url, type) => { setMediaUrl(url); setMediaType(type); }}
-                  onMediaRemoved={() => { setMediaUrl(null); setMediaType(null); }}
-                  maxFileSizeMB={10} maxVideoDurationSeconds={15} />
-              </div>
-            )}
-
-            <RewardsBanner amount={Number(formData.amount)} currency={selectedCurrency} />
-
-            <Button type="submit" className="w-full font-semibold py-6 bg-fuchsia-600 hover:bg-fuchsia-700"
-              disabled={isProcessingPayment}>
-              {isProcessingPayment ? "Processing..." : `Support with ${currencySymbol}${formData.amount || "0"}`}
-            </Button>
-          </form>
-          <DonationPageFooter brandColor="#e879f9" />
-        </CardContent>
-      </Card>
-    </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </>
   );
 };
 
