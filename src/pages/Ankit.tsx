@@ -50,7 +50,6 @@ const STYLES = `
       radial-gradient(ellipse 50% 40% at 50% 50%, rgba(0,238,255,0.07) 0%, transparent 60%);
   }
 
-  /* ── Card ── */
   .v-card {
     width: 100%; max-width: 420px;
     position: relative; z-index: 10;
@@ -80,33 +79,24 @@ const STYLES = `
     box-shadow: 0 0 10px var(--hot-pink), 0 0 20px rgba(255,0,153,0.5);
   }
   @keyframes v-shift { 0%{background-position:0%} 100%{background-position:200%} }
-
   .v-hero-blob1 { position:absolute; top:-40px; left:-40px; width:180px; height:180px; border-radius:50%; background:radial-gradient(circle, rgba(170,0,255,0.35) 0%, transparent 65%); pointer-events:none; }
   .v-hero-blob2 { position:absolute; top:-20px; right:-40px; width:150px; height:150px; border-radius:50%; background:radial-gradient(circle, rgba(255,0,153,0.3) 0%, transparent 65%); pointer-events:none; }
 
   @keyframes v-flicker {
-    0%,18%,20%,22%,52%,54%,64%,100% {
-      text-shadow: 0 0 4px #fff, 0 0 10px #fff, 0 0 20px var(--hot-pink), 0 0 40px var(--hot-pink), 0 0 80px var(--hot-pink), 0 0 120px var(--hot-pink);
-    }
+    0%,18%,20%,22%,52%,54%,64%,100% { text-shadow: 0 0 4px #fff, 0 0 10px #fff, 0 0 20px var(--hot-pink), 0 0 40px var(--hot-pink), 0 0 80px var(--hot-pink); }
     19%,21%,53%,63% { text-shadow:none; opacity:0.75; }
   }
-  .v-name {
-    font-family:'Pacifico',cursive; font-size:54px; color:#fff; line-height:1;
-    position:relative; z-index:2;
-    animation: v-flicker 9s infinite;
-  }
-  .v-sub { font-size:13px; font-weight:700; color:rgba(255,255,255,0.5); margin-top:6px; position:relative; z-index:2; }
+  .v-name { font-family:'Pacifico',cursive; font-size:54px; color:#fff; line-height:1; position:relative; z-index:2; animation:v-flicker 9s infinite; }
+  .v-sub  { font-size:13px; font-weight:700; color:rgba(255,255,255,0.5); margin-top:6px; position:relative; z-index:2; }
 
   @keyframes v-pulse { 0%,100%{box-shadow:0 0 6px var(--green),0 0 12px rgba(0,255,136,0.4);} 50%{box-shadow:none;} }
   .v-live { display:inline-flex; align-items:center; gap:6px; background:rgba(0,255,136,0.1); border:1.5px solid rgba(0,255,136,0.45); border-radius:20px; padding:3px 13px; margin-top:12px; position:relative; z-index:2; }
   .v-live-dot { width:7px; height:7px; border-radius:50%; background:var(--green); animation:v-pulse 1.5s ease-in-out infinite; }
 
-  /* ── Form body ── */
+  /* ── Form ── */
   .v-body { padding: 20px 22px 26px; display:flex; flex-direction:column; gap:16px; }
+  .v-lbl  { font-size:11px; font-weight:900; letter-spacing:0.12em; text-transform:uppercase; display:block; margin-bottom:8px; color:rgba(255,255,255,0.5); }
 
-  .v-lbl { font-size:11px; font-weight:900; letter-spacing:0.12em; text-transform:uppercase; display:block; margin-bottom:8px; color:rgba(255,255,255,0.5); }
-
-  /* Input */
   .v-iw input {
     width:100% !important; background:rgba(255,255,255,0.05) !important;
     border:1.5px solid rgba(255,255,255,0.12) !important; border-radius:10px !important;
@@ -121,8 +111,7 @@ const STYLES = `
   .v-ta {
     width:100%; background:rgba(255,255,255,0.05); border:1.5px solid rgba(255,255,255,0.12);
     border-radius:10px; color:#fff; font-family:'Nunito',sans-serif; font-size:14px; font-weight:700;
-    padding:10px 14px; resize:none; outline:none; line-height:1.6; caret-color:var(--cyan);
-    transition:all .2s;
+    padding:10px 14px; resize:none; outline:none; line-height:1.6; caret-color:var(--cyan); transition:all .2s;
   }
   .v-ta:focus { border-color:var(--cyan); background:rgba(0,238,255,0.06); box-shadow:0 0 0 3px rgba(0,238,255,0.15),0 0 20px rgba(0,238,255,0.15); }
   .v-ta::placeholder { color:rgba(255,255,255,0.22); }
@@ -130,203 +119,173 @@ const STYLES = `
   .v-cbar { height:3px; margin-top:5px; background:rgba(255,255,255,0.07); border-radius:2px; overflow:hidden; }
   .v-cbar-fill { height:100%; border-radius:2px; transition:width .12s,background .2s; }
 
-  /* ════════════════════════════════════════
-     3D EXTRUDED TYPE BUTTONS
-  ════════════════════════════════════════ */
-  .v-types { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  /* ══════════════════════════════════════════════════
+     TRUE 3D ARCADE BUTTONS
+     Technique: position:relative wrapper + ::after pseudo
+     for the visible colored "side face", translateY on press
+  ══════════════════════════════════════════════════ */
+  .v-types { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; padding-bottom: 8px; }
 
+  /* Common wrapper — provides the click area & depth space */
   .v-tb {
     position: relative;
-    padding: 11px 4px 10px;
-    text-align: center;
-    border-radius: 12px;
+    padding: 0;
+    border: none; background: none;
     cursor: pointer;
-    /* The 3D extrusion depth via layered box-shadow acting as the "side face" */
-    transition: transform .12s ease, box-shadow .12s ease;
-    transform-style: preserve-3d;
-    border: none; outline: none;
-    user-select: none;
+    /* Reserve space below for the 3D side */
+    margin-bottom: 0;
+    outline: none;
+    border-radius: 12px;
   }
 
-  /* DEFAULT (inactive) 3D extruded style */
-  .v-tb-cy {
-    background: linear-gradient(160deg, rgba(0,238,255,0.15) 0%, rgba(0,238,255,0.07) 100%);
-    border-top: 1.5px solid rgba(0,238,255,0.5);
-    border-left: 1.5px solid rgba(0,238,255,0.3);
-    border-right: 1.5px solid rgba(0,238,255,0.12);
-    border-bottom: 1.5px solid rgba(0,238,255,0.08);
-    box-shadow:
-      /* 3D depth layers - stacked to create extrusion */
-      0 4px 0 rgba(0,120,130,0.9),
-      0 5px 0 rgba(0,90,100,0.7),
-      0 6px 0 rgba(0,60,70,0.5),
-      /* outer glow */
-      0 8px 16px rgba(0,238,255,0.2),
-      inset 0 1px 0 rgba(255,255,255,0.15);
-  }
-  .v-tb-pk {
-    background: linear-gradient(160deg, rgba(255,0,153,0.15) 0%, rgba(255,0,153,0.07) 100%);
-    border-top: 1.5px solid rgba(255,0,153,0.5);
-    border-left: 1.5px solid rgba(255,0,153,0.3);
-    border-right: 1.5px solid rgba(255,0,153,0.12);
-    border-bottom: 1.5px solid rgba(255,0,153,0.08);
-    box-shadow:
-      0 4px 0 rgba(130,0,80,0.9),
-      0 5px 0 rgba(100,0,60,0.7),
-      0 6px 0 rgba(70,0,40,0.5),
-      0 8px 16px rgba(255,0,153,0.2),
-      inset 0 1px 0 rgba(255,255,255,0.15);
-  }
-  .v-tb-or {
-    background: linear-gradient(160deg, rgba(255,102,0,0.15) 0%, rgba(255,102,0,0.07) 100%);
-    border-top: 1.5px solid rgba(255,102,0,0.5);
-    border-left: 1.5px solid rgba(255,102,0,0.3);
-    border-right: 1.5px solid rgba(255,102,0,0.12);
-    border-bottom: 1.5px solid rgba(255,102,0,0.08);
-    box-shadow:
-      0 4px 0 rgba(130,50,0,0.9),
-      0 5px 0 rgba(100,38,0,0.7),
-      0 6px 0 rgba(70,25,0,0.5),
-      0 8px 16px rgba(255,102,0,0.2),
-      inset 0 1px 0 rgba(255,255,255,0.15);
-  }
-  .v-tb-pu {
-    background: linear-gradient(160deg, rgba(170,0,255,0.15) 0%, rgba(170,0,255,0.07) 100%);
-    border-top: 1.5px solid rgba(170,0,255,0.5);
-    border-left: 1.5px solid rgba(170,0,255,0.3);
-    border-right: 1.5px solid rgba(170,0,255,0.12);
-    border-bottom: 1.5px solid rgba(170,0,255,0.08);
-    box-shadow:
-      0 4px 0 rgba(85,0,130,0.9),
-      0 5px 0 rgba(65,0,100,0.7),
-      0 6px 0 rgba(45,0,70,0.5),
-      0 8px 16px rgba(170,0,255,0.2),
-      inset 0 1px 0 rgba(255,255,255,0.15);
+  /* The visible TOP FACE */
+  .v-tb-face {
+    position: relative;
+    z-index: 2;
+    padding: 11px 4px 10px;
+    border-radius: 12px;
+    text-align: center;
+    transition: transform .1s ease;
+    /* Default: pushed up = 3D standing tall */
+    transform: translateY(-6px);
   }
 
-  /* HOVER — lift up, extrusion shrinks */
-  .v-tb-cy:hover { transform:translateY(-2px); box-shadow: 0 6px 0 rgba(0,120,130,0.9), 0 7px 0 rgba(0,90,100,0.7), 0 8px 0 rgba(0,60,70,0.5), 0 12px 24px rgba(0,238,255,0.3), inset 0 1px 0 rgba(255,255,255,0.2); }
-  .v-tb-pk:hover { transform:translateY(-2px); box-shadow: 0 6px 0 rgba(130,0,80,0.9),  0 7px 0 rgba(100,0,60,0.7),  0 8px 0 rgba(70,0,40,0.5),   0 12px 24px rgba(255,0,153,0.3), inset 0 1px 0 rgba(255,255,255,0.2); }
-  .v-tb-or:hover { transform:translateY(-2px); box-shadow: 0 6px 0 rgba(130,50,0,0.9),  0 7px 0 rgba(100,38,0,0.7), 0 8px 0 rgba(70,25,0,0.5),   0 12px 24px rgba(255,102,0,0.3), inset 0 1px 0 rgba(255,255,255,0.2); }
-  .v-tb-pu:hover { transform:translateY(-2px); box-shadow: 0 6px 0 rgba(85,0,130,0.9),  0 7px 0 rgba(65,0,100,0.7), 0 8px 0 rgba(45,0,70,0.5),   0 12px 24px rgba(170,0,255,0.3), inset 0 1px 0 rgba(255,255,255,0.2); }
+  /* The SIDE / BOTTOM face — always visible below */
+  .v-tb::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: calc(100% - 4px);
+    border-radius: 12px;
+    z-index: 1;
+    transition: height .1s ease;
+  }
 
-  /* ACTIVE (pressed) — push down, extrusion disappears */
-  .v-tb-cy:active, .v-tb-cy.v-on:active { transform:translateY(4px); box-shadow: 0 0px 0 rgba(0,120,130,0.9), 0 8px 12px rgba(0,238,255,0.15) !important; }
-  .v-tb-pk:active, .v-tb-pk.v-on:active { transform:translateY(4px); box-shadow: 0 0px 0 rgba(130,0,80,0.9),  0 8px 12px rgba(255,0,153,0.15) !important; }
-  .v-tb-or:active, .v-tb-or.v-on:active { transform:translateY(4px); box-shadow: 0 0px 0 rgba(130,50,0,0.9),  0 8px 12px rgba(255,102,0,0.15) !important; }
-  .v-tb-pu:active, .v-tb-pu.v-on:active { transform:translateY(4px); box-shadow: 0 0px 0 rgba(85,0,130,0.9),  0 8px 12px rgba(170,0,255,0.15) !important; }
+  /* CYAN button */
+  .v-tb-cy .v-tb-face {
+    background: linear-gradient(160deg, rgba(0,238,255,0.2) 0%, rgba(0,100,140,0.5) 100%);
+    border: 1.5px solid rgba(0,238,255,0.7);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), 0 0 12px rgba(0,238,255,0.25);
+  }
+  .v-tb-cy::after { background: #006680; border: 1.5px solid rgba(0,238,255,0.4); }
+  .v-tb-cy:hover .v-tb-face { box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 0 20px rgba(0,238,255,0.5), 0 0 40px rgba(0,238,255,0.2); }
 
-  /* SELECTED (on) — pressed in + full neon glow */
-  .v-tb-cy.v-on {
-    transform: translateY(3px);
-    background: linear-gradient(160deg, rgba(0,238,255,0.25) 0%, rgba(0,238,255,0.14) 100%);
-    border-top-color: var(--cyan);
-    box-shadow:
-      0 1px 0 rgba(0,120,130,0.9),
-      0 0 16px rgba(0,238,255,0.6),
-      0 0 32px rgba(0,238,255,0.25),
-      inset 0 0 14px rgba(0,238,255,0.12),
-      inset 0 1px 0 rgba(255,255,255,0.25);
+  /* PINK button */
+  .v-tb-pk .v-tb-face {
+    background: linear-gradient(160deg, rgba(255,0,153,0.22) 0%, rgba(140,0,80,0.5) 100%);
+    border: 1.5px solid rgba(255,0,153,0.7);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), 0 0 12px rgba(255,0,153,0.25);
   }
-  .v-tb-pk.v-on {
-    transform: translateY(3px);
-    background: linear-gradient(160deg, rgba(255,0,153,0.25) 0%, rgba(255,0,153,0.14) 100%);
-    border-top-color: var(--hot-pink);
-    box-shadow:
-      0 1px 0 rgba(130,0,80,0.9),
-      0 0 16px rgba(255,0,153,0.6),
-      0 0 32px rgba(255,0,153,0.25),
-      inset 0 0 14px rgba(255,0,153,0.12),
-      inset 0 1px 0 rgba(255,255,255,0.25);
+  .v-tb-pk::after { background: #800040; border: 1.5px solid rgba(255,0,153,0.4); }
+  .v-tb-pk:hover .v-tb-face { box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 0 20px rgba(255,0,153,0.5), 0 0 40px rgba(255,0,153,0.2); }
+
+  /* ORANGE button */
+  .v-tb-or .v-tb-face {
+    background: linear-gradient(160deg, rgba(255,102,0,0.22) 0%, rgba(140,50,0,0.5) 100%);
+    border: 1.5px solid rgba(255,102,0,0.7);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), 0 0 12px rgba(255,102,0,0.25);
   }
-  .v-tb-or.v-on {
-    transform: translateY(3px);
-    background: linear-gradient(160deg, rgba(255,102,0,0.25) 0%, rgba(255,102,0,0.14) 100%);
-    border-top-color: var(--orange);
-    box-shadow:
-      0 1px 0 rgba(130,50,0,0.9),
-      0 0 16px rgba(255,102,0,0.6),
-      0 0 32px rgba(255,102,0,0.25),
-      inset 0 0 14px rgba(255,102,0,0.12),
-      inset 0 1px 0 rgba(255,255,255,0.25);
+  .v-tb-or::after { background: #7a2e00; border: 1.5px solid rgba(255,102,0,0.4); }
+  .v-tb-or:hover .v-tb-face { box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 0 20px rgba(255,102,0,0.5), 0 0 40px rgba(255,102,0,0.2); }
+
+  /* PURPLE button */
+  .v-tb-pu .v-tb-face {
+    background: linear-gradient(160deg, rgba(170,0,255,0.22) 0%, rgba(90,0,140,0.5) 100%);
+    border: 1.5px solid rgba(170,0,255,0.7);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), 0 0 12px rgba(170,0,255,0.25);
   }
-  .v-tb-pu.v-on {
-    transform: translateY(3px);
-    background: linear-gradient(160deg, rgba(170,0,255,0.25) 0%, rgba(170,0,255,0.14) 100%);
-    border-top-color: var(--purple);
-    box-shadow:
-      0 1px 0 rgba(85,0,130,0.9),
-      0 0 16px rgba(170,0,255,0.6),
-      0 0 32px rgba(170,0,255,0.25),
-      inset 0 0 14px rgba(170,0,255,0.12),
-      inset 0 1px 0 rgba(255,255,255,0.25);
+  .v-tb-pu::after { background: #500080; border: 1.5px solid rgba(170,0,255,0.4); }
+  .v-tb-pu:hover .v-tb-face { box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 0 20px rgba(170,0,255,0.5), 0 0 40px rgba(170,0,255,0.2); }
+
+  /* PRESSED (active click) */
+  .v-tb:active .v-tb-face { transform: translateY(0px) !important; }
+
+  /* SELECTED STATE — face pressed down, full glow */
+  .v-tb-cy.v-on .v-tb-face {
+    transform: translateY(0px);
+    background: linear-gradient(160deg, rgba(0,238,255,0.35) 0%, rgba(0,150,180,0.6) 100%);
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.3), 0 0 20px rgba(0,238,255,0.7), 0 0 40px rgba(0,238,255,0.3), inset 0 0 16px rgba(0,238,255,0.15);
+    border-color: var(--cyan);
+  }
+  .v-tb-pk.v-on .v-tb-face {
+    transform: translateY(0px);
+    background: linear-gradient(160deg, rgba(255,0,153,0.35) 0%, rgba(180,0,100,0.6) 100%);
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.3), 0 0 20px rgba(255,0,153,0.7), 0 0 40px rgba(255,0,153,0.3), inset 0 0 16px rgba(255,0,153,0.15);
+    border-color: var(--hot-pink);
+  }
+  .v-tb-or.v-on .v-tb-face {
+    transform: translateY(0px);
+    background: linear-gradient(160deg, rgba(255,102,0,0.35) 0%, rgba(180,70,0,0.6) 100%);
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.3), 0 0 20px rgba(255,102,0,0.7), 0 0 40px rgba(255,102,0,0.3), inset 0 0 16px rgba(255,102,0,0.15);
+    border-color: var(--orange);
+  }
+  .v-tb-pu.v-on .v-tb-face {
+    transform: translateY(0px);
+    background: linear-gradient(160deg, rgba(170,0,255,0.35) 0%, rgba(120,0,180,0.6) 100%);
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.3), 0 0 20px rgba(170,0,255,0.7), 0 0 40px rgba(170,0,255,0.3), inset 0 0 16px rgba(170,0,255,0.15);
+    border-color: var(--purple);
   }
 
   .v-tb-emoji { font-size:20px; display:block; line-height:1; }
-  .v-tb-name  { font-size:10px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; display:block; margin-top:5px; transition:color .18s, text-shadow .18s; }
-  .v-tb-min   { font-size:8px; font-weight:700; color:rgba(255,228,0,0.7); display:block; margin-top:2px; }
+  .v-tb-name  { font-size:10px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; display:block; margin-top:5px; transition:color .15s, text-shadow .15s; }
+  .v-tb-min   { font-size:8px; font-weight:700; color:rgba(255,228,0,0.75); display:block; margin-top:2px; }
 
-  /* Amount row */
+  /* Amount */
   .v-amt { display:flex; gap:8px; }
   .v-cur {
     display:flex; align-items:center; justify-content:space-between; gap:5px;
-    background:rgba(255,255,255,0.05) !important;
-    border:1.5px solid rgba(255,255,255,0.12) !important;
-    border-radius:10px !important; color:#fff !important;
-    font-family:'Nunito',sans-serif !important; font-size:13px !important; font-weight:800 !important;
-    padding:0 12px !important; min-width:92px; height:42px;
-    cursor:pointer; transition:all .2s; flex-shrink:0;
+    background:rgba(255,255,255,0.05) !important; border:1.5px solid rgba(255,255,255,0.12) !important;
+    border-radius:10px !important; color:#fff !important; font-family:'Nunito',sans-serif !important;
+    font-size:13px !important; font-weight:800 !important; padding:0 12px !important;
+    min-width:92px; height:42px; cursor:pointer; transition:all .2s; flex-shrink:0;
   }
   .v-cur:hover { border-color:var(--cyan) !important; box-shadow:0 0 12px rgba(0,238,255,0.2) !important; }
 
   .v-div { height:1px; background:linear-gradient(90deg,transparent,rgba(255,0,153,0.35),rgba(0,238,255,0.3),transparent); box-shadow:0 0 6px rgba(255,0,153,0.1); }
 
-  /* Sub panels */
   .v-sp { border-radius:14px; padding:14px 16px; }
   .v-sp-or { background:rgba(255,102,0,0.07); border:1.5px solid rgba(255,102,0,0.45); box-shadow:0 0 18px rgba(255,102,0,0.12),inset 0 0 18px rgba(255,102,0,0.04); }
   .v-sp-pu { background:rgba(170,0,255,0.07); border:1.5px solid rgba(170,0,255,0.45); box-shadow:0 0 18px rgba(170,0,255,0.12),inset 0 0 18px rgba(170,0,255,0.04); }
 
-  /* ════════════════════════════════════════
-     3D SUBMIT BUTTON
-  ════════════════════════════════════════ */
+  /* ══════════════════════════════════════════════
+     3D SUBMIT BUTTON — same technique
+  ══════════════════════════════════════════════ */
+  .v-btn-wrap {
+    position: relative;
+    width: 100%;
+    border-radius: 14px;
+  }
+  /* The deep side face */
+  .v-btn-wrap::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: calc(100% - 4px);
+    border-radius: 14px;
+    background: linear-gradient(90deg, #7700aa, #aa0055, #aa3300);
+    z-index: 1;
+  }
   .v-btn {
-    width:100%; padding:14px; border:none; cursor:pointer;
+    position: relative; z-index: 2;
+    width: 100%; padding: 14px; border: none; cursor: pointer;
     font-family:'Nunito',sans-serif; font-size:16px; font-weight:900;
     letter-spacing:.04em; color:#fff;
-    position:relative; overflow:hidden; border-radius:14px;
-    transition: transform .12s ease, box-shadow .12s ease;
-    background: linear-gradient(160deg, #cc00ff 0%, #ff0099 50%, #ff6600 100%);
+    border-radius: 14px;
+    transition: transform .1s ease, box-shadow .1s ease;
+    transform: translateY(-7px);
+    background: linear-gradient(135deg, #cc00ff 0%, #ff0099 50%, #ff6600 100%);
     border-top: 1.5px solid rgba(255,255,255,0.3);
     border-left: 1.5px solid rgba(255,255,255,0.15);
-    border-right: 1.5px solid transparent;
-    border-bottom: 1.5px solid transparent;
-    /* 3D extrusion */
-    box-shadow:
-      0 6px 0 rgba(120,0,80,1),
-      0 7px 0 rgba(90,0,60,0.9),
-      0 8px 0 rgba(60,0,40,0.7),
-      0 12px 30px rgba(255,0,153,0.4),
-      0 20px 60px rgba(170,0,255,0.2),
-      inset 0 1px 0 rgba(255,255,255,0.2);
+    border-right: 1.5px solid rgba(255,150,0,0.4);
+    border-bottom: 1.5px solid rgba(255,80,0,0.3);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 0 20px rgba(255,0,153,0.4), 0 0 40px rgba(170,0,255,0.2);
+    overflow: hidden;
   }
   .v-btn:hover:not(:disabled) {
-    transform: translateY(-3px);
-    box-shadow:
-      0 9px 0 rgba(120,0,80,1),
-      0 10px 0 rgba(90,0,60,0.9),
-      0 11px 0 rgba(60,0,40,0.7),
-      0 18px 40px rgba(255,0,153,0.55),
-      0 28px 80px rgba(170,0,255,0.25),
-      inset 0 1px 0 rgba(255,255,255,0.25);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), 0 0 30px rgba(255,0,153,0.65), 0 0 60px rgba(170,0,255,0.3);
   }
-  .v-btn:active:not(:disabled) {
-    transform: translateY(6px);
-    box-shadow:
-      0 0px 0 rgba(120,0,80,1),
-      0 6px 16px rgba(255,0,153,0.3),
-      inset 0 2px 4px rgba(0,0,0,0.3);
-  }
-  .v-btn:disabled { opacity:.35; cursor:not-allowed; }
+  .v-btn:active:not(:disabled) { transform: translateY(0px) !important; box-shadow: inset 0 2px 8px rgba(0,0,0,0.4), 0 0 16px rgba(255,0,153,0.3) !important; }
+  .v-btn:disabled { opacity:.38; cursor:not-allowed; transform: translateY(-7px); }
   .v-btn::before {
     content:''; position:absolute; top:0; left:-110%; width:55%; height:100%;
     background:linear-gradient(90deg,transparent,rgba(255,255,255,0.22),transparent);
@@ -380,9 +339,7 @@ const Ankit = () => {
     const onPause = () => { if (document.visibilityState==='visible') video.play().catch(()=>{}); };
     const onVis   = () => { if (document.visibilityState==='visible') video.play().catch(()=>{}); };
     const onTouch = () => { if (video.paused) video.play().catch(()=>{}); };
-    video.addEventListener('pause', onPause);
-    document.addEventListener('visibilitychange', onVis);
-    document.addEventListener('touchend', onTouch);
+    video.addEventListener('pause',onPause); document.addEventListener('visibilitychange',onVis); document.addEventListener('touchend',onTouch);
     return () => { video.removeEventListener('pause',onPause); document.removeEventListener('visibilitychange',onVis); document.removeEventListener('touchend',onTouch); };
   }, [isMobile]);
 
@@ -403,8 +360,7 @@ const Ankit = () => {
     s.onload=()=>{ setRazorpayLoaded(true); toast({title:"Payment System Ready"}); };
     s.onerror=()=>toast({title:"Payment Error",description:"Please refresh.",variant:"destructive"});
     document.body.appendChild(s);
-    supabase.rpc('get_streamer_public_settings',{slug:'ankit'})
-      .then(({data,error})=>{ if(!error&&data?.length) setStreamerSettings(data[0]); });
+    supabase.rpc('get_streamer_public_settings',{slug:'ankit'}).then(({data,error})=>{ if(!error&&data?.length) setStreamerSettings(data[0]); });
     return ()=>{ document.body.removeChild(s); };
   }, []);
 
@@ -412,11 +368,7 @@ const Ankit = () => {
     const {name,value}=e.target;
     if (name==='amount'&&donationType==='message') {
       const lim=getMaxMessageLength(pricing.messageCharTiers,parseFloat(value)||40);
-      if (formData.message.length>lim) {
-        toast({title:"Message Shortened",description:`Limited to ${lim} chars.`});
-        setFormData(p=>({...p,[name]:value,message:p.message.slice(0,lim)}));
-        return;
-      }
+      if (formData.message.length>lim) { toast({title:"Message Shortened",description:`Limited to ${lim} chars.`}); setFormData(p=>({...p,[name]:value,message:p.message.slice(0,lim)})); return; }
     }
     setFormData(p=>({...p,[name]:value}));
   };
@@ -425,14 +377,14 @@ const Ankit = () => {
     e.preventDefault();
     const amount=parseFloat(formData.amount);
     const sym=getCurrencySymbol(formData.currency);
-    if (!formData.name?.trim())                             { toast({title:"Name Required",variant:"destructive"}); return; }
-    if (donationType==='voice'&&!hasVoiceRecording)         { toast({title:"Voice Required",variant:"destructive"}); return; }
-    if (donationType==='hypersound'&&!selectedSound)        { toast({title:"Sound Required",variant:"destructive"}); return; }
-    if (donationType==='message'&&!formData.message?.trim()){ toast({title:"Message Required",variant:"destructive"}); return; }
+    if (!formData.name?.trim())                              { toast({title:"Name Required",variant:"destructive"}); return; }
+    if (donationType==='voice'&&!hasVoiceRecording)          { toast({title:"Voice Required",variant:"destructive"}); return; }
+    if (donationType==='hypersound'&&!selectedSound)         { toast({title:"Sound Required",variant:"destructive"}); return; }
+    if (donationType==='message'&&!formData.message?.trim()) { toast({title:"Message Required",variant:"destructive"}); return; }
     if (donationType==='message'&&formData.message.length>charLimit){ toast({title:"Message Too Long",variant:"destructive"}); return; }
-    if (!amount||amount<1)                                  { toast({title:"Invalid Amount",variant:"destructive"}); return; }
-    if (donationType==='message'&&amount<pricing.minText)   { toast({title:`Min ${sym}${pricing.minText}`,variant:"destructive"}); return; }
-    if (donationType==='voice'&&amount<pricing.minVoice)    { toast({title:`Min ${sym}${pricing.minVoice}`,variant:"destructive"}); return; }
+    if (!amount||amount<1)                                   { toast({title:"Invalid Amount",variant:"destructive"}); return; }
+    if (donationType==='message'&&amount<pricing.minText)    { toast({title:`Min ${sym}${pricing.minText}`,variant:"destructive"}); return; }
+    if (donationType==='voice'&&amount<pricing.minVoice)     { toast({title:`Min ${sym}${pricing.minVoice}`,variant:"destructive"}); return; }
     if (donationType==='hypersound'&&amount<pricing.minHypersound){ toast({title:`Min ${sym}${pricing.minHypersound}`,variant:"destructive"}); return; }
     if (!razorpayLoaded){ toast({title:"Payment Not Ready",variant:"destructive"}); return; }
     setIsProcessing(true);
@@ -446,11 +398,9 @@ const Ankit = () => {
         voiceMessageUrl=up.voice_message_url;
       }
       const {data,error}=await supabase.functions.invoke('create-razorpay-order-unified',{
-        body:{
-          streamer_slug:'ankit', name:formData.name.trim(), amount, currency:formData.currency,
+        body:{ streamer_slug:'ankit', name:formData.name.trim(), amount, currency:formData.currency,
           message:donationType==='message'?formData.message.trim():donationType==='voice'?'Sent a Voice message':donationType==='hypersound'?'🔊 HyperSound!':'',
-          voiceMessageUrl, hypersoundUrl:donationType==='hypersound'?selectedSound:null,
-        }
+          voiceMessageUrl, hypersoundUrl:donationType==='hypersound'?selectedSound:null }
       });
       if (error||!data?.orderId) throw new Error(data?.error||'Failed to create order');
       const rzp=new (window as any).Razorpay({
@@ -475,11 +425,7 @@ const Ankit = () => {
     if (file.size>5*1024*1024) { toast({title:"File Too Large",variant:"destructive"}); return; }
     setSelectedImage(file); setImagePreview(URL.createObjectURL(file));
   };
-  const handleRemoveImage=()=>{
-    setSelectedImage(null);
-    if (imagePreview) URL.revokeObjectURL(imagePreview);
-    setImagePreview(null);
-  };
+  const handleRemoveImage=()=>{ setSelectedImage(null); if (imagePreview) URL.revokeObjectURL(imagePreview); setImagePreview(null); };
   const handleDonationTypeChange=(type:'message'|'voice'|'hypersound'|'image')=>{
     setDonationType(type);
     const mins={message:pricing.minText,voice:pricing.minVoice,hypersound:pricing.minHypersound,image:pricing.minMedia};
@@ -509,14 +455,14 @@ const Ankit = () => {
           <><VideoBackground videoSrc="/assets/streamers/ankit-background.mp4"/>
             <div style={{position:'fixed',inset:0,background:'rgba(13,0,21,0.82)',pointerEvents:'none',zIndex:1}}/></>
         ) : (
-          <><video ref={mobileVideoRef} autoPlay loop muted playsInline
-              style={{position:'fixed',inset:0,width:'100%',height:'100%',objectFit:'cover',zIndex:0}}>
+          <><video ref={mobileVideoRef} autoPlay loop muted playsInline style={{position:'fixed',inset:0,width:'100%',height:'100%',objectFit:'cover',zIndex:0}}>
               <source src="/assets/streamers/ankit-background.mp4" type="video/mp4"/>
             </video>
             <div style={{position:'fixed',inset:0,background:'rgba(13,0,21,0.82)',pointerEvents:'none',zIndex:1}}/></>
         )}
 
         <div className="v-card v-in">
+
           {/* HERO */}
           <div className="v-hero">
             <div className="v-hero-blob1"/><div className="v-hero-blob2"/>
@@ -537,12 +483,10 @@ const Ankit = () => {
               {/* Name */}
               <div>
                 <label className="v-lbl">Your Name</label>
-                <div className="v-iw">
-                  <Input id="name" name="name" value={formData.name} onChange={handleInputChange} placeholder="Enter your name" required/>
-                </div>
+                <div className="v-iw"><Input id="name" name="name" value={formData.name} onChange={handleInputChange} placeholder="Enter your name" required/></div>
               </div>
 
-              {/* Type — 3D buttons */}
+              {/* 3D Type Buttons */}
               <div>
                 <label className="v-lbl">Donation Type</label>
                 <div className="v-types">
@@ -550,12 +494,15 @@ const Ankit = () => {
                     <button key={t.key} type="button"
                       onClick={()=>handleDonationTypeChange(t.key)}
                       className={cn('v-tb',t.tc,donationType===t.key?'v-on':'')}>
-                      <span className="v-tb-emoji">{t.emoji}</span>
-                      <span className="v-tb-name" style={{
-                        color: donationType===t.key ? t.nc : 'rgba(255,255,255,0.45)',
-                        textShadow: donationType===t.key ? `0 0 10px ${t.nc}, 0 0 20px ${t.nc}` : 'none',
-                      }}>{t.label}</span>
-                      <span className="v-tb-min">{sym}{t.min}+</span>
+                      {/* The face element that moves */}
+                      <div className="v-tb-face">
+                        <span className="v-tb-emoji">{t.emoji}</span>
+                        <span className="v-tb-name" style={{
+                          color: donationType===t.key ? t.nc : 'rgba(255,255,255,0.5)',
+                          textShadow: donationType===t.key ? `0 0 10px ${t.nc}, 0 0 20px ${t.nc}` : 'none',
+                        }}>{t.label}</span>
+                        <span className="v-tb-min">{sym}{t.min}+</span>
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -591,10 +538,8 @@ const Ankit = () => {
                     </PopoverContent>
                   </Popover>
                   <div className="v-iw" style={{flex:1}}>
-                    <Input id="amount" name="amount" type="number"
-                      value={formData.amount} onChange={handleInputChange}
-                      min="1" max="100000" placeholder="0"
-                      disabled={isAmountLocked||donationType==='hypersound'} required/>
+                    <Input id="amount" name="amount" type="number" value={formData.amount} onChange={handleInputChange}
+                      min="1" max="100000" placeholder="0" disabled={isAmountLocked||donationType==='hypersound'} required/>
                   </div>
                 </div>
                 {isAmountLocked&&<p className="v-lock">🔒 Amount locked during recording</p>}
@@ -604,7 +549,6 @@ const Ankit = () => {
 
               <div className="v-div"/>
 
-              {/* Dynamic */}
               {donationType==='message'&&(
                 <div className="v-fu">
                   <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
@@ -664,20 +608,22 @@ const Ankit = () => {
 
               <RewardsBanner amount={currentAmount} currency={formData.currency}/>
 
-              {/* 3D Submit */}
-              <button type="submit" className="v-btn" disabled={isProcessing||!razorpayLoaded}>
-                {isProcessing||!razorpayLoaded?(
-                  <span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
-                    <span className="v-spin"/>
-                    {isProcessing?'Processing...':'Loading Payment...'}
-                  </span>
-                ):(
-                  <span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
-                    <Heart style={{width:17,height:17}}/>
-                    Donate {sym}{formData.amount||'0'}
-                  </span>
-                )}
-              </button>
+              {/* 3D Donate button */}
+              <div className="v-btn-wrap">
+                <button type="submit" className="v-btn" disabled={isProcessing||!razorpayLoaded}>
+                  {isProcessing||!razorpayLoaded?(
+                    <span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
+                      <span className="v-spin"/>
+                      {isProcessing?'Processing...':'Loading Payment...'}
+                    </span>
+                  ):(
+                    <span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
+                      <Heart style={{width:17,height:17}}/>
+                      Donate {sym}{formData.amount||'0'}
+                    </span>
+                  )}
+                </button>
+              </div>
 
               <p style={{fontSize:10,fontWeight:600,color:'rgba(255,255,255,0.2)',textAlign:'center',lineHeight:1.6}}>
                 Phone numbers collected by Razorpay as per RBI regulations
