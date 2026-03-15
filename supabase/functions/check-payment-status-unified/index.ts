@@ -30,6 +30,7 @@ const STREAMER_CONFIG: Record<string, { table: string; prefix: string }> = {
   'mr_champion': { table: 'mr_champion_donations', prefix: 'mc_rp_' },
   'demigod': { table: 'demigod_donations', prefix: 'dg_rp_' },
   'nova_plays': { table: 'nova_plays_donations', prefix: 'np_rp_' },
+  'starlight_anya': { table: 'starlight_anya_donations', prefix: 'sa_rp_' },
 };
 
 // Derive streamer_slug from order_id prefix
