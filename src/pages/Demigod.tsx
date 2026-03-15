@@ -1,15 +1,12 @@
-import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Check, ChevronsUpDown, Heart } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Check, ChevronsUpDown } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import EnhancedVoiceRecorder from "@/components/EnhancedVoiceRecorder";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import HyperSoundSelector from "@/components/HyperSoundSelector";
@@ -20,357 +17,303 @@ import { getMaxMessageLength } from "@/utils/getMaxMessageLength";
 import DonationPageFooter from "@/components/DonationPageFooter";
 import RewardsBanner from "@/components/RewardsBanner";
 
+const STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Pacifico&display=swap');
+
+  :root {
+    --sa-pink:#ac1117;
+    --sa-fuchsia:#ac1117;
+    --sa-cyan:#ac1117;
+    --sa-purple:#ac1117;
+    --sa-yellow:#ffe500;
+    --sa-orange:#ac1117;
+    --sa-green:#00ff88;
+    --sa-bg:#24201D;
+    --sa-card:#24201D;
+  }
+
+  .sa-root{font-family:'Nunito',sans-serif;}
+  .sa-page{width:100vw;height:100dvh;background:var(--sa-bg);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;}
+  .sa-scale-wrap{width:420px;transform-origin:top center;position:relative;z-index:10;}
+
+  .sa-card{
+    width:420px;background:var(--sa-card);border-radius:20px;
+    border:1px solid rgba(172,17,23,0.3);
+    box-shadow:0 0 0 1px rgba(172,17,23,0.12),0 0 25px rgba(172,17,23,0.2),0 30px 80px rgba(0,0,0,0.7);
+    overflow:hidden;
+  }
+
+  .sa-hero{
+    position:relative;padding:14px 18px 12px;
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    overflow:hidden;
+    background:linear-gradient(135deg,rgba(172,17,23,0.2) 0%,rgba(172,17,23,0.1) 60%,transparent 100%);
+    border-bottom:1px solid rgba(172,17,23,0.18);
+  }
+
+  .sa-name{
+    font-family:'Pacifico',cursive;
+    font-size:26px;
+    color:#fff;
+  }
+
+  .sa-body{padding:14px 18px 16px;display:flex;flex-direction:column;gap:11px;}
+
+  .sa-lbl{
+    font-size:10px;
+    font-weight:900;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    display:block;
+    margin-bottom:5px;
+    color:rgba(255,255,255,0.45);
+  }
+
+  .sa-iw input{
+    width:100%!important;
+    background:rgba(255,255,255,0.05)!important;
+    border:1.5px solid rgba(172,17,23,0.3)!important;
+    border-radius:8px!important;
+    color:#fff!important;
+    font-size:14px!important;
+    font-weight:700!important;
+    padding:8px 12px!important;
+  }
+
+  .sa-ta{
+    width:100%;
+    background:rgba(255,255,255,0.05);
+    border:1.5px solid rgba(172,17,23,0.3);
+    border-radius:8px;
+    color:#fff;
+    font-size:13px;
+    padding:8px 12px;
+  }
+
+  .sa-btn-wrap{position:relative;width:100%;border-radius:12px;padding-bottom:6px;}
+  .sa-btn{
+    position:relative;
+    width:100%;
+    padding:13px;
+    border:none;
+    cursor:pointer;
+    font-size:15px;
+    font-weight:900;
+    color:#fff;
+    border-radius:12px;
+    background:#ac1117;
+  }
+`;
+
 const Demigod = () => {
   const navigate = useNavigate();
+  const cardRef = useRef<HTMLDivElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
 
-  const [formData, setFormData] = useState({
-    name: "",
-    amount: "",
-    message: "",
-  });
+  const [formData,setFormData]=useState({name:"",amount:"",message:""});
+  const [selectedCurrency,setSelectedCurrency]=useState("INR");
+  const [currencyOpen,setCurrencyOpen]=useState(false);
+  const [donationType,setDonationType]=useState<"text"|"voice"|"hypersound"|"media">("text");
+  const [selectedHypersound,setSelectedHypersound]=useState<string|null>(null);
+  const [mediaUrl,setMediaUrl]=useState<string|null>(null);
+  const [mediaType,setMediaType]=useState<string|null>(null);
+  const [isProcessingPayment,setIsProcessingPayment]=useState(false);
+  const [razorpayLoaded,setRazorpayLoaded]=useState(false);
 
-  const [selectedCurrency, setSelectedCurrency] = useState("INR");
-  const [currencyOpen, setCurrencyOpen] = useState(false);
-  const [donationType, setDonationType] = useState<"text" | "voice" | "hypersound" | "media">("text");
-
-  const [selectedHypersound, setSelectedHypersound] = useState<string | null>(null);
-  const [mediaUrl, setMediaUrl] = useState<string | null>(null);
-  const [mediaType, setMediaType] = useState<string | null>(null);
-
-  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-
-  const { pricing } = useStreamerPricing("demigod", selectedCurrency);
+  const { pricing } = useStreamerPricing("demigod",selectedCurrency);
   const currencySymbol = getCurrencySymbol(selectedCurrency);
 
-  const currentAmount = parseFloat(formData.amount) || 0;
-  const maxMessageLength = getMaxMessageLength(pricing.messageCharTiers, currentAmount);
+  const currentAmount=parseFloat(formData.amount)||0;
+  const maxMessageLength=getMaxMessageLength(pricing.messageCharTiers,currentAmount);
 
-  const getVoiceDuration = (amount: number) => {
-    if (selectedCurrency === "INR") {
-      if (amount >= 500) return 15;
-      if (amount >= 300) return 12;
+  const getVoiceDuration=(amount:number)=>{
+    if(selectedCurrency==="INR"){
+      if(amount>=500)return 15;
+      if(amount>=300)return 12;
       return 8;
     }
-    if (amount >= 6) return 15;
-    if (amount >= 4) return 12;
+    if(amount>=6)return 15;
+    if(amount>=4)return 12;
     return 8;
   };
 
-  const voiceRecorder = useVoiceRecorder(getVoiceDuration(currentAmount));
+  const voiceRecorder=useVoiceRecorder(getVoiceDuration(currentAmount));
 
-  useEffect(() => {
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.async = true;
-    script.onload = () => setRazorpayLoaded(true);
-    script.onerror = () => toast.error("Failed to load payment gateway");
-    document.body.appendChild(script);
+  useEffect(()=>{
+    const s=document.createElement("script");
+    s.src="https://checkout.razorpay.com/v1/checkout.js";
+    s.async=true;
+    s.onload=()=>setRazorpayLoaded(true);
+    document.body.appendChild(s);
+  },[]);
 
-    return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
-    };
-  }, []);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleInputChange=(e:React.ChangeEvent<HTMLInputElement|HTMLTextAreaElement>)=>{
+    const {name,value}=e.target;
+    setFormData(prev=>({...prev,[name]:value}));
   };
 
-  const handleDonationTypeChange = (value: "text" | "voice" | "hypersound" | "media") => {
-    setDonationType(value);
-
-    const amount =
-      value === "voice"
-        ? pricing.minVoice
-        : value === "hypersound"
-          ? pricing.minHypersound
-          : value === "media"
-            ? pricing.minMedia
-            : pricing.minText;
-
-    setFormData({ name: formData.name, amount: String(amount), message: "" });
-    setSelectedHypersound(null);
-    setMediaUrl(null);
-    setMediaType(null);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!razorpayLoaded || !window.Razorpay) {
-      toast.error("Payment system is still loading");
-      return;
-    }
-
-    const amount = Number(formData.amount);
-    if (!formData.name || !amount || amount <= 0) {
-      toast.error("Enter valid name and amount");
-      return;
-    }
-
-    const minAmount =
-      donationType === "voice"
-        ? pricing.minVoice
-        : donationType === "hypersound"
-          ? pricing.minHypersound
-          : donationType === "media"
-            ? pricing.minMedia
-            : pricing.minText;
-
-    if (amount < minAmount) {
-      toast.error(`Minimum for ${donationType} is ${currencySymbol}${minAmount}`);
-      return;
-    }
-
-    if (donationType === "voice" && !voiceRecorder.audioBlob) {
-      toast.error("Please record a voice message");
-      return;
-    }
-
-    if (donationType === "hypersound" && !selectedHypersound) {
-      toast.error("Select a sound");
-      return;
-    }
-
-    if (donationType === "media" && !mediaUrl) {
-      toast.error("Upload a media file");
-      return;
-    }
-
-    await processPayment();
-  };
-
-  const processPayment = async () => {
+  const processPayment=async()=>{
     setIsProcessingPayment(true);
 
-    try {
-      let voiceMessageUrl: string | null = null;
+    try{
+      let voiceMessageUrl:string|null=null;
 
-      if (donationType === "voice" && voiceRecorder.audioBlob) {
-        const base64 = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve((reader.result as string).split(",")[1]);
-          reader.onerror = reject;
+      if(donationType==="voice"&&voiceRecorder.audioBlob){
+        const base64=await new Promise<string>((resolve,reject)=>{
+          const reader=new FileReader();
+          reader.onload=()=>resolve((reader.result as string).split(",")[1]);
+          reader.onerror=reject;
           reader.readAsDataURL(voiceRecorder.audioBlob!);
         });
 
-        const { data, error } = await supabase.functions.invoke("upload-voice-message-direct", {
-          body: { voiceData: base64, streamerSlug: "demigod" },
+        const {data}=await supabase.functions.invoke("upload-voice-message-direct",{
+          body:{voiceData:base64,streamerSlug:"demigod"}
         });
 
-        if (error) throw error;
-        voiceMessageUrl = data.voice_message_url;
+        voiceMessageUrl=data.voice_message_url;
       }
 
-      const { data, error } = await supabase.functions.invoke("create-razorpay-order-unified", {
-        body: {
-          streamer_slug: "demigod",
-          name: formData.name,
-          amount: Number(formData.amount),
-          message: donationType === "text" ? formData.message : null,
+      const {data}=await supabase.functions.invoke("create-razorpay-order-unified",{
+        body:{
+          streamer_slug:"demigod",
+          name:formData.name,
+          amount:Number(formData.amount),
+          message:donationType==="text"?formData.message:null,
           voiceMessageUrl,
-          hypersoundUrl: donationType === "hypersound" ? selectedHypersound : null,
-          mediaUrl: donationType === "media" ? mediaUrl : null,
+          hypersoundUrl:donationType==="hypersound"?selectedHypersound:null,
+          mediaUrl:donationType==="media"?mediaUrl:null,
           mediaType,
-          currency: selectedCurrency,
-        },
+          currency:selectedCurrency
+        }
       });
 
-      if (error) throw error;
+      const rzp=new (window as any).Razorpay({
+        key:data.razorpay_key_id,
+        amount:data.amount,
+        currency:data.currency,
+        order_id:data.razorpay_order_id,
+        name:"Demigod",
+        description:"Support Demigod",
+        handler:()=>navigate(`/status?order_id=${data.orderId}&status=success&st=${data.status_token}`),
+        modal:{ondismiss:()=>navigate(`/status?order_id=${data.orderId}&status=pending&st=${data.status_token}`)},
+        theme:{color:"#ac1117"}
+      });
 
-      new (window as any).Razorpay({
-        key: data.razorpay_key_id,
-        amount: data.amount,
-        currency: data.currency,
-        order_id: data.razorpay_order_id,
-        name: "Demigod",
-        description: "Support Demigod",
-        handler: () => navigate(`/status?order_id=${data.orderId}&status=success&st=${data.status_token}`),
-        modal: {
-          ondismiss: () => navigate(`/status?order_id=${data.orderId}&status=pending&st=${data.status_token}`),
-        },
-        theme: { color: "#ac1117" },
-      }).open();
-    } catch {
+      rzp.open();
+    }catch{
       toast.error("Payment failed");
-    } finally {
+    }finally{
       setIsProcessingPayment(false);
     }
   };
 
+  const handleSubmit=(e:React.FormEvent)=>{
+    e.preventDefault();
+    processPayment();
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-[#24201D]">
-      <Card className="w-full max-w-sm backdrop-blur-sm border-[#3D4158] shadow-[0_0_30px_rgba(172,17,23,0.15)] relative overflow-hidden bg-gradient-to-br from-[#24201D] to-[#3D4158]">
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-md" />
+    <>
+      <style dangerouslySetInnerHTML={{__html:STYLES}}/>
 
-        <CardHeader className="text-center relative z-10 pb-2 flex flex-col items-center">
-          <CardTitle className="text-2xl font-bold text-[#EDE7E7] tracking-wider">
-            Demigod
-          </CardTitle>
-          <p className="text-xs text-[#7E797D]">Support Demigod with your donation</p>
-        </CardHeader>
+      <div className="sa-root sa-page">
+        <div ref={wrapRef} className="sa-scale-wrap">
 
-        <CardContent className="space-y-4 relative z-10">
-          <div className="space-y-2">
-            <Label className="text-[#EDE7E7]">Your Name *</Label>
-            <Input
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              className="bg-[#24201D]/60 text-[#EDE7E7] placeholder:text-[#7E797D] border-[#3D4158] focus:border-[#AC1117] focus:ring-[#AC1117]/20"
-            />
-          </div>
+          <div ref={cardRef} className="sa-card">
 
-          <div className="grid grid-cols-4 gap-1.5">
-            {(["text", "voice", "hypersound", "media"] as const).map((type) => (
-              <button
-                key={type}
-                type="button"
-                onClick={() => handleDonationTypeChange(type)}
-                className={`p-2 rounded-lg border-2 transition-all ${
-                  donationType === type
-                    ? "border-[#AC1117] bg-[#AC1117]/10 text-[#EDE7E7]"
-                    : "border-[#3D4158] hover:border-[#7E797D] text-[#7E797D]"
-                }`}
-              >
-                <div className="text-center">
-                  <div className="text-sm mb-0.5">
-                    {type === "text" ? "💬" : type === "voice" ? "🎤" : type === "hypersound" ? "🔊" : "🖼️"}
-                  </div>
-                  <div className="font-medium text-[10px] capitalize">{type === "hypersound" ? "Sound" : type}</div>
-                  <div className="text-[9px] text-muted-foreground">
-                    Min: {currencySymbol}
-                    {type === "text"
-                      ? pricing.minText
-                      : type === "voice"
-                        ? pricing.minVoice
-                        : type === "hypersound"
-                          ? pricing.minHypersound
-                          : pricing.minMedia}
+            <div className="sa-hero">
+              <div>
+                <div className="sa-name">Demigod</div>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit}>
+              <div className="sa-body">
+
+                <div>
+                  <label className="sa-lbl">Your Name</label>
+                  <div className="sa-iw">
+                    <Input
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                    />
                   </div>
                 </div>
-              </button>
-            ))}
+
+                <div>
+                  <label className="sa-lbl">Amount</label>
+                  <div className="sa-iw">
+                    <Input
+                      name="amount"
+                      type="number"
+                      value={formData.amount}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+
+                {donationType==="text"&&(
+                  <textarea
+                    name="message"
+                    value={formData.message}
+                    onChange={handleInputChange}
+                    maxLength={maxMessageLength}
+                    className="sa-ta"
+                  />
+                )}
+
+                {donationType==="voice"&&(
+                  <EnhancedVoiceRecorder
+                    controller={voiceRecorder}
+                    onRecordingComplete={()=>{}}
+                    maxDurationSeconds={getVoiceDuration(currentAmount)}
+                    requiredAmount={pricing.minVoice}
+                    currentAmount={currentAmount}
+                    brandColor="#ac1117"
+                  />
+                )}
+
+                {donationType==="hypersound"&&(
+                  <HyperSoundSelector
+                    selectedSound={selectedHypersound}
+                    onSoundSelect={setSelectedHypersound}
+                  />
+                )}
+
+                {donationType==="media"&&(
+                  <MediaUploader
+                    streamerSlug="demigod"
+                    onMediaUploaded={(url,type)=>{
+                      setMediaUrl(url);
+                      setMediaType(type);
+                    }}
+                    onMediaRemoved={()=>{
+                      setMediaUrl(null);
+                      setMediaType(null);
+                    }}
+                  />
+                )}
+
+                <RewardsBanner amount={Number(formData.amount)} currency={selectedCurrency}/>
+
+                <div className="sa-btn-wrap">
+                  <button type="submit" className="sa-btn">
+                    {isProcessingPayment
+                      ? "Processing..."
+                      : `Support ${currencySymbol}${formData.amount||0}`}
+                  </button>
+                </div>
+
+                <DonationPageFooter brandColor="#ac1117"/>
+
+              </div>
+            </form>
+
           </div>
-
-          <div className="space-y-2">
-            <Label className="text-[#EDE7E7]">Amount *</Label>
-            <div className="flex gap-2">
-              <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-[100px] justify-between bg-[#24201D]/60 text-[#EDE7E7] border-[#3D4158] hover:bg-[#3D4158]/40"
-                  >
-                    {currencySymbol} {selectedCurrency}
-                    <ChevronsUpDown className="h-4 w-4 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[200px] p-0">
-                  <Command>
-                    <CommandInput placeholder="Search currency..." />
-                    <CommandList>
-                      <CommandEmpty>No currency found.</CommandEmpty>
-                      <CommandGroup>
-                        {SUPPORTED_CURRENCIES.map((c) => (
-                          <CommandItem
-                            key={c.code}
-                            value={c.code}
-                            onSelect={() => {
-                              setSelectedCurrency(c.code);
-                              setCurrencyOpen(false);
-                            }}
-                          >
-                            <Check className={cn("mr-2 h-4 w-4", selectedCurrency === c.code ? "opacity-100" : "opacity-0")} />
-                            {c.symbol} {c.code}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-
-              <Input
-                name="amount"
-                type="number"
-                value={formData.amount}
-                onChange={handleInputChange}
-                readOnly={donationType === "hypersound"}
-                className={`bg-[#24201D]/60 text-[#EDE7E7] placeholder:text-[#7E797D] border-[#3D4158] focus:border-[#AC1117] focus:ring-[#AC1117]/20 ${donationType === "hypersound" ? "opacity-50 cursor-not-allowed" : ""}`}
-              />
-            </div>
-
-            {pricing.ttsEnabled && (
-              <p className="text-xs text-[#7E797D]">
-                TTS above {currencySymbol}
-                {pricing.minTts}
-              </p>
-            )}
-          </div>
-
-          {donationType === "text" && (
-            <div className="space-y-1">
-              <textarea
-                name="message"
-                value={formData.message}
-                onChange={handleInputChange}
-                maxLength={maxMessageLength}
-                className="w-full min-h-[90px] rounded-md bg-[#24201D]/60 text-[#EDE7E7] placeholder:text-[#7E797D] border border-[#3D4158] focus:border-[#AC1117] focus:ring-[#AC1117]/20 px-3 py-2 text-sm"
-                placeholder="Your message (optional)"
-              />
-              <p className="text-xs text-right text-muted-foreground">
-                {formData.message.length}/{maxMessageLength}
-              </p>
-            </div>
-          )}
-
-          {donationType === "voice" && (
-            <EnhancedVoiceRecorder
-              controller={voiceRecorder}
-              onRecordingComplete={() => {}}
-              maxDurationSeconds={getVoiceDuration(currentAmount)}
-              requiredAmount={pricing.minVoice}
-              currentAmount={currentAmount}
-              brandColor="#ac1117"
-            />
-          )}
-
-          {donationType === "hypersound" && (
-            <HyperSoundSelector selectedSound={selectedHypersound} onSoundSelect={setSelectedHypersound} />
-          )}
-
-          {donationType === "media" && (
-            <MediaUploader
-              streamerSlug="demigod"
-              onMediaUploaded={(url, type) => {
-                setMediaUrl(url);
-                setMediaType(type);
-              }}
-              onMediaRemoved={() => {
-                setMediaUrl(null);
-                setMediaType(null);
-              }}
-            />
-          )}
-
-          <RewardsBanner amount={Number(formData.amount)} currency={selectedCurrency} />
-
-          <Button
-            className="w-full font-semibold py-6 bg-[#AC1117] hover:bg-[#8e0e13] text-[#EDE7E7]"
-            onClick={handleSubmit}
-            disabled={isProcessingPayment}
-          >
-            {isProcessingPayment ? "Processing..." : `Support ${currencySymbol}${formData.amount || "0"}`}
-          </Button>
-
-          <DonationPageFooter brandColor="#ac1117" />
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </div>
+    </>
   );
 };
 
