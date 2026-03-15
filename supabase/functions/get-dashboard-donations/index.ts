@@ -47,11 +47,15 @@ Deno.serve(async (req) => {
     );
 
     // Validate session
-    const { data: session, error: sessionError } = await supabase.rpc('validate_session_token', {
-      p_token: authToken,
+    const { data: sessionData, error: sessionError } = await supabase.rpc('validate_session_token', {
+      plain_token: authToken,
     });
 
-    if (sessionError || !session) {
+    const sessionUserId = Array.isArray(sessionData)
+      ? sessionData[0]?.user_id || sessionData[0]?.id
+      : (sessionData as any)?.user_id || (sessionData as any)?.id || sessionData;
+
+    if (sessionError || !sessionUserId) {
       return new Response(JSON.stringify({ error: 'Invalid session' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -93,7 +97,7 @@ Deno.serve(async (req) => {
     const { data: user } = await supabase
       .from('auth_users')
       .select('streamer_id, email')
-      .eq('id', session)
+      .eq('id', sessionUserId)
       .single();
 
     const { data: isAdmin } = await supabase
