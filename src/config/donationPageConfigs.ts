@@ -123,6 +123,24 @@ export const DONATION_PAGE_CONFIGS: Record<string, DonationPageConfig> = {
   edgeFunctionName: 'create-razorpay-order-unified',
   themeDescription: 'Support Reyna Yadav with your donation',
 },
+  slidey_playz: {
+  streamerSlug: 'slidey_playz',
+  streamerName: 'Slidey Playz',
+  brandColor: '#10b981',
+  logoSrc: '/assets/streamers/slidey-playz-logo.png',
+  backgroundSrc: '/assets/streamers/slidey-playz-background.png',
+  edgeFunctionName: 'create-razorpay-order-unified',
+  themeDescription: 'Support Slidey Playz with your donation',
+},
+eryx: {
+  streamerSlug: 'eryx',
+  streamerName: 'Eryx',
+  brandColor: '#f97316',
+  logoSrc: '/assets/streamers/eryx-logo.png',
+  backgroundSrc: '/assets/streamers/eryx-background.png',
+  edgeFunctionName: 'create-razorpay-order-unified',
+  themeDescription: 'Support Eryx with your donation',
+},
 };
 
 export const getDonationPageConfig = (slug: string): DonationPageConfig | undefined => {
