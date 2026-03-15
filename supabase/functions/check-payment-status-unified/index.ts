@@ -451,7 +451,6 @@ serve(async (req) => {
                 });
                 if (ttsResponse.error) {
                   console.error('[Unified] TTS generation failed:', ttsResponse.error);
-                  // Fallback to silent audio so visual alert still shows
                   const SILENT_AUDIO_URL = Deno.env.get('SILENT_AUDIO_URL') || 'https://pub-fff13c27bb0d4a1e807dfc596462b7d5.r2.dev/silence_no_sound.mp3';
                   ttsAudioUrl = SILENT_AUDIO_URL;
                   await supabase.from(config.table).update({ tts_audio_url: SILENT_AUDIO_URL }).eq('id', donation.id);
@@ -461,11 +460,11 @@ serve(async (req) => {
                 }
               } catch (ttsError) {
                 console.error('[Unified] TTS generation error:', ttsError);
-                // Fallback to silent audio so visual alert still shows
                 const SILENT_AUDIO_URL = Deno.env.get('SILENT_AUDIO_URL') || 'https://pub-fff13c27bb0d4a1e807dfc596462b7d5.r2.dev/silence_no_sound.mp3';
                 ttsAudioUrl = SILENT_AUDIO_URL;
                 await supabase.from(config.table).update({ tts_audio_url: SILENT_AUDIO_URL }).eq('id', donation.id);
                 console.log('[Unified] TTS error, using silent audio fallback');
+              }
             } else if (isTextDonation) {
               // Use silent audio for donations under threshold
               const SILENT_AUDIO_URL = Deno.env.get('SILENT_AUDIO_URL') || 'https://pub-fff13c27bb0d4a1e807dfc596462b7d5.r2.dev/silence_no_sound.mp3';
