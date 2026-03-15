@@ -238,7 +238,10 @@ serve(async (req) => {
       mr_champion: "mr_champion_donations",
       demigod: "demigod_donations",
       starlight_anya: "starlight_anya_donations",
+      slidey_playz: "slidey_playz_donations",
+      eryx: "eryx_donations",
     };
+    
 
     const donationTable = donationTableMap[streamerSlug];
     if (!donationTable) {
