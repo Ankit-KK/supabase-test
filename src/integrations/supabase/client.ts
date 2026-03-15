@@ -2,12 +2,9 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-// Primary: custom domain (required for India accessibility)
-const PRIMARY_URL = "https://supabase.hyperchat.space";
-// Fallback: direct Supabase endpoint (works globally except where blocked)
-const FALLBACK_URL = import.meta.env.VITE_SUPABASE_URL || "https://vsevsjvtrshgeiudrnth.supabase.co";
-
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzZXZzanZ0cnNoZ2VpdWRybnRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI1ODE1ODEsImV4cCI6MjA1ODE1NzU4MX0.uLkTc3a0kdMNfgIg2qYKnnaLjbvtXGKPOoWbqntibmw";
+const PRIMARY_URL = "https://supabase.harishkumar.space";
+const FALLBACK_URL = import.meta.env.VITE_SUPABASE_URL || "https://supabase.harishkumar.space";
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
 
 /**
  * Exported base URL for manually constructed function URLs (OBS media source, etc.).
