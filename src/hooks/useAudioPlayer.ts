@@ -50,7 +50,7 @@ export const useAudioPlayer = ({ tableName, streamerId }: UseAudioPlayerProps) =
     streamerSlug,
     pusherKey: pusherConfig?.key,
     pusherCluster: pusherConfig?.cluster,
-    delayBeforeDisplay: 60000, // 1 minute delay
+    delayBeforeDisplay: 10000, // 10 second delay
     onNewAudioMessage: (donation) => {
       console.log('[AudioPlayer] New audio message via Pusher:', donation);
       setQueuedDonations(prev => {

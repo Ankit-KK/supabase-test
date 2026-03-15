@@ -194,7 +194,7 @@ serve(async (req) => {
     const newStatus = isSuccess ? 'success' : 'failed'
     console.log('Updating payment status to:', newStatus)
 
-    const audioDelay = donation.hypersound_url ? 15000 : 60000;
+    const audioDelay = 10000;
     const audioScheduledAt = new Date(Date.now() + audioDelay).toISOString();
 
     // Fetch streamer settings (scoped fields)
