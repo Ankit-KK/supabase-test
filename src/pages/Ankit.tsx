@@ -1,20 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { toast } from "@/hooks/use-toast";
-import { Gamepad2, Heart, Sparkles, Check, ChevronsUpDown, Volume2, Image, X } from "lucide-react";
+import { Check, ChevronsUpDown, X, Heart, Volume2, Image } from "lucide-react";
 import VideoBackground from "@/components/VideoBackground";
 import { cn } from "@/lib/utils";
 import { SUPPORTED_CURRENCIES, getCurrencySymbol } from "@/constants/currencies";
 import { useStreamerPricing } from "@/hooks/useStreamerPricing";
 import { getMaxMessageLength } from "@/utils/getMaxMessageLength";
 import RewardsBanner from "@/components/RewardsBanner";
-// Razorpay integration - SDK loaded dynamically
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import VoiceRecorder from "@/components/VoiceRecorder";
@@ -22,713 +18,701 @@ import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import HyperSoundSelector from "@/components/HyperSoundSelector";
 import DonationPageFooter from "@/components/DonationPageFooter";
 
+const STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap');
+
+  :root {
+    --cp-cyan:    #00f5ff;
+    --cp-magenta: #ff2d78;
+    --cp-yellow:  #f5e642;
+    --cp-orange:  #ff6b2b;
+    --cp-bg:      #05050d;
+  }
+
+  .cp-root { font-family: 'Rajdhani', sans-serif; }
+
+  /* ── Full-screen layout: card fills viewport height ── */
+  .cp-page {
+    height: 100vh;
+    background: var(--cp-bg);
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Background grid */
+  .cp-grid {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image:
+      linear-gradient(rgba(0,245,255,0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,245,255,0.035) 1px, transparent 1px);
+    background-size: 44px 44px;
+  }
+  .cp-grid::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 50%, transparent 40%, var(--cp-bg) 100%);
+  }
+  .cp-glow-a {
+    position: fixed; top: -180px; left: -80px;
+    width: 560px; height: 560px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,245,255,0.07) 0%, transparent 65%);
+    pointer-events: none; z-index: 0;
+  }
+  .cp-glow-b {
+    position: fixed; bottom: -120px; right: -60px;
+    width: 420px; height: 420px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,45,120,0.08) 0%, transparent 65%);
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ── Main card: full height, scrollable inside ── */
+  .cp-card {
+    width: 100%;
+    max-width: 500px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    z-index: 10;
+    background: rgba(0,245,255,0.025);
+    border-left: 1px solid rgba(0,245,255,0.12);
+    border-right: 1px solid rgba(0,245,255,0.12);
+    overflow: hidden;
+  }
+
+  /* ── HERO: compact horizontal layout ── */
+  .cp-hero {
+    flex-shrink: 0;
+    position: relative;
+    padding: 12px 18px 10px;
+    background: linear-gradient(135deg, rgba(0,245,255,0.1) 0%, rgba(255,45,120,0.07) 60%, transparent 100%);
+    border-bottom: 1px solid rgba(0,245,255,0.15);
+    overflow: hidden;
+  }
+  /* Diagonal cut top-right */
+  .cp-hero::after {
+    content: '';
+    position: absolute; top: 0; right: 0;
+    border-top: 32px solid var(--cp-bg);
+    border-left: 32px solid transparent;
+    z-index: 2;
+  }
+  /* Scanline */
+  @keyframes cp-scan { 0% { top:-2px; opacity:.6; } 100% { top:100%; opacity:0; } }
+  .cp-scanline {
+    position: absolute; left:0; right:0; height:1px;
+    background: linear-gradient(90deg, transparent, rgba(0,245,255,0.5), transparent);
+    animation: cp-scan 3.5s linear infinite;
+    pointer-events: none; z-index: 1;
+  }
+  /* Corner brackets */
+  .cp-tl { position:absolute; top:8px; left:8px; width:14px; height:14px; border-top:2px solid var(--cp-cyan); border-left:2px solid var(--cp-cyan); z-index:3; }
+  .cp-br { position:absolute; bottom:8px; right:8px; width:14px; height:14px; border-bottom:2px solid var(--cp-magenta); border-right:2px solid var(--cp-magenta); z-index:3; }
+
+  /* Live badge */
+  @keyframes cp-blink { 0%,100%{opacity:1;} 50%{opacity:0.2;} }
+  .cp-live {
+    display:inline-flex; align-items:center; gap:5px;
+    background:rgba(0,255,80,0.08); border:1px solid rgba(0,255,80,0.28);
+    padding:2px 8px;
+  }
+  .cp-live-dot { width:5px; height:5px; border-radius:50%; background:#00ff50; animation:cp-blink 1.4s ease-in-out infinite; box-shadow:0 0 5px #00ff50; }
+
+  /* Hero name — glitch */
+  @keyframes cp-g1 {
+    0%,91%,100%{clip-path:none;transform:none;}
+    92%{clip-path:polygon(0 20%,100% 20%,100% 40%,0 40%);transform:translateX(-3px);}
+    93%{clip-path:polygon(0 60%,100% 60%,100% 78%,0 78%);transform:translateX(3px);}
+    94%{clip-path:none;transform:none;}
+  }
+  @keyframes cp-g2 {
+    0%,91%,100%{opacity:0;}
+    92%{opacity:.5;transform:translateX(5px);clip-path:polygon(0 25%,100% 25%,100% 45%,0 45%);}
+    93%{opacity:.5;transform:translateX(-5px);clip-path:polygon(0 62%,100% 62%,100% 75%,0 75%);}
+    94%{opacity:0;}
+  }
+  .cp-name {
+    font-family:'Orbitron',sans-serif; font-size:30px; font-weight:900;
+    letter-spacing:0.08em; color:#fff; line-height:1;
+    text-shadow:0 0 20px rgba(0,245,255,0.45), 0 0 40px rgba(0,245,255,0.15);
+    animation:cp-g1 9s ease-in-out infinite;
+    position:relative;
+  }
+  .cp-name::after {
+    content:attr(data-text); position:absolute; inset:0; color:var(--cp-cyan);
+    animation:cp-g2 9s ease-in-out infinite; pointer-events:none;
+  }
+
+  /* Ticker */
+  @keyframes cp-tick { from{transform:translateX(0);} to{transform:translateX(-50%);} }
+  .cp-ticker { overflow:hidden; height:22px; display:flex; align-items:center; background:rgba(0,245,255,0.025); border-bottom:1px solid rgba(0,245,255,0.09); flex-shrink:0; }
+  .cp-ticker-inner { display:inline-flex; gap:32px; white-space:nowrap; animation:cp-tick 22s linear infinite; }
+  .cp-tick-item { font-family:'Share Tech Mono',monospace; font-size:9px; color:rgba(0,245,255,0.38); letter-spacing:.1em; }
+  .cp-tick-sep  { color:rgba(255,45,120,0.38); font-size:9px; }
+
+  /* ── Scrollable form body ── */
+  .cp-body {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 14px 18px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .cp-body::-webkit-scrollbar { width:3px; }
+  .cp-body::-webkit-scrollbar-track { background:transparent; }
+  .cp-body::-webkit-scrollbar-thumb { background:rgba(0,245,255,0.2); }
+
+  /* ── Section header ── */
+  .cp-sec {
+    display:flex; align-items:center; gap:8px; margin-bottom:6px;
+  }
+  .cp-sec-dot { width:4px; height:4px; border-radius:50%; flex-shrink:0; }
+  .cp-sec-label { font-family:'Share Tech Mono',monospace; font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:rgba(0,245,255,0.4); white-space:nowrap; }
+  .cp-sec-line { flex:1; height:1px; background:linear-gradient(90deg,rgba(0,245,255,0.15),transparent); }
+
+  /* ── Input ── */
+  .cp-iw input {
+    width:100% !important;
+    background:rgba(0,0,0,0.5) !important;
+    border:1px solid rgba(0,245,255,0.16) !important;
+    border-left:2px solid rgba(0,245,255,0.32) !important;
+    border-radius:0 !important;
+    color:#e8fffe !important;
+    font-family:'Rajdhani',sans-serif !important;
+    font-size:15px !important; font-weight:500 !important;
+    padding:8px 12px !important;
+    outline:none !important;
+    transition:border-color .2s, box-shadow .2s, background .2s !important;
+    caret-color:var(--cp-cyan);
+  }
+  .cp-iw input:focus {
+    border-color:rgba(0,245,255,0.5) !important;
+    border-left-color:var(--cp-cyan) !important;
+    box-shadow:0 0 0 1px rgba(0,245,255,0.08), 0 0 16px rgba(0,245,255,0.06) !important;
+    background:rgba(0,245,255,0.035) !important;
+  }
+  .cp-iw input::placeholder { color:rgba(0,245,255,0.18) !important; }
+  .cp-iw input:disabled { opacity:.45 !important; }
+
+  .cp-ta {
+    width:100%; background:rgba(0,0,0,0.5);
+    border:1px solid rgba(0,245,255,0.16); border-left:2px solid rgba(0,245,255,0.32);
+    border-radius:0; color:#e8fffe;
+    font-family:'Rajdhani',sans-serif; font-size:14px; font-weight:500;
+    padding:8px 12px; resize:none; outline:none;
+    caret-color:var(--cp-cyan); line-height:1.5;
+    transition:border-color .2s, box-shadow .2s, background .2s;
+  }
+  .cp-ta:focus {
+    border-color:rgba(0,245,255,0.5); border-left-color:var(--cp-cyan);
+    box-shadow:0 0 0 1px rgba(0,245,255,0.08), 0 0 16px rgba(0,245,255,0.06);
+    background:rgba(0,245,255,0.035);
+  }
+  .cp-ta::placeholder { color:rgba(0,245,255,0.18); }
+
+  /* Char bar */
+  .cp-cbar { height:2px; margin-top:4px; background:rgba(0,245,255,0.07); overflow:hidden; }
+  .cp-cbar-fill { height:100%; transition:width .12s, background .2s; }
+
+  /* ── Type buttons ── */
+  .cp-types { display:grid; grid-template-columns:repeat(4,1fr); gap:5px; }
+  .cp-tb {
+    padding:8px 3px 7px; text-align:center;
+    background:rgba(0,0,0,0.4); border:1px solid rgba(0,245,255,0.1);
+    cursor:pointer; transition:all .15s;
+    clip-path:polygon(0 0,calc(100% - 7px) 0,100% 7px,100% 100%,0 100%);
+  }
+  .cp-tb:hover { border-color:rgba(0,245,255,0.28); background:rgba(0,245,255,0.04); }
+  .cp-tb-c.cp-on { border-color:rgba(0,245,255,0.55); background:rgba(0,245,255,0.08); box-shadow:0 0 14px rgba(0,245,255,0.1); }
+  .cp-tb-o.cp-on { border-color:rgba(255,107,43,0.55); background:rgba(255,107,43,0.08); box-shadow:0 0 14px rgba(255,107,43,0.1); }
+  .cp-tb-m.cp-on { border-color:rgba(255,45,120,0.55); background:rgba(255,45,120,0.08); box-shadow:0 0 14px rgba(255,45,120,0.1); }
+  .cp-tb-emoji { font-size:16px; display:block; line-height:1; }
+  .cp-tb-name  { font-family:'Share Tech Mono',monospace; font-size:8px; letter-spacing:.1em; text-transform:uppercase; display:block; margin-top:4px; transition:color .15s; }
+  .cp-tb-min   { font-family:'Share Tech Mono',monospace; font-size:7px; color:rgba(245,230,66,.6); display:block; margin-top:2px; }
+
+  /* ── Amount row ── */
+  .cp-amt-row { display:flex; gap:6px; }
+  .cp-cur-btn {
+    display:flex; align-items:center; justify-content:space-between; gap:4px;
+    background:rgba(0,0,0,0.5) !important; border:1px solid rgba(0,245,255,0.16) !important;
+    border-left:2px solid rgba(0,245,255,0.32) !important; border-radius:0 !important;
+    color:#e8fffe !important; font-family:'Share Tech Mono',monospace !important;
+    font-size:11px !important; padding:0 10px !important;
+    min-width:90px; height:38px; cursor:pointer;
+    transition:border-color .2s, background .2s; flex-shrink:0;
+  }
+  .cp-cur-btn:hover { background:rgba(0,245,255,0.04) !important; border-color:rgba(0,245,255,0.35) !important; }
+
+  /* ── Divider ── */
+  .cp-div { height:1px; background:linear-gradient(90deg,transparent,rgba(0,245,255,0.12),rgba(255,45,120,0.08),transparent); }
+
+  /* ── Sub-panels ── */
+  .cp-sp { border:1px solid; padding:10px 12px; position:relative; }
+  .cp-sp::before { content:''; position:absolute; top:-1px; right:-1px; border-top:10px solid var(--cp-bg); border-left:10px solid transparent; }
+  .cp-sp-o { border-color:rgba(255,107,43,0.2); background:rgba(255,107,43,0.03); }
+  .cp-sp-m { border-color:rgba(255,45,120,0.2);  background:rgba(255,45,120,0.03); }
+
+  /* ── Submit ── */
+  .cp-btn {
+    width:100%; padding:12px; border:none; cursor:pointer;
+    font-family:'Orbitron',sans-serif; font-size:13px; font-weight:700;
+    letter-spacing:.14em; text-transform:uppercase; color:#05050d;
+    position:relative; overflow:hidden;
+    transition:transform .15s, box-shadow .2s;
+    background:linear-gradient(90deg, var(--cp-cyan) 0%, #00ccff 40%, var(--cp-magenta) 100%);
+    box-shadow:0 0 20px rgba(0,245,255,0.2), 0 0 40px rgba(255,45,120,0.08);
+    clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px));
+    flex-shrink:0;
+  }
+  .cp-btn:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 0 28px rgba(0,245,255,0.35), 0 0 56px rgba(255,45,120,0.12); }
+  .cp-btn:active:not(:disabled) { transform:translateY(0); }
+  .cp-btn:disabled { opacity:.35; cursor:not-allowed; }
+  .cp-btn::before {
+    content:''; position:absolute; top:0; left:-100%; width:50%; height:100%;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,0.22),transparent);
+    transform:skewX(-20deg); transition:left .55s;
+  }
+  .cp-btn:hover:not(:disabled)::before { left:150%; }
+
+  /* Hints */
+  .cp-hint { font-family:'Share Tech Mono',monospace; font-size:9px; color:rgba(0,245,255,0.32); margin-top:4px; }
+  .cp-lock { font-family:'Share Tech Mono',monospace; font-size:9px; color:rgba(245,230,66,.7); display:flex; align-items:center; gap:3px; margin-top:4px; }
+
+  /* Fade-up */
+  @keyframes cp-fu { from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:translateY(0);} }
+  .cp-fu { animation:cp-fu .2s ease forwards; }
+
+  /* Spinner */
+  @keyframes cp-sp { to{transform:rotate(360deg);} }
+  .cp-spin { width:13px; height:13px; border:2px solid rgba(5,5,13,.4); border-top-color:#05050d; border-radius:50%; display:inline-block; animation:cp-sp .6s linear infinite; }
+
+  /* HyperSound FX */
+  @keyframes cp-hs { 0%{opacity:1;transform:scale(1) translateY(0);} 40%{opacity:1;transform:scale(1.5) translateY(-26px);} 100%{opacity:0;transform:scale(1.2) translateY(-55px);} }
+  .cp-hs-fx { animation:cp-hs .9s ease forwards; }
+
+  /* Flicker on load */
+  @keyframes cp-fl { 0%,100%{opacity:1;} 3%{opacity:.6;} 5%{opacity:1;} 7%{opacity:.5;} 8%{opacity:1;} }
+  .cp-fl { animation:cp-fl .5s ease .1s both; }
+`;
+
 const Ankit = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const mobileVideoRef = useRef<HTMLVideoElement>(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    amount: '',
-    message: '',
-    currency: 'INR'
-  });
+
+  const [formData, setFormData] = useState({ name:'', amount:'', message:'', currency:'INR' });
   const [isProcessing, setIsProcessing] = useState(false);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
-  const [donationType, setDonationType] = useState<'message' | 'voice' | 'hypersound' | 'image'>('message');
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [donationType, setDonationType] = useState<'message'|'voice'|'hypersound'|'image'>('message');
+  const [selectedImage, setSelectedImage] = useState<File|null>(null);
+  const [imagePreview, setImagePreview] = useState<string|null>(null);
   const [streamerSettings, setStreamerSettings] = useState<any>(null);
   const [hasVoiceRecording, setHasVoiceRecording] = useState(false);
   const [voiceDuration, setVoiceDuration] = useState(0);
   const [showHypersoundEffect, setShowHypersoundEffect] = useState(false);
   const [isAmountLocked, setIsAmountLocked] = useState(false);
   const [currencyOpen, setCurrencyOpen] = useState(false);
-  const [selectedSound, setSelectedSound] = useState<string | null>(null);
+  const [selectedSound, setSelectedSound] = useState<string|null>(null);
 
-  // Fetch streamer-specific pricing
   const { pricing } = useStreamerPricing('ankit', formData.currency);
 
-  // Auto-resume mobile video when it gets paused by touch/interaction
   useEffect(() => {
     const video = mobileVideoRef.current;
     if (!video || !isMobile) return;
-
-    const handlePause = () => {
-      if (document.visibilityState === 'visible') {
-        video.play().catch(() => {});
-      }
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        video.play().catch(() => {});
-      }
-    };
-
-    const handleTouchEnd = () => {
-      if (video.paused) {
-        video.play().catch(() => {});
-      }
-    };
-
-    video.addEventListener('pause', handlePause);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    document.addEventListener('touchend', handleTouchEnd);
-
-    return () => {
-      video.removeEventListener('pause', handlePause);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      document.removeEventListener('touchend', handleTouchEnd);
-    };
+    const onPause = () => { if (document.visibilityState==='visible') video.play().catch(()=>{}); };
+    const onVis   = () => { if (document.visibilityState==='visible') video.play().catch(()=>{}); };
+    const onTouch = () => { if (video.paused) video.play().catch(()=>{}); };
+    video.addEventListener('pause',onPause);
+    document.addEventListener('visibilitychange',onVis);
+    document.addEventListener('touchend',onTouch);
+    return () => { video.removeEventListener('pause',onPause); document.removeEventListener('visibilitychange',onVis); document.removeEventListener('touchend',onTouch); };
   }, [isMobile]);
 
-  // Calculate voice recording duration based on amount
-  const getVoiceDuration = (amount: number): number => {
-    if (amount >= 250) return 30;
-    if (amount >= 200) return 20;
-    if (amount >= 150) return 15;
-    return 15;
-  };
-
-  // Voice recorder instance - dynamically update duration based on amount
-  const currentAmount = parseFloat(formData.amount) || 0;
-  const charLimit = getMaxMessageLength(pricing.messageCharTiers, currentAmount);
+  const getVoiceDuration = (a:number) => a>=250?30:a>=200?20:15;
+  const currentAmount    = parseFloat(formData.amount)||0;
+  const charLimit        = getMaxMessageLength(pricing.messageCharTiers, currentAmount);
   const maxVoiceDuration = getVoiceDuration(currentAmount);
-  const voiceRecorder = useVoiceRecorder(maxVoiceDuration);
+  const voiceRecorder    = useVoiceRecorder(maxVoiceDuration);
 
-  // Lock amount when recording starts
   useEffect(() => {
-    if (voiceRecorder.isRecording) {
-      setIsAmountLocked(true);
-    } else if (!voiceRecorder.audioBlob) {
-      setIsAmountLocked(false);
-    }
+    if (voiceRecorder.isRecording) setIsAmountLocked(true);
+    else if (!voiceRecorder.audioBlob) setIsAmountLocked(false);
   }, [voiceRecorder.isRecording, voiceRecorder.audioBlob]);
 
-  // Load Razorpay SDK and fetch streamer settings
   useEffect(() => {
-    const loadRazorpay = () => {
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.async = true;
-      script.onload = () => {
-        setRazorpayLoaded(true);
-        console.log('Razorpay SDK loaded successfully');
-        toast({
-          title: "Payment System Ready",
-          description: "You can now make donations safely."
-        });
-      };
-      script.onerror = () => {
-        console.error('Failed to load Razorpay SDK');
-        toast({
-          title: "Payment System Error",
-          description: "Failed to load payment system. Please refresh.",
-          variant: "destructive"
-        });
-      };
-      document.body.appendChild(script);
-      return () => {
-        document.body.removeChild(script);
-      };
-    };
-    const fetchStreamerSettings = async () => {
-      try {
-        const {
-          data,
-          error
-        } = await supabase.rpc('get_streamer_public_settings', {
-          slug: 'ankit'
-        });
-        if (error) throw error;
-        if (data && data.length > 0) setStreamerSettings(data[0]);
-      } catch (error) {
-        console.error('Failed to fetch streamer settings:', error);
-      }
-    };
-    loadRazorpay();
-    fetchStreamerSettings();
+    const s = document.createElement('script');
+    s.src='https://checkout.razorpay.com/v1/checkout.js'; s.async=true;
+    s.onload=()=>{ setRazorpayLoaded(true); toast({ title:"Payment System Ready" }); };
+    s.onerror=()=>toast({ title:"Payment Error", description:"Please refresh.", variant:"destructive" });
+    document.body.appendChild(s);
+    supabase.rpc('get_streamer_public_settings',{slug:'ankit'})
+      .then(({data,error})=>{ if(!error&&data?.length) setStreamerSettings(data[0]); });
+    return ()=>{ document.body.removeChild(s); };
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const {
-      name,
-      value
-    } = e.target;
-
-    // If amount changes and message exceeds new limit, truncate message
-    if (name === 'amount' && donationType === 'message') {
-      const newAmount = parseFloat(value) || 40;
-      const newCharLimit = getMaxMessageLength(pricing.messageCharTiers, newAmount);
-      if (formData.message.length > newCharLimit) {
-        toast({
-          title: "Message Shortened",
-          description: `Donation amount reduced. Message limited to ${newCharLimit} characters.`
-        });
-        setFormData(prev => ({
-          ...prev,
-          [name]: value,
-          message: prev.message.substring(0, newCharLimit)
-        }));
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement|HTMLTextAreaElement>) => {
+    const {name,value}=e.target;
+    if (name==='amount'&&donationType==='message') {
+      const lim=getMaxMessageLength(pricing.messageCharTiers,parseFloat(value)||40);
+      if (formData.message.length>lim) {
+        toast({ title:"Message Shortened", description:`Limited to ${lim} chars.` });
+        setFormData(p=>({...p,[name]:value,message:p.message.slice(0,lim)}));
         return;
       }
     }
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(p=>({...p,[name]:value}));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Validate inputs first
-    const amount = parseFloat(formData.amount);
-    if (!formData.name?.trim()) {
-      toast({
-        title: "Name Required",
-        description: "Please enter your name.",
-        variant: "destructive"
-      });
-      return;
-    }
-    if (donationType === 'voice' && !hasVoiceRecording) {
-      toast({
-        title: "Voice Message Required",
-        description: "Please record a voice message for your donation.",
-        variant: "destructive"
-      });
-      return;
-    }
-    if (donationType === 'hypersound' && !selectedSound) {
-      toast({
-        title: "Sound Required",
-        description: "Please select a sound for your HyperSound donation.",
-        variant: "destructive"
-      });
-      return;
-    }
-    if (donationType === 'message' && !formData.message?.trim()) {
-      toast({
-        title: "Message Required",
-        description: "Please enter a message for your donation.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Validate character limits for text messages
-    if (donationType === 'message' && formData.message?.trim()) {
-      if (formData.message.length > charLimit) {
-        toast({
-          title: "Message Too Long",
-          description: `Your donation amount allows up to ${charLimit} characters. Increase donation or shorten message.`,
-          variant: "destructive"
-        });
-        return;
-      }
-    }
-    if (!amount || amount < 1) {
-      toast({
-        title: "Invalid Amount",
-        description: "Please enter a valid donation amount.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Validate minimum amounts based on donation type using streamer pricing
-    const currencySymbol = getCurrencySymbol(formData.currency);
-    
-    // Text donations use minText - TTS is a bonus at higher amounts (₹70+)
-    if (donationType === 'message' && amount < pricing.minText) {
-      toast({
-        title: "Insufficient Amount",
-        description: `Text messages require a minimum donation of ${currencySymbol}${pricing.minText}.`,
-        variant: "destructive"
-      });
-      return;
-    }
-    if (donationType === 'voice' && amount < pricing.minVoice) {
-      toast({
-        title: "Insufficient Amount",
-        description: `Voice messages require a minimum donation of ${currencySymbol}${pricing.minVoice}.`,
-        variant: "destructive"
-      });
-      return;
-    }
-    if (donationType === 'hypersound' && amount < pricing.minHypersound) {
-      toast({
-        title: "Insufficient Amount",
-        description: `HyperSounds require a minimum donation of ${currencySymbol}${pricing.minHypersound}.`,
-        variant: "destructive"
-      });
-      return;
-    }
-    if (!razorpayLoaded) {
-      toast({
-        title: "Payment System Not Ready",
-        description: "Please wait or refresh the page.",
-        variant: "destructive"
-      });
-      return;
-    }
+    const amount=parseFloat(formData.amount);
+    const sym=getCurrencySymbol(formData.currency);
+    if (!formData.name?.trim())                            { toast({title:"Name Required",variant:"destructive"}); return; }
+    if (donationType==='voice'&&!hasVoiceRecording)        { toast({title:"Voice Required",variant:"destructive"}); return; }
+    if (donationType==='hypersound'&&!selectedSound)       { toast({title:"Sound Required",variant:"destructive"}); return; }
+    if (donationType==='message'&&!formData.message?.trim()){ toast({title:"Message Required",variant:"destructive"}); return; }
+    if (donationType==='message'&&formData.message.length>charLimit){ toast({title:"Message Too Long",variant:"destructive"}); return; }
+    if (!amount||amount<1)                                 { toast({title:"Invalid Amount",variant:"destructive"}); return; }
+    if (donationType==='message'&&amount<pricing.minText)  { toast({title:`Min ${sym}${pricing.minText}`,variant:"destructive"}); return; }
+    if (donationType==='voice'&&amount<pricing.minVoice)   { toast({title:`Min ${sym}${pricing.minVoice}`,variant:"destructive"}); return; }
+    if (donationType==='hypersound'&&amount<pricing.minHypersound){ toast({title:`Min ${sym}${pricing.minHypersound}`,variant:"destructive"}); return; }
+    if (!razorpayLoaded){ toast({title:"Payment Not Ready",variant:"destructive"}); return; }
     setIsProcessing(true);
     try {
-      const amount = parseFloat(formData.amount);
-
-      // Upload voice message BEFORE creating payment order
-      let voiceMessageUrl: string | null = null;
-      if (donationType === 'voice' && voiceRecorder.audioBlob) {
-        console.log('Uploading voice message before payment...');
-        const reader = new FileReader();
-        const voiceDataBase64 = await new Promise<string>(resolve => {
-          reader.onload = () => {
-            const base64 = (reader.result as string).split(',')[1];
-            resolve(base64);
-          };
-          reader.readAsDataURL(voiceRecorder.audioBlob!);
-        });
-
-        // Upload voice message directly
-        const {
-          data: uploadResult,
-          error: uploadError
-        } = await supabase.functions.invoke('upload-voice-message-direct', {
-          body: {
-            voiceData: voiceDataBase64,
-            streamerSlug: 'ankit'
-          }
-        });
-        if (uploadError) {
-          console.error('Voice upload error:', uploadError);
-          throw new Error('Failed to upload voice message');
-        }
-        voiceMessageUrl = uploadResult.voice_message_url;
-        console.log('Voice message uploaded successfully:', voiceMessageUrl);
+      let voiceMessageUrl:string|null=null;
+      if (donationType==='voice'&&voiceRecorder.audioBlob) {
+        const reader=new FileReader();
+        const b64=await new Promise<string>(res=>{ reader.onload=()=>res((reader.result as string).split(',')[1]); reader.readAsDataURL(voiceRecorder.audioBlob!); });
+        const {data:up,error:ue}=await supabase.functions.invoke('upload-voice-message-direct',{body:{voiceData:b64,streamerSlug:'ankit'}});
+        if (ue) throw new Error('Failed to upload voice message');
+        voiceMessageUrl=up.voice_message_url;
       }
-
-      // Create Razorpay order via Supabase edge function
-      const response = await supabase.functions.invoke('create-razorpay-order-unified', {
-        body: {
-          streamer_slug: 'ankit',
-          name: formData.name.trim(),
-          amount: amount,
-          currency: formData.currency,
-          message: donationType === 'message' ? formData.message.trim() : donationType === 'voice' ? 'Sent a Voice message' : donationType === 'hypersound' ? '🔊 HyperSound!' : '',
-          voiceMessageUrl: voiceMessageUrl,
-          hypersoundUrl: donationType === 'hypersound' ? selectedSound : null
+      const {data,error}=await supabase.functions.invoke('create-razorpay-order-unified',{
+        body:{
+          streamer_slug:'ankit', name:formData.name.trim(), amount, currency:formData.currency,
+          message:donationType==='message'?formData.message.trim():donationType==='voice'?'Sent a Voice message':donationType==='hypersound'?'🔊 HyperSound!':'',
+          voiceMessageUrl, hypersoundUrl:donationType==='hypersound'?selectedSound:null,
         }
       });
-      const data = response.data;
-      const error = response.error;
-      if (error || !data?.orderId) {
-        throw new Error(data?.error || 'Failed to create payment order');
-      }
-      console.log('Razorpay order created:', data.razorpay_order_id);
-
-      // Initialize Razorpay Checkout
-      const rzp = new (window as any).Razorpay({
-        key: data.razorpay_key_id,
-        amount: data.amount,
-        currency: formData.currency,
-        name: 'HyperChat - Ankit',
-        description: donationType === 'hypersound' ? 'HyperSound - Soundboard' : donationType === 'voice' ? 'Voice Message' : 'Text Message',
-        order_id: data.razorpay_order_id,
-        prefill: {
-          name: formData.name.trim()
-        },
-        hidden: {
-          contact: true
-        },
-        theme: {
-          color: '#3b82f6'
-        },
-        handler: function (response: any) {
-          console.log('Payment success:', response);
-          navigate(`/status?order_id=${data.order_id}&status=success&st=${data.status_token}`);
-        },
-        modal: {
-          ondismiss: function () {
-            console.log('Payment cancelled');
-            navigate(`/status?order_id=${data.order_id}&status=pending&st=${data.status_token}`);
-          }
-        }
+      if (error||!data?.orderId) throw new Error(data?.error||'Failed to create order');
+      const rzp=new (window as any).Razorpay({
+        key:data.razorpay_key_id, amount:data.amount, currency:formData.currency,
+        name:'HyperChat — Ankit',
+        description:donationType==='hypersound'?'HyperSound':donationType==='voice'?'Voice Message':'Text Message',
+        order_id:data.razorpay_order_id, prefill:{name:formData.name.trim()}, hidden:{contact:true},
+        theme:{color:'#00f5ff'},
+        handler:()=>navigate(`/status?order_id=${data.order_id}&status=success&st=${data.status_token}`),
+        modal:{ondismiss:()=>navigate(`/status?order_id=${data.order_id}&status=pending&st=${data.status_token}`)},
       });
-
-      rzp.on('payment.failed', function (response: any) {
-        console.log('Payment failed:', response);
-        navigate(`/status?order_id=${data.order_id}&status=failed&st=${data.status_token}`);
-      });
+      rzp.on('payment.failed',()=>navigate(`/status?order_id=${data.order_id}&status=failed&st=${data.status_token}`));
       rzp.open();
-    } catch (error) {
-      console.error('Payment error:', error);
-      toast({
-        title: "Payment Failed",
-        description: error instanceof Error ? error.message : "Something went wrong.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsProcessing(false);
-    }
+    } catch(err) {
+      toast({title:"Payment Failed",description:err instanceof Error?err.message:"Something went wrong.",variant:"destructive"});
+    } finally { setIsProcessing(false); }
   };
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (!file.type.startsWith('image/')) {
-        toast({
-          title: "Invalid File",
-          description: "Please select an image file.",
-          variant: "destructive"
-        });
-        return;
-      }
-      if (file.size > 5 * 1024 * 1024) {
-        toast({
-          title: "File Too Large",
-          description: "Image must be less than 5MB.",
-          variant: "destructive"
-        });
-        return;
-      }
-      setSelectedImage(file);
-      setImagePreview(URL.createObjectURL(file));
-    }
+  const handleImageSelect=(e: React.ChangeEvent<HTMLInputElement>)=>{
+    const file=e.target.files?.[0]; if (!file) return;
+    if (!file.type.startsWith('image/')) { toast({title:"Invalid File",variant:"destructive"}); return; }
+    if (file.size>5*1024*1024) { toast({title:"File Too Large",variant:"destructive"}); return; }
+    setSelectedImage(file); setImagePreview(URL.createObjectURL(file));
   };
-
-  const handleRemoveImage = () => {
+  const handleRemoveImage=()=>{
     setSelectedImage(null);
     if (imagePreview) URL.revokeObjectURL(imagePreview);
     setImagePreview(null);
   };
-
-  const handleDonationTypeChange = (type: 'message' | 'voice' | 'hypersound' | 'image') => {
+  const handleDonationTypeChange=(type:'message'|'voice'|'hypersound'|'image')=>{
     setDonationType(type);
-    if (type === 'hypersound') {
-      setFormData(prev => ({
-        ...prev,
-        amount: pricing.minHypersound.toString(),
-        message: ''
-      }));
-      setShowHypersoundEffect(true);
-      setTimeout(() => setShowHypersoundEffect(false), 3000);
-    } else if (type === 'image') {
-      setFormData(prev => ({
-        ...prev,
-        amount: pricing.minMedia.toString(),
-        message: ''
-      }));
-      setSelectedSound(null);
-    } else if (type === 'voice') {
-      setFormData(prev => ({
-        ...prev,
-        amount: pricing.minVoice.toString(),
-        message: ''
-      }));
-      setSelectedSound(null);
-    } else {
-      // Text donations use minText - TTS is a bonus at higher amounts
-      setFormData(prev => ({
-        ...prev,
-        amount: pricing.minText.toString()
-      }));
-      setSelectedSound(null);
-    }
-    // Clear image when switching away from image type
-    if (type !== 'image') {
-      handleRemoveImage();
-    }
+    const mins={message:pricing.minText,voice:pricing.minVoice,hypersound:pricing.minHypersound,image:pricing.minMedia};
+    setFormData(p=>({...p,amount:mins[type].toString(),message:''}));
+    setSelectedSound(null);
+    if (type!=='image') handleRemoveImage();
+    if (type==='hypersound'){ setShowHypersoundEffect(true); setTimeout(()=>setShowHypersoundEffect(false),2500); }
   };
 
-  return <div className="min-h-screen bg-transparent flex items-center justify-center p-4 relative">
-    {/* Background - Video on desktop, gradient on mobile */}
-    {!isMobile ? (
-      <>
-        <VideoBackground videoSrc="/assets/streamers/ankit-background.mp4" />
-        <div className="absolute inset-0 bg-black/40 pointer-events-none"></div>
-      </>
-    ) : (
-      <div className="absolute inset-0 bg-gradient-to-br from-[#9b87f5]/30 via-[#D946EF]/20 to-[#7E69AB]/40 pointer-events-none"></div>
-    )}
+  const sym     = getCurrencySymbol(formData.currency);
+  const charPct = charLimit>0?(formData.message.length/charLimit)*100:0;
+  const charClr = charPct>90?'#ff2d78':charPct>70?'#f5e642':'rgba(0,245,255,0.5)';
 
-      <Card className="w-full max-w-sm mx-auto bg-transparent border-blue-500/20 shadow-2xl relative overflow-hidden z-10">
-        {/* Card Background - Gradient on desktop, video on mobile */}
-        {isMobile ? (
-          <>
-            <video
-              ref={mobileVideoRef}
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="absolute inset-0 w-full h-full object-cover z-0 rounded-lg"
-            >
-              <source src="/assets/streamers/ankit-background.mp4" type="video/mp4" />
-            </video>
-            <div className="absolute inset-0 bg-black/50 z-0"></div>
-          </>
+  const TYPES=[
+    {key:'message' as const,   emoji:'💬',label:'TEXT', min:pricing.minText,       tc:'cp-tb-c',nameClr:'#00f5ff'},
+    {key:'voice' as const,     emoji:'🎤',label:'VOICE',min:pricing.minVoice,      tc:'cp-tb-c',nameClr:'#00f5ff'},
+    {key:'hypersound' as const,emoji:'🔊',label:'SOUND',min:pricing.minHypersound, tc:'cp-tb-o',nameClr:'#ff6b2b'},
+    {key:'image' as const,     emoji:'📷',label:'IMAGE',min:pricing.minMedia,       tc:'cp-tb-m',nameClr:'#ff2d78'},
+  ];
+
+  return (
+    <>
+      <style dangerouslySetInnerHTML={{__html:STYLES}} />
+
+      <div className="cp-root cp-page">
+        <div className="cp-grid"/>
+        <div className="cp-glow-a"/><div className="cp-glow-b"/>
+
+        {/* Video bg */}
+        {!isMobile ? (
+          <><VideoBackground videoSrc="/assets/streamers/ankit-background.mp4"/>
+            <div style={{position:'fixed',inset:0,background:'rgba(5,5,13,0.8)',pointerEvents:'none',zIndex:1}}/></>
         ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-[#9b87f5]/40 via-[#D946EF]/30 to-[#7E69AB]/50 z-0"></div>
+          <><video ref={mobileVideoRef} autoPlay loop muted playsInline
+              style={{position:'fixed',inset:0,width:'100%',height:'100%',objectFit:'cover',zIndex:0}}>
+              <source src="/assets/streamers/ankit-background.mp4" type="video/mp4"/>
+            </video>
+            <div style={{position:'fixed',inset:0,background:'rgba(5,5,13,0.8)',pointerEvents:'none',zIndex:1}}/></>
         )}
-        
-        {/* Card glow effect */}
-        <div className="absolute inset-0 bg-gradient-to-r from-hyperchat-purple/20 via-hyperchat-pink/20 to-hyperchat-purple/20 opacity-50 blur-xl z-0"></div>
-        
-        <CardHeader className="text-center relative z-10 pb-2">
-          <div className="flex items-center justify-center mb-2">
-            <div className="flex items-center space-x-2 text-white drop-shadow-[0_0_8px_rgba(155,135,245,0.8)]">
-              <Gamepad2 className="h-6 w-6" />
-              <Sparkles className="h-5 w-5 animate-pulse" />
-              <Heart className="h-5 w-5" />
+
+        <div className="cp-card cp-fl">
+
+          {/* ── COMPACT HERO ── */}
+          <div className="cp-hero">
+            <div className="cp-scanline"/>
+            <div className="cp-tl"/><div className="cp-br"/>
+
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',position:'relative',zIndex:2}}>
+              {/* Left: identity */}
+              <div style={{display:'flex',alignItems:'center',gap:12}}>
+                <div style={{
+                  width:42,height:42,flexShrink:0,
+                  background:'linear-gradient(135deg,rgba(0,245,255,0.15),rgba(255,45,120,0.12))',
+                  border:'1px solid rgba(0,245,255,0.25)',
+                  display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,
+                }}>🎮</div>
+                <div>
+                  <div className="cp-name" data-text="ANKIT">ANKIT</div>
+                  <div style={{fontFamily:"'Share Tech Mono',monospace",fontSize:9,color:'rgba(0,245,255,0.45)',letterSpacing:'0.14em',marginTop:2}}>
+                    // STREAM ACTIVE
+                  </div>
+                </div>
+              </div>
+              {/* Right: status */}
+              <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:5}}>
+                <div className="cp-live">
+                  <div className="cp-live-dot"/>
+                  <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:9,color:'#00ff50',letterSpacing:'0.14em'}}>ON AIR</span>
+                </div>
+                <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:9,color:'rgba(0,245,255,0.28)',letterSpacing:'0.1em'}}>HYPERCHAT</span>
+              </div>
             </div>
           </div>
-          <CardTitle className="text-xl sm:text-2xl font-bold bg-hero-gradient bg-clip-text text-transparent drop-shadow-lg">
-            Ankit
-          </CardTitle>
-          <p className="text-white text-xs drop-shadow-md">
-            Support Ankit with your donation
-          </p>
-        </CardHeader>
 
-        <CardContent className="space-y-4 relative z-10">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Name Field */}
-            <div className="space-y-2">
-              <label htmlFor="name" className="text-sm font-semibold text-white drop-shadow-md">
-                Your Name *
-              </label>
-              <Input id="name" name="name" placeholder="Enter your name" value={formData.name} onChange={handleInputChange} className="border-blue-500/30 focus:border-blue-500 focus:ring-blue-500/20" required />
+          {/* ── TICKER ── */}
+          <div className="cp-ticker">
+            <div className="cp-ticker-inner">
+              {[...Array(2)].map((_,i)=>(
+                <React.Fragment key={i}>
+                  <span className="cp-tick-item">💬 TEXT · MIN {sym}{pricing.minText}</span>
+                  <span className="cp-tick-sep"> ◆ </span>
+                  <span className="cp-tick-item">🎤 VOICE · MIN {sym}{pricing.minVoice}</span>
+                  <span className="cp-tick-sep"> ◆ </span>
+                  <span className="cp-tick-item">🔊 SOUND · MIN {sym}{pricing.minHypersound}</span>
+                  <span className="cp-tick-sep"> ◆ </span>
+                  <span className="cp-tick-item">⚡ TTS AT {sym}{pricing.minTts}+</span>
+                  <span className="cp-tick-sep"> ◆ </span>
+                </React.Fragment>
+              ))}
             </div>
+          </div>
 
-            {/* Donation Type Selection */}
-            <div className="space-y-3">
-                <label className="text-sm font-semibold text-white drop-shadow-md">
-                  Choose your donation type
-                </label>
-                <div className="grid grid-cols-4 gap-2">
-                  <button type="button" onClick={() => handleDonationTypeChange('message')} className={`p-2 rounded-lg border-2 transition-all ${donationType === 'message' ? 'border-blue-500 bg-blue-500/10' : 'border-blue-500/30 hover:border-blue-500/50'}`}>
-                    <div className="text-center">
-                      <div className="text-base mb-1">💬</div>
-                      <div className="font-semibold text-[10px] text-white drop-shadow-sm">Text</div>
-                      <div className="text-[9px] text-yellow-300 drop-shadow-sm">Min: {getCurrencySymbol(formData.currency)}{pricing.minText}</div>
-                    </div>
-                  </button>
-                  <button type="button" onClick={() => handleDonationTypeChange('voice')} className={`p-2 rounded-lg border-2 transition-all ${donationType === 'voice' ? 'border-blue-500 bg-blue-500/10' : 'border-blue-500/30 hover:border-blue-500/50'}`}>
-                    <div className="text-center">
-                      <div className="text-base mb-1">🎤</div>
-                      <div className="font-semibold text-[10px] text-white drop-shadow-sm">Voice</div>
-                      <div className="text-[9px] text-yellow-300 drop-shadow-sm">Min: {getCurrencySymbol(formData.currency)}{pricing.minVoice}</div>
-                    </div>
-                  </button>
-                  <button type="button" onClick={() => handleDonationTypeChange('hypersound')} className={`p-2 rounded-lg border-2 transition-all ${donationType === 'hypersound' ? 'border-orange-500 bg-orange-500/10' : 'border-orange-500/30 hover:border-orange-500/50'}`}>
-                    <div className="text-center">
-                      <div className="text-base mb-1">🔊</div>
-                      <div className="font-semibold text-[10px] text-white drop-shadow-sm">Sound</div>
-                      <div className="text-[9px] text-yellow-300 drop-shadow-sm">
-                        Min: {getCurrencySymbol(formData.currency)}{pricing.minHypersound}
-                      </div>
-                    </div>
-                  </button>
-                  <button type="button" onClick={() => handleDonationTypeChange('image')} className={`p-2 rounded-lg border-2 transition-all ${donationType === 'image' ? 'border-purple-500 bg-purple-500/10' : 'border-purple-500/30 hover:border-purple-500/50'}`}>
-                    <div className="text-center">
-                      <div className="text-base mb-1">📷</div>
-                      <div className="font-semibold text-[10px] text-white drop-shadow-sm">Image</div>
-                      <div className="text-[9px] text-yellow-300 drop-shadow-sm">Min: {getCurrencySymbol(formData.currency)}{pricing.minMedia}</div>
-                    </div>
-                  </button>
+          {/* ── FORM BODY (scrollable) ── */}
+          <form onSubmit={handleSubmit} style={{display:'flex',flexDirection:'column',flex:1,overflow:'hidden'}}>
+            <div className="cp-body">
+
+              {/* Name */}
+              <div>
+                <div className="cp-sec">
+                  <div className="cp-sec-dot" style={{background:'var(--cp-cyan)',boxShadow:'0 0 5px var(--cp-cyan)'}}/>
+                  <span className="cp-sec-label">Identification</span>
+                  <div className="cp-sec-line"/>
                 </div>
-            </div>
-
-            {/* Amount Field with Inline Currency Selector */}
-            <div className="space-y-2">
-              <label htmlFor="amount" className="text-sm font-semibold text-white drop-shadow-md">
-                Amount *
-              </label>
-              <div className="flex gap-2">
-                <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={currencyOpen}
-                      className="w-[100px] justify-between border-blue-500/30 focus:border-blue-500 px-2"
-                    >
-                      {getCurrencySymbol(formData.currency)} {formData.currency}
-                      <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[220px] p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder="Search currency..." />
-                      <CommandList>
-                        <CommandEmpty>No currency found.</CommandEmpty>
-                        <CommandGroup>
-                          {SUPPORTED_CURRENCIES.map((currency) => (
-                            <CommandItem
-                              key={currency.code}
-                              value={`${currency.code} ${currency.name}`}
-                              onSelect={() => {
-                                setFormData(prev => ({ ...prev, currency: currency.code }));
-                                setCurrencyOpen(false);
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  formData.currency === currency.code ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              {currency.symbol} {currency.code} - {currency.name}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-                <Input 
-                  id="amount" 
-                  name="amount" 
-                  type="number" 
-                  placeholder={donationType === 'message' ? `Min: ${pricing.minText}` : donationType === 'voice' ? `Min: ${pricing.minVoice}` : `Min: ${pricing.minHypersound}`} 
-                  value={formData.amount} 
-                  onChange={handleInputChange} 
-                  className="flex-1 border-blue-500/30 focus:border-blue-500 focus:ring-blue-500/20" 
-                  min="1" 
-                  max="100000" 
-                  disabled={isAmountLocked || donationType === 'hypersound'} 
-                  required 
-                />
+                <div className="cp-iw">
+                  <Input id="name" name="name" value={formData.name} onChange={handleInputChange} placeholder="Enter your callsign" required/>
+                </div>
               </div>
-              {isAmountLocked && <p className="text-xs text-yellow-600 flex items-center gap-1">
-                  🔒 Amount locked during voice recording
-                </p>}
-              {donationType === 'message' && pricing.ttsEnabled && (
-                <p className="text-xs text-white/90 drop-shadow-sm">TTS above {getCurrencySymbol(formData.currency)}{pricing.minTts}</p>
+
+              {/* Type */}
+              <div>
+                <div className="cp-sec">
+                  <div className="cp-sec-dot" style={{background:'var(--cp-magenta)',boxShadow:'0 0 5px var(--cp-magenta)'}}/>
+                  <span className="cp-sec-label" style={{color:'rgba(255,45,120,0.5)'}}>Payload Type</span>
+                  <div className="cp-sec-line" style={{background:'linear-gradient(90deg,rgba(255,45,120,0.18),transparent)'}}/>
+                </div>
+                <div className="cp-types">
+                  {TYPES.map(t=>(
+                    <button key={t.key} type="button"
+                      onClick={()=>handleDonationTypeChange(t.key)}
+                      className={cn('cp-tb',t.tc,donationType===t.key?'cp-on':'')}>
+                      <span className="cp-tb-emoji">{t.emoji}</span>
+                      <span className="cp-tb-name" style={{color:donationType===t.key?t.nameClr:'rgba(255,255,255,0.35)'}}>{t.label}</span>
+                      <span className="cp-tb-min">{sym}{t.min}+</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Amount */}
+              <div>
+                <div className="cp-sec">
+                  <div className="cp-sec-dot" style={{background:'var(--cp-yellow)',boxShadow:'0 0 5px var(--cp-yellow)'}}/>
+                  <span className="cp-sec-label" style={{color:'rgba(245,230,66,0.45)'}}>Transfer Amount</span>
+                  <div className="cp-sec-line" style={{background:'linear-gradient(90deg,rgba(245,230,66,0.15),transparent)'}}/>
+                </div>
+                <div className="cp-amt-row">
+                  <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
+                    <PopoverTrigger asChild>
+                      <button type="button" className="cp-cur-btn">
+                        <span>{sym} {formData.currency}</span>
+                        <ChevronsUpDown style={{width:11,height:11,opacity:0.4,marginLeft:'auto',flexShrink:0}}/>
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[220px] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search currency..."/>
+                        <CommandList>
+                          <CommandEmpty>No currency found.</CommandEmpty>
+                          <CommandGroup>
+                            {SUPPORTED_CURRENCIES.map(c=>(
+                              <CommandItem key={c.code} value={`${c.code} ${c.name}`}
+                                onSelect={()=>{ setFormData(p=>({...p,currency:c.code})); setCurrencyOpen(false); }}>
+                                <Check className={cn("mr-2 h-4 w-4",formData.currency===c.code?"opacity-100":"opacity-0")}/>
+                                {c.symbol} {c.code} — {c.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  <div className="cp-iw" style={{flex:1}}>
+                    <Input id="amount" name="amount" type="number"
+                      value={formData.amount} onChange={handleInputChange}
+                      min="1" max="100000" placeholder="0"
+                      disabled={isAmountLocked||donationType==='hypersound'} required/>
+                  </div>
+                </div>
+                {isAmountLocked && <p className="cp-lock">🔒 Locked during recording</p>}
+                {donationType==='message'&&pricing.ttsEnabled&&(
+                  <p className="cp-hint">⚡ TTS voice above {sym}{pricing.minTts}</p>
+                )}
+                {donationType==='voice'&&currentAmount>=pricing.minVoice&&(
+                  <p className="cp-hint">⏱ {getVoiceDuration(currentAmount)}s
+                    {formData.currency==='INR'&&currentAmount<200?' · ₹200+ for 20s, ₹250+ for 30s':''}
+                  </p>
+                )}
+              </div>
+
+              <div className="cp-div"/>
+
+              {/* Dynamic section */}
+              {donationType==='message'&&(
+                <div className="cp-fu">
+                  <div className="cp-sec" style={{marginBottom:5}}>
+                    <div className="cp-sec-dot" style={{background:'var(--cp-cyan)',boxShadow:'0 0 5px var(--cp-cyan)'}}/>
+                    <span className="cp-sec-label">Message Payload</span>
+                    <div className="cp-sec-line"/>
+                    <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:9,color:charClr,marginLeft:8,flexShrink:0}}>
+                      {formData.message.length}/{charLimit}
+                    </span>
+                  </div>
+                  <textarea id="message" name="message"
+                    value={formData.message} onChange={handleInputChange}
+                    placeholder="Transmit your message..."
+                    className="cp-ta" rows={2} maxLength={charLimit} required/>
+                  <div className="cp-cbar">
+                    <div className="cp-cbar-fill" style={{width:`${charPct}%`,background:charClr}}/>
+                  </div>
+                </div>
               )}
-              {donationType === 'voice' && currentAmount >= pricing.minVoice && <p className="text-xs text-white/90 drop-shadow-sm">
-                  Voice duration: {getVoiceDuration(currentAmount)}s
-                  {formData.currency === 'INR' && currentAmount < 200 && ' (Donate ₹200+ for 20s, ₹250+ for 30s)'}
-                </p>}
-              {donationType === 'hypersound' && <p className="text-xs text-white/90 drop-shadow-sm">
-                  HyperSounds start at {getCurrencySymbol(formData.currency)}{pricing.minHypersound}
-                </p>}
-            </div>
 
-            {/* Message Field */}
-            {donationType === 'message' && <div className="space-y-2">
-                <label htmlFor="message" className="text-sm font-semibold text-white drop-shadow-md">
-                  Message *
-                </label>
-                <textarea id="message" name="message" placeholder="Enter your message" value={formData.message} onChange={handleInputChange} className="w-full p-3 border border-blue-500/30 rounded-lg bg-background/50 backdrop-blur-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none resize-none" rows={3} maxLength={charLimit} required />
-                <div className="text-xs text-white/90 drop-shadow-sm text-right">
-                  {formData.message.length}/{charLimit} characters
-                </div>
-              </div>}
-
-            {donationType === 'voice' && <div className="space-y-3">
-                <label className="text-sm font-semibold text-white drop-shadow-md">
-                  Record Voice Message *
-                </label>
-                <VoiceRecorder onRecordingComplete={(hasRecording, duration) => {
-              setHasVoiceRecording(hasRecording);
-              setVoiceDuration(duration);
-            }} maxDurationSeconds={maxVoiceDuration} controller={voiceRecorder} requiredAmount={150} currentAmount={currentAmount} />
-              </div>}
-
-            {/* HyperSound Selector */}
-            {donationType === 'hypersound' && <div className="space-y-3">
-                <div className="p-4 rounded-lg border border-orange-500/30 bg-orange-500/5">
-                  <div className="flex items-center gap-3 mb-3">
-                    <Volume2 className="h-5 w-5 text-orange-400 drop-shadow-md" />
-                    <span className="font-semibold text-orange-400 drop-shadow-md">HyperSounds</span>
+              {donationType==='voice'&&(
+                <div className="cp-fu">
+                  <div className="cp-sec" style={{marginBottom:6}}>
+                    <div className="cp-sec-dot" style={{background:'var(--cp-cyan)',boxShadow:'0 0 5px var(--cp-cyan)'}}/>
+                    <span className="cp-sec-label">Voice Transmission</span>
+                    <div className="cp-sec-line"/>
                   </div>
-                  <p className="text-sm text-white/90 drop-shadow-sm mb-4">
-                    You control the soundboard! Pick a sound to play on stream.
-                  </p>
-                  <HyperSoundSelector 
-                    selectedSound={selectedSound}
-                    onSoundSelect={setSelectedSound}
-                  />
+                  <VoiceRecorder
+                    onRecordingComplete={(has,dur)=>{ setHasVoiceRecording(has); setVoiceDuration(dur); }}
+                    maxDurationSeconds={maxVoiceDuration} controller={voiceRecorder}
+                    requiredAmount={150} currentAmount={currentAmount}/>
                 </div>
-              </div>}
+              )}
 
-            {/* Image Upload (Demo) */}
-            {donationType === 'image' && <div className="space-y-3">
-                <div className="p-4 rounded-lg border border-purple-500/30 bg-purple-500/5">
-                  <div className="flex items-center gap-3 mb-3">
-                    <Image className="h-5 w-5 text-purple-300 drop-shadow-md" />
-                    <span className="font-semibold text-purple-300 drop-shadow-md">Image Upload</span>
-                    <span className="text-xs bg-yellow-500/30 text-yellow-300 px-2 py-0.5 rounded-full drop-shadow-sm">Demo</span>
+              {donationType==='hypersound'&&(
+                <div className="cp-fu cp-sp cp-sp-o">
+                  <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:8}}>
+                    <Volume2 style={{width:13,height:13,color:'#ff6b2b'}}/>
+                    <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:10,color:'#ff6b2b',letterSpacing:'0.12em'}}>SOUND MODULE</span>
                   </div>
-                  <p className="text-sm text-white/90 drop-shadow-sm mb-4">
-                    Share an image with the streamer! (Demo feature - not functional yet)
-                  </p>
-                  
-                  {!imagePreview ? (
-                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-purple-500/30 border-dashed rounded-lg cursor-pointer bg-purple-500/5 hover:bg-purple-500/10 transition-colors">
-                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                        <Image className="w-8 h-8 mb-2 text-purple-300 drop-shadow-md" />
-                        <p className="text-sm text-purple-300 drop-shadow-sm">Click to upload image</p>
-                        <p className="text-xs text-white/80 drop-shadow-sm">PNG, JPG up to 5MB</p>
-                      </div>
-                      <input 
-                        type="file" 
-                        className="hidden" 
-                        accept="image/*"
-                        onChange={handleImageSelect}
-                      />
+                  <HyperSoundSelector selectedSound={selectedSound} onSoundSelect={setSelectedSound}/>
+                </div>
+              )}
+
+              {donationType==='image'&&(
+                <div className="cp-fu cp-sp cp-sp-m">
+                  <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:8}}>
+                    <Image style={{width:13,height:13,color:'#ff2d78'}}/>
+                    <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:10,color:'#ff2d78',letterSpacing:'0.12em'}}>IMAGE UPLINK</span>
+                    <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:'rgba(245,230,66,.75)',border:'1px solid rgba(245,230,66,.2)',padding:'1px 6px',marginLeft:4}}>DEMO</span>
+                  </div>
+                  {!imagePreview?(
+                    <label style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:72,border:'1px dashed rgba(255,45,120,0.22)',cursor:'pointer',background:'rgba(255,45,120,0.02)'}}>
+                      <Image style={{width:18,height:18,color:'rgba(255,45,120,0.45)',marginBottom:4}}/>
+                      <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:10,color:'rgba(255,45,120,0.5)'}}>UPLINK FILE</span>
+                      <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:'rgba(255,255,255,0.22)',marginTop:2}}>PNG, JPG · MAX 5MB</span>
+                      <input type="file" style={{display:'none'}} accept="image/*" onChange={handleImageSelect}/>
                     </label>
-                  ) : (
-                    <div className="relative">
-                      <img 
-                        src={imagePreview} 
-                        alt="Preview" 
-                        className="w-full h-32 object-cover rounded-lg"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleRemoveImage}
-                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-                      >
-                        <X className="h-4 w-4" />
+                  ):(
+                    <div style={{position:'relative'}}>
+                      <img src={imagePreview} alt="Preview" style={{width:'100%',height:72,objectFit:'cover',display:'block'}}/>
+                      <button type="button" onClick={handleRemoveImage} style={{position:'absolute',top:5,right:5,background:'rgba(255,45,120,0.85)',border:'none',width:22,height:22,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
+                        <X style={{width:12,height:12,color:'#fff'}}/>
                       </button>
                     </div>
                   )}
                 </div>
-              </div>}
+              )}
 
-            {/* Rewards Banner */}
-            <RewardsBanner amount={currentAmount} currency={formData.currency} />
+              {/* Rewards */}
+              <RewardsBanner amount={currentAmount} currency={formData.currency}/>
 
-            {/* Submit Button */}
-            <Button type="submit" className="w-full bg-hero-gradient hover:opacity-90 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none" disabled={isProcessing || !razorpayLoaded}>
-              {isProcessing ? <div className="flex items-center justify-center space-x-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  <span>Processing...</span>
-                </div> : !razorpayLoaded ? <div className="flex items-center justify-center space-x-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  <span>Loading Payment System...</span>
-                </div> : <span className="flex items-center justify-center space-x-2">
-                  <Heart className="h-4 w-4" />
-                  <span>Donate {getCurrencySymbol(formData.currency)}{formData.amount || '0'}</span>
-                </span>}
-            </Button>
-            
-            {/* RBI Regulation Notice */}
-            <p className="text-xs text-white/70 text-center mt-2">
-              Phone numbers are collected by Razorpay as per RBI regulations
-            </p>
+              {/* Submit */}
+              <button type="submit" className="cp-btn" disabled={isProcessing||!razorpayLoaded}>
+                {isProcessing||!razorpayLoaded?(
+                  <span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:9}}>
+                    <span className="cp-spin"/>
+                    {isProcessing?'TRANSMITTING...':'INITIALIZING...'}
+                  </span>
+                ):(
+                  <span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:9}}>
+                    <Heart style={{width:14,height:14}}/>
+                    DONATE {sym}{formData.amount||'0'}
+                  </span>
+                )}
+              </button>
+
+              <p style={{fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:'rgba(255,255,255,0.13)',textAlign:'center',letterSpacing:'0.06em',lineHeight:1.6}}>
+                PHONE NUMBERS COLLECTED BY RAZORPAY · RBI COMPLIANCE
+              </p>
+
+              <DonationPageFooter brandColor="#00f5ff"/>
+            </div>
           </form>
-          <DonationPageFooter brandColor="#3b82f6" />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* HyperSound Effect */}
-      {showHypersoundEffect && <div className="fixed inset-0 pointer-events-none z-50 flex items-center justify-center">
-          <div className="animate-bounce text-6xl">🔊</div>
-        </div>}
-    </div>;
+      {showHypersoundEffect&&(
+        <div style={{position:'fixed',inset:0,display:'flex',alignItems:'center',justifyContent:'center',pointerEvents:'none',zIndex:9999}}>
+          <div className="cp-hs-fx" style={{fontSize:72}}>🔊</div>
+        </div>
+      )}
+    </>
+  );
 };
+
 export default Ankit;
