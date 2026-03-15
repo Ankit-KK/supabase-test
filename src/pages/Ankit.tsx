@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { toast } from "@/hooks/use-toast";
-import { Check, ChevronsUpDown, X, Heart, Volume2, Image } from "lucide-react";
+import { Check, ChevronsUpDown, X, Heart, Volume2, Image, Mic, MessageSquare, Zap } from "lucide-react";
 import VideoBackground from "@/components/VideoBackground";
 import { cn } from "@/lib/utils";
 import { SUPPORTED_CURRENCIES, getCurrencySymbol } from "@/constants/currencies";
@@ -19,355 +19,309 @@ import HyperSoundSelector from "@/components/HyperSoundSelector";
 import DonationPageFooter from "@/components/DonationPageFooter";
 
 const STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Pacifico&display=swap');
 
   :root {
-    --n-cyan:    #00ffff;
-    --n-pink:    #ff00aa;
-    --n-purple:  #bf00ff;
-    --n-yellow:  #ffe600;
-    --n-orange:  #ff6600;
-    --n-green:   #00ff88;
-    --n-bg:      #07070f;
-    --n-card:    #0a0a18;
+    --pink:   #ff2d9b;
+    --cyan:   #00e5ff;
+    --purple: #c026d3;
+    --yellow: #ffd600;
+    --orange: #ff6d00;
+    --green:  #00e676;
+    --bg:     #110d1a;
+    --card:   #16111f;
+    --surface: rgba(255,255,255,0.04);
   }
 
-  .n-root { font-family: 'Rajdhani', sans-serif; }
+  .nr { font-family: 'Nunito', sans-serif; }
 
-  /* ── Page ── */
-  .n-page {
+  /* Page */
+  .nr-page {
     min-height: 100vh;
-    background: var(--n-bg);
+    background: var(--bg);
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 24px 16px 40px;
+    padding: 28px 16px 44px;
     position: relative;
     overflow-x: hidden;
   }
 
-  /* ── Background ── */
-  .n-bg-layer {
+  /* Warm dark ambient blobs */
+  .nr-ambient {
     position: fixed; inset: 0; pointer-events: none; z-index: 0;
     background:
-      radial-gradient(ellipse 70% 50% at 20% 20%, rgba(0,255,255,0.055) 0%, transparent 60%),
-      radial-gradient(ellipse 60% 50% at 80% 80%, rgba(255,0,170,0.06) 0%, transparent 60%),
-      radial-gradient(ellipse 40% 40% at 60% 10%, rgba(191,0,255,0.04) 0%, transparent 55%);
-  }
-  /* Subtle grid */
-  .n-grid {
-    position: fixed; inset: 0; pointer-events: none; z-index: 0;
-    background-image:
-      linear-gradient(rgba(0,255,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,255,255,0.03) 1px, transparent 1px);
-    background-size: 50px 50px;
+      radial-gradient(ellipse 60% 50% at 15% 25%, rgba(192,38,211,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 85% 75%, rgba(255,45,155,0.1) 0%, transparent 55%),
+      radial-gradient(ellipse 40% 35% at 75% 15%, rgba(0,229,255,0.06) 0%, transparent 50%);
   }
 
-  /* ── Card ── */
-  .n-card {
-    width: 100%; max-width: 460px;
+  /* Card */
+  .nr-card {
+    width: 100%; max-width: 420px;
     position: relative; z-index: 10;
-    background: var(--n-card);
-    border-radius: 2px;
-    /* The main neon glow effect on the card */
+    background: var(--card);
+    border-radius: 16px;
+    border: 1px solid rgba(255,45,155,0.15);
     box-shadow:
-      0 0 0 1px rgba(0,255,255,0.35),
-      0 0 12px rgba(0,255,255,0.2),
-      0 0 40px rgba(0,255,255,0.07),
-      0 0 80px rgba(255,0,170,0.05),
-      inset 0 0 60px rgba(0,255,255,0.02);
-  }
-
-  /* ── HERO ── */
-  .n-hero {
-    position: relative;
-    padding: 20px 22px 18px;
+      0 0 0 1px rgba(255,45,155,0.08),
+      0 0 30px rgba(255,45,155,0.08),
+      0 0 80px rgba(192,38,211,0.06),
+      0 24px 64px rgba(0,0,0,0.5);
     overflow: hidden;
-    background: linear-gradient(160deg, rgba(0,255,255,0.07) 0%, rgba(191,0,255,0.05) 50%, rgba(255,0,170,0.04) 100%);
-    border-bottom: 1px solid rgba(0,255,255,0.2);
-  }
-  /* Top cyan glow line */
-  .n-hero::before {
-    content: '';
-    position: absolute; top: 0; left: 0; right: 0; height: 2px;
-    background: linear-gradient(90deg, transparent 0%, var(--n-cyan) 30%, var(--n-purple) 70%, transparent 100%);
-    box-shadow: 0 0 12px var(--n-cyan), 0 0 24px rgba(0,255,255,0.4);
-  }
-  /* Bottom edge glow */
-  .n-hero::after {
-    content: '';
-    position: absolute; bottom: -1px; left: 0; right: 0; height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(0,255,255,0.3), transparent);
   }
 
-  /* Scanline sweep */
-  @keyframes n-scan { 0%{top:-2px;opacity:1;} 100%{top:102%;opacity:0;} }
-  .n-scanline {
-    position: absolute; left:0; right:0; height:1px; pointer-events:none; z-index:1;
-    background: linear-gradient(90deg, transparent, rgba(0,255,255,0.6), transparent);
-    animation: n-scan 4s linear infinite;
-  }
-
-  /* Live badge */
-  @keyframes n-blink { 0%,100%{opacity:1;box-shadow:0 0 6px var(--n-green);} 50%{opacity:0.3;box-shadow:none;} }
-  .n-live {
-    display: inline-flex; align-items: center; gap: 5px;
-    background: rgba(0,255,136,0.08);
-    border: 1px solid rgba(0,255,136,0.4);
-    border-radius: 2px; padding: 2px 9px;
-    box-shadow: 0 0 8px rgba(0,255,136,0.15);
-  }
-  .n-live-dot {
-    width: 6px; height: 6px; border-radius: 50%; background: var(--n-green);
-    animation: n-blink 1.4s ease-in-out infinite;
-  }
-
-  /* Glitch name */
-  @keyframes n-g1 {
-    0%,90%,100%{clip-path:none;transform:none;}
-    91%{clip-path:polygon(0 15%,100% 15%,100% 35%,0 35%);transform:translateX(-4px);}
-    92%{clip-path:polygon(0 55%,100% 55%,100% 75%,0 75%);transform:translateX(4px);}
-    93%{clip-path:none;transform:none;}
-  }
-  @keyframes n-g2 {
-    0%,90%,100%{opacity:0;}
-    91%{opacity:0.7;transform:translateX(6px);clip-path:polygon(0 15%,100% 15%,100% 35%,0 35%);}
-    92%{opacity:0.7;transform:translateX(-6px);clip-path:polygon(0 55%,100% 55%,100% 75%,0 75%);}
-    93%{opacity:0;}
-  }
-  .n-name {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 32px; font-weight: 900;
-    letter-spacing: 0.08em; color: #fff; line-height: 1;
+  /* ── HERO: neon sign energy ── */
+  .nr-hero {
     position: relative;
-    animation: n-g1 10s ease-in-out infinite;
-    /* Neon text glow */
-    text-shadow:
-      0 0 7px #fff,
-      0 0 15px var(--n-cyan),
-      0 0 30px var(--n-cyan),
-      0 0 60px rgba(0,255,255,0.4);
+    padding: 28px 24px 24px;
+    background: linear-gradient(175deg, rgba(192,38,211,0.12) 0%, rgba(255,45,155,0.06) 50%, transparent 100%);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    text-align: center;
+    overflow: hidden;
   }
-  .n-name::after {
-    content: attr(data-text); position: absolute; inset: 0;
-    color: var(--n-cyan);
-    animation: n-g2 10s ease-in-out infinite;
+
+  /* Glowing halo behind the name */
+  .nr-hero::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -55%);
+    width: 260px; height: 100px;
+    background: radial-gradient(ellipse, rgba(255,45,155,0.18) 0%, transparent 70%);
     pointer-events: none;
-    text-shadow: 0 0 10px var(--n-cyan);
   }
 
-  /* Ticker */
-  @keyframes n-tick { from{transform:translateX(0);} to{transform:translateX(-50%);} }
-  .n-ticker {
-    overflow: hidden; height: 22px; display: flex; align-items: center;
-    background: rgba(0,0,0,0.4);
-    border-bottom: 1px solid rgba(0,255,255,0.12);
+  /* Neon sign name */
+  @keyframes nr-flicker {
+    0%,19%,21%,23%,25%,54%,56%,100% {
+      text-shadow:
+        0 0 4px #fff,
+        0 0 11px #fff,
+        0 0 19px #fff,
+        0 0 40px var(--pink),
+        0 0 80px var(--pink),
+        0 0 90px var(--pink),
+        0 0 100px var(--pink),
+        0 0 150px var(--pink);
+      opacity: 1;
+    }
+    20%,24%,55% {
+      text-shadow: none;
+      opacity: 0.7;
+    }
   }
-  .n-ticker-inner { display:inline-flex; gap:32px; white-space:nowrap; animation:n-tick 20s linear infinite; }
-  .n-tick-i { font-family:'Share Tech Mono',monospace; font-size:9px; color:rgba(0,255,255,0.5); letter-spacing:.1em; }
-  .n-tick-s { color:rgba(255,0,170,0.5); font-size:9px; }
-
-  /* ── Body ── */
-  .n-body { padding: 18px 22px 22px; display: flex; flex-direction: column; gap: 16px; }
-
-  /* Section header */
-  .n-sec { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
-  .n-sec-dot {
-    width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0;
+  .nr-name {
+    font-family: 'Pacifico', cursive;
+    font-size: 52px;
+    color: #fff;
+    line-height: 1;
+    position: relative; z-index: 1;
+    animation: nr-flicker 8s infinite;
+    letter-spacing: 0.02em;
   }
-  .n-sec-lbl {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 9px; letter-spacing: .18em; text-transform: uppercase;
-    white-space: nowrap;
-  }
-  .n-sec-line { flex:1; height:1px; }
 
-  /* ── Neon input ── */
-  .n-iw input {
+  .nr-tagline {
+    font-family: 'Nunito', sans-serif;
+    font-size: 13px; font-weight: 600;
+    color: rgba(255,255,255,0.45);
+    margin-top: 6px;
+    letter-spacing: 0.04em;
+  }
+
+  /* Live pill */
+  @keyframes nr-pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+  .nr-live {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(0,230,118,0.1);
+    border: 1px solid rgba(0,230,118,0.35);
+    border-radius: 20px; padding: 3px 12px;
+    margin-top: 10px;
+    box-shadow: 0 0 10px rgba(0,230,118,0.12);
+  }
+  .nr-live-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green), 0 0 12px rgba(0,230,118,0.4);
+    animation: nr-pulse 1.5s ease-in-out infinite;
+  }
+
+  /* ── Form body ── */
+  .nr-body { padding: 20px 22px 24px; display: flex; flex-direction: column; gap: 16px; }
+
+  /* Label */
+  .nr-label {
+    font-size: 11px; font-weight: 800;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: rgba(255,255,255,0.4);
+    display: block; margin-bottom: 8px;
+  }
+
+  /* Input — neon outline on focus */
+  .nr-iw input {
     width: 100% !important;
-    background: rgba(0,0,0,0.6) !important;
-    border: 1px solid rgba(0,255,255,0.25) !important;
-    border-radius: 2px !important;
-    color: #e0ffff !important;
-    font-family: 'Rajdhani', sans-serif !important;
-    font-size: 15px !important; font-weight: 500 !important;
+    background: rgba(0,0,0,0.35) !important;
+    border: 1.5px solid rgba(255,255,255,0.1) !important;
+    border-radius: 10px !important;
+    color: #fff !important;
+    font-family: 'Nunito', sans-serif !important;
+    font-size: 15px !important; font-weight: 600 !important;
     padding: 10px 14px !important;
     outline: none !important;
     transition: border-color .2s, box-shadow .2s !important;
-    caret-color: var(--n-cyan);
-    box-shadow: 0 0 0 0 transparent, inset 0 0 0 0 transparent !important;
+    caret-color: var(--cyan);
   }
-  .n-iw input:focus {
-    border-color: var(--n-cyan) !important;
-    box-shadow: 0 0 8px rgba(0,255,255,0.3), 0 0 20px rgba(0,255,255,0.1), inset 0 0 8px rgba(0,255,255,0.04) !important;
+  .nr-iw input:focus {
+    border-color: var(--cyan) !important;
+    box-shadow: 0 0 0 3px rgba(0,229,255,0.12), 0 0 16px rgba(0,229,255,0.15) !important;
   }
-  .n-iw input::placeholder { color: rgba(0,255,255,0.22) !important; }
-  .n-iw input:disabled { opacity: .38 !important; }
+  .nr-iw input::placeholder { color: rgba(255,255,255,0.2) !important; }
+  .nr-iw input:disabled { opacity: .4 !important; }
 
   /* Textarea */
-  .n-ta {
+  .nr-ta {
     width: 100%;
-    background: rgba(0,0,0,0.6);
-    border: 1px solid rgba(0,255,255,0.25);
-    border-radius: 2px;
-    color: #e0ffff;
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 14px; font-weight: 500;
-    padding: 10px 14px; resize: none; outline: none; line-height: 1.55;
-    caret-color: var(--n-cyan);
+    background: rgba(0,0,0,0.35);
+    border: 1.5px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    color: #fff;
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px; font-weight: 600;
+    padding: 10px 14px; resize: none; outline: none; line-height: 1.6;
+    caret-color: var(--cyan);
     transition: border-color .2s, box-shadow .2s;
   }
-  .n-ta:focus {
-    border-color: var(--n-cyan);
-    box-shadow: 0 0 8px rgba(0,255,255,0.3), 0 0 20px rgba(0,255,255,0.1), inset 0 0 8px rgba(0,255,255,0.04);
+  .nr-ta:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3px rgba(0,229,255,0.12), 0 0 16px rgba(0,229,255,0.15);
   }
-  .n-ta::placeholder { color: rgba(0,255,255,0.22); }
+  .nr-ta::placeholder { color: rgba(255,255,255,0.2); }
 
   /* Char bar */
-  .n-cbar { height: 2px; margin-top: 5px; background: rgba(0,255,255,0.08); overflow: hidden; border-radius: 1px; }
-  .n-cbar-fill { height: 100%; transition: width .12s, background .2s; border-radius: 1px; }
+  .nr-cbar { height: 3px; margin-top: 5px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }
+  .nr-cbar-fill { height: 100%; border-radius: 2px; transition: width .12s, background .2s; }
 
-  /* ── Type buttons ── */
-  .n-types { display: grid; grid-template-columns: repeat(4,1fr); gap: 7px; }
-  .n-tb {
+  /* ── Type buttons — neon pill style ── */
+  .nr-types { display: grid; grid-template-columns: repeat(4,1fr); gap: 7px; }
+  .nr-tb {
     padding: 10px 4px 9px; text-align: center;
-    background: rgba(0,0,0,0.5);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 2px;
+    background: rgba(0,0,0,0.3);
+    border: 1.5px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
     cursor: pointer; transition: all .18s;
+    position: relative; overflow: hidden;
   }
-  .n-tb:hover {
-    border-color: rgba(0,255,255,0.35);
-    box-shadow: 0 0 10px rgba(0,255,255,0.12);
-    background: rgba(0,255,255,0.04);
+  .nr-tb:hover {
+    border-color: rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.05);
+    transform: translateY(-1px);
   }
-  /* Active states with full neon glow per color */
-  .n-tb-c.n-on {
-    border-color: var(--n-cyan);
-    background: rgba(0,255,255,0.07);
-    box-shadow: 0 0 10px rgba(0,255,255,0.4), 0 0 24px rgba(0,255,255,0.15), inset 0 0 10px rgba(0,255,255,0.06);
-  }
-  .n-tb-p.n-on {
-    border-color: var(--n-pink);
-    background: rgba(255,0,170,0.07);
-    box-shadow: 0 0 10px rgba(255,0,170,0.4), 0 0 24px rgba(255,0,170,0.15), inset 0 0 10px rgba(255,0,170,0.06);
-  }
-  .n-tb-o.n-on {
-    border-color: var(--n-orange);
-    background: rgba(255,102,0,0.07);
-    box-shadow: 0 0 10px rgba(255,102,0,0.4), 0 0 24px rgba(255,102,0,0.15), inset 0 0 10px rgba(255,102,0,0.06);
-  }
-  .n-tb-v.n-on {
-    border-color: var(--n-purple);
-    background: rgba(191,0,255,0.07);
-    box-shadow: 0 0 10px rgba(191,0,255,0.4), 0 0 24px rgba(191,0,255,0.15), inset 0 0 10px rgba(191,0,255,0.06);
-  }
-  .n-tb-emoji { font-size: 18px; display: block; line-height: 1; }
-  .n-tb-name {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 8px; letter-spacing: .1em; text-transform: uppercase;
+
+  /* Active neon glow per type */
+  .nr-tb-cyan.nr-on  { border-color: var(--cyan);   background: rgba(0,229,255,0.08);  box-shadow: 0 0 12px rgba(0,229,255,0.3),  0 0 28px rgba(0,229,255,0.1),  inset 0 0 12px rgba(0,229,255,0.05); }
+  .nr-tb-pink.nr-on  { border-color: var(--pink);   background: rgba(255,45,155,0.08); box-shadow: 0 0 12px rgba(255,45,155,0.3), 0 0 28px rgba(255,45,155,0.1), inset 0 0 12px rgba(255,45,155,0.05); }
+  .nr-tb-or.nr-on    { border-color: var(--orange); background: rgba(255,109,0,0.08);  box-shadow: 0 0 12px rgba(255,109,0,0.3),  0 0 28px rgba(255,109,0,0.1),  inset 0 0 12px rgba(255,109,0,0.05); }
+  .nr-tb-pur.nr-on   { border-color: var(--purple); background: rgba(192,38,211,0.08); box-shadow: 0 0 12px rgba(192,38,211,0.3), 0 0 28px rgba(192,38,211,0.1), inset 0 0 12px rgba(192,38,211,0.05); }
+
+  .nr-tb-emoji { font-size: 19px; display: block; line-height: 1; }
+  .nr-tb-name {
+    font-family: 'Nunito', sans-serif;
+    font-size: 9px; font-weight: 800;
+    letter-spacing: .06em; text-transform: uppercase;
     display: block; margin-top: 5px; transition: color .18s;
   }
-  .n-tb-min { font-family: 'Share Tech Mono', monospace; font-size: 8px; color: rgba(255,230,0,0.6); display: block; margin-top: 2px; }
+  .nr-tb-min {
+    font-size: 8px; font-weight: 700;
+    color: rgba(255,214,0,0.65); display: block; margin-top: 2px;
+  }
 
-  /* ── Amount ── */
-  .n-amt-row { display: flex; gap: 7px; }
-  .n-cur-btn {
+  /* Amount row */
+  .nr-amt-row { display: flex; gap: 7px; }
+  .nr-cur-btn {
     display: flex; align-items: center; justify-content: space-between; gap: 4px;
-    background: rgba(0,0,0,0.6) !important;
-    border: 1px solid rgba(0,255,255,0.25) !important;
-    border-radius: 2px !important;
-    color: #e0ffff !important;
-    font-family: 'Share Tech Mono', monospace !important;
-    font-size: 11px !important; padding: 0 11px !important;
+    background: rgba(0,0,0,0.35) !important;
+    border: 1.5px solid rgba(255,255,255,0.1) !important;
+    border-radius: 10px !important;
+    color: #fff !important;
+    font-family: 'Nunito', sans-serif !important;
+    font-size: 13px !important; font-weight: 700 !important;
+    padding: 0 12px !important;
     min-width: 90px; height: 42px;
     cursor: pointer; transition: border-color .2s, box-shadow .2s;
     flex-shrink: 0;
   }
-  .n-cur-btn:hover {
-    border-color: var(--n-cyan) !important;
-    box-shadow: 0 0 8px rgba(0,255,255,0.25) !important;
+  .nr-cur-btn:hover {
+    border-color: var(--cyan) !important;
+    box-shadow: 0 0 10px rgba(0,229,255,0.2) !important;
   }
 
   /* Divider */
-  .n-div {
+  .nr-div {
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(0,255,255,0.2), rgba(255,0,170,0.15), transparent);
-    box-shadow: 0 0 4px rgba(0,255,255,0.1);
+    background: linear-gradient(90deg, transparent, rgba(255,45,155,0.25), rgba(0,229,255,0.2), transparent);
   }
 
-  /* Sub-panels */
-  .n-sp {
-    border-radius: 2px; padding: 12px 14px; position: relative;
-  }
-  .n-sp-o {
-    border: 1px solid rgba(255,102,0,0.4);
-    background: rgba(255,102,0,0.04);
-    box-shadow: 0 0 14px rgba(255,102,0,0.1), inset 0 0 14px rgba(255,102,0,0.03);
-  }
-  .n-sp-p {
-    border: 1px solid rgba(191,0,255,0.35);
-    background: rgba(191,0,255,0.04);
-    box-shadow: 0 0 14px rgba(191,0,255,0.1), inset 0 0 14px rgba(191,0,255,0.03);
-  }
+  /* Sub panels */
+  .nr-sp { border-radius: 12px; padding: 14px 16px; }
+  .nr-sp-or  { background: rgba(255,109,0,0.06);  border: 1.5px solid rgba(255,109,0,0.3);  box-shadow: 0 0 16px rgba(255,109,0,0.08),  inset 0 0 16px rgba(255,109,0,0.03); }
+  .nr-sp-pur { background: rgba(192,38,211,0.06); border: 1.5px solid rgba(192,38,211,0.3); box-shadow: 0 0 16px rgba(192,38,211,0.08), inset 0 0 16px rgba(192,38,211,0.03); }
 
   /* ── Submit ── */
-  .n-btn {
-    width: 100%; padding: 13px; border: none; cursor: pointer;
-    font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 700;
-    letter-spacing: .14em; text-transform: uppercase;
-    color: #07070f;
-    position: relative; overflow: hidden; border-radius: 2px;
+  .nr-btn {
+    width: 100%; padding: 14px; border: none; cursor: pointer;
+    font-family: 'Nunito', sans-serif; font-size: 16px; font-weight: 800;
+    letter-spacing: .04em; color: #fff;
+    position: relative; overflow: hidden; border-radius: 12px;
     transition: transform .15s, box-shadow .2s;
-    background: linear-gradient(90deg, var(--n-cyan) 0%, #44eeff 35%, var(--n-purple) 65%, var(--n-pink) 100%);
+    background: linear-gradient(90deg, #c026d3 0%, #ff2d9b 50%, #ff6d00 100%);
     box-shadow:
-      0 0 12px rgba(0,255,255,0.5),
-      0 0 30px rgba(0,255,255,0.2),
-      0 0 60px rgba(255,0,170,0.15);
+      0 0 14px rgba(255,45,155,0.5),
+      0 0 30px rgba(192,38,211,0.2),
+      0 4px 20px rgba(0,0,0,0.4);
   }
-  .n-btn:hover:not(:disabled) {
+  .nr-btn:hover:not(:disabled) {
     transform: translateY(-2px);
     box-shadow:
-      0 0 18px rgba(0,255,255,0.7),
-      0 0 40px rgba(0,255,255,0.3),
-      0 0 80px rgba(255,0,170,0.2);
+      0 0 22px rgba(255,45,155,0.7),
+      0 0 50px rgba(192,38,211,0.3),
+      0 8px 30px rgba(0,0,0,0.5);
   }
-  .n-btn:active:not(:disabled) { transform: translateY(0); }
-  .n-btn:disabled { opacity: .35; cursor: not-allowed; filter: grayscale(0.4); }
-  .n-btn::before {
+  .nr-btn:active:not(:disabled) { transform: translateY(0); }
+  .nr-btn:disabled { opacity: .35; cursor: not-allowed; }
+  .nr-btn::before {
     content: ''; position: absolute; top: 0; left: -110%; width: 55%; height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent);
-    transform: skewX(-22deg); transition: left .55s;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transform: skewX(-20deg); transition: left .55s;
   }
-  .n-btn:hover:not(:disabled)::before { left: 160%; }
+  .nr-btn:hover:not(:disabled)::before { left: 160%; }
 
   /* Hints */
-  .n-hint { font-family: 'Share Tech Mono', monospace; font-size: 9px; color: rgba(0,255,255,0.38); margin-top: 5px; }
-  .n-lock { font-family: 'Share Tech Mono', monospace; font-size: 9px; color: rgba(255,230,0,0.7); display: flex; align-items: center; gap: 3px; margin-top: 5px; }
+  .nr-hint { font-size: 11px; font-weight: 600; color: rgba(0,229,255,0.5); margin-top: 5px; }
+  .nr-lock { font-size: 11px; font-weight: 700; color: rgba(255,214,0,0.7); display: flex; align-items: center; gap: 4px; margin-top: 5px; }
 
-  /* Fade-up */
-  @keyframes n-fu { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
-  .n-fu { animation: n-fu .22s ease forwards; }
+  /* Fade up */
+  @keyframes nr-fu { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
+  .nr-fu { animation: nr-fu .22s ease forwards; }
 
   /* Spinner */
-  @keyframes n-sp-a { to{transform:rotate(360deg);} }
-  .n-spin {
-    width: 14px; height: 14px;
-    border: 2px solid rgba(7,7,15,0.5); border-top-color: #07070f;
+  @keyframes nr-sp { to{transform:rotate(360deg);} }
+  .nr-spin {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff;
     border-radius: 50%; display: inline-block;
-    animation: n-sp-a .6s linear infinite;
+    animation: nr-sp .65s linear infinite;
   }
 
   /* HyperSound FX */
-  @keyframes n-hs { 0%{opacity:1;transform:scale(1) translateY(0);} 50%{opacity:1;transform:scale(1.6) translateY(-28px);} 100%{opacity:0;transform:scale(1.2) translateY(-60px);} }
-  .n-hs-fx { animation: n-hs .9s ease forwards; }
+  @keyframes nr-hs { 0%{opacity:1;transform:scale(1) translateY(0);} 50%{transform:scale(1.6) translateY(-28px);} 100%{opacity:0;transform:scale(1.2) translateY(-60px);} }
+  .nr-hs-fx { animation: nr-hs .9s ease forwards; }
 
-  /* Load flicker */
-  @keyframes n-fl { 0%,100%{opacity:1;} 3%{opacity:.5;} 5%{opacity:1;} 7.5%{opacity:.4;} 9%{opacity:1;} }
-  .n-fl { animation: n-fl .6s ease .1s both; }
+  /* Load in */
+  @keyframes nr-in { from{opacity:0;transform:translateY(16px) scale(0.98);} to{opacity:1;transform:translateY(0) scale(1);} }
+  .nr-in { animation: nr-in .4s cubic-bezier(0.22,1,0.36,1) both; }
 
-  .n-scroll::-webkit-scrollbar { width: 3px; }
-  .n-scroll::-webkit-scrollbar-thumb { background: rgba(0,255,255,0.2); }
+  .nr-scroll::-webkit-scrollbar { width: 3px; }
+  .nr-scroll::-webkit-scrollbar-thumb { background: rgba(255,45,155,0.25); border-radius: 2px; }
 `;
 
 const Ankit = () => {
@@ -475,7 +429,7 @@ const Ankit = () => {
         name:'HyperChat — Ankit',
         description:donationType==='hypersound'?'HyperSound':donationType==='voice'?'Voice Message':'Text Message',
         order_id:data.razorpay_order_id, prefill:{name:formData.name.trim()}, hidden:{contact:true},
-        theme:{color:'#00ffff'},
+        theme:{color:'#ff2d9b'},
         handler:()=>navigate(`/status?order_id=${data.order_id}&status=success&st=${data.status_token}`),
         modal:{ondismiss:()=>navigate(`/status?order_id=${data.order_id}&status=pending&st=${data.status_token}`)},
       });
@@ -508,121 +462,73 @@ const Ankit = () => {
 
   const sym     = getCurrencySymbol(formData.currency);
   const charPct = charLimit>0?(formData.message.length/charLimit)*100:0;
-  const charClr = charPct>90?'#ff00aa':charPct>70?'#ffe600':'rgba(0,255,255,0.55)';
+  const charClr = charPct>90?'var(--pink)':charPct>70?'var(--yellow)':'var(--cyan)';
 
   const TYPES=[
-    {key:'message' as const,   emoji:'💬',label:'TEXT', min:pricing.minText,       tc:'n-tb-c', nc:'var(--n-cyan)'},
-    {key:'voice' as const,     emoji:'🎤',label:'VOICE',min:pricing.minVoice,      tc:'n-tb-c', nc:'var(--n-cyan)'},
-    {key:'hypersound' as const,emoji:'🔊',label:'SOUND',min:pricing.minHypersound, tc:'n-tb-o', nc:'var(--n-orange)'},
-    {key:'image' as const,     emoji:'📷',label:'IMAGE',min:pricing.minMedia,      tc:'n-tb-v', nc:'var(--n-purple)'},
+    {key:'message' as const,   emoji:'💬', label:'Text',  min:pricing.minText,       tc:'nr-tb-cyan', nc:'var(--cyan)'},
+    {key:'voice' as const,     emoji:'🎤', label:'Voice', min:pricing.minVoice,      tc:'nr-tb-cyan', nc:'var(--cyan)'},
+    {key:'hypersound' as const,emoji:'🔊', label:'Sound', min:pricing.minHypersound, tc:'nr-tb-or',   nc:'var(--orange)'},
+    {key:'image' as const,     emoji:'📷', label:'Image', min:pricing.minMedia,      tc:'nr-tb-pur',  nc:'var(--purple)'},
   ];
 
   return (
     <>
       <style dangerouslySetInnerHTML={{__html:STYLES}}/>
 
-      <div className="n-root n-page n-scroll">
-        <div className="n-bg-layer"/><div className="n-grid"/>
+      <div className="nr nr-page nr-scroll">
+        <div className="nr-ambient"/>
 
         {!isMobile ? (
           <><VideoBackground videoSrc="/assets/streamers/ankit-background.mp4"/>
-            <div style={{position:'fixed',inset:0,background:'rgba(7,7,15,0.82)',pointerEvents:'none',zIndex:1}}/></>
+            <div style={{position:'fixed',inset:0,background:'rgba(17,13,26,0.8)',pointerEvents:'none',zIndex:1}}/></>
         ) : (
           <><video ref={mobileVideoRef} autoPlay loop muted playsInline
               style={{position:'fixed',inset:0,width:'100%',height:'100%',objectFit:'cover',zIndex:0}}>
               <source src="/assets/streamers/ankit-background.mp4" type="video/mp4"/>
             </video>
-            <div style={{position:'fixed',inset:0,background:'rgba(7,7,15,0.82)',pointerEvents:'none',zIndex:1}}/></>
+            <div style={{position:'fixed',inset:0,background:'rgba(17,13,26,0.8)',pointerEvents:'none',zIndex:1}}/></>
         )}
 
-        <div className="n-card n-fl">
+        <div className="nr-card nr-in">
 
           {/* ── HERO ── */}
-          <div className="n-hero">
-            <div className="n-scanline"/>
-            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',position:'relative',zIndex:2}}>
-              {/* Left */}
-              <div style={{display:'flex',alignItems:'center',gap:14}}>
-                {/* Avatar with neon border */}
-                <div style={{
-                  width:48,height:48,flexShrink:0,borderRadius:2,
-                  background:'rgba(0,0,0,0.5)',
-                  border:'1px solid rgba(0,255,255,0.45)',
-                  display:'flex',alignItems:'center',justifyContent:'center',fontSize:24,
-                  boxShadow:'0 0 10px rgba(0,255,255,0.3), inset 0 0 10px rgba(0,255,255,0.05)',
-                }}>🎮</div>
-                <div>
-                  <div className="n-name" data-text="ANKIT">ANKIT</div>
-                  <div style={{
-                    fontFamily:"'Share Tech Mono',monospace",fontSize:9,
-                    color:'rgba(0,255,255,0.5)',letterSpacing:'0.16em',marginTop:2,
-                    textShadow:'0 0 6px rgba(0,255,255,0.3)',
-                  }}>// DONATION INTERFACE</div>
-                </div>
+          <div className="nr-hero">
+            <div className="nr-name">Ankit</div>
+            <div className="nr-tagline">Send a message live on stream</div>
+            <div style={{display:'flex',justifyContent:'center',marginTop:10}}>
+              <div className="nr-live">
+                <div className="nr-live-dot"/>
+                <span style={{fontSize:11,fontWeight:700,color:'var(--green)',letterSpacing:'0.06em'}}>Live Now</span>
               </div>
-              {/* Right */}
-              <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:6}}>
-                <div className="n-live">
-                  <div className="n-live-dot"/>
-                  <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:9,color:'var(--n-green)',letterSpacing:'0.12em',textShadow:'0 0 6px var(--n-green)'}}>ON AIR</span>
-                </div>
-                <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:'rgba(0,255,255,0.3)',letterSpacing:'0.1em'}}>HYPERCHAT</span>
-              </div>
-            </div>
-          </div>
-
-          {/* ── TICKER ── */}
-          <div className="n-ticker">
-            <div className="n-ticker-inner">
-              {[...Array(2)].map((_,i)=>(
-                <React.Fragment key={i}>
-                  <span className="n-tick-i">💬 TEXT · MIN {sym}{pricing.minText}</span>
-                  <span className="n-tick-s"> ◆ </span>
-                  <span className="n-tick-i">🎤 VOICE · MIN {sym}{pricing.minVoice}</span>
-                  <span className="n-tick-s"> ◆ </span>
-                  <span className="n-tick-i">🔊 SOUND · MIN {sym}{pricing.minHypersound}</span>
-                  <span className="n-tick-s"> ◆ </span>
-                  <span className="n-tick-i">⚡ TTS AT {sym}{pricing.minTts}+</span>
-                  <span className="n-tick-s"> ◆ </span>
-                </React.Fragment>
-              ))}
             </div>
           </div>
 
           {/* ── FORM ── */}
           <form onSubmit={handleSubmit}>
-            <div className="n-body">
+            <div className="nr-body">
 
               {/* Name */}
               <div>
-                <div className="n-sec">
-                  <div className="n-sec-dot" style={{background:'var(--n-cyan)',boxShadow:'0 0 6px var(--n-cyan)'}}/>
-                  <span className="n-sec-lbl" style={{color:'rgba(0,255,255,0.5)',textShadow:'0 0 6px rgba(0,255,255,0.3)'}}>Your Name</span>
-                  <div className="n-sec-line" style={{background:'linear-gradient(90deg,rgba(0,255,255,0.2),transparent)'}}/>
-                </div>
-                <div className="n-iw">
+                <label className="nr-label">Your Name</label>
+                <div className="nr-iw">
                   <Input id="name" name="name" value={formData.name} onChange={handleInputChange} placeholder="Enter your name" required/>
                 </div>
               </div>
 
               {/* Type */}
               <div>
-                <div className="n-sec">
-                  <div className="n-sec-dot" style={{background:'var(--n-pink)',boxShadow:'0 0 6px var(--n-pink)'}}/>
-                  <span className="n-sec-lbl" style={{color:'rgba(255,0,170,0.6)',textShadow:'0 0 6px rgba(255,0,170,0.3)'}}>Donation Type</span>
-                  <div className="n-sec-line" style={{background:'linear-gradient(90deg,rgba(255,0,170,0.2),transparent)'}}/>
-                </div>
-                <div className="n-types">
+                <label className="nr-label">Donation Type</label>
+                <div className="nr-types">
                   {TYPES.map(t=>(
                     <button key={t.key} type="button"
                       onClick={()=>handleDonationTypeChange(t.key)}
-                      className={cn('n-tb',t.tc,donationType===t.key?'n-on':'')}>
-                      <span className="n-tb-emoji">{t.emoji}</span>
-                      <span className="n-tb-name" style={{
-                        color: donationType===t.key ? t.nc : 'rgba(255,255,255,0.3)',
+                      className={cn('nr-tb',t.tc,donationType===t.key?'nr-on':'')}>
+                      <span className="nr-tb-emoji">{t.emoji}</span>
+                      <span className="nr-tb-name" style={{
+                        color: donationType===t.key ? t.nc : 'rgba(255,255,255,0.35)',
                         textShadow: donationType===t.key ? `0 0 8px ${t.nc}` : 'none',
                       }}>{t.label}</span>
-                      <span className="n-tb-min">{sym}{t.min}+</span>
+                      <span className="nr-tb-min">{sym}{t.min}+</span>
                     </button>
                   ))}
                 </div>
@@ -630,17 +536,13 @@ const Ankit = () => {
 
               {/* Amount */}
               <div>
-                <div className="n-sec">
-                  <div className="n-sec-dot" style={{background:'var(--n-yellow)',boxShadow:'0 0 6px var(--n-yellow)'}}/>
-                  <span className="n-sec-lbl" style={{color:'rgba(255,230,0,0.55)',textShadow:'0 0 6px rgba(255,230,0,0.25)'}}>Amount</span>
-                  <div className="n-sec-line" style={{background:'linear-gradient(90deg,rgba(255,230,0,0.18),transparent)'}}/>
-                </div>
-                <div className="n-amt-row">
+                <label className="nr-label">Amount</label>
+                <div className="nr-amt-row">
                   <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
                     <PopoverTrigger asChild>
-                      <button type="button" className="n-cur-btn">
+                      <button type="button" className="nr-cur-btn">
                         <span>{sym} {formData.currency}</span>
-                        <ChevronsUpDown style={{width:11,height:11,opacity:0.4,marginLeft:'auto',flexShrink:0}}/>
+                        <ChevronsUpDown style={{width:12,height:12,opacity:0.4,marginLeft:'auto',flexShrink:0}}/>
                       </button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[220px] p-0" align="start">
@@ -661,52 +563,46 @@ const Ankit = () => {
                       </Command>
                     </PopoverContent>
                   </Popover>
-                  <div className="n-iw" style={{flex:1}}>
+                  <div className="nr-iw" style={{flex:1}}>
                     <Input id="amount" name="amount" type="number"
                       value={formData.amount} onChange={handleInputChange}
                       min="1" max="100000" placeholder="0"
                       disabled={isAmountLocked||donationType==='hypersound'} required/>
                   </div>
                 </div>
-                {isAmountLocked&&<p className="n-lock">🔒 Locked during recording</p>}
+                {isAmountLocked&&<p className="nr-lock">🔒 Amount locked during recording</p>}
                 {donationType==='message'&&pricing.ttsEnabled&&(
-                  <p className="n-hint">⚡ TTS voice above {sym}{pricing.minTts}</p>
+                  <p className="nr-hint">⚡ TTS voice above {sym}{pricing.minTts}</p>
                 )}
                 {donationType==='voice'&&currentAmount>=pricing.minVoice&&(
-                  <p className="n-hint">⏱ {getVoiceDuration(currentAmount)}s{formData.currency==='INR'&&currentAmount<200?' · ₹200+ for 20s, ₹250+ for 30s':''}</p>
+                  <p className="nr-hint">⏱ {getVoiceDuration(currentAmount)}s{formData.currency==='INR'&&currentAmount<200?' · ₹200+ for 20s, ₹250+ for 30s':''}</p>
                 )}
               </div>
 
-              <div className="n-div"/>
+              <div className="nr-div"/>
 
-              {/* Dynamic */}
+              {/* Dynamic content */}
               {donationType==='message'&&(
-                <div className="n-fu">
-                  <div className="n-sec" style={{marginBottom:7}}>
-                    <div className="n-sec-dot" style={{background:'var(--n-cyan)',boxShadow:'0 0 6px var(--n-cyan)'}}/>
-                    <span className="n-sec-lbl" style={{color:'rgba(0,255,255,0.5)',textShadow:'0 0 6px rgba(0,255,255,0.3)'}}>Message</span>
-                    <div className="n-sec-line" style={{background:'linear-gradient(90deg,rgba(0,255,255,0.2),transparent)'}}/>
-                    <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:9,color:charClr,marginLeft:8,flexShrink:0,textShadow:`0 0 6px ${charClr}`}}>
+                <div className="nr-fu">
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+                    <label className="nr-label" style={{margin:0}}>Message</label>
+                    <span style={{fontSize:11,fontWeight:700,color:charClr,textShadow:`0 0 8px ${charClr}`}}>
                       {formData.message.length}/{charLimit}
                     </span>
                   </div>
                   <textarea id="message" name="message"
                     value={formData.message} onChange={handleInputChange}
                     placeholder="Type your message..."
-                    className="n-ta" rows={3} maxLength={charLimit} required/>
-                  <div className="n-cbar">
-                    <div className="n-cbar-fill" style={{width:`${charPct}%`,background:charClr,boxShadow:`0 0 6px ${charClr}`}}/>
+                    className="nr-ta" rows={3} maxLength={charLimit} required/>
+                  <div className="nr-cbar">
+                    <div className="nr-cbar-fill" style={{width:`${charPct}%`,background:charClr,boxShadow:`0 0 6px ${charClr}`}}/>
                   </div>
                 </div>
               )}
 
               {donationType==='voice'&&(
-                <div className="n-fu">
-                  <div className="n-sec" style={{marginBottom:7}}>
-                    <div className="n-sec-dot" style={{background:'var(--n-cyan)',boxShadow:'0 0 6px var(--n-cyan)'}}/>
-                    <span className="n-sec-lbl" style={{color:'rgba(0,255,255,0.5)',textShadow:'0 0 6px rgba(0,255,255,0.3)'}}>Voice Message</span>
-                    <div className="n-sec-line" style={{background:'linear-gradient(90deg,rgba(0,255,255,0.2),transparent)'}}/>
-                  </div>
+                <div className="nr-fu">
+                  <label className="nr-label">Voice Message</label>
                   <VoiceRecorder
                     onRecordingComplete={(has,dur)=>{ setHasVoiceRecording(has); setVoiceDuration(dur); }}
                     maxDurationSeconds={maxVoiceDuration} controller={voiceRecorder}
@@ -715,34 +611,40 @@ const Ankit = () => {
               )}
 
               {donationType==='hypersound'&&(
-                <div className="n-fu n-sp n-sp-o">
+                <div className="nr-fu nr-sp nr-sp-or">
                   <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
-                    <Volume2 style={{width:14,height:14,color:'var(--n-orange)',filter:'drop-shadow(0 0 4px var(--n-orange))'}}/>
-                    <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:10,color:'var(--n-orange)',letterSpacing:'0.12em',textShadow:'0 0 8px var(--n-orange)'}}>HYPERSOUNDS</span>
+                    <Volume2 style={{width:15,height:15,color:'var(--orange)',filter:'drop-shadow(0 0 5px var(--orange))'}}/>
+                    <span style={{fontSize:13,fontWeight:800,color:'var(--orange)',textShadow:'0 0 8px var(--orange)',letterSpacing:'0.03em'}}>HyperSounds</span>
                   </div>
+                  <p style={{fontSize:13,fontWeight:600,color:'rgba(255,255,255,0.45)',marginBottom:12}}>
+                    Pick a sound to blast on stream.
+                  </p>
                   <HyperSoundSelector selectedSound={selectedSound} onSoundSelect={setSelectedSound}/>
                 </div>
               )}
 
               {donationType==='image'&&(
-                <div className="n-fu n-sp n-sp-p">
+                <div className="nr-fu nr-sp nr-sp-pur">
                   <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
-                    <Image style={{width:14,height:14,color:'var(--n-purple)',filter:'drop-shadow(0 0 4px var(--n-purple))'}}/>
-                    <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:10,color:'var(--n-purple)',letterSpacing:'0.12em',textShadow:'0 0 8px var(--n-purple)'}}>IMAGE UPLOAD</span>
-                    <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:'rgba(255,230,0,.8)',border:'1px solid rgba(255,230,0,.25)',padding:'1px 6px',marginLeft:4}}>DEMO</span>
+                    <Image style={{width:15,height:15,color:'var(--purple)',filter:'drop-shadow(0 0 5px var(--purple))'}}/>
+                    <span style={{fontSize:13,fontWeight:800,color:'var(--purple)',textShadow:'0 0 8px var(--purple)',letterSpacing:'0.03em'}}>Image Upload</span>
+                    <span style={{fontSize:9,fontWeight:800,color:'rgba(255,214,0,0.8)',border:'1px solid rgba(255,214,0,0.25)',padding:'1px 7px',borderRadius:20,marginLeft:4}}>DEMO</span>
                   </div>
+                  <p style={{fontSize:13,fontWeight:600,color:'rgba(255,255,255,0.4)',marginBottom:12}}>
+                    Share an image with the streamer. (Demo — not live yet)
+                  </p>
                   {!imagePreview?(
-                    <label style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:80,border:'1px dashed rgba(191,0,255,0.3)',cursor:'pointer',background:'rgba(191,0,255,0.02)'}}>
-                      <Image style={{width:20,height:20,color:'rgba(191,0,255,0.5)',marginBottom:5}}/>
-                      <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:10,color:'rgba(191,0,255,0.55)'}}>Click to upload</span>
-                      <span style={{fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:'rgba(255,255,255,0.2)',marginTop:2}}>PNG, JPG · MAX 5MB</span>
+                    <label style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:84,border:'1.5px dashed rgba(192,38,211,0.3)',borderRadius:10,cursor:'pointer',background:'rgba(192,38,211,0.03)'}}>
+                      <Image style={{width:22,height:22,color:'rgba(192,38,211,0.5)',marginBottom:6}}/>
+                      <span style={{fontSize:12,fontWeight:700,color:'rgba(192,38,211,0.6)'}}>Click to upload</span>
+                      <span style={{fontSize:10,fontWeight:600,color:'rgba(255,255,255,0.25)',marginTop:2}}>PNG, JPG · max 5MB</span>
                       <input type="file" style={{display:'none'}} accept="image/*" onChange={handleImageSelect}/>
                     </label>
                   ):(
                     <div style={{position:'relative'}}>
-                      <img src={imagePreview} alt="Preview" style={{width:'100%',height:80,objectFit:'cover',display:'block',borderRadius:1}}/>
-                      <button type="button" onClick={handleRemoveImage} style={{position:'absolute',top:5,right:5,background:'rgba(255,0,170,0.85)',border:'none',width:22,height:22,borderRadius:2,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}>
-                        <X style={{width:12,height:12,color:'#fff'}}/>
+                      <img src={imagePreview} alt="Preview" style={{width:'100%',height:84,objectFit:'cover',borderRadius:8,display:'block'}}/>
+                      <button type="button" onClick={handleRemoveImage} style={{position:'absolute',top:6,right:6,background:'rgba(255,45,155,0.9)',border:'none',borderRadius:'50%',width:24,height:24,display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',boxShadow:'0 0 8px rgba(255,45,155,0.5)'}}>
+                        <X style={{width:13,height:13,color:'#fff'}}/>
                       </button>
                     </div>
                   )}
@@ -753,25 +655,25 @@ const Ankit = () => {
               <RewardsBanner amount={currentAmount} currency={formData.currency}/>
 
               {/* Submit */}
-              <button type="submit" className="n-btn" disabled={isProcessing||!razorpayLoaded}>
+              <button type="submit" className="nr-btn" disabled={isProcessing||!razorpayLoaded}>
                 {isProcessing||!razorpayLoaded?(
-                  <span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:9}}>
-                    <span className="n-spin"/>
+                  <span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
+                    <span className="nr-spin"/>
                     {isProcessing?'Processing...':'Loading Payment...'}
                   </span>
                 ):(
-                  <span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:9}}>
-                    <Heart style={{width:15,height:15}}/>
+                  <span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10}}>
+                    <Heart style={{width:16,height:16}}/>
                     Donate {sym}{formData.amount||'0'}
                   </span>
                 )}
               </button>
 
-              <p style={{fontFamily:"'Share Tech Mono',monospace",fontSize:8,color:'rgba(255,255,255,0.15)',textAlign:'center',letterSpacing:'0.06em',lineHeight:1.6}}>
+              <p style={{fontSize:10,fontWeight:600,color:'rgba(255,255,255,0.18)',textAlign:'center',lineHeight:1.6}}>
                 Phone numbers collected by Razorpay as per RBI regulations
               </p>
 
-              <DonationPageFooter brandColor="#00ffff"/>
+              <DonationPageFooter brandColor="#ff2d9b"/>
             </div>
           </form>
         </div>
@@ -779,7 +681,7 @@ const Ankit = () => {
 
       {showHypersoundEffect&&(
         <div style={{position:'fixed',inset:0,display:'flex',alignItems:'center',justifyContent:'center',pointerEvents:'none',zIndex:9999}}>
-          <div className="n-hs-fx" style={{fontSize:72}}>🔊</div>
+          <div className="nr-hs-fx" style={{fontSize:72}}>🔊</div>
         </div>
       )}
     </>
