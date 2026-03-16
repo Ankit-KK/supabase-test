@@ -145,38 +145,39 @@ serve(async (req) => {
     const originError = validateOrigin(req);
     if (originError) return originError;
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // --- Authentication ---
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
+    const serviceClient = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: { persistSession: false },
+    });
+
+    // --- Authentication via custom session ---
+    const authToken = req.headers.get("x-auth-token");
+    const body = await req.json();
+    const tokenToValidate = authToken || body.authToken;
+
+    if (!tokenToValidate) {
       return new Response(
-        JSON.stringify({ error: "Missing authorization header" }),
+        JSON.stringify({ error: "Missing auth token" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-      auth: { persistSession: false },
-    });
+    const { data: session, error: sessionError } = await serviceClient.rpc(
+      "validate_session_token",
+      { plain_token: tokenToValidate }
+    );
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await userClient.auth.getUser(token);
-    if (authError || !user) {
-      console.error("[broadcast-settings-update] Auth error:", authError?.message);
+    if (sessionError || !session || session.length === 0) {
+      console.error("[broadcast-settings-update] Session validation failed:", sessionError?.message);
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const serviceClient = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: { persistSession: false },
-    });
-
-    const { streamer_slug, settings } = await req.json();
+    const userId = session[0].user_id;
+    const { streamer_slug, settings } = body;
 
     if (!streamer_slug) {
       throw new Error("streamer_slug is required");
@@ -198,8 +199,29 @@ serve(async (req) => {
       throw new Error("Streamer not found");
     }
 
-    if (streamer.user_id !== user.id) {
-      console.error(`[broadcast-settings-update] Forbidden: user ${user.id} tried to broadcast for ${streamer_slug} owned by ${streamer.user_id}`);
+    // Check ownership or admin bypass
+    let isAuthorized = streamer.user_id === userId;
+    if (!isAuthorized) {
+      const { data: userData } = await serviceClient
+        .from("auth_users")
+        .select("email")
+        .eq("id", userId)
+        .single();
+
+      const { data: adminEntry } = await serviceClient
+        .from("admin_emails")
+        .select("email")
+        .eq("email", userData?.email)
+        .maybeSingle();
+
+      isAuthorized = !!adminEntry;
+      if (isAuthorized) {
+        console.log(`[broadcast-settings-update] Admin bypass granted for ${userData?.email}`);
+      }
+    }
+
+    if (!isAuthorized) {
+      console.error(`[broadcast-settings-update] Forbidden: user ${userId} tried to broadcast for ${streamer_slug} owned by ${streamer.user_id}`);
       return new Response(
         JSON.stringify({ error: "Forbidden" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
