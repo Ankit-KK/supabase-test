@@ -21,6 +21,8 @@ const ALLOWED_TABLES: Record<string, string> = {
   nova_plays: 'nova_plays_donations',
   starlight_anya: 'starlight_anya_donations',
   reyna_yadav: 'reyna_yadav_donations',
+  slidey_playz: 'slidey_playz_donations',
+  eryx: 'eryx_donations',
 };
 
 Deno.serve(async (req) => {
