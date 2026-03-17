@@ -21,15 +21,15 @@ const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@600;700;900&display=swap');
 
   :root {
-    --v-green:   #10ffa0;
-    --v-emerald: #10b981;
+    --v-green:   #00aaff;
+    --v-emerald: #0088dd;
     --v-pink:    #ff4655;
     --v-cyan:    #00e4ff;
     --v-yellow:  #ffe500;
     --v-orange:  #ff9000;
     --v-purple:  #9b59ff;
-    --v-bg:      #0f1923;
-    --v-card:    #131f2b;
+    --v-bg:      #080d1a;
+    --v-card:    #0d1428;
   }
 
   .vl-root { font-family: 'Rajdhani', sans-serif; }
@@ -45,8 +45,8 @@ const STYLES = `
   .vl-grid {
     position: fixed; inset: 0; pointer-events: none; z-index: 0;
     background-image:
-      linear-gradient(rgba(16,255,160,0.025) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(16,255,160,0.025) 1px, transparent 1px);
+      linear-gradient(rgba(0,170,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,170,255,0.025) 1px, transparent 1px);
     background-size: 40px 40px;
   }
   .vl-grid::after {
@@ -57,7 +57,7 @@ const STYLES = `
   .vl-atm {
     position: fixed; inset: 0; pointer-events: none; z-index: 0;
     background:
-      radial-gradient(ellipse 55% 45% at 5%  5%,  rgba(16,255,160,0.1)  0%, transparent 55%),
+      radial-gradient(ellipse 55% 45% at 5%  5%,  rgba(0,170,255,0.1)  0%, transparent 55%),
       radial-gradient(ellipse 45% 40% at 95% 90%, rgba(255,70,85,0.08)  0%, transparent 55%),
       radial-gradient(ellipse 40% 35% at 60% 40%, rgba(0,228,255,0.04)  0%, transparent 55%);
   }
@@ -71,11 +71,11 @@ const STYLES = `
     background: var(--v-card);
     clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
     position: relative;
-    border: 1px solid rgba(16,255,160,0.2);
+    border: 1px solid rgba(0,170,255,0.2);
     box-shadow:
-      0 0 0 1px rgba(16,255,160,0.06),
-      0 0 30px rgba(16,255,160,0.12),
-      0 0 80px rgba(16,255,160,0.05),
+      0 0 0 1px rgba(0,170,255,0.06),
+      0 0 30px rgba(0,170,255,0.12),
+      0 0 80px rgba(0,170,255,0.05),
       0 24px 64px rgba(0,0,0,0.6);
     overflow: visible;
   }
@@ -83,7 +83,7 @@ const STYLES = `
     content: '';
     position: absolute; inset: 0;
     clip-path: inherit;
-    background: linear-gradient(145deg, rgba(16,255,160,0.04) 0%, transparent 50%, rgba(255,70,85,0.02) 100%);
+    background: linear-gradient(145deg, rgba(0,170,255,0.04) 0%, transparent 50%, rgba(255,70,85,0.02) 100%);
     pointer-events: none; z-index: 0;
   }
 
@@ -93,8 +93,8 @@ const STYLES = `
     padding: 16px 20px 14px;
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
     overflow: hidden;
-    background: linear-gradient(135deg, rgba(16,255,160,0.1) 0%, rgba(0,228,255,0.05) 50%, transparent 100%);
-    border-bottom: 1px solid rgba(16,255,160,0.15);
+    background: linear-gradient(135deg, rgba(0,170,255,0.1) 0%, rgba(0,228,255,0.05) 50%, transparent 100%);
+    border-bottom: 1px solid rgba(0,170,255,0.15);
   }
   .vl-hero::before {
     content: '';
@@ -102,7 +102,7 @@ const STYLES = `
     background: linear-gradient(90deg, var(--v-green), var(--v-cyan), var(--v-green));
     background-size: 200% 100%;
     animation: vl-slide 2.5s linear infinite;
-    box-shadow: 0 0 8px var(--v-green), 0 0 18px rgba(16,255,160,0.4);
+    box-shadow: 0 0 8px var(--v-green), 0 0 18px rgba(0,170,255,0.4);
   }
   @keyframes vl-slide { 0%{background-position:0%} 100%{background-position:200%} }
   .vl-hero::after {
@@ -114,7 +114,7 @@ const STYLES = `
   .vl-hero-blob {
     position: absolute; top: -20px; right: -20px;
     width: 110px; height: 110px; border-radius: 50%;
-    background: radial-gradient(circle, rgba(16,255,160,0.18) 0%, transparent 65%);
+    background: radial-gradient(circle, rgba(0,170,255,0.18) 0%, transparent 65%);
     pointer-events: none;
   }
   .vl-corner-tl {
@@ -141,7 +141,7 @@ const STYLES = `
     letter-spacing: 0.06em; color: #fff; line-height: 1;
     position: relative; z-index: 1;
     animation: vl-g1 10s ease-in-out infinite;
-    text-shadow: 0 0 6px #fff, 0 0 14px var(--v-green), 0 0 28px rgba(16,255,160,0.4);
+    text-shadow: 0 0 6px #fff, 0 0 14px var(--v-green), 0 0 28px rgba(0,170,255,0.4);
   }
   .vl-name::after {
     content: attr(data-text); position: absolute; inset: 0;
@@ -151,13 +151,13 @@ const STYLES = `
   .vl-hero-sub {
     font-family: 'Rajdhani', sans-serif;
     font-size: 10px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
-    color: rgba(16,255,160,0.45); margin-top: 3px; position: relative; z-index: 1;
+    color: rgba(0,170,255,0.45); margin-top: 3px; position: relative; z-index: 1;
   }
 
   @keyframes vl-pulse { 0%,100%{box-shadow:0 0 5px var(--v-green);} 50%{box-shadow:none;} }
   .vl-live {
     display: inline-flex; align-items: center; gap: 5px;
-    background: rgba(16,255,160,0.08); border: 1px solid rgba(16,255,160,0.4);
+    background: rgba(0,170,255,0.08); border: 1px solid rgba(0,170,255,0.4);
     border-radius: 2px; padding: 3px 10px; flex-shrink: 0; position: relative; z-index: 1;
   }
   .vl-live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--v-green); animation: vl-pulse 1.5s ease-in-out infinite; }
@@ -168,15 +168,15 @@ const STYLES = `
   .vl-lbl {
     font-family: 'Rajdhani', sans-serif;
     font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
-    display: block; margin-bottom: 5px; color: rgba(16,255,160,0.5);
+    display: block; margin-bottom: 5px; color: rgba(0,170,255,0.5);
   }
 
   /* Inputs */
   .vl-iw input {
     width: 100% !important;
     background: rgba(0,0,0,0.4) !important;
-    border: 1px solid rgba(16,255,160,0.2) !important;
-    border-left: 2px solid rgba(16,255,160,0.4) !important;
+    border: 1px solid rgba(0,170,255,0.2) !important;
+    border-left: 2px solid rgba(0,170,255,0.4) !important;
     border-radius: 2px !important;
     color: #e0fff8 !important;
     font-family: 'Rajdhani', sans-serif !important;
@@ -186,33 +186,33 @@ const STYLES = `
     caret-color: var(--v-green);
   }
   .vl-iw input:focus {
-    border-color: rgba(16,255,160,0.6) !important;
+    border-color: rgba(0,170,255,0.6) !important;
     border-left-color: var(--v-green) !important;
-    background: rgba(16,255,160,0.04) !important;
-    box-shadow: 0 0 0 1px rgba(16,255,160,0.1), 0 0 16px rgba(16,255,160,0.1) !important;
+    background: rgba(0,170,255,0.04) !important;
+    box-shadow: 0 0 0 1px rgba(0,170,255,0.1), 0 0 16px rgba(0,170,255,0.1) !important;
   }
-  .vl-iw input::placeholder { color: rgba(16,255,160,0.2) !important; }
+  .vl-iw input::placeholder { color: rgba(0,170,255,0.2) !important; }
   .vl-iw input:disabled, .vl-iw input[readonly] { opacity: .35 !important; cursor: not-allowed !important; }
 
   .vl-ta {
     width: 100%; background: rgba(0,0,0,0.4);
-    border: 1px solid rgba(16,255,160,0.2); border-left: 2px solid rgba(16,255,160,0.4);
+    border: 1px solid rgba(0,170,255,0.2); border-left: 2px solid rgba(0,170,255,0.4);
     border-radius: 2px; color: #e0fff8;
     font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 600;
     padding: 8px 12px; resize: none; outline: none; line-height: 1.5;
     caret-color: var(--v-green); transition: all .2s;
   }
   .vl-ta:focus {
-    border-color: rgba(16,255,160,0.6); border-left-color: var(--v-green);
-    background: rgba(16,255,160,0.04);
-    box-shadow: 0 0 0 1px rgba(16,255,160,0.1), 0 0 16px rgba(16,255,160,0.1);
+    border-color: rgba(0,170,255,0.6); border-left-color: var(--v-green);
+    background: rgba(0,170,255,0.04);
+    box-shadow: 0 0 0 1px rgba(0,170,255,0.1), 0 0 16px rgba(0,170,255,0.1);
   }
-  .vl-ta::placeholder { color: rgba(16,255,160,0.2); }
+  .vl-ta::placeholder { color: rgba(0,170,255,0.2); }
 
-  .vl-cbar { height: 2px; margin-top: 4px; background: rgba(16,255,160,0.08); overflow: hidden; }
+  .vl-cbar { height: 2px; margin-top: 4px; background: rgba(0,170,255,0.08); overflow: hidden; }
   .vl-cbar-fill { height: 100%; transition: width .12s, background .2s; }
 
-  .vl-div { height: 1px; background: linear-gradient(90deg, transparent, rgba(16,255,160,0.18), rgba(0,228,255,0.12), transparent); }
+  .vl-div { height: 1px; background: linear-gradient(90deg, transparent, rgba(0,170,255,0.18), rgba(0,228,255,0.12), transparent); }
 
   /* ═══════════════════════════════════════════════
      3D TYPE BUTTONS — NO clip-path on wrapper/after
@@ -249,17 +249,17 @@ const STYLES = `
 
   /* GREEN */
   .vl-tb-gn .vl-tb-face {
-    background: linear-gradient(160deg, rgba(16,255,160,0.18), rgba(0,80,50,0.6));
-    border: 1.5px solid rgba(16,255,160,0.6);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 0 10px rgba(16,255,160,0.2);
+    background: linear-gradient(160deg, rgba(0,170,255,0.18), rgba(0,80,50,0.6));
+    border: 1.5px solid rgba(0,170,255,0.6);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 0 10px rgba(0,170,255,0.2);
   }
-  .vl-tb-gn::after { background: #003d28; border: 1.5px solid rgba(16,255,160,0.3); }
-  .vl-tb-gn:hover .vl-tb-face { box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 0 18px rgba(16,255,160,0.5), 0 0 30px rgba(16,255,160,0.15); transform: translateY(-8px); }
+  .vl-tb-gn::after { background: #001e55; border: 1.5px solid rgba(0,170,255,0.3); }
+  .vl-tb-gn:hover .vl-tb-face { box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 0 18px rgba(0,170,255,0.5), 0 0 30px rgba(0,170,255,0.15); transform: translateY(-8px); }
   .vl-tb-gn.vl-on .vl-tb-face {
     transform: translateY(0);
-    background: linear-gradient(160deg, rgba(16,255,160,0.3), rgba(0,110,65,0.65));
+    background: linear-gradient(160deg, rgba(0,170,255,0.3), rgba(0,80,180,0.65));
     border-color: var(--v-green);
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3), 0 0 18px rgba(16,255,160,0.75), 0 0 36px rgba(16,255,160,0.28), inset 0 0 12px rgba(16,255,160,0.14);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3), 0 0 18px rgba(0,170,255,0.75), 0 0 36px rgba(0,170,255,0.28), inset 0 0 12px rgba(0,170,255,0.14);
   }
 
   /* CYAN */
@@ -323,24 +323,24 @@ const STYLES = `
   .vl-cur {
     display: flex; align-items: center; justify-content: space-between; gap: 4px;
     background: rgba(0,0,0,0.4) !important;
-    border: 1px solid rgba(16,255,160,0.2) !important;
-    border-left: 2px solid rgba(16,255,160,0.4) !important;
+    border: 1px solid rgba(0,170,255,0.2) !important;
+    border-left: 2px solid rgba(0,170,255,0.4) !important;
     border-radius: 2px !important; color: #e0fff8 !important;
     font-family: 'Rajdhani', sans-serif !important;
     font-size: 13px !important; font-weight: 700 !important; padding: 0 10px !important;
     min-width: 88px; height: 38px; cursor: pointer; transition: all .2s; flex-shrink: 0;
   }
   .vl-cur:hover {
-    border-color: rgba(16,255,160,0.5) !important;
+    border-color: rgba(0,170,255,0.5) !important;
     border-left-color: var(--v-green) !important;
-    box-shadow: 0 0 10px rgba(16,255,160,0.12) !important;
+    box-shadow: 0 0 10px rgba(0,170,255,0.12) !important;
   }
 
   /* Sub panels */
   .vl-sp { padding: 10px 12px; }
   .vl-sp-or { background: rgba(255,144,0,0.05); border: 1px solid rgba(255,144,0,0.3); border-left: 2px solid rgba(255,144,0,0.6); box-shadow: 0 0 12px rgba(255,144,0,0.08); }
   .vl-sp-pu { background: rgba(155,89,255,0.05); border: 1px solid rgba(155,89,255,0.3); border-left: 2px solid rgba(155,89,255,0.6); box-shadow: 0 0 12px rgba(155,89,255,0.08); }
-  .vl-sp-gn { background: rgba(16,255,160,0.04); border: 1px solid rgba(16,255,160,0.25); border-left: 2px solid rgba(16,255,160,0.5); box-shadow: 0 0 12px rgba(16,255,160,0.07); }
+  .vl-sp-gn { background: rgba(0,170,255,0.04); border: 1px solid rgba(0,170,255,0.25); border-left: 2px solid rgba(0,170,255,0.5); box-shadow: 0 0 12px rgba(0,170,255,0.07); }
 
   /* ═══════════════════════════════════════════
      3D DONATE BUTTON — no clip-path on wrapper
@@ -356,28 +356,28 @@ const STYLES = `
     content: ''; position: absolute; bottom: 0; left: 0; right: 0;
     height: calc(100% - 5px);
     border-radius: 4px; z-index: 1;
-    background: linear-gradient(90deg, #004d30, #006840, #003820);
-    border: 1px solid rgba(16,255,160,0.25);
+    background: linear-gradient(90deg, #002255, #003388, #001540);
+    border: 1px solid rgba(0,170,255,0.25);
   }
   .vl-btn {
     position: relative; z-index: 2;
     width: 100%; padding: 13px; border: none; cursor: pointer;
     font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 700;
-    letter-spacing: .1em; text-transform: uppercase; color: #071a0f;
+    letter-spacing: .1em; text-transform: uppercase; color: #050d1f;
     /* Cut-corner on the face only */
     clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
     transition: transform .1s ease, box-shadow .1s ease;
     transform: translateY(-7px);
-    background: linear-gradient(135deg, #10ffa0 0%, #00e4aa 50%, #00c890 100%);
+    background: linear-gradient(135deg, #00aaff 0%, #0088ee 50%, #006bcc 100%);
     border-top: 1px solid rgba(255,255,255,0.35);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 0 20px rgba(16,255,160,0.5), 0 0 40px rgba(16,255,160,0.2);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 0 20px rgba(0,170,255,0.5), 0 0 40px rgba(0,170,255,0.2);
     overflow: hidden;
   }
   .vl-btn:hover:not(:disabled) {
     transform: translateY(-9px);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 0 32px rgba(16,255,160,0.75), 0 0 64px rgba(16,255,160,0.3);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 0 32px rgba(0,170,255,0.75), 0 0 64px rgba(0,170,255,0.3);
   }
-  .vl-btn:active:not(:disabled) { transform: translateY(0px) !important; box-shadow: inset 0 2px 6px rgba(0,0,0,0.3), 0 0 14px rgba(16,255,160,0.3) !important; }
+  .vl-btn:active:not(:disabled) { transform: translateY(0px) !important; box-shadow: inset 0 2px 6px rgba(0,0,0,0.3), 0 0 14px rgba(0,170,255,0.3) !important; }
   .vl-btn:disabled { opacity: .35; cursor: not-allowed; }
   .vl-btn::before {
     content: ''; position: absolute; top: 0; left: -110%; width: 55%; height: 100%;
@@ -386,13 +386,13 @@ const STYLES = `
   }
   .vl-btn:hover:not(:disabled)::before { left: 160%; }
 
-  .vl-hint { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 600; color: rgba(16,255,160,0.4); margin-top: 3px; letter-spacing: .06em; }
+  .vl-hint { font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 600; color: rgba(0,170,255,0.4); margin-top: 3px; letter-spacing: .06em; }
 
   @keyframes vl-fu { from{opacity:0;transform:translateY(6px);} to{opacity:1;transform:translateY(0);} }
   .vl-fu { animation: vl-fu .2s ease forwards; }
 
   @keyframes vl-sp-a { to{transform:rotate(360deg);} }
-  .vl-spin { width: 14px; height: 14px; border: 2px solid rgba(7,26,15,0.4); border-top-color: #071a0f; border-radius: 50%; display: inline-block; animation: vl-sp-a .6s linear infinite; }
+  .vl-spin { width: 14px; height: 14px; border: 2px solid rgba(5,13,31,0.4); border-top-color: #050d1f; border-radius: 50%; display: inline-block; animation: vl-sp-a .6s linear infinite; }
 
   @keyframes vl-in { from{opacity:0;transform:scale(0.97);} to{opacity:1;transform:scale(1);} }
   .vl-in { animation: vl-in .4s cubic-bezier(0.22,1,0.36,1) both; }
@@ -498,7 +498,7 @@ const SlideyPlayz = () => {
         order_id:data.razorpay_order_id,name:"Slidey Playz",description:"Support Slidey Playz",
         handler:(response:any)=>navigate(`/status?order_id=${data.orderId}&status=success&st=${data.status_token}`),
         modal:{ondismiss:()=>navigate(`/status?order_id=${data.orderId}&status=pending&st=${data.status_token}`)},
-        theme:{color:"#10b981"},
+        theme:{color:"#0077dd"},
       });
       rzp.open();
     } catch(error) {
@@ -545,7 +545,7 @@ const SlideyPlayz = () => {
               </div>
               <div className="vl-live">
                 <div className="vl-live-dot"/>
-                <span style={{fontFamily:"'Rajdhani',sans-serif",fontSize:10,fontWeight:700,color:'#00ff88',letterSpacing:'0.1em',textShadow:'0 0 6px #00ff88'}}>LIVE</span>
+                <span style={{fontFamily:"'Rajdhani',sans-serif",fontSize:10,fontWeight:700,color:'#00aaff',letterSpacing:'0.1em',textShadow:'0 0 6px #00aaff'}}>LIVE</span>
               </div>
             </div>
 
@@ -632,7 +632,7 @@ const SlideyPlayz = () => {
                     <label className="vl-lbl">Voice Message</label>
                     <div className="vl-sp vl-sp-gn">
                       <EnhancedVoiceRecorder controller={voiceRecorder} onRecordingComplete={()=>{}}
-                        maxDurationSeconds={getVoiceDuration(currentAmount)} brandColor="#10b981"
+                        maxDurationSeconds={getVoiceDuration(currentAmount)} brandColor="#0077dd"
                         requiredAmount={pricing.minVoice} currentAmount={currentAmount}/>
                     </div>
                   </div>
@@ -684,7 +684,7 @@ const SlideyPlayz = () => {
                 <p style={{fontFamily:"'Rajdhani',sans-serif",fontSize:9,fontWeight:600,color:'rgba(255,255,255,0.18)',textAlign:'center',lineHeight:1.5,letterSpacing:'0.06em'}}>
                   PHONE NUMBERS COLLECTED BY RAZORPAY · RBI COMPLIANCE
                 </p>
-                <DonationPageFooter brandColor="#10b981"/>
+                <DonationPageFooter brandColor="#0077dd"/>
               </div>
             </form>
           </div>
