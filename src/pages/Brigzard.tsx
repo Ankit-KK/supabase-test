@@ -138,6 +138,25 @@ const STYLES = `
   .bz-live-dot { width:5px; height:5px; border-radius:50%; background:var(--bz-green-light); animation:bz-pulse 1.2s ease-in-out infinite; }
   .bz-live-text { font-family:'Orbitron',monospace; font-size:8px; font-weight:700; color:var(--bz-green-light); letter-spacing:0.18em; text-shadow:0 0 8px var(--bz-green-light); }
 
+  /* ── Operator Loadout Bar ── */
+  .bz-loadout {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 18px; border-bottom: 1px solid rgba(74,92,62,0.2);
+    background: rgba(74,92,62,0.06); position: relative; z-index: 10;
+  }
+  .bz-rank-info { display: flex; align-items: center; gap: 8px; }
+  .bz-rank-badge {
+    font-family: 'Black Ops One', cursive; font-size: 10px;
+    color: var(--bz-bg); background: var(--bz-gold);
+    padding: 2px 7px; letter-spacing: 0.08em;
+    clip-path: polygon(4px 0%, 100% 0%, calc(100% - 4px) 100%, 0% 100%);
+  }
+  .bz-rank-name { font-family:'Orbitron',monospace; font-size:9px; font-weight:700; color:rgba(196,167,71,0.7); letter-spacing:0.12em; }
+  .bz-xp-wrap { display:flex; flex-direction:column; align-items:flex-end; gap:3px; }
+  .bz-xp-label { font-family:'Orbitron',monospace; font-size:7px; color:rgba(255,255,255,0.25); letter-spacing:0.15em; }
+  .bz-xp-bar { width:90px; height:3px; background:rgba(255,255,255,0.08); overflow:hidden; }
+  .bz-xp-fill { height:100%; background:linear-gradient(90deg,var(--bz-green),var(--bz-gold)); width:68%; box-shadow:0 0 6px var(--bz-gold); }
+
   /* ── Body ── */
   .bz-body { padding:14px 18px 16px; display:flex; flex-direction:column; gap:12px; }
   .bz-lbl { font-family:'Orbitron',monospace; font-size:8px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; display:block; margin-bottom:6px; color:rgba(196,167,71,0.55); }
@@ -205,7 +224,107 @@ const STYLES = `
   .bz-sp-or { background:rgba(200,100,20,0.05); border:1px solid rgba(200,120,30,0.3); }
   .bz-sp-rd { background:rgba(180,30,30,0.05); border:1px solid rgba(180,40,40,0.25); }
 
-  /* ── Button ── */
+  /* ── Battle Pass Reward Banners ── */
+  .bz-rewards {
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .bz-reward-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 10px;
+    border: 1px solid rgba(74,92,62,0.2);
+    background: rgba(74,92,62,0.04);
+    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+    transition: all .2s;
+    position: relative; overflow: hidden;
+  }
+  .bz-reward-row.bz-reward-active {
+    border-color: var(--bz-gold);
+    background: rgba(196,167,71,0.08);
+    box-shadow: 0 0 14px rgba(196,167,71,0.2);
+  }
+  .bz-reward-row.bz-reward-active::before {
+    content: ''; position: absolute; top: 0; left: -100%; width: 60%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(196,167,71,0.08), transparent);
+    animation: bz-sweep 2s linear infinite;
+  }
+  @keyframes bz-sweep { to { left: 160%; } }
+  .bz-reward-tier {
+    font-family: 'Black Ops One', cursive; font-size: 8px;
+    color: var(--bz-bg); background: rgba(196,167,71,0.35);
+    padding: 2px 6px; flex-shrink: 0; letter-spacing: 0.06em;
+    clip-path: polygon(3px 0%, 100% 0%, calc(100% - 3px) 100%, 0% 100%);
+  }
+  .bz-reward-row.bz-reward-active .bz-reward-tier {
+    background: var(--bz-gold); color: var(--bz-bg);
+  }
+  .bz-reward-label { font-family:'Orbitron',monospace; font-size:8px; font-weight:700; color:rgba(255,255,255,0.3); letter-spacing:0.08em; flex:1; }
+  .bz-reward-row.bz-reward-active .bz-reward-label { color:rgba(196,167,71,0.85); }
+  .bz-reward-unlock { font-family:'Orbitron',monospace; font-size:7px; color:rgba(196,167,71,0.4); letter-spacing:0.06em; }
+  .bz-reward-row.bz-reward-active .bz-reward-unlock { color:var(--bz-gold); text-shadow:0 0 8px var(--bz-gold); }
+  .bz-reward-check { font-size:10px; color:var(--bz-green-light); display:none; }
+  .bz-reward-row.bz-reward-active .bz-reward-check { display:block; }
+
+  /* ── Reconnecting HUD ── */
+  @keyframes bz-rc-blink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+  .bz-reconnecting {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    z-index: 99998; pointer-events: none;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .bz-rc-text {
+    font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 700;
+    color: var(--bz-gold); letter-spacing: 0.2em;
+    animation: bz-rc-blink 1s ease-in-out infinite;
+    text-shadow: 0 0 12px var(--bz-gold);
+  }
+  .bz-rc-dots { display:flex; gap:4px; }
+  .bz-rc-dot { width:4px; height:4px; border-radius:50%; background:var(--bz-gold); animation:bz-rc-blink 1s ease-in-out infinite; }
+  .bz-rc-dot:nth-child(2) { animation-delay:.2s; }
+  .bz-rc-dot:nth-child(3) { animation-delay:.4s; }
+
+  /* ── Kill Confirmed Overlay ── */
+  @keyframes bz-kc-in  { from{opacity:0;transform:scale(1.06);} to{opacity:1;transform:scale(1);} }
+  @keyframes bz-kc-out { from{opacity:1;transform:scale(1);} to{opacity:0;transform:scale(0.96);} }
+  @keyframes bz-kc-bar { from{width:0;} to{width:100%;} }
+  @keyframes bz-kc-tag { from{opacity:0;transform:translateY(-10px);} to{opacity:1;transform:translateY(0);} }
+  @keyframes bz-kc-scan { 0%{top:-10%;} 100%{top:110%;} }
+
+  .bz-kc-overlay {
+    position: fixed; inset: 0; z-index: 99999;
+    background: rgba(0,0,0,0.93);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    animation: bz-kc-in .3s ease forwards;
+  }
+  .bz-kc-overlay.bz-kc-exit { animation: bz-kc-out .4s ease forwards; }
+  .bz-kc-scanline {
+    position: absolute; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, transparent, rgba(196,167,71,0.4), transparent);
+    animation: bz-kc-scan 1.8s linear infinite;
+    pointer-events: none;
+  }
+  .bz-kc-icon { font-size:54px; margin-bottom:14px; filter:drop-shadow(0 0 20px rgba(196,167,71,0.7)); }
+  .bz-kc-tag {
+    font-family:'Black Ops One',cursive; font-size:40px; color:var(--bz-gold);
+    letter-spacing:0.12em; text-transform:uppercase;
+    text-shadow:0 0 20px rgba(196,167,71,0.6),0 0 50px rgba(196,167,71,0.25);
+    animation:bz-kc-tag .4s ease .15s both;
+  }
+  .bz-kc-sub {
+    font-family:'Orbitron',monospace; font-size:10px; font-weight:700;
+    color:rgba(255,255,255,0.3); letter-spacing:0.22em; text-transform:uppercase;
+    margin-top:8px; animation:bz-kc-tag .4s ease .3s both;
+  }
+  .bz-kc-amount {
+    font-family:'Orbitron',monospace; font-size:14px; font-weight:700;
+    color:var(--bz-gold); letter-spacing:0.1em;
+    margin-top:12px; animation:bz-kc-tag .4s ease .45s both;
+    text-shadow:0 0 14px rgba(196,167,71,0.5);
+  }
+  .bz-kc-bar-wrap { width:220px; height:2px; background:rgba(255,255,255,0.08); margin-top:24px; overflow:hidden; }
+  .bz-kc-bar { height:100%; background:var(--bz-gold); box-shadow:0 0 8px var(--bz-gold); animation:bz-kc-bar 2.2s linear .5s both; }
+  .bz-kc-redirecting { font-family:'Orbitron',monospace; font-size:8px; font-weight:700; color:rgba(196,167,71,0.4); letter-spacing:0.18em; margin-top:10px; animation:bz-kc-tag .3s ease .6s both; }
+
+  /* ── Donate Button ── */
   .bz-btn-wrap { position:relative; width:100%; padding-bottom:5px; }
   .bz-btn-wrap::after { content:''; position:absolute; bottom:0; left:0; right:0; height:calc(100% - 4px); z-index:1; background:linear-gradient(90deg,#151e0c,#1e2e12,#182410); clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px)); }
   .bz-btn { position:relative; z-index:2; width:100%; padding:14px; border:none; cursor:pointer; font-family:'Black Ops One',cursive; font-size:13px; font-weight:400; letter-spacing:.12em; color:var(--bz-gold); transition:transform .1s ease,box-shadow .1s ease; transform:translateY(-5px); background:linear-gradient(135deg,#253318 0%,#334a20 50%,#263a16 100%); border-top:1px solid rgba(196,167,71,0.25); border-left:1px solid rgba(196,167,71,0.12); box-shadow:inset 0 1px 0 rgba(196,167,71,0.1),0 0 18px rgba(74,92,62,0.35); overflow:hidden; clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px)); }
@@ -229,7 +348,6 @@ const STYLES = `
   /* ── Kill Feed ── */
   .bz-killfeed { position:fixed; top:20px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:6px; pointer-events:none; }
   @keyframes bz-kf-in  { from{opacity:0;transform:translateX(20px);} to{opacity:1;transform:translateX(0);} }
-  @keyframes bz-kf-out { from{opacity:1;} to{opacity:0;transform:translateX(12px);} }
   .bz-kf { display:flex; align-items:center; gap:8px; background:rgba(6,8,4,0.93); border:1px solid rgba(74,92,62,0.45); border-left:3px solid var(--bz-gold); padding:8px 14px; clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%); animation:bz-kf-in .2s ease forwards; min-width:220px; }
   .bz-kf-err  { border-left-color:var(--bz-red); }
   .bz-kf-warn { border-left-color:var(--bz-orange); }
@@ -271,6 +389,29 @@ const SmokeCanvas: React.FC = () => {
   return <canvas ref={canvasRef} className="bz-canvas"/>;
 };
 
+/* ── Kill Confirmed Overlay ── */
+const KillConfirmedOverlay: React.FC<{ amount: string; currency: string; onDone: () => void }> = ({ amount, currency, onDone }) => {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      ref.current?.classList.add('bz-kc-exit');
+      setTimeout(onDone, 400);
+    }, 2800);
+    return () => clearTimeout(t);
+  }, [onDone]);
+  return (
+    <div ref={ref} className="bz-kc-overlay">
+      <div className="bz-kc-scanline"/>
+      <div className="bz-kc-icon">🎯</div>
+      <div className="bz-kc-tag">Kill Confirmed</div>
+      <div className="bz-kc-sub">Support deployed successfully</div>
+      <div className="bz-kc-amount">{currency}{amount} CREDITS DEPLOYED</div>
+      <div className="bz-kc-bar-wrap"><div className="bz-kc-bar"/></div>
+      <div className="bz-kc-redirecting">▸ Redirecting to debrief...</div>
+    </div>
+  );
+};
+
 /* ── Kill Feed ── */
 type KFMsg = { id:number; text:string; icon:string; variant:'default'|'err'|'warn'; };
 let kfId = 0;
@@ -285,9 +426,17 @@ const useKillFeed = () => {
 };
 
 /* ── Audio ── */
-const playClick = () => { try { const c=new (window.AudioContext||(window as any).webkitAudioContext)(); const o=c.createOscillator(); const g=c.createGain(); o.connect(g); g.connect(c.destination); o.frequency.setValueAtTime(880,c.currentTime); o.frequency.exponentialRampToValueAtTime(220,c.currentTime+0.06); g.gain.setValueAtTime(0.07,c.currentTime); g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.08); o.start(); o.stop(c.currentTime+0.08); } catch {} };
-const playConfirm = () => { try { const c=new (window.AudioContext||(window as any).webkitAudioContext)(); [440,550,660].forEach((f,i)=>{ const o=c.createOscillator(); const g=c.createGain(); o.connect(g); g.connect(c.destination); o.frequency.value=f; const t=c.currentTime+i*0.07; g.gain.setValueAtTime(0.05,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.1); o.start(t); o.stop(t+0.1); }); } catch {} };
-const playError = () => { try { const c=new (window.AudioContext||(window as any).webkitAudioContext)(); const o=c.createOscillator(); const g=c.createGain(); o.connect(g); g.connect(c.destination); o.type='sawtooth'; o.frequency.setValueAtTime(200,c.currentTime); o.frequency.exponentialRampToValueAtTime(80,c.currentTime+0.15); g.gain.setValueAtTime(0.06,c.currentTime); g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.15); o.start(); o.stop(c.currentTime+0.15); } catch {} };
+const playClick    = () => { try { const c=new (window.AudioContext||(window as any).webkitAudioContext)(); const o=c.createOscillator(); const g=c.createGain(); o.connect(g); g.connect(c.destination); o.frequency.setValueAtTime(880,c.currentTime); o.frequency.exponentialRampToValueAtTime(220,c.currentTime+0.06); g.gain.setValueAtTime(0.07,c.currentTime); g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.08); o.start(); o.stop(c.currentTime+0.08); } catch {} };
+const playConfirm  = () => { try { const c=new (window.AudioContext||(window as any).webkitAudioContext)(); [440,550,660].forEach((f,i)=>{ const o=c.createOscillator(); const g=c.createGain(); o.connect(g); g.connect(c.destination); o.frequency.value=f; const t=c.currentTime+i*0.07; g.gain.setValueAtTime(0.05,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.1); o.start(t); o.stop(t+0.1); }); } catch {} };
+const playError    = () => { try { const c=new (window.AudioContext||(window as any).webkitAudioContext)(); const o=c.createOscillator(); const g=c.createGain(); o.connect(g); g.connect(c.destination); o.type='sawtooth'; o.frequency.setValueAtTime(200,c.currentTime); o.frequency.exponentialRampToValueAtTime(80,c.currentTime+0.15); g.gain.setValueAtTime(0.06,c.currentTime); g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.15); o.start(); o.stop(c.currentTime+0.15); } catch {} };
+
+/* ── Battle Pass Reward Tiers ── */
+const REWARD_TIERS = [
+  { min: 0,    label: 'RECRUIT',    unlock: 'Basic support',         emoji: '🪖' },
+  { min: 100,  label: 'OPERATOR',   unlock: 'TTS message unlocked',  emoji: '🎖️' },
+  { min: 300,  label: 'SPECIALIST', unlock: 'Voice comms unlocked',  emoji: '🔰' },
+  { min: 500,  label: 'COMMANDER',  unlock: 'Max voice duration',    emoji: '⭐' },
+];
 
 /* ── Main ── */
 const Brigzard = () => {
@@ -305,11 +454,17 @@ const Brigzard = () => {
   const [mediaType, setMediaType]                     = useState<string|null>(null);
   const [razorpayLoaded, setRazorpayLoaded]           = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [showKillConfirmed, setShowKillConfirmed]     = useState(false);
+  const [showReconnecting, setShowReconnecting]       = useState(false);
+  const [redirectUrl, setRedirectUrl]                 = useState('');
 
   const { pricing }      = useStreamerPricing("brigzard", selectedCurrency);
   const currencySymbol   = getCurrencySymbol(selectedCurrency);
   const currentAmount    = parseFloat(formData.amount) || 0;
   const maxMessageLength = getMaxMessageLength(pricing.messageCharTiers, currentAmount);
+
+  /* Active reward tier */
+  const activeRewardIdx = REWARD_TIERS.reduce((best, tier, i) => currentAmount >= tier.min ? i : best, 0);
 
   const getVoiceDuration = (amount:number) => {
     if (selectedCurrency==="INR") { if (amount>=500) return 15; if (amount>=300) return 12; return 8; }
@@ -364,6 +519,10 @@ const Brigzard = () => {
   const processPayment = async () => {
     setIsProcessingPayment(true);
     push("Initiating deployment...","◈","default");
+
+    /* Show reconnecting HUD after 4s if still waiting */
+    const reconnectTimer = setTimeout(() => setShowReconnecting(true), 4000);
+
     try {
       let voiceMessageUrl:string|null=null;
       if (donationType==="voice"&&voiceRecorder.audioBlob) {
@@ -376,15 +535,25 @@ const Brigzard = () => {
         body:{ streamer_slug:"brigzard", name:formData.name, amount:Number(formData.amount), message:donationType==="text"?formData.message:null, voiceMessageUrl, hypersoundUrl:donationType==="hypersound"?selectedHypersound:null, mediaUrl:donationType==="media"?mediaUrl:null, mediaType, currency:selectedCurrency }
       });
       if (error) throw error;
-      playConfirm();
+
+      clearTimeout(reconnectTimer);
+      setShowReconnecting(false);
+
       new (window as any).Razorpay({
         key:data.razorpay_key_id, amount:data.amount, currency:data.currency, order_id:data.razorpay_order_id,
         name:"BRIGZARD", description:"Support BRIGZARD",
-        handler:()=>navigate(`/status?order_id=${data.orderId}&status=success&st=${data.status_token}`),
+        handler: () => {
+          playConfirm();
+          const url=`/status?order_id=${data.orderId}&status=success&st=${data.status_token}`;
+          setRedirectUrl(url);
+          setShowKillConfirmed(true);
+        },
         modal:{ondismiss:()=>navigate(`/status?order_id=${data.orderId}&status=pending&st=${data.status_token}`)},
         theme:{color:"#4a5c3e"},
       }).open();
     } catch {
+      clearTimeout(reconnectTimer);
+      setShowReconnecting(false);
       playError(); push("Payment failed. Try again.","✖","err");
     } finally { setIsProcessingPayment(false); }
   };
@@ -404,10 +573,29 @@ const Brigzard = () => {
       <style dangerouslySetInnerHTML={{__html:STYLES}}/>
       <SmokeCanvas/>
 
+      {/* Kill Confirmed */}
+      {showKillConfirmed && (
+        <KillConfirmedOverlay
+          amount={formData.amount}
+          currency={currencySymbol}
+          onDone={() => navigate(redirectUrl)}
+        />
+      )}
+
+      {/* Reconnecting HUD */}
+      {showReconnecting && (
+        <div className="bz-reconnecting">
+          <div className="bz-rc-text">RECONNECTING</div>
+          <div className="bz-rc-dots">
+            <div className="bz-rc-dot"/><div className="bz-rc-dot"/><div className="bz-rc-dot"/>
+          </div>
+        </div>
+      )}
+
       {/* Kill Feed */}
       <div className="bz-killfeed">
         {msgs.map(m=>(
-          <div key={m.id} className={cn('bz-kf', m.variant==='err'?'bz-kf-err':m.variant==='warn'?'bz-kf-warn':'')}>
+          <div key={m.id} className={cn('bz-kf',m.variant==='err'?'bz-kf-err':m.variant==='warn'?'bz-kf-warn':'')}>
             <span className="bz-kf-icon">{m.icon}</span>
             <span className="bz-kf-text">{m.text}</span>
           </div>
@@ -441,15 +629,29 @@ const Brigzard = () => {
               </div>
             </div>
 
+            {/* Operator Loadout Bar */}
+            <div className="bz-loadout">
+              <div className="bz-rank-info">
+                <div className="bz-rank-badge">SGT</div>
+                <div className="bz-rank-name">BRIGZARD FORCE</div>
+              </div>
+              <div className="bz-xp-wrap">
+                <div className="bz-xp-label">SEASON XP</div>
+                <div className="bz-xp-bar"><div className="bz-xp-fill"/></div>
+              </div>
+            </div>
+
             {/* FORM */}
             <form onSubmit={handleSubmit}>
               <div className="bz-body">
 
+                {/* Operator Callsign */}
                 <div>
                   <label className="bz-lbl">▸ Operator Callsign</label>
                   <div className="bz-iw"><Input name="name" value={formData.name} onChange={handleInputChange} placeholder="Enter your name" required/></div>
                 </div>
 
+                {/* Mission Type */}
                 <div>
                   <label className="bz-lbl">▸ Mission Type</label>
                   <div className="bz-types">
@@ -465,8 +667,9 @@ const Brigzard = () => {
                   </div>
                 </div>
 
+                {/* Deploy Credits (Amount) */}
                 <div>
-                  <label className="bz-lbl">▸ Support Amount</label>
+                  <label className="bz-lbl">▸ Deploy Credits</label>
                   <div className="bz-amt">
                     <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
                       <PopoverTrigger asChild>
@@ -499,8 +702,29 @@ const Brigzard = () => {
                   {pricing.ttsEnabled&&<p className="bz-hint">⚡ TTS ENABLED ABOVE {currencySymbol}{pricing.minTts}</p>}
                 </div>
 
+                {/* Battle Pass Reward Tiers */}
+                {currentAmount > 0 && (
+                  <div className="bz-fu">
+                    <label className="bz-lbl">▸ Battle Pass Tier</label>
+                    <div className="bz-rewards">
+                      {REWARD_TIERS.map((tier, i) => (
+                        <div key={i} className={cn('bz-reward-row', i === activeRewardIdx ? 'bz-reward-active' : '')}>
+                          <span style={{fontSize:12,flexShrink:0}}>{tier.emoji}</span>
+                          <div className="bz-reward-tier">{tier.label}</div>
+                          <div className="bz-reward-label">{tier.unlock}</div>
+                          <div className="bz-reward-unlock">
+                            {i <= activeRewardIdx ? `✓ UNLOCKED` : `${currencySymbol}${tier.min}+`}
+                          </div>
+                          <div className="bz-reward-check">✓</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="bz-div"/>
 
+                {/* Intel Message */}
                 {donationType==="text"&&(
                   <div className="bz-fu">
                     <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}}>
@@ -512,6 +736,7 @@ const Brigzard = () => {
                   </div>
                 )}
 
+                {/* Voice */}
                 {donationType==="voice"&&(
                   <div className="bz-fu">
                     <label className="bz-lbl">▸ Voice Comms</label>
@@ -521,6 +746,7 @@ const Brigzard = () => {
                   </div>
                 )}
 
+                {/* HyperSound */}
                 {donationType==="hypersound"&&(
                   <div className="bz-fu bz-sp bz-sp-or">
                     <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
@@ -531,6 +757,7 @@ const Brigzard = () => {
                   </div>
                 )}
 
+                {/* Media */}
                 {donationType==="media"&&(
                   <div className="bz-fu bz-sp bz-sp-rd">
                     <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
@@ -543,6 +770,7 @@ const Brigzard = () => {
 
                 <RewardsBanner amount={Number(formData.amount)} currency={selectedCurrency}/>
 
+                {/* Deploy Button */}
                 <div className="bz-btn-wrap">
                   <button type="submit" className="bz-btn" disabled={isProcessingPayment}>
                     {isProcessingPayment?(
@@ -552,7 +780,7 @@ const Brigzard = () => {
                     ):(
                       <span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:9}}>
                         <Crosshair style={{width:14,height:14}}/>
-                        SUPPORT {currencySymbol}{formData.amount||'0'}
+                        DEPLOY {currencySymbol}{formData.amount||'0'} CREDITS
                       </span>
                     )}
                   </button>
