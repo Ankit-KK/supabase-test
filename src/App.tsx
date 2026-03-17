@@ -189,7 +189,7 @@ const App = () => (
             <Route path="/dashboard/reyna_yadav" element={<ReynaYadavDashboard />} />
             <Route path="/dashboard/slidey_playz" element={<SlideyPlayzDashboard />} />
             <Route path="/dashboard/eryx" element={<EryxDashboard />} />
-            <Route path="/dashboard/gaming_with_latifa" element={<GamingWithLatifaDashboard />}
+            <Route path="/dashboard/gaming_with_latifa" element={<GamingWithLatifaDashboard />} />
             
             {/* OBS Alert routes */}
             <Route path="/ankit/obs-alerts" element={<AnkitObsAlerts />} />
