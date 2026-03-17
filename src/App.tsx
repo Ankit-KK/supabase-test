@@ -36,6 +36,7 @@ import StarlightAnya from "./pages/StarlightAnya";
 import ReynaYadav from "./pages/ReynaYadav";
 import SlideyPlayz from "./pages/SlideyPlayz";
 import Eryx from "./pages/Eryx";
+import GamingWithLatifa from "./pages/GamingWithLatifa";
 
 // Dashboard pages
 import Dashboard from "./pages/dashboard/Dashboard";
@@ -58,6 +59,7 @@ import StarlightAnyaDashboard from "./pages/dashboard/StarlightAnyaDashboard";
 import ReynaYadavDashboard from "./pages/dashboard/ReynaYadavDashboard";
 import SlideyPlayzDashboard from "./pages/dashboard/SlideyPlayzDashboard";
 import EryxDashboard from "./pages/dashboard/EryxDashboard";
+import GamingWithLatifaDashboard from "./pages/dashboard/GamingWithLatifaDashboard";
 
 // OBS Alert pages
 import AnkitObsAlerts from "./pages/obs-alerts/AnkitObsAlerts";
@@ -92,6 +94,8 @@ import SlideyPlayzObsAlerts from "./pages/obs-alerts/SlideyPlayzObsAlerts";
 import SlideyPlayzGoalOverlay from "./pages/obs-alerts/SlideyPlayzGoalOverlay";
 import EryxObsAlerts from "./pages/obs-alerts/EryxObsAlerts";
 import EryxGoalOverlay from "./pages/obs-alerts/EryxGoalOverlay";
+import GamingWithLatifaObsAlerts from "./pages/obs-alerts/GamingWithLatifaObsAlerts";
+import GamingWithLatifaGoalOverlay from "./pages/obs-alerts/GamingWithLatifaGoalOverlay";
 
 // Audio Player pages
 import AnkitAudioPlayer from "./pages/audio-player/AnkitAudioPlayer";
@@ -112,6 +116,7 @@ import StarlightAnyaMediaSourcePlayer from "./pages/audio-player/StarlightAnyaMe
 import ReynaYadavMediaSourcePlayer from "./pages/audio-player/ReynaYadavMediaSourcePlayer";
 import SlideyPlayzMediaSourcePlayer from "./pages/audio-player/SlideyPlayzMediaSourcePlayer"
 import EryxMediaSourcePlayer from "./pages/audio-player/EryxMediaSourcePlayer";
+import GamingWithLatifaMediaSourcePlayer from "./pages/audio-player/GamingWithLatifaMediaSourcePlayer";
 
 const queryClient = new QueryClient();
 
@@ -158,6 +163,7 @@ const App = () => (
             <Route path="/reyna_yadav" element={<ReynaYadav />} />
             <Route path="/slidey_playz" element={<SlideyPlayz />} />
             <Route path="/eryx" element={<Eryx />} />
+            <Route path="/gaming_with_latifa" element={<GamingWithLatifa />} />
             
             
             {/* Authentication */}
@@ -183,6 +189,7 @@ const App = () => (
             <Route path="/dashboard/reyna_yadav" element={<ReynaYadavDashboard />} />
             <Route path="/dashboard/slidey_playz" element={<SlideyPlayzDashboard />} />
             <Route path="/dashboard/eryx" element={<EryxDashboard />} />
+            <Route path="/dashboard/gaming_with_latifa" element={<GamingWithLatifaDashboard />}
             
             {/* OBS Alert routes */}
             <Route path="/ankit/obs-alerts" element={<AnkitObsAlerts />} />
@@ -217,6 +224,8 @@ const App = () => (
             <Route path="/slidey_playz/goal-overlay" element={<SlideyPlayzGoalOverlay />} />
             <Route path="/eryx/obs-alerts" element={<EryxObsAlerts />} />
             <Route path="/eryx/goal-overlay" element={<EryxGoalOverlay />} />
+            <Route path="/gaming_with_latifa/obs-alerts" element={<GamingWithLatifaObsAlerts />} />
+            <Route path="/gaming_with_latifa/goal-overlay" element={<GamingWithLatifaGoalOverlay />} />
             
             {/* Audio Player routes */}
             <Route path="/ankit/audio-player" element={<AnkitAudioPlayer />} />
@@ -237,6 +246,7 @@ const App = () => (
             <Route path="/reyna_yadav/media-audio-player" element={<ReynaYadavMediaSourcePlayer />} />
             <Route path="/slidey_playz/media-audio-player" element={<SlideyPlayzMediaSourcePlayer />} />
             <Route path="/eryx/media-audio-player" element={<EryxMediaSourcePlayer />} />
+            <Route path="/gaming_with_latifa/media-audio-player" element={<GamingWithLatifaMediaSourcePlayer />} />
             
             {/* Catch all 404 */}
             <Route path="*" element={<NotFound />} />
