@@ -23,6 +23,7 @@ const STREAMER_CONFIG: Record<string, { table: string; prefix: string; tableId: 
   'starlight_anya': { table: 'starlight_anya_donations', prefix: 'sa_rp_', tableId: 12 },
   'slidey_playz': { table: 'slidey_playz_donations', prefix: 'slp_rp_', tableId: 14 },
   'eryx': { table: 'eryx_donations', prefix: 'ex_rp_', tableId: 15 },
+  'gaming_with_latifa': { table: 'gaming_with_latifa_donations', prefix: 'latifa_rp_', tableId: 16 },
 };
 
 // Platform floors (cannot go below these)
