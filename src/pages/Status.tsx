@@ -112,6 +112,7 @@ export default function Status() {
           if (orderId.startsWith('ry_rp_')) return 'check-payment-status-unified';//reyna_yadav
           if (orderId.startsWith('slp_rp_')) return 'check-payment-status-unified';//slidey_playz
           if (orderId.startsWith('ex_rp_')) return 'check-payment-status-unified';//eryx_live
+          if (orderId.startsWith('latifa_rp_')) return 'check-payment-status-unified'; //gaming_withlatifa
           if (orderId.startsWith('chiagaming_rp_')) return 'check-payment-status-unified';
           
           
