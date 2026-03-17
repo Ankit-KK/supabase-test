@@ -33,6 +33,7 @@ const STREAMER_CONFIG: Record<string, { table: string; prefix: string }> = {
   'starlight_anya': { table: 'starlight_anya_donations', prefix: 'sa_rp_' },
   'slidey_playz': { table: 'slidey_playz_donations', prefix: 'slp_rp_' },
   'eryx': { table: 'eryx_donations', prefix: 'ex_rp_' },
+  'gaming_with_latifa': { table: 'gaming_with_latifa_donations', prefix: 'latifa_rp_' },
 };
 
 // Derive streamer_slug from order_id prefix
