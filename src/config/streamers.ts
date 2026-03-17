@@ -136,6 +136,12 @@ eryx: {
   pusherSettingsChannel: 'eryx-settings',
   razorpayOrderPrefix: 'ex_rp_',
 },
+  gaming_with_latifa: {
+  slug: 'gaming_with_latifa', name: 'Gaming With Latifa', tableName: 'gaming_with_latifa_donations', brandColor: '#a855f7',
+  pusherDashboardChannel: 'gaming_with_latifa-dashboard', pusherGoalChannel: 'gaming_with_latifa-goal',
+  pusherAudioChannel: 'gaming_with_latifa-audio', pusherAlertsChannel: 'gaming_with_latifa-alerts',
+  pusherSettingsChannel: 'gaming_with_latifa-settings', razorpayOrderPrefix: 'latifa_rp_',
+},
 };
 
 export const getStreamerConfig = (slug: string): StreamerConfig | undefined => STREAMER_CONFIGS[slug];
