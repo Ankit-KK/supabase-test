@@ -143,7 +143,7 @@ serve(async (req: Request) => {
 
     // Send email via Resend
     const { error: emailError } = await resend.emails.send({
-      from: 'HyperChat <noreply@hyperchat.space>',
+      from: 'HyperChat <noreply@hyperchat.site>',
       to: [user.email],
       subject: 'Reset Your HyperChat Password',
       html: `
