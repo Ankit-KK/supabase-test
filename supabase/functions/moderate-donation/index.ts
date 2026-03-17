@@ -255,6 +255,7 @@ serve(async (req) => {
       'nova_plays_donations',
       'slidey_playz_donations',
       'eryx_donations',
+      'gaming_with_latifa_donations',
     ];
 
     if (!ALLOWED_DONATION_TABLES.includes(donationTable)) {
