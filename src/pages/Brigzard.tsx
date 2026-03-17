@@ -28,8 +28,8 @@ const STYLES = `
     --bz-orange:      #e08020;
     --bz-red:         #e04040;
     --bz-cyan:        #00eeff;
-    --bz-bg:          #060804;
-    --bz-card:        #0a0c07;
+    --bz-bg:          #1a1f14;
+    --bz-card:        #1e2418;
     --bz-text:        #d4c9a8;
   }
 
@@ -43,32 +43,37 @@ const STYLES = `
     overflow: hidden; position: relative;
   }
 
-  .bz-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.35; }
+  .bz-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.5; }
 
   .bz-atm {
     position: fixed; inset: 0; pointer-events: none; z-index: 1;
     background:
-      radial-gradient(ellipse 65% 50% at 10% 15%, rgba(74,92,62,0.2) 0%, transparent 60%),
-      radial-gradient(ellipse 55% 45% at 88% 80%, rgba(196,167,71,0.08) 0%, transparent 55%);
+      radial-gradient(ellipse 65% 50% at 10% 15%, rgba(74,92,62,0.35) 0%, transparent 60%),
+      radial-gradient(ellipse 55% 45% at 88% 80%, rgba(196,167,71,0.12) 0%, transparent 55%),
+      radial-gradient(ellipse 80% 60% at 50% 50%, rgba(30,36,24,0.5) 0%, transparent 70%);
   }
 
   .bz-grid {
-    position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: 0.03;
+    position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: 0.05;
     background-image: linear-gradient(rgba(196,167,71,1) 1px, transparent 1px), linear-gradient(90deg, rgba(196,167,71,1) 1px, transparent 1px);
     background-size: 40px 40px;
   }
 
   .bz-scanlines {
     position: fixed; inset: 0; pointer-events: none; z-index: 2;
-    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.07) 2px, rgba(0,0,0,0.07) 4px);
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px);
   }
 
   .bz-scale-wrap { width: 420px; transform-origin: top center; position: relative; z-index: 10; }
 
   .bz-card {
     width: 420px; background: var(--bz-card); border-radius: 2px;
-    border: 1px solid rgba(74,92,62,0.5);
-    box-shadow: 0 0 0 1px rgba(196,167,71,0.05), 0 0 30px rgba(74,92,62,0.18), 0 0 70px rgba(74,92,62,0.07), 0 30px 80px rgba(0,0,0,0.9);
+    border: 1px solid rgba(74,92,62,0.6);
+    box-shadow:
+      0 0 0 1px rgba(196,167,71,0.06),
+      0 0 30px rgba(74,92,62,0.25),
+      0 0 70px rgba(74,92,62,0.1),
+      0 30px 80px rgba(0,0,0,0.6);
     overflow: hidden;
     clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 22px 100%, 0 calc(100% - 22px));
     position: relative;
@@ -76,7 +81,7 @@ const STYLES = `
 
   .bz-card::after {
     content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 100;
-    background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.03) 3px, rgba(0,0,0,0.03) 4px);
+    background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.02) 3px, rgba(0,0,0,0.02) 4px);
   }
 
   .bz-bracket { position: absolute; width: 14px; height: 14px; z-index: 101; pointer-events: none; }
@@ -90,8 +95,8 @@ const STYLES = `
     position: relative; padding: 18px 22px 16px;
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
     overflow: hidden;
-    background: linear-gradient(135deg, rgba(74,92,62,0.22) 0%, rgba(40,55,30,0.18) 60%, transparent 100%);
-    border-bottom: 1px solid rgba(74,92,62,0.3);
+    background: linear-gradient(135deg, rgba(74,92,62,0.3) 0%, rgba(40,55,30,0.25) 60%, transparent 100%);
+    border-bottom: 1px solid rgba(74,92,62,0.35);
   }
   .bz-hero::before {
     content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
@@ -103,17 +108,17 @@ const STYLES = `
     content: ''; position: absolute; bottom: 0; right: 0;
     width: 0; height: 0; border-style: solid;
     border-width: 0 0 20px 20px;
-    border-color: transparent transparent rgba(196,167,71,0.18) transparent;
+    border-color: transparent transparent rgba(196,167,71,0.2) transparent;
   }
   @keyframes bz-shift { 0%{background-position:0%} 100%{background-position:200%} }
 
   .bz-hero-blob {
     position: absolute; top: -40px; right: -40px; width: 160px; height: 160px;
-    border-radius: 50%; background: radial-gradient(circle, rgba(74,92,62,0.28) 0%, transparent 65%); pointer-events: none;
+    border-radius: 50%; background: radial-gradient(circle, rgba(74,92,62,0.35) 0%, transparent 65%); pointer-events: none;
   }
 
   .bz-operator-tag { display: flex; flex-direction: column; position: relative; z-index: 1; }
-  .bz-tag-prefix { font-family:'Orbitron',monospace; font-size:8px; font-weight:700; color:rgba(196,167,71,0.45); letter-spacing:0.25em; text-transform:uppercase; margin-bottom:3px; }
+  .bz-tag-prefix { font-family:'Orbitron',monospace; font-size:8px; font-weight:700; color:rgba(196,167,71,0.5); letter-spacing:0.25em; text-transform:uppercase; margin-bottom:3px; }
 
   @keyframes bz-glitch {
     0%,90%,100% { transform:none; text-shadow:none; clip-path:none; opacity:1; }
@@ -129,56 +134,56 @@ const STYLES = `
   .bz-name {
     font-family:'Black Ops One',cursive; font-size:30px; font-weight:400; color:#fff;
     line-height:1; letter-spacing:0.08em; animation:bz-glitch 9s infinite;
-    position:relative; z-index:1; text-shadow:0 0 20px rgba(196,167,71,0.2);
+    position:relative; z-index:1; text-shadow:0 0 20px rgba(196,167,71,0.25);
   }
-  .bz-hero-sub { font-size:9px; font-weight:600; color:rgba(255,255,255,0.25); margin-top:5px; position:relative; z-index:1; letter-spacing:0.18em; text-transform:uppercase; font-family:'Orbitron',monospace; }
+  .bz-hero-sub { font-size:9px; font-weight:600; color:rgba(255,255,255,0.3); margin-top:5px; position:relative; z-index:1; letter-spacing:0.18em; text-transform:uppercase; font-family:'Orbitron',monospace; }
 
   @keyframes bz-pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
-  .bz-live { display:inline-flex; align-items:center; gap:5px; background:rgba(74,92,62,0.15); border:1px solid rgba(106,138,85,0.45); padding:5px 11px; flex-shrink:0; position:relative; z-index:1; clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%); }
+  .bz-live { display:inline-flex; align-items:center; gap:5px; background:rgba(74,92,62,0.2); border:1px solid rgba(106,138,85,0.5); padding:5px 11px; flex-shrink:0; position:relative; z-index:1; clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%); }
   .bz-live-dot { width:5px; height:5px; border-radius:50%; background:var(--bz-green-light); animation:bz-pulse 1.2s ease-in-out infinite; }
   .bz-live-text { font-family:'Orbitron',monospace; font-size:8px; font-weight:700; color:var(--bz-green-light); letter-spacing:0.18em; text-shadow:0 0 8px var(--bz-green-light); }
 
   /* ── Operator Loadout Bar ── */
   .bz-loadout {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 8px 18px; border-bottom: 1px solid rgba(74,92,62,0.2);
-    background: rgba(74,92,62,0.06); position: relative; z-index: 10;
+    padding: 8px 18px; border-bottom: 1px solid rgba(74,92,62,0.25);
+    background: rgba(74,92,62,0.1); position: relative; z-index: 10;
   }
   .bz-rank-info { display: flex; align-items: center; gap: 8px; }
   .bz-rank-badge {
     font-family: 'Black Ops One', cursive; font-size: 10px;
-    color: var(--bz-bg); background: var(--bz-gold);
+    color: #1a1f14; background: var(--bz-gold);
     padding: 2px 7px; letter-spacing: 0.08em;
     clip-path: polygon(4px 0%, 100% 0%, calc(100% - 4px) 100%, 0% 100%);
   }
   .bz-rank-name { font-family:'Orbitron',monospace; font-size:9px; font-weight:700; color:rgba(196,167,71,0.7); letter-spacing:0.12em; }
   .bz-xp-wrap { display:flex; flex-direction:column; align-items:flex-end; gap:3px; }
-  .bz-xp-label { font-family:'Orbitron',monospace; font-size:7px; color:rgba(255,255,255,0.25); letter-spacing:0.15em; }
-  .bz-xp-bar { width:90px; height:3px; background:rgba(255,255,255,0.08); overflow:hidden; }
+  .bz-xp-label { font-family:'Orbitron',monospace; font-size:7px; color:rgba(255,255,255,0.3); letter-spacing:0.15em; }
+  .bz-xp-bar { width:90px; height:3px; background:rgba(255,255,255,0.1); overflow:hidden; }
   .bz-xp-fill { height:100%; background:linear-gradient(90deg,var(--bz-green),var(--bz-gold)); width:68%; box-shadow:0 0 6px var(--bz-gold); }
 
   /* ── Body ── */
   .bz-body { padding:14px 18px 16px; display:flex; flex-direction:column; gap:12px; }
-  .bz-lbl { font-family:'Orbitron',monospace; font-size:8px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; display:block; margin-bottom:6px; color:rgba(196,167,71,0.55); }
+  .bz-lbl { font-family:'Orbitron',monospace; font-size:8px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; display:block; margin-bottom:6px; color:rgba(196,167,71,0.6); }
 
   .bz-iw { position:relative; }
   .bz-iw input {
-    width:100% !important; background:rgba(74,92,62,0.05) !important; border:1px solid rgba(74,92,62,0.3) !important;
-    border-radius:1px !important; color:#fff !important; font-family:'Rajdhani',sans-serif !important;
+    width:100% !important; background:rgba(74,92,62,0.08) !important; border:1px solid rgba(74,92,62,0.35) !important;
+    border-radius:1px !important; color:#e8e0cc !important; font-family:'Rajdhani',sans-serif !important;
     font-size:15px !important; font-weight:600 !important; padding:8px 12px !important;
     outline:none !important; transition:all .15s !important; caret-color:var(--bz-gold); letter-spacing:0.05em !important;
   }
-  .bz-iw input:focus { border-color:var(--bz-gold) !important; background:rgba(196,167,71,0.05) !important; box-shadow:0 0 0 1px rgba(196,167,71,0.1),0 0 12px rgba(196,167,71,0.08) !important; }
-  .bz-iw input::placeholder { color:rgba(255,255,255,0.18) !important; }
+  .bz-iw input:focus { border-color:var(--bz-gold) !important; background:rgba(196,167,71,0.07) !important; box-shadow:0 0 0 1px rgba(196,167,71,0.12),0 0 12px rgba(196,167,71,0.08) !important; }
+  .bz-iw input::placeholder { color:rgba(255,255,255,0.22) !important; }
   .bz-iw input:disabled,.bz-iw input[readonly] { opacity:.35 !important; cursor:not-allowed !important; }
   .bz-iw::after { content:''; position:absolute; bottom:0; left:0; right:0; height:1px; background:var(--bz-gold); transform:scaleX(0); transform-origin:left; transition:transform 0.2s ease; opacity:0.6; }
   .bz-iw:focus-within::after { transform:scaleX(1); }
 
-  .bz-ta { width:100%; background:rgba(74,92,62,0.05); border:1px solid rgba(74,92,62,0.3); border-radius:1px; color:#fff; font-family:'Rajdhani',sans-serif; font-size:14px; font-weight:600; padding:8px 12px; resize:none; outline:none; line-height:1.5; caret-color:var(--bz-gold); transition:all .15s; letter-spacing:0.04em; }
-  .bz-ta:focus { border-color:var(--bz-gold); background:rgba(196,167,71,0.05); box-shadow:0 0 0 1px rgba(196,167,71,0.1); }
-  .bz-ta::placeholder { color:rgba(255,255,255,0.18); }
+  .bz-ta { width:100%; background:rgba(74,92,62,0.08); border:1px solid rgba(74,92,62,0.35); border-radius:1px; color:#e8e0cc; font-family:'Rajdhani',sans-serif; font-size:14px; font-weight:600; padding:8px 12px; resize:none; outline:none; line-height:1.5; caret-color:var(--bz-gold); transition:all .15s; letter-spacing:0.04em; }
+  .bz-ta:focus { border-color:var(--bz-gold); background:rgba(196,167,71,0.07); box-shadow:0 0 0 1px rgba(196,167,71,0.1); }
+  .bz-ta::placeholder { color:rgba(255,255,255,0.22); }
 
-  .bz-cbar { height:2px; margin-top:5px; background:rgba(255,255,255,0.06); overflow:hidden; }
+  .bz-cbar { height:2px; margin-top:5px; background:rgba(255,255,255,0.08); overflow:hidden; }
   .bz-cbar-fill { height:100%; transition:width .12s,background .2s; }
 
   /* ── Type Buttons ── */
@@ -187,96 +192,80 @@ const STYLES = `
   .bz-tb-face { position:relative; z-index:2; padding:10px 4px 9px; text-align:center; transition:transform .1s ease,box-shadow .1s ease; transform:translateY(-4px); clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px)); }
   .bz-tb::after { content:''; position:absolute; bottom:0; left:0; right:0; height:calc(100% - 2px); z-index:1; clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px)); }
 
-  .bz-tb-gd .bz-tb-face { background:linear-gradient(160deg,rgba(196,167,71,0.15),rgba(100,80,20,0.45)); border:1px solid rgba(196,167,71,0.5); }
+  .bz-tb-gd .bz-tb-face { background:linear-gradient(160deg,rgba(196,167,71,0.18),rgba(100,80,20,0.5)); border:1px solid rgba(196,167,71,0.5); }
   .bz-tb-gd::after { background:#3a2e0c; }
-  .bz-tb-gd.bz-on .bz-tb-face { transform:translateY(0); background:linear-gradient(160deg,rgba(196,167,71,0.28),rgba(140,110,30,0.5)); border-color:var(--bz-gold); box-shadow:0 0 16px rgba(196,167,71,0.6),0 0 30px rgba(196,167,71,0.2); }
+  .bz-tb-gd.bz-on .bz-tb-face { transform:translateY(0); background:linear-gradient(160deg,rgba(196,167,71,0.32),rgba(140,110,30,0.55)); border-color:var(--bz-gold); box-shadow:0 0 16px rgba(196,167,71,0.6),0 0 30px rgba(196,167,71,0.2); }
 
-  .bz-tb-gn .bz-tb-face { background:linear-gradient(160deg,rgba(74,92,62,0.2),rgba(30,50,20,0.5)); border:1px solid rgba(74,92,62,0.55); }
-  .bz-tb-gn::after { background:#141f10; }
-  .bz-tb-gn.bz-on .bz-tb-face { transform:translateY(0); background:linear-gradient(160deg,rgba(74,92,62,0.32),rgba(50,75,35,0.55)); border-color:var(--bz-green-light); box-shadow:0 0 16px rgba(106,138,85,0.6),0 0 30px rgba(74,92,62,0.2); }
+  .bz-tb-gn .bz-tb-face { background:linear-gradient(160deg,rgba(74,92,62,0.25),rgba(30,50,20,0.55)); border:1px solid rgba(74,92,62,0.6); }
+  .bz-tb-gn::after { background:#1e2e18; }
+  .bz-tb-gn.bz-on .bz-tb-face { transform:translateY(0); background:linear-gradient(160deg,rgba(74,92,62,0.38),rgba(50,75,35,0.6)); border-color:var(--bz-green-light); box-shadow:0 0 16px rgba(106,138,85,0.6),0 0 30px rgba(74,92,62,0.2); }
 
-  .bz-tb-or .bz-tb-face { background:linear-gradient(160deg,rgba(200,100,20,0.18),rgba(120,50,0,0.45)); border:1px solid rgba(200,120,30,0.5); }
+  .bz-tb-or .bz-tb-face { background:linear-gradient(160deg,rgba(200,100,20,0.2),rgba(120,50,0,0.5)); border:1px solid rgba(200,120,30,0.5); }
   .bz-tb-or::after { background:#3a1e04; }
-  .bz-tb-or.bz-on .bz-tb-face { transform:translateY(0); background:linear-gradient(160deg,rgba(200,120,30,0.3),rgba(160,80,0,0.5)); border-color:var(--bz-orange); box-shadow:0 0 16px rgba(200,120,30,0.6),0 0 30px rgba(200,100,20,0.2); }
+  .bz-tb-or.bz-on .bz-tb-face { transform:translateY(0); background:linear-gradient(160deg,rgba(200,120,30,0.32),rgba(160,80,0,0.55)); border-color:var(--bz-orange); box-shadow:0 0 16px rgba(200,120,30,0.6),0 0 30px rgba(200,100,20,0.2); }
 
-  .bz-tb-rd .bz-tb-face { background:linear-gradient(160deg,rgba(180,30,30,0.18),rgba(100,10,10,0.45)); border:1px solid rgba(180,40,40,0.5); }
+  .bz-tb-rd .bz-tb-face { background:linear-gradient(160deg,rgba(180,30,30,0.2),rgba(100,10,10,0.5)); border:1px solid rgba(180,40,40,0.5); }
   .bz-tb-rd::after { background:#2e0808; }
-  .bz-tb-rd.bz-on .bz-tb-face { transform:translateY(0); background:linear-gradient(160deg,rgba(180,40,40,0.3),rgba(140,20,20,0.5)); border-color:var(--bz-red); box-shadow:0 0 16px rgba(200,50,50,0.6),0 0 30px rgba(180,30,30,0.2); }
+  .bz-tb-rd.bz-on .bz-tb-face { transform:translateY(0); background:linear-gradient(160deg,rgba(180,40,40,0.32),rgba(140,20,20,0.55)); border-color:var(--bz-red); box-shadow:0 0 16px rgba(200,50,50,0.6),0 0 30px rgba(180,30,30,0.2); }
 
   .bz-tb:active .bz-tb-face { transform:translateY(0) !important; }
-  .bz-tb:hover .bz-tb-face { filter:brightness(1.1); }
+  .bz-tb:hover .bz-tb-face { filter:brightness(1.12); }
   .bz-tb-emoji { font-size:17px; display:block; line-height:1; }
   .bz-tb-name { font-family:'Orbitron',monospace; font-size:7px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; display:block; margin-top:4px; transition:color .15s,text-shadow .15s; }
-  .bz-tb-min { font-size:7px; font-weight:600; color:rgba(196,167,71,0.55); display:block; margin-top:2px; font-family:'Rajdhani',sans-serif; }
+  .bz-tb-min { font-size:7px; font-weight:600; color:rgba(196,167,71,0.6); display:block; margin-top:2px; font-family:'Rajdhani',sans-serif; }
 
   .bz-amt { display:flex; gap:7px; }
-  .bz-cur { display:flex; align-items:center; justify-content:space-between; gap:4px; background:rgba(74,92,62,0.05) !important; border:1px solid rgba(74,92,62,0.3) !important; border-radius:1px !important; color:#fff !important; font-family:'Rajdhani',sans-serif !important; font-size:13px !important; font-weight:700 !important; padding:0 10px !important; min-width:90px; height:38px; cursor:pointer; transition:all .15s; flex-shrink:0; letter-spacing:0.05em !important; }
+  .bz-cur { display:flex; align-items:center; justify-content:space-between; gap:4px; background:rgba(74,92,62,0.08) !important; border:1px solid rgba(74,92,62,0.35) !important; border-radius:1px !important; color:#e8e0cc !important; font-family:'Rajdhani',sans-serif !important; font-size:13px !important; font-weight:700 !important; padding:0 10px !important; min-width:90px; height:38px; cursor:pointer; transition:all .15s; flex-shrink:0; letter-spacing:0.05em !important; }
   .bz-cur:hover { border-color:var(--bz-gold) !important; }
 
-  .bz-div { height:1px; background:linear-gradient(90deg,transparent,rgba(74,92,62,0.4),rgba(196,167,71,0.15),transparent); position:relative; }
-  .bz-div::before { content:'◆'; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-size:6px; color:rgba(196,167,71,0.4); }
+  .bz-div { height:1px; background:linear-gradient(90deg,transparent,rgba(74,92,62,0.5),rgba(196,167,71,0.18),transparent); position:relative; }
+  .bz-div::before { content:'◆'; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-size:6px; color:rgba(196,167,71,0.45); }
 
   .bz-sp { padding:10px 12px; position:relative; }
   .bz-sp::before,.bz-sp::after { content:''; position:absolute; width:10px; height:10px; pointer-events:none; }
   .bz-sp::before { top:0; left:0; border-top:1px solid var(--bz-gold); border-left:1px solid var(--bz-gold); opacity:0.4; }
   .bz-sp::after  { bottom:0; right:0; border-bottom:1px solid var(--bz-gold); border-right:1px solid var(--bz-gold); opacity:0.4; }
-  .bz-sp-gn { background:rgba(74,92,62,0.07); border:1px solid rgba(74,92,62,0.35); }
-  .bz-sp-or { background:rgba(200,100,20,0.05); border:1px solid rgba(200,120,30,0.3); }
-  .bz-sp-rd { background:rgba(180,30,30,0.05); border:1px solid rgba(180,40,40,0.25); }
+  .bz-sp-gn { background:rgba(74,92,62,0.1); border:1px solid rgba(74,92,62,0.4); }
+  .bz-sp-or { background:rgba(200,100,20,0.07); border:1px solid rgba(200,120,30,0.32); }
+  .bz-sp-rd { background:rgba(180,30,30,0.07); border:1px solid rgba(180,40,40,0.28); }
 
-  /* ── Battle Pass Reward Banners ── */
-  .bz-rewards {
-    display: flex; flex-direction: column; gap: 4px;
-  }
-  .bz-reward-row {
-    display: flex; align-items: center; gap: 8px;
-    padding: 6px 10px;
-    border: 1px solid rgba(74,92,62,0.2);
-    background: rgba(74,92,62,0.04);
+  /* ── Battle Pass Tiers ── */
+  .bz-tiers { display:flex; gap:5px; }
+  .bz-tier {
+    flex: 1; display:flex; flex-direction:column; align-items:center; gap:3px;
+    padding: 7px 4px;
+    border: 1px solid rgba(74,92,62,0.25);
+    background: rgba(74,92,62,0.06);
     clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
-    transition: all .2s;
-    position: relative; overflow: hidden;
+    transition: all .2s; position: relative; overflow: hidden;
   }
-  .bz-reward-row.bz-reward-active {
+  .bz-tier.bz-tier-active {
     border-color: var(--bz-gold);
-    background: rgba(196,167,71,0.08);
-    box-shadow: 0 0 14px rgba(196,167,71,0.2);
+    background: rgba(196,167,71,0.1);
+    box-shadow: 0 0 12px rgba(196,167,71,0.18);
   }
-  .bz-reward-row.bz-reward-active::before {
+  .bz-tier.bz-tier-active::before {
     content: ''; position: absolute; top: 0; left: -100%; width: 60%; height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(196,167,71,0.08), transparent);
-    animation: bz-sweep 2s linear infinite;
+    background: linear-gradient(90deg, transparent, rgba(196,167,71,0.07), transparent);
+    animation: bz-sweep 2.5s linear infinite;
+  }
+  .bz-tier-done {
+    border-color: rgba(106,138,85,0.4);
+    background: rgba(74,92,62,0.12);
   }
   @keyframes bz-sweep { to { left: 160%; } }
-  .bz-reward-tier {
-    font-family: 'Black Ops One', cursive; font-size: 8px;
-    color: var(--bz-bg); background: rgba(196,167,71,0.35);
-    padding: 2px 6px; flex-shrink: 0; letter-spacing: 0.06em;
-    clip-path: polygon(3px 0%, 100% 0%, calc(100% - 3px) 100%, 0% 100%);
-  }
-  .bz-reward-row.bz-reward-active .bz-reward-tier {
-    background: var(--bz-gold); color: var(--bz-bg);
-  }
-  .bz-reward-label { font-family:'Orbitron',monospace; font-size:8px; font-weight:700; color:rgba(255,255,255,0.3); letter-spacing:0.08em; flex:1; }
-  .bz-reward-row.bz-reward-active .bz-reward-label { color:rgba(196,167,71,0.85); }
-  .bz-reward-unlock { font-family:'Orbitron',monospace; font-size:7px; color:rgba(196,167,71,0.4); letter-spacing:0.06em; }
-  .bz-reward-row.bz-reward-active .bz-reward-unlock { color:var(--bz-gold); text-shadow:0 0 8px var(--bz-gold); }
-  .bz-reward-check { font-size:10px; color:var(--bz-green-light); display:none; }
-  .bz-reward-row.bz-reward-active .bz-reward-check { display:block; }
+  .bz-tier-emoji { font-size:14px; line-height:1; }
+  .bz-tier-rank { font-family:'Black Ops One',cursive; font-size:7px; color:rgba(196,167,71,0.4); letter-spacing:0.06em; text-align:center; }
+  .bz-tier.bz-tier-active .bz-tier-rank { color:var(--bz-gold); text-shadow:0 0 8px rgba(196,167,71,0.5); }
+  .bz-tier.bz-tier-done .bz-tier-rank { color:var(--bz-green-light); }
+  .bz-tier-amt { font-family:'Orbitron',monospace; font-size:7px; color:rgba(255,255,255,0.2); letter-spacing:0.05em; }
+  .bz-tier.bz-tier-active .bz-tier-amt { color:rgba(196,167,71,0.6); }
+  .bz-tier.bz-tier-done .bz-tier-amt { color:rgba(106,138,85,0.7); }
 
   /* ── Reconnecting HUD ── */
   @keyframes bz-rc-blink { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
-  .bz-reconnecting {
-    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    z-index: 99998; pointer-events: none;
-    display: flex; flex-direction: column; align-items: center; gap: 6px;
-  }
-  .bz-rc-text {
-    font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 700;
-    color: var(--bz-gold); letter-spacing: 0.2em;
-    animation: bz-rc-blink 1s ease-in-out infinite;
-    text-shadow: 0 0 12px var(--bz-gold);
-  }
+  .bz-reconnecting { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:99998; pointer-events:none; display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .bz-rc-text { font-family:'Orbitron',monospace; font-size:11px; font-weight:700; color:var(--bz-gold); letter-spacing:0.2em; animation:bz-rc-blink 1s ease-in-out infinite; text-shadow:0 0 12px var(--bz-gold); }
   .bz-rc-dots { display:flex; gap:4px; }
   .bz-rc-dot { width:4px; height:4px; border-radius:50%; background:var(--bz-gold); animation:bz-rc-blink 1s ease-in-out infinite; }
   .bz-rc-dot:nth-child(2) { animation-delay:.2s; }
@@ -289,52 +278,28 @@ const STYLES = `
   @keyframes bz-kc-tag { from{opacity:0;transform:translateY(-10px);} to{opacity:1;transform:translateY(0);} }
   @keyframes bz-kc-scan { 0%{top:-10%;} 100%{top:110%;} }
 
-  .bz-kc-overlay {
-    position: fixed; inset: 0; z-index: 99999;
-    background: rgba(0,0,0,0.93);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    animation: bz-kc-in .3s ease forwards;
-  }
-  .bz-kc-overlay.bz-kc-exit { animation: bz-kc-out .4s ease forwards; }
-  .bz-kc-scanline {
-    position: absolute; left: 0; right: 0; height: 3px;
-    background: linear-gradient(90deg, transparent, rgba(196,167,71,0.4), transparent);
-    animation: bz-kc-scan 1.8s linear infinite;
-    pointer-events: none;
-  }
+  .bz-kc-overlay { position:fixed; inset:0; z-index:99999; background:rgba(10,14,8,0.95); display:flex; flex-direction:column; align-items:center; justify-content:center; animation:bz-kc-in .3s ease forwards; }
+  .bz-kc-overlay.bz-kc-exit { animation:bz-kc-out .4s ease forwards; }
+  .bz-kc-scanline { position:absolute; left:0; right:0; height:3px; background:linear-gradient(90deg,transparent,rgba(196,167,71,0.4),transparent); animation:bz-kc-scan 1.8s linear infinite; pointer-events:none; }
   .bz-kc-icon { font-size:54px; margin-bottom:14px; filter:drop-shadow(0 0 20px rgba(196,167,71,0.7)); }
-  .bz-kc-tag {
-    font-family:'Black Ops One',cursive; font-size:40px; color:var(--bz-gold);
-    letter-spacing:0.12em; text-transform:uppercase;
-    text-shadow:0 0 20px rgba(196,167,71,0.6),0 0 50px rgba(196,167,71,0.25);
-    animation:bz-kc-tag .4s ease .15s both;
-  }
-  .bz-kc-sub {
-    font-family:'Orbitron',monospace; font-size:10px; font-weight:700;
-    color:rgba(255,255,255,0.3); letter-spacing:0.22em; text-transform:uppercase;
-    margin-top:8px; animation:bz-kc-tag .4s ease .3s both;
-  }
-  .bz-kc-amount {
-    font-family:'Orbitron',monospace; font-size:14px; font-weight:700;
-    color:var(--bz-gold); letter-spacing:0.1em;
-    margin-top:12px; animation:bz-kc-tag .4s ease .45s both;
-    text-shadow:0 0 14px rgba(196,167,71,0.5);
-  }
+  .bz-kc-tag { font-family:'Black Ops One',cursive; font-size:40px; color:var(--bz-gold); letter-spacing:0.12em; text-transform:uppercase; text-shadow:0 0 20px rgba(196,167,71,0.6),0 0 50px rgba(196,167,71,0.25); animation:bz-kc-tag .4s ease .15s both; }
+  .bz-kc-sub { font-family:'Orbitron',monospace; font-size:10px; font-weight:700; color:rgba(255,255,255,0.3); letter-spacing:0.22em; text-transform:uppercase; margin-top:8px; animation:bz-kc-tag .4s ease .3s both; }
+  .bz-kc-amount { font-family:'Orbitron',monospace; font-size:14px; font-weight:700; color:var(--bz-gold); letter-spacing:0.1em; margin-top:12px; animation:bz-kc-tag .4s ease .45s both; text-shadow:0 0 14px rgba(196,167,71,0.5); }
   .bz-kc-bar-wrap { width:220px; height:2px; background:rgba(255,255,255,0.08); margin-top:24px; overflow:hidden; }
   .bz-kc-bar { height:100%; background:var(--bz-gold); box-shadow:0 0 8px var(--bz-gold); animation:bz-kc-bar 2.2s linear .5s both; }
   .bz-kc-redirecting { font-family:'Orbitron',monospace; font-size:8px; font-weight:700; color:rgba(196,167,71,0.4); letter-spacing:0.18em; margin-top:10px; animation:bz-kc-tag .3s ease .6s both; }
 
   /* ── Donate Button ── */
   .bz-btn-wrap { position:relative; width:100%; padding-bottom:5px; }
-  .bz-btn-wrap::after { content:''; position:absolute; bottom:0; left:0; right:0; height:calc(100% - 4px); z-index:1; background:linear-gradient(90deg,#151e0c,#1e2e12,#182410); clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px)); }
-  .bz-btn { position:relative; z-index:2; width:100%; padding:14px; border:none; cursor:pointer; font-family:'Black Ops One',cursive; font-size:13px; font-weight:400; letter-spacing:.12em; color:var(--bz-gold); transition:transform .1s ease,box-shadow .1s ease; transform:translateY(-5px); background:linear-gradient(135deg,#253318 0%,#334a20 50%,#263a16 100%); border-top:1px solid rgba(196,167,71,0.25); border-left:1px solid rgba(196,167,71,0.12); box-shadow:inset 0 1px 0 rgba(196,167,71,0.1),0 0 18px rgba(74,92,62,0.35); overflow:hidden; clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px)); }
-  .bz-btn:hover:not(:disabled) { box-shadow:inset 0 1px 0 rgba(196,167,71,0.18),0 0 26px rgba(196,167,71,0.35),0 0 50px rgba(74,92,62,0.2); text-shadow:0 0 14px var(--bz-gold); }
-  .bz-btn:active:not(:disabled) { transform:translateY(0) !important; box-shadow:inset 0 2px 8px rgba(0,0,0,0.6) !important; }
+  .bz-btn-wrap::after { content:''; position:absolute; bottom:0; left:0; right:0; height:calc(100% - 4px); z-index:1; background:linear-gradient(90deg,#1a2610,#243618,#1c2e10); clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px)); }
+  .bz-btn { position:relative; z-index:2; width:100%; padding:14px; border:none; cursor:pointer; font-family:'Black Ops One',cursive; font-size:13px; font-weight:400; letter-spacing:.12em; color:var(--bz-gold); transition:transform .1s ease,box-shadow .1s ease; transform:translateY(-5px); background:linear-gradient(135deg,#2a3d1a 0%,#3a5224 50%,#2e4218 100%); border-top:1px solid rgba(196,167,71,0.28); border-left:1px solid rgba(196,167,71,0.14); box-shadow:inset 0 1px 0 rgba(196,167,71,0.12),0 0 18px rgba(74,92,62,0.4); overflow:hidden; clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px)); }
+  .bz-btn:hover:not(:disabled) { box-shadow:inset 0 1px 0 rgba(196,167,71,0.2),0 0 26px rgba(196,167,71,0.38),0 0 50px rgba(74,92,62,0.22); text-shadow:0 0 14px var(--bz-gold); }
+  .bz-btn:active:not(:disabled) { transform:translateY(0) !important; box-shadow:inset 0 2px 8px rgba(0,0,0,0.5) !important; }
   .bz-btn:disabled { opacity:.35; cursor:not-allowed; }
   .bz-btn::before { content:''; position:absolute; top:0; left:-110%; width:55%; height:100%; background:linear-gradient(90deg,transparent,rgba(196,167,71,0.1),transparent); transform:skewX(-20deg); transition:left .6s; }
   .bz-btn:hover:not(:disabled)::before { left:160%; }
 
-  .bz-hint { font-size:9px; font-weight:600; color:rgba(196,167,71,0.45); margin-top:3px; font-family:'Orbitron',monospace; letter-spacing:0.08em; }
+  .bz-hint { font-size:9px; font-weight:600; color:rgba(196,167,71,0.5); margin-top:3px; font-family:'Orbitron',monospace; letter-spacing:0.08em; }
 
   @keyframes bz-fu { from{opacity:0;transform:translateY(5px);} to{opacity:1;transform:translateY(0);} }
   .bz-fu { animation:bz-fu .18s ease forwards; }
@@ -347,8 +312,8 @@ const STYLES = `
 
   /* ── Kill Feed ── */
   .bz-killfeed { position:fixed; top:20px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:6px; pointer-events:none; }
-  @keyframes bz-kf-in  { from{opacity:0;transform:translateX(20px);} to{opacity:1;transform:translateX(0);} }
-  .bz-kf { display:flex; align-items:center; gap:8px; background:rgba(6,8,4,0.93); border:1px solid rgba(74,92,62,0.45); border-left:3px solid var(--bz-gold); padding:8px 14px; clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%); animation:bz-kf-in .2s ease forwards; min-width:220px; }
+  @keyframes bz-kf-in { from{opacity:0;transform:translateX(20px);} to{opacity:1;transform:translateX(0);} }
+  .bz-kf { display:flex; align-items:center; gap:8px; background:rgba(20,26,16,0.95); border:1px solid rgba(74,92,62,0.5); border-left:3px solid var(--bz-gold); padding:8px 14px; clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,0 100%); animation:bz-kf-in .2s ease forwards; min-width:220px; }
   .bz-kf-err  { border-left-color:var(--bz-red); }
   .bz-kf-warn { border-left-color:var(--bz-orange); }
   .bz-kf-icon { font-size:11px; flex-shrink:0; color:var(--bz-gold); font-family:'Orbitron',monospace; }
@@ -366,8 +331,8 @@ const SmokeCanvas: React.FC = () => {
     canvas.width = window.innerWidth; canvas.height = window.innerHeight;
     type P = { x:number; y:number; r:number; vx:number; vy:number; alpha:number; da:number; };
     const ps: P[] = [];
-    const spawn = () => ps.push({ x:Math.random()*canvas.width, y:canvas.height+20, r:30+Math.random()*60, vx:(Math.random()-0.5)*0.3, vy:-(0.15+Math.random()*0.25), alpha:0.04+Math.random()*0.06, da:-(0.0001+Math.random()*0.0002) });
-    for (let i=0;i<18;i++) { spawn(); ps[i].y=Math.random()*canvas.height; }
+    const spawn = () => ps.push({ x:Math.random()*canvas.width, y:canvas.height+20, r:40+Math.random()*70, vx:(Math.random()-0.5)*0.3, vy:-(0.12+Math.random()*0.22), alpha:0.05+Math.random()*0.07, da:-(0.00008+Math.random()*0.00015) });
+    for (let i=0;i<20;i++) { spawn(); ps[i].y=Math.random()*canvas.height; }
     let frame: number;
     const tick = () => {
       ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -376,7 +341,7 @@ const SmokeCanvas: React.FC = () => {
         const p=ps[i]; p.x+=p.vx; p.y+=p.vy; p.alpha+=p.da;
         if (p.alpha<=0||p.y<-p.r) { ps.splice(i,1); continue; }
         const g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r);
-        g.addColorStop(0,`rgba(74,92,62,${p.alpha})`); g.addColorStop(1,`rgba(74,92,62,0)`);
+        g.addColorStop(0,`rgba(60,75,45,${p.alpha})`); g.addColorStop(1,`rgba(60,75,45,0)`);
         ctx.fillStyle=g; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
       }
       frame=requestAnimationFrame(tick);
@@ -390,7 +355,7 @@ const SmokeCanvas: React.FC = () => {
 };
 
 /* ── Kill Confirmed Overlay ── */
-const KillConfirmedOverlay: React.FC<{ amount: string; currency: string; onDone: () => void }> = ({ amount, currency, onDone }) => {
+const KillConfirmedOverlay: React.FC<{ amount:string; currency:string; onDone:()=>void }> = ({ amount, currency, onDone }) => {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const t = setTimeout(() => {
@@ -418,7 +383,7 @@ let kfId = 0;
 const useKillFeed = () => {
   const [msgs, setMsgs] = useState<KFMsg[]>([]);
   const push = useCallback((text:string, icon='✦', variant:KFMsg['variant']='default') => {
-    const id = ++kfId;
+    const id=++kfId;
     setMsgs(p=>[...p,{id,text,icon,variant}]);
     setTimeout(()=>setMsgs(p=>p.filter(m=>m.id!==id)), 3200);
   }, []);
@@ -426,16 +391,16 @@ const useKillFeed = () => {
 };
 
 /* ── Audio ── */
-const playClick    = () => { try { const c=new (window.AudioContext||(window as any).webkitAudioContext)(); const o=c.createOscillator(); const g=c.createGain(); o.connect(g); g.connect(c.destination); o.frequency.setValueAtTime(880,c.currentTime); o.frequency.exponentialRampToValueAtTime(220,c.currentTime+0.06); g.gain.setValueAtTime(0.07,c.currentTime); g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.08); o.start(); o.stop(c.currentTime+0.08); } catch {} };
-const playConfirm  = () => { try { const c=new (window.AudioContext||(window as any).webkitAudioContext)(); [440,550,660].forEach((f,i)=>{ const o=c.createOscillator(); const g=c.createGain(); o.connect(g); g.connect(c.destination); o.frequency.value=f; const t=c.currentTime+i*0.07; g.gain.setValueAtTime(0.05,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.1); o.start(t); o.stop(t+0.1); }); } catch {} };
-const playError    = () => { try { const c=new (window.AudioContext||(window as any).webkitAudioContext)(); const o=c.createOscillator(); const g=c.createGain(); o.connect(g); g.connect(c.destination); o.type='sawtooth'; o.frequency.setValueAtTime(200,c.currentTime); o.frequency.exponentialRampToValueAtTime(80,c.currentTime+0.15); g.gain.setValueAtTime(0.06,c.currentTime); g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.15); o.start(); o.stop(c.currentTime+0.15); } catch {} };
+const playClick   = () => { try { const c=new (window.AudioContext||(window as any).webkitAudioContext)(); const o=c.createOscillator(); const g=c.createGain(); o.connect(g); g.connect(c.destination); o.frequency.setValueAtTime(880,c.currentTime); o.frequency.exponentialRampToValueAtTime(220,c.currentTime+0.06); g.gain.setValueAtTime(0.07,c.currentTime); g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.08); o.start(); o.stop(c.currentTime+0.08); } catch {} };
+const playConfirm = () => { try { const c=new (window.AudioContext||(window as any).webkitAudioContext)(); [440,550,660].forEach((f,i)=>{ const o=c.createOscillator(); const g=c.createGain(); o.connect(g); g.connect(c.destination); o.frequency.value=f; const t=c.currentTime+i*0.07; g.gain.setValueAtTime(0.05,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.1); o.start(t); o.stop(t+0.1); }); } catch {} };
+const playError   = () => { try { const c=new (window.AudioContext||(window as any).webkitAudioContext)(); const o=c.createOscillator(); const g=c.createGain(); o.connect(g); g.connect(c.destination); o.type='sawtooth'; o.frequency.setValueAtTime(200,c.currentTime); o.frequency.exponentialRampToValueAtTime(80,c.currentTime+0.15); g.gain.setValueAtTime(0.06,c.currentTime); g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+0.15); o.start(); o.stop(c.currentTime+0.15); } catch {} };
 
-/* ── Battle Pass Reward Tiers ── */
-const REWARD_TIERS = [
-  { min: 0,    label: 'RECRUIT',    unlock: 'Basic support',         emoji: '🪖' },
-  { min: 100,  label: 'OPERATOR',   unlock: 'TTS message unlocked',  emoji: '🎖️' },
-  { min: 300,  label: 'SPECIALIST', unlock: 'Voice comms unlocked',  emoji: '🔰' },
-  { min: 500,  label: 'COMMANDER',  unlock: 'Max voice duration',    emoji: '⭐' },
+/* ── Battle Pass Tiers — rank labels + thresholds only ── */
+const TIERS = [
+  { min:0,   rank:'RECRUIT',    emoji:'🪖' },
+  { min:100, rank:'OPERATOR',   emoji:'🎖️' },
+  { min:300, rank:'SPECIALIST', emoji:'🔰' },
+  { min:500, rank:'COMMANDER',  emoji:'⭐' },
 ];
 
 /* ── Main ── */
@@ -463,8 +428,8 @@ const Brigzard = () => {
   const currentAmount    = parseFloat(formData.amount) || 0;
   const maxMessageLength = getMaxMessageLength(pricing.messageCharTiers, currentAmount);
 
-  /* Active reward tier */
-  const activeRewardIdx = REWARD_TIERS.reduce((best, tier, i) => currentAmount >= tier.min ? i : best, 0);
+  /* Active tier index */
+  const activeTierIdx = TIERS.reduce((best, tier, i) => currentAmount >= tier.min ? i : best, 0);
 
   const getVoiceDuration = (amount:number) => {
     if (selectedCurrency==="INR") { if (amount>=500) return 15; if (amount>=300) return 12; return 8; }
@@ -519,10 +484,7 @@ const Brigzard = () => {
   const processPayment = async () => {
     setIsProcessingPayment(true);
     push("Initiating deployment...","◈","default");
-
-    /* Show reconnecting HUD after 4s if still waiting */
-    const reconnectTimer = setTimeout(() => setShowReconnecting(true), 4000);
-
+    const reconnectTimer = setTimeout(()=>setShowReconnecting(true), 4000);
     try {
       let voiceMessageUrl:string|null=null;
       if (donationType==="voice"&&voiceRecorder.audioBlob) {
@@ -535,25 +497,16 @@ const Brigzard = () => {
         body:{ streamer_slug:"brigzard", name:formData.name, amount:Number(formData.amount), message:donationType==="text"?formData.message:null, voiceMessageUrl, hypersoundUrl:donationType==="hypersound"?selectedHypersound:null, mediaUrl:donationType==="media"?mediaUrl:null, mediaType, currency:selectedCurrency }
       });
       if (error) throw error;
-
-      clearTimeout(reconnectTimer);
-      setShowReconnecting(false);
-
+      clearTimeout(reconnectTimer); setShowReconnecting(false);
       new (window as any).Razorpay({
         key:data.razorpay_key_id, amount:data.amount, currency:data.currency, order_id:data.razorpay_order_id,
         name:"BRIGZARD", description:"Support BRIGZARD",
-        handler: () => {
-          playConfirm();
-          const url=`/status?order_id=${data.orderId}&status=success&st=${data.status_token}`;
-          setRedirectUrl(url);
-          setShowKillConfirmed(true);
-        },
+        handler:()=>{ playConfirm(); setRedirectUrl(`/status?order_id=${data.orderId}&status=success&st=${data.status_token}`); setShowKillConfirmed(true); },
         modal:{ondismiss:()=>navigate(`/status?order_id=${data.orderId}&status=pending&st=${data.status_token}`)},
         theme:{color:"#4a5c3e"},
       }).open();
     } catch {
-      clearTimeout(reconnectTimer);
-      setShowReconnecting(false);
+      clearTimeout(reconnectTimer); setShowReconnecting(false);
       playError(); push("Payment failed. Try again.","✖","err");
     } finally { setIsProcessingPayment(false); }
   };
@@ -573,17 +526,11 @@ const Brigzard = () => {
       <style dangerouslySetInnerHTML={{__html:STYLES}}/>
       <SmokeCanvas/>
 
-      {/* Kill Confirmed */}
-      {showKillConfirmed && (
-        <KillConfirmedOverlay
-          amount={formData.amount}
-          currency={currencySymbol}
-          onDone={() => navigate(redirectUrl)}
-        />
+      {showKillConfirmed&&(
+        <KillConfirmedOverlay amount={formData.amount} currency={currencySymbol} onDone={()=>navigate(redirectUrl)}/>
       )}
 
-      {/* Reconnecting HUD */}
-      {showReconnecting && (
+      {showReconnecting&&(
         <div className="bz-reconnecting">
           <div className="bz-rc-text">RECONNECTING</div>
           <div className="bz-rc-dots">
@@ -592,7 +539,6 @@ const Brigzard = () => {
         </div>
       )}
 
-      {/* Kill Feed */}
       <div className="bz-killfeed">
         {msgs.map(m=>(
           <div key={m.id} className={cn('bz-kf',m.variant==='err'?'bz-kf-err':m.variant==='warn'?'bz-kf-warn':'')}>
@@ -629,7 +575,7 @@ const Brigzard = () => {
               </div>
             </div>
 
-            {/* Operator Loadout Bar */}
+            {/* Loadout Bar */}
             <div className="bz-loadout">
               <div className="bz-rank-info">
                 <div className="bz-rank-badge">SGT</div>
@@ -641,11 +587,10 @@ const Brigzard = () => {
               </div>
             </div>
 
-            {/* FORM */}
             <form onSubmit={handleSubmit}>
               <div className="bz-body">
 
-                {/* Operator Callsign */}
+                {/* Callsign */}
                 <div>
                   <label className="bz-lbl">▸ Operator Callsign</label>
                   <div className="bz-iw"><Input name="name" value={formData.name} onChange={handleInputChange} placeholder="Enter your name" required/></div>
@@ -667,7 +612,7 @@ const Brigzard = () => {
                   </div>
                 </div>
 
-                {/* Deploy Credits (Amount) */}
+                {/* Deploy Credits */}
                 <div>
                   <label className="bz-lbl">▸ Deploy Credits</label>
                   <div className="bz-amt">
@@ -702,20 +647,18 @@ const Brigzard = () => {
                   {pricing.ttsEnabled&&<p className="bz-hint">⚡ TTS ENABLED ABOVE {currencySymbol}{pricing.minTts}</p>}
                 </div>
 
-                {/* Battle Pass Reward Tiers */}
+                {/* Battle Pass Tiers — rank + threshold only */}
                 {currentAmount > 0 && (
                   <div className="bz-fu">
-                    <label className="bz-lbl">▸ Battle Pass Tier</label>
-                    <div className="bz-rewards">
-                      {REWARD_TIERS.map((tier, i) => (
-                        <div key={i} className={cn('bz-reward-row', i === activeRewardIdx ? 'bz-reward-active' : '')}>
-                          <span style={{fontSize:12,flexShrink:0}}>{tier.emoji}</span>
-                          <div className="bz-reward-tier">{tier.label}</div>
-                          <div className="bz-reward-label">{tier.unlock}</div>
-                          <div className="bz-reward-unlock">
-                            {i <= activeRewardIdx ? `✓ UNLOCKED` : `${currencySymbol}${tier.min}+`}
+                    <label className="bz-lbl">▸ Rank Tier</label>
+                    <div className="bz-tiers">
+                      {TIERS.map((tier, i) => (
+                        <div key={i} className={cn('bz-tier', i === activeTierIdx ? 'bz-tier-active' : i < activeTierIdx ? 'bz-tier-done' : '')}>
+                          <span className="bz-tier-emoji">{tier.emoji}</span>
+                          <div className="bz-tier-rank">{tier.rank}</div>
+                          <div className="bz-tier-amt">
+                            {i < activeTierIdx ? '✓' : i === activeTierIdx ? `${currencySymbol}${tier.min}+` : `${currencySymbol}${tier.min}`}
                           </div>
-                          <div className="bz-reward-check">✓</div>
                         </div>
                       ))}
                     </div>
@@ -786,7 +729,7 @@ const Brigzard = () => {
                   </button>
                 </div>
 
-                <p style={{fontSize:8,fontWeight:600,color:'rgba(255,255,255,0.12)',textAlign:'center',lineHeight:1.6,fontFamily:'Orbitron,monospace',letterSpacing:'0.06em'}}>
+                <p style={{fontSize:8,fontWeight:600,color:'rgba(255,255,255,0.15)',textAlign:'center',lineHeight:1.6,fontFamily:'Orbitron,monospace',letterSpacing:'0.06em'}}>
                   PHONE NUMBERS COLLECTED BY RAZORPAY PER RBI REGULATIONS
                 </p>
                 <DonationPageFooter brandColor="#4a5c3e"/>
