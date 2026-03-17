@@ -156,6 +156,10 @@ serve(async (req) => {
     const body = await req.json();
     const tokenToValidate = authToken || body.authToken;
 
+    console.log("HEADER:", authToken);
+    console.log("BODY TOKEN:", body.authToken);
+    console.log("FINAL TOKEN:", tokenToValidate);
+
     if (!tokenToValidate) {
       return new Response(
         JSON.stringify({ error: "Missing auth token" }),
