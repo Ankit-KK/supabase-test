@@ -169,6 +169,7 @@ export const DONATION_TABLE_ID_MAP: Record<number, string> = {
   13: 'reyna_yadav_donations',
   14: 'slidey_playz_donations',
   15: 'eryx_donations',
+  16: 'gaming_with_latifa_donations',
 };
 
 // Reverse mapping: table name -> donation_table_id
