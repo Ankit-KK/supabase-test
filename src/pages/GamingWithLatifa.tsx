@@ -36,13 +36,15 @@ const STYLES = `
 
   .lf-root {
     font-family: 'Nunito', sans-serif;
-    width: 100vw; min-height: 100dvh;
+    width: 100vw; min-height: 100dvh; display: flex; flex-direction: column; align-items: center;
     background: var(--lf-bg);
-    overflow-x: hidden; overflow-y: auto;
+    overflow-x: hidden; overflow-y: auto; display: flex; flex-direction: column; align-items: center; background: var(--lf-bg);
     position: relative;
   }
 
   /* ── Hero Section — full width photo ── */
+  .lf-inner { width: 100%; max-width: 480px; }
+
   .lf-hero {
     position: relative;
     width: 100%; height: 55vw; max-height: 340px; min-height: 240px;
@@ -51,7 +53,7 @@ const STYLES = `
 
   .lf-hero-img {
     width: 100%; height: 100%;
-    object-fit: cover; object-position: center 15%;
+    object-fit: cover; object-position: center 35%;
     display: block;
   }
 
@@ -498,7 +500,7 @@ const GamingWithLatifa = () => {
         ))}
       </div>
 
-      <div className="lf-root">
+      <div className="lf-root"><div className="lf-inner">
 
         {/* ── HERO — full width photo ── */}
         <div className="lf-hero">
@@ -674,7 +676,8 @@ const GamingWithLatifa = () => {
             <DonationPageFooter brandColor="#a855f7"/>
           </div>
         </form>
-      </div>
+      </div>{/* lf-inner */}
+      </div>{/* lf-root */}
     </>
   );
 };
