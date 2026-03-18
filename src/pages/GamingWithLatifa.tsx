@@ -365,11 +365,11 @@ const SuccessOverlay: React.FC<{amount:string;currency:string;onDone:()=>void}> 
       <div className="lf-success-scan"/>
       <div className="lf-conf-wrap">{conf.map((c,i)=><div key={i} className="lf-conf-piece" style={{left:c.left,top:c.top,background:c.bg,animationDelay:c.delay,animationDuration:c.dur,width:c.size,height:c.size}}/>)}</div>
       <div className="lf-success-emoji">🎯</div>
-      <div className="lf-success-title">Support Confirmed</div>
-      <div className="lf-success-sub">Mission Accomplished</div>
+      <div className="lf-success-title">Thank You!</div>
+      <div className="lf-success-sub">Latifa loves you for this 💜</div>
       <div className="lf-success-amount">{currency}{amount} Deployed</div>
       <div className="lf-success-bar-wrap"><div className="lf-success-bar"/></div>
-      <div className="lf-success-redirect">▸ Redirecting to debrief...</div>
+      <div className="lf-success-redirect">Taking you to confirmation...</div>
     </div>
   );
 };
@@ -447,18 +447,18 @@ const GamingWithLatifa = () => {
     e.preventDefault();
     if(!razorpayLoaded||!(window as any).Razorpay){ playError(); push("Payment system loading","⚠","warn"); return; }
     const amount=Number(formData.amount);
-    if(!formData.name){ playError(); push("Name required","✖","err"); return; }
-    if(!amount||amount<=0){ playError(); push("Enter a valid amount","✖","err"); return; }
+    if(!formData.name){ playError(); push("Tell us your name first","✖","err"); return; }
+    if(!amount||amount<=0){ playError(); push("Enter an amount first","✖","err"); return; }
     const min=donationType==="voice"?pricing.minVoice:donationType==="hypersound"?pricing.minHypersound:donationType==="media"?pricing.minMedia:pricing.minText;
     if(amount<min){ playError(); push(`Min for ${donationType}: ${currencySymbol}${min}`,"✖","err"); return; }
-    if(donationType==="voice"&&!voiceRecorder.audioBlob){ playError(); push("Record voice message first","⚠","warn"); return; }
+    if(donationType==="voice"&&!voiceRecorder.audioBlob){ playError(); push("Record your voice message first","⚠","warn"); return; }
     if(donationType==="hypersound"&&!selectedHypersound){ playError(); push("Select a sound","⚠","warn"); return; }
     if(donationType==="media"&&!mediaUrl){ playError(); push("Upload a media file","⚠","warn"); return; }
     await processPayment();
   };
 
   const processPayment=async()=>{
-    setIsProcessing(true); push("Initiating payment...","◈","default");
+    setIsProcessing(true); push("Getting things ready...","◈","default");
     try{
       let voiceMessageUrl:string|null=null;
       if(donationType==="voice"&&voiceRecorder.audioBlob){
@@ -526,13 +526,13 @@ const GamingWithLatifa = () => {
                   </div>
                 </div>
                 <div className="lf-name-section">
-                  <div className="lf-ambassador-tag">Brand Ambassador</div>
+                  
                   <div className="lf-big-name">
                     {dispPre}
                     {dispSuf&&<span className="lf-big-name-pink">{dispSuf}</span>}
                     {!done&&<span className="lf-name-cursor"/>}
                   </div>
-                  <div className="lf-tagline">Support · Drop · Deploy</div>
+                  <div className="lf-tagline">Drop in and show some love 💜</div>
                 </div>
                 <div className="lf-stats">
                   <div className="lf-stat"><span className="lf-stat-val">BGMI</span><span className="lf-stat-lbl">Game</span></div>
@@ -546,12 +546,12 @@ const GamingWithLatifa = () => {
                 <div className="lf-body">
 
                   <div>
-                    <label className="lf-lbl">▸ Operator Name</label>
-                    <div className="lf-iw"><Input name="name" value={formData.name} onChange={handleInputChange} placeholder="Enter your name" required/></div>
+                    <label className="lf-lbl">▸ Your Name</label>
+                    <div className="lf-iw"><Input name="name" value={formData.name} onChange={handleInputChange} placeholder="What do we call you?" required/></div>
                   </div>
 
                   <div>
-                    <label className="lf-lbl">▸ Mission Type</label>
+                    <label className="lf-lbl">▸ Support Type</label>
                     <div className="lf-types">
                       {TYPES.map(t=>(
                         <button key={t.key} type="button" onClick={()=>handleTypeChange(t.key)} className={cn('lf-tb',t.tc,donationType===t.key?'lf-on':'')}>
@@ -566,7 +566,7 @@ const GamingWithLatifa = () => {
                   </div>
 
                   <div>
-                    <label className="lf-lbl">▸ Deploy Amount</label>
+                    <label className="lf-lbl">▸ Amount</label>
                     <div className="lf-amt">
                       <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
                         <PopoverTrigger asChild>
@@ -597,17 +597,17 @@ const GamingWithLatifa = () => {
                   {donationType==="text"&&(
                     <div className="lf-fu">
                       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}}>
-                        <label className="lf-lbl" style={{margin:0}}>▸ Intel Message</label>
+                        <label className="lf-lbl" style={{margin:0}}>▸ Your Message</label>
                         <span style={{fontSize:9,fontWeight:700,color:msgClr,fontFamily:'Orbitron,monospace',letterSpacing:'0.08em'}}>{formData.message.length}/{maxMsgLen}</span>
                       </div>
-                      <textarea name="message" value={formData.message} onChange={handleInputChange} placeholder="Your message (optional)" className="lf-ta" rows={2} maxLength={maxMsgLen}/>
+                      <textarea name="message" value={formData.message} onChange={handleInputChange} placeholder="Say something to Latifa!" className="lf-ta" rows={2} maxLength={maxMsgLen}/>
                       <div className="lf-cbar"><div className="lf-cbar-fill" style={{width:`${msgPct}%`,background:msgClr,boxShadow:`0 0 5px ${msgClr}`}}/></div>
                     </div>
                   )}
 
                   {donationType==="voice"&&(
                     <div className="lf-fu">
-                      <label className="lf-lbl">▸ Voice Transmission</label>
+                      <label className="lf-lbl">▸ Voice Message</label>
                       <div className="lf-sp lf-sp-pk">
                         <EnhancedVoiceRecorder controller={voiceRecorder} onRecordingComplete={()=>{}} maxDurationSeconds={getVoiceDur(currentAmount)} requiredAmount={pricing.minVoice} currentAmount={currentAmount} brandColor="#a855f7"/>
                       </div>
@@ -639,7 +639,7 @@ const GamingWithLatifa = () => {
                   <div className="lf-btn-wrap">
                     <button type="submit" className="lf-btn" disabled={isProcessing}>
                       {isProcessing?(
-                        <span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:9}}><span className="lf-spinner"/> DEPLOYING...</span>
+                        <span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:9}}><span className="lf-spinner"/> SENDING...</span>
                       ):(
                         <span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8}}><Heart style={{width:14,height:14}}/> SUPPORT {currencySymbol}{formData.amount||'0'}</span>
                       )}
