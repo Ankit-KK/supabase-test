@@ -6,7 +6,6 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Check, ChevronsUpDown, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import EnhancedVoiceRecorder from "@/components/EnhancedVoiceRecorder";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import HyperSoundSelector from "@/components/HyperSoundSelector";
@@ -23,10 +22,8 @@ const STYLES = `
   :root {
     --lf-purple:      #a855f7;
     --lf-purple-dark: #7c3aed;
-    --lf-purple-dim:  #3b1570;
     --lf-pink:        #f472b6;
     --lf-pink-dark:   #db2777;
-    --lf-pink-dim:    #6b1040;
     --lf-cyan:        #e879f9;
     --lf-bg:          #08050f;
     --lf-card:        #0e0a1a;
@@ -44,10 +41,8 @@ const STYLES = `
     overflow: hidden; position: relative;
   }
 
-  /* ── Canvas ── */
   .lf-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.4; }
 
-  /* ── Atmospheric glow ── */
   .lf-atm {
     position: fixed; inset: 0; pointer-events: none; z-index: 1;
     background:
@@ -56,31 +51,57 @@ const STYLES = `
       radial-gradient(ellipse 40% 30% at 50% 50%, rgba(168,85,247,0.06) 0%, transparent 60%);
   }
 
-  /* ── Grid ── */
   .lf-grid {
     position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: 0.04;
     background-image: linear-gradient(rgba(168,85,247,1) 1px, transparent 1px), linear-gradient(90deg, rgba(168,85,247,1) 1px, transparent 1px);
     background-size: 40px 40px;
   }
 
-  /* ── Scanlines ── */
   .lf-scanlines {
     position: fixed; inset: 0; pointer-events: none; z-index: 2;
     background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.05) 2px, rgba(0,0,0,0.05) 4px);
   }
 
-  /* ── Scale wrap ── */
   .lf-scale-wrap { width: 420px; transform-origin: top center; position: relative; z-index: 10; }
 
-  /* ── Parachute drop entrance ── */
-  @keyframes lf-drop {
-    0%   { opacity: 0; transform: translateY(-140px) scale(0.95); }
-    55%  { opacity: 1; transform: translateY(14px) scale(1.01); }
-    72%  { transform: translateY(-7px) scale(0.99); }
-    85%  { transform: translateY(4px) scale(1.005); }
-    100% { transform: translateY(0) scale(1); opacity: 1; }
+  /* ── Scanline reveal ── */
+  .lf-reveal-wrap {
+    position: relative;
+    /* clip reveals card top→bottom */
+    animation: lf-reveal-clip 0.9s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both;
   }
-  .lf-drop-in { animation: lf-drop 1s cubic-bezier(0.22,1,0.36,1) both; }
+  @keyframes lf-reveal-clip {
+    0%   { clip-path: inset(0 0 100% 0); }
+    100% { clip-path: inset(0 0 0% 0); }
+  }
+
+  /* The glowing scanline that sweeps downward */
+  .lf-reveal-line {
+    position: absolute;
+    left: 0; right: 0;
+    height: 3px;
+    z-index: 200;
+    pointer-events: none;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(168,85,247,0.4) 15%,
+      rgba(244,114,182,0.9) 40%,
+      #fff 50%,
+      rgba(244,114,182,0.9) 60%,
+      rgba(168,85,247,0.4) 85%,
+      transparent 100%
+    );
+    box-shadow:
+      0 0 8px rgba(244,114,182,0.8),
+      0 0 20px rgba(168,85,247,0.6),
+      0 0 40px rgba(168,85,247,0.3);
+    animation: lf-scanline-sweep 0.9s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both;
+  }
+  @keyframes lf-scanline-sweep {
+    0%   { top: 0%;   opacity: 1; }
+    85%  { top: 100%; opacity: 1; }
+    100% { top: 100%; opacity: 0; }
+  }
 
   /* ── Card ── */
   .lf-card {
@@ -101,7 +122,6 @@ const STYLES = `
     background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.025) 3px, rgba(0,0,0,0.025) 4px);
   }
 
-  /* Corner brackets */
   .lf-bracket { position: absolute; width: 14px; height: 14px; z-index: 101; pointer-events: none; }
   .lf-bracket-tl { top: 5px; left: 5px; border-top: 1.5px solid var(--lf-purple); border-left: 1.5px solid var(--lf-purple); opacity: 0.7; }
   .lf-bracket-tr { top: 5px; right: 28px; border-top: 1.5px solid var(--lf-purple); border-right: 1.5px solid var(--lf-purple); opacity: 0.7; }
@@ -116,30 +136,23 @@ const STYLES = `
     background: linear-gradient(135deg, rgba(124,58,237,0.2) 0%, rgba(168,85,247,0.12) 50%, rgba(244,114,182,0.08) 100%);
     border-bottom: 1px solid rgba(168,85,247,0.25);
   }
-
-  /* Animated top border */
   .lf-hero::before {
     content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
     background: linear-gradient(90deg, var(--lf-purple-dark), var(--lf-purple), var(--lf-pink), var(--lf-cyan), var(--lf-purple), var(--lf-purple-dark));
     background-size: 200% 100%; animation: lf-shift 4s linear infinite;
     box-shadow: 0 0 10px var(--lf-purple), 0 0 22px rgba(244,114,182,0.4);
   }
-
   .lf-hero::after {
     content: ''; position: absolute; bottom: 0; right: 0;
     width: 0; height: 0; border-style: solid;
     border-width: 0 0 20px 20px;
     border-color: transparent transparent rgba(168,85,247,0.2) transparent;
   }
-
   @keyframes lf-shift { 0%{background-position:0%} 100%{background-position:200%} }
 
-  .lf-hero-blob {
-    position: absolute; top: -40px; right: -40px; width: 160px; height: 160px;
-    border-radius: 50%; background: radial-gradient(circle, rgba(124,58,237,0.3) 0%, transparent 65%); pointer-events: none;
-  }
+  .lf-hero-blob { position: absolute; top: -40px; right: -40px; width: 160px; height: 160px; border-radius: 50%; background: radial-gradient(circle, rgba(124,58,237,0.3) 0%, transparent 65%); pointer-events: none; }
 
-  /* ── Animated ring ── */
+  /* ── Ring ── */
   .lf-ring-wrap { position: relative; width: 72px; height: 72px; flex-shrink: 0; }
   .lf-ring { position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid transparent; }
   .lf-ring-1 { border-color: var(--lf-purple); animation: lf-spin 3s linear infinite; box-shadow: 0 0 12px rgba(168,85,247,0.55); }
@@ -156,22 +169,15 @@ const STYLES = `
   @keyframes lf-spin { to{transform:rotate(360deg);} }
   @keyframes lf-dot-pulse { 0%,100%{transform:translate(-50%,-50%) scale(1);} 50%{transform:translate(-50%,-50%) scale(1.2);} }
 
-  /* Name + typewriter */
+  /* Typewriter name */
   .lf-operator-tag { display: flex; flex-direction: column; position: relative; z-index: 1; flex: 1; }
   .lf-tag-prefix { font-family:'Orbitron',monospace; font-size:8px; font-weight:700; color:rgba(168,85,247,0.5); letter-spacing:0.25em; text-transform:uppercase; margin-bottom:3px; }
-
   @keyframes lf-cursor-blink { 0%,100%{opacity:1;} 50%{opacity:0;} }
-  .lf-name {
-    font-family: 'Black Ops One', cursive; font-size: 22px; font-weight: 400;
-    color: #fff; line-height: 1.1; letter-spacing: 0.04em;
-    text-shadow: 0 0 18px rgba(168,85,247,0.4), 0 0 35px rgba(244,114,182,0.2);
-    min-height: 50px;
-  }
+  .lf-name { font-family:'Black Ops One',cursive; font-size:22px; font-weight:400; color:#fff; line-height:1.1; letter-spacing:0.04em; text-shadow:0 0 18px rgba(168,85,247,0.4),0 0 35px rgba(244,114,182,0.2); min-height:50px; }
   .lf-name-pink { color: var(--lf-pink); text-shadow: 0 0 14px rgba(244,114,182,0.6); }
-  .lf-name-cursor { display: inline-block; width: 2px; height: 20px; background: var(--lf-pink); margin-left: 2px; vertical-align: middle; animation: lf-cursor-blink .7s ease-in-out infinite; }
+  .lf-name-cursor { display:inline-block; width:2px; height:20px; background:var(--lf-pink); margin-left:2px; vertical-align:middle; animation:lf-cursor-blink .7s ease-in-out infinite; }
   .lf-hero-sub { font-size:9px; font-weight:600; color:rgba(233,213,255,0.28); margin-top:5px; letter-spacing:0.18em; text-transform:uppercase; font-family:'Orbitron',monospace; }
 
-  /* Live badge */
   @keyframes lf-pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
   .lf-live { display:inline-flex; align-items:center; gap:5px; background:rgba(168,85,247,0.12); border:1px solid rgba(168,85,247,0.45); padding:4px 10px; flex-shrink:0; position:relative; z-index:1; clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%); }
   .lf-live-dot { width:5px; height:5px; border-radius:50%; background:var(--lf-purple); animation:lf-pulse 1.2s ease-in-out infinite; }
@@ -181,16 +187,8 @@ const STYLES = `
   .lf-body { padding:14px 18px 16px; display:flex; flex-direction:column; gap:12px; }
   .lf-lbl { font-family:'Orbitron',monospace; font-size:8px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; display:block; margin-bottom:6px; color:rgba(168,85,247,0.65); }
 
-  /* ── Inputs ── */
-  .lf-iw { position: relative; }
-  .lf-iw input {
-    width:100% !important; background:rgba(168,85,247,0.05) !important;
-    border:1px solid rgba(168,85,247,0.28) !important; border-radius:2px !important;
-    color:var(--lf-text) !important; font-family:'Rajdhani',sans-serif !important;
-    font-size:15px !important; font-weight:600 !important; padding:9px 12px !important;
-    outline:none !important; transition:all .15s !important; caret-color:var(--lf-pink);
-    letter-spacing:0.04em !important;
-  }
+  .lf-iw { position:relative; }
+  .lf-iw input { width:100% !important; background:rgba(168,85,247,0.05) !important; border:1px solid rgba(168,85,247,0.28) !important; border-radius:2px !important; color:var(--lf-text) !important; font-family:'Rajdhani',sans-serif !important; font-size:15px !important; font-weight:600 !important; padding:9px 12px !important; outline:none !important; transition:all .15s !important; caret-color:var(--lf-pink); letter-spacing:0.04em !important; }
   .lf-iw input:focus { border-color:var(--lf-purple) !important; background:rgba(168,85,247,0.09) !important; box-shadow:0 0 0 2px rgba(168,85,247,0.15),0 0 14px rgba(168,85,247,0.1) !important; }
   .lf-iw input::placeholder { color:rgba(233,213,255,0.2) !important; }
   .lf-iw input:disabled,.lf-iw input[readonly] { opacity:.35 !important; cursor:not-allowed !important; }
@@ -210,22 +208,18 @@ const STYLES = `
   .lf-tb-face { position:relative; z-index:2; padding:10px 4px 9px; text-align:center; transition:transform .1s ease,box-shadow .1s ease; transform:translateY(-4px); clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px)); }
   .lf-tb::after { content:''; position:absolute; bottom:0; left:0; right:0; height:calc(100% - 2px); z-index:1; clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px)); }
 
-  /* Purple */
   .lf-tb-pu .lf-tb-face { background:linear-gradient(160deg,rgba(168,85,247,0.18),rgba(100,30,180,0.5)); border:1px solid rgba(168,85,247,0.5); box-shadow:inset 0 1px 0 rgba(255,255,255,0.12); }
   .lf-tb-pu::after { background:#2e1060; }
   .lf-tb-pu.lf-on .lf-tb-face { transform:translateY(0); background:linear-gradient(160deg,rgba(168,85,247,0.32),rgba(124,58,237,0.6)); border-color:var(--lf-purple); box-shadow:inset 0 2px 5px rgba(0,0,0,0.35),0 0 18px rgba(168,85,247,0.75),0 0 36px rgba(168,85,247,0.28); }
 
-  /* Pink */
   .lf-tb-pk .lf-tb-face { background:linear-gradient(160deg,rgba(244,114,182,0.18),rgba(180,30,120,0.5)); border:1px solid rgba(244,114,182,0.5); box-shadow:inset 0 1px 0 rgba(255,255,255,0.12); }
   .lf-tb-pk::after { background:#5a0e35; }
   .lf-tb-pk.lf-on .lf-tb-face { transform:translateY(0); background:linear-gradient(160deg,rgba(244,114,182,0.32),rgba(219,39,119,0.6)); border-color:var(--lf-pink); box-shadow:inset 0 2px 5px rgba(0,0,0,0.3),0 0 18px rgba(244,114,182,0.75),0 0 36px rgba(244,114,182,0.28); }
 
-  /* Cyan/Magenta */
   .lf-tb-cy .lf-tb-face { background:linear-gradient(160deg,rgba(232,121,249,0.18),rgba(160,30,200,0.5)); border:1px solid rgba(232,121,249,0.5); box-shadow:inset 0 1px 0 rgba(255,255,255,0.12); }
   .lf-tb-cy::after { background:#460e5a; }
   .lf-tb-cy.lf-on .lf-tb-face { transform:translateY(0); background:linear-gradient(160deg,rgba(232,121,249,0.32),rgba(192,38,211,0.6)); border-color:var(--lf-cyan); box-shadow:inset 0 2px 5px rgba(0,0,0,0.3),0 0 18px rgba(232,121,249,0.75),0 0 36px rgba(232,121,249,0.28); }
 
-  /* Deep purple */
   .lf-tb-dp .lf-tb-face { background:linear-gradient(160deg,rgba(139,92,246,0.18),rgba(80,20,160,0.5)); border:1px solid rgba(139,92,246,0.5); box-shadow:inset 0 1px 0 rgba(255,255,255,0.12); }
   .lf-tb-dp::after { background:#260c50; }
   .lf-tb-dp.lf-on .lf-tb-face { transform:translateY(0); background:linear-gradient(160deg,rgba(139,92,246,0.32),rgba(109,40,217,0.6)); border-color:#8b5cf6; box-shadow:inset 0 2px 5px rgba(0,0,0,0.3),0 0 18px rgba(139,92,246,0.75),0 0 36px rgba(139,92,246,0.28); }
@@ -233,11 +227,10 @@ const STYLES = `
   .lf-tb:active .lf-tb-face { transform:translateY(0) !important; }
   .lf-tb:hover .lf-tb-face { filter:brightness(1.1); }
   .lf-tb-emoji { font-size:17px; display:block; line-height:1; }
-  .lf-tb-name { font-family:'Orbitron',monospace; font-size:7px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; display:block; margin-top:4px; color:rgba(233,213,255,0.4); transition:color .15s,text-shadow .15s; }
+  .lf-tb-name { font-family:'Orbitron',monospace; font-size:7px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; display:block; margin-top:4px; color:rgba(233,213,255,0.4); transition:color .15s; }
   .lf-tb.lf-on .lf-tb-name { color:#fff; text-shadow:0 0 8px rgba(255,255,255,0.5); }
   .lf-tb-min { font-size:7px; font-weight:600; color:rgba(244,114,182,0.6); display:block; margin-top:2px; font-family:'Rajdhani',sans-serif; }
 
-  /* ── Amount ── */
   .lf-amt { display:flex; gap:7px; }
   .lf-cur { display:flex; align-items:center; justify-content:space-between; gap:4px; background:rgba(168,85,247,0.05) !important; border:1px solid rgba(168,85,247,0.28) !important; border-radius:2px !important; color:var(--lf-text) !important; font-family:'Rajdhani',sans-serif !important; font-size:13px !important; font-weight:700 !important; padding:0 10px !important; min-width:90px; height:40px; cursor:pointer; transition:all .15s; flex-shrink:0; letter-spacing:0.04em !important; }
   .lf-cur:hover { border-color:var(--lf-purple) !important; }
@@ -245,7 +238,6 @@ const STYLES = `
   .lf-div { height:1px; background:linear-gradient(90deg,transparent,rgba(168,85,247,0.4),rgba(244,114,182,0.2),transparent); position:relative; }
   .lf-div::before { content:'◆'; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); font-size:6px; color:rgba(244,114,182,0.5); }
 
-  /* Sub panels */
   .lf-sp { padding:10px 12px; position:relative; }
   .lf-sp::before,.lf-sp::after { content:''; position:absolute; width:10px; height:10px; pointer-events:none; }
   .lf-sp::before { top:0; left:0; border-top:1px solid var(--lf-purple); border-left:1px solid var(--lf-purple); opacity:0.45; }
@@ -254,20 +246,10 @@ const STYLES = `
   .lf-sp-pk { background:rgba(244,114,182,0.05); border:1px solid rgba(244,114,182,0.28); }
   .lf-sp-cy { background:rgba(232,121,249,0.05); border:1px solid rgba(232,121,249,0.28); }
 
-  /* ── 3D Donate Button ── */
+  /* ── 3D Button ── */
   .lf-btn-wrap { position:relative; width:100%; border-radius:3px; padding-bottom:6px; }
   .lf-btn-wrap::after { content:''; position:absolute; bottom:0; left:0; right:0; height:calc(100% - 4px); border-radius:3px; z-index:1; background:linear-gradient(90deg,#2e0e6a,#3d1490,#2a0c6a); clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px)); }
-  .lf-btn {
-    position:relative; z-index:2; width:100%; padding:14px; border:none; cursor:pointer;
-    font-family:'Black Ops One',cursive; font-size:13px; font-weight:400;
-    letter-spacing:.1em; color:#fff;
-    border-radius:3px; transition:transform .1s ease,box-shadow .1s ease; transform:translateY(-6px);
-    background:linear-gradient(135deg,var(--lf-purple-dark) 0%,var(--lf-purple) 50%,var(--lf-pink-dark) 100%);
-    border-top:1.5px solid rgba(255,255,255,0.18); border-left:1.5px solid rgba(255,255,255,0.08);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),0 0 22px rgba(168,85,247,0.6),0 0 45px rgba(168,85,247,0.2);
-    overflow:hidden;
-    clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px));
-  }
+  .lf-btn { position:relative; z-index:2; width:100%; padding:14px; border:none; cursor:pointer; font-family:'Black Ops One',cursive; font-size:13px; font-weight:400; letter-spacing:.1em; color:#fff; border-radius:3px; transition:transform .1s ease,box-shadow .1s ease; transform:translateY(-6px); background:linear-gradient(135deg,var(--lf-purple-dark) 0%,var(--lf-purple) 50%,var(--lf-pink-dark) 100%); border-top:1.5px solid rgba(255,255,255,0.18); border-left:1.5px solid rgba(255,255,255,0.08); box-shadow:inset 0 1px 0 rgba(255,255,255,0.15),0 0 22px rgba(168,85,247,0.6),0 0 45px rgba(168,85,247,0.2); overflow:hidden; clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px)); }
   .lf-btn:hover:not(:disabled) { box-shadow:inset 0 1px 0 rgba(255,255,255,0.22),0 0 35px rgba(168,85,247,0.8),0 0 65px rgba(244,114,182,0.35); transform:translateY(-7px); }
   .lf-btn:active:not(:disabled) { transform:translateY(0) !important; box-shadow:inset 0 2px 8px rgba(0,0,0,0.5) !important; }
   .lf-btn:disabled { opacity:.35; cursor:not-allowed; }
@@ -282,20 +264,17 @@ const STYLES = `
   @keyframes lf-spin-a { to{transform:rotate(360deg);} }
   .lf-spinner { width:13px; height:13px; border:1.5px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; display:inline-block; animation:lf-spin-a .65s linear infinite; }
 
-  @keyframes lf-in { from{opacity:0;transform:scale(0.97) translateY(8px);} to{opacity:1;transform:scale(1) translateY(0);} }
-  .lf-in { animation:lf-in .45s cubic-bezier(0.22,1,0.36,1) both; }
-
   /* ── Success Overlay ── */
   @keyframes lf-ov-in  { from{opacity:0;} to{opacity:1;} }
   @keyframes lf-ov-out { from{opacity:1;} to{opacity:0;} }
   @keyframes lf-pop    { 0%{transform:scale(0.4);opacity:0;} 65%{transform:scale(1.1);} 100%{transform:scale(1);opacity:1;} }
   @keyframes lf-conf   { 0%{transform:translateY(0) rotate(0deg);opacity:1;} 100%{transform:translateY(100px) rotate(720deg);opacity:0;} }
   @keyframes lf-bar-fill { from{width:0;} to{width:100%;} }
-  @keyframes lf-scan { 0%{top:-5%;} 100%{top:110%;} }
+  @keyframes lf-scan-ov { 0%{top:-5%;} 100%{top:110%;} }
 
   .lf-success-overlay { position:fixed; inset:0; z-index:99999; background:rgba(5,3,12,0.96); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; animation:lf-ov-in .3s ease forwards; }
   .lf-success-overlay.lf-ov-exit { animation:lf-ov-out .4s ease forwards; }
-  .lf-success-scanline { position:absolute; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,rgba(168,85,247,0.5),rgba(244,114,182,0.4),transparent); animation:lf-scan 2s linear infinite; pointer-events:none; }
+  .lf-success-scanline { position:absolute; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,rgba(168,85,247,0.5),rgba(244,114,182,0.4),transparent); animation:lf-scan-ov 2s linear infinite; pointer-events:none; }
   .lf-conf-wrap { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
   .lf-conf-piece { position:absolute; border-radius:2px; animation:lf-conf 1.6s ease-out both; }
   .lf-success-emoji { font-size:64px; animation:lf-pop .5s cubic-bezier(0.22,1,0.36,1) .1s both; }
@@ -351,37 +330,34 @@ const ParticleCanvas: React.FC = () => {
 };
 
 /* ── Typewriter hook ── */
-const useTypewriter = (text:string, speed=55, delay=700) => {
+const useTypewriter = (text:string, speed=55, delay=500) => {
   const [displayed, setDisplayed] = useState('');
   const [done, setDone] = useState(false);
   useEffect(() => {
     setDisplayed(''); setDone(false); let i=0;
-    const t = setTimeout(() => {
-      const iv = setInterval(() => {
-        i++; setDisplayed(text.slice(0,i));
-        if (i>=text.length) { clearInterval(iv); setDone(true); }
-      }, speed);
+    const t=setTimeout(()=>{
+      const iv=setInterval(()=>{ i++; setDisplayed(text.slice(0,i)); if (i>=text.length) { clearInterval(iv); setDone(true); } },speed);
       return ()=>clearInterval(iv);
-    }, delay);
+    },delay);
     return ()=>clearTimeout(t);
-  }, [text]);
+  },[text]);
   return { displayed, done };
 };
 
 /* ── Parallax hook ── */
 const useParallax = (ref: React.RefObject<HTMLDivElement>) => {
   useEffect(() => {
-    const el = ref.current; if (!el) return;
-    const onMove = (e:MouseEvent) => {
+    const el=ref.current; if (!el) return;
+    const onMove=(e:MouseEvent)=>{
       const cx=window.innerWidth/2; const cy=window.innerHeight/2;
       const rx=(e.clientY-cy)/cy*5; const ry=-(e.clientX-cx)/cx*5;
       el.style.transform=`perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg)`;
     };
-    const onLeave = () => { el.style.transform='perspective(900px) rotateX(0deg) rotateY(0deg)'; };
+    const onLeave=()=>{ el.style.transform='perspective(900px) rotateX(0deg) rotateY(0deg)'; };
     window.addEventListener('mousemove',onMove);
     window.addEventListener('mouseleave',onLeave);
     return ()=>{ window.removeEventListener('mousemove',onMove); window.removeEventListener('mouseleave',onLeave); };
-  }, []);
+  },[]);
 };
 
 /* ── Success Overlay ── */
@@ -390,13 +366,12 @@ const SuccessOverlay: React.FC<{ amount:string; currency:string; onDone:()=>void
   const confetti = Array.from({length:28},(_,i)=>({
     left:`${Math.random()*100}%`, top:`${5+Math.random()*45}%`,
     bg:['#a855f7','#f472b6','#e879f9','#c084fc','#f9a8d4','#7c3aed'][i%6],
-    delay:`${Math.random()*0.5}s`, dur:`${1.3+Math.random()*0.8}s`,
-    size:`${7+Math.random()*6}px`,
+    delay:`${Math.random()*0.5}s`, dur:`${1.3+Math.random()*0.8}s`, size:`${7+Math.random()*6}px`,
   }));
-  useEffect(() => {
+  useEffect(()=>{
     const t=setTimeout(()=>{ ref.current?.classList.add('lf-ov-exit'); setTimeout(onDone,400); },3000);
     return ()=>clearTimeout(t);
-  }, [onDone]);
+  },[onDone]);
   return (
     <div ref={ref} className="lf-success-overlay">
       <div className="lf-success-scanline"/>
@@ -407,7 +382,7 @@ const SuccessOverlay: React.FC<{ amount:string; currency:string; onDone:()=>void
       </div>
       <div className="lf-success-emoji">🎯</div>
       <div className="lf-success-title">Support Confirmed</div>
-      <div className="lf-success-sub">Mission accomplished</div>
+      <div className="lf-success-sub">Mission Accomplished</div>
       <div className="lf-success-amount">{currency}{amount} Deployed</div>
       <div className="lf-success-bar-wrap"><div className="lf-success-bar"/></div>
       <div className="lf-success-redirect">▸ Redirecting to debrief...</div>
@@ -423,7 +398,7 @@ const useKillFeed = () => {
   const push = useCallback((text:string, icon='✦', variant:KFMsg['variant']='default') => {
     const id=++kfId; setMsgs(p=>[...p,{id,text,icon,variant}]);
     setTimeout(()=>setMsgs(p=>p.filter(m=>m.id!==id)),3200);
-  }, []);
+  },[]);
   return { msgs, push };
 };
 
@@ -456,7 +431,7 @@ const GamingWithLatifa = () => {
   const currentAmount    = parseFloat(formData.amount) || 0;
   const maxMessageLength = getMaxMessageLength(pricing.messageCharTiers, currentAmount);
 
-  const { displayed, done } = useTypewriter("Gaming With Latifa", 55, 700);
+  const { displayed, done } = useTypewriter("Gaming With Latifa", 55, 1000);
   useParallax(cardRef);
 
   const getVoiceDuration = (amount:number) => {
@@ -465,14 +440,14 @@ const GamingWithLatifa = () => {
   };
   const voiceRecorder = useVoiceRecorder(getVoiceDuration(currentAmount));
 
-  const applyScale = useCallback(() => {
+  const applyScale = useCallback(()=>{
     const wrap=wrapRef.current; const card=cardRef.current; if (!wrap||!card) return;
     const scaleW=Math.min(1,(window.innerWidth-32)/420);
     const scaleH=card.scrollHeight>0?Math.min(1,(window.innerHeight-48)/card.scrollHeight):1;
     const scale=Math.min(scaleW,scaleH);
     wrap.style.height=`${card.scrollHeight*scale}px`;
     wrap.style.transform=`scale(${scale})`;
-  }, []);
+  },[]);
 
   useEffect(()=>{ const t=setTimeout(applyScale,80); window.addEventListener('resize',applyScale); return ()=>{ clearTimeout(t); window.removeEventListener('resize',applyScale); }; },[applyScale]);
   useEffect(()=>{ const t=setTimeout(applyScale,60); return ()=>clearTimeout(t); },[donationType,applyScale]);
@@ -485,18 +460,18 @@ const GamingWithLatifa = () => {
     return ()=>{ if (document.body.contains(s)) document.body.removeChild(s); };
   },[]);
 
-  const handleInputChange = (e:React.ChangeEvent<HTMLInputElement|HTMLTextAreaElement>) => {
+  const handleInputChange=(e:React.ChangeEvent<HTMLInputElement|HTMLTextAreaElement>)=>{
     const {name,value}=e.target; setFormData(prev=>({...prev,[name]:value}));
   };
 
-  const handleDonationTypeChange = (value:"text"|"voice"|"hypersound"|"media") => {
+  const handleDonationTypeChange=(value:"text"|"voice"|"hypersound"|"media")=>{
     playClick(); setDonationType(value);
     const amount=value==="voice"?pricing.minVoice:value==="hypersound"?pricing.minHypersound:value==="media"?pricing.minMedia:pricing.minText;
     setFormData({name:formData.name,amount:String(amount),message:""});
     setSelectedHypersound(null); setMediaUrl(null); setMediaType(null);
   };
 
-  const handleSubmit = async (e:React.FormEvent) => {
+  const handleSubmit=async(e:React.FormEvent)=>{
     e.preventDefault();
     if (!razorpayLoaded||!(window as any).Razorpay) { playError(); push("Payment system loading","⚠","warn"); return; }
     const amount=Number(formData.amount);
@@ -510,7 +485,7 @@ const GamingWithLatifa = () => {
     await processPayment();
   };
 
-  const processPayment = async () => {
+  const processPayment=async()=>{
     setIsProcessingPayment(true);
     push("Initiating payment...","◈","default");
     try {
@@ -540,7 +515,6 @@ const GamingWithLatifa = () => {
   const msgPct=maxMessageLength>0?(formData.message.length/maxMessageLength)*100:0;
   const msgClr=msgPct>90?'#ef4444':msgPct>70?'var(--lf-pink)':'var(--lf-purple)';
 
-  /* Split typewriter for pink "Latifa" */
   const prefix="Gaming With "; const suffix="Latifa";
   const dispPre=displayed.slice(0,Math.min(displayed.length,prefix.length));
   const dispSuf=displayed.length>prefix.length?displayed.slice(prefix.length):'';
@@ -574,166 +548,165 @@ const GamingWithLatifa = () => {
         <div className="lf-scanlines"/>
 
         <div ref={wrapRef} className="lf-scale-wrap" style={{transformOrigin:'top center'}}>
-          <div ref={cardRef} className="lf-card lf-drop-in">
+          {/* Scanline reveal wrapper */}
+          <div className="lf-reveal-wrap">
+            <div className="lf-reveal-line"/>
+            <div ref={cardRef} className="lf-card">
 
-            <div className="lf-bracket lf-bracket-tl"/>
-            <div className="lf-bracket lf-bracket-tr"/>
-            <div className="lf-bracket lf-bracket-bl"/>
-            <div className="lf-bracket lf-bracket-br"/>
+              <div className="lf-bracket lf-bracket-tl"/>
+              <div className="lf-bracket lf-bracket-tr"/>
+              <div className="lf-bracket lf-bracket-bl"/>
+              <div className="lf-bracket lf-bracket-br"/>
 
-            {/* HERO */}
-            <div className="lf-hero">
-              <div className="lf-hero-blob"/>
-
-              {/* Ring */}
-              <div className="lf-ring-wrap">
-                <div className="lf-ring lf-ring-1"/>
-                <div className="lf-ring lf-ring-2"/>
-                <div className="lf-ring lf-ring-3"/>
-                <div className="lf-ring-cross"/>
-                <div className="lf-orbit"><div className="lf-orbit-dot"/></div>
-                <div className="lf-ring-dot"/>
-              </div>
-
-              {/* Name + typewriter */}
-              <div className="lf-operator-tag">
-                <span className="lf-tag-prefix">▸ Operator ID</span>
-                <div className="lf-name">
-                  {dispPre}
-                  {dispSuf&&<span className="lf-name-pink">{dispSuf}</span>}
-                  {!done&&<span className="lf-name-cursor"/>}
+              {/* HERO */}
+              <div className="lf-hero">
+                <div className="lf-hero-blob"/>
+                <div className="lf-ring-wrap">
+                  <div className="lf-ring lf-ring-1"/>
+                  <div className="lf-ring lf-ring-2"/>
+                  <div className="lf-ring lf-ring-3"/>
+                  <div className="lf-ring-cross"/>
+                  <div className="lf-orbit"><div className="lf-orbit-dot"/></div>
+                  <div className="lf-ring-dot"/>
                 </div>
-                <div className="lf-hero-sub">Support · Drop · Deploy</div>
-              </div>
-
-              <div className="lf-live">
-                <div className="lf-live-dot"/>
-                <span className="lf-live-text">LIVE</span>
-              </div>
-            </div>
-
-            <form onSubmit={handleSubmit}>
-              <div className="lf-body">
-
-                <div>
-                  <label className="lf-lbl">▸ Operator Name</label>
-                  <div className="lf-iw"><Input name="name" value={formData.name} onChange={handleInputChange} placeholder="Enter your name" required/></div>
-                </div>
-
-                <div>
-                  <label className="lf-lbl">▸ Mission Type</label>
-                  <div className="lf-types">
-                    {TYPES.map(t=>(
-                      <button key={t.key} type="button" onClick={()=>handleDonationTypeChange(t.key)} className={cn('lf-tb',t.tc,donationType===t.key?'lf-on':'')}>
-                        <div className="lf-tb-face">
-                          <span className="lf-tb-emoji">{t.emoji}</span>
-                          <span className="lf-tb-name">{t.label}</span>
-                          <span className="lf-tb-min">{currencySymbol}{t.min}+</span>
-                        </div>
-                      </button>
-                    ))}
+                <div className="lf-operator-tag">
+                  <span className="lf-tag-prefix">▸ Operator ID</span>
+                  <div className="lf-name">
+                    {dispPre}
+                    {dispSuf&&<span className="lf-name-pink">{dispSuf}</span>}
+                    {!done&&<span className="lf-name-cursor"/>}
                   </div>
+                  <div className="lf-hero-sub">Support · Drop · Deploy</div>
                 </div>
+                <div className="lf-live">
+                  <div className="lf-live-dot"/>
+                  <span className="lf-live-text">LIVE</span>
+                </div>
+              </div>
 
-                <div>
-                  <label className="lf-lbl">▸ Deploy Amount</label>
-                  <div className="lf-amt">
-                    <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
-                      <PopoverTrigger asChild>
-                        <button type="button" className="lf-cur">
-                          <span>{currencySymbol} {selectedCurrency}</span>
-                          <ChevronsUpDown style={{width:10,height:10,opacity:0.35,marginLeft:'auto',flexShrink:0}}/>
+              <form onSubmit={handleSubmit}>
+                <div className="lf-body">
+
+                  <div>
+                    <label className="lf-lbl">▸ Operator Name</label>
+                    <div className="lf-iw"><Input name="name" value={formData.name} onChange={handleInputChange} placeholder="Enter your name" required/></div>
+                  </div>
+
+                  <div>
+                    <label className="lf-lbl">▸ Mission Type</label>
+                    <div className="lf-types">
+                      {TYPES.map(t=>(
+                        <button key={t.key} type="button" onClick={()=>handleDonationTypeChange(t.key)} className={cn('lf-tb',t.tc,donationType===t.key?'lf-on':'')}>
+                          <div className="lf-tb-face">
+                            <span className="lf-tb-emoji">{t.emoji}</span>
+                            <span className="lf-tb-name">{t.label}</span>
+                            <span className="lf-tb-min">{currencySymbol}{t.min}+</span>
+                          </div>
                         </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[220px] p-0" align="start">
-                        <Command>
-                          <CommandInput placeholder="Search currency..."/>
-                          <CommandList>
-                            <CommandEmpty>No currency found.</CommandEmpty>
-                            <CommandGroup>
-                              {SUPPORTED_CURRENCIES.map(c=>(
-                                <CommandItem key={c.code} value={c.code} onSelect={()=>{setSelectedCurrency(c.code);setCurrencyOpen(false);}}>
-                                  <Check className={cn("mr-2 h-4 w-4",selectedCurrency===c.code?"opacity-100":"opacity-0")}/>
-                                  {c.symbol} {c.code}
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                    <div className="lf-iw" style={{flex:1}}>
-                      <Input name="amount" type="number" value={formData.amount} onChange={handleInputChange} min="1" placeholder="0" readOnly={donationType==="hypersound"} required/>
+                      ))}
                     </div>
                   </div>
-                  {pricing.ttsEnabled&&<p className="lf-hint">⚡ TTS ABOVE {currencySymbol}{pricing.minTts}</p>}
+
+                  <div>
+                    <label className="lf-lbl">▸ Deploy Amount</label>
+                    <div className="lf-amt">
+                      <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
+                        <PopoverTrigger asChild>
+                          <button type="button" className="lf-cur">
+                            <span>{currencySymbol} {selectedCurrency}</span>
+                            <ChevronsUpDown style={{width:10,height:10,opacity:0.35,marginLeft:'auto',flexShrink:0}}/>
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[220px] p-0" align="start">
+                          <Command>
+                            <CommandInput placeholder="Search currency..."/>
+                            <CommandList>
+                              <CommandEmpty>No currency found.</CommandEmpty>
+                              <CommandGroup>
+                                {SUPPORTED_CURRENCIES.map(c=>(
+                                  <CommandItem key={c.code} value={c.code} onSelect={()=>{setSelectedCurrency(c.code);setCurrencyOpen(false);}}>
+                                    <Check className={cn("mr-2 h-4 w-4",selectedCurrency===c.code?"opacity-100":"opacity-0")}/>
+                                    {c.symbol} {c.code}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                      <div className="lf-iw" style={{flex:1}}>
+                        <Input name="amount" type="number" value={formData.amount} onChange={handleInputChange} min="1" placeholder="0" readOnly={donationType==="hypersound"} required/>
+                      </div>
+                    </div>
+                    {pricing.ttsEnabled&&<p className="lf-hint">⚡ TTS ABOVE {currencySymbol}{pricing.minTts}</p>}
+                  </div>
+
+                  <div className="lf-div"/>
+
+                  {donationType==="text"&&(
+                    <div className="lf-fu">
+                      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}}>
+                        <label className="lf-lbl" style={{margin:0}}>▸ Intel Message</label>
+                        <span style={{fontSize:9,fontWeight:700,color:msgClr,fontFamily:'Orbitron,monospace',letterSpacing:'0.08em'}}>{formData.message.length}/{maxMessageLength}</span>
+                      </div>
+                      <textarea name="message" value={formData.message} onChange={handleInputChange} placeholder="Your message (optional)" className="lf-ta" rows={2} maxLength={maxMessageLength}/>
+                      <div className="lf-cbar"><div className="lf-cbar-fill" style={{width:`${msgPct}%`,background:msgClr,boxShadow:`0 0 5px ${msgClr}`}}/></div>
+                    </div>
+                  )}
+
+                  {donationType==="voice"&&(
+                    <div className="lf-fu">
+                      <label className="lf-lbl">▸ Voice Transmission</label>
+                      <div className="lf-sp lf-sp-pk">
+                        <EnhancedVoiceRecorder controller={voiceRecorder} onRecordingComplete={()=>{}} maxDurationSeconds={getVoiceDuration(currentAmount)} requiredAmount={pricing.minVoice} currentAmount={currentAmount} brandColor="#a855f7"/>
+                      </div>
+                    </div>
+                  )}
+
+                  {donationType==="hypersound"&&(
+                    <div className="lf-fu lf-sp lf-sp-cy">
+                      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+                        <span style={{fontSize:14}}>🔊</span>
+                        <span style={{fontSize:11,fontWeight:700,color:'var(--lf-cyan)',fontFamily:'Orbitron,monospace',letterSpacing:'0.1em'}}>HYPERSOUNDS</span>
+                      </div>
+                      <HyperSoundSelector selectedSound={selectedHypersound} onSoundSelect={setSelectedHypersound}/>
+                    </div>
+                  )}
+
+                  {donationType==="media"&&(
+                    <div className="lf-fu lf-sp lf-sp-pu">
+                      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+                        <span style={{fontSize:14}}>🖼️</span>
+                        <span style={{fontSize:11,fontWeight:700,color:'var(--lf-purple)',fontFamily:'Orbitron,monospace',letterSpacing:'0.1em'}}>MEDIA DROP</span>
+                      </div>
+                      <MediaUploader streamerSlug="gaming_with_latifa" onMediaUploaded={(url,type)=>{setMediaUrl(url);setMediaType(type);}} onMediaRemoved={()=>{setMediaUrl(null);setMediaType(null);}}/>
+                    </div>
+                  )}
+
+                  <RewardsBanner amount={Number(formData.amount)} currency={selectedCurrency}/>
+
+                  <div className="lf-btn-wrap">
+                    <button type="submit" className="lf-btn" disabled={isProcessingPayment}>
+                      {isProcessingPayment?(
+                        <span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:9}}>
+                          <span className="lf-spinner"/> DEPLOYING...
+                        </span>
+                      ):(
+                        <span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
+                          <Heart style={{width:14,height:14}}/>
+                          SUPPORT {currencySymbol}{formData.amount||'0'}
+                        </span>
+                      )}
+                    </button>
+                  </div>
+
+                  <p style={{fontSize:8,fontWeight:600,color:'rgba(233,213,255,0.14)',textAlign:'center',lineHeight:1.6,fontFamily:'Orbitron,monospace',letterSpacing:'0.06em'}}>
+                    PHONE NUMBERS COLLECTED BY RAZORPAY PER RBI REGULATIONS
+                  </p>
+                  <DonationPageFooter brandColor="#a855f7"/>
                 </div>
-
-                <div className="lf-div"/>
-
-                {donationType==="text"&&(
-                  <div className="lf-fu">
-                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:5}}>
-                      <label className="lf-lbl" style={{margin:0}}>▸ Intel Message</label>
-                      <span style={{fontSize:9,fontWeight:700,color:msgClr,fontFamily:'Orbitron,monospace',letterSpacing:'0.08em'}}>{formData.message.length}/{maxMessageLength}</span>
-                    </div>
-                    <textarea name="message" value={formData.message} onChange={handleInputChange} placeholder="Your message (optional)" className="lf-ta" rows={2} maxLength={maxMessageLength}/>
-                    <div className="lf-cbar"><div className="lf-cbar-fill" style={{width:`${msgPct}%`,background:msgClr,boxShadow:`0 0 5px ${msgClr}`}}/></div>
-                  </div>
-                )}
-
-                {donationType==="voice"&&(
-                  <div className="lf-fu">
-                    <label className="lf-lbl">▸ Voice Transmission</label>
-                    <div className="lf-sp lf-sp-pk">
-                      <EnhancedVoiceRecorder controller={voiceRecorder} onRecordingComplete={()=>{}} maxDurationSeconds={getVoiceDuration(currentAmount)} requiredAmount={pricing.minVoice} currentAmount={currentAmount} brandColor="#a855f7"/>
-                    </div>
-                  </div>
-                )}
-
-                {donationType==="hypersound"&&(
-                  <div className="lf-fu lf-sp lf-sp-cy">
-                    <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
-                      <span style={{fontSize:14}}>🔊</span>
-                      <span style={{fontSize:11,fontWeight:700,color:'var(--lf-cyan)',fontFamily:'Orbitron,monospace',letterSpacing:'0.1em'}}>HYPERSOUNDS</span>
-                    </div>
-                    <HyperSoundSelector selectedSound={selectedHypersound} onSoundSelect={setSelectedHypersound}/>
-                  </div>
-                )}
-
-                {donationType==="media"&&(
-                  <div className="lf-fu lf-sp lf-sp-pu">
-                    <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
-                      <span style={{fontSize:14}}>🖼️</span>
-                      <span style={{fontSize:11,fontWeight:700,color:'var(--lf-purple)',fontFamily:'Orbitron,monospace',letterSpacing:'0.1em'}}>MEDIA DROP</span>
-                    </div>
-                    <MediaUploader streamerSlug="gaming_with_latifa" onMediaUploaded={(url,type)=>{setMediaUrl(url);setMediaType(type);}} onMediaRemoved={()=>{setMediaUrl(null);setMediaType(null);}}/>
-                  </div>
-                )}
-
-                <RewardsBanner amount={Number(formData.amount)} currency={selectedCurrency}/>
-
-                <div className="lf-btn-wrap">
-                  <button type="submit" className="lf-btn" disabled={isProcessingPayment}>
-                    {isProcessingPayment?(
-                      <span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:9}}>
-                        <span className="lf-spinner"/> DEPLOYING...
-                      </span>
-                    ):(
-                      <span style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8}}>
-                        <Heart style={{width:14,height:14}}/>
-                        SUPPORT {currencySymbol}{formData.amount||'0'}
-                      </span>
-                    )}
-                  </button>
-                </div>
-
-                <p style={{fontSize:8,fontWeight:600,color:'rgba(233,213,255,0.14)',textAlign:'center',lineHeight:1.6,fontFamily:'Orbitron,monospace',letterSpacing:'0.06em'}}>
-                  PHONE NUMBERS COLLECTED BY RAZORPAY PER RBI REGULATIONS
-                </p>
-                <DonationPageFooter brandColor="#a855f7"/>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
         </div>
       </div>
