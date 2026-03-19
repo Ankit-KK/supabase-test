@@ -567,14 +567,7 @@ const Ankit = () => {
                 </div>
 
                 {/* ✅ Claim Reward Points Button */}
-                
-                  href="https://hyperchat.store/auth"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="v-reward-btn"
-                >
-                  🎁 Claim your reward points
-                </a>
+                <a href="https://hyperchat.store/auth" target="_blank" rel="noopener noreferrer" className="v-reward-btn">🎁 Claim your reward points</a>
 
                 <p style={{fontSize:9,fontWeight:600,color:'rgba(255,255,255,0.18)',textAlign:'center',lineHeight:1.5}}>
                   Phone numbers collected by Razorpay as per RBI regulations
