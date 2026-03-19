@@ -34,7 +34,6 @@ const STYLES = `
 
   .v-root { font-family: 'Nunito', sans-serif; }
 
-  /* Page: full viewport, centers the card */
   .v-page {
     width: 100vw;
     height: 100dvh;
@@ -54,21 +53,13 @@ const STYLES = `
       radial-gradient(ellipse 50% 40% at 50% 50%, rgba(0,238,255,0.07) 0%, transparent 60%);
   }
 
-  /*
-    The scale wrapper:
-    - Natural width = 420px, natural height determined by content (~680px)
-    - We set a JS-computed --scale CSS variable on it
-    - transform-origin: top center so it scales from the top
-  */
   .v-scale-wrap {
     width: 420px;
     transform-origin: top center;
-    /* transform: scale(var(--scale, 1)) applied inline */
     position: relative;
     z-index: 10;
   }
 
-  /* Card: fixed design, no dynamic sizing */
   .v-card {
     width: 420px;
     background: var(--card);
@@ -82,7 +73,6 @@ const STYLES = `
     overflow: hidden;
   }
 
-  /* ── HERO ── */
   .v-hero {
     position: relative;
     padding: 14px 18px 12px;
@@ -116,12 +106,10 @@ const STYLES = `
   .v-live { display:inline-flex; align-items:center; gap:5px; background:rgba(0,255,136,0.1); border:1.5px solid rgba(0,255,136,0.4); border-radius:20px; padding:3px 10px; flex-shrink:0; position:relative; z-index:1; }
   .v-live-dot { width:6px; height:6px; border-radius:50%; background:var(--green); animation:v-pulse 1.5s ease-in-out infinite; }
 
-  /* ── Form body ── */
   .v-body { padding: 14px 18px 16px; display:flex; flex-direction:column; gap:11px; }
 
   .v-lbl { font-size:10px; font-weight:900; letter-spacing:0.1em; text-transform:uppercase; display:block; margin-bottom:5px; color:rgba(255,255,255,0.45); }
 
-  /* Inputs */
   .v-iw input {
     width:100% !important; background:rgba(255,255,255,0.05) !important;
     border:1.5px solid rgba(255,255,255,0.12) !important; border-radius:8px !important;
@@ -144,9 +132,6 @@ const STYLES = `
   .v-cbar { height:2px; margin-top:4px; background:rgba(255,255,255,0.07); border-radius:2px; overflow:hidden; }
   .v-cbar-fill { height:100%; border-radius:2px; transition:width .12s,background .2s; }
 
-  /* ══════════════════════
-     3D TYPE BUTTONS
-  ══════════════════════ */
   .v-types { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; padding-bottom:6px; }
 
   .v-tb { position:relative; padding:0; border:none; background:none; cursor:pointer; outline:none; border-radius:10px; display:block; width:100%; }
@@ -182,7 +167,6 @@ const STYLES = `
   .v-tb-name  { font-size:9px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; display:block; margin-top:4px; transition:color .15s, text-shadow .15s; }
   .v-tb-min   { font-size:7px; font-weight:700; color:rgba(255,228,0,0.7); display:block; margin-top:1px; }
 
-  /* Amount */
   .v-amt { display:flex; gap:7px; }
   .v-cur {
     display:flex; align-items:center; justify-content:space-between; gap:4px;
@@ -199,9 +183,6 @@ const STYLES = `
   .v-sp-or { background:rgba(255,102,0,0.07); border:1.5px solid rgba(255,102,0,0.4); box-shadow:0 0 14px rgba(255,102,0,0.1); }
   .v-sp-pu { background:rgba(170,0,255,0.07); border:1.5px solid rgba(170,0,255,0.4); box-shadow:0 0 14px rgba(170,0,255,0.1); }
 
-  /* ══════════════════════
-     3D DONATE BUTTON
-  ══════════════════════ */
   .v-btn-wrap { position:relative; width:100%; border-radius:12px; padding-bottom:6px; }
   .v-btn-wrap::after { content:''; position:absolute; bottom:0; left:0; right:0; height:calc(100% - 4px); border-radius:12px; z-index:1; background:linear-gradient(90deg,#7700aa,#aa0055,#aa3300); }
   .v-btn {
@@ -233,6 +214,21 @@ const STYLES = `
 
   @keyframes v-in { from{opacity:0;transform:scale(0.97);} to{opacity:1;transform:scale(1);} }
   .v-in { animation:v-in .4s cubic-bezier(0.22,1,0.36,1) both; }
+
+  .v-reward-btn {
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    padding:8px 12px; border-radius:10px; text-decoration:none;
+    border:1.5px solid rgba(255,228,0,0.3); background:rgba(255,228,0,0.05);
+    color:rgba(255,228,0,0.8); font-size:11px; font-weight:800;
+    font-family:'Nunito',sans-serif; letter-spacing:0.04em;
+    transition:all .2s; cursor:pointer;
+  }
+  .v-reward-btn:hover {
+    border-color:rgba(255,228,0,0.6);
+    background:rgba(255,228,0,0.1);
+    box-shadow:0 0 12px rgba(255,228,0,0.2);
+    color:rgba(255,228,0,1);
+  }
 `;
 
 const Ankit = () => {
@@ -258,37 +254,27 @@ const Ankit = () => {
 
   const { pricing } = useStreamerPricing('ankit', formData.currency);
 
-  // ── Auto-scale: fit card to viewport ──
   const applyScale = useCallback(() => {
     const wrap = wrapRef.current;
     const card = cardRef.current;
     if (!wrap || !card) return;
-
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-
-    // Card natural size: 420px wide
     const cardNaturalW = 420;
     const cardNaturalH = card.scrollHeight;
-
-    // Scale to fit width (with 16px padding each side) AND height (with 24px padding each side)
     const scaleW = Math.min(1, (vw - 32) / cardNaturalW);
     const scaleH = cardNaturalH > 0 ? Math.min(1, (vh - 48) / cardNaturalH) : 1;
     const scale  = Math.min(scaleW, scaleH);
-
     wrap.style.transform = `scale(${scale})`;
-    // Compensate the wrapper height so the page doesn't overflow
     wrap.style.height = `${cardNaturalH * scale}px`;
   }, []);
 
   useEffect(() => {
-    // Small delay to let fonts & layout settle
     const t = setTimeout(applyScale, 80);
     window.addEventListener('resize', applyScale);
     return () => { clearTimeout(t); window.removeEventListener('resize', applyScale); };
   }, [applyScale]);
 
-  // Re-scale when donation type changes (content height changes)
   useEffect(() => {
     const t = setTimeout(applyScale, 60);
     return () => clearTimeout(t);
@@ -370,10 +356,10 @@ const Ankit = () => {
         description:donationType==='hypersound'?'HyperSound':donationType==='voice'?'Voice Message':'Text Message',
         order_id:data.razorpay_order_id, prefill:{name:formData.name.trim()}, hidden:{contact:true},
         theme:{color:'#ff0099'},
-        handler:()=>navigate(`/status?order_id=${data.order_id}&status=success&st=${data.status_token}`),
-        modal:{ondismiss:()=>navigate(`/status?order_id=${data.order_id}&status=pending&st=${data.status_token}`)},
+        handler:()=>navigate(`/status?order_id=${data.orderId}&status=success&st=${data.status_token}`),
+        modal:{ondismiss:()=>navigate(`/status?order_id=${data.orderId}&status=pending&st=${data.status_token}`)},
       });
-      rzp.on('payment.failed',()=>navigate(`/status?order_id=${data.order_id}&status=failed&st=${data.status_token}`));
+      rzp.on('payment.failed',()=>navigate(`/status?order_id=${data.orderId}&status=failed&st=${data.status_token}`));
       rzp.open();
     } catch(err) {
       toast({title:"Payment Failed",description:err instanceof Error?err.message:"Something went wrong.",variant:"destructive"});
@@ -424,7 +410,6 @@ const Ankit = () => {
             <div style={{position:'fixed',inset:0,background:'rgba(13,0,21,0.82)',pointerEvents:'none',zIndex:1}}/></>
         )}
 
-        {/* Scale wrapper — JS sets transform: scale() on this */}
         <div ref={wrapRef} className="v-scale-wrap" style={{transformOrigin:'top center'}}>
           <div ref={cardRef} className="v-card v-in">
 
@@ -564,7 +549,7 @@ const Ankit = () => {
 
                 <RewardsBanner amount={currentAmount} currency={formData.currency}/>
 
-                {/* 3D Donate */}
+                {/* 3D Donate Button */}
                 <div className="v-btn-wrap">
                   <button type="submit" className="v-btn" disabled={isProcessing||!razorpayLoaded}>
                     {isProcessing||!razorpayLoaded?(
@@ -580,6 +565,16 @@ const Ankit = () => {
                     )}
                   </button>
                 </div>
+
+                {/* ✅ Claim Reward Points Button */}
+                
+                  href="https://hyperchat.store/auth"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="v-reward-btn"
+                >
+                  🎁 Claim your reward points
+                </a>
 
                 <p style={{fontSize:9,fontWeight:600,color:'rgba(255,255,255,0.18)',textAlign:'center',lineHeight:1.5}}>
                   Phone numbers collected by Razorpay as per RBI regulations
