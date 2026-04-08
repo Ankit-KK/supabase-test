@@ -157,47 +157,95 @@ const STYLES = `
   .nv-operator-tag { display:flex; flex-direction:column; position:relative; z-index:1; }
   .nv-tag-prefix { font-family: var(--mw-font-label); font-size:8px; font-weight:700; color:var(--mw-text-dim); letter-spacing:0.25em; text-transform:uppercase; margin-bottom:3px; }
 
-  /* GLITCH + OLD TV EFFECT — ONLY ON .nv-name */
+    /* GLITCH + OLD TV EFFECT — ONLY ON .nv-name (ENHANCED ANALOG CRT) */
   @keyframes nv-glitch-tv {
-    0%, 90%, 100% { transform: none; text-shadow: none; clip-path: none; opacity: 1; }
-    91% { transform: translateX(-3px); text-shadow: 3px 0 #fff, -3px 0 #000; }
-    92% { transform: translateX(3px) skewX(-4deg); text-shadow: -3px 0 #000, 3px 0 #888; clip-path: polygon(0 20%, 100% 20%, 100% 40%, 0 40%); }
-    93% { transform: translateX(-2px); text-shadow: 2px 0 #aaa, -2px 0 #333; }
-    94% { transform: translateX(2px) skewX(3deg); opacity: 0.8; }
-    95% { transform: none; opacity: 1; }
-    96% { transform: translateX(-1px); text-shadow: 1px 0 #fff; clip-path: polygon(0 60%, 100% 60%, 100% 80%, 0 80%); }
-    97% { transform: none; clip-path: none; }
-  }
-  .nv-name {
-    font-family: var(--mw-font-heading); font-size:30px; font-weight:600; color:var(--mw-white);
-    line-height:1; letter-spacing:0.08em; position:relative; z-index:1;
-    text-transform: uppercase;
-    animation: nv-glitch-tv 9s infinite, nv-name-glow 6s ease-in-out infinite;
-  }
-  @keyframes nv-name-glow {
-    0%,100%{ text-shadow:0 0 8px rgba(255,255,255,0.3), 0 0 20px rgba(255,255,255,0.1); }
-    50%    { text-shadow:0 0 12px rgba(255,255,255,0.4), 0 0 30px rgba(255,255,255,0.15); }
+    0%, 90%, 100% {
+      transform: none;
+      text-shadow: none;
+      clip-path: none;
+      opacity: 1;
+    }
+    /* RGB split + horizontal shift */
+    92% {
+      transform: translateX(-3px) skewX(-2deg);
+      text-shadow: 
+        4px 0 rgba(255,0,0,0.6),
+        -4px 0 rgba(0,255,255,0.6);
+      clip-path: polygon(0 15%, 100% 15%, 100% 35%, 0 35%);
+    }
+    94% {
+      transform: translateX(4px) skewX(3deg);
+      text-shadow: 
+        -4px 0 rgba(255,0,0,0.6),
+        4px 0 rgba(0,255,255,0.6);
+      clip-path: polygon(0 65%, 100% 65%, 100% 85%, 0 85%);
+    }
+    96% {
+      transform: translateX(-2px);
+      text-shadow: 
+        2px 0 rgba(255,0,0,0.5),
+        -2px 0 rgba(0,255,255,0.5);
+      clip-path: polygon(0 40%, 100% 40%, 100% 60%, 0 60%);
+      opacity: 0.9;
+    }
+    98% {
+      transform: translateX(2px) skewX(-1deg);
+      text-shadow: 
+        -2px 0 rgba(255,0,0,0.4),
+        2px 0 rgba(0,255,255,0.4);
+      clip-path: none;
+      opacity: 1;
+    }
+    /* Flicker effect */
+    91% { opacity: 0.6; }
+    93% { opacity: 1; }
+    95% { opacity: 0.3; }
+    97% { opacity: 1; }
+    99% { opacity: 0.7; }
   }
 
-  /* Optional subtle TV static overlay behind everything (not on text) */
-  .nv-page::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 5;
-    background: repeating-radial-gradient(circle at 20% 30%, #fff, #888 1px, #000 2px);
-    background-size: 4px 4px;
-    opacity: 0.02;
-    mix-blend-mode: overlay;
-    animation: tv-static 0.2s infinite steps(3);
+  .nv-name {
+    font-family: var(--mw-font-heading);
+    font-size: 30px;
+    font-weight: 600;
+    color: var(--mw-white);
+    line-height: 1;
+    letter-spacing: 0.08em;
+    position: relative;
+    z-index: 1;
+    text-transform: uppercase;
+    animation: nv-glitch-tv 8s infinite, nv-name-glow 6s ease-in-out infinite;
   }
-  @keyframes tv-static {
-    0% { opacity: 0.01; background-position: 0 0; }
-    25% { opacity: 0.03; background-position: 2px 3px; }
-    50% { opacity: 0.005; background-position: -3px 1px; }
-    75% { opacity: 0.02; background-position: 1px -2px; }
-    100% { opacity: 0.01; background-position: 0 0; }
+
+  /* Static scanline overlay on the name (only appears during glitch) */
+  .nv-name::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(255,255,255,0.03) 0px,
+      rgba(0,0,0,0.1) 2px,
+      transparent 3px
+    );
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    opacity: 0;
+    animation: nv-static-flash 8s infinite;
+  }
+
+  @keyframes nv-static-flash {
+    0%, 90%, 100% { opacity: 0; }
+    92%, 96% { opacity: 0.5; }
+    94%, 98% { opacity: 0.2; }
+  }
+
+  @keyframes nv-name-glow {
+    0%, 100% { text-shadow: 0 0 8px rgba(255,255,255,0.3), 0 0 20px rgba(255,255,255,0.1); }
+    50% { text-shadow: 0 0 12px rgba(255,255,255,0.4), 0 0 30px rgba(255,255,255,0.15); }
   }
 
   /* Greeting tag */
